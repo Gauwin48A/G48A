@@ -63,14 +63,14 @@ const PostImageCarousel = ({ imageUrls = [], title, postId, handleViewDetails })
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition z-10 focus:outline-none"
             aria-label={t("previous_image")}
           >
-            <FaChevronLeft className="w-3 h-3" />
+            <FaChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={goToNext}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 transition z-10 focus:outline-none"
             aria-label={t("next_image")}
           >
-            <FaChevronRight className="w-3 h-3" />
+            <FaChevronRight className="w-4 h-4" />
           </button>
           
           {/* Indicator Dots */}

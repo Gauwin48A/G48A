@@ -108,7 +108,7 @@ function FlowStep({ number, label, active, done }) {
         {done ? <CheckCircle2 className="h-4 w-4" /> : number}
       </div>
       <span
-        className={`text-[11px] font-semibold sm:text-xs ${
+        className={`text-xs font-semibold sm:text-xs ${
           active ? "text-slate-800 dark:text-white" : done ? "text-emerald-600" : "text-slate-400 dark:text-gray-500"
         }`}
       >
@@ -345,12 +345,12 @@ export default function PostWelcome() {
   };
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:bg-gradient-to-br">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:bg-gradient-to-br">
       <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } } @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
       {/* Top flow progress bar */}
       <div className="sticky top-0 z-20 mhub-premium-bar">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 relative">
-          <span className="text-sm font-bold text-slate-700 dark:text-gray-300 dark:text-slate-200">
+        <div className="mx-auto flex max-w-[640px] items-center justify-between px-4 py-3 relative">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
             {tr("publish_flow", "Publish Flow")}
           </span>
           <div className="flex items-center gap-1">
@@ -363,12 +363,12 @@ export default function PostWelcome() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14">
-        <div className="grid items-start gap-8 md:grid-cols-[1.1fr_0.9fr]">
+      <div className="mx-auto w-full max-w-[640px] px-4 py-10 md:py-14">
+        <div className="grid items-start gap-4 sm:gap-8 md:grid-cols-[1.1fr_0.9fr]">
           {/* LEFT: Hero copy + CTA + tips */}
           <div className="space-y-6 order-2 md:order-1">
             {/* Eyebrow badge */}
-            <div className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards] inline-flex items-center gap-2 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:text-gray-400 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-slate-200" style={{ animationDelay: "0ms" }}>
+            <div className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards] inline-flex items-center gap-2 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:text-gray-400 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-slate-200" style={{ animationDelay: "0ms" }}>
               <Sparkles className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-300" aria-hidden="true" />
               {isEligible
                 ? tr("ready_to_post_label", "Ready to post")
@@ -382,7 +382,7 @@ export default function PostWelcome() {
                 : tr("welcome_publish_title_ineligible", "Start publishing today")}
             </h1>
 
-            <p className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards] text-base text-slate-500 md:text-lg dark:text-gray-400 dark:text-slate-300" style={{ animationDelay: "200ms" }}>
+            <p className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards] text-base text-slate-500 md:text-lg dark:text-slate-300" style={{ animationDelay: "200ms" }}>
               {isEligible
                 ? tr(
                     "welcome_publish_subtitle_eligible",
@@ -396,7 +396,7 @@ export default function PostWelcome() {
 
             {/* Error notice */}
             {subscriptionState.error ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-amber-900 dark:text-amber-200">
@@ -420,7 +420,7 @@ export default function PostWelcome() {
 
             {/* Tier-seen hint */}
             {!isEligible && tierSeen ? (
-              <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-400 dark:border dark:border-blue-600/40 dark:text-blue-300">
+              <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-600/40 dark:text-blue-300">
                 <Crown className="h-3.5 w-3.5 flex-shrink-0 text-blue-500 dark:text-blue-300" />
                 <span>
                   {tr(
@@ -437,7 +437,7 @@ export default function PostWelcome() {
                 onClick={handlePrimary}
                 disabled={isLoading}
                 aria-busy={isLoading}
-                className="h-12 min-w-[220px] rounded-xl bg-emerald-500 px-8 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:shadow-xl hover:shadow-emerald-500/40 transition-all active:scale-[0.98] active:shadow-lg active:shadow-emerald-500/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 dark:bg-emerald-800/30 dark:text-white dark:hover:bg-emerald-800/30"
+                className="h-12 w-full max-w-[280px] rounded-xl bg-emerald-500 px-6 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:shadow-xl hover:shadow-emerald-500/40 transition-all active:scale-[0.98] active:shadow-lg active:shadow-emerald-500/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 dark:bg-emerald-800/30 dark:text-white dark:hover:bg-emerald-800/30"
               >
                 {isLoading ? (
                   <>
@@ -467,7 +467,7 @@ export default function PostWelcome() {
             </div>
 
             {!isEligible ? (
-              <p className="text-sm text-slate-400 dark:text-gray-500 dark:text-slate-300">
+              <p className="text-sm text-slate-400 dark:text-slate-300">
                 {tr(
                   "publish_subscribe_hint",
                   "Choose a plan once and manage it anytime from your profile.",
@@ -477,7 +477,7 @@ export default function PostWelcome() {
 
             {/* Popular categories */}
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-gray-500 dark:text-slate-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-300">
                 {tr("popular_starts", "Quick starts")}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -487,7 +487,7 @@ export default function PostWelcome() {
                     type="button"
                     aria-label={tr(item.labelKey, item.labelFallback)}
                     onClick={() => handlePopularStart(item.category)}
-                    className="group rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md hover:shadow-emerald-500/10 active:scale-95 dark:text-gray-300 dark:hover:border-emerald-400 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-slate-200 dark:hover:border-emerald-600/40 dark:hover:text-emerald-300"
+                    className="group rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md hover:shadow-emerald-500/10 active:scale-95 dark:text-gray-300 dark:hover:border-emerald-400 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-slate-200 dark:hover:border-emerald-600/40 dark:hover:text-emerald-300"
                   >
                     {tr(item.labelKey, item.labelFallback)}
                     <ArrowRight className="inline ml-1 h-3 w-3 opacity-0 -translate-x-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" />
@@ -505,11 +505,11 @@ export default function PostWelcome() {
                     key={tip.title}
                     className="group rounded-2xl mhub-premium-surface p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-500/10 mhub-shine"
                   >
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/30 dark:bg-emerald-950/20">
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/20">
                       <TipIcon className="h-4 w-4 text-emerald-600 group-hover:scale-110 transition-transform duration-300 dark:text-emerald-300" />
                     </div>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-gray-200 dark:text-slate-100">{tip.title}</p>
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed dark:text-gray-400 dark:text-slate-300">{tip.desc}</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{tip.title}</p>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed dark:text-slate-300">{tip.desc}</p>
                   </div>
                 );
               })}
@@ -556,13 +556,13 @@ export default function PostWelcome() {
                         <PlanIcon className="h-6 w-6 text-white dark:text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-gray-500 dark:text-slate-300">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-300">
                           {isEligible
                             ? tr("active_plan", "Active Plan")
                             : tr("plan_label", "Plan")}
                         </p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100">{planLabel}</p>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-gray-400 dark:text-slate-300">
+                        <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100">{planLabel}</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                           {isTrial && expiryLabel
                             ? tr("trial_days_left", "Trial active · {{count}} days left", { count: daysRemaining })
                             : expiryLabel
@@ -589,11 +589,11 @@ export default function PostWelcome() {
 
                     {isEligible && daysRemaining > 0 ? (
                       <div className="mt-4">
-                        <div className="mb-1 flex items-center justify-between text-xs text-slate-400 dark:text-gray-500 dark:text-slate-300">
+                        <div className="mb-1 flex items-center justify-between text-xs text-slate-400 dark:text-slate-300">
                           <span>{tr("days_remaining", "Days remaining")}</span>
-                          <span className="font-bold text-slate-600 dark:text-gray-300 dark:text-slate-200">{daysRemaining}d</span>
+                          <span className="font-bold text-slate-600 dark:text-slate-200">{daysRemaining}d</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-gray-700 dark:bg-slate-950">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-1000 ease-out dark:bg-gradient-to-r"
                             style={{
@@ -608,7 +608,7 @@ export default function PostWelcome() {
 
                 {/* Ready to post pill */}
                 {isEligible ? (
-                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/20 dark:border dark:border-emerald-600/40">
+                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-600/40">
                     <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-500 animate-pulse dark:text-emerald-300" />
                     <div>
                       <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
@@ -621,12 +621,12 @@ export default function PostWelcome() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 rounded-2xl mhub-premium-surface px-4 py-3">
-                    <Sparkles className="h-5 w-5 flex-shrink-0 text-slate-400 dark:text-gray-500 dark:text-slate-300" aria-hidden="true" />
+                    <Sparkles className="h-5 w-5 flex-shrink-0 text-slate-400 dark:text-slate-300" aria-hidden="true" />
                     <div>
-                      <p className="text-sm font-bold text-slate-600 dark:text-gray-300 dark:text-slate-200">
+                      <p className="text-sm font-bold text-slate-600 dark:text-slate-200">
                         {tr("subscription_needed", "Subscription required")}
                       </p>
-                      <p className="text-xs text-slate-400 dark:text-gray-500 dark:text-slate-300">
+                      <p className="text-xs text-slate-400 dark:text-slate-300">
                         {tr("choose_plan_to_post", "Choose a plan to start posting.")}
                       </p>
                     </div>
@@ -671,12 +671,12 @@ export default function PostWelcome() {
                             {step.done ? <CheckCircle2 className="h-4 w-4" /> : step.n}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-700 dark:text-gray-300 dark:text-slate-200">{step.title}</p>
-                            <p className="text-xs text-slate-400 leading-relaxed dark:text-gray-500 dark:text-slate-300">{step.desc}</p>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{step.title}</p>
+                            <p className="text-xs text-slate-400 leading-relaxed dark:text-slate-300">{step.desc}</p>
                           </div>
                         </div>
                         {idx < 2 ? (
-                          <div className="ml-4 h-3 border-l-2 border-dashed border-slate-200 dark:border-gray-700 dark:border-l-2 dark:border-dashed dark:border-slate-700" />
+                          <div className="ml-4 h-3 border-l-2 border-dashed border-slate-200 dark:border-slate-700" />
                         ) : null}
                       </div>
                     ))}
@@ -684,16 +684,16 @@ export default function PostWelcome() {
                 </div>
 
                 {/* Rewards nudge */}
-                <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 dark:border-indigo-900 dark:from-indigo-950/20 dark:to-violet-950/20 bg-[length:200%_200%] animate-[gradientShift_6s_ease_infinite] dark:border dark:border-indigo-600/40 dark:bg-gradient-to-br">
+                <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 dark:border-indigo-900 dark:from-indigo-950/20 dark:to-violet-950/20 bg-[length:200%_200%] animate-[gradientShift_6s_ease_infinite] dark:border-indigo-600/40 dark:bg-gradient-to-br">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/30 dark:bg-indigo-950/20">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/20">
                       <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-indigo-800 dark:text-indigo-300 dark:text-indigo-200">
+                      <p className="text-sm font-bold text-indigo-800 dark:text-indigo-200">
                         {tr("welcome_prompt_title", "What are you listing today?")}
                       </p>
-                      <p className="mt-1 text-xs text-indigo-600/70 leading-relaxed dark:text-indigo-400/70 dark:text-indigo-300/70">
+                      <p className="mt-1 text-xs text-indigo-600/70 leading-relaxed dark:text-indigo-300/70">
                         {tr(
                           "welcome_referral_hint",
                           "Invite friends and build coin balance while you prepare your first post.",

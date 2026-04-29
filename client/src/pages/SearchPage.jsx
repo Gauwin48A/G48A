@@ -812,10 +812,10 @@ const u = "recentSearches",
       },
       e.createElement(
         "div",
-        { className: "sticky top-0 z-50 mhub-premium-bar shadow-lg" },
+        { className: "sticky z-50 mhub-premium-bar shadow-lg", style: { top: "var(--top-nav-height, 60px)" } },
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto px-4 py-2 page-shell page-pad" },
+          { className: "max-w-[640px] mx-auto px-4 py-2 page-shell page-pad" },
           e.createElement(
             "form",
             { onSubmit: $, className: "flex items-center gap-3" },
@@ -829,7 +829,7 @@ const u = "recentSearches",
                   "p-2 rounded-full hover:bg-[var(--surface-2)] transition dark:hover:bg-[var(--surface-2)]",
               },
               e.createElement(q, {
-                className: "w-6 h-6 text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                className: "w-6 h-6 text-gray-600 dark:text-gray-200",
               }),
             ),
             e.createElement(
@@ -855,7 +855,7 @@ const u = "recentSearches",
                     className:
                       "absolute right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-[var(--surface-2)] dark:hover:bg-[var(--surface-2)]",
                   },
-                  e.createElement(Y, { className: "w-4 h-4 text-gray-500 dark:text-gray-400 dark:text-gray-300" }),
+                  e.createElement(Y, { className: "w-4 h-4 text-gray-500 dark:text-gray-300" }),
                 ),
               e.createElement(
                 "button",
@@ -882,14 +882,14 @@ const u = "recentSearches",
       e.createElement(
         "div",
         {
-          className: "max-w-2xl mx-auto px-4 py-4 space-y-2.5 page-shell page-pad",
+          className: "max-w-[640px] mx-auto px-4 py-4 space-y-2.5 page-shell page-pad",
         },
         O &&
           e.createElement(
             "div",
             {
               className:
-                "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 dark:border dark:border-amber-600/40",
+                "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 dark:border-amber-600/40",
             },
             e.createElement(
               "p",
@@ -913,7 +913,7 @@ const u = "recentSearches",
             "div",
             {
               className:
-                "rounded-2xl border border-blue-100 bg-white/90 dark:border-blue-900/40 dark:bg-gray-900/70 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border dark:border-blue-600/40 dark:bg-slate-900/90",
+                "rounded-2xl border border-blue-100 bg-white/90 dark:border-blue-900/40 dark:bg-gray-900/70 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border-blue-600/40 dark:bg-slate-900/90",
             },
             e.createElement(
               "div",
@@ -922,14 +922,14 @@ const u = "recentSearches",
                 "p",
                 {
                   className:
-                    "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100",
+                    "text-sm font-semibold text-slate-800 dark:text-slate-100",
                 },
                 "Category mode: ",
                 categoryModeCategory.name,
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
+                { className: "text-xs text-slate-500 dark:text-slate-300" },
                 "Search results stay inside this marketplace.",
               ),
             ),
@@ -1010,7 +1010,7 @@ const u = "recentSearches",
                         s(v(b, categoryLock, value));
                       },
                       className:
-                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950",
+                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border-slate-700 dark:bg-slate-950",
                     },
                     e.createElement("option", { value: "All" }, "All subcategories"),
                     subcategoryOptions.map((r) =>
@@ -1038,7 +1038,7 @@ const u = "recentSearches",
                         s(v(b, value, ""));
                       },
                       className:
-                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950",
+                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border-slate-700 dark:bg-slate-950",
                     },
                     e.createElement("option", { value: "All" }, "All categories"),
                     (Array.isArray(appScopedCategoryOptions) ? appScopedCategoryOptions : []).map(
@@ -1061,7 +1061,7 @@ const u = "recentSearches",
                 onChange: (r) =>
                   l((t) => ({ ...t, minPrice: r.target.value })),
                 className:
-                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950",
+                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border-slate-700 dark:bg-slate-950",
                 placeholder: "0",
               }),
             ),
@@ -1075,7 +1075,7 @@ const u = "recentSearches",
                 onChange: (r) =>
                   l((t) => ({ ...t, maxPrice: r.target.value })),
                 className:
-                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950",
+                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border-slate-700 dark:bg-slate-950",
                 placeholder: "100000",
               }),
             ),
@@ -1093,12 +1093,12 @@ const u = "recentSearches",
                     onClick: () => clearFilterKey(filter.key),
                     "aria-label": n("remove_filter", { defaultValue: `Remove filter: ${filter.label}` }),
                     className:
-                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200",
+                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200",
                   },
                   filter.label,
                   filter.key === "category" && categoryLock
                     ? null
-                    : e.createElement(Y, { className: "w-3 h-3" }),
+                    : e.createElement(Y, { className: "w-4 h-4" }),
                 ),
               ),
             ),
@@ -1190,7 +1190,7 @@ const u = "recentSearches",
                                 },
                               }),
                             className:
-                              "w-full text-left rounded-xl border border-slate-200 dark:border-gray-700 mhub-premium-surface mhub-shine px-4 py-2.5 hover:shadow-xl hover:-translate-y-0.5 hover:shadow-blue-500/5 dark:hover:shadow-blue-400/5 transition-all duration-200 ease-out dark:text-left dark:border dark:border-slate-700",
+                              "w-full text-left rounded-xl border border-slate-200 dark:border-gray-700 mhub-premium-surface mhub-shine px-4 py-2.5 hover:shadow-xl hover:-translate-y-0.5 hover:shadow-blue-500/5 dark:hover:shadow-blue-400/5 transition-all duration-200 ease-out dark:border-slate-700",
                           },
                           e.createElement(
                             "p",
@@ -1234,7 +1234,7 @@ const u = "recentSearches",
                                   secondaryLabel
                                     ? e.createElement(
                                         "span",
-                                        { className: "text-slate-500 dark:text-gray-300 dark:text-slate-300" },
+                                        { className: "text-slate-500 dark:text-slate-300" },
                                         `- ${secondaryLabel}`,
                                       )
                                     : null,
@@ -1284,7 +1284,7 @@ const u = "recentSearches",
             e.createElement(
               "div",
               { className: "flex items-center gap-2 min-w-0" },
-              e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 dark:bg-gradient-to-br" }, e.createElement(U, { className: "w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-300" })),
+              e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 dark:bg-gradient-to-br" }, e.createElement(U, { className: "w-4 h-4 text-blue-600 dark:text-blue-300" })),
               e.createElement(
                 "h2",
                 {
@@ -1364,7 +1364,7 @@ const u = "recentSearches",
                             "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition dark:hover:bg-gray-900",
                         },
                         e.createElement(Y, {
-                          className: "w-4 h-4 text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                          className: "w-4 h-4 text-gray-500 dark:text-gray-300",
                         }),
                       ),
                       e.createElement(R, {
@@ -1381,7 +1381,7 @@ const u = "recentSearches",
           e.createElement(
             "div",
             { className: "flex items-center gap-2 mb-3" },
-            e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 dark:bg-gradient-to-br" }, e.createElement(I, { className: "w-4 h-4 text-orange-600 dark:text-orange-400 dark:text-orange-300" })),
+            e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 dark:bg-gradient-to-br" }, e.createElement(I, { className: "w-4 h-4 text-orange-600 dark:text-orange-300" })),
             e.createElement(
               "h2",
               { className: "text-base font-bold mhub-gradient-text" },
@@ -1409,7 +1409,7 @@ const u = "recentSearches",
                       key: r,
                       onClick: () => k(r),
                       className:
-                        "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200/50 dark:border-orange-800/30 rounded-full text-gray-700 dark:text-gray-200 hover:shadow-md hover:shadow-orange-500/10 hover:border-orange-400 active:scale-[0.97] transition-all duration-150 flex items-center gap-2 font-medium dark:bg-gradient-to-r dark:border dark:border-orange-600/50 dark:hover:border-orange-600/40",
+                        "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200/50 dark:border-orange-800/30 rounded-full text-gray-700 dark:text-gray-200 hover:shadow-md hover:shadow-orange-500/10 hover:border-orange-400 active:scale-[0.97] transition-all duration-150 flex items-center gap-2 font-medium dark:bg-gradient-to-r dark:border-orange-600/50 dark:hover:border-orange-600/40",
                     },
                     e.createElement(I, {
                       className: "w-3.5 h-3.5 text-orange-500 dark:text-orange-300",
@@ -1425,7 +1425,7 @@ const u = "recentSearches",
           e.createElement(
             "div",
             { className: "flex items-center gap-2 mb-3" },
-            e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 dark:bg-gradient-to-br" }, e.createElement(Z, { className: "w-4 h-4 text-purple-600 dark:text-purple-400 dark:text-purple-300" })),
+            e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 dark:bg-gradient-to-br" }, e.createElement(Z, { className: "w-4 h-4 text-purple-600 dark:text-purple-300" })),
             e.createElement(
               "h2",
               { className: "text-base font-bold mhub-gradient-text" },
@@ -1506,7 +1506,7 @@ const u = "recentSearches",
                           "span",
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200 text-center dark:text-center",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200 text-center",
                           },
                           r.name || r.subcategory_name || r.title,
                         ),
@@ -1518,7 +1518,7 @@ const u = "recentSearches",
           "div",
           {
             className:
-              "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-5 border border-blue-200 dark:border-blue-800 dark:bg-gradient-to-r dark:border dark:border-blue-600/40",
+              "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-5 border border-blue-200 dark:border-blue-800 dark:bg-gradient-to-r dark:border-blue-600/40",
             "data-density": "extra",
           },
           e.createElement(
@@ -1528,7 +1528,7 @@ const u = "recentSearches",
           ),
           e.createElement(
             "ul",
-            { className: "space-y-2 text-sm text-blue-700 dark:text-blue-400 dark:text-blue-300" },
+            { className: "space-y-2 text-sm text-blue-700 dark:text-blue-300" },
             e.createElement(
               "li",
               null,

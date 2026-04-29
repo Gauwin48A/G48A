@@ -138,7 +138,7 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
         <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">
           {t("voice_description")}
         </h3>
-        <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
           {t("trust_boost")}
         </span>
       </div>

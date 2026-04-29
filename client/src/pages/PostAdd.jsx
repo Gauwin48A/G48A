@@ -76,9 +76,9 @@ const PostAdd = () => {
   };
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-indigo-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 transition-colors duration-300 dark:bg-gradient-to-b">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-indigo-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 transition-colors duration-300 dark:bg-gradient-to-b">
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 dark:from-[#0b1220] dark:via-[#1b2542] dark:to-[#0b1220] py-6 dark:bg-gradient-to-r">
-        <div className="max-w-2xl mx-auto px-4 page-shell page-pad">
+        <div className="max-w-[640px] mx-auto px-4 page-shell page-pad">
           <button
             onClick={() => navigate("/feed")}
             className="flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors dark:text-white/80 dark:hover:text-white"
@@ -87,9 +87,9 @@ const PostAdd = () => {
           </button>
 
           <div className="flex items-center gap-3">
-            <FaNewspaper className="text-3xl text-white/90 dark:text-white/90" />
+            <FaNewspaper className="text-xl sm:text-3xl text-white/90 dark:text-white/90" />
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white dark:text-white">
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-white dark:text-white">
                 {t("create_feed_post") || "Create Feed Post"}
               </h1>
               <p className="text-white/70 text-sm mt-1 dark:text-white/70">
@@ -101,7 +101,7 @@ const PostAdd = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto py-8 px-4 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto py-8 px-4 page-shell page-pad">
         <Card className="mhub-premium-surface rounded-2xl overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>
@@ -148,7 +148,7 @@ const PostAdd = () => {
               </div>
             </div>
 
-            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40">
+            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/20 dark:border-indigo-600/40">
               <p className="text-indigo-700 dark:text-indigo-300 text-sm">
                 <strong>{t("tip") || "Tip"}:</strong>{" "}
                 {t("feed_tip") ||
@@ -157,7 +157,7 @@ const PostAdd = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl p-4 border border-red-200 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300 dark:border dark:border-red-600/40">
+              <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl p-4 border border-red-200 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300 dark:border-red-600/40">
                 {error}
               </div>
             )}

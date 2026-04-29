@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function PolicyLayout({ title, subtitle, updatedOn, sections }) {
   return (
     <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950">
-      <div className="page-shell page-pad w-full max-w-4xl pt-8 md:pt-10">
+      <div className="page-shell page-pad w-full max-w-[640px] pt-8 md:pt-10">
         <div className="mb-8 mhub-hero-card rounded-3xl p-6 md:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-200">
             Legal

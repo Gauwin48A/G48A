@@ -237,10 +237,13 @@ function buildTextFeedQuery({
       : `ORDER BY p.${sortBy} ${sortOrder}`;
 
   const query = `
-    SELECT p.*, c.name as category_name, sc.name as subcategory_name
+    SELECT p.*, c.name as category_name, sc.name as subcategory_name,
+           COALESCE(pr.full_name, 'Seller') as author_name,
+           pr.full_name as user_name
     FROM posts p
     LEFT JOIN categories c ON p.category_id = c.category_id
     LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+    LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
     WHERE ${conditions.join(" AND ")}
     ${orderClause}
     OFFSET ${addParam(offset)} LIMIT ${addParam(limit)}

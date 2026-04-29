@@ -1,0 +1,305 @@
+{
+  "generatedAt": "2026-04-27T07:40:32.953Z",
+  "mode": "live-backend-authenticated",
+  "baseUrl": "http://localhost:8081",
+  "target": {
+    "description": "{\"attached\":true,\"empty\":false,\"height\":2209,\"never_attached\":false,\"screenX\":0,\"screenY\":128,\"visible\":true,\"width\":1080}",
+    "devtoolsFrontendUrl": "https://chrome-devtools-frontend.appspot.com/serve_internal_file/@2d54072eb2f350d37f3f304c4ba0fafcddbd7e82/inspector.html?ws=127.0.0.1:9222/devtools/page/EEBEA918101C790933C70C280668B4B4",
+    "id": "EEBEA918101C790933C70C280668B4B4",
+    "title": "MHub - Rewards",
+    "type": "page",
+    "url": "http://localhost:8081/rewards",
+    "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/EEBEA918101C790933C70C280668B4B4"
+  },
+  "login": {
+    "href": "http://localhost:8081/login?fresh=1777275506205",
+    "csrfStatus": 200,
+    "csrfHasToken": true,
+    "hasXsrfCookie": true,
+    "loginStatus": 200,
+    "loginSuccess": true,
+    "sessionStatus": 200,
+    "sessionAuthenticated": true,
+    "sessionUser": {
+      "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+      "name": null,
+      "role": "user",
+      "phone": null
+    },
+    "meStatus": 200,
+    "meUser": {
+      "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+      "name": "Test User",
+      "role": "user",
+      "phone": "9876543210",
+      "tier": "basic"
+    },
+    "loginError": null
+  },
+  "routes": [
+    {
+      "name": "category_hub",
+      "route": "/category-hub",
+      "startedAt": "2026-04-27T07:38:31.064Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/category-hub",
+        "title": "MHub â€” Browse Categories",
+        "ready": true,
+        "rootChars": 385,
+        "bodyChars": 385,
+        "imgs": 0,
+        "cards": 0,
+        "text": "Choose Your World Select the app you want to open. Your choice becomes the active experience across feed, listings, chat, and every page until you switch to another app from this hub. 📱 Electronics Phones, laptops & gadgets 12 listings 👗 ",
+        "waitedMs": 8130
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\category_hub.png",
+        "bytes": 613116
+      },
+      "inspect": {
+        "href": "http://localhost:8081/category-hub",
+        "title": "MHub â€” Browse Categories",
+        "rootTextLength": 385,
+        "rootTextHead": "Choose Your World Select the app you want to open. Your choice becomes the active experience across feed, listings, chat, and every page until you switch to another app from this hub. 📱 Electronics Phones, laptops & gad",
+        "bodyTextLength": 385,
+        "fallbackMarkerHits": [],
+        "navButtons": 0,
+        "cards": 0,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:38:43.414Z"
+    },
+    {
+      "name": "all_posts",
+      "route": "/all-posts",
+      "startedAt": "2026-04-27T07:38:43.416Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/all-posts",
+        "title": "All Posts",
+        "ready": true,
+        "rootChars": 279,
+        "bodyChars": 279,
+        "imgs": 0,
+        "cards": 2,
+        "text": "Search for products, brands and more Home All Posts For You + Sell Feed Profile More All QUICK FILTERS Posted Today Latest 10 Latest 5 All Posts No results found • Updated 1 minute ago No results found Try a broader keyword or reset the sea",
+        "waitedMs": 12529
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\all_posts.png",
+        "bytes": 482250
+      },
+      "inspect": {
+        "href": "http://localhost:8081/all-posts",
+        "title": "All Posts",
+        "rootTextLength": 688,
+        "rootTextHead": "Search for products, brands and more Home All Posts For You + Sell Feed Profile More All QUICK FILTERS Posted Today Latest 10 Latest 5 All Posts A Amit Kumar PRICE ₹1,45,000 TVS Apache RTR 200 General Bangalore, Karnatak",
+        "bodyTextLength": 688,
+        "fallbackMarkerHits": [],
+        "navButtons": 7,
+        "cards": 19,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:39:04.048Z"
+    },
+    {
+      "name": "profile",
+      "route": "/profile",
+      "startedAt": "2026-04-27T07:39:04.049Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/profile",
+        "title": "MHub - Profile",
+        "ready": true,
+        "rootChars": 1021,
+        "bodyChars": 1021,
+        "imgs": 0,
+        "cards": 10,
+        "text": "Home All Posts For You + Sell Feed Profile More YOUR PROFILE Your profile dashboard Manage your account, preferences, and settings TU Test User test@mhub.com Unverified User Risky Seller · 0 Verify Now Edit Profile VIEW Compact Full JUMP TO",
+        "waitedMs": 11993
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\profile.png",
+        "bytes": 723019
+      },
+      "inspect": {
+        "href": "http://localhost:8081/profile",
+        "title": "MHub - Profile",
+        "rootTextLength": 1025,
+        "rootTextHead": "Home All Posts For You + Sell Feed Profile More YOUR PROFILE Your profile dashboard Manage your account, preferences, and settings TU Test User test@mhub.com Unverified User Risky Seller · 30 Verify Now Edit Profile VIEW",
+        "bodyTextLength": 1025,
+        "fallbackMarkerHits": [],
+        "navButtons": 7,
+        "cards": 10,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:39:26.085Z"
+    },
+    {
+      "name": "rewards",
+      "route": "/rewards",
+      "startedAt": "2026-04-27T07:39:26.086Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/rewards",
+        "title": "MHub - Rewards",
+        "ready": true,
+        "rootChars": 2005,
+        "bodyChars": 2005,
+        "imgs": 0,
+        "cards": 33,
+        "text": "Home All Posts For You + Sell Feed Profile More REWARDS PROGRAM Rewards & Referrals Track progress, earn points, and unlock perks for every milestone. TU Test User Rank: Bronze Level 1 Basic Risky Seller · 30 Rewards rank is based on activi",
+        "waitedMs": 16962
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\rewards.png",
+        "bytes": 835395
+      },
+      "inspect": {
+        "href": "http://localhost:8081/rewards",
+        "title": "MHub - Rewards",
+        "rootTextLength": 1334,
+        "rootTextHead": "Home All Posts For You + Sell Feed Profile More REWARDS PROGRAM Rewards & Referrals Track progress, earn points, and unlock perks for every milestone. TU Test User Rank: Bronze Level 1 Basic Risky Seller · 30 Rewards ran",
+        "bodyTextLength": 1334,
+        "fallbackMarkerHits": [],
+        "navButtons": 7,
+        "cards": 33,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:39:49.117Z"
+    },
+    {
+      "name": "notifications",
+      "route": "/notifications",
+      "startedAt": "2026-04-27T07:39:49.119Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/notifications",
+        "title": "MHub - Verified Marketplace",
+        "ready": true,
+        "rootChars": 319,
+        "bodyChars": 319,
+        "imgs": 0,
+        "cards": 1,
+        "text": "Home All Posts For You + Sell Feed Profile More Back ALERTS Notifications Stay on top of updates, offers, and order activity. VIEW Compact Full Newest Oldest Priority Unread first Preferences All 0 Unread 0 Read 0 You're all caught up! No n",
+        "waitedMs": 12323
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\notifications.png",
+        "bytes": 629254
+      },
+      "inspect": {
+        "href": "http://localhost:8081/notifications",
+        "title": "MHub - Verified Marketplace",
+        "rootTextLength": 319,
+        "rootTextHead": "Home All Posts For You + Sell Feed Profile More Back ALERTS Notifications Stay on top of updates, offers, and order activity. VIEW Compact Full Newest Oldest Priority Unread first Preferences All 0 Unread 0 Read 0 You're",
+        "bodyTextLength": 319,
+        "fallbackMarkerHits": [],
+        "navButtons": 7,
+        "cards": 1,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:40:05.998Z"
+    },
+    {
+      "name": "wishlist",
+      "route": "/wishlist",
+      "startedAt": "2026-04-27T07:40:06.001Z",
+      "renderProbe": {
+        "href": "http://localhost:8081/wishlist",
+        "title": "MHub - Verified Marketplace",
+        "ready": true,
+        "rootChars": 355,
+        "bodyChars": 355,
+        "imgs": 0,
+        "cards": 1,
+        "text": "Home All Posts For You + Sell Feed Profile More Back 0 saved items VIEW Compact Full SAVED ITEMS My Wishlist Save favorites, compare options, and revisit later. 0 saved items Newest Oldest Price: Low to High Price: High to Low Title: A to Z",
+        "waitedMs": 22083
+      },
+      "screenshot": {
+        "file": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\wishlist.png",
+        "bytes": 776677
+      },
+      "inspect": {
+        "href": "http://localhost:8081/wishlist",
+        "title": "MHub - Verified Marketplace",
+        "rootTextLength": 355,
+        "rootTextHead": "Home All Posts For You + Sell Feed Profile More Back 0 saved items VIEW Compact Full SAVED ITEMS My Wishlist Save favorites, compare options, and revisit later. 0 saved items Newest Oldest Price: Low to High Price: High ",
+        "bodyTextLength": 355,
+        "fallbackMarkerHits": [],
+        "navButtons": 7,
+        "cards": 1,
+        "sessionStatus": 200,
+        "authenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user"
+        },
+        "meStatus": 200,
+        "meName": "Test User",
+        "mePhone": "9876543210",
+        "meTier": "basic",
+        "meError": null
+      },
+      "completedAt": "2026-04-27T07:40:32.951Z"
+    }
+  ],
+  "summary": {
+    "routeCount": 6,
+    "authenticatedRoutes": 6,
+    "routesWithFallbackMarkers": 0,
+    "routeFailures": 0
+  }
+}

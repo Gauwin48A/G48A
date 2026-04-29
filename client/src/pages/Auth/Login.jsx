@@ -320,13 +320,13 @@ export default function Login() {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
             {t("welcome_back") || "Welcome Back"}
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 dark:text-gray-200">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-200">
             {t("sign_in_to_account") || "Sign in with your mobile number"}
           </p>
         </div>
 
         <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
-          <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-5 sm:py-6 dark:bg-gradient-to-r dark:text-white dark:text-center">
+          <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-5 sm:py-6 dark:bg-gradient-to-r">
             <CardTitle className="text-xl sm:text-2xl font-bold">
               {t("sign_in") || "Sign In"}
             </CardTitle>
@@ -342,7 +342,7 @@ export default function Login() {
                   <Phone className="w-4 h-4" /> {t("mobile_number") || "Mobile Number"}
                 </Label>
                 <div className="relative mt-2 flex">
-                  <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-2 dark:border-r-0 dark:border-gray-700">
+                  <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-gray-700">
                     +91
                   </span>
                   <Input
@@ -352,17 +352,17 @@ export default function Login() {
                     maxLength={10}
                     value={form.mobile}
                     onChange={(e) => setForm((p) => ({ ...p, mobile: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl dark:border-2 dark:border-gray-700 dark:focus:border-sky-500/40"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl dark:border-gray-700 dark:focus:border-sky-500/40"
                     placeholder="9876543210"
                   />
                 </div>
-                <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-300">
                   {t("mobile_login_help") || "Enter the mobile number linked to your Aadhaar."}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   {t("password") || "Password"}
                 </Label>
                 <div className="relative mt-2">
@@ -372,7 +372,7 @@ export default function Login() {
                     required
                     value={form.password}
                     onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-2 dark:border-gray-700 dark:focus:border-sky-500/40"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-gray-700 dark:focus:border-sky-500/40"
                     placeholder={t("password_placeholder") || "Enter your password"}
                   />
                   <Button
@@ -389,7 +389,7 @@ export default function Login() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <p className="text-gray-600 dark:text-gray-400 dark:text-gray-200">
+                <p className="text-gray-600 dark:text-gray-200">
                   {t("dont_have_account") || "Don't have an account?"}{" "}
                   <button
                     type="button"
@@ -401,7 +401,7 @@ export default function Login() {
                 </p>
                 <Link
                   to="/forgot-password"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium whitespace-nowrap ml-2 dark:text-blue-300"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium whitespace-nowrap ml-2 dark:text-blue-300 py-1.5"
                 >
                   {t("forgot_password") || "Forgot?"}
                 </Link>
@@ -416,11 +416,11 @@ export default function Login() {
 
               {showOtpChallenge && (
                 <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                     <Smartphone className="w-4 h-4 text-orange-500 dark:text-orange-300" />
                     {t("sim_verification") || "Phone Verification"}
                   </div>
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl p-3 text-xs text-orange-700 dark:text-orange-300 dark:bg-orange-950/20 dark:border dark:border-orange-600/40">
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl p-3 text-xs text-orange-700 dark:text-orange-300 dark:bg-orange-950/20 dark:border-orange-600/40">
                     <p>Enter the 6-digit code sent to your registered mobile number. This verifies your SIM is in this device.</p>
                   </div>
                   <Input
@@ -430,14 +430,14 @@ export default function Login() {
                     autoComplete="one-time-code"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                    className="h-12 sm:h-14 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-2xl tracking-[0.3em] font-mono bg-orange-50 dark:bg-orange-900/20 dark:border-2 dark:border-orange-600/40 dark:focus:border-orange-500/40 dark:text-center dark:bg-orange-950/20"
+                    className="h-12 sm:h-14 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-2xl tracking-[0.3em] font-mono bg-orange-50 dark:bg-orange-900/20 dark:border-orange-600/40 dark:focus:border-orange-500/40 dark:bg-orange-950/20"
                     placeholder="● ● ● ● ● ●"
                     maxLength={6}
                     autoFocus
                   />
                   <div className="flex items-center justify-between text-xs">
                     {otpCountdown > 0 ? (
-                      <span className="text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                      <span className="text-gray-500 dark:text-gray-300">
                         Resend in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
                       </span>
                     ) : (
@@ -450,7 +450,7 @@ export default function Login() {
                         {otpSending ? "Sending..." : "Resend OTP"}
                       </button>
                     )}
-                    <span className="text-gray-400 dark:text-gray-500 dark:text-gray-300">
+                    <span className="text-gray-400 dark:text-gray-300">
                       ****{normalizeMobile(form.mobile).slice(-4)}
                     </span>
                   </div>

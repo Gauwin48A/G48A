@@ -31,7 +31,7 @@ export default function InviteRedirect() {
 
   return (
     <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 px-4 dark:bg-gradient-to-br">
-      <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg text-center dark:border-slate-700 dark:bg-slate-900/70 dark:border dark:bg-slate-900 dark:text-center">
+      <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg text-center dark:border-slate-700 dark:bg-slate-900/70 dark:border dark:bg-slate-900">
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
           {title}
         </h1>

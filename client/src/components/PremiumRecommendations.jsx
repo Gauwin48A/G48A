@@ -143,7 +143,7 @@ const RecommendationCard = memo(function RecommendationCard({ post }) {
           )}
           {badge && (
             <div className="absolute top-2 right-2">
-              <Badge variant="secondary" className="text-[10px] gap-1 bg-white/90 backdrop-blur-sm">
+              <Badge variant="secondary" className="text-xs gap-1 bg-white/90 backdrop-blur-sm">
                 <badge.icon className={`h-3 w-3 ${badge.color}`} />
                 {badge.label}
               </Badge>
@@ -151,7 +151,7 @@ const RecommendationCard = memo(function RecommendationCard({ post }) {
           )}
           {boostBadge && (
             <div className="absolute top-2 left-2">
-              <Badge className={`text-[10px] ${boostBadge.className}`}>
+              <Badge className={`text-xs ${boostBadge.className}`}>
                 {boostBadge.label}
               </Badge>
             </div>
@@ -165,7 +165,7 @@ const RecommendationCard = memo(function RecommendationCard({ post }) {
             <span className="text-sm font-bold text-primary">
               {formatPrice(post.price)}
             </span>
-            <span className="text-[11px] text-muted-foreground truncate ml-2">
+            <span className="text-xs text-muted-foreground truncate ml-2">
               {post.seller_name}
             </span>
           </div>

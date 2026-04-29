@@ -117,10 +117,10 @@ const $ = ({ variant = "channels" } = {}) => {
     }, []),
     e.createElement(
       "div",
-      { className: "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" },
+      { className: "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" },
       e.createElement(
         "div",
-        { className: "container mx-auto max-w-5xl p-4 sm:p-6 page-shell page-pad" },
+        { className: "container mx-auto max-w-[640px] p-4 sm:p-6 page-shell page-pad" },
         e.createElement(
           "div",
           {
@@ -132,12 +132,12 @@ const $ = ({ variant = "channels" } = {}) => {
             null,
             e.createElement(
               "h1",
-              { className: "text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+              { className: "text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100" },
               titleLabel,
             ),
             e.createElement(
               "p",
-              { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+              { className: "text-sm text-gray-500 dark:text-gray-300" },
               subtitleLabel,
             ),
           ),
@@ -183,23 +183,23 @@ const $ = ({ variant = "channels" } = {}) => {
                     { className: "flex items-center gap-3" },
                     e.createElement("div", {
                       className:
-                        "h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
+                        "h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-900",
                     }),
                     e.createElement(
                       "div",
                       { className: "space-y-2" },
                       e.createElement("div", {
                         className:
-                          "h-4 w-40 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
+                          "h-4 w-40 rounded bg-gray-200 dark:bg-gray-900",
                       }),
                       e.createElement("div", {
                         className:
-                          "h-3 w-56 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
+                          "h-3 w-56 rounded bg-gray-200 dark:bg-gray-900",
                       }),
                     ),
                   ),
                   e.createElement("div", {
-                    className: "h-9 w-24 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
+                    className: "h-9 w-24 rounded bg-gray-200 dark:bg-gray-900",
                   }),
                 ),
               ),
@@ -212,7 +212,7 @@ const $ = ({ variant = "channels" } = {}) => {
               e.createElement(
                 h,
                 {
-                  className: "flex flex-col items-center gap-3 p-6 text-center dark:text-center",
+                  className: "flex flex-col items-center gap-3 p-6 text-center",
                 },
                 e.createElement(
                   "p",
@@ -281,7 +281,7 @@ const $ = ({ variant = "channels" } = {}) => {
                               "p",
                               {
                                 className:
-                                  "text-base font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                                  "text-base font-semibold text-gray-900 dark:text-gray-100",
                               },
                               o.name,
                             ),
@@ -289,7 +289,7 @@ const $ = ({ variant = "channels" } = {}) => {
                               "p",
                               {
                                 className:
-                                  "line-clamp-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                  "line-clamp-2 text-xs text-gray-500 dark:text-gray-300",
                               },
                               o.description ||
                                 o.bio ||
@@ -331,7 +331,7 @@ const $ = ({ variant = "channels" } = {}) => {
                             {
                               to: `${viewPathPrefix}/${t}`,
                               className:
-                                "rounded-md border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:border dark:border-blue-600/40 dark:hover:bg-blue-950/20",
+                                "rounded-md border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:border-blue-600/40 dark:hover:bg-blue-950/20",
                             },
                             r("view") || "View",
                           ),

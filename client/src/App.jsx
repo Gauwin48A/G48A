@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { Suspense, lazy, useEffect, startTransition } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet, useLocation as useRouterLocation } from "react-router-dom";
 import GreenNavbar from "./components/GreenNavbar.jsx";
 import PullToRefreshWrapper from "./components/PullToRefreshWrapper.jsx";
@@ -263,7 +263,7 @@ function LocationBanner() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-100 dark:bg-yellow-900/30 border-b-2 border-yellow-400 dark:border-yellow-600 shadow-lg">
-      <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div className="max-w-[640px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <MapPin className="w-6 h-6 text-yellow-700 dark:text-yellow-300" />
           <div>
@@ -398,9 +398,27 @@ function AppShell() {
 
   useEffect(() => {
     return registerSoftNavigationHandler(({ to, options }) => {
-      navigate(to, options);
+      startTransition(() => navigate(to, options));
     });
   }, [navigate]);
+
+  // Prefetch main navigation route chunks after initial render to eliminate lazy-load delays
+  useEffect(() => {
+    const prefetch = () => {
+      import("./pages/Home.jsx");
+      import("./pages/AllPosts.jsx");
+      import("./pages/ForYou.jsx");
+      import("./pages/FeedPage.jsx");
+      import("./pages/Profile.jsx");
+      import("./pages/Notifications.jsx");
+      import("./pages/Rewards.jsx");
+      import("./pages/SearchPage.jsx");
+    };
+    const timer = typeof requestIdleCallback === "function"
+      ? (requestIdleCallback(prefetch), null)
+      : setTimeout(prefetch, 500);
+    return () => { if (timer) clearTimeout(timer); };
+  }, []);
 
   useEffect(() => {
     const reloadLabel = t("reload", { defaultValue: "Reload" });
@@ -457,13 +475,13 @@ function AppShell() {
           <PullToRefreshWrapper>
           <main
             className="flex-1 app-main"
-            style={{ marginTop: !permissionGranted && !userSkipped ? "112px" : "0" }}
+            style={{ marginTop: !permissionGranted && !userSkipped ? "calc(var(--top-nav-height, 60px) + 64px)" : "0" }}
           >
             <Suspense
               fallback={
-                <div className="flex flex-col justify-center items-center h-full py-20 gap-3">
-                  <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-muted-foreground">{t("loading")}</span>
+                <div className="flex flex-col justify-center items-center h-full py-10 gap-3">
+                  <div className="w-8 h-8 border-[3px] border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-muted-foreground">{t("loading")}</span>
                 </div>
               }
             >

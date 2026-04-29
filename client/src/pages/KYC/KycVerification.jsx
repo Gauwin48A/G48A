@@ -126,7 +126,7 @@ const KycVerification = () => {
   };
 
   const pageClassName =
-    "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br";
+    "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br";
 
   if (!hasSession) {
     return (
@@ -196,8 +196,8 @@ const KycVerification = () => {
     return (
       <div className={`${pageClassName} flex items-center justify-center p-4`}>
         <Card className="max-w-lg w-full border-green-200 bg-green-50 dark:border-emerald-400/30 dark:bg-emerald-500/10 page-shell page-pad dark:border-green-600/40 dark:bg-green-950/20">
-          <CardContent className="pt-8 text-center space-y-4 dark:text-center">
-            <h2 className="text-3xl font-bold text-green-800 dark:text-green-200">
+          <CardContent className="pt-8 text-center space-y-4">
+            <h2 className="text-xl sm:text-3xl font-bold text-green-800 dark:text-green-200">
               {tr("kyc_verified_title", "KYC Verified")}
             </h2>
             <p className="text-green-700 dark:text-green-300">
@@ -228,8 +228,8 @@ const KycVerification = () => {
     return (
       <div className={`${pageClassName} flex items-center justify-center p-4`}>
         <Card className="max-w-lg w-full border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20">
-          <CardContent className="pt-8 text-center space-y-4 dark:text-center">
-            <h2 className="text-3xl font-bold text-amber-800 dark:text-amber-200">
+          <CardContent className="pt-8 text-center space-y-4">
+            <h2 className="text-xl sm:text-3xl font-bold text-amber-800 dark:text-amber-200">
               {tr("kyc_pending_title", "Verification in progress")}
             </h2>
             <p className="text-amber-700 dark:text-amber-300">
@@ -257,7 +257,7 @@ const KycVerification = () => {
 
   return (
     <div className={`${pageClassName} py-8 px-4`}>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-[640px] mx-auto">
         <Card className="mb-6 border-slate-200/80 bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/60">
           <CardHeader>
             <CardTitle>

@@ -346,14 +346,14 @@ const ChatPage = () => {
         },
         React.createElement("div", {
           className:
-            "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-b-2 dark:border-blue-500/40",
+            "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500/40",
         }),
       )
     : React.createElement(
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" +
+            "min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" +
             densityClass,
         },
         React.createElement(
@@ -363,7 +363,7 @@ const ChatPage = () => {
           },
           React.createElement(
             "div",
-            { className: "max-w-4xl mx-auto flex items-center gap-4" },
+            { className: "max-w-[640px] mx-auto flex items-center gap-4" },
             React.createElement(
               Button,
               {
@@ -381,7 +381,7 @@ const ChatPage = () => {
                 "h1",
                 {
                   className:
-                    "text-2xl font-bold text-white flex items-center gap-2 dark:text-white",
+                    "text-lg sm:text-2xl font-bold text-white flex items-center gap-2 dark:text-white",
                 },
                 React.createElement(MessageCircle, { className: "w-6 h-6" }),
                 tr("messages", "Messages"),
@@ -409,13 +409,13 @@ const ChatPage = () => {
             "div",
             {
               className:
-                "bg-amber-50 border-b border-amber-200 dark:bg-amber-500/10 dark:border-amber-400/30 px-4 py-3 dark:bg-amber-950/20 dark:border-b dark:border-amber-600/40",
+                "bg-amber-50 border-b border-amber-200 dark:bg-amber-500/10 dark:border-amber-400/30 px-4 py-3 dark:bg-amber-950/20 dark:border-amber-600/40",
             },
             React.createElement(
               "div",
               {
                 className:
-                  "max-w-4xl mx-auto flex items-center justify-between gap-3 text-amber-800 dark:text-amber-200",
+                  "max-w-[640px] mx-auto flex items-center justify-between gap-3 text-amber-800 dark:text-amber-200",
               },
               React.createElement(
                 "div",
@@ -454,7 +454,7 @@ const ChatPage = () => {
           ),
         React.createElement(
           "div",
-          { className: "max-w-4xl mx-auto px-4 py-6" },
+          { className: "max-w-[640px] mx-auto px-4 py-6" },
           React.createElement(
             "div",
             {
@@ -472,7 +472,7 @@ const ChatPage = () => {
                 },
                 React.createElement(
                   "div",
-                  { className: "p-4 border-b dark:border-gray-700 dark:border-b" },
+                  { className: "p-4 border-b dark:border-b" },
                   React.createElement(
                     "div",
                     { className: "relative" },
@@ -494,7 +494,7 @@ const ChatPage = () => {
                   filteredConversations.length === 0
                     ? React.createElement(
                         "div",
-                        { className: "p-8 text-center text-gray-500 dark:text-center dark:text-gray-300" },
+                        { className: "p-8 text-center text-gray-500 dark:text-gray-300" },
                         React.createElement(MessageCircle, {
                           className: "w-12 h-12 mx-auto mb-4 opacity-50",
                         }),
@@ -680,7 +680,7 @@ const ChatPage = () => {
                               },
                               React.createElement("div", {
                                 className:
-                                  "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-b-2 dark:border-blue-500/40",
+                                  "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-500/40",
                               }),
                             )
                           : messagesError
@@ -688,7 +688,7 @@ const ChatPage = () => {
                                 "div",
                                 {
                                   className:
-                                    "rounded-xl border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-4 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
+                                    "rounded-xl border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-4 text-sm text-red-700 dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                                 },
                                 React.createElement(
                                   "p",
@@ -722,7 +722,7 @@ const ChatPage = () => {
                                     "div",
                                     {
                                       className:
-                                        "text-center text-gray-500 max-w-sm dark:text-center dark:text-gray-300",
+                                        "text-center text-gray-500 max-w-sm dark:text-gray-300",
                                     },
                                     React.createElement(MessageCircle, {
                                       className:
@@ -732,7 +732,7 @@ const ChatPage = () => {
                                       "p",
                                       {
                                         className:
-                                          "font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                                          "font-medium text-gray-700 dark:text-gray-200",
                                       },
                                       tr("no_messages_yet", "No messages yet"),
                                     ),
@@ -850,13 +850,13 @@ const ChatPage = () => {
                       ),
                       React.createElement(
                         "div",
-                        { className: "p-4 border-t dark:border-gray-700 dark:border-t" },
+                        { className: "p-4 border-t dark:border-t" },
                         sendError &&
                           React.createElement(
                             "div",
                             {
                               className:
-                                "mb-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-2 text-xs text-red-700 flex items-center justify-between gap-2 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
+                                "mb-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-2 text-xs text-red-700 flex items-center justify-between gap-2 dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                             },
                             React.createElement(
                               "span",
@@ -875,7 +875,7 @@ const ChatPage = () => {
                                   onClick: handleSend,
                                 },
                               React.createElement(RotateCcw, {
-                                className: "w-3 h-3 mr-1",
+                                className: "w-4 h-4 mr-1",
                               }),
                               tr("retry", "Retry"),
                             ),
@@ -911,7 +911,7 @@ const ChatPage = () => {
                       { className: "flex-1 flex items-center justify-center" },
                       React.createElement(
                         "div",
-                        { className: "text-center text-gray-500 dark:text-center dark:text-gray-300" },
+                        { className: "text-center text-gray-500 dark:text-gray-300" },
                         React.createElement(MessageCircle, {
                           className: "w-16 h-16 mx-auto mb-4 opacity-50",
                         }),

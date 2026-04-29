@@ -259,14 +259,14 @@ export const getPremiumChannels = async () =>
  * @param {object} params - Query parameters (limit, category).
  * @returns {Promise<object>}
  */
-export const getFeaturedCentrePages = async (params = {}) => {
+export const getFeaturedCentrePages = async (params = {}, config = {}) => {
   try {
-    return await api.get(`${PF}/channels/featured`, { params });
+    return await api.get(`${PF}/channels/featured`, { params, ...config });
   } catch (error) {
     if (!shouldFallbackToLegacyRoute(error)) {
       throw error;
     }
-    return api.get(`${PF}/channel/featured`, { params });
+    return api.get(`${PF}/channel/featured`, { params, ...config });
   }
 };
 
@@ -294,8 +294,8 @@ export const followChannel = async (channelId) => {
  * @param {object} params - Query parameters (limit)
  * @returns {Promise<object>}
  */
-export const getFollowingCentreUpdates = (params = {}) =>
-  api.get(`${PF}/channels/updates/following`, { params });
+export const getFollowingCentreUpdates = (params = {}, config = {}) =>
+  api.get(`${PF}/channels/updates/following`, { params, ...config });
 
 /**
  * Add a text post to the feed.

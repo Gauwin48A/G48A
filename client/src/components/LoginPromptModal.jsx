@@ -57,7 +57,7 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center pb-[calc(var(--bottom-nav-height,64px)+env(safe-area-inset-bottom,0px)+0.5rem)] sm:pb-0"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center pb-[calc(var(--bottom-nav-height,64px)+env(safe-area-inset-bottom,0px)+0.5rem)] sm:pb-0"
       role="dialog"
       aria-modal="true"
       aria-labelledby="login-prompt-title"
@@ -92,7 +92,7 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
 
         <h2
           id="login-prompt-title"
-          className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-3"
+          className="text-lg sm:text-2xl font-bold text-center text-gray-900 dark:text-white mb-3"
         >
           {t("login_to_continue") || "Login to Continue"}
         </h2>

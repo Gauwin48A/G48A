@@ -83,14 +83,14 @@ export default function ForgotPassword() {
         {/* Back link */}
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium dark:text-blue-300"
+          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium dark:text-blue-300 py-2"
         >
           <ArrowLeft className="w-4 h-4" />
           {t("back_to_login") || "Back to Login"}
         </Link>
 
         <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
-          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-500 to-blue-600 dark:text-center dark:bg-gradient-to-r">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-500 to-blue-600 dark:bg-gradient-to-r">
             <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center dark:bg-slate-900/20">
               {sent ? (
                 <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
@@ -126,15 +126,15 @@ export default function ForgotPassword() {
             )}
 
             {sent ? (
-              <div className="text-center space-y-4 dark:text-center">
+              <div className="text-center space-y-4">
                 <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200">
                   {t("sent_link_to") || "We've sent reset instructions for"}{" "}
-                  <strong className="text-gray-900 dark:text-white dark:text-gray-100">{identifier}</strong>.{" "}
+                  <strong className="text-gray-900 dark:text-gray-100">{identifier}</strong>.{" "}
                   {t("check_inbox_instructions") || "Please check your inbox and follow the instructions."}
                 </p>
 
                 {isPhoneIdentifier(identifier) && (
-                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 p-3 text-left dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-left">
+                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 p-3 text-left dark:border-indigo-600/40 dark:bg-indigo-950/20">
                     <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                       {t("reset_with_otp") || "Prefer OTP reset?"}
                     </p>
@@ -148,7 +148,7 @@ export default function ForgotPassword() {
                 )}
 
                 {resetLink && (
-                  <div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 p-3 text-left dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-left">
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 p-3 text-left dark:border-blue-600/40 dark:bg-blue-950/20">
                     <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
                       {t("dev_reset_preview") || "Local reset preview link"}
                     </p>
@@ -158,7 +158,7 @@ export default function ForgotPassword() {
                     >
                       {resetLink}
                     </a>
-                    <p className="mt-1 text-xs text-blue-500 dark:text-blue-400 dark:text-blue-300">
+                    <p className="mt-1 text-xs text-blue-500 dark:text-blue-300">
                       {debugInfo?.mock
                         ? t("email_provider_not_configured") || "Email provider not configured; this link is shown for local testing."
                         : `${t("email_delivery_channel") || "Delivery channel"}: ${debugInfo?.channel || "email"}`}
@@ -166,7 +166,7 @@ export default function ForgotPassword() {
                   </div>
                 )}
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                <p className="text-sm text-gray-500 dark:text-gray-300">
                   {t("didnt_receive_email") || "Didn't receive the email?"}{" "}
                   {t("check_spam") || "Check your spam folder or"}
                   <button
@@ -187,7 +187,7 @@ export default function ForgotPassword() {
                 <div>
                   <Label
                     htmlFor="email"
-                    className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200"
+                    className="text-sm font-semibold text-gray-700 dark:text-gray-200"
                   >
                     {t("email_phone_username") || "Email / Phone / Username"}
                   </Label>
@@ -196,7 +196,7 @@ export default function ForgotPassword() {
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40"
+                    className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-gray-700 dark:focus:border-blue-500/40"
                     placeholder={t("email_phone_username_placeholder") || "Enter your email, phone, or username"}
                     disabled={loading}
                   />
@@ -219,9 +219,9 @@ export default function ForgotPassword() {
               </form>
             )}
 
-            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400 dark:text-center dark:text-gray-200">
+            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-200">
               {t("remember_password") || "Remember your password?"}{" "}
-              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium dark:text-blue-300">
+              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium dark:text-blue-300 py-1.5 inline-block">
                 {t("sign_in") || "Sign In"}
               </Link>
             </div>

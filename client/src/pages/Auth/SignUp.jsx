@@ -387,7 +387,7 @@ export default function SignUp() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
             {t("create_account") || "Create Account"}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 dark:text-gray-200">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-200">
             {t("aadhaar_signup_hint") || "Register with your Aadhaar and PAN details"}
           </p>
         </div>
@@ -401,11 +401,11 @@ export default function SignUp() {
           ].map(({ n, label }) => (
             <div key={n} className="flex flex-col items-center gap-1 flex-1 min-w-0" aria-current={step === n ? "step" : undefined}>
               <div
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                className={`w-4 h-4 rounded-full transition-all duration-300 ${
                   step >= n ? "bg-purple-500 scale-110" : "bg-gray-300 dark:bg-gray-600"
                 }`}
               />
-              <span className={`text-[10px] sm:text-xs font-medium text-center truncate w-full ${step >= n ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
+              <span className={`text-xs sm:text-xs font-medium text-center truncate w-full ${step >= n ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
                 {label}
               </span>
             </div>
@@ -464,16 +464,16 @@ export default function SignUp() {
                       onChange={(e) =>
                         setForm((p) => ({ ...p, aadhaar: e.target.value }))
                       }
-                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-gray-700 dark:focus:border-purple-500/40"
                       placeholder={t("aadhaar_placeholder") || "Enter your 12-digit Aadhaar number"}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <FieldStatus status={aadhaarStatus} />
                     </div>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
                     {t("aadhaar_validation_hint") || "We validate Aadhaar in real time."}{" "}
-                    <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300">
+                    <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300 py-1.5 inline-block">
                       {t("privacy_policy") || "Privacy Policy"}
                     </Link>
                   </p>
@@ -484,7 +484,7 @@ export default function SignUp() {
                     {t("aadhaar_mobile") || "Aadhaar Registered Mobile"}
                   </Label>
                   <div className="relative flex">
-                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-2 dark:border-r-0 dark:border-gray-700">
+                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-gray-700">
                       +91
                     </span>
                     <Input
@@ -495,7 +495,7 @@ export default function SignUp() {
                       onChange={(e) =>
                         setForm((p) => ({ ...p, mobile: e.target.value }))
                       }
-                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl pr-10 dark:border-gray-700 dark:focus:border-purple-500/40"
                       placeholder="9876543210"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -554,13 +554,13 @@ export default function SignUp() {
                       t("verify_otp") || "Verify OTP"
                     )}
                   </Button>
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-300">
                     <Button
                       type="button"
                       variant="ghost"
                       disabled={resendIn > 0 || loading}
                       onClick={handleSendOtp}
-                      className="text-indigo-600 dark:text-indigo-400 dark:text-indigo-300"
+                      className="text-indigo-600 dark:text-indigo-300"
                     >
                       {resendIn > 0
                         ? `${t("resend_in") || "Resend in"} ${resendIn}s`
@@ -593,14 +593,14 @@ export default function SignUp() {
                       onChange={(e) =>
                         setForm((p) => ({ ...p, pan: normalizePan(e.target.value) }))
                       }
-                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-gray-700 dark:focus:border-purple-500/40"
                       placeholder={t("pan_placeholder") || "ABCDE1234F"}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <FieldStatus status={panStatus} />
                     </div>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
                     {t("pan_verification_hint") || "We verify PAN in real time."}
                   </p>
                 </div>
@@ -646,7 +646,7 @@ export default function SignUp() {
                     type="password"
                     value={form.password}
                     onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-gray-700 dark:focus:border-purple-500/40"
                     placeholder={t("create_password_placeholder") || "Create a strong password"}
                   />
                   {form.password && (
@@ -663,7 +663,7 @@ export default function SignUp() {
                           />
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                      <p className="text-xs text-gray-500 dark:text-gray-300">
                         {t("password_strength") || "Password strength"}: {" "}
                         <span
                           className={`font-medium ${
@@ -689,7 +689,7 @@ export default function SignUp() {
                     type="password"
                     value={form.confirmPassword}
                     onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-gray-700 dark:focus:border-purple-500/40"
                     placeholder={t("confirm_password_placeholder") || "Re-enter your password"}
                   />
                 </div>
@@ -702,19 +702,19 @@ export default function SignUp() {
                     type="text"
                     value={form.referralCode}
                     onChange={(e) => setForm((p) => ({ ...p, referralCode: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-gray-700 dark:focus:border-purple-500/40"
                     placeholder={t("enter_referral_code") || "Enter referral code"}
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
                     {t("referral_code_hint") || "Paste a referral code to credit your referrer."}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border dark:border-gray-700">
-                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border-gray-700">
+                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-200">
                     {t("password_requirements") || "Password Requirements"}
                   </p>
-                  <ul className="space-y-1 text-gray-600 dark:text-gray-400 dark:text-gray-200">
+                  <ul className="space-y-1 text-gray-600 dark:text-gray-200">
                     <li>- {t("req_min_chars") || "At least 12 characters"}</li>
                     <li>- {t("req_number") || "One number"}</li>
                     <li>- {t("req_special") || "One special character"}</li>
@@ -747,7 +747,7 @@ export default function SignUp() {
 
             <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
               {t("already_have_account") || "Already have an account?"}{" "}
-              <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purple-300">
+              <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purple-300 py-1.5 inline-block">
                 {t("sign_in") || "Sign In"}
               </Link>
             </p>

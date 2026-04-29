@@ -306,7 +306,7 @@ const W = ({ variant = "channel" } = {}) => {
         },
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto space-y-4 page-shell page-pad" },
+          { className: "max-w-[640px] mx-auto space-y-4 page-shell page-pad" },
           e.createElement(
             m,
             {
@@ -356,7 +356,7 @@ const W = ({ variant = "channel" } = {}) => {
                   {
                     htmlFor: "channel-name",
                     className:
-                      "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                      "text-sm font-medium text-gray-700 dark:text-gray-200",
                   },
                   isCentre
                     ? a("centre_name_label", { defaultValue: "CentrePage Name" })
@@ -379,7 +379,7 @@ const W = ({ variant = "channel" } = {}) => {
                   {
                     htmlFor: "channel-description",
                     className:
-                      "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                      "text-sm font-medium text-gray-700 dark:text-gray-200",
                   },
                   isCentre
                     ? a("centre_description", { defaultValue: "About your CentrePage" })
@@ -414,7 +414,7 @@ const W = ({ variant = "channel" } = {}) => {
                   {
                     htmlFor: "channel-category",
                     className:
-                      "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                      "text-sm font-medium text-gray-700 dark:text-gray-200",
                   },
                   "Category",
                 ),
@@ -439,7 +439,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-logo-file",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_logo_label", { defaultValue: "Logo image" }),
                     ),
@@ -483,7 +483,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-cover-file",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_cover_label", { defaultValue: "Cover image" }),
                     ),
@@ -527,7 +527,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-email",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_contact_email", { defaultValue: "Contact email" }),
                     ),
@@ -547,7 +547,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-phone",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_contact_phone", { defaultValue: "Contact phone" }),
                     ),
@@ -567,7 +567,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-website",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_contact_website", { defaultValue: "Website" }),
                     ),
@@ -587,7 +587,7 @@ const W = ({ variant = "channel" } = {}) => {
                       {
                         htmlFor: "centre-location",
                         className:
-                          "text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                          "text-sm font-medium text-gray-700 dark:text-gray-200",
                       },
                       a("centre_location", { defaultValue: "Location" }),
                     ),
@@ -667,7 +667,7 @@ const W = ({ variant = "channel" } = {}) => {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 px-4 py-20 dark:bg-gradient-to-br",
+            "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-white to-blue-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 px-4 py-20 dark:bg-gradient-to-br",
         },
       e.createElement(
         k,

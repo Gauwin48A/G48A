@@ -51,10 +51,10 @@ const DealsSection = () => {
 
   return (
     <section
-      className="max-w-7xl mx-auto px-4 py-10"
+      className="max-w-[640px] mx-auto px-4 py-10"
       aria-label={t("todays_deals")}
     >
-      <h2 className="text-2xl font-bold mb-6 text-primary">
+      <h2 className="text-lg sm:text-2xl font-bold mb-6 text-primary">
         {t("todays_deals")}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">

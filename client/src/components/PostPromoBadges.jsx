@@ -183,8 +183,8 @@ const PostPromoBadges = memo(function PostPromoBadges({
   if (!visibleBadges.length) return null;
   const sizeClass =
     size === "xs"
-      ? "text-[9px] px-1.5 py-0.5"
-      : "text-[10px] sm:text-[11px] px-2 py-0.5";
+      ? "text-xs px-2 py-1"
+      : "text-xs px-2.5 py-1";
 
   return (
     <div className={`flex flex-wrap gap-1 ${className}`.trim()}>

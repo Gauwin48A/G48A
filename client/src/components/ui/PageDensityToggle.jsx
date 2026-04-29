@@ -7,8 +7,8 @@ export default function PageDensityToggle({
   className = "",
 }) {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-300">
+    <div className={`flex items-center gap-2 ${className}`} data-widget="density-toggle">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-300">
         {label}
       </span>
       <select

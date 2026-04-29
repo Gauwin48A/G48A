@@ -59,6 +59,7 @@ function LocationGate({ children }) {
     provider,
     lastRefreshedAt,
     isStaleLocation,
+    userSkipped,
   } = useLocation();
 
   const [deviceInfoSent, setDeviceInfoSent] = useState(false);
@@ -89,6 +90,7 @@ function LocationGate({ children }) {
     badgeDismissed ||
     isAndroidReplicaWebView ||
     HIDE_BADGE_ROUTES.some((p) => (routerLoc?.pathname || "").startsWith(p));
+  const shouldBypassGate = bypassed || Boolean(userSkipped) || isAndroidReplicaWebView;
 
   const isWebDriver =
     typeof navigator !== "undefined" && navigator.webdriver;
@@ -225,7 +227,7 @@ function LocationGate({ children }) {
   };
 
   // Passed through — app renders with optional accuracy badge overlay
-  if ((permissionGranted && !loading) || bypassed) {
+  if ((permissionGranted && !loading) || shouldBypassGate) {
     return React.createElement(
       React.Fragment,
       null,

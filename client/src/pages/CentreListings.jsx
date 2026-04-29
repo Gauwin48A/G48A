@@ -263,7 +263,7 @@ export default function CentreListings() {
   if (channelLoading) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-        <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6 page-shell page-pad">
+        <div className="container mx-auto max-w-[640px] px-4 py-6 sm:px-6 page-shell page-pad">
           <HeroSkeleton />
           <div className="mt-10">
             <ListingSkeleton />
@@ -277,7 +277,7 @@ export default function CentreListings() {
   if (channelError) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-        <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6 page-shell page-pad">
+        <div className="container mx-auto max-w-[640px] px-4 py-6 sm:px-6 page-shell page-pad">
           <Link
             to={`/centre/${id}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
@@ -301,7 +301,7 @@ export default function CentreListings() {
 
   /* ── Main Content ──────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-white to-slate-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 via-white to-slate-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* ─── Hero Banner ──────────────────────────────────────────── */}
       <div className="relative">
         {/* Cover Image / Gradient */}
@@ -345,7 +345,7 @@ export default function CentreListings() {
         </button>
 
         {/* Profile Card (overlay at bottom) */}
-        <div className="container mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="container mx-auto max-w-[640px] px-4 sm:px-6">
           <div className="relative -mt-16 sm:-mt-20 z-10 flex items-end gap-4 sm:gap-5">
             {/* Avatar */}
             <div className="shrink-0">
@@ -376,19 +376,19 @@ export default function CentreListings() {
               </div>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 {memberYear && (
-                  <Badge className="bg-white/15 text-white border-0 text-[10px] px-2 py-0.5 backdrop-blur-sm">
+                  <Badge className="bg-white/15 text-white border-0 text-xs px-2 py-1 backdrop-blur-sm">
                     {tr("member_since", "Since")} {memberYear}
                   </Badge>
                 )}
                 {isVerified && (
-                  <Badge className="bg-blue-500/20 text-blue-200 border-0 text-[10px] px-2 py-0.5 backdrop-blur-sm">
-                    <ShieldCheck className="w-3 h-3 mr-0.5" />
+                  <Badge className="bg-blue-500/20 text-blue-200 border-0 text-xs px-2 py-1 backdrop-blur-sm">
+                    <ShieldCheck className="w-4 h-4 mr-0.5" />
                     {tr("verified_seller", "Verified")}
                   </Badge>
                 )}
                 {rating > 0 && (
-                  <Badge className="bg-amber-500/20 text-amber-200 border-0 text-[10px] px-2 py-0.5 backdrop-blur-sm">
-                    <Star className="w-3 h-3 mr-0.5 fill-amber-300" />
+                  <Badge className="bg-amber-500/20 text-amber-200 border-0 text-xs px-2 py-1 backdrop-blur-sm">
+                    <Star className="w-4 h-4 mr-0.5 fill-amber-300" />
                     {rating.toFixed(1)}{ratingCount > 0 ? ` (${ratingCount})` : ""}
                   </Badge>
                 )}
@@ -399,7 +399,7 @@ export default function CentreListings() {
       </div>
 
       {/* ─── Content Area ─────────────────────────────────────────── */}
-      <div className="container mx-auto max-w-6xl px-4 sm:px-6 page-shell page-pad">
+      <div className="container mx-auto max-w-[640px] px-4 sm:px-6 page-shell page-pad">
         {/* Description & Stats Row */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-start">
           {/* Left: Bio */}
@@ -415,14 +415,14 @@ export default function CentreListings() {
           <div className="flex items-center gap-6 text-center">
             <div>
               <p className="text-xl font-bold text-slate-900 dark:text-white">{listingCount}</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">{tr("listings", "Listings")}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{tr("listings", "Listings")}</p>
             </div>
             {followerCount > 0 && (
               <>
                 <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
                 <div>
                   <p className="text-xl font-bold text-slate-900 dark:text-white">{followerCount}</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">{tr("followers", "Followers")}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{tr("followers", "Followers")}</p>
                 </div>
               </>
             )}
@@ -433,7 +433,7 @@ export default function CentreListings() {
                   <p className="text-xl font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
                     <Star className="h-4 w-4 fill-amber-500" /> {rating.toFixed(1)}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">{tr("rating", "Rating")}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{tr("rating", "Rating")}</p>
                 </div>
               </>
             )}
@@ -453,7 +453,7 @@ export default function CentreListings() {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
                 {tr("all_listings", "All Listings")}
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {listings.length}{hasMore ? "+" : ""} {tr("items_available", "items available")}
               </p>
             </div>
@@ -533,12 +533,12 @@ export default function CentreListings() {
                         {/* Overlay badges */}
                         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
                           {isFeatured && (
-                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] shadow-lg">
-                              <Sparkles className="w-3 h-3 mr-0.5" /> {tr("featured", "Featured")}
+                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-xs shadow-lg">
+                              <Sparkles className="w-4 h-4 mr-0.5" /> {tr("featured", "Featured")}
                             </Badge>
                           )}
                           {condition && condition !== "unknown" && (
-                            <Badge className="bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border-0 text-[10px] backdrop-blur-sm shadow-sm">
+                            <Badge className="bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border-0 text-xs backdrop-blur-sm shadow-sm">
                               {condition === "new" ? tr("condition_new", "New") :
                                condition === "like_new" ? tr("condition_like_new", "Like New") :
                                condition === "good" ? tr("condition_good", "Good") :

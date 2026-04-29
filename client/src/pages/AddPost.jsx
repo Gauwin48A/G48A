@@ -749,7 +749,7 @@ const Xe = 2 * 1024 * 1024,
           },
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 py-8" },
+            { className: "max-w-[640px] mx-auto px-4 py-8" },
             e.createElement(
               "div",
               { className: "mb-8" },
@@ -763,13 +763,13 @@ const Xe = 2 * 1024 * 1024,
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                    "text-xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                 },
                 "Preview Your Post",
               ),
               e.createElement(
                 "p",
-                { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                { className: "text-gray-600 dark:text-gray-200" },
                 "Review your listing before publishing",
               ),
             ),
@@ -821,7 +821,7 @@ const Xe = 2 * 1024 * 1024,
                     "h3",
                     {
                       className:
-                        "text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                        "text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                     },
                     t.brand,
                     " ",
@@ -831,7 +831,7 @@ const Xe = 2 * 1024 * 1024,
                     "div",
                     {
                       className:
-                        "text-3xl font-bold text-green-600 dark:text-green-400 mb-4 dark:text-green-300",
+                        "text-xl sm:text-3xl font-bold text-green-600 dark:text-green-400 mb-4 dark:text-green-300",
                     },
                     "\u20B9",
                     (Number.parseInt(t.price, 10) || 0).toLocaleString(),
@@ -840,7 +840,7 @@ const Xe = 2 * 1024 * 1024,
                     "div",
                     {
                       className:
-                        "grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                        "grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-200",
                     },
                     e.createElement(
                       "div",
@@ -932,7 +932,7 @@ const Xe = 2 * 1024 * 1024,
                 "div",
                 {
                   className:
-                    "mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3 dark:border dark:border-sky-600/40 dark:bg-sky-950/20",
+                    "mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3 dark:border-sky-600/40 dark:bg-sky-950/20",
                 },
                 e.createElement(
                   "div",
@@ -947,7 +947,7 @@ const Xe = 2 * 1024 * 1024,
                   "div",
                   {
                     className:
-                      "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900 dark:bg-sky-950/20",
+                      "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-950/20",
                   },
                   e.createElement("div", {
                     className:
@@ -966,7 +966,7 @@ const Xe = 2 * 1024 * 1024,
           },
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 py-4 pb-40" },
+            { className: "max-w-[640px] mx-auto px-4 py-4 pb-40" },
             " ",
             e.createElement(
               "div",
@@ -990,7 +990,7 @@ const Xe = 2 * 1024 * 1024,
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70" },
+                  { className: "text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70" },
                   "Create listing",
                 ),
                 e.createElement(
@@ -1024,11 +1024,11 @@ const Xe = 2 * 1024 * 1024,
                 "div",
                 {
                   className:
-                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20",
+                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border-amber-600/40 dark:bg-amber-950/20",
                 },
                 e.createElement(
                   "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-amber-200" },
+                  { className: "text-sm text-amber-800 dark:text-amber-200" },
                   Z,
                 ),
                 e.createElement(
@@ -1047,11 +1047,11 @@ const Xe = 2 * 1024 * 1024,
                 "div",
                 {
                   className:
-                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20",
+                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border-amber-600/40 dark:bg-amber-950/20",
                 },
                 e.createElement(
                   "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-amber-200" },
+                  { className: "text-sm text-amber-800 dark:text-amber-200" },
                   oe,
                 ),
                 e.createElement(
@@ -1069,7 +1069,7 @@ const Xe = 2 * 1024 * 1024,
               W,
               {
                 className:
-                  "mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20 dark:border dark:border-sky-600/40",
+                  "mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-600/40",
               },
               e.createElement(
                 ce,
@@ -1081,7 +1081,7 @@ const Xe = 2 * 1024 * 1024,
                     "p",
                     {
                       className:
-                        "text-sm font-semibold text-sky-800 dark:text-sky-300 dark:text-sky-200",
+                        "text-sm font-semibold text-sky-800 dark:text-sky-200",
                     },
                     a("pre_submit_checklist", "Pre-submit checklist"),
                   ),
@@ -1117,7 +1117,7 @@ const Xe = 2 * 1024 * 1024,
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                        { className: "text-slate-600 dark:text-slate-200" },
                         r.hint,
                       ),
                     ),
@@ -1185,7 +1185,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "title",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("title"),
                           " *",
@@ -1197,7 +1197,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "e.g., iPhone 14 Pro for Sale",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           maxLength: 100,
                           minLength: 5,
@@ -1228,7 +1228,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("category"),
                           " *",
@@ -1240,7 +1240,7 @@ const Xe = 2 * 1024 * 1024,
                               readOnly: !0,
                               disabled: !0,
                               className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-2 dark:border-gray-700 dark:bg-gray-950",
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-gray-700 dark:bg-gray-950",
                             })
                           : Y
                           ? e.createElement(h, {
@@ -1249,7 +1249,7 @@ const Xe = 2 * 1024 * 1024,
                               readOnly: !0,
                               disabled: !0,
                               className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-2 dark:border-gray-700 dark:bg-gray-950",
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-gray-700 dark:bg-gray-950",
                             })
                           : e.createElement(
                               F,
@@ -1263,7 +1263,7 @@ const Xe = 2 * 1024 * 1024,
                                 A,
                                 {
                                   className:
-                                    "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                                    "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                                 },
                                 e.createElement(D, {
                                   placeholder: "Select category",
@@ -1296,7 +1296,7 @@ const Xe = 2 * 1024 * 1024,
                             u,
                             {
                               className:
-                                "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                                "text-sm font-semibold text-gray-700 dark:text-gray-200",
                             },
                             a("subcategory", "Subcategory"),
                             Array.isArray(resolvedSubcategories) &&
@@ -1322,7 +1322,7 @@ const Xe = 2 * 1024 * 1024,
                               A,
                               {
                                 className:
-                                  "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                                  "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                               },
                               e.createElement(D, {
                                 placeholder:
@@ -1374,7 +1374,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("brand"),
                           " *",
@@ -1391,7 +1391,7 @@ const Xe = 2 * 1024 * 1024,
                             A,
                             {
                               className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                             },
                             e.createElement(D, {
                               placeholder: a("select_brand"),
@@ -1424,7 +1424,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "model",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("model"),
                           " *",
@@ -1436,7 +1436,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "e.g., iPhone 14 Pro, Galaxy S23",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           "aria-describedby": i.model ? "model-error" : undefined,
                           "aria-invalid": !!i.model,
@@ -1455,7 +1455,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("condition"),
                           " *",
@@ -1470,7 +1470,7 @@ const Xe = 2 * 1024 * 1024,
                             A,
                             {
                               className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                             },
                             e.createElement(D, {
                               placeholder: a("select_condition"),
@@ -1526,7 +1526,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "age",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("age_months"),
                         ),
@@ -1538,7 +1538,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "0-48 months",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           min: "0",
                           max: "48",
                         }),
@@ -1550,7 +1550,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("warranty_status"),
                         ),
@@ -1564,7 +1564,7 @@ const Xe = 2 * 1024 * 1024,
                             A,
                             {
                               className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                             },
                             e.createElement(D, {
                               placeholder: "Warranty status",
@@ -1599,7 +1599,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "dimensions",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           a("dimensions"),
                         ),
@@ -1610,7 +1610,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "e.g., 6.1 inch",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                         }),
                       ),
                     ),
@@ -1637,7 +1637,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "price",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "Price (\u20B9) *",
                         ),
@@ -1649,7 +1649,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "Enter price",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           "aria-describedby": i.price ? "price-error" : undefined,
                           "aria-invalid": !!i.price,
@@ -1677,7 +1677,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "district",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "District *",
                         ),
@@ -1688,7 +1688,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "Enter district",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           "aria-describedby": i.district ? "district-error" : undefined,
                           "aria-invalid": !!i.district,
@@ -1708,7 +1708,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "state",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "State *",
                         ),
@@ -1719,7 +1719,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "Enter state",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           "aria-describedby": i.state ? "state-error" : undefined,
                           "aria-invalid": !!i.state,
@@ -1755,7 +1755,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "contactNumber",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "Contact Number *",
                         ),
@@ -1767,7 +1767,7 @@ const Xe = 2 * 1024 * 1024,
                           onChange: x,
                           placeholder: "+91 XXXXXXXXXX",
                           className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           required: !0,
                           "aria-describedby": i.contactNumber ? "contactNumber-error" : undefined,
                           "aria-invalid": !!i.contactNumber,
@@ -1794,7 +1794,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "Images (1-",
                           g?.maxImages || 1,
@@ -1807,12 +1807,12 @@ const Xe = 2 * 1024 * 1024,
                             "div",
                             {
                               className:
-                                "border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 transition-all duration-300 hover:border-solid hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-xl hover:shadow-blue-500/10 active:scale-[0.98] dark:border-2 dark:border-dashed dark:border-blue-600/40 dark:bg-gradient-to-br dark:hover:border-solid dark:hover:border-blue-600/40 dark:hover:bg-gradient-to-br",
+                                "border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 transition-all duration-300 hover:border-solid hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-xl hover:shadow-blue-500/10 active:scale-[0.98] dark:border-blue-600/40 dark:bg-gradient-to-br dark:hover:border-solid dark:hover:border-blue-600/40 dark:hover:bg-gradient-to-br",
                               "aria-label": a("upload_images", { defaultValue: "Upload product images" }),
                             },
                             e.createElement(
                               "div",
-                              { className: "text-center dark:text-center" },
+                              { className: "text-center" },
                               e.createElement(Be, {
                                 className:
                                   "mx-auto h-12 w-12 text-sky-400 mb-4 dark:text-sky-200",
@@ -1853,7 +1853,7 @@ const Xe = 2 * 1024 * 1024,
                                   "p",
                                   {
                                     className:
-                                      "mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "mt-1 text-xs text-gray-500 dark:text-gray-300",
                                   },
                                   "Selected: ",
                                   b.length,
@@ -1864,7 +1864,7 @@ const Xe = 2 * 1024 * 1024,
                                   "p",
                                   {
                                     className:
-                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "mt-2 text-sm text-gray-500 dark:text-gray-300",
                                   },
                                   "PNG, JPG up to 2MB each \u2022 Max ",
                                   g?.maxImages || 1,
@@ -1878,7 +1878,7 @@ const Xe = 2 * 1024 * 1024,
                               "div",
                               {
                                 className:
-                                  "mt-4 grid grid-cols-3 sm:grid-cols-4 gap-3",
+                                  "mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3",
                               },
                               b.map((r, o) =>
                                 e.createElement(
@@ -1892,7 +1892,7 @@ const Xe = 2 * 1024 * 1024,
                                     },
                                     alt: `Upload ${o + 1}`,
                                     className:
-                                      "h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:ring-2 hover:ring-blue-400 transition-all duration-200 cursor-pointer dark:border-2 dark:border-gray-700",
+                                      "h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:ring-2 hover:ring-blue-400 transition-all duration-200 cursor-pointer dark:border-gray-700",
                                   }),
                                   e.createElement(
                                     "button",
@@ -1923,7 +1923,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "description",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
                           },
                           "Description *",
                         ),
@@ -1935,7 +1935,7 @@ const Xe = 2 * 1024 * 1024,
                           placeholder:
                             "Add any additional details about your mobile phone...",
                           className:
-                            "mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                            "mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
                           rows: 4,
                           required: !0,
                           minLength: 20,
@@ -1968,7 +1968,7 @@ const Xe = 2 * 1024 * 1024,
                         "div",
                         {
                           className:
-                            "flex flex-col gap-3 p-4 border-2 border-dashed border-orange-200 dark:border-orange-800/30 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 shadow-sm hover:shadow-md transition-all duration-200 dark:border-2 dark:border-dashed dark:border-orange-600/40 dark:bg-gradient-to-br",
+                            "flex flex-col gap-3 p-4 border-2 border-dashed border-orange-200 dark:border-orange-800/30 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 shadow-sm hover:shadow-md transition-all duration-200 dark:border-orange-600/40 dark:bg-gradient-to-br",
                         },
                         e.createElement(
                           "div",
@@ -1988,7 +1988,7 @@ const Xe = 2 * 1024 * 1024,
                                 "h3",
                                 {
                                   className:
-                                    "text-sm font-semibold text-orange-800 dark:text-orange-300 dark:text-orange-200",
+                                    "text-sm font-semibold text-orange-800 dark:text-orange-200",
                                 },
                                 a("flash_sale_label", "24-Hour Flash Sale"),
                               ),
@@ -1996,7 +1996,7 @@ const Xe = 2 * 1024 * 1024,
                                 "p",
                                 {
                                   className:
-                                    "text-xs text-gray-600 dark:text-gray-400 dark:text-gray-200",
+                                    "text-xs text-gray-600 dark:text-gray-200",
                                 },
                                 "Auto-expires in 24 hours \u2022 Gets 2x visibility boost",
                               ),
@@ -2019,7 +2019,7 @@ const Xe = 2 * 1024 * 1024,
                             "div",
                             {
                               className:
-                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg dark:text-center dark:text-orange-300 dark:bg-orange-950/20",
+                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg dark:text-orange-300 dark:bg-orange-950/20",
                             },
                             "\uD83D\uDD25 Your listing will appear at the TOP of feeds and auto-delete after 24 hours!",
                           ),
@@ -2030,7 +2030,7 @@ const Xe = 2 * 1024 * 1024,
                     "div",
                     {
                       className:
-                        "sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 pb-4 border-t border-gray-200/60 dark:border-gray-700/60 mt-8 mhub-premium-bar backdrop-blur-xl -mx-8 px-8 rounded-b-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.08)] dark:border-t",
+                        "sticky bottom-0 z-[60] flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 pb-4 border-t border-gray-200/60 dark:border-gray-700/60 mt-8 mhub-premium-bar backdrop-blur-xl -mx-8 px-8 rounded-b-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.08)] dark:border-t",
                     },
                     e.createElement(
                       v,
@@ -2093,7 +2093,7 @@ const Xe = 2 * 1024 * 1024,
                       "div",
                       {
                         className:
-                          "rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3 dark:border dark:border-sky-600/40 dark:bg-sky-950/20",
+                          "rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3 dark:border-sky-600/40 dark:bg-sky-950/20",
                       },
                       e.createElement(
                         "div",
@@ -2112,7 +2112,7 @@ const Xe = 2 * 1024 * 1024,
                         "div",
                         {
                           className:
-                            "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900 dark:bg-sky-950/20",
+                            "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-950/20",
                         },
                         e.createElement("div", {
                           className:

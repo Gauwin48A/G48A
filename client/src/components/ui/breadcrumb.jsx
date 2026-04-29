@@ -38,7 +38,7 @@ const BreadcrumbLink = forwardRef(({ asChild, className, ...props }, ref) => {
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("transition-colors hover:text-foreground py-2 inline-block", className)}
       {...props}
     />
   )

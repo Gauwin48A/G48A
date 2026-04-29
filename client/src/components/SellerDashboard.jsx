@@ -53,7 +53,7 @@ function StatCard({ title, value, icon: Icon, trend, color = "text-blue-600", bg
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-lg sm:text-2xl font-bold mt-1">{value}</p>
             {trend !== undefined && (
               <div className="flex items-center gap-1 mt-1">
                 {trend >= 0 ? (
@@ -105,7 +105,7 @@ function ConversionFunnel({ funnel }) {
               <p className="text-xs font-medium mt-1">{step.label}</p>
               <p className="text-sm font-bold">{step.value.toLocaleString()}</p>
               {step.rate !== null && (
-                <p className="text-[10px] text-muted-foreground">{step.rate}%</p>
+                <p className="text-xs text-muted-foreground">{step.rate}%</p>
               )}
             </div>
           ))}
@@ -147,7 +147,7 @@ function TopListings({ listings }) {
               </span>
               <span>
                 {listing.boost_level > 0 && (
-                  <Badge variant="outline" className="text-[10px]">Boosted</Badge>
+                  <Badge variant="outline" className="text-xs">Boosted</Badge>
                 )}
               </span>
             </div>

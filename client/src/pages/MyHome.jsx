@@ -798,10 +798,10 @@ const MyHomePage = () => {
         },
         e.createElement(
           "div",
-          { className: "text-center dark:text-center" },
+          { className: "text-center" },
           e.createElement("div", {
             className:
-              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4 dark:border-b-2 dark:border-blue-500/40",
+              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4 dark:border-blue-500/40",
           }),
           e.createElement(
             "p",
@@ -816,14 +816,14 @@ const MyHomePage = () => {
             "div",
             {
               className:
-                "mhub-page-myposts min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-4 pt-28 dark:bg-gradient-to-br",
+                "mhub-page-myposts min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-4 pt-4 dark:bg-gradient-to-br",
             },
             e.createElement(
               de,
               { className: "max-w-xl mx-auto border-red-200 page-shell page-pad dark:border-red-600/40" },
               e.createElement(
                 ge,
-                { className: "p-8 text-center dark:text-center" },
+                { className: "p-8 text-center" },
                 e.createElement(
                   "div",
                   {
@@ -889,13 +889,13 @@ const MyHomePage = () => {
                 "div",
                 {
                   className:
-                    "relative max-w-4xl mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad",
+                    "relative max-w-[640px] mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad",
                 },
                 e.createElement(
                   "div",
                   {
                     className:
-                      "flex items-start gap-3 mb-2 max-w-2xl text-left dark:text-left",
+                      "flex items-start gap-3 mb-2 max-w-2xl text-left",
                   },
                   e.createElement(
                     "button",
@@ -913,7 +913,7 @@ const MyHomePage = () => {
                       "p",
                       {
                         className:
-                          "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70",
+                          "text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70",
                       },
                       tr("my_home_label", "My home"),
                     ),
@@ -950,7 +950,7 @@ const MyHomePage = () => {
               "div",
               {
                 className:
-                  "-mt-6 sm:-mt-8 mb-6 relative z-10 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad",
+                  "-mt-6 sm:-mt-8 mb-6 relative z-10 max-w-[640px] mx-auto px-4 sm:px-6 page-shell page-pad",
               },
               e.createElement(
                 "div",
@@ -959,7 +959,7 @@ const MyHomePage = () => {
                   "div",
                   {
                     className:
-                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80",
+                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80",
                     style: {
                       "--card-accent":
                         "linear-gradient(90deg, #38bdf8, #6366f1)",
@@ -985,7 +985,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100",
                         },
                         totals.total,
                       ),
@@ -993,7 +993,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                            "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         l("total_posts"),
                       ),
@@ -1004,7 +1004,7 @@ const MyHomePage = () => {
                   "div",
                   {
                     className:
-                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80",
+                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80",
                     style: {
                       "--card-accent":
                         "linear-gradient(90deg, #34d399, #10b981)",
@@ -1031,7 +1031,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100",
                         },
                         totals.active,
                       ),
@@ -1039,7 +1039,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                            "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         l("active"),
                       ),
@@ -1050,7 +1050,7 @@ const MyHomePage = () => {
                   "div",
                   {
                     className:
-                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80",
+                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80",
                     style: {
                       "--card-accent":
                         "linear-gradient(90deg, #6366f1, #8b5cf6)",
@@ -1077,7 +1077,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100",
                         },
                         totals.sold,
                       ),
@@ -1085,7 +1085,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                            "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         l("sold"),
                       ),
@@ -1096,7 +1096,7 @@ const MyHomePage = () => {
                   "div",
                   {
                     className:
-                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80",
+                      "rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80",
                     style: {
                       "--card-accent":
                         "linear-gradient(90deg, #f472b6, #ec4899)",
@@ -1123,7 +1123,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100",
                         },
                         totals.bought,
                       ),
@@ -1131,7 +1131,7 @@ const MyHomePage = () => {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                            "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         l("bought"),
                       ),
@@ -1146,13 +1146,13 @@ const MyHomePage = () => {
                 "div",
                 {
                   className:
-                    "mb-6 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad",
+                    "mb-6 max-w-[640px] mx-auto px-4 sm:px-6 page-shell page-pad",
                 },
                 e.createElement(
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-blue-100 bg-white/90 dark:border-blue-900/40 dark:bg-gray-900/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm dark:border dark:border-blue-600/40 dark:bg-slate-900/90",
+                      "rounded-2xl border border-blue-100 bg-white/90 dark:border-blue-900/40 dark:bg-gray-900/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm dark:border-blue-600/40 dark:bg-slate-900/90",
                   },
                   e.createElement(
                     "div",
@@ -1161,14 +1161,14 @@ const MyHomePage = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
                     ),
                     e.createElement(
                       "p",
-                      { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
+                      { className: "text-xs text-slate-500 dark:text-slate-300" },
                       "Your listings are filtered to this category.",
                     ),
                   ),
@@ -1186,13 +1186,13 @@ const MyHomePage = () => {
               ),
             e.createElement(
               "div",
-              { className: "pb-10 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad" },
+              { className: "pb-10 max-w-[640px] mx-auto px-4 sm:px-6 page-shell page-pad" },
               listError
                 ? e.createElement(
                     Ye,
                     {
                       variant: "destructive",
-                      className: "mb-4 bg-white/90 dark:bg-gray-900/90 dark:bg-slate-900/90",
+                      className: "mb-4 bg-white/90 dark:bg-slate-900/90",
                     },
                     e.createElement(xe, { className: "h-4 w-4" }),
                     e.createElement(
@@ -1232,7 +1232,7 @@ const MyHomePage = () => {
                       "p",
                       {
                         className:
-                          "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300",
+                          "text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300",
                       },
                       tr("listings_overview", "Listings overview"),
                     ),
@@ -1240,7 +1240,7 @@ const MyHomePage = () => {
                       "h3",
                       {
                         className:
-                          "text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100",
                       },
                       tr("manage_listings", "Manage your listings"),
                     ),
@@ -1261,7 +1261,7 @@ const MyHomePage = () => {
                   "div",
                   {
                     className:
-                      "w-full flex justify-start gap-2 py-2 mb-3 overflow-x-auto whitespace-nowrap scrollbar-hide rewards-tab-bar bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/60 rounded-2xl px-2 dark:bg-slate-900/70 dark:border dark:border-slate-700/70",
+                      "w-full flex justify-start gap-2 py-2 mb-3 overflow-x-auto whitespace-nowrap scrollbar-hide rewards-tab-bar bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/60 rounded-2xl px-2 dark:bg-slate-900/70 dark:border-slate-700/70",
                   },
                   [
                     {
@@ -1302,7 +1302,7 @@ const MyHomePage = () => {
                       e.createElement(
                         "span",
                         {
-                          className: `ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold dark:text-[10px]${p === t.tab ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200"}`,
+                          className: `ml-2 px-2 py-1 rounded-full text-xs font-semibold dark:text-xs${p === t.tab ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200"}`,
                         },
                         t.count,
                       ),
@@ -1416,7 +1416,7 @@ const MyHomePage = () => {
                     "div",
                     {
                       className:
-                        "profile-subpanel rounded-xl p-4 mt-4 border border-blue-100/80 dark:border-blue-900/40 dark:border dark:border-blue-600/80",
+                        "profile-subpanel rounded-xl p-4 mt-4 border border-blue-100/80 dark:border-blue-600/80",
                     },
                     e.createElement(
                       "div",
@@ -1444,7 +1444,7 @@ const MyHomePage = () => {
                           "span",
                           {
                             className:
-                              "text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                              "text-sm text-slate-500 dark:text-slate-300",
                           },
                           c.size,
                           " ",
@@ -1490,7 +1490,7 @@ const MyHomePage = () => {
                 f.length === 0
                   ? e.createElement(
                       "div",
-                      { className: "text-center py-10 sm:py-12 dark:text-center" },
+                      { className: "text-center py-10 sm:py-12" },
                       e.createElement(
                         "div",
                         { className: "text-6xl mb-4" },
@@ -1734,7 +1734,7 @@ const MyHomePage = () => {
                               "div",
                               {
                                 className:
-                                  "text-2xl font-extrabold text-green-600 dark:text-green-400 mb-3 dark:text-green-300",
+                                  "text-lg sm:text-2xl font-extrabold text-green-600 dark:text-green-400 mb-3 dark:text-green-300",
                               },
                               "INR ",
                               typeof t.price == "number"
@@ -1795,7 +1795,7 @@ const MyHomePage = () => {
                                 g,
                                 {
                                   className:
-                                    "shrink-0 min-w-[36px] h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg px-2.5 text-[10px] sm:h-9 sm:min-w-[120px] sm:px-3 sm:text-xs shadow inline-flex items-center justify-center gap-1.5 dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white",
+                                    "shrink-0 min-w-[36px] h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg px-2.5 text-xs sm:h-9 sm:min-w-[120px] sm:px-3 sm:text-xs shadow inline-flex items-center justify-center gap-1.5 dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white",
                                   onClick: () => je(t),
                                 },
                                 e.createElement(Xe, { className: "w-5 h-5" }),
@@ -1812,7 +1812,7 @@ const MyHomePage = () => {
                                   {
                                     variant: "outline",
                                     className:
-                                      "shrink-0 h-8 border-2 border-emerald-400 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3 dark:border-2 dark:border-emerald-600/40 dark:text-emerald-300 dark:hover:bg-emerald-950/20",
+                                      "shrink-0 h-8 border-2 border-emerald-400 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3 dark:border-emerald-600/40 dark:text-emerald-300 dark:hover:bg-emerald-950/20",
                                     onClick: () => openMarkSold(t),
                                   },
                                   e.createElement(G, { className: "w-5 h-5" }),
@@ -1828,7 +1828,7 @@ const MyHomePage = () => {
                                   {
                                     variant: "outline",
                                     className:
-                                      "shrink-0 h-8 border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3 dark:border-2 dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20",
+                                      "shrink-0 h-8 border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3 dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20",
                                     onClick: () =>
                                       ae(t.postId || t.post_id || t.id),
                                   },
@@ -1909,13 +1909,13 @@ const MyHomePage = () => {
                     K,
                     {
                       className:
-                        "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-xl font-bold text-gray-900 dark:text-gray-100",
                     },
                     l("delete_post_title"),
                   ),
                   e.createElement(
                     J,
-                    { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                    { className: "text-gray-600 dark:text-gray-200" },
                     l("delete_post_desc"),
                   ),
                 ),
@@ -1948,13 +1948,13 @@ const MyHomePage = () => {
                     K,
                     {
                       className:
-                        "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-xl font-bold text-gray-900 dark:text-gray-100",
                     },
                     l("move_sale_undone_title"),
                   ),
                   e.createElement(
                     J,
-                    { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                    { className: "text-gray-600 dark:text-gray-200" },
                     l("move_sale_undone_desc"),
                   ),
                 ),
@@ -1987,13 +1987,13 @@ const MyHomePage = () => {
                     K,
                     {
                       className:
-                        "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-xl font-bold text-gray-900 dark:text-gray-100",
                     },
                     l("bulk_delete_title", { count: c.size }),
                   ),
                   e.createElement(
                     J,
-                    { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                    { className: "text-gray-600 dark:text-gray-200" },
                     l("bulk_delete_desc"),
                   ),
                 ),
@@ -2031,13 +2031,13 @@ const MyHomePage = () => {
                     K,
                     {
                       className:
-                        "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-xl font-bold text-gray-900 dark:text-gray-100",
                     },
                     tr("mark_sold_title", "Mark as sold?"),
                   ),
                   e.createElement(
                     J,
-                    { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                    { className: "text-gray-600 dark:text-gray-200" },
                     tr(
                       "mark_sold_desc",
                       "This will move your listing to Sold and hide it from buyers.",
@@ -2108,7 +2108,7 @@ const MyHomePage = () => {
           },
           e.createElement(
             "div",
-            { className: "pt-16 pb-12 px-6 text-center dark:text-center" },
+            { className: "pt-16 pb-12 px-6 text-center" },
             e.createElement(
               "div",
               {
@@ -2119,7 +2119,7 @@ const MyHomePage = () => {
             ),
             e.createElement(
               "h1",
-              { className: "text-4xl font-bold text-white mb-3 dark:text-white" },
+              { className: "text-lg sm:text-2xl md:text-3xl font-bold text-white mb-3 dark:text-white" },
               l("my_home_title"),
             ),
             e.createElement(
@@ -2130,7 +2130,7 @@ const MyHomePage = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-2xl mx-auto px-6 space-y-4 page-shell page-pad" },
+            { className: "max-w-[640px] mx-auto px-6 space-y-4 page-shell page-pad" },
             e.createElement(
               ne,
               {
@@ -2155,7 +2155,7 @@ const MyHomePage = () => {
                   { className: "flex-1" },
                   e.createElement(
                     "h3",
-                    { className: "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+                    { className: "text-xl font-bold text-gray-900 dark:text-gray-100" },
                     l("login"),
                   ),
                   e.createElement(
@@ -2164,7 +2164,7 @@ const MyHomePage = () => {
                     l("already_account"),
                   ),
                 ),
-                e.createElement(be, { className: "w-6 h-6 text-gray-400 dark:text-gray-500 dark:text-gray-300" }),
+                e.createElement(be, { className: "w-6 h-6 text-gray-400 dark:text-gray-300" }),
               ),
             ),
             e.createElement(
@@ -2172,7 +2172,7 @@ const MyHomePage = () => {
               {
                 to: "/signup",
                 className:
-                  "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border dark:border-white/20 dark:hover:bg-slate-900/20",
+                  "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border-white/20 dark:hover:bg-slate-900/20",
               },
               e.createElement(
                 "div",

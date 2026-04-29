@@ -486,14 +486,14 @@ function PostDetail() {
       },
       React.createElement(
         "div",
-        { className: "text-center dark:text-center" },
+        { className: "text-center" },
         React.createElement("div", {
           className:
-            "w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-blue-500/40 dark:border-t-transparent",
+            "w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-t-transparent",
         }),
         React.createElement(
           "p",
-          { className: "text-lg font-medium text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+          { className: "text-lg font-medium text-gray-600 dark:text-gray-200" },
           tr("loading_product", "Loading product..."),
         ),
       ),
@@ -509,7 +509,7 @@ function PostDetail() {
         "div",
         {
         className:
-          "text-center p-8 mhub-premium-surface rounded-3xl max-w-lg w-full page-shell page-pad dark:text-center",
+          "text-center p-8 mhub-premium-surface rounded-3xl max-w-lg w-full page-shell page-pad",
         },
         React.createElement(
           "div",
@@ -1494,7 +1494,7 @@ function PostDetail() {
           icon && React.createElement(icon, { className: "w-5 h-5" }),
           React.createElement(
             "h3",
-            { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+            { className: "font-bold text-gray-900 dark:text-gray-100" },
             title,
           ),
         ),
@@ -1686,7 +1686,7 @@ function PostDetail() {
                   "text-center space-y-3 text-gray-500 dark:text-gray-300 max-w-sm px-4",
               },
               React.createElement(x, {
-                className: "w-12 h-12 mx-auto text-gray-300 dark:text-gray-500 dark:text-gray-300",
+                className: "w-12 h-12 mx-auto text-gray-300 dark:text-gray-300",
               }),
               React.createElement(
                 "p",
@@ -1748,7 +1748,7 @@ function PostDetail() {
           {
             className: `px-3 py-1 text-xs font-bold rounded-full ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
           },
-          React.createElement(ve, { className: "w-3 h-3 mr-1 inline" }),
+          React.createElement(ve, { className: "w-4 h-4 mr-1 inline" }),
           tierLabel,
         ),
         highlightBadges.length > 0 &&
@@ -1761,7 +1761,7 @@ function PostDetail() {
                 {
                   key: t.key,
                   className:
-                    "inline-flex items-center rounded-full bg-white/90 text-gray-700 px-2.5 py-1 text-[11px] font-semibold shadow-sm dark:bg-slate-900/90 dark:text-gray-200",
+                    "inline-flex items-center rounded-full bg-white/90 text-gray-700 px-2.5 py-1 text-xs font-semibold shadow-sm dark:bg-slate-900/90 dark:text-gray-200",
                 },
                 t.label,
               ),
@@ -1912,13 +1912,13 @@ function PostDetail() {
           "div",
           {
             className:
-              "flex flex-wrap items-baseline gap-3 mt-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800 dark:border-b dark:border-gray-700",
+              "flex flex-wrap items-baseline gap-3 mt-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-700",
           },
           React.createElement(
             "span",
             {
               className:
-                "text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                "text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100",
             },
             C(r.price),
           ),
@@ -1948,7 +1948,7 @@ function PostDetail() {
               "span",
               {
                 className:
-                  "text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:text-emerald-300",
+                  "text-xs font-semibold text-emerald-600 dark:text-emerald-300",
               },
               tr("you_save", "You save {{amount}}", {
                 amount: C(savingsValue),
@@ -1975,13 +1975,13 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                    "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
                 },
                 tr("delivery_meetup", "Delivery / Meetup"),
               ),
               React.createElement(
                 "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
+                { className: "text-sm font-medium text-gray-900 dark:text-gray-100" },
                 deliveryDetail,
               ),
             ),
@@ -2000,13 +2000,13 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                    "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
                 },
                 tr("return_inspection", "Return / Inspection"),
               ),
               React.createElement(
                 "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
+                { className: "text-sm font-medium text-gray-900 dark:text-gray-100" },
                 inspectionDetail,
               ),
             ),
@@ -2032,7 +2032,7 @@ function PostDetail() {
                 {
                   key: fact.key,
                   className:
-                    "flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                    "flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-200",
                 },
                 fact.icon
                   ? React.createElement(fact.icon, {
@@ -2048,13 +2048,13 @@ function PostDetail() {
                   null,
                   React.createElement(
                     "span",
-                    { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-gray-500 dark:text-gray-300" },
                     fact.label,
                     ": ",
                   ),
                   React.createElement(
                     "span",
-                    { className: "font-medium text-gray-900 dark:text-white dark:text-gray-100" },
+                    { className: "font-medium text-gray-900 dark:text-gray-100" },
                     fact.value,
                   ),
                 ),
@@ -2071,13 +2071,13 @@ function PostDetail() {
               {
                 key: stat.key,
                 className:
-                  "rounded-xl bg-white/60 dark:bg-gray-900/30 px-3 py-2 border border-gray-100 dark:border-gray-800 dark:bg-slate-900/60 dark:border dark:border-gray-700",
+                  "rounded-xl bg-white/60 dark:bg-gray-900/30 px-3 py-2 border border-gray-100 dark:border-gray-800 dark:bg-slate-900/60 dark:border-gray-700",
               },
               React.createElement(
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 dark:text-gray-300",
+                    "text-xs uppercase tracking-wide text-gray-400 dark:text-gray-300",
                 },
                 stat.label,
               ),
@@ -2134,7 +2134,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                          "flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
                       },
                       fact.icon &&
                         React.createElement(fact.icon, {
@@ -2171,7 +2171,7 @@ function PostDetail() {
                     onClick: handleContactSeller,
                     disabled: contactCtaDisabled,
                     title: contactCtaDisabled ? contactCtaReason : undefined,
-                    className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-[13px] sm:text-sm whitespace-nowrap dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                    className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-sm sm:text-sm truncate dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
                   React.createElement(fe, { className: "w-4 h-4 mr-2" }),
                   tr("chat_seller", "Chat seller"),
@@ -2183,7 +2183,7 @@ function PostDetail() {
                     variant: "outline",
                     disabled: offerCtaDisabled,
                     title: offerCtaDisabled ? offerCtaReason : undefined,
-                    className: `border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/40 font-semibold h-11 px-3 rounded-xl text-[13px] sm:text-sm whitespace-nowrap dark:border-gray-700 dark:hover:bg-gray-950 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                    className: `border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/40 font-semibold h-11 px-3 rounded-xl text-sm sm:text-sm truncate dark:border-gray-700 dark:hover:bg-gray-950 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
                   React.createElement(ke, { className: "w-4 h-4 mr-2" }),
                   tr("make_an_offer", "Make an Offer"),
@@ -2197,7 +2197,7 @@ function PostDetail() {
                     variant: "outline",
                     type: "button",
                     onClick: toggleSavedPost,
-                    className: `h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap dark:sm:text-sm${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
+                    className: `h-11 px-3 rounded-xl font-semibold text-sm sm:text-sm truncate dark:sm:text-sm${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
                   },
                   savedPost
                     ? React.createElement(Xe, { className: "w-4 h-4 mr-2" })
@@ -2216,7 +2216,7 @@ function PostDetail() {
                         re.post(`/posts/${J}/share`).catch(() => {});
                     },
                     className:
-                      "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:border-gray-700 dark:text-gray-200",
+                      "h-11 px-3 rounded-xl font-semibold text-sm sm:text-sm truncate border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:border-gray-700 dark:text-gray-200",
                   },
                   React.createElement(Qe, { className: "w-4 h-4 mr-2" }),
                   tr("share", "Share"),
@@ -2228,7 +2228,7 @@ function PostDetail() {
                     disabled: reportSubmitting || reportSubmitted,
                     onClick: handleReportPost,
                     className:
-                      "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30",
+                      "h-11 px-3 rounded-xl font-semibold text-sm sm:text-sm truncate border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30",
                   },
                   reportSubmitted ? tr("reported", "Reported") : tr("report", "Report"),
                 ),
@@ -2283,7 +2283,7 @@ function PostDetail() {
       "div",
       {
         className:
-          "sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-gray-200/50 dark:border-gray-700/50",
+          "sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-gray-200/50 dark:border-gray-700/50",
       },
       React.createElement(
         "div",
@@ -2329,8 +2329,8 @@ function PostDetail() {
                     },
                     className:
                       activeSection === item.id
-                        ? "inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 text-white text-[11px] font-bold shadow-md shadow-blue-500/25 whitespace-nowrap transition-all duration-200"
-                        : "inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-200 transition-all duration-200 whitespace-nowrap",
+                        ? "inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/25 truncate transition-all duration-200"
+                        : "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-200 transition-all duration-200 truncate",
                   },
                   item.label,
                 ),
@@ -2427,13 +2427,13 @@ function PostDetail() {
                   { className: "flex items-center gap-2 mb-0.5" },
                   React.createElement(
                     "h3",
-                    { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+                    { className: "font-bold text-gray-900 dark:text-gray-100" },
                     o.name,
                   ),
                   sellerTrustLabel
                     ? React.createElement(Badge,
                         {
-                          className: `text-[10px] px-2 py-1 leading-none ${sellerTrustBadgeClass}`,
+                          className: `text-xs px-2 py-1 leading-none ${sellerTrustBadgeClass}`,
                           title:
                             sellerTrustScore != null
                               ? `${sellerTrustLabel} · ${sellerTrustScore}`
@@ -2447,7 +2447,7 @@ function PostDetail() {
                     ? React.createElement(Badge,
                         {
                           className:
-                            "text-[10px] px-2 py-1 leading-none bg-rose-600 text-white border-0",
+                            "text-xs px-2 py-1 leading-none bg-rose-600 text-white border-0",
                         },
                         tr("seller_frozen", "Seller Frozen"),
                       )
@@ -2455,7 +2455,7 @@ function PostDetail() {
                       ? React.createElement(Badge,
                           {
                             className:
-                              "text-[10px] px-2 py-1 leading-none bg-amber-500 text-white border-0",
+                              "text-xs px-2 py-1 leading-none bg-amber-500 text-white border-0",
                           },
                           tr("seller_under_review", "Under Review"),
                         )
@@ -2470,7 +2470,7 @@ function PostDetail() {
                 ),
                 React.createElement(
                   "p",
-                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                  { className: "text-xs text-gray-500 dark:text-gray-300" },
                   S
                     ? tr("verified_profile", "Verified profile")
                     : tr("verification_pending", "Verification pending"),
@@ -2505,7 +2505,7 @@ function PostDetail() {
                   "div",
                   {
                     className:
-                      "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                      "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-200",
                   },
                   sellerStats.map((t) =>
                     React.createElement(
@@ -2519,7 +2519,7 @@ function PostDetail() {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                            "text-xs uppercase text-gray-500 dark:text-gray-300",
                         },
                         t.label,
                       ),
@@ -2527,7 +2527,7 @@ function PostDetail() {
                         "p",
                         {
                           className:
-                            "font-semibold text-gray-800 dark:text-gray-200 dark:text-gray-100",
+                            "font-semibold text-gray-800 dark:text-gray-100",
                         },
                         t.value,
                       ),
@@ -2564,7 +2564,7 @@ function PostDetail() {
                           ),
                           React.createElement(
                             "p",
-                            { className: "text-[11px] text-gray-500 dark:text-gray-400" },
+                            { className: "text-xs text-gray-500 dark:text-gray-400" },
                             tr("browse_all_listings", "Browse all listings & reviews from this seller"),
                           ),
                         ),
@@ -2594,7 +2594,7 @@ function PostDetail() {
                 "div",
                 {
                   className:
-                    "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                    "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200",
                 },
                 React.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
                 tr("ready_to_buy", "Ready to buy?"),
@@ -2627,7 +2627,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-center text-xs text-gray-500 dark:text-gray-400 dark:text-center dark:text-gray-300",
+                    "text-center text-xs text-gray-500 dark:text-gray-300",
                 },
                 tr(
                   "secure_contact_details_hint",
@@ -2638,7 +2638,7 @@ function PostDetail() {
                 "div",
                 {
                   className:
-                    "pt-2 border-t border-slate-200/70 dark:border-slate-700/70 dark:border-t",
+                    "pt-2 border-t border-slate-200/70 dark:border-t",
                 },
                 React.createElement(Button,
                   {
@@ -2677,7 +2677,7 @@ function PostDetail() {
             "div",
             {
               className:
-                "rounded-2xl border border-slate-200 mhub-premium-surface p-4 shadow-lg space-y-4 dark:border dark:border-slate-700",
+                "rounded-2xl border border-slate-200 mhub-premium-surface p-4 shadow-lg space-y-4 dark:border-slate-700",
             },
             React.createElement(
               "div",
@@ -2689,13 +2689,13 @@ function PostDetail() {
                   "h3",
                   {
                     className:
-                      "text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                      "text-lg font-bold text-gray-900 dark:text-gray-100",
                   },
                   tr("lead_activity", "Lead activity"),
                 ),
                 React.createElement(
                   "p",
-                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                  { className: "text-xs text-gray-500 dark:text-gray-300" },
                   tr(
                     "lead_activity_hint",
                     "Track who viewed and engaged with your post.",
@@ -2716,13 +2716,13 @@ function PostDetail() {
             ownerInsightsLoading
               ? React.createElement(
                   "p",
-                  { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                  { className: "text-sm text-gray-500 dark:text-gray-300" },
                   tr("loading_leads", "Loading lead activity..."),
                 )
               : ownerInsightsErrorMessage
                 ? React.createElement(
                     "p",
-                    { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-sm text-gray-500 dark:text-gray-300" },
                     ownerInsightsErrorMessage,
                   )
                 : React.createElement(
@@ -2732,7 +2732,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
+                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
                       },
                       React.createElement(
                         "div",
@@ -2746,7 +2746,7 @@ function PostDetail() {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
                           },
                           ownerInquiries.length,
                         ),
@@ -2764,7 +2764,7 @@ function PostDetail() {
                                 {
                                   key: t.inquiry_id || t.buyer_id || s,
                                   className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
                                 },
                                 React.createElement(
                                   "span",
@@ -2777,7 +2777,7 @@ function PostDetail() {
                                 t.phone
                                   ? React.createElement(
                                       "span",
-                                      { className: "text-[11px]" },
+                                      { className: "text-xs" },
                                       t.phone,
                                     )
                                   : null,
@@ -2788,7 +2788,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2797,7 +2797,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
+                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
                       },
                       React.createElement(
                         "div",
@@ -2811,7 +2811,7 @@ function PostDetail() {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
                           },
                           ownerViewers.length,
                         ),
@@ -2829,7 +2829,7 @@ function PostDetail() {
                                 {
                                   key: t.viewer_id || t.user_id || s,
                                   className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
                                 },
                                 React.createElement(
                                   "span",
@@ -2843,7 +2843,7 @@ function PostDetail() {
                                 t.viewed_at
                                   ? React.createElement(
                                       "span",
-                                      { className: "text-[11px]" },
+                                      { className: "text-xs" },
                                       I(t.viewed_at),
                                     )
                                   : null,
@@ -2854,7 +2854,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2863,7 +2863,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
+                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
                       },
                       React.createElement(
                         "div",
@@ -2877,7 +2877,7 @@ function PostDetail() {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
                           },
                           ownerLeadCount,
                         ),
@@ -2895,7 +2895,7 @@ function PostDetail() {
                                 {
                                   key: t.id || s,
                                   className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
                                 },
                                 React.createElement(
                                   "span",
@@ -2905,7 +2905,7 @@ function PostDetail() {
                                 t.types?.length
                                   ? React.createElement(
                                       "span",
-                                      { className: "text-[11px]" },
+                                      { className: "text-xs" },
                                       t.types.join(", "),
                                     )
                                   : null,
@@ -2916,7 +2916,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2953,7 +2953,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300",
                       },
                       t.icon &&
                         React.createElement(t.icon, { className: "w-3.5 h-3.5" }),
@@ -2998,7 +2998,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300",
                       },
                       item.icon &&
                         React.createElement(item.icon, { className: "w-3.5 h-3.5" }),
@@ -3043,7 +3043,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                          "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
                       },
                       spec.label,
                     ),
@@ -3086,14 +3086,14 @@ function PostDetail() {
                   "p",
                   {
                     className:
-                      "text-sm font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                      "text-sm font-semibold text-gray-900 dark:text-gray-100",
                   },
                   locationDisplay,
                 ),
                 hasCoords &&
                   React.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-300" },
                     tr("coordinates", "Coordinates"),
                     ": ",
                     latitude.toFixed(4),
@@ -3117,7 +3117,7 @@ function PostDetail() {
             ),
             React.createElement(
               "p",
-              { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+              { className: "text-xs text-gray-500 dark:text-gray-300" },
               locationHint,
             ),
             ),
@@ -3140,7 +3140,7 @@ function PostDetail() {
               "div",
               {
                 className:
-                  "rounded-xl border border-emerald-100 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-900/20 p-3 mb-4 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/70",
+                  "rounded-xl border border-emerald-100 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-900/20 p-3 mb-4 dark:border-emerald-600/40 dark:bg-emerald-950/70",
               },
               React.createElement(
                 "p",
@@ -3159,13 +3159,13 @@ function PostDetail() {
                     {
                       key: tip.key,
                       className:
-                        "mhub-safety-tile rounded-lg border border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-gray-900/40 p-2.5 dark:border dark:border-emerald-600/60 dark:bg-slate-900/80",
+                        "mhub-safety-tile rounded-lg border border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-gray-900/40 p-2.5 dark:border-emerald-600/60 dark:bg-slate-900/80",
                     },
                     React.createElement(
                       "div",
                       {
                         className:
-                          "mhub-safety-title flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-200 dark:text-emerald-300",
+                          "mhub-safety-title flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300",
                       },
                       tip.icon &&
                         React.createElement(tip.icon, { className: "w-3.5 h-3.5" }),
@@ -3175,7 +3175,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "mhub-safety-hint text-[11px] text-emerald-800/80 dark:text-emerald-100/80 mt-1 dark:text-emerald-200/80",
+                          "mhub-safety-hint text-xs text-emerald-800/80 dark:text-emerald-200/80 mt-1",
                       },
                       tip.hint,
                     ),
@@ -3196,14 +3196,14 @@ function PostDetail() {
                   },
                   React.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-300" },
                     t.label,
                   ),
                   React.createElement(
                     "p",
                     {
                       className:
-                        "text-sm font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-sm font-semibold text-gray-900 dark:text-gray-100",
                     },
                     t.value,
                   ),
@@ -3222,11 +3222,11 @@ function PostDetail() {
               "div",
               {
                 className:
-                  "mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 dark:bg-amber-950/20 dark:border dark:border-amber-600/40",
+                  "mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 dark:bg-amber-950/20 dark:border-amber-600/40",
               },
               React.createElement(
                 "p",
-                { className: "text-xs text-amber-800 dark:text-amber-300 dark:text-amber-200" },
+                { className: "text-xs text-amber-800 dark:text-amber-200" },
                 tr(
                   "safety_tip",
                   "Safety tip: avoid sharing sensitive details outside the app and verify the listing ID before payment handover.",
@@ -3277,7 +3277,7 @@ function PostDetail() {
                   )
                 : React.createElement(
                     "p",
-                    { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-gray-500 dark:text-gray-300" },
                     tr(
                       "no_description",
                       "No description provided for this product. Contact the seller for more details.",
@@ -3321,7 +3321,7 @@ function PostDetail() {
               React.createElement(ke, { className: "w-5 h-5 text-emerald-500 dark:text-emerald-300" }),
               React.createElement(
                 "h3",
-                { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+                { className: "font-bold text-gray-900 dark:text-gray-100" },
                 tr("negotiate_price", "Negotiate & bargain"),
               ),
             ),
@@ -3370,7 +3370,7 @@ function PostDetail() {
                       ),
                       React.createElement(
                         "p",
-                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                        { className: "text-xs text-gray-500 dark:text-gray-300" },
                         tr(
                           "sponsored_hint",
                           "Paid boosts (Boost/Featured/Spotlight) similar to this listing.",
@@ -3391,7 +3391,7 @@ function PostDetail() {
                         "span",
                         {
                           className:
-                            "text-[10px] text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full cursor-help",
+                            "text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-full cursor-help",
                           title: tr(
                             "sponsored_tooltip",
                             "Sponsored listings are boosted with Boost, Featured, or Spotlight promotions.",
@@ -3456,7 +3456,7 @@ function PostDetail() {
                       ),
                       React.createElement(
                         "p",
-                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                        { className: "text-xs text-gray-500 dark:text-gray-300" },
                         tr(
                           "premium_hint",
                           "Premium-tier listings from top sellers in this category.",
@@ -3477,7 +3477,7 @@ function PostDetail() {
                         "span",
                         {
                           className:
-                            "text-[10px] text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full cursor-help",
+                            "text-xs text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full cursor-help",
                           title: tr(
                             "premium_tooltip",
                             "Premium listings are from Premium-tier sellers (top priority plans).",
@@ -3550,7 +3550,7 @@ function PostDetail() {
             freshnessLine &&
               React.createElement(
                 "p",
-                { className: "text-[11px] text-gray-500 dark:text-gray-400 truncate dark:text-gray-300" },
+                { className: "text-xs text-gray-500 dark:text-gray-300 truncate" },
                 freshnessLine,
               ),
           ),
@@ -3562,7 +3562,7 @@ function PostDetail() {
                 onClick: handleContactSeller,
                 disabled: contactCtaDisabled,
                 title: contactCtaDisabled ? contactCtaReason : undefined,
-                className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm truncate dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
               },
               tr("contact_seller", "Contact Seller"),
             ),
@@ -3571,7 +3571,7 @@ function PostDetail() {
                 onClick: handleMakeOffer,
                 disabled: offerCtaDisabled,
                 title: offerCtaDisabled ? offerCtaReason : undefined,
-                className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-gray-100 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm truncate dark:bg-gradient-to-r dark:text-gray-100 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
               },
               tr("make_offer_short", "Make Offer"),
             ),

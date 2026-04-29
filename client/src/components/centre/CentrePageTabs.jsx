@@ -70,13 +70,13 @@ export function CentreVerificationBadge({ channel }) {
   return (
     <div className="flex items-center gap-1.5">
       {isVerified && (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
           <BadgeCheck className="h-3 w-3" />
           Verified
         </span>
       )}
       {isPremium && (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
           <Crown className="h-3 w-3" />
           Premium
         </span>
@@ -146,7 +146,7 @@ function AboutTab({ channel }) {
             >
               <Icon className="h-5 w-5 mx-auto text-gray-400 dark:text-gray-500 mb-1" />
               <p className="text-lg font-bold text-gray-900 dark:text-white">{stat.value}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">{stat.label}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
             </div>
           );
         })}
@@ -248,7 +248,7 @@ function Milestones({ channel }) {
         {milestones.map((m) => (
           <div
             key={m.threshold}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
               m.unlocked
                 ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"
                 : "bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500"

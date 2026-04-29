@@ -70,7 +70,7 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
           ) : null}
           {trustLabel ? (
             <Badge
-              className={`text-[10px] px-2 py-1 leading-none ${trustBadgeClass}`}
+              className={`text-xs px-2 py-1 leading-none ${trustBadgeClass}`}
               title={trustScore != null ? `${trustLabel} · ${trustScore}` : trustLabel}
             >
               {trustLabel}
@@ -78,11 +78,11 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
             </Badge>
           ) : null}
           {isFrozen ? (
-            <Badge className="text-[10px] px-2 py-1 leading-none bg-rose-600 text-white border-0">
+            <Badge className="text-xs px-2 py-1 leading-none bg-rose-600 text-white border-0">
               Seller Frozen
             </Badge>
           ) : underReview ? (
-            <Badge className="text-[10px] px-2 py-1 leading-none bg-amber-500 text-white border-0">
+            <Badge className="text-xs px-2 py-1 leading-none bg-amber-500 text-white border-0">
               Under Review
             </Badge>
           ) : null}
@@ -99,7 +99,7 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
         </div>
         <div className="flex items-center justify-end">
           <button
-            className="h-7 px-3 bg-blue-600 text-white rounded text-[10px] sm:h-8 sm:text-xs md:text-sm font-medium hover:bg-blue-700"
+            className="h-8 px-3 bg-blue-600 text-white rounded text-xs sm:h-8 sm:text-xs md:text-sm font-medium hover:bg-blue-700"
             onClick={handleViewDetails}
           >
             {t("view_details")}

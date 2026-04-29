@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useCallback,
   useEffect,
   useMemo,
@@ -47,7 +47,7 @@ function PageSkeleton() {
   return (
     <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950">
       <div className="h-48 sm:h-56 animate-pulse bg-slate-200 dark:bg-slate-800" />
-      <div className="max-w-4xl mx-auto px-4 -mt-12">
+      <div className="max-w-[640px] mx-auto px-4 -mt-12">
         <div className="flex items-end gap-4">
           <div className="h-24 w-24 rounded-2xl animate-pulse bg-slate-300 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-900" />
           <div className="flex-1 pb-2 space-y-2">
@@ -240,7 +240,7 @@ function ListingsGrid({ listings, listingsLoading, listingsError, channelId, tr 
               <p className="text-sm font-bold text-emerald-600 dark:text-emerald-300 mt-1">
                 {formatPrice(item.price, tr)}
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                 <MapPinIcon className="h-3 w-3" />
                 {item.location || tr("location_unknown", "Location unknown")}
               </p>
@@ -252,7 +252,7 @@ function ListingsGrid({ listings, listingsLoading, listingsError, channelId, tr 
         to={`/centre/${channelId}/listings`}
         className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
       >
-        {tr("view_all_listings", "View all listings")} â†’
+        {tr("view_all_listings", "View all listings")} →
       </Link>
     </div>
   );
@@ -285,8 +285,8 @@ function ReviewsSection({ reviews, reviewsStats, reviewsLoading, reviewsError, o
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-3xl font-black text-slate-900 dark:text-white">
-            {ratingValue > 0 ? ratingValue.toFixed(1) : "â€”"}
+          <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            {ratingValue > 0 ? ratingValue.toFixed(1) : "—"}
           </span>
           <div>
             <div className="flex items-center gap-0.5">
@@ -715,7 +715,7 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
   const channelInitial = String(channel.name || "C").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 pb-12">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gray-50 dark:bg-gray-950">
       {/* Hero Cover */}
       {isCentre && (
         <div className="relative h-48 sm:h-56 bg-slate-100 dark:bg-slate-800">
@@ -728,7 +728,7 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-[640px] mx-auto px-4">
         {/* Back button */}
         <div className={`${isCentre ? "-mt-2" : "mt-4"} mb-4 flex items-center gap-3`}>
           <Link to={backPath} className="inline-flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm">
@@ -754,7 +754,7 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
                   <CentreVerificationBadge channel={channel} />
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
-                  {channelCategory && <Badge variant="secondary" className="text-[10px] font-semibold">{channelCategory}</Badge>}
+                  {channelCategory && <Badge variant="secondary" className="text-xs font-semibold">{channelCategory}</Badge>}
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     {channel.follower_count || 0} {t("followers") || "Followers"}

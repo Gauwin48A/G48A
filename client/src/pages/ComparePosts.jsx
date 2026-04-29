@@ -183,10 +183,10 @@ export default function ComparePosts() {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 to-white dark:from-gray-950 dark:to-gray-900">
       {/* ── Sticky header ── */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-[640px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -224,7 +224,7 @@ export default function ComparePosts() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-[640px] mx-auto px-4 py-6">
         {/* ── Product cards row ── */}
         <div className="overflow-x-auto pb-2 -mx-4 px-4">
           <div
@@ -272,7 +272,7 @@ export default function ComparePosts() {
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
                     {(item?.location || item?.city) && (
                       <span className="inline-flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
+                        <MapPin className="w-4 h-4" />
                         {item?.location || item?.city}
                       </span>
                     )}

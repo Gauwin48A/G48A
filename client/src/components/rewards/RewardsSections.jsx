@@ -144,9 +144,9 @@ export function RewardsHero({
             'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
         }}
       />
-      <div className="relative max-w-6xl mx-auto px-4 py-2 sm:px-6 sm:py-3">
+      <div className="relative max-w-[640px] mx-auto px-4 py-2 sm:px-6 sm:py-3">
         <div className="mb-2 max-w-2xl text-left">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1">
             {tr("rewards_program", "Your rewards")}
           </p>
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
@@ -185,27 +185,27 @@ export function RewardsHero({
                 </h2>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   <Badge
-                    className={`bg-gradient-to-r ${rankGradient} text-white border-0 text-[10px] px-2 py-1 leading-none`}
+                    className={`bg-gradient-to-r ${rankGradient} text-white border-0 text-xs px-2 py-1 leading-none`}
                     title={`${tr("rewards_rank", "Rewards rank")}: ${
                       rewardsUser?.rank || tr("unknown", "Unknown")
                     }`}
                   >
-                    <Trophy className="w-3 h-3 mr-1" />
+                    <Trophy className="w-4 h-4 mr-1" />
                     {tr("rank", "Rank")}: {rewardsUser?.rank || tr("unknown", "Unknown")}
                   </Badge>
-                  <Badge className="bg-white/15 text-white border-0 text-[10px] px-2 py-1 leading-none">
+                  <Badge className="bg-white/15 text-white border-0 text-xs px-2 py-1 leading-none">
                     {tr("level", "Level")} {rewardsUser?.level ?? "-"}
                   </Badge>
                   <Badge
-                    className={`${planBadgeClass} border-0 text-[10px] px-2 py-1 leading-none`}
+                    className={`${planBadgeClass} border-0 text-xs px-2 py-1 leading-none`}
                     title={`${tr("membership_plan", "Membership plan")}: ${planLabel}`}
                   >
-                    <Sparkles className="w-3 h-3 mr-1" />
+                    <Sparkles className="w-4 h-4 mr-1" />
                     {planLabel}
                   </Badge>
                   {resolvedTrustLabel ? (
                     <Badge
-                      className={`text-[10px] px-2 py-1 leading-none ${trustBadgeClass}`}
+                      className={`text-xs px-2 py-1 leading-none ${trustBadgeClass}`}
                       title={
                         normalizedTrustScore != null
                           ? `${resolvedTrustLabel} · ${normalizedTrustScore}`
@@ -217,16 +217,16 @@ export function RewardsHero({
                     </Badge>
                   ) : null}
                   {isFrozen ? (
-                    <Badge className="text-[10px] px-2 py-1 leading-none bg-rose-600 text-white border-0">
+                    <Badge className="text-xs px-2 py-1 leading-none bg-rose-600 text-white border-0">
                       {tr("account_frozen", "Account Frozen")}
                     </Badge>
                   ) : showUnderReview ? (
-                    <Badge className="text-[10px] px-2 py-1 leading-none bg-amber-500 text-white border-0">
+                    <Badge className="text-xs px-2 py-1 leading-none bg-amber-500 text-white border-0">
                       {tr("seller_under_review", "Under Review")}
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-[10px] text-white/70">
+                <p className="mt-1 text-xs text-white/70">
                   {tr(
                     "rewards_rank_plan_note",
                     "Rewards rank is based on activity and is separate from your membership plan.",
@@ -264,7 +264,7 @@ export function RewardsHero({
               </p>
             </div>
 
-            <div className="mt-1.5 text-[11px] text-white/70 flex items-center gap-2">
+            <div className="mt-1.5 text-xs text-white/70 flex items-center gap-2">
               <Share2 className="w-3.5 h-3.5" />
               {tr("invite_friends_hint", "Invite friends to boost your coins.")}
             </div>
@@ -276,7 +276,7 @@ export function RewardsHero({
               style={{ "--card-accent": "linear-gradient(90deg, #f59e0b, #fbbf24)" }}
             >
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
                   {tr("coin_balance", "Coin Balance")}
                 </p>
               </div>
@@ -299,12 +299,12 @@ export function RewardsHero({
                   }}
                 />
               </div>
-              <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
                 {tr("coin_balance_hint", "Earn coins to unlock rewards")}
               </p>
               {coinDelta?.amount ? (
                 <p
-                  className={`mt-2 text-[10px] font-semibold ${
+                  className={`mt-2 text-xs font-semibold ${
                     coinDelta.amount > 0
                       ? "text-emerald-600 dark:text-emerald-300"
                       : "text-rose-600 dark:text-rose-300"
@@ -320,7 +320,7 @@ export function RewardsHero({
               className="rewards-stat-card rounded-2xl bg-white/90 dark:bg-slate-900/70 text-slate-900 dark:text-slate-100 p-3 shadow-lg border border-slate-100/70 dark:border-slate-800"
               style={{ "--card-accent": "linear-gradient(90deg, #10b981, #34d399)" }}
             >
-              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-300 leading-tight">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-300 leading-tight">
                 {tr("referral_goal", "Invite {{count}} friends to earn {{reward}} coins", {
                   count: referralGoal,
                   reward: referralReward,
@@ -361,7 +361,7 @@ export function RewardsHero({
               className="rewards-stat-card rounded-2xl bg-white/90 dark:bg-slate-900/70 text-slate-900 dark:text-slate-100 p-3 shadow-lg border border-slate-100/70 dark:border-slate-800"
               style={{ "--card-accent": "linear-gradient(90deg, #60a5fa, #a78bfa)" }}
             >
-              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-300 mb-2">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-300 mb-2">
                 {tr("quick_share", "Quick share")}
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -370,7 +370,7 @@ export function RewardsHero({
                   variant="outline"
                   disabled={shareDisabled}
                   size="sm"
-                  className="h-8 rounded-full text-[11px] font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
+                  className="h-8 rounded-full text-xs font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
                   onClick={onShareWhatsApp}
                 >
                   {tr("share_whatsapp", "WhatsApp")}
@@ -380,7 +380,7 @@ export function RewardsHero({
                   variant="outline"
                   disabled={shareDisabled}
                   size="sm"
-                  className="h-8 rounded-full text-[11px] font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
+                  className="h-8 rounded-full text-xs font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
                   onClick={onShareTelegram}
                 >
                   {tr("share_telegram", "Telegram")}
@@ -390,7 +390,7 @@ export function RewardsHero({
                   variant="outline"
                   disabled={shareDisabled}
                   size="sm"
-                  className="h-8 rounded-full text-[11px] font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
+                  className="h-8 rounded-full text-xs font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
                   onClick={onCopyReferralLink}
                 >
                   {tr("copy_link", "Copy Link")}
@@ -400,7 +400,7 @@ export function RewardsHero({
                   variant="outline"
                   disabled={shareDisabled}
                   size="sm"
-                  className="h-8 rounded-full text-[11px] font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
+                  className="h-8 rounded-full text-xs font-semibold bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 dark:bg-slate-900/60 dark:text-slate-100 dark:border-slate-700"
                   onClick={onShareSms}
                 >
                   SMS
@@ -458,7 +458,7 @@ export function RewardsImpactDashboard({
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
               {tr("coin_balance", "Coin Balance")}
             </p>
           </div>
@@ -483,7 +483,7 @@ export function RewardsImpactDashboard({
             </p>
           ) : null}
           <div className="mt-4">
-            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-300 mb-1.5">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-300 mb-1.5">
               <span>
                 {tr("next_reward", "Next reward")}: {nextRewardLabel}
               </span>
@@ -495,7 +495,7 @@ export function RewardsImpactDashboard({
                 style={{ width: `${nextRewardProgress}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-400">
               {nextRewardRemaining > 0
                 ? tr("coins_to_unlock", "{{count}} coins to unlock", {
                     count: nextRewardRemaining,
@@ -522,7 +522,7 @@ export function RewardsImpactDashboard({
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-sm">
               <Calendar className="w-4 h-4 text-white" />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
               {tr("daily_actions", "Daily Actions")}
             </p>
           </div>
@@ -584,7 +584,7 @@ export function RewardsImpactDashboard({
                   }`}
                   onClick={onSpin}
                 >
-                  <Sparkles className="w-3 h-3 mr-1" />
+                  <Sparkles className="w-4 h-4 mr-1" />
                   {spinStatus?.hasSpunToday
                     ? tr("spin_done", "Spun")
                     : tr("spin_now", "Spin")}
@@ -607,7 +607,7 @@ export function RewardsImpactDashboard({
                   }`}
                   onClick={onScratch}
                 >
-                  <Star className="w-3 h-3 mr-1" />
+                  <Star className="w-4 h-4 mr-1" />
                   {tr("scratch_now", "Scratch")}
                 </Button>
               </div>
@@ -633,12 +633,12 @@ export function RewardsImpactDashboard({
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-sm">
               <Users className="w-4 h-4 text-white" />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
               {tr("referral_hub", "Referral Hub")}
             </p>
           </div>
           <div className="rounded-xl bg-white/80 dark:bg-slate-800/60 border border-emerald-100 dark:border-emerald-900/30 px-3 py-2 mb-3">
-            <p className="text-[10px] text-slate-500 dark:text-slate-300">
+            <p className="text-xs text-slate-500 dark:text-slate-300">
               {tr("your_code", "Your code")}
             </p>
             <div className="flex items-center justify-between gap-2">
@@ -663,7 +663,7 @@ export function RewardsImpactDashboard({
               variant="outline"
               size="sm"
               disabled={shareDisabled}
-              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              className="h-8 text-xs font-semibold px-1 border-slate-200 dark:border-slate-600"
               onClick={onShareWhatsApp}
             >
               WA
@@ -673,7 +673,7 @@ export function RewardsImpactDashboard({
               variant="outline"
               size="sm"
               disabled={shareDisabled}
-              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              className="h-8 text-xs font-semibold px-1 border-slate-200 dark:border-slate-600"
               onClick={onShareTelegram}
             >
               TG
@@ -683,24 +683,24 @@ export function RewardsImpactDashboard({
               variant="outline"
               size="sm"
               disabled={shareDisabled}
-              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              className="h-8 text-xs font-semibold px-1 border-slate-200 dark:border-slate-600"
               onClick={onCopyReferralLink}
             >
-              <CopyIcon className="w-3 h-3" />
+              <CopyIcon className="w-4 h-4" />
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={shareDisabled}
-              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              className="h-8 text-xs font-semibold px-1 border-slate-200 dark:border-slate-600"
               onClick={onShareSms}
             >
               SMS
             </Button>
           </div>
           <div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-300 mb-1">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-300 mb-1">
               <span>
                 {referralDisplay}/{referralGoal} {tr("invited", "invited")}
               </span>
@@ -808,7 +808,7 @@ export function RewardsOverview({
                 <div className="relative space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300">
                         {tr("coin_balance", "Coin balance")}
                       </p>
                       <div className="mt-2 flex items-end gap-2">
@@ -841,7 +841,7 @@ export function RewardsOverview({
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                         {tr("level", "Level")}
                       </p>
                       <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
@@ -849,7 +849,7 @@ export function RewardsOverview({
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                         {tr("rewards_rank", "Rewards rank")}
                       </p>
                       <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
@@ -857,7 +857,7 @@ export function RewardsOverview({
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                         {tr("membership_plan", "Membership plan")}
                       </p>
                       <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
@@ -865,7 +865,7 @@ export function RewardsOverview({
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                         {tr("milestones", "Milestones")}
                       </p>
                       <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
@@ -881,7 +881,7 @@ export function RewardsOverview({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 <div className="rounded-2xl border border-indigo-100/80 bg-indigo-50/80 p-4 shadow-sm dark:border-indigo-900/40 dark:bg-indigo-900/20">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
                     {tr("xp_progress", "XP Progress")}
                   </p>
                   <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
@@ -908,7 +908,7 @@ export function RewardsOverview({
                 <div className="rounded-2xl border border-emerald-100/80 bg-emerald-50/80 p-4 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-900/20">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
                         {tr("next_reward", "Next reward")}
                       </p>
                       <p className="mt-2 text-base font-bold text-slate-900 dark:text-white">
@@ -935,7 +935,7 @@ export function RewardsOverview({
                 </div>
 
                 <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/40">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
                     {tr("rewards_summary", "Rewards summary")}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -1002,10 +1002,10 @@ export function RewardsOverview({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-400">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-400">
                           {stat.label}
                         </p>
-                        <p className="text-3xl font-black coin-big-number text-slate-900 dark:text-white mt-0.5">
+                        <p className="text-xl sm:text-3xl font-black coin-big-number text-slate-900 dark:text-white mt-0.5">
                           {stat.value}
                         </p>
                       </div>
@@ -1024,7 +1024,7 @@ export function RewardsOverview({
                         style={{ width: `${stat.progress}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5">
+                    <p className="text-xs text-slate-400 dark:text-slate-400 mt-1.5">
                       {tr("progress_pct", "{{count}}% complete", {
                         count: stat.progress,
                       })}
@@ -1104,7 +1104,7 @@ export function RewardsOverview({
               <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-900/20 dark:via-slate-900 dark:to-slate-900">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
                       {tr("xp_progress", "XP Progress")}
                     </p>
                     <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
@@ -1142,7 +1142,7 @@ export function RewardsOverview({
               <div className="rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-100/60 p-4 shadow-sm dark:border-indigo-900/40 dark:from-indigo-900/20 dark:via-slate-900 dark:to-slate-900">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
                       {tr("streak_progress", "Streak progress")}
                     </p>
                     <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
@@ -1178,7 +1178,7 @@ export function RewardsOverview({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
                       {tr("upcoming_milestone", "Upcoming Milestone")}
                     </p>
                     <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
@@ -1444,7 +1444,7 @@ export function RewardsEarn({
                 return (
                   <div
                     key={reward.day}
-                    className={`checkin-day rounded-xl border-2 p-2 text-center flex flex-col items-center gap-0.5 ${
+                    className={`checkin-day rounded-xl border-2 p-2 text-center flex flex-col items-center gap-1 ${
                       isCompleted
                         ? "border-emerald-400 bg-gradient-to-b from-emerald-50 to-emerald-100 dark:border-emerald-700 dark:from-emerald-900/30 dark:to-emerald-900/20 shadow-sm"
                         : isToday
@@ -1453,7 +1453,7 @@ export function RewardsEarn({
                     }`}
                   >
                     <span
-                      className={`text-[9px] font-bold uppercase ${
+                      className={`text-xs font-bold uppercase ${
                         isCompleted
                           ? "text-emerald-600 dark:text-emerald-400"
                           : isToday
@@ -1472,7 +1472,7 @@ export function RewardsEarn({
                       <Circle className="w-4 h-4 text-slate-300 dark:text-slate-500" />
                     )}
                     <p
-                      className={`text-[9px] font-black ${
+                      className={`text-xs font-black ${
                         isCompleted
                           ? "text-emerald-700 dark:text-emerald-300"
                           : isToday
@@ -1575,7 +1575,7 @@ export function RewardsEarn({
                 )}
               </p>
               {scratchStatus ? (
-                <p className="text-[11px] text-amber-600 dark:text-amber-200 mt-1">
+                <p className="text-xs text-amber-600 dark:text-amber-200 mt-1">
                   {scratchStatus.available
                     ? tr("scratch_available", "Available: {{count}}", {
                         count: scratchStatus.available,
@@ -1763,7 +1763,7 @@ export function RewardsMilestones({
                         key={`${benefit.key}-${index}`}
                         className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"
                       >
-                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                         {perk}
                       </div>
                     ))}
@@ -1828,13 +1828,13 @@ export function RewardsMilestones({
                     <div className="badge-icon text-2xl">{milestone.icon}</div>
                     {milestone.unlocked ? (
                       <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5">
-                        <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
                           {tr("unlocked", "Unlocked")}
                         </span>
                       </div>
                     ) : (
                       <div className="inline-flex items-center rounded-full bg-slate-200/60 dark:bg-slate-700/40 px-2 py-0.5">
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wide">
+                        <span className="text-xs text-slate-400 uppercase tracking-wide">
                           {tr("locked", "Locked")}
                         </span>
                       </div>
@@ -1855,7 +1855,7 @@ export function RewardsMilestones({
                     </p>
                   ) : null}
                   <div className="mt-4">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-300">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
                       <span>{tr("progress", "Progress")}</span>
                       <span>
                         {progressValue}/{progressMax}
@@ -1873,7 +1873,7 @@ export function RewardsMilestones({
                     </div>
                   </div>
                   {milestone.meta ? (
-                    <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-300">
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
                       {milestone.meta}
                     </p>
                   ) : null}
@@ -1922,7 +1922,7 @@ export function RewardsRedeem({
         <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 p-4 dark:border-indigo-900/40 dark:from-indigo-900/20 dark:via-slate-900 dark:to-slate-900">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
                 {tr("available_coins", "Available coins")}
               </p>
               <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
@@ -1994,13 +1994,13 @@ export function RewardsRedeem({
                   </div>
 
                   <div className="shrink-0 rounded-2xl bg-white/80 px-3 py-2 text-right shadow-sm dark:bg-slate-950/40">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-300">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-300">
                       {tr("cost", "Cost")}
                     </p>
                     <p className="mt-1 text-2xl font-black text-amber-600 dark:text-amber-300">
                       {option.cost}
                     </p>
-                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-300">
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-300">
                       {tr("coins", "coins")}
                     </p>
                   </div>
@@ -2418,7 +2418,7 @@ export function RewardsReferrals({
               </Badge>
             ) : null}
             {joinDate ? (
-              <span className="text-[11px]">
+              <span className="text-xs">
                 {tr("joined", "Joined")} {joinDate}
               </span>
             ) : null}
@@ -2670,7 +2670,7 @@ export function RewardsReferrals({
                             </Badge>
                           ) : null}
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-emerald-700/80 dark:text-emerald-200/80">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-emerald-700/80 dark:text-emerald-200/80">
                           {referral.joinDate ? (
                             <span>
                               {tr("joined", "Joined")} {referral.joinDate}
@@ -2725,7 +2725,7 @@ export function RewardsReferrals({
                             </Badge>
                           ) : null}
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-blue-700/80 dark:text-blue-200/80">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-blue-700/80 dark:text-blue-200/80">
                           {referral.joinDate ? (
                             <span>
                               {tr("joined", "Joined")} {referral.joinDate}
@@ -2787,7 +2787,7 @@ export function RewardsReferrals({
                     "--card-accent": "linear-gradient(90deg, #6366f1, #22d3ee)",
                   }}
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                     {tr("level", "Level")} {rule.level}
                   </p>
                   <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
@@ -2892,7 +2892,7 @@ export function RewardsLeaderboard({
                   </p>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-2xl font-black text-slate-900 dark:text-slate-50">
+                      <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-50">
                         #{currentReferralRank.rank || tr("unknown", "Unknown")}
                       </p>
                       <p className="text-xs text-slate-600 dark:text-slate-300">

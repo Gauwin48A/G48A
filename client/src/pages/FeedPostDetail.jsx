@@ -174,19 +174,20 @@ const X = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:bg-gradient-to-b",
+              "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 to-white dark:bg-gradient-to-b",
           },
           e.createElement(
             "div",
             {
               className:
-                "sticky top-0 z-50 mhub-premium-bar shadow-sm",
+                "sticky z-50 mhub-premium-bar shadow-sm",
+              style: { top: "var(--top-nav-height, 60px)" },
             },
             e.createElement(
               "div",
               {
                 className:
-                  "max-w-4xl mx-auto px-4 py-3 flex items-center gap-4 page-shell page-pad",
+                  "max-w-[640px] mx-auto px-4 py-3 flex items-center gap-4 page-shell page-pad",
               },
               e.createElement(
                 "button",
@@ -205,7 +206,7 @@ const X = () => {
               ),
               e.createElement(
                 "div",
-                { className: "flex-1 text-center dark:text-center" },
+                { className: "flex-1 text-center" },
                 e.createElement(
                   "span",
                   { className: "text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300" },
@@ -217,7 +218,7 @@ const X = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 py-8 page-shell page-pad" },
+            { className: "max-w-[640px] mx-auto px-4 py-8 page-shell page-pad" },
             e.createElement(
               O,
               {
@@ -228,7 +229,7 @@ const X = () => {
                 "div",
                 {
                   className:
-                    "flex items-center gap-4 p-6 border-b dark:border-gray-700 dark:border-b",
+                    "flex items-center gap-4 p-6 border-b dark:border-b",
                 },
                 e.createElement(
                   D,
@@ -249,7 +250,7 @@ const X = () => {
                     "h3",
                     {
                       className:
-                        "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
+                        "font-bold text-lg text-gray-900 dark:text-gray-100",
                     },
                     post.user?.name || post.username || tr("anonymous", "Anonymous"),
                   ),
@@ -285,7 +286,7 @@ const X = () => {
                     "h1",
                     {
                       className:
-                        "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight dark:text-gray-100",
+                        "text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight dark:text-gray-100",
                     },
                     post.title,
                   ),
@@ -307,7 +308,7 @@ const X = () => {
                 "div",
                 {
                   className:
-                    "flex flex-wrap items-center justify-between gap-4 px-6 py-4 mhub-premium-bar border-t dark:border-gray-700 dark:border-t",
+                    "flex flex-wrap items-center justify-between gap-4 px-6 py-4 mhub-premium-bar border-t dark:border-t",
                 },
                 e.createElement(
                   "div",
@@ -346,7 +347,7 @@ const X = () => {
                     "span",
                     {
                       className:
-                        "flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                        "flex items-center gap-2 text-gray-500 dark:text-gray-300",
                     },
                     e.createElement(K, { className: "w-4 h-4" }),
                     e.createElement(
@@ -362,7 +363,7 @@ const X = () => {
             ),
             e.createElement(
               "div",
-              { className: "text-center mt-8 dark:text-center" },
+              { className: "text-center mt-8" },
               e.createElement(
                 N,
                 {

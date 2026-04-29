@@ -222,8 +222,8 @@ const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
                   max={originalPrice - 1}
                 />
                 {offerPrice && discount > 0 && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-sm font-medium flex items-center gap-1">
-                    <Percent className="w-3 h-3" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 px-2 py-1 rounded text-sm font-medium flex items-center gap-1">
+                    <Percent className="w-4 h-4" />
                     {discount}% off
                   </span>
                 )}

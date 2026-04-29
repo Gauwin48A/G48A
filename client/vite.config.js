@@ -206,7 +206,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: false,
-      modulePreload: false,
+      modulePreload: true,
       // Strip console.log/warn in production, keep errors + mangle for obfuscation
       minify: 'terser',
       terserOptions: {
@@ -214,7 +214,7 @@ export default defineConfig(({ mode }) => {
           drop_console: true,
           drop_debugger: true,
           pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-          passes: 3,
+          passes: 1,
           dead_code: true,
           conditionals: true,
           evaluate: true,

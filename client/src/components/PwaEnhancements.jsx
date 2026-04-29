@@ -4,7 +4,14 @@
  * Mount once in App.jsx: <PwaEnhancements />
  */
 import { useState, useEffect, useCallback } from 'react';
-import { promptInstall, skipWaiting, registerSW, initInstallPrompt } from '@/lib/pwa';
+import {
+  promptInstall,
+  skipWaiting,
+  registerSW,
+  initInstallPrompt,
+  disableServiceWorkersForNativeRuntime,
+  isNativeRuntime,
+} from '@/lib/pwa';
 import { initWebVitals } from '@/lib/webVitals';
 import { isOnline, onOnlineChange } from '@/lib/network';
 import { requestSoftReload } from '@/utils/softReload';
@@ -12,6 +19,7 @@ import { requestSoftReload } from '@/utils/softReload';
 let initialized = false;
 
 export default function PwaEnhancements() {
+  const nativeRuntime = typeof window !== 'undefined' && isNativeRuntime();
   const [installable, setInstallable] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
   const [offline, setOffline] = useState(!isOnline());
@@ -20,6 +28,11 @@ export default function PwaEnhancements() {
   useEffect(() => {
     if (initialized) return;
     initialized = true;
+
+    if (nativeRuntime) {
+      disableServiceWorkersForNativeRuntime();
+      return;
+    }
 
     // Init all fire-and-forget systems
     initInstallPrompt();
@@ -45,7 +58,7 @@ export default function PwaEnhancements() {
       window.removeEventListener('mhub:sw-update', onUpdate);
       unsub();
     };
-  }, []);
+  }, [nativeRuntime]);
 
   const handleInstall = useCallback(async () => {
     await promptInstall();
@@ -61,11 +74,15 @@ export default function PwaEnhancements() {
     });
   }, []);
 
+  if (nativeRuntime) {
+    return null;
+  }
+
   return (
     <>
       {/* Offline banner */}
       {offline && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-center py-2 px-4 text-[13px] font-semibold">
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-center py-2 px-4 text-sm font-semibold">
           You&apos;re offline - browsing cached content
         </div>
       )}
@@ -76,11 +93,11 @@ export default function PwaEnhancements() {
           <span className="text-sm">📲 Install MHub for the best experience</span>
           <div className="flex gap-2 shrink-0">
             <button onClick={() => setDismissed((d) => ({ ...d, install: true }))}
-              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-[13px] cursor-pointer">
+              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-sm cursor-pointer">
               Later
             </button>
             <button onClick={handleInstall}
-              className="bg-blue-500 text-white border-none rounded-lg px-4 py-1.5 text-[13px] font-semibold cursor-pointer hover:bg-blue-600 transition-colors">
+              className="bg-blue-500 text-white border-none rounded-lg px-4 py-1.5 text-sm font-semibold cursor-pointer hover:bg-blue-600 transition-colors">
               Install
             </button>
           </div>
@@ -93,11 +110,11 @@ export default function PwaEnhancements() {
           <span className="text-sm">🚀 New version available</span>
           <div className="flex gap-2 shrink-0">
             <button onClick={() => setDismissed((d) => ({ ...d, update: true }))}
-              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-[13px] cursor-pointer">
+              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-sm cursor-pointer">
               Later
             </button>
             <button onClick={handleUpdate}
-              className="bg-emerald-500 text-white border-none rounded-lg px-4 py-1.5 text-[13px] font-semibold cursor-pointer hover:bg-emerald-600 transition-colors">
+              className="bg-emerald-500 text-white border-none rounded-lg px-4 py-1.5 text-sm font-semibold cursor-pointer hover:bg-emerald-600 transition-colors">
               Update
             </button>
           </div>

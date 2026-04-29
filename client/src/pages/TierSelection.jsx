@@ -258,18 +258,18 @@ function FaqItem({ question, answer }) {
     return { button: `faq-btn-${id}`, content: `faq-content-${id}` };
   });
   return (
-    <div className="border-b border-slate-200 dark:border-gray-700 last:border-0 dark:border-b dark:border-slate-700 dark:last:border-0">
+    <div className="border-b border-slate-200 dark:border-gray-700 last:border-0 dark:border-slate-700 dark:last:border-0">
       <button
         type="button"
         id={ids.button}
         aria-controls={ids.content}
-        className="flex w-full items-center justify-between py-4 text-left group focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 rounded-lg dark:text-left"
+        className="flex w-full items-center justify-between py-4 text-left group focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 rounded-lg"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors dark:text-slate-200 dark:group-hover:text-slate-100">{question}</span>
         <span className={`ml-2 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
-          <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 dark:text-slate-300" />
+          <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-300" />
         </span>
       </button>
       <div
@@ -653,15 +653,15 @@ export default function TierSelection() {
       <div className="overflow-x-auto scrollbar-hide">
         <table className="mhub-comparison-table" role="table" aria-label="Plan comparison">
           <thead>
-            <tr className="border-b-2 border-gray-200 dark:border-slate-600 dark:border-b-2 dark:border-gray-700">
-              <th scope="col" className="text-left dark:text-left">{tr("feature", "Feature")}</th>
+            <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+              <th scope="col" className="text-left">{tr("feature", "Feature")}</th>
               <th scope="col">{tr("basic_plan", "Basic")}</th>
               <th scope="col">{tr("bronze_seller", "Bronze")}</th>
               <th scope="col" className="highlight-col">{tr("silver_seller", "Silver")}</th>
               <th scope="col">{tr("premium", "Premium")}</th>
             </tr>
           </thead>
-          <tbody className="text-gray-700 dark:text-slate-300 dark:text-gray-200">
+          <tbody className="text-gray-700 dark:text-gray-200">
             <tr>
               <td>{tr("active_listings", "Active Listings")}</td>
               <td>1</td>
@@ -678,52 +678,52 @@ export default function TierSelection() {
             </tr>
             <tr>
               <td>{tr("boosts_month", "Boosts")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">Coins</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">Coins</td>
               <td className="highlight-col">5/6mo</td>
               <td>5/mo</td>
             </tr>
             <tr>
               <td>{tr("featured_month", "Featured")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
               <td className="highlight-col">5/6mo</td>
               <td>5/mo</td>
             </tr>
             <tr>
               <td>{tr("spotlight_month", "Spotlight")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
               <td className="highlight-col">5/6mo</td>
               <td>5/mo</td>
             </tr>
             <tr>
               <td>{tr("seller_badge_label", "Badge")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
               <td>Seller</td>
               <td className="highlight-col">Verified</td>
               <td>Premium</td>
             </tr>
             <tr>
               <td>{tr("analytics_label", "Analytics")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
               <td>Basic</td>
               <td className="highlight-col">Full</td>
               <td>Full</td>
             </tr>
             <tr>
               <td>{tr("free_trial_label", "Free Trial")}</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
-              <td className="text-gray-400 dark:text-slate-500 dark:text-gray-300">-</td>
-              <td className="highlight-col font-semibold text-blue-600 dark:text-blue-400 dark:text-blue-300">7 days</td>
-              <td className="font-semibold text-yellow-600 dark:text-yellow-400 dark:text-yellow-300">14 days</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
+              <td className="text-gray-400 dark:text-gray-300">-</td>
+              <td className="highlight-col font-semibold text-blue-600 dark:text-blue-300">7 days</td>
+              <td className="font-semibold text-yellow-600 dark:text-yellow-300">14 days</td>
             </tr>
             <tr>
               <td>{tr("monthly_cost_label", "Monthly Cost")}</td>
               <td>{formatCurrency(500)}/listing</td>
               <td>~{formatCurrency(283)}</td>
-              <td className="highlight-col font-bold text-green-600 dark:text-green-400 dark:text-green-300">~{formatCurrency(200)}</td>
-              <td className="font-bold text-green-600 dark:text-green-400 dark:text-green-300">~{formatCurrency(125)}</td>
+              <td className="highlight-col font-bold text-green-600 dark:text-green-300">~{formatCurrency(200)}</td>
+              <td className="font-bold text-green-600 dark:text-green-300">~{formatCurrency(125)}</td>
             </tr>
           </tbody>
         </table>
@@ -974,7 +974,7 @@ export default function TierSelection() {
   }, [cmsContent, tr]);
 
   return (
-    <div className={`mhub-page-tier min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-100 py-6 px-4 sm:px-6 dark:bg-gradient-to-b ${densityClass}`}>
+    <div className={`mhub-page-tier min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-100 py-6 px-4 sm:px-6 dark:bg-gradient-to-b ${densityClass}`}>
       <style>{`
         @keyframes tierFadeIn {
           from { opacity: 0; transform: translateY(16px); }
@@ -987,7 +987,7 @@ export default function TierSelection() {
       `}</style>
 
       {/* Hero section */}
-      <div className="mx-auto max-w-6xl mb-8">
+      <div className="mx-auto max-w-[640px] mb-8">
         <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 overflow-hidden relative dark:bg-gradient-to-br">
           {/* SVG cross pattern overlay */}
           <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
@@ -1030,7 +1030,7 @@ export default function TierSelection() {
                       {tr("compare_plans", "Compare plans")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-5xl w-[min(96vw,1024px)]">
+                  <DialogContent className="max-w-[640px] w-[min(96vw,1024px)]">
                     <DialogHeader>
                       <DialogTitle>{tr("compare_plans", "Compare plans")}</DialogTitle>
                     </DialogHeader>
@@ -1048,7 +1048,7 @@ export default function TierSelection() {
               </div>
             </div>
             {/* Hero text */}
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
               {tr("membership_plans_label", "Membership Plans")}
             </p>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white dark:text-white">
@@ -1066,8 +1066,8 @@ export default function TierSelection() {
 
       {/* Flash sale banner */}
       {flashSale ? (
-        <div data-density="extra" className="mx-auto max-w-6xl mb-6 page-shell page-pad">
-          <div className="rounded-2xl bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 p-4 text-white text-center shadow-xl shadow-orange-500/20 relative overflow-hidden dark:bg-gradient-to-r dark:text-white dark:text-center">
+        <div data-density="extra" className="mx-auto max-w-[640px] mb-6 page-shell page-pad">
+          <div className="rounded-2xl bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 p-4 text-white text-center shadow-xl shadow-orange-500/20 relative overflow-hidden dark:bg-gradient-to-r">
             <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_100%] animate-[shimmer_3s_ease-in-out_infinite] dark:bg-slate-900" />
             <div className="relative flex items-center justify-center gap-2 font-black text-lg">
               <Zap className="w-5 h-5 drop-shadow-sm" />
@@ -1083,7 +1083,7 @@ export default function TierSelection() {
 
       {/* Current plan banner */}
       {(currentSubscription || normalizedCurrentPlan) && !subscriptionSummary.loading ? (
-        <div className="mx-auto max-w-6xl mb-6 page-shell page-pad">
+        <div className="mx-auto max-w-[640px] mb-6 page-shell page-pad">
           <div className="mhub-premium-surface rounded-2xl p-5">
             <div className="flex flex-wrap items-start gap-4">
               <div className="flex-1 min-w-0">
@@ -1091,13 +1091,13 @@ export default function TierSelection() {
                   <Badge className="bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 text-xs dark:bg-slate-950 dark:text-slate-200">
                     {tr("current_plan_status", "Current plan")}
                   </Badge>
-                  <span className="text-base font-black text-slate-900 dark:text-white dark:text-slate-100">{currentPlanLabel}</span>
+                  <span className="text-base font-black text-slate-900 dark:text-slate-100">{currentPlanLabel}</span>
                   {currentSubscription?.isTrial ? (
-                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs dark:bg-blue-950/20 dark:text-blue-300 dark:border dark:border-blue-600/40">
+                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-600/40">
                       {tr("trial_active", "Trial active")}
                     </Badge>
                   ) : currentSubscription ? (
-                    <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs dark:bg-emerald-950/20 dark:text-emerald-300 dark:border dark:border-emerald-600/40">
+                    <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-600/40">
                       {tr("active_now", "Active")}
                     </Badge>
                   ) : (
@@ -1111,7 +1111,7 @@ export default function TierSelection() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1 dark:text-slate-300">
                       {tr("expires_label", "Expires")}
                     </p>
-                    <p className="font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200">
+                    <p className="font-medium text-slate-700 dark:text-slate-200">
                       {subscriptionExpiresLabel || tr("no_expiry", "No expiry set")}
                     </p>
                   </div>
@@ -1119,7 +1119,7 @@ export default function TierSelection() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1 dark:text-slate-300">
                       {tr("quota_reset", "Quota reset")}
                     </p>
-                    <p className="font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200">
+                    <p className="font-medium text-slate-700 dark:text-slate-200">
                       {quotaResetLabel || tr("not_applicable", "N/A")}
                     </p>
                   </div>
@@ -1189,12 +1189,12 @@ export default function TierSelection() {
           </div>
         </div>
       ) : subscriptionSummary.loading ? (
-        <div className="mx-auto max-w-6xl mb-6 page-shell page-pad">
+        <div className="mx-auto max-w-[640px] mb-6 page-shell page-pad">
           <div className="h-24 rounded-2xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite] dark:bg-gradient-to-r" />
         </div>
       ) : subscriptionSummary.error ? (
-        <div className="mx-auto max-w-6xl mb-6 page-shell page-pad">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex flex-wrap items-center gap-3 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+        <div className="mx-auto max-w-[640px] mb-6 page-shell page-pad">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex flex-wrap items-center gap-3 dark:border-amber-600/40 dark:bg-amber-950/20">
             <p className="text-sm text-amber-700 flex-1 dark:text-amber-300">{subscriptionSummary.error}</p>
             <Button
               type="button"
@@ -1211,7 +1211,7 @@ export default function TierSelection() {
 
       {/* Processing / activated banners */}
       {processingTier ? (
-        <p className="max-w-md mx-auto mb-4 text-center text-sm text-blue-600 page-shell page-pad flex items-center justify-center gap-2 dark:text-center dark:text-blue-300">
+        <p className="max-w-md mx-auto mb-4 text-center text-sm text-blue-600 page-shell page-pad flex items-center justify-center gap-2 dark:text-blue-300">
           <Loader2 className="w-4 h-4 animate-spin" />
           {t("tier_upgrading_plan", { defaultValue: "Redirecting to payment" })}
           <span className="inline-flex gap-0.5" aria-hidden="true">
@@ -1223,7 +1223,7 @@ export default function TierSelection() {
       ) : null}
 
       {activatedTier ? (
-        <div className="max-w-md mx-auto mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center page-shell page-pad dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20 dark:text-center">
+        <div className="max-w-md mx-auto mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center page-shell page-pad dark:border-emerald-600/40 dark:bg-emerald-950/20">
           <Sparkles className="w-8 h-8 text-emerald-500 mx-auto mb-2 animate-pulse dark:text-emerald-300" />
           <p className="text-emerald-700 font-bold dark:text-emerald-300">
             {t("tier_activated_redirect", { plan: activatedTierLabel, defaultValue: `${activatedTierLabel} trial activated!` })}
@@ -1234,10 +1234,10 @@ export default function TierSelection() {
       {/* Error banner */}
       {error ? (
         <div
-          className="max-w-md mx-auto mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 page-shell page-pad dark:border dark:border-red-600/40 dark:bg-red-950/20"
+          className="max-w-md mx-auto mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 page-shell page-pad dark:border-red-600/40 dark:bg-red-950/20"
           role="alert"
         >
-          <div className="flex items-start gap-3 text-left dark:text-left">
+          <div className="flex items-start gap-3 text-left">
             <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0 dark:text-red-300" />
             <div className="flex-1">
               <p className="text-red-800 font-bold dark:text-red-200">{t("upgrade_failed", { defaultValue: "Action failed" })}</p>
@@ -1246,7 +1246,7 @@ export default function TierSelection() {
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md p-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 dark:text-red-200 dark:hover:text-red-300 dark:hover:bg-red-950/20"
+              className="text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md p-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 dark:text-red-200 dark:hover:text-red-300 dark:hover:bg-red-950/20"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1265,7 +1265,7 @@ export default function TierSelection() {
       ) : null}
 
       {/* Plan cards — 2x2 on mobile, 4-col on desktop */}
-      <div className="max-w-7xl mx-auto grid gap-5 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch page-shell page-pad mb-8">
+      <div className="max-w-[640px] mx-auto grid gap-5 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch page-shell page-pad mb-8">
         {resolvedPlans.map((plan, planIndex) => {
           const Icon = plan.icon;
           const isProcessing = processingTier === plan.key;
@@ -1302,7 +1302,7 @@ export default function TierSelection() {
                 </div>
               ) : null}
               {plan.featured ? (
-                <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-center py-1 font-black text-xs shadow-lg shadow-yellow-500/30 dark:bg-yellow-800/30 dark:text-slate-100 dark:text-center">
+                <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-center py-1 font-black text-xs shadow-lg shadow-yellow-500/30 dark:bg-yellow-800/30">
                   {t("best_value", { defaultValue: "Best Value" })}
                 </div>
               ) : null}
@@ -1310,8 +1310,8 @@ export default function TierSelection() {
               {/* Active plan badge */}
               {isCurrentPlan ? (
                 <div className="absolute left-3 top-3 z-10">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-black text-white dark:bg-emerald-800/30 dark:text-white">
-                    <Check className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-1 text-xs font-black text-white dark:bg-emerald-800/30 dark:text-white">
+                    <Check className="w-4 h-4" />
                     {isCurrentTrial ? tr("trial_live_badge", "Trial live") : tr("current_plan_badge", "Active")}
                   </span>
                 </div>
@@ -1324,7 +1324,7 @@ export default function TierSelection() {
                     <Icon className={`w-6 h-6 ${plan.iconColor}`} />
                   </div>
                   <div>
-                    <p className="text-lg font-black text-slate-900 dark:text-white dark:text-slate-100">
+                    <p className="text-lg font-black text-slate-900 dark:text-slate-100">
                       {tr(plan.nameKey, plan.nameFallback || plan.key)}
                     </p>
                     <p className={`text-xs ${plan.accentColor}`}>
@@ -1334,7 +1334,7 @@ export default function TierSelection() {
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className={`text-4xl font-black tracking-tight tabular-nums ${plan.priceColor}`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                  <span className={`text-2xl sm:text-4xl font-black tracking-tight tabular-nums ${plan.priceColor}`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
                     {plan.price}
                   </span>
                   <span className="text-sm text-slate-400 dark:text-slate-300">
@@ -1356,11 +1356,11 @@ export default function TierSelection() {
                     <li key={feature.key} className="flex items-start gap-2 text-sm">
                       {feature.included ? (
                         <span className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full ${plan.iconBg}`}>
-                          <Check className="w-3 h-3 text-emerald-500 dark:text-emerald-400 dark:text-emerald-300" />
+                          <Check className="w-4 h-4 text-emerald-500 dark:text-emerald-300" />
                         </span>
                       ) : (
                         <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gray-700 opacity-50 dark:bg-slate-950">
-                          <X className="w-3 h-3 text-slate-300 dark:text-slate-600 dark:text-slate-300" />
+                          <X className="w-4 h-4 text-slate-300 dark:text-slate-300" />
                         </span>
                       )}
                       <span
@@ -1428,7 +1428,7 @@ export default function TierSelection() {
                   </Button>
                 ) : null}
 
-                <p className="text-xs text-slate-400 text-center pt-1 dark:text-slate-300 dark:text-center">
+                <p className="text-xs text-slate-400 text-center pt-1">
                   {isCurrentPlan
                     ? tr("current_plan_hint", "This is your active plan.")
                     : plan.key === "basic"
@@ -1442,15 +1442,15 @@ export default function TierSelection() {
       </div>
 
       {/* Divider */}
-      <div className="max-w-6xl mx-auto page-shell page-pad"><hr className="mhub-divider" /></div>
+      <div className="max-w-[640px] mx-auto page-shell page-pad"><hr className="mhub-divider" /></div>
 
       {/* Cost calculator */}
-      <div className="max-w-6xl mx-auto mb-6 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto mb-6 page-shell page-pad">
         <div className="mhub-premium-surface rounded-2xl p-6">
           <h2 className="text-lg font-black text-slate-900 dark:text-white mb-4 dark:text-slate-100">
             {tr("monthly_cost_calculator", "Monthly Cost Calculator")}
           </h2>
-          <div className="rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4 mb-4 dark:border dark:border-slate-700 dark:bg-slate-950">
+          <div className="rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4 mb-4 dark:border-slate-700 dark:bg-slate-950">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div>
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
@@ -1492,7 +1492,7 @@ export default function TierSelection() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-gray-600 dark:text-left dark:text-slate-300 dark:border-b dark:border-slate-700">
+                <tr className="text-left text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-gray-600 dark:text-slate-300 dark:border-slate-700">
                   <th scope="col" className="py-2 font-semibold">{tr("plan", "Plan")}</th>
                   <th scope="col" className="py-2 font-semibold">{tr("monthly_cost", "Monthly cost")}</th>
                   <th scope="col" className="py-2 font-semibold">{tr("per_listing", "Per listing")}</th>
@@ -1501,11 +1501,11 @@ export default function TierSelection() {
               <tbody>
                 {calculatorRows.map((row) => (
                   <tr key={row.key} className={`border-t border-slate-100 dark:border-gray-700 transition-colors duration-300 ${row.highlighted ? "bg-emerald-50/50 dark:bg-emerald-900/20 font-semibold" : ""} ${normalizedCurrentPlan === row.key ? "bg-blue-50/50 dark:bg-blue-900/20" : ""}`}>
-                    <td className="py-2.5 font-bold text-slate-700 dark:text-slate-300 dark:text-slate-200">
+                    <td className="py-2.5 font-bold text-slate-700 dark:text-slate-200">
                       <span className="flex items-center gap-2">
                         {row.name}
                         {normalizedCurrentPlan === row.key ? (
-                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300">
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300">
                             {tr("your_plan", "Yours")}
                           </span>
                         ) : null}
@@ -1526,7 +1526,7 @@ export default function TierSelection() {
       </div>
 
       {/* Subscription history */}
-      <div className="max-w-6xl mx-auto mb-6 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto mb-6 page-shell page-pad">
         <div className="mhub-premium-surface rounded-2xl p-6">
           <h2 className="text-base font-black text-slate-900 dark:text-white mb-4 dark:text-slate-100">
             {tr("subscription_history", "Subscription history")}
@@ -1551,7 +1551,7 @@ export default function TierSelection() {
               {recentSubscriptionHistory.map((entry) => (
                 <div
                   key={entry.id}
-                  className="rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 px-4 py-3 dark:border dark:border-slate-700 dark:bg-slate-950"
+                  className="rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950"
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <p className="font-bold text-slate-700 text-sm dark:text-slate-200">
@@ -1584,7 +1584,7 @@ export default function TierSelection() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-4 dark:text-center">
+            <div className="text-center py-4">
               <Clock className="w-8 h-8 text-slate-300 mx-auto mb-2 dark:text-slate-300" />
               <p className="text-sm text-slate-400 dark:text-slate-300">
                 {tr("subscription_history_empty", "No subscription changes yet.")}
@@ -1598,10 +1598,10 @@ export default function TierSelection() {
       </div>
 
       {/* Divider */}
-      <div className="max-w-4xl mx-auto page-shell page-pad"><hr className="mhub-divider" /></div>
+      <div className="max-w-[640px] mx-auto page-shell page-pad"><hr className="mhub-divider" /></div>
 
       {/* FAQ */}
-      <div data-density="extra" className="max-w-2xl mx-auto mb-8 page-shell page-pad">
+      <div data-density="extra" className="max-w-[640px] mx-auto mb-8 page-shell page-pad">
         <div className="mhub-premium-surface rounded-2xl px-6 py-4">
           <h2 className="text-base font-black text-slate-900 dark:text-white mb-2 dark:text-slate-100">
             {tr("faq_title", "Frequently asked questions")}
@@ -1613,7 +1613,7 @@ export default function TierSelection() {
       </div>
 
       {/* Footer note */}
-      <div className="max-w-4xl mx-auto pb-6 text-center page-shell page-pad dark:text-center">
+      <div className="max-w-[640px] mx-auto pb-6 text-center page-shell page-pad">
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-slate-400 dark:text-slate-500 backdrop-blur-sm mhub-premium-bar rounded-2xl px-6 py-3 dark:text-slate-300">
           <span className="flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5" />

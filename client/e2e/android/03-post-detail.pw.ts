@@ -75,12 +75,16 @@ for (const mode of MODES) {
     });
 
     test("login prompt shown when trying protected actions", async ({ page }) => {
-      // Try clicking any action that requires auth
+      // Try clicking any action that requires auth — find a visible one
       const actionBtns = page.locator("button").filter({ hasText: /add to cart|wishlist|save|buy|contact/i });
-      if (await actionBtns.count() > 0) {
-        await actionBtns.first().click();
-        await page.waitForTimeout(500);
-        await screenshotViewport(page, `03-post-detail-auth-prompt-${mode}`);
+      const count = await actionBtns.count();
+      for (let i = 0; i < count; i++) {
+        if (await actionBtns.nth(i).isVisible()) {
+          await actionBtns.nth(i).click();
+          await page.waitForTimeout(500);
+          await screenshotViewport(page, `03-post-detail-auth-prompt-${mode}`);
+          break;
+        }
       }
     });
   });

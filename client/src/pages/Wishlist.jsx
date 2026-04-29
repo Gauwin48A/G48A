@@ -44,6 +44,8 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { getUserId, isAuthenticated } from "@/utils/authStorage";
+import { isParityOfflineAuthMode } from "@/utils/parityMode";
+import { buildParityWishlistFallback } from "@/utils/parityFallbackData";
 import { getApiOriginBase } from "@/lib/networkConfig";
 import {
   buildActiveAppMatcher,
@@ -123,6 +125,7 @@ const Wishlist = () => {
 
   const isAuth = isAuthenticated(user);
   const userId = getUserId(user);
+  const parityOfflineMode = useMemo(() => isParityOfflineAuthMode(), []);
   const handleBack = useCallback(
     () => navigateBack(navigate),
     [navigate],
@@ -180,8 +183,29 @@ const Wishlist = () => {
       } catch (err) {
         if (import.meta.env.DEV) console.error("Failed to fetch wishlist:", err);
         if (currentId === fetchIdRef.current) {
-          setError(t("failed_load_wishlist"));
-          if (reset) setItems([]);
+          if (parityOfflineMode) {
+            const fallbackItems = buildParityWishlistFallback(userId);
+            const filteredFallback = fallbackItems.filter((item) => {
+              const status = String(item?.status || "active").toLowerCase();
+              const matchesStatus = statusFilter === "all" || status === statusFilter;
+              if (!matchesStatus) return false;
+              const query = String(searchQuery || "").trim().toLowerCase();
+              if (!query) return true;
+              const haystack = `${item?.title || ""} ${item?.description || ""} ${item?.category_name || ""}`.toLowerCase();
+              return haystack.includes(query);
+            });
+            setCursor(null);
+            cursorRef.current = null;
+            setHasMore(false);
+            setItems(filteredFallback);
+            const ids = extractSavedPostIds(filteredFallback);
+            savedIdsRef.current = new Set(ids);
+            replaceSavedPostIds(ids);
+            setError(null);
+          } else {
+            setError(t("failed_load_wishlist"));
+            if (reset) setItems([]);
+          }
         }
       } finally {
         if (currentId === fetchIdRef.current) {
@@ -199,6 +223,7 @@ const Wishlist = () => {
       statusFilter,
       t,
       userId,
+      parityOfflineMode,
     ],
   );
 
@@ -350,7 +375,9 @@ const Wishlist = () => {
 
   const getImageUrl = (item) => {
     const raw = item.images?.[0] || item.image_url;
-    return raw ? (raw.startsWith("http") ? raw : `${getApiOriginBase()}${raw}`) : "/placeholder.svg";
+    if (!raw) return "/placeholder.svg";
+    if (/^(https?:|data:)/i.test(raw)) return raw;
+    return `${getApiOriginBase()}${raw}`;
   };
 
   const buildCartItem = useCallback(
@@ -480,7 +507,7 @@ const Wishlist = () => {
   const gridClassName = isListView
     ? "grid-cols-1"
     : displayItems.length <= 2
-      ? "grid-cols-1 sm:grid-cols-2 max-w-5xl"
+      ? "grid-cols-1 sm:grid-cols-2 max-w-[640px]"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3";
 
   const removeSelected = useCallback(async () => {
@@ -533,7 +560,7 @@ const Wishlist = () => {
         className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-slate-950 ${densityClass}`}
       >
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin dark:border-2 dark:border-pink-600/40 dark:border-t-transparent" />
+          <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin dark:border-t-transparent" />
           <p className="text-gray-500 dark:text-gray-400 text-sm font-medium dark:text-gray-300">
             {t("loading") || "Loading..."}
           </p>
@@ -553,7 +580,7 @@ const Wishlist = () => {
         <div className="absolute top-20 -left-32 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/30" />
         <div className="absolute bottom-20 -right-32 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/30" />
 
-        <div className="mhub-premium-surface rounded-3xl p-8 sm:p-10 max-w-md w-full text-center relative z-10 border border-white/60 dark:border-gray-700/40 shadow-xl shadow-pink-500/5 dark:text-center dark:border dark:border-white/60">
+        <div className="mhub-premium-surface rounded-3xl p-8 sm:p-10 max-w-md w-full text-center relative z-10 border border-white/60 dark:border-gray-700/40 shadow-xl shadow-pink-500/5 dark:border-white/60">
           {/* Icon */}
           <div className="relative w-20 h-20 mx-auto mb-6">
             <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 rounded-full blur-xl opacity-60 dark:bg-gradient-to-br" />
@@ -562,10 +589,10 @@ const Wishlist = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {t("sign_in_to_view_wishlist") || "Sign in to view Wishlist"}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed dark:text-gray-300">
+          <p className="text-sm text-gray-500 dark:text-gray-300 mb-8 leading-relaxed">
             {t("save_favorites") || "Save your favorite items for later"}
           </p>
           <Button
@@ -594,8 +621,8 @@ const Wishlist = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-[92rem] mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
-          <div className="mb-2 max-w-4xl text-left dark:text-left mhub-hero-card min-h-[116px] sm:min-h-[132px] rounded-2xl px-4 py-3.5 sm:px-6 sm:py-4.5">
+        <div className="relative max-w-[640px] mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
+          <div className="mb-2 max-w-[640px] text-left mhub-hero-card min-h-[116px] sm:min-h-[132px] rounded-2xl px-4 py-3.5 sm:px-6 sm:py-4.5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -652,18 +679,18 @@ const Wishlist = () => {
       </div>
 
       {/* ── subheader ── */}
-      <div className="relative z-10 max-w-[92rem] mx-auto px-4 pt-3 pb-0.5 sm:px-6 lg:px-8 page-shell page-pad">
+      <div className="relative z-10 max-w-[640px] mx-auto px-4 pt-3 pb-0.5 sm:px-6 lg:px-8 page-shell page-pad">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-sm shadow-pink-500/20 dark:bg-gradient-to-br">
             <Heart className="w-3.5 h-3.5 text-white fill-white shrink-0 dark:text-white" />
           </div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 dark:text-gray-200">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-200">
             {hasCategoryMode && categoryModeCategory?.name
               ? `${displayItems.length} ${displayItems.length === 1 ? (t("saved_item") || "saved item") : (t("saved_items") || "saved items")} in ${categoryModeCategory.name}`
               : `${items.length} ${items.length === 1 ? (t("saved_item") || "saved item") : (t("saved_items") || "saved items")}`}
           </p>
           {isTranslating && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 ml-1 dark:text-gray-300">
+            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-300 ml-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75 dark:bg-pink-800/30" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500 dark:bg-pink-800/30" />
@@ -675,12 +702,12 @@ const Wishlist = () => {
 
         {/* ── category mode banner ── */}
         {hasCategoryMode && categoryModeCategory?.name && (
-          <div className="mb-3 rounded-xl border border-pink-200/60 dark:border-pink-900/30 mhub-premium-surface backdrop-blur-sm p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 dark:border dark:border-pink-600/60">
+          <div className="mb-3 rounded-xl border border-pink-200/60 dark:border-pink-900/30 mhub-premium-surface backdrop-blur-sm p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 dark:border-pink-600/60">
             <div>
-              <p className="text-sm font-medium text-gray-800 dark:text-white dark:text-gray-100">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
                 Category mode: {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+              <p className="text-xs text-gray-500 dark:text-gray-300">
                 Your wishlist is filtered to this category.
               </p>
             </div>
@@ -697,13 +724,13 @@ const Wishlist = () => {
 
         {/* ── error banner — premium inline alert ── */}
         {error && (
-          <div className="mt-3 mhub-premium-surface rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-3 shadow-sm dark:border dark:border-red-600/40">
+          <div className="mt-3 mhub-premium-surface rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-3 shadow-sm dark:border-red-600/40">
             <div className="w-9 h-9 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center flex-shrink-0">
               <Heart className="w-4 h-4 text-red-400 dark:text-red-200" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 dark:text-gray-100">{t("wishlist_load_error") || "Couldn't load your wishlist"}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 dark:text-gray-300">{t("try_again_later") || "Check your connection and try again"}</p>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{t("wishlist_load_error") || "Couldn't load your wishlist"}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-300 mt-0.5">{t("try_again_later") || "Check your connection and try again"}</p>
             </div>
             <Button
               type="button"
@@ -760,7 +787,7 @@ const Wishlist = () => {
                     ? t("clear_selection") || "Clear selection"
                     : t("select_all") || "Select all"}
                   {selectedCount > 0 && (
-                    <span className="ml-1 text-[10px] text-gray-500 dark:text-gray-400">
+                    <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
                       ({selectedCount})
                     </span>
                   )}
@@ -830,14 +857,14 @@ const Wishlist = () => {
       </div>
 
       {/* ── main content ── */}
-      <div className="relative z-10 max-w-[92rem] mx-auto px-4 sm:px-6 lg:px-8 pt-1.5 pb-4 page-shell page-pad">
+      <div className="relative z-10 max-w-[640px] mx-auto px-4 sm:px-6 lg:px-8 pt-1.5 pb-4 page-shell page-pad">
         {loading ? (
           /* ── loading skeleton ── */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
             {[...Array(8)].map((_, idx) => (
               <div
                 key={idx}
-                className="mhub-premium-surface backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800/50 dark:border dark:border-gray-700"
+                className="mhub-premium-surface backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
               >
                 {/* image placeholder with shimmer */}
                 <div className="relative w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -876,9 +903,9 @@ const Wishlist = () => {
               {/* Ambient glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 dark:from-pink-500/20 dark:to-purple-500/20 rounded-full blur-2xl opacity-60 dark:bg-gradient-to-br" />
               {/* Outer rotating dashed ring */}
-              <div className="absolute inset-0 rounded-full border-2 border-dashed border-pink-200 dark:border-pink-500/20 animate-[spin_20s_linear_infinite] dark:border-2 dark:border-dashed dark:border-pink-600/40" />
+              <div className="absolute inset-0 rounded-full border-2 border-dashed border-pink-200 dark:border-pink-500/20 animate-[spin_20s_linear_infinite] dark:border-pink-600/40" />
               {/* Inner solid ring with gradient fill */}
-              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-500/10 dark:to-purple-500/10 border border-pink-100/50 dark:border-pink-500/10 dark:bg-gradient-to-br dark:border dark:border-pink-600/50" />
+              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-500/10 dark:to-purple-500/10 border border-pink-100/50 dark:border-pink-500/10 dark:bg-gradient-to-br dark:border-pink-600/50" />
               {/* Icon container */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-xl shadow-pink-500/30 transition-transform hover:scale-105 duration-500 dark:bg-gradient-to-br">
@@ -889,15 +916,15 @@ const Wishlist = () => {
               <div className="absolute top-2 right-4 w-2.5 h-2.5 bg-pink-400 rounded-full opacity-70 animate-[bounce_3s_ease-in-out_infinite] dark:bg-pink-800/30" />
               <div className="absolute bottom-6 left-2 w-2 h-2 bg-purple-400 rounded-full opacity-50 animate-[bounce_3s_ease-in-out_infinite_0.5s] dark:bg-purple-800/30" />
               {/* Star decoration */}
-              <Star className="absolute top-8 left-4 w-3 h-3 text-amber-400 opacity-60 dark:text-amber-200" />
+              <Star className="absolute top-8 left-4 w-4 h-4 text-amber-400 opacity-60 dark:text-amber-200" />
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center dark:text-gray-100 dark:text-center">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
               {isFilteredEmpty
                 ? `No ${categoryModeCategory?.name || "category"} items saved yet`
                 : t("wishlist_empty") || "Your wishlist is empty"}
             </h3>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-8 text-center max-w-[280px] leading-relaxed dark:text-gray-300 dark:text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center max-w-[280px] leading-relaxed">
               {isFilteredEmpty
                 ? "Switch category or save items in this marketplace."
                 : t("start_saving") || "Tap the heart icon on any listing to add it here."}
@@ -960,7 +987,7 @@ const Wishlist = () => {
               return (
                 <Card
                   key={itemId}
-                  className={`group mhub-premium-surface backdrop-blur-md rounded-2xl overflow-hidden border border-gray-100/80 dark:border-gray-700/40 shadow-md shadow-gray-200/40 dark:shadow-black/20 hover:shadow-lg hover:shadow-pink-500/10 dark:hover:shadow-pink-500/5 hover:border-pink-200/60 dark:hover:border-pink-500/20 transition-all duration-300 hover:-translate-y-0.5 dark:border dark:border-gray-700/80 dark:hover:border-pink-600/60 ${isListView ? "sm:flex sm:flex-row" : ""} ${isSelected ? "ring-2 ring-pink-400/60 dark:ring-pink-500/40" : ""}`}
+                  className={`group mhub-premium-surface backdrop-blur-md rounded-2xl overflow-hidden border border-gray-100/80 dark:border-gray-700/40 shadow-md shadow-gray-200/40 dark:shadow-black/20 hover:shadow-lg hover:shadow-pink-500/10 dark:hover:shadow-pink-500/5 hover:border-pink-200/60 dark:hover:border-pink-500/20 transition-all duration-300 hover:-translate-y-0.5 dark:border-gray-700/80 dark:hover:border-pink-600/60 ${isListView ? "sm:flex sm:flex-row" : ""} ${isSelected ? "ring-2 ring-pink-400/60 dark:ring-pink-500/40" : ""}`}
                 >
                   {/* ── image area ── */}
                   <div className={`relative w-full overflow-hidden ${isListView ? "sm:w-56 sm:aspect-[4/3] sm:shrink-0" : "aspect-[4/3]"}`}>
@@ -976,9 +1003,9 @@ const Wishlist = () => {
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-slate-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 text-gray-400 dark:bg-gradient-to-br dark:text-gray-300">
                         <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-500/10 dark:to-purple-500/10 rounded-2xl flex items-center justify-center mb-2 dark:bg-gradient-to-br">
-                          <ImageIcon className="w-7 h-7 text-pink-300 dark:text-pink-500/40 dark:text-pink-200" />
+                          <ImageIcon className="w-7 h-7 text-pink-300 dark:text-pink-200" />
                         </div>
-                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 dark:text-gray-300">
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-300">
                           {t("image_unavailable") || "Image coming soon"}
                         </span>
                       </div>
@@ -1016,18 +1043,18 @@ const Wishlist = () => {
                     </button>
 
                     {/* category badge - pill, semi-transparent with tint */}
-                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] font-medium px-2.5 py-0.5 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border dark:border-white/20">
+                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 backdrop-blur-md text-white border border-white/20 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border-white/20">
                       {item.category_name || t("general") || "General"}
                     </Badge>
                   </div>
 
                   {/* ── card body ── */}
                   <div className={`p-3 sm:p-3.5 ${isListView ? "flex-1" : ""}`}>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-[13px] sm:text-sm leading-snug mb-1 line-clamp-1 transition-colors duration-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 dark:group-hover:text-pink-300">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-sm leading-snug mb-1 line-clamp-1 transition-colors duration-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 dark:group-hover:text-pink-300">
                       {item.title}
                     </h3>
                     {sellerName && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 mb-1">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
                         {sellerAvatar ? (
                           <img
                             src={sellerAvatar}
@@ -1036,14 +1063,14 @@ const Wishlist = () => {
                             loading="lazy"
                           />
                         ) : (
-                          <span className="w-4 h-4 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-[9px] font-semibold">
+                          <span className="w-5 h-5 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-xs font-semibold">
                             {sellerInitials}
                           </span>
                         )}
-                        <ShoppingBag className="w-3 h-3" />
+                        <ShoppingBag className="w-4 h-4" />
                         <span className="truncate">{sellerName}</span>
                         {sellerVerified && (
-                          <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] px-1.5 py-0.5 rounded-full dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20">
+                          <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs px-2 py-1 rounded-full dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20">
                             {t("verified") || "Verified"}
                           </Badge>
                         )}
@@ -1054,10 +1081,10 @@ const Wishlist = () => {
                     {/* rating */}
                     {rating > 0 && (
                       <div className="flex items-center gap-1 text-xs mb-1.5">
-                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 dark:text-amber-200" />
-                        <span className="font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200">{rating.toFixed(1)}</span>
+                        <Star className="w-4 h-4 text-amber-400 fill-amber-400 dark:text-amber-200" />
+                        <span className="font-medium text-gray-700 dark:text-gray-200">{rating.toFixed(1)}</span>
                         {reviews > 0 && (
-                          <span className="text-gray-400 dark:text-gray-500 dark:text-gray-300">
+                          <span className="text-gray-400 dark:text-gray-300">
                             ({reviews})
                           </span>
                         )}
@@ -1065,21 +1092,21 @@ const Wishlist = () => {
                     )}
 
                     {/* description */}
-                    <p className="text-gray-500 dark:text-gray-400 text-[11px] sm:text-xs leading-relaxed mb-2 line-clamp-2 dark:text-gray-300">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed mb-2 line-clamp-2 dark:text-gray-300">
                       {item.description || t("no_description") || "No description"}
                     </p>
 
                     {/* notes */}
                     {notesText && (
-                      <p className="text-[10px] sm:text-[11px] italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 pl-2 py-0.5 bg-pink-50/50 rounded-r-md line-clamp-2 dark:border-pink-600/40 dark:bg-pink-950/50">
+                      <p className="text-xs italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 pl-2 py-1 bg-pink-50/50 rounded-r-md line-clamp-2 dark:border-pink-600/40 dark:bg-pink-950/50">
                         {notesText}
                       </p>
                     )}
 
                     {/* location + saved date */}
-                    <div className="flex items-center justify-between mb-2.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 dark:text-gray-300">
+                    <div className="flex items-center justify-between mb-2.5 text-xs text-gray-400 dark:text-gray-300">
                       <div className="flex items-center gap-1 truncate">
-                        <MapPin className="w-3 h-3 shrink-0" />
+                        <MapPin className="w-4 h-4 shrink-0" />
                         <span className="truncate">{item.location || t("not_available") || "N/A"}</span>
                       </div>
                       <span className="shrink-0 ml-1.5 hidden sm:inline">
@@ -1097,17 +1124,17 @@ const Wishlist = () => {
                               state: { source: "wishlist", returnTo: "/wishlist" },
                             })
                           }
-                          className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl text-[11px] sm:text-xs h-9 sm:h-10 font-semibold shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none dark:bg-gradient-to-r dark:text-white"
+                          className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl text-xs h-9 sm:h-10 font-semibold shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none dark:bg-gradient-to-r dark:text-white"
                         >
-                          <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
+                          <ExternalLink className="w-4 h-4 sm:w-3.5 sm:h-3.5 mr-1" />
                           <span className="hidden sm:inline">{t("view_details") || "View Details"}</span>
                           <span className="sm:hidden">{t("view") || "View"}</span>
                         </Button>
                         <Button
                           onClick={() => handleBuyNow(item)}
-                          className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-[11px] sm:text-xs h-9 sm:h-10 font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-200 hover:-translate-y-0.5"
+                          className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs h-9 sm:h-10 font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-200 hover:-translate-y-0.5"
                         >
-                          <ShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
+                          <ShoppingBag className="w-4 h-4 sm:w-3.5 sm:h-3.5 mr-1" />
                           {t("buy_now") || "Buy Now"}
                         </Button>
                       </div>
@@ -1124,7 +1151,7 @@ const Wishlist = () => {
                           aria-label={isInCart(item.post_id) ? "In cart" : "Add to cart"}
                         >
                           <CartIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                          <span className="text-[11px] sm:text-xs">
+                          <span className="text-xs">
                             {isInCart(item.post_id)
                               ? t("in_cart") || "In cart"
                               : t("add_to_cart") || "Add to cart"}
@@ -1136,7 +1163,7 @@ const Wishlist = () => {
                           className="flex-1 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-pink-300 hover:text-pink-600 hover:-translate-y-0.5 dark:hover:border-pink-700 dark:hover:text-pink-400 rounded-xl h-9 sm:h-10 transition-all duration-200"
                         >
                           <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                          <span className="text-[11px] sm:text-xs">
+                          <span className="text-xs">
                             {t("share") || "Share"}
                           </span>
                         </Button>

@@ -25,7 +25,7 @@ function StatCard({ icon: Icon, label, value, trend, trendLabel, color }) {
         </div>
         {trend !== undefined && trend !== null && (
           <div
-            className={`flex items-center gap-0.5 text-[10px] font-semibold ${
+            className={`flex items-center gap-1 text-xs font-semibold ${
               isPositive
                 ? "text-emerald-600 dark:text-emerald-400"
                 : "text-red-600 dark:text-red-400"
@@ -40,8 +40,8 @@ function StatCard({ icon: Icon, label, value, trend, trendLabel, color }) {
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+      <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
         {label}
         {trendLabel && (
           <span className="ml-1 text-gray-400 dark:text-gray-500">
@@ -145,7 +145,7 @@ export default function CentrePageAnalytics({ channelId }) {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors ${
+              className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
                 period === p
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -196,7 +196,7 @@ export default function CentrePageAnalytics({ channelId }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {analytics.followers?.recentData?.length > 0 && (
             <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 {tr("follower_growth", "Follower Growth")}
               </p>
               <MiniChart data={analytics.followers.recentData} color="#10b981" />
@@ -204,7 +204,7 @@ export default function CentrePageAnalytics({ channelId }) {
           )}
           {analytics.engagement?.recentData?.length > 0 && (
             <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 {tr("engagement_trend", "Engagement Trend")}
               </p>
               <MiniChart data={analytics.engagement.recentData} color="#8b5cf6" />
@@ -216,7 +216,7 @@ export default function CentrePageAnalytics({ channelId }) {
       {/* Top posts */}
       {analytics.topPosts?.length > 0 && (
         <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
             {tr("top_performing_posts", "Top Performing Posts")}
           </p>
           <div className="space-y-2">
@@ -231,7 +231,7 @@ export default function CentrePageAnalytics({ channelId }) {
                     {post.title || post.description || "Post"}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
                     <Eye className="h-3 w-3" /> {post.views || 0}
                   </span>

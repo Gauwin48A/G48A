@@ -243,7 +243,7 @@ const R = () => {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page flex items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-gray-950",
+            "min-h-screen mhub-premium-page flex items-center justify-center bg-gray-50 dark:bg-gray-950",
         },
         e.createElement(
           "div",
@@ -283,7 +283,7 @@ const R = () => {
         )
       : e.createElement(
           "div",
-          { className: "min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950" },
+          { className: "min-h-screen mhub-premium-page nav-clearance bg-gray-50 dark:bg-gray-950" },
           e.createElement(
             "div",
             {
@@ -292,7 +292,7 @@ const R = () => {
             },
             e.createElement(
               "div",
-              { className: "max-w-4xl mx-auto" },
+              { className: "max-w-[640px] mx-auto" },
               e.createElement(
                 u,
                 {
@@ -320,7 +320,7 @@ const R = () => {
                   e.createElement(
                     "h1",
                     {
-                      className: "text-3xl font-bold text-white mb-2 truncate dark:text-white",
+                      className: "text-xl sm:text-3xl font-bold text-white mb-2 truncate dark:text-white",
                       title: "User Reviews",
                     },
                     "User Reviews",
@@ -336,7 +336,7 @@ const R = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 mt-8 -translate-y-8 page-shell page-pad" },
+            { className: "max-w-[640px] mx-auto px-4 mt-8 -translate-y-8 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
@@ -350,7 +350,7 @@ const R = () => {
                 ),
                 e.createElement(
                   y,
-                  { className: "text-center dark:text-center" },
+                  { className: "text-center" },
                   e.createElement(
                     "div",
                     {
@@ -387,7 +387,7 @@ const R = () => {
                         },
                         e.createElement("span", { className: "w-3" }, r),
                         e.createElement(o, {
-                          className: "w-3 h-3 text-gray-400 dark:text-gray-300",
+                          className: "w-4 h-4 text-gray-400 dark:text-gray-300",
                         }),
                         e.createElement(
                           "div",
@@ -404,7 +404,7 @@ const R = () => {
                         ),
                         e.createElement(
                           "span",
-                          { className: "w-6 text-right text-gray-400 dark:text-right dark:text-gray-300" },
+                          { className: "w-6 text-right text-gray-400 dark:text-gray-300" },
                           P?.[r] || 0,
                         ),
                       ),
@@ -432,7 +432,7 @@ const R = () => {
                           "div",
                           {
                             className:
-                              "mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200",
+                              "mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200",
                           },
                           "Log in to submit your review.",
                         ),
@@ -520,7 +520,7 @@ const R = () => {
                             value: filterSort,
                             onChange: (r) => setFilterSort(r.target.value),
                             className:
-                              "ml-2 h-9 rounded-lg border border-gray-200 px-2 text-sm dark:border dark:border-gray-700",
+                              "ml-2 h-9 rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700",
                           },
                           e.createElement(
                             "option",
@@ -560,7 +560,7 @@ const R = () => {
                   ? e.createElement(X, {
                       marker: "empty",
                       className:
-                        "bg-gray-50 border-dashed border-2 border-gray-200 dark:bg-gray-950 dark:border-dashed dark:border-2 dark:border-gray-700",
+                        "bg-gray-50 border-dashed border-2 border-gray-200 dark:bg-gray-950 dark:border-gray-700",
                       icon: J,
                       title: hasReviewFilters
                         ? "No reviews match these filters."
@@ -785,7 +785,7 @@ const R = () => {
                             "div",
                             {
                               className:
-                                "flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-800 dark:border-t dark:border-gray-700",
+                                "flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700",
                             },
                             e.createElement(
                               u,

@@ -7,6 +7,7 @@ import { runBackendPreflight } from './lib/backendPreflight';
 import './i18n/index';
 import './index.css';
 import './styles/ui-enhancements.css';
+import './styles/mobile-layout.css';
 import { ToastProvider } from '@/hooks/use-toast';
 import { activateDefenseMode, isAuthorizedHostname } from './utils/security';
 import { initCodeProtection } from './utils/codeProtection';
@@ -39,6 +40,33 @@ const DOM_RELOAD_KEY = 'mhub:dom-recovery-reload-at';
 const DOM_RELOAD_COOLDOWN_MS = 7 * 1000;
 const RootMode = import.meta.env.DEV ? React.Fragment : React.StrictMode;
 
+const detectNativeRuntime = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (typeof window.Capacitor?.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+      return true;
+    }
+  } catch {
+    // Ignore runtime detection errors and continue with UA fallback.
+  }
+  const userAgent = String(window.navigator?.userAgent || '').toLowerCase();
+  return userAgent.includes('mhubandroidwebreplica') || (userAgent.includes('android') && /\bwv\b/.test(userAgent));
+};
+
+const applyNativePlatformFlag = () => {
+  if (typeof document === 'undefined') return;
+  const isNative = detectNativeRuntime();
+  const html = document.documentElement;
+  const body = document.body;
+  if (isNative) {
+    html.setAttribute('data-native-platform', '1');
+    body?.setAttribute('data-native-platform', '1');
+    return;
+  }
+  html.removeAttribute('data-native-platform');
+  body?.removeAttribute('data-native-platform');
+};
+
 function isRecoverableModuleError(message) {
   return /Failed to fetch dynamically imported module|Importing a module script failed|Outdated Optimize Dep/i.test(
     String(message || '')
@@ -65,9 +93,20 @@ function getBootstrapState() {
 activateDefenseMode();
 initErrorReporting();
 warnIfFirebaseMisconfigured();
+applyNativePlatformFlag();
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyNativePlatformFlag, { once: true });
+  } else {
+    applyNativePlatformFlag();
+  }
+}
 
 if (typeof window !== 'undefined' && !window[BOOTSTRAP_LISTENER_FLAG]) {
   window[BOOTSTRAP_LISTENER_FLAG] = true;
+  window.addEventListener('focus', applyNativePlatformFlag);
+  window.addEventListener('visibilitychange', applyNativePlatformFlag);
 
   const reloadOnceWithinCooldown = (storageKey, cooldownMs, reasonLabel) => {
     const now = Date.now();

@@ -438,7 +438,7 @@ const PaymentPage = () => {
   if (!loggedIn) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center px-4 dark:bg-gradient-to-br">
-        <div className="w-full max-w-md text-center dark:text-center">
+        <div className="w-full max-w-md text-center">
           <div className="mhub-premium-surface mhub-shine rounded-3xl p-8 shadow-2xl">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 dark:bg-gradient-to-br">
               <Lock className="h-7 w-7 text-white dark:text-white" />
@@ -473,8 +473,8 @@ const PaymentPage = () => {
     return (
       <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 dark:bg-gradient-to-br">
         <div className="mhub-premium-surface rounded-3xl p-10 flex flex-col items-center gap-4 shadow-2xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-400 dark:border-4 dark:border-indigo-600/40 dark:border-t-indigo-600" />
-          <p className="text-slate-600 text-sm font-medium dark:text-slate-400 dark:text-slate-200">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 dark:border-indigo-600/40 dark:border-t-indigo-600" />
+          <p className="text-slate-600 text-sm font-medium dark:text-slate-200">
             {tr("payment_loading_details", "Loading payment details...")}
           </p>
         </div>
@@ -486,14 +486,14 @@ const PaymentPage = () => {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center px-4 dark:bg-gradient-to-br">
         <div className="w-full max-w-md">
-          <div className="mhub-premium-surface rounded-3xl p-8 shadow-2xl text-center dark:text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/20 dark:bg-red-950/20">
+          <div className="mhub-premium-surface rounded-3xl p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-950/20">
               <ExternalLink className="h-6 w-6 text-red-500 dark:text-red-300" />
             </div>
-            <h2 className="mb-2 text-lg font-black text-red-700 dark:text-red-400 dark:text-red-300">
+            <h2 className="mb-2 text-lg font-black text-red-700 dark:text-red-300">
               {tr("payment_unable_to_load", "Unable to load payment details")}
             </h2>
-            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-300">
               {configError ||
                 tr(
                   "payment_unavailable",
@@ -733,12 +733,12 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-950 page-shell page-pad nav-clearance dark:bg-gradient-to-br">
       {/* Transaction stepper */}
-      <div className="mx-auto max-w-4xl px-4 pt-4">
+      <div className="mx-auto max-w-[640px] px-4 pt-4">
         <TransactionStepper steps={localizedSteps} currentStep={2} />
       </div>
 
       {/* Header card */}
-      <div className="mx-auto max-w-4xl px-4 mt-4">
+      <div className="mx-auto max-w-[640px] px-4 mt-4">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 via-blue-900 to-purple-900 px-6 py-5 text-white shadow-xl dark:bg-gradient-to-r dark:text-white">
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl pointer-events-none dark:bg-slate-900/10" />
           <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300 dark:text-indigo-200">
@@ -767,13 +767,13 @@ const PaymentPage = () => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 pb-10 mt-5 grid md:grid-cols-2 gap-6">
+      <div className="mx-auto max-w-[640px] px-4 pb-10 mt-5 grid md:grid-cols-2 gap-6">
         {/* LEFT: form area */}
         <div className="space-y-5">
 
           {/* SUCCESS CARD — shown after successful submission */}
           {submitState.message && !submitState.error ? (
-            <div className="rounded-2xl border border-emerald-200 mhub-premium-surface p-7 shadow-lg text-center dark:border dark:border-emerald-600/40 dark:text-center">
+            <div className="rounded-2xl border border-emerald-200 mhub-premium-surface p-7 shadow-lg text-center dark:border-emerald-600/40">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-emerald-950/20">
                 <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
               </div>
@@ -781,7 +781,7 @@ const PaymentPage = () => {
                 {tr("payment_submitted_title", "Payment Submitted!")}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 dark:text-gray-200">{submitState.message}</p>
-              <div aria-live="polite" className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center mb-6 flex items-center justify-center gap-2 dark:bg-blue-950/20 dark:border dark:border-blue-600/40 dark:text-center">
+              <div aria-live="polite" className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center mb-6 flex items-center justify-center gap-2 dark:bg-blue-950/20 dark:border-blue-600/40">
                 <svg className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span className="text-sm text-blue-700 dark:text-blue-300">{tr(
                   "payment_verification_notice",
@@ -805,8 +805,8 @@ const PaymentPage = () => {
           ) : (
             <>
               {/* Plan / boost selector — horizontal pills */}
-              <div className="rounded-2xl border border-slate-200 mhub-premium-surface mhub-shine p-5 shadow-sm dark:border-gray-700 dark:border dark:border-slate-700">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <div className="rounded-2xl border border-slate-200 mhub-premium-surface mhub-shine p-5 shadow-sm dark:border-slate-700">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-300">
                   {isBoostFlow
                     ? tr("select_boost_label", "Select Boost")
                     : tr("select_plan_label", "Select Plan")}
@@ -836,9 +836,9 @@ const PaymentPage = () => {
                 </div>
 
                 {selectedOption ? (
-                  <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/30 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20">
+                  <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/30 dark:border-indigo-600/40 dark:bg-indigo-950/20">
                     <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="font-bold text-lg capitalize text-gray-900 dark:text-white dark:text-gray-100">
+                      <h3 className="font-bold text-lg capitalize text-gray-900 dark:text-gray-100">
                         {isBoostFlow
                           ? tr("payment_selected_boost", "{{boost}} Boost", { boost: selectedLabel })
                           : tr("payment_selected_plan", "{{plan}} Plan", { plan: selectedLabel })}
@@ -848,7 +848,7 @@ const PaymentPage = () => {
                       </span>
                     </div>
                     {selectedOption.description ? (
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">{selectedOption.description}</p>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-200">{selectedOption.description}</p>
                     ) : null}
                     {isBoostFlow && selectedOption.durationDays ? (
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
@@ -859,7 +859,7 @@ const PaymentPage = () => {
                     ) : null}
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-600/40 dark:bg-amber-950/20">
                     <p className="text-sm text-amber-700 dark:text-amber-300">
                       {tr(
                         isBoostFlow
@@ -876,7 +876,7 @@ const PaymentPage = () => {
 
               {/* Gateway section */}
               {gatewayEnabled ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-600/40 dark:bg-emerald-950/20">
                   <h3 className="text-sm font-bold text-emerald-800 mb-1 dark:text-emerald-200">
                     {tr("payment_gateway_title", "Instant payment")}
                   </h3>
@@ -905,7 +905,7 @@ const PaymentPage = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-600/40 dark:bg-amber-950/20">
                   <h3 className="text-sm font-bold text-amber-800 mb-1 dark:text-amber-200">
                     {tr("payment_gateway_unavailable_title", "Instant pay paused")}
                   </h3>
@@ -919,31 +919,31 @@ const PaymentPage = () => {
               )}
 
               {/* UPI section */}
-              <div className="rounded-2xl border border-slate-200 mhub-premium-surface p-5 shadow-sm dark:border-gray-700 dark:border dark:border-slate-700">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <div className="rounded-2xl border border-slate-200 mhub-premium-surface p-5 shadow-sm dark:border-slate-700">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-300">
                   {tr("pay_via_upi", "Pay via UPI")}
                 </p>
 
                 {/* QR code centered */}
                 <div className="flex flex-col items-center gap-3 mb-5">
-                  <div className="mhub-premium-surface p-4 rounded-2xl shadow-inner border-2 border-indigo-100 dark:border-indigo-900/30 dark:border-2 dark:border-indigo-600/40">
+                  <div className="mhub-premium-surface p-4 rounded-2xl shadow-inner border-2 border-indigo-100 dark:border-indigo-600/40">
                     <img
                       src={qrCode}
                       alt={tr("payment_scan_to_pay", "Scan to Pay")}
                       className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl"
                       onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling && (e.target.nextElementSibling.style.display = 'flex'); }}
                     />
-                    <div className="hidden h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl border-2 border-dashed border-slate-300 items-center justify-center text-center text-xs text-slate-500 p-4 dark:border-gray-600 dark:text-slate-400 dark:border-2 dark:border-dashed dark:border-slate-600 dark:text-center dark:text-slate-300">
+                    <div className="hidden h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl border-2 border-dashed border-slate-300 items-center justify-center text-center text-xs text-slate-500 p-4 dark:border-gray-600 dark:text-slate-400 dark:border-slate-600 dark:text-slate-300">
                       {tr("qr_unavailable", "QR unavailable — use UPI ID below")}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
+                  <p className="text-xs text-slate-500 dark:text-slate-300">
                     {tr("payment_scan_instructions", "Scan using GPay, PhonePe, or Paytm")}
                   </p>
 
                   {/* UPI ID chip */}
-                  <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 px-4 py-3 rounded-xl dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40">
-                    <span className="text-sm font-mono font-semibold text-slate-700 dark:text-gray-300 dark:text-slate-200">
+                  <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 px-4 py-3 rounded-xl dark:bg-indigo-950/20 dark:border-indigo-600/40">
+                    <span className="text-sm font-mono font-semibold text-slate-700 dark:text-slate-200">
                       {paymentConfig.upi_id}
                     </span>
                     <button
@@ -971,7 +971,7 @@ const PaymentPage = () => {
                 {/* UTR form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
                       {tr("payment_transaction_label", "Transaction ID (UTR)")}
                     </label>
                     <input
@@ -1016,11 +1016,11 @@ const PaymentPage = () => {
         <div className="space-y-5">
           {/* Instructions */}
           {(paymentConfig.instructions || []).length > 0 ? (
-            <div className="rounded-2xl border border-amber-200 dark:border-amber-800/30 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-5 shadow-sm dark:border dark:border-amber-600/40 dark:bg-gradient-to-br">
-              <h3 className="mb-3 font-bold text-gray-900 dark:text-white dark:text-gray-100">
+            <div className="rounded-2xl border border-amber-200 dark:border-amber-800/30 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-5 shadow-sm dark:border-amber-600/40 dark:bg-gradient-to-br">
+              <h3 className="mb-3 font-bold text-gray-900 dark:text-gray-100">
                 {tr("payment_how_it_works", "How it works")}
               </h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-200">
                 {(paymentConfig.instructions || []).map((instruction, index) => (
                   <li key={index} className="flex gap-2">
                     <span className="flex-shrink-0 font-bold text-indigo-500 dark:text-indigo-300">{index + 1}.</span>
@@ -1032,18 +1032,18 @@ const PaymentPage = () => {
           ) : null}
 
           {/* Payment history — collapsible */}
-          <div className="rounded-2xl border border-slate-200 mhub-premium-surface shadow-sm overflow-hidden dark:border-gray-700 dark:border dark:border-slate-700">
+          <div className="rounded-2xl border border-slate-200 mhub-premium-surface shadow-sm overflow-hidden dark:border-slate-700">
             <button
               type="button"
               aria-expanded={historyOpen}
               aria-controls="payment-history"
-              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors dark:text-left dark:hover:bg-slate-950"
+              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors dark:hover:bg-slate-950"
               onClick={() => setHistoryOpen((o) => !o)}
             >
-              <span className="font-bold text-gray-900 dark:text-white dark:text-gray-100">
+              <span className="font-bold text-gray-900 dark:text-gray-100">
                 {tr("payment_history_title", "Payment History")}
                 {history.length > 0 ? (
-                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-300">
+                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-300">
                     {history.length}
                   </span>
                 ) : null}
@@ -1065,11 +1065,11 @@ const PaymentPage = () => {
             </button>
 
             {historyOpen ? (
-              <div id="payment-history" className="border-t border-slate-100 px-5 pb-5 pt-3 dark:border-t dark:border-slate-700">
+              <div id="payment-history" className="border-t border-slate-100 px-5 pb-5 pt-3 dark:border-slate-700">
                 {historyLoading ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">{tr("payment_history_loading", "Loading history...")}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-300">{tr("payment_history_loading", "Loading history...")}</p>
                 ) : historyError ? (
-                  <div className="rounded-xl border border-red-100 bg-red-50 p-3 dark:border dark:border-red-600/40 dark:bg-red-950/20">
+                  <div className="rounded-xl border border-red-100 bg-red-50 p-3 dark:border-red-600/40 dark:bg-red-950/20">
                     <p className="text-sm text-red-600 mb-2 dark:text-red-300">{historyError}</p>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -1117,7 +1117,7 @@ const PaymentPage = () => {
                       return (
                         <div
                           key={payment.id}
-                          className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:bg-gray-900 dark:border-gray-600 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border dark:border-slate-700 dark:bg-slate-950"
+                          className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:bg-gray-900 dark:border-gray-600 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 dark:border-slate-700 dark:bg-slate-950"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
@@ -1134,13 +1134,13 @@ const PaymentPage = () => {
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              <span className="font-bold text-sm text-gray-900 dark:text-white dark:text-gray-100">
+                              <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
                                 {tr("payment_amount_rupees", "Rs {{amount}}", {
                                   amount: payment.amount,
                                 })}
                               </span>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusChipClass(payment.status)}`}
+                                className={`text-xs px-2 py-1 rounded-full font-semibold ${statusChipClass(payment.status)}`}
                               >
                                 {tr(`payment_status_${payment.status}`, payment.status)}
                               </span>

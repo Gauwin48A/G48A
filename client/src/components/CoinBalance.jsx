@@ -54,7 +54,7 @@ const TransactionRow = memo(function TransactionRow({ tx }) {
           <p className="text-sm font-medium">
             {TYPE_LABELS[tx.type] || tx.type}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {formatDate(tx.created_at)}
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function CoinBalance({ compact = false }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-center py-3">
-          <p className="text-3xl font-bold text-amber-600">{balance ?? 0}</p>
+          <p className="text-xl sm:text-3xl font-bold text-amber-600">{balance ?? 0}</p>
           <p className="text-xs text-muted-foreground mt-1">Available Coins</p>
         </div>
 

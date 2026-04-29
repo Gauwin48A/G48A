@@ -278,14 +278,14 @@ const W = {
             },
             e.createElement(
               "div",
-              { className: "text-center space-y-3 dark:text-center" },
+              { className: "text-center space-y-3" },
               e.createElement("div", {
                 className:
-                  "h-10 w-10 mx-auto rounded-full border-2 border-blue-500 border-t-transparent animate-spin dark:border-2 dark:border-blue-500/40 dark:border-t-transparent",
+                  "h-10 w-10 mx-auto rounded-full border-2 border-blue-500 border-t-transparent animate-spin dark:border-t-transparent",
               }),
               e.createElement(
                 "p",
-                { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                { className: "text-gray-500 dark:text-gray-300" },
                 r("loading", "Loading"),
               ),
             ),
@@ -340,13 +340,13 @@ const W = {
                 "div",
                 {
                   className:
-                    "min-h-screen mhub-premium-page pb-24 bg-gray-50 transition-colors duration-300 dark:bg-gray-950",
+                    "min-h-screen mhub-premium-page nav-clearance bg-gray-50 transition-colors duration-300 dark:bg-gray-950",
                 },
                 e.createElement(
                   "div",
                   {
                     className:
-                      "container mx-auto px-4 py-6 max-w-6xl space-y-3",
+                      "container mx-auto px-4 py-6 max-w-[640px] space-y-3",
                   },
                   errorMessage
                     ? e.createElement(
@@ -440,7 +440,7 @@ const W = {
                               "h1",
                               {
                                 className:
-                                  "text-2xl lg:text-3xl font-bold text-white mb-2 truncate dark:text-white",
+                                  "text-lg sm:text-2xl lg:text-3xl font-bold text-white mb-2 truncate dark:text-white",
                                 title: s?.name
                                   ? `${r("welcome_back", "Welcome back")}, ${s?.name}!`
                                   : r("welcome_back", "Welcome back"),
@@ -497,7 +497,7 @@ const W = {
                             null,
                             e.createElement(
                               "div",
-                              { className: "text-2xl lg:text-3xl font-bold" },
+                              { className: "text-lg sm:text-2xl lg:text-3xl font-bold" },
                               s?.coins || 0,
                             ),
                             e.createElement(
@@ -525,7 +525,7 @@ const W = {
                                 size: "sm",
                                 variant: "secondary",
                                 className:
-                                  "bg-white/20 text-white hover:bg-white/30 border border-white/30 dark:bg-slate-900/20 dark:text-white dark:hover:bg-slate-900/30 dark:border dark:border-white/30",
+                                  "bg-white/20 text-white hover:bg-white/30 border border-white/30 dark:bg-slate-900/20 dark:text-white dark:hover:bg-slate-900/30 dark:border-white/30",
                                 onClick: () => I((t) => t + 1),
                               },
                               e.createElement(ge, {
@@ -631,7 +631,7 @@ const W = {
                               "div",
                               {
                                 className:
-                                  "text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200",
+                                  "text-sm text-gray-600 dark:text-gray-200",
                               },
                               r(t.labelKey, t.label || "Metric"),
                             ),
@@ -711,7 +711,7 @@ const W = {
                                         "div",
                                         {
                                           className:
-                                            "p-2 rounded-lg bg-white dark:bg-gray-600 dark:bg-slate-900",
+                                            "p-2 rounded-lg bg-white dark:bg-slate-900",
                                         },
                                         e.createElement(z, {
                                           className:
@@ -736,7 +736,7 @@ const W = {
                                               "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-gray-200",
                                           },
                                           e.createElement(le, {
-                                            className: "w-3 h-3 mr-1",
+                                            className: "w-4 h-4 mr-1",
                                           }),
                                           t.time,
                                         ),
@@ -746,12 +746,12 @@ const W = {
                                 )
                               : e.createElement(
                                   "div",
-                                  { className: "text-center py-10 space-y-3 dark:text-center" },
+                                  { className: "text-center py-10 space-y-3" },
                                   e.createElement(
                                     "p",
                                     {
                                       className:
-                                        "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                        "text-sm text-gray-500 dark:text-gray-300",
                                     },
                                     r(
                                       "buyer_activity_empty",
@@ -876,7 +876,7 @@ const W = {
                                       "div",
                                       {
                                         className:
-                                          "p-2 rounded-lg bg-white dark:bg-gray-600 dark:bg-slate-900",
+                                          "p-2 rounded-lg bg-white dark:bg-slate-900",
                                       },
                                       e.createElement(z, {
                                         className:
@@ -901,7 +901,7 @@ const W = {
                                             "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-gray-200",
                                         },
                                         e.createElement(le, {
-                                          className: "w-3 h-3 mr-1",
+                                          className: "w-4 h-4 mr-1",
                                         }),
                                         t.time,
                                       ),
@@ -911,12 +911,12 @@ const W = {
                               )
                             : e.createElement(
                                 "div",
-                                { className: "text-center py-10 space-y-3 dark:text-center" },
+                                { className: "text-center py-10 space-y-3" },
                                 e.createElement(
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "text-sm text-gray-500 dark:text-gray-300",
                                   },
                                   r(
                                     "no_activity_yet",
@@ -1028,7 +1028,7 @@ const W = {
                                         "p",
                                         {
                                           className:
-                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-200",
                                         },
                                         t.sales,
                                         " ",
@@ -1051,7 +1051,7 @@ const W = {
                               )
                             : e.createElement(
                                 "div",
-                                { className: "text-center py-8 space-y-3 dark:text-center" },
+                                { className: "text-center py-8 space-y-3" },
                                 e.createElement(
                                   "p",
                                   {
@@ -1091,7 +1091,7 @@ const W = {
                 },
                 e.createElement(
                   b,
-                  { className: "max-w-3xl mx-auto" },
+                  { className: "max-w-[640px] mx-auto" },
                   e.createElement(
                     p,
                     { className: "p-6 space-y-4" },
@@ -1156,13 +1156,13 @@ const W = {
             "div",
             {
               className:
-                "mhub-premium-surface rounded-3xl p-5 text-center max-w-md w-full dark:text-center",
+                "mhub-premium-surface rounded-3xl p-5 text-center max-w-md w-full",
             },
             e.createElement(
               "h2",
               {
                 className:
-                  "text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4 dark:text-blue-300",
+                  "text-xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4 dark:text-blue-300",
               },
               r("your_dashboard", "Your Dashboard"),
             ),
@@ -1182,7 +1182,7 @@ const W = {
                 {
                   to: "/login?returnTo=%2Fdashboard",
                   className:
-                    "bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-xl font-bold text-center dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:text-center",
+                    "bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-xl font-bold text-center dark:bg-blue-700/40 dark:hover:bg-blue-700/40",
                 },
                 r("login_to_continue", "Login to Continue"),
               ),
@@ -1191,7 +1191,7 @@ const W = {
                 {
                   to: "/signup",
                   className:
-                    "border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-base px-8 py-3 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700 dark:border dark:border-blue-600/40 dark:text-blue-300 dark:text-center dark:hover:bg-blue-950/20",
+                    "border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-base px-8 py-3 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700 dark:border-blue-600/40 dark:hover:bg-blue-950/20",
                 },
                 r("create_account", "Create Account"),
               ),

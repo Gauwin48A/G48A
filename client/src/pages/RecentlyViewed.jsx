@@ -583,8 +583,8 @@ const RecentlyViewed = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-6xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
-          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-3 max-w-[640px] text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -596,7 +596,7 @@ const RecentlyViewed = () => {
                 {t("back", { defaultValue: "Back" })}
               </button>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="relative flex bg-white/15 backdrop-blur-sm rounded-full p-0.5 border border-white/20 gap-0.5 dark:bg-slate-900/15 dark:border dark:border-white/20">
+                <div className="relative flex bg-white/15 backdrop-blur-sm rounded-full p-1 border border-white/20 gap-1 dark:bg-slate-900/15 dark:border-white/20">
                   <button
                     type="button"
                     onClick={() => setViewMode("grid")}
@@ -681,10 +681,10 @@ const RecentlyViewed = () => {
 
       {/* ── Category Mode Banner ── */}
       {hasCategoryMode && categoryModeCategory?.name && (
-        <div className="max-w-6xl mx-auto px-4 pt-3 page-shell page-pad">
-          <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 backdrop-blur-sm p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 dark:border dark:border-blue-600/60 dark:bg-blue-950/50">
+        <div className="max-w-[640px] mx-auto px-4 pt-3 page-shell page-pad">
+          <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 backdrop-blur-sm p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 dark:border-blue-600/60 dark:bg-blue-950/50">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Category mode: {categoryModeCategory.name}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-300">
@@ -704,7 +704,7 @@ const RecentlyViewed = () => {
       )}
 
       {/* ── Source Filter Tabs — segmented control ── */}
-      <div className="max-w-6xl mx-auto px-4 py-3 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 py-3 page-shell page-pad">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide bg-gray-100/90 dark:bg-white/[0.06] rounded-xl p-1 dark:bg-gray-950/90">
           {sourceFilterTabs.map((tab) => {
             const Icon = tab.icon;
@@ -722,7 +722,7 @@ const RecentlyViewed = () => {
                 <Icon className={`h-3.5 w-3.5 transition-colors duration-300 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
                 <span>{tab.label}</span>
                 {isActive && displayItems.length > 0 && (
-                  <span className="ml-0.5 min-w-[20px] px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-gray-800 dark:bg-white text-white dark:text-gray-900 dark:bg-gray-700 dark:text-white">
+                  <span className="ml-0.5 min-w-[20px] px-1.5 py-1 rounded-md text-xs font-bold tabular-nums bg-gray-800 dark:bg-white text-white dark:text-gray-900 dark:bg-gray-700 dark:text-white">
                     {displayItems.length}
                   </span>
                 )}
@@ -734,7 +734,7 @@ const RecentlyViewed = () => {
           })}
         </div>
       </div>
-      <div className="max-w-6xl mx-auto px-4 pb-2 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 pb-2 page-shell page-pad">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-1 flex-col sm:flex-row gap-2">
             <input
@@ -766,7 +766,7 @@ const RecentlyViewed = () => {
                   ? t("clear_selection") || "Clear selection"
                   : t("select_all") || "Select all"}
               {selectedCount > 0 && (
-                <span className="ml-1 text-[10px] text-gray-500 dark:text-gray-400">
+                <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
                   ({selectedCount})
                 </span>
               )}
@@ -800,7 +800,7 @@ const RecentlyViewed = () => {
       </div>
 
       {/* ── Main Content ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-32 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 pb-32 page-shell page-pad">
         {/* Loading — skeleton cards */}
         {loading ? (
           <div
@@ -815,7 +815,7 @@ const RecentlyViewed = () => {
                 return (
                   <div
                     key={i}
-                    className="rounded-2xl border border-gray-200/60 dark:border-white/5 bg-white dark:bg-white/5 overflow-hidden dark:border dark:border-gray-700/60 dark:bg-slate-900"
+                    className="rounded-2xl border border-gray-200/60 dark:border-white/5 bg-white dark:bg-white/5 overflow-hidden dark:border-gray-700/60 dark:bg-slate-900"
                   >
                     <div className="aspect-[4/3] bg-gray-200 dark:bg-white/10 animate-pulse dark:bg-gray-900" />
                     <div className="p-4 space-y-3">
@@ -837,7 +837,7 @@ const RecentlyViewed = () => {
               return (
                 <div
                   key={i}
-                  className="rounded-2xl border border-gray-200/60 dark:border-white/5 bg-white dark:bg-white/5 p-4 flex gap-4 dark:border dark:border-gray-700/60 dark:bg-slate-900"
+                  className="rounded-2xl border border-gray-200/60 dark:border-white/5 bg-white dark:bg-white/5 p-4 flex gap-4 dark:border-gray-700/60 dark:bg-slate-900"
                 >
                   <div className="w-32 h-24 rounded-xl bg-gray-200 dark:bg-white/10 animate-pulse flex-shrink-0 dark:bg-gray-900" />
                   <div className="flex-1 space-y-2.5">
@@ -852,12 +852,12 @@ const RecentlyViewed = () => {
           </div>
         ) : error ? (
           /* ── Error / Session Expired — premium redesign ── */
-          <div className="text-center py-16 dark:text-center">
+          <div className="text-center py-16">
             {error === "session_expired" || !isUserAuthenticated ? (
               <div className="max-w-sm mx-auto">
                 <div className="relative w-28 h-28 mx-auto mb-8">
                   <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10 rounded-full blur-xl opacity-60 dark:bg-gradient-to-br" />
-                  <div className="absolute inset-3 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 border border-amber-100/50 dark:border-amber-500/10 dark:bg-gradient-to-br dark:border dark:border-amber-600/50" />
+                  <div className="absolute inset-3 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 border border-amber-100/50 dark:border-amber-500/10 dark:bg-gradient-to-br dark:border-amber-600/50" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30 rotate-6 dark:bg-gradient-to-br">
                       <Lock className="h-6 w-6 text-white -rotate-6 dark:text-white" />
@@ -867,7 +867,7 @@ const RecentlyViewed = () => {
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
                   {t("session_expired") || "Session Expired"}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed max-w-[260px] mx-auto dark:text-gray-300">
+                <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm leading-relaxed max-w-[260px] mx-auto dark:text-gray-300">
                   {t("login_to_view_history") ||
                     "Please login to view your browsing history."}
                 </p>
@@ -887,7 +887,7 @@ const RecentlyViewed = () => {
               <div className="max-w-sm mx-auto">
                 <div className="relative w-28 h-28 mx-auto mb-8">
                   <div className="absolute inset-0 bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-500/10 dark:to-rose-500/10 rounded-full blur-xl opacity-60 dark:bg-gradient-to-br" />
-                  <div className="absolute inset-3 rounded-full bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-500/5 dark:to-rose-500/5 border border-red-100/50 dark:border-red-500/10 dark:bg-gradient-to-br dark:border dark:border-red-600/50" />
+                  <div className="absolute inset-3 rounded-full bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-500/5 dark:to-rose-500/5 border border-red-100/50 dark:border-red-500/10 dark:bg-gradient-to-br dark:border-red-600/50" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-14 h-14 bg-gradient-to-br from-red-400 to-rose-500 rounded-2xl flex items-center justify-center shadow-xl shadow-red-500/30 dark:bg-gradient-to-br">
                       <XCircle className="h-7 w-7 text-white dark:text-white" />
@@ -897,7 +897,7 @@ const RecentlyViewed = () => {
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
                   {t("something_went_wrong")}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed dark:text-gray-300">
+                <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm leading-relaxed dark:text-gray-300">
                   {t("try_again_later") || "Check your connection and try again"}
                 </p>
                 <Button
@@ -912,12 +912,12 @@ const RecentlyViewed = () => {
           </div>
         ) : displayItems.length === 0 ? (
           /* ── Empty State — premium redesign ── */
-          <div className="text-center py-16 dark:text-center">
+          <div className="text-center py-16">
             <div className="relative w-32 h-32 mx-auto mb-8">
               {/* Ambient glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-slate-200 dark:from-slate-500/20 dark:to-gray-500/20 rounded-full blur-2xl opacity-50 dark:bg-gradient-to-br" />
               {/* Rotating ring */}
-              <div className="absolute inset-0 rounded-full border-2 border-dashed border-gray-200 dark:border-gray-700 animate-[spin_25s_linear_infinite] dark:border-2 dark:border-dashed" />
+              <div className="absolute inset-0 rounded-full border-2 border-dashed border-gray-200 dark:border-gray-700 animate-[spin_25s_linear_infinite] dark:border-dashed" />
               {/* Inner circle */}
               <div className="absolute inset-4 rounded-full bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 border border-gray-100/50 dark:border-gray-700/50 dark:bg-gradient-to-br dark:border" />
               {/* Icon */}
@@ -936,7 +936,7 @@ const RecentlyViewed = () => {
                   ? `No ${categoryModeCategory?.name || "category"} items viewed yet`
                   : t("no_browsing_history")}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-[280px] mx-auto text-[13px] leading-relaxed dark:text-gray-300">
+            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-[280px] mx-auto text-sm leading-relaxed dark:text-gray-300">
               {isFilteredEmpty
                   ? "Switch category or view items in this marketplace."
                   : t("posts_you_view_appear")}
@@ -996,7 +996,7 @@ const RecentlyViewed = () => {
                 /* ── Grid Card ── */
                 <Card
                   key={itemId}
-                  className={`group bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-gray-100 dark:border-white/[0.06] overflow-hidden cursor-pointer hover:border-blue-200/60 dark:hover:border-blue-500/20 shadow-md shadow-gray-200/30 dark:shadow-none hover:shadow-xl hover:shadow-blue-500/[0.08] transition-all duration-300 rounded-2xl hover:-translate-y-0.5 dark:bg-slate-900 dark:border dark:border-gray-700 dark:hover:border-blue-600/60 ${isSelected ? "ring-2 ring-blue-400/50 dark:ring-blue-500/40" : ""} ${isSold ? "border-red-200/70 dark:border-red-500/30 bg-red-50/40 dark:bg-red-950/10" : ""}`}
+                  className={`group bg-white dark:bg-white/[0.04] backdrop-blur-sm border border-gray-100 dark:border-white/[0.06] overflow-hidden cursor-pointer hover:border-blue-200/60 dark:hover:border-blue-500/20 shadow-md shadow-gray-200/30 dark:shadow-none hover:shadow-xl hover:shadow-blue-500/[0.08] transition-all duration-300 rounded-2xl hover:-translate-y-0.5 dark:bg-slate-900 dark:border-gray-700 dark:hover:border-blue-600/60 ${isSelected ? "ring-2 ring-blue-400/50 dark:ring-blue-500/40" : ""} ${isSold ? "border-red-200/70 dark:border-red-500/30 bg-red-50/40 dark:bg-red-950/10" : ""}`}
                   onClick={() =>
                     navigate(`/post/${item.post_id}`, {
                       state: {
@@ -1019,13 +1019,13 @@ const RecentlyViewed = () => {
                       }}
                     />
                     <div className="img-placeholder hidden absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 items-center justify-center dark:bg-gradient-to-br">
-                      <ShoppingBag className="h-10 w-10 text-gray-400 dark:text-gray-500 dark:text-gray-300" />
+                      <ShoppingBag className="h-10 w-10 text-gray-400 dark:text-gray-300" />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent dark:bg-gradient-to-t" />
 
                     {/* Status badge */}
                     <Badge
-                      className={`absolute top-3 right-3 px-2.5 py-0.5 text-[11px] font-semibold rounded-full border-0 shadow-sm ${
+                      className={`absolute top-3 right-3 px-2.5 py-1 text-xs font-semibold rounded-full border-0 shadow-sm ${
                         isActiveStatus
                           ? "bg-emerald-500 text-white"
                           : isSold
@@ -1060,7 +1060,7 @@ const RecentlyViewed = () => {
                           <div className="bg-red-500 text-white text-lg font-bold tracking-wider px-8 py-2 rounded-2xl shadow-xl dark:bg-red-800/40 dark:text-white">
                             {(t("sold") || "Sold").toUpperCase()}
                           </div>
-                          <span className="text-[11px] text-white/80">
+                          <span className="text-xs text-white/80">
                             {t("sold_out_hint") || "No longer available"}
                           </span>
                         </div>
@@ -1068,14 +1068,14 @@ const RecentlyViewed = () => {
                     )}
 
                     {/* View count */}
-                    <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-md text-white/90 px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 dark:bg-black/30 dark:text-white/90">
+                    <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-md text-white/90 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 dark:bg-black/30 dark:text-white/90">
                       <Eye className="h-3 w-3" />
                       {item.view_count || 1}
                       {t("x_viewed")}
                     </div>
 
                     {priceDropLabel && (
-                      <Badge className="absolute top-12 left-3 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/90 text-white shadow-sm">
+                      <Badge className="absolute top-12 left-3 px-2 py-1 text-xs font-semibold rounded-full bg-emerald-500/90 text-white shadow-sm">
                         {t("price_drop") || "Price drop"} {priceDropLabel}
                       </Badge>
                     )}
@@ -1083,7 +1083,7 @@ const RecentlyViewed = () => {
                     {/* Price */}
                     <div className="absolute bottom-3 left-3">
                       <p
-                        className={`text-lg font-bold text-white drop-shadow-lg tracking-tight bg-black/20 backdrop-blur-sm px-2.5 py-0.5 rounded-lg dark:text-white dark:bg-black/20 ${
+                        className={`text-lg font-bold text-white drop-shadow-lg tracking-tight bg-black/20 backdrop-blur-sm px-2.5 py-1 rounded-lg dark:text-white dark:bg-black/20 ${
                           isSold ? "line-through text-white/70" : ""
                         }`}
                       >
@@ -1109,13 +1109,13 @@ const RecentlyViewed = () => {
                   <div className="p-3 sm:p-4">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5 sm:mb-2">
                       {item.category_name && (
-                        <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/20 text-[10px] sm:text-[11px] font-medium px-1.5 sm:px-2 py-0.5 rounded-lg dark:bg-blue-950/20 dark:border dark:border-blue-600/60">
+                        <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/20 text-xs sm:text-xs font-medium px-1.5 sm:px-2 py-1 rounded-lg dark:bg-blue-950/20 dark:border-blue-600/60">
                           {item.category_name}
                         </Badge>
                       )}
                       {sourceMeta && (
                         <span
-                          className={`inline-flex items-center gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] font-semibold ${sourceMeta.badgeClass}`}
+                          className={`inline-flex items-center gap-1.5 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-semibold ${sourceMeta.badgeClass}`}
                         >
                           <sourceMeta.icon className="h-3 w-3" />
                           {sourceMeta.label}
@@ -1123,7 +1123,7 @@ const RecentlyViewed = () => {
                       )}
                     </div>
                     <h3
-                      className={`text-gray-900 dark:text-white font-semibold text-[13px] sm:text-base truncate mb-1.5 sm:mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:group-hover:text-blue-300 ${
+                      className={`text-gray-900 dark:text-white font-semibold text-sm sm:text-base truncate mb-1.5 sm:mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:group-hover:text-blue-300 ${
                         isSold ? "line-through text-gray-400 dark:text-gray-500" : ""
                       }`}
                     >
@@ -1133,7 +1133,7 @@ const RecentlyViewed = () => {
                     {item.seller_name && (
                       <div className="flex items-center gap-2 mb-2 sm:mb-3">
                         <Avatar className="h-5 w-5 bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-white dark:ring-gray-900 dark:bg-gradient-to-br">
-                          <AvatarFallback className="text-white text-[10px] font-bold dark:text-white">
+                          <AvatarFallback className="text-white text-xs font-bold dark:text-white">
                             {item.seller_name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -1151,8 +1151,8 @@ const RecentlyViewed = () => {
                       underReview={item.under_review ?? item.user?.under_review ?? null}
                     />
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-gray-100 dark:border-white/5 dark:border-t dark:border-gray-700">
-                      <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <span className="flex items-center gap-1 text-gray-500 dark:text-gray-300">
                         <MapPin className="h-3 w-3" />
                         {item.location || t("unknown")}
                       </span>
@@ -1161,7 +1161,7 @@ const RecentlyViewed = () => {
                         {formatTimeAgo(item.viewed_at)}
                       </span>
                       {expiryLabel && (
-                        <span className="flex items-center gap-1 text-amber-500 dark:text-amber-300 text-[11px]">
+                        <span className="flex items-center gap-1 text-amber-500 dark:text-amber-300 text-xs">
                           <Clock className="h-3 w-3" />
                           {expiryLabel}
                         </span>
@@ -1173,7 +1173,7 @@ const RecentlyViewed = () => {
                 /* ── List Card ── */
                 <Card
                   key={itemId}
-                  className={`group bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-gray-200/60 dark:border-white/[0.08] overflow-hidden cursor-pointer hover:border-gray-300 dark:hover:border-white/[0.15] hover:bg-white dark:hover:bg-white/[0.08] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl dark:bg-slate-900/80 dark:border dark:border-gray-700/60 dark:hover:border-gray-600 dark:hover:bg-slate-900 ${isSelected ? "ring-2 ring-blue-400/50 dark:ring-blue-500/40" : ""} ${isSold ? "border-red-200/70 dark:border-red-500/30 bg-red-50/30 dark:bg-red-950/10" : ""}`}
+                  className={`group bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-gray-200/60 dark:border-white/[0.08] overflow-hidden cursor-pointer hover:border-gray-300 dark:hover:border-white/[0.15] hover:bg-white dark:hover:bg-white/[0.08] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl dark:bg-slate-900/80 dark:border-gray-700/60 dark:hover:border-gray-600 dark:hover:bg-slate-900 ${isSelected ? "ring-2 ring-blue-400/50 dark:ring-blue-500/40" : ""} ${isSold ? "border-red-200/70 dark:border-red-500/30 bg-red-50/30 dark:bg-red-950/10" : ""}`}
                   onClick={() =>
                     navigate(`/post/${item.post_id}`, {
                       state: {
@@ -1197,10 +1197,10 @@ const RecentlyViewed = () => {
                         }}
                       />
                       <div className="img-placeholder hidden absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 items-center justify-center dark:bg-gradient-to-br">
-                        <ShoppingBag className="h-6 w-6 text-gray-400 dark:text-gray-500 dark:text-gray-300" />
+                        <ShoppingBag className="h-6 w-6 text-gray-400 dark:text-gray-300" />
                       </div>
                       <Badge
-                        className={`absolute top-1.5 right-1.5 px-1.5 py-0 text-[9px] font-semibold rounded-full border-0 ${
+                        className={`absolute top-1.5 right-1.5 px-1.5 py-0 text-xs font-semibold rounded-full border-0 ${
                           isActiveStatus
                             ? "bg-emerald-500 text-white"
                             : isSold
@@ -1213,7 +1213,7 @@ const RecentlyViewed = () => {
 
                       {isSold && (
                         <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] flex items-center justify-center">
-                          <span className="bg-red-500 text-white text-[10px] font-bold tracking-wider px-3 py-1 rounded-full shadow-sm">
+                          <span className="bg-red-500 text-white text-xs font-bold tracking-wider px-3 py-1 rounded-full shadow-sm">
                             {(t("sold") || "Sold").toUpperCase()}
                           </span>
                         </div>
@@ -1241,13 +1241,13 @@ const RecentlyViewed = () => {
                     <div className="flex-1 min-w-0 py-0.5">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         {item.category_name && (
-                          <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20 text-[10px] font-medium px-1.5 py-0 rounded-md dark:bg-blue-950/20 dark:text-blue-300 dark:border dark:border-blue-600/60">
+                          <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20 text-xs font-medium px-1.5 py-0 rounded-md dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-600/60">
                             {item.category_name}
                           </Badge>
                         )}
                         {sourceMeta && (
                           <span
-                            className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${sourceMeta.badgeClass}`}
+                            className={`inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md text-xs font-semibold ${sourceMeta.badgeClass}`}
                           >
                             <sourceMeta.icon className="h-3 w-3" />
                             {sourceMeta.label}
@@ -1265,17 +1265,17 @@ const RecentlyViewed = () => {
                         className={`text-lg font-bold mt-0.5 tracking-tight ${
                           isSold
                             ? "text-gray-400 dark:text-gray-500 line-through"
-                            : "text-emerald-600 dark:text-emerald-400 dark:text-emerald-300"
+                            : "text-emerald-600 dark:text-emerald-300"
                         }`}
                       >
                         {formatPrice(item.price)}
                       </p>
                       {priceDropLabel && (
-                        <Badge className="mt-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/20 text-[9px] px-2 py-0.5 rounded-full">
+                        <Badge className="mt-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/20 text-xs px-2 py-1 rounded-full">
                           {t("price_drop") || "Price drop"} {priceDropLabel}
                         </Badge>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-500 dark:text-gray-300">
                         {item.seller_name && (
                           <span className="flex items-center gap-1">
                             <Avatar className="h-3.5 w-3.5 bg-gradient-to-br from-violet-500 to-fuchsia-500 dark:bg-gradient-to-br">

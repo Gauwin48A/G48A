@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FiAlertCircle,
   FiCheckCircle,
@@ -218,7 +218,7 @@ export default function LocationSelector({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/50 sm:items-start sm:pt-20"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-start sm:pt-20"
       onClick={onClose}
     >
       <div
@@ -275,7 +275,7 @@ export default function LocationSelector({ isOpen, onClose }) {
                     Location detected: {detectedLocation.displayName || detectedLocation.city}
                   </p>
                   <p className="text-xs text-green-600 dark:text-green-500">
-                    Accuracy: �{Math.round(Number(detectedLocation.accuracy) || 0)}m
+                    Accuracy: ?{Math.round(Number(detectedLocation.accuracy) || 0)}m
                   </p>
                   <p className="mt-1 text-xs text-green-500 dark:text-green-600">
                     {Number(detectedLocation.latitude).toFixed(6)},{" "}

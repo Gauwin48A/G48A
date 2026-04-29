@@ -175,10 +175,64 @@ const PageAuthGateState = ({
   secondaryAction,
   badge,
   highlights = [],
+  tone = "default",
   className = "",
   marker = "auth-gate",
-}) =>
-  React.createElement(
+}) => {
+  const tonePalette = {
+    default: {
+      badge:
+        "border-blue-200/70 bg-blue-50/80 text-blue-700 dark:border-blue-400/30 dark:bg-blue-900/30 dark:text-blue-200",
+      iconWrap:
+        "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300",
+      title: "text-gray-800 dark:text-gray-100",
+      description: "text-gray-500 dark:text-gray-400",
+      highlight:
+        "border-slate-200/70 bg-slate-50/90 text-slate-600 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-200",
+    },
+    rewards: {
+      badge:
+        "border-fuchsia-200/70 bg-fuchsia-50/80 text-fuchsia-700 dark:border-fuchsia-400/30 dark:bg-fuchsia-900/30 dark:text-fuchsia-200",
+      iconWrap:
+        "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300",
+      title: "text-fuchsia-900 dark:text-fuchsia-100",
+      description: "text-fuchsia-700/80 dark:text-fuchsia-200/80",
+      highlight:
+        "border-fuchsia-200/70 bg-fuchsia-50/80 text-fuchsia-700 dark:border-fuchsia-500/40 dark:bg-fuchsia-900/30 dark:text-fuchsia-200",
+    },
+    profile: {
+      badge:
+        "border-cyan-200/80 bg-cyan-50/90 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-900/30 dark:text-cyan-200",
+      iconWrap:
+        "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/35 dark:text-cyan-200",
+      title: "text-cyan-900 dark:text-cyan-100",
+      description: "text-slate-600 dark:text-cyan-100/80",
+      highlight:
+        "border-cyan-200/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200",
+    },
+    notifications: {
+      badge:
+        "border-sky-200/80 bg-sky-50/90 text-sky-800 dark:border-sky-400/30 dark:bg-sky-900/30 dark:text-sky-200",
+      iconWrap:
+        "bg-sky-50 text-sky-700 dark:bg-sky-900/35 dark:text-sky-200",
+      title: "text-sky-900 dark:text-sky-100",
+      description: "text-slate-600 dark:text-sky-100/80",
+      highlight:
+        "border-sky-200/80 bg-sky-50/85 text-sky-800 dark:border-sky-500/40 dark:bg-sky-900/30 dark:text-sky-200",
+    },
+    wishlist: {
+      badge:
+        "border-rose-200/80 bg-rose-50/90 text-rose-700 dark:border-rose-400/30 dark:bg-rose-900/30 dark:text-rose-200",
+      iconWrap:
+        "bg-rose-50 text-rose-700 dark:bg-rose-900/35 dark:text-rose-200",
+      title: "text-rose-900 dark:text-rose-100",
+      description: "text-slate-600 dark:text-rose-100/80",
+      highlight:
+        "border-rose-200/80 bg-rose-50/85 text-rose-700 dark:border-rose-500/40 dark:bg-rose-900/30 dark:text-rose-200",
+    },
+  };
+  const resolvedTone = tonePalette[tone] || tonePalette.default;
+  return React.createElement(
     Card,
     { className: `mhub-state-card ${className}`.trim(), "data-ux-state": marker },
     React.createElement(
@@ -192,7 +246,7 @@ const PageAuthGateState = ({
               "span",
               {
                 className:
-                  "inline-flex items-center rounded-full border border-blue-200/70 bg-blue-50/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700 shadow-sm dark:border-blue-400/30 dark:bg-blue-900/30 dark:text-blue-200",
+                  `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] shadow-sm ${resolvedTone.badge}`,
               },
               badge,
             ),
@@ -202,7 +256,7 @@ const PageAuthGateState = ({
         "div",
         {
           className:
-            "w-12 h-12 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-amber-50 text-amber-600 shadow-sm dark:bg-amber-900/30 dark:text-amber-300",
+            `w-12 h-12 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-sm ${resolvedTone.iconWrap}`,
         },
         React.createElement(Lock, {
           className: "w-6 h-6",
@@ -210,12 +264,12 @@ const PageAuthGateState = ({
       ),
       React.createElement(
         "p",
-        { className: "font-semibold text-gray-800 dark:text-gray-100 text-lg" },
+        { className: `font-semibold text-lg ${resolvedTone.title}` },
         title
       ),
       React.createElement(
         "p",
-        { className: "text-sm text-gray-500 dark:text-gray-400 mt-1 mb-5" },
+        { className: `text-sm mt-1 mb-5 ${resolvedTone.description}` },
         description
       ),
       Array.isArray(highlights) && highlights.length
@@ -228,7 +282,7 @@ const PageAuthGateState = ({
                 {
                   key: `${item}-${index}`,
                   className:
-                    "inline-flex items-center rounded-full border border-slate-200/70 bg-slate-50/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-200",
+                    `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ${resolvedTone.highlight}`,
                 },
                 item,
               ),
@@ -243,5 +297,6 @@ const PageAuthGateState = ({
       )
     )
   );
+};
 
 export { PageAuthGateState, PageEmptyState, PageErrorState, PageLoadingState };

@@ -730,7 +730,7 @@ const Ve = 5,
         },
         e.createElement(
           "div",
-          { className: "max-w-3xl mx-auto px-4 py-6" },
+          { className: "max-w-[640px] mx-auto px-4 py-3" },
           e.createElement(
             "div",
             {
@@ -739,17 +739,17 @@ const Ve = 5,
             },
             e.createElement(
               "div",
-              { className: "text-center md:text-left dark:text-center dark:md:text-left" },
+              { className: "text-center md:text-left dark:md:text-left" },
               e.createElement(
                 "div",
                 {
                   className:
                     "flex items-center justify-center md:justify-start gap-3 mb-2",
                 },
-                e.createElement(le, { className: "text-3xl text-white/90 dark:text-white/90" }),
+                e.createElement(le, { className: "text-xl sm:text-3xl text-white/90 dark:text-white/90" }),
                 e.createElement(
                   "h1",
-                  { className: "text-2xl md:text-3xl font-bold text-white dark:text-white" },
+                  { className: "text-lg sm:text-2xl md:text-3xl font-bold text-white dark:text-white" },
                   o("news_updates") || "News & Updates",
                 ),
               ),
@@ -763,13 +763,13 @@ const Ve = 5,
                 "div",
                 {
                   className:
-                    "mt-3 flex flex-wrap items-center justify-center md:justify-start gap-2 text-[11px] font-semibold text-white/80",
+                    "mt-3 flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs font-semibold text-white/80",
                 },
                 e.createElement(
                   "span",
                   {
                     className:
-                      "inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-white",
+                      "inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-white",
                   },
                   o("community_feed", { defaultValue: "Community feed" }),
                 ),
@@ -779,7 +779,7 @@ const Ve = 5,
                     type: "button",
                     onClick: () => g("/all-posts"),
                     className:
-                      "inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/10 px-2 py-0.5 text-white hover:bg-white/20",
+                      "inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/10 px-2 py-1 text-white hover:bg-white/20",
                   },
                   o("browse_marketplace", { defaultValue: "Browse marketplace" }),
                 ),
@@ -794,7 +794,7 @@ const Ve = 5,
                   onClick: () => g("/my-feed"),
                   variant: "outline",
                   className:
-                    "bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2 dark:bg-transparent dark:border-2 dark:border-white/50 dark:text-white dark:hover:bg-slate-900/10",
+                    "bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2 dark:bg-transparent dark:border-white/50 dark:text-white dark:hover:bg-slate-900/10",
                 },
                 e.createElement(Be, null),
                 " ",
@@ -825,51 +825,94 @@ const Ve = 5,
         "div",
         {
           className:
-            "sticky top-0 z-40 mhub-premium-bar transition-all",
+            "sticky z-40 mhub-premium-bar feed-sticky-toolbar transition-all",
+          style: { top: "var(--top-nav-height, 60px)" },
         },
         e.createElement(
           "div",
           {
             className:
-              "mx-auto flex w-full max-w-3xl justify-center px-4 py-2",
+              "mx-auto w-full max-w-[640px] px-3 py-2 space-y-2",
           },
+          /* Search + sort row */
           e.createElement(
-            "button",
-            {
-              onClick: be,
-              disabled: _,
-              "aria-label": o("refresh_feed") || "Refresh feed posts",
-              "data-ux-action": "feed_refresh_posts",
+            "div",
+            { className: "flex items-center gap-2" },
+            e.createElement("input", {
+              type: "text",
+              value: searchQuery,
+              onChange: (t) => setSearchQuery(t.target.value),
+              placeholder: o("search_feed") || "\uD83D\uDD0D Search the feed...",
               className:
-                "text-xs font-bold text-indigo-600 dark:text-indigo-400 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/40 shadow-sm border border-indigo-100 dark:border-indigo-800 active:scale-95 transition-transform flex items-center gap-2 dark:text-indigo-300 dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40",
-            },
-            _ && f === 1
-              ? e.createElement(
-                  e.Fragment,
-                  null,
-                  e.createElement(
-                    "span",
-                    { className: "animate-spin inline-block" },
-                    "R",
-                  ),
-                  " ",
-                  o("refreshing") || "Refreshing...",
-                )
-              : e.createElement(
-                  e.Fragment,
-                  null,
-                  o("refresh_feed") || "Refresh posts",
-                ),
+                "feed-search-input flex-1 px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/90 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm",
+            }),
+            e.createElement(
+              "select",
+              {
+                value: sortBy,
+                onChange: (t) => setSortBy(t.target.value),
+                className:
+                  "feed-sort-select px-2 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/90 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm",
+              },
+              e.createElement("option", { value: "shuffle" }, "\u2728 " + (o("sort_discover") || "Discover")),
+              e.createElement("option", { value: "created_at" }, "\uD83D\uDD25 " + (o("sort_recent") || "Newest")),
+              e.createElement("option", { value: "updated_at" }, "\uD83D\uDD04 " + (o("sort_updated") || "Updated")),
+              e.createElement("option", { value: "views_count" }, "\uD83D\uDC41 " + (o("sort_views") || "Popular")),
+              e.createElement("option", { value: "likes" }, "\u2764 " + (o("sort_likes") || "Liked")),
+              e.createElement("option", { value: "title" }, "\uD83D\uDD24 " + (o("sort_title") || "Title")),
+            ),
+            e.createElement(
+              "button",
+              {
+                onClick: be,
+                disabled: _,
+                "aria-label": o("refresh_feed") || "Refresh feed posts",
+                "data-ux-action": "feed_refresh_posts",
+                className:
+                  "feed-refresh-btn flex items-center justify-center w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 active:scale-90 transition-transform text-indigo-600 dark:text-indigo-300 shadow-sm",
+              },
+              _ && f === 1
+                ? e.createElement("span", { className: "animate-spin inline-block text-sm" }, "\u21BB")
+                : e.createElement("span", { className: "text-sm" }, "\u21BB"),
+            ),
+          ),
+          /* Sort order pills */
+          e.createElement(
+            "div",
+            { className: "feed-sort-pills flex items-center gap-1.5 overflow-x-auto scrollbar-hide" },
+            e.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => setSortOrder("desc"),
+                className: `feed-sort-pill inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-colors ${sortOrder === "desc" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"}`,
+              },
+              "\u2B07 " + (o("sort_desc") || "Newest first"),
+            ),
+            e.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => setSortOrder("asc"),
+                className: `feed-sort-pill inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-colors ${sortOrder === "asc" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"}`,
+              },
+              "\u2B06 " + (o("sort_asc") || "Oldest first"),
+            ),
+            displayPosts && displayPosts.length > 0 && e.createElement(
+              "span",
+              { className: "ml-auto text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap" },
+              displayPosts.length + " " + (o("posts_count") || "posts"),
+            ),
           ),
         ),
       ),
       e.createElement(
         "div",
-        { className: "max-w-3xl mx-auto px-4 py-6" },
+        { className: "max-w-[640px] mx-auto px-4 py-3" },
         !h &&
           e.createElement(
             O,
-            { className: "mb-6 border border-indigo-100 bg-indigo-50/70 p-4 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/70" },
+            { className: "mb-6 border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-600/40 dark:bg-indigo-950/70" },
             e.createElement(
               "div",
               {
@@ -921,7 +964,7 @@ const Ve = 5,
               { className: "flex items-center gap-4" },
               e.createElement(
                 oe,
-                { className: "w-11 h-11 bg-indigo-100 dark:bg-indigo-900 dark:bg-indigo-950/20" },
+                { className: "w-11 h-11 bg-indigo-100 dark:bg-indigo-950/20" },
                 e.createElement(
                   se,
                   {
@@ -942,85 +985,7 @@ const Ve = 5,
           ),
         e.createElement(
           "div",
-          { className: "mb-6 space-y-3" },
-          e.createElement(
-            "div",
-            { className: "flex flex-col sm:flex-row gap-3" },
-            e.createElement("input", {
-              type: "text",
-              value: searchQuery,
-              onChange: (t) => setSearchQuery(t.target.value),
-              placeholder: o("search_feed") || "Search the feed",
-              className:
-                "flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500",
-            }),
-            e.createElement(
-              "div",
-              { className: "flex gap-2" },
-              e.createElement(
-                "select",
-                {
-                  value: sortBy,
-                  onChange: (t) => setSortBy(t.target.value),
-                  className:
-                    "px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500",
-                },
-                e.createElement(
-                  "option",
-                  { value: "shuffle" },
-                  o("sort_discover") || "Discover",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "created_at" },
-                  o("sort_recent") || "Newest",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "updated_at" },
-                  o("sort_updated") || "Recently updated",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "views_count" },
-                  o("sort_views") || "Most viewed",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "likes" },
-                  o("sort_likes") || "Most liked",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "title" },
-                  o("sort_title") || "Title",
-                ),
-              ),
-              e.createElement(
-                "select",
-                {
-                  value: sortOrder,
-                  onChange: (t) => setSortOrder(t.target.value),
-                  className:
-                    "px-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500",
-                },
-                e.createElement(
-                  "option",
-                  { value: "desc" },
-                  o("sort_desc") || "Desc",
-                ),
-                e.createElement(
-                  "option",
-                  { value: "asc" },
-                  o("sort_asc") || "Asc",
-                ),
-              ),
-            ),
-          ),
-        ),
-        e.createElement(
-          "div",
-          { className: "space-y-4" },
+          { className: "space-y-2" },
           Ce
             ? e.createElement(
                 ne,
@@ -1148,19 +1113,19 @@ const Ve = 5,
                       {
                         key: r,
                         className:
-                          "mhub-premium-surface rounded-2xl overflow-hidden hover:shadow-md transition",
+                          "mhub-premium-surface rounded-xl overflow-hidden hover:shadow-md transition",
                       },
                       e.createElement(
                         "div",
                         {
                           className:
-                            "flex items-start gap-2 px-5 pt-4 pb-2 relative min-w-0 flex-nowrap",
+                            "flex items-start gap-2 px-3 pt-2 pb-1 relative min-w-0 flex-nowrap",
                         },
                         e.createElement(
                           oe,
                           {
                             className:
-                              `w-11 h-11 shrink-0 bg-gradient-to-br dark:bg-gradient-to-br ${getAvatarGradient(
+                              `w-8 h-8 shrink-0 bg-gradient-to-br dark:bg-gradient-to-br ${getAvatarGradient(
                                 sellerName || r,
                               )}`,
                           },
@@ -1197,9 +1162,9 @@ const Ve = 5,
                                     "span",
                                     {
                                       className:
-                                        "inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]",
+                                        "inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]",
                                     },
-                                    e.createElement(Ge, { className: "w-3 h-3 shrink-0" }),
+                                    e.createElement(Ge, { className: "w-4 h-4 shrink-0" }),
                                     getPostLocationLabel(t),
                                   ),
                                 )
@@ -1210,16 +1175,6 @@ const Ve = 5,
                               { className: "text-xs text-gray-400 dark:text-gray-500" },
                               Ne(t.created_at),
                             ),
-                            r && e.createElement(
-                              e.Fragment,
-                              null,
-                              e.createElement("span", { className: "text-gray-300 dark:text-gray-600" }, "\u00B7"),
-                              e.createElement(
-                                "span",
-                                { className: "text-[10px] text-gray-400 dark:text-gray-500 font-mono" },
-                                "#", String(r),
-                              ),
-                            ),
                           ),
                           (t.category_name || t.subcategory_name || t.category) &&
                             e.createElement(
@@ -1228,13 +1183,13 @@ const Ve = 5,
                               (t.category_name || t.category) &&
                                 e.createElement(
                                   "span",
-                                  { className: "inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-medium text-indigo-600 dark:text-indigo-300" },
+                                  { className: "inline-flex items-center px-1.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-xs font-medium text-indigo-600 dark:text-indigo-300" },
                                   t.category_name || t.category,
                                 ),
                               t.subcategory_name &&
                                 e.createElement(
                                   "span",
-                                  { className: "inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-[10px] font-medium text-purple-600 dark:text-purple-300" },
+                                  { className: "inline-flex items-center px-1.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/30 text-xs font-medium text-purple-600 dark:text-purple-300" },
                                   t.subcategory_name,
                                 ),
                             ),
@@ -1336,17 +1291,17 @@ const Ve = 5,
                       ),
                       e.createElement(
                         "div",
-                        { className: "px-5 pb-4" },
+                        { className: "px-3 pb-2" },
                         (t.title || postPriceLabel)
                           ? e.createElement(
                               "div",
-                              { className: "flex items-baseline justify-between gap-2 mb-2" },
+                              { className: "flex items-baseline justify-between gap-1.5 mb-1" },
                               t.title &&
                                 e.createElement(
                                   "h3",
                                   {
                                     className:
-                                      "text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100 truncate flex-1 min-w-0 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors",
+                                      "text-sm font-bold text-gray-900 dark:text-gray-100 truncate flex-1 min-w-0 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors",
                                     onClick: () => ke(r),
                                   },
                                   t.title,
@@ -1356,7 +1311,7 @@ const Ve = 5,
                                     "span",
                                     {
                                       className:
-                                        "shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 text-sm font-bold text-emerald-700 dark:text-emerald-200",
+                                        "shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-200",
                                     },
                                     postPriceLabel,
                                   )
@@ -1368,7 +1323,7 @@ const Ve = 5,
                               "div",
                               {
                                 className:
-                                  "mb-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer",
+                                  "mb-1.5 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer",
                                 onClick: () => ke(r),
                               },
                               e.createElement("img", {
@@ -1376,7 +1331,7 @@ const Ve = 5,
                                 alt: t.title || o("listing_image") || "Listing image",
                                 loading: "lazy",
                                 className:
-                                  "h-52 w-full object-cover transition-transform duration-300 hover:scale-[1.02]",
+                                  "h-32 w-full object-cover transition-transform duration-300 hover:scale-[1.02]",
                                 onError: (evt) => {
                                   evt.currentTarget.style.display = "none";
                                 },
@@ -1387,7 +1342,7 @@ const Ve = 5,
                           "div",
                           {
                             className:
-                              "text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap dark:text-gray-200",
+                              "text-sm text-gray-700 dark:text-gray-300 leading-snug whitespace-pre-wrap dark:text-gray-200",
                           },
                           l && !s
                             ? e.createElement(
@@ -1411,7 +1366,7 @@ const Ve = 5,
                                 a ||
                                   e.createElement(
                                     "span",
-                                    { className: "italic text-gray-400 dark:text-gray-500 dark:text-gray-300" },
+                                    { className: "italic text-gray-400 dark:text-gray-300" },
                                     o("no_content"),
                                   ),
                                 l &&
@@ -1432,19 +1387,19 @@ const Ve = 5,
                         "div",
                         {
                           className:
-                            "px-3 py-2.5 border-t border-gray-200 dark:border-gray-700 mhub-premium-bar dark:border-t",
+                            "px-2 py-1.5 border-t border-gray-200 dark:border-gray-700 mhub-premium-bar dark:border-t",
                         },
                         e.createElement(
                           "div",
                           {
                           className:
-                            "post-action-row flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap pr-2 py-1 text-[11px] sm:text-xs scrollbar-hide",
+                            "post-action-row flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap pr-2 py-1 text-xs sm:text-xs scrollbar-hide",
                           },
                           e.createElement(
                             "button",
                             {
                               className:
-                                "shrink-0 inline-flex h-7 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-gray-600 dark:text-gray-300 hover:text-red-500 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-red-300",
+                                "shrink-0 inline-flex h-10 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 text-gray-600 dark:text-gray-300 hover:text-red-500 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-red-300",
                               onClick: () => ve(r),
                             },
                             I[r]
@@ -1458,7 +1413,7 @@ const Ve = 5,
                             "button",
                             {
                               className:
-                                "shrink-0 inline-flex h-7 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-indigo-300",
+                                "shrink-0 inline-flex h-10 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-indigo-300",
                               onClick: () => ye(r),
                             },
                             e.createElement(Le, null),
@@ -1472,7 +1427,7 @@ const Ve = 5,
                             "button",
                             {
                               className:
-                                "shrink-0 inline-flex h-7 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-indigo-300",
+                                "shrink-0 inline-flex h-10 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:bg-gray-950 dark:text-gray-200 dark:hover:text-indigo-300",
                               onClick: () => toggleSaveFeed(r),
                             },
                             savedPosts[String(r)]
@@ -1492,7 +1447,7 @@ const Ve = 5,
                             "span",
                             {
                               className:
-                                "shrink-0 inline-flex h-7 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-gray-500 dark:text-gray-300 dark:bg-gray-950",
+                                "shrink-0 inline-flex h-10 items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 text-gray-500 dark:text-gray-300 dark:bg-gray-950",
                             },
                             e.createElement(Pe, null),
                             e.createElement(
@@ -1507,7 +1462,7 @@ const Ve = 5,
                             {
                               variant: "ghost",
                               className:
-                                "shrink-0 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-3 text-xs text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800/40 font-semibold sm:ml-auto",
+                                "shrink-0 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-3 text-xs text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800/40 font-semibold sm:ml-auto",
                               onClick: () => ke(r),
                             },
                             e.createElement(Pe, { className: "w-3.5 h-3.5" }),
@@ -1526,7 +1481,7 @@ const Ve = 5,
               O,
               {
                 className:
-                  "border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 text-center shadow-sm dark:border dark:border-indigo-600/40 dark:bg-gradient-to-br dark:text-center",
+                  "border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 text-center shadow-sm dark:border-indigo-600/40 dark:bg-gradient-to-br",
                 "data-ux-state": "feed-guest-preview-limit",
               },
               e.createElement(
@@ -1570,12 +1525,12 @@ const Ve = 5,
             e.createElement(
               "div",
               {
-                className: "text-center py-4 dark:text-center",
+                className: "text-center py-4",
                 "data-ux-state": "feed-load-more-loading",
               },
               e.createElement("div", {
                 className:
-                  "w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-2 dark:border-indigo-500/40 dark:border-t-transparent",
+                  "w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-t-transparent",
               }),
             ),
           loadMoreErrorMessage &&
@@ -1613,14 +1568,14 @@ const Ve = 5,
             displayPosts.length > 0 &&
             e.createElement(
               "div",
-              { className: "text-center py-10 dark:text-center" },
+              { className: "text-center py-10" },
               e.createElement(
                 "div",
                 { className: "inline-flex flex-col items-center gap-2" },
                 e.createElement("div", { className: "w-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:bg-gradient-to-r" }),
                 e.createElement("span", { className: "text-2xl" }, "✨"),
-                e.createElement("p", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-gray-300" }, o("end_of_feed") || "You've reached the end"),
-                e.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-500 dark:text-gray-300" }, o("check_back_later") || "Check back later for new listings"),
+                e.createElement("p", { className: "text-sm font-medium text-gray-500 dark:text-gray-300" }, o("end_of_feed") || "You've reached the end"),
+                e.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-300" }, o("check_back_later") || "Check back later for new listings"),
                 e.createElement("div", { className: "w-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:bg-gradient-to-r" }),
               ),
             ),
@@ -1659,7 +1614,7 @@ const Ve = 5,
           "div",
           {
             className:
-              "fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 dark:bg-indigo-700/40 dark:text-white",
+              "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+0.5rem)] left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-[60] dark:bg-indigo-700/40 dark:text-white",
           },
           K,
         ),

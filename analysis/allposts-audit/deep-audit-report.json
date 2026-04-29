@@ -1,0 +1,702 @@
+{
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "pageHeight": 1975,
+  "bodyOverflow": false,
+  "htmlOverflow": false,
+  "stats": {
+    "totalElements": 533,
+    "interactiveElements": 68,
+    "textElements": 141,
+    "imageElements": 0
+  },
+  "gridData": {
+    "columns": "164px 164px",
+    "gap": "8px",
+    "width": 336,
+    "padding": "0px",
+    "childCount": 5
+  },
+  "stickyBars": [
+    {
+      "height": 61,
+      "top": "0px",
+      "zIndex": "200",
+      "classes": "mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300",
+      "position": "sticky"
+    },
+    {
+      "height": 145,
+      "top": "40px",
+      "zIndex": "95",
+      "classes": "w-full sticky z-30 mhub-premium-bar mhub-allposts-toolbar",
+      "position": "sticky"
+    }
+  ],
+  "navData": {
+    "height": 64,
+    "top": 736,
+    "labels": [
+      {
+        "text": "Home",
+        "width": 30,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "All Posts",
+        "width": 44,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "For You",
+        "width": 37,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "Feed",
+        "width": 25,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "Rewards",
+        "width": 44,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "Profile",
+        "width": 33,
+        "isClipped": false,
+        "fontSize": "11px"
+      },
+      {
+        "text": "More",
+        "width": 26,
+        "isClipped": false,
+        "fontSize": "11px"
+      }
+    ]
+  },
+  "searchBars": [],
+  "categoryTrack": {
+    "category": "CATEGORY_TRACK",
+    "severity": "info",
+    "trackWidth": 1762,
+    "viewportWidth": 360,
+    "overflowPx": 1421,
+    "parentOverflow": "hidden",
+    "chipCount": 15,
+    "chips": [
+      {
+        "text": "All",
+        "width": 64,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": true
+      },
+      {
+        "text": "📦Agriculture",
+        "width": 117,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": true
+      },
+      {
+        "text": "📚Books",
+        "width": 87,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": true
+      },
+      {
+        "text": "💻Electronics",
+        "width": 118,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "👗Fashion",
+        "width": 97,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Food & Grocery",
+        "width": 139,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Hobbies & Collectibles",
+        "width": 183,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Home & Living",
+        "width": 133,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "🏠Home Appliances",
+        "width": 152,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Jobs",
+        "width": 79,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Kids & Baby",
+        "width": 118,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Real Estate",
+        "width": 117,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "📦Services",
+        "width": 102,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "⚽Sports",
+        "width": 91,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      },
+      {
+        "text": "🚗Vehicles",
+        "width": 100,
+        "height": 44,
+        "fontSize": "12px",
+        "padding": "8px 14px",
+        "isVisible": false
+      }
+    ],
+    "hasScrollbar": true
+  },
+  "cards": [
+    {
+      "index": 0,
+      "width": 164,
+      "height": 418,
+      "top": 391,
+      "subIssues": [],
+      "headerHeight": 186,
+      "headerPadding": "4px 6px 2px",
+      "sellerFontSize": "12px",
+      "sellerText": "Amit Kumar",
+      "avatarDisplay": "none",
+      "imageHeight": 120,
+      "imageWidth": 138,
+      "mediaFrameHeight": 137,
+      "priceHeight": 28,
+      "priceFontSize": "13px",
+      "currencyDisplay": "none",
+      "titleFontSize": "12px",
+      "titleLineHeight": "15.6px",
+      "titleHeight": 31,
+      "titleClamp": "2",
+      "titleText": "TVS Apache RTR 200",
+      "metaChipCount": 3,
+      "metaChipFontSize": "12px",
+      "metaChipPadding": "2px 5px",
+      "actionRowHeight": 53,
+      "actionRowPadding": "8px 10px",
+      "actionRowGap": "4px",
+      "actionButtons": [
+        {
+          "width": 65,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Like34"
+        },
+        {
+          "width": 36,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Interested"
+        },
+        {
+          "width": 0,
+          "height": 0,
+          "fontSize": "12px",
+          "isTooSmall": true,
+          "text": "View Details"
+        }
+      ],
+      "moreBtnWidth": 36,
+      "moreBtnHeight": 36,
+      "moreBtnPadding": "8px"
+    },
+    {
+      "index": 1,
+      "width": 164,
+      "height": 418,
+      "top": 391,
+      "subIssues": [],
+      "headerHeight": 186,
+      "headerPadding": "4px 6px 2px",
+      "sellerFontSize": "12px",
+      "sellerText": "Amit Kumar",
+      "avatarDisplay": "none",
+      "imageHeight": 120,
+      "imageWidth": 138,
+      "mediaFrameHeight": 137,
+      "priceHeight": 28,
+      "priceFontSize": "13px",
+      "currencyDisplay": "none",
+      "titleFontSize": "12px",
+      "titleLineHeight": "15.6px",
+      "titleHeight": 31,
+      "titleClamp": "2",
+      "titleText": "Hyundai Creta SX(O)",
+      "metaChipCount": 3,
+      "metaChipFontSize": "12px",
+      "metaChipPadding": "2px 5px",
+      "actionRowHeight": 53,
+      "actionRowPadding": "8px 10px",
+      "actionRowGap": "4px",
+      "actionButtons": [
+        {
+          "width": 65,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Like48"
+        },
+        {
+          "width": 36,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Interested"
+        },
+        {
+          "width": 0,
+          "height": 0,
+          "fontSize": "12px",
+          "isTooSmall": true,
+          "text": "View Details"
+        }
+      ],
+      "moreBtnWidth": 36,
+      "moreBtnHeight": 36,
+      "moreBtnPadding": "8px"
+    },
+    {
+      "index": 2,
+      "width": 164,
+      "height": 418,
+      "top": 817,
+      "subIssues": [],
+      "headerHeight": 186,
+      "headerPadding": "4px 6px 2px",
+      "sellerFontSize": "12px",
+      "sellerText": "Amit Kumar",
+      "avatarDisplay": "none",
+      "imageHeight": 120,
+      "imageWidth": 138,
+      "mediaFrameHeight": 137,
+      "priceHeight": 28,
+      "priceFontSize": "13px",
+      "currencyDisplay": "none",
+      "titleFontSize": "12px",
+      "titleLineHeight": "15.6px",
+      "titleHeight": 31,
+      "titleClamp": "2",
+      "titleText": "Maruti Swift ZXI Plus",
+      "metaChipCount": 3,
+      "metaChipFontSize": "12px",
+      "metaChipPadding": "2px 5px",
+      "actionRowHeight": 53,
+      "actionRowPadding": "8px 10px",
+      "actionRowGap": "4px",
+      "actionButtons": [
+        {
+          "width": 65,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Like9"
+        },
+        {
+          "width": 36,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Interested"
+        },
+        {
+          "width": 0,
+          "height": 0,
+          "fontSize": "12px",
+          "isTooSmall": true,
+          "text": "View Details"
+        }
+      ],
+      "moreBtnWidth": 36,
+      "moreBtnHeight": 36,
+      "moreBtnPadding": "8px"
+    },
+    {
+      "index": 3,
+      "width": 164,
+      "height": 418,
+      "top": 817,
+      "subIssues": [
+        "TITLE_TRUNCATED"
+      ],
+      "headerHeight": 186,
+      "headerPadding": "4px 6px 2px",
+      "sellerFontSize": "12px",
+      "sellerText": "Amit Kumar",
+      "avatarDisplay": "none",
+      "imageHeight": 120,
+      "imageWidth": 138,
+      "mediaFrameHeight": 137,
+      "priceHeight": 28,
+      "priceFontSize": "13px",
+      "currencyDisplay": "none",
+      "titleFontSize": "12px",
+      "titleLineHeight": "15.6px",
+      "titleHeight": 31,
+      "titleClamp": "2",
+      "titleText": "Honda City 2023 VX CVT",
+      "metaChipCount": 3,
+      "metaChipFontSize": "12px",
+      "metaChipPadding": "2px 5px",
+      "actionRowHeight": 53,
+      "actionRowPadding": "8px 10px",
+      "actionRowGap": "4px",
+      "actionButtons": [
+        {
+          "width": 65,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Like65"
+        },
+        {
+          "width": 36,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Interested"
+        },
+        {
+          "width": 0,
+          "height": 0,
+          "fontSize": "12px",
+          "isTooSmall": true,
+          "text": "View Details"
+        }
+      ],
+      "moreBtnWidth": 36,
+      "moreBtnHeight": 36,
+      "moreBtnPadding": "8px"
+    },
+    {
+      "index": 4,
+      "width": 164,
+      "height": 402,
+      "top": 1243,
+      "subIssues": [
+        "TITLE_TRUNCATED"
+      ],
+      "headerHeight": 170,
+      "headerPadding": "4px 6px 2px",
+      "sellerFontSize": "12px",
+      "sellerText": "Priya Patel",
+      "avatarDisplay": "none",
+      "imageHeight": 120,
+      "imageWidth": 138,
+      "mediaFrameHeight": 137,
+      "priceHeight": 28,
+      "priceFontSize": "13px",
+      "currencyDisplay": "none",
+      "titleFontSize": "12px",
+      "titleLineHeight": "15.6px",
+      "titleHeight": 31,
+      "titleClamp": "2",
+      "titleText": "Gucci Marmont Bag",
+      "metaChipCount": 3,
+      "metaChipFontSize": "12px",
+      "metaChipPadding": "2px 5px",
+      "actionRowHeight": 53,
+      "actionRowPadding": "8px 10px",
+      "actionRowGap": "4px",
+      "actionButtons": [
+        {
+          "width": 65,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Like23"
+        },
+        {
+          "width": 36,
+          "height": 36,
+          "fontSize": "12px",
+          "isTooSmall": false,
+          "text": "Interested"
+        },
+        {
+          "width": 0,
+          "height": 0,
+          "fontSize": "12px",
+          "isTooSmall": true,
+          "text": "View Details"
+        }
+      ],
+      "moreBtnWidth": 36,
+      "moreBtnHeight": 36,
+      "moreBtnPadding": "8px"
+    }
+  ],
+  "touchTargetIssues": [
+    {
+      "tag": "A",
+      "text": "Home",
+      "width": 45,
+      "height": 41,
+      "classes": "mhub-nav-pill flex items-center gap-1.5 sm:gap-2 rounded-ful",
+      "top": 9
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Filter",
+      "width": 44,
+      "height": 40,
+      "classes": "mhub-nav-action inline-flex h-10 sm:h-11 items-center gap-1.",
+      "top": 10
+    },
+    {
+      "tag": "BUTTON",
+      "text": "+1 more",
+      "width": 60,
+      "height": 36,
+      "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full fo",
+      "top": 688
+    },
+    {
+      "tag": "BUTTON",
+      "text": "",
+      "width": 36,
+      "height": 36,
+      "classes": "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:",
+      "top": 544
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Like34",
+      "width": 65,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 740
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Interested",
+      "width": 36,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 740
+    },
+    {
+      "tag": "BUTTON",
+      "text": "+1 more",
+      "width": 60,
+      "height": 36,
+      "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full fo",
+      "top": 688
+    },
+    {
+      "tag": "BUTTON",
+      "text": "",
+      "width": 36,
+      "height": 36,
+      "classes": "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:",
+      "top": 544
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Like48",
+      "width": 65,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 740
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Interested",
+      "width": 36,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 740
+    },
+    {
+      "tag": "BUTTON",
+      "text": "+1 more",
+      "width": 60,
+      "height": 36,
+      "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full fo",
+      "top": 1114
+    },
+    {
+      "tag": "BUTTON",
+      "text": "",
+      "width": 36,
+      "height": 36,
+      "classes": "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:",
+      "top": 970
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Like9",
+      "width": 65,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1166
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Interested",
+      "width": 36,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1166
+    },
+    {
+      "tag": "BUTTON",
+      "text": "+1 more",
+      "width": 60,
+      "height": 36,
+      "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full fo",
+      "top": 1114
+    },
+    {
+      "tag": "BUTTON",
+      "text": "",
+      "width": 36,
+      "height": 36,
+      "classes": "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:",
+      "top": 970
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Like65",
+      "width": 65,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1166
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Interested",
+      "width": 36,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1166
+    },
+    {
+      "tag": "BUTTON",
+      "text": "+1 more",
+      "width": 60,
+      "height": 36,
+      "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full fo",
+      "top": 1524
+    },
+    {
+      "tag": "BUTTON",
+      "text": "",
+      "width": 36,
+      "height": 36,
+      "classes": "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:",
+      "top": 1396
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Like23",
+      "width": 65,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1576
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Interested",
+      "width": 36,
+      "height": 36,
+      "classes": "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-f",
+      "top": 1576
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Login",
+      "width": 342,
+      "height": 36,
+      "classes": "mhub-btn justify-center whitespace-nowrap text-sm font-semib",
+      "top": 1719
+    },
+    {
+      "tag": "OL",
+      "text": "",
+      "width": 360,
+      "height": 16,
+      "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-revers",
+      "top": 0
+    }
+  ],
+  "fontSizeDistribution": {
+    "14px": 4,
+    "12px": 79,
+    "11px": 15,
+    "16.8px": 1,
+    "13px": 42
+  },
+  "spacingIssues": []
+}

@@ -394,7 +394,7 @@ const ComplaintsPage = () => {
         "div",
         {
           className:
-            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative dark:bg-gradient-to-br" +
+            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative overflow-x-hidden dark:bg-gradient-to-br" +
             densityClass,
           style: { minHeight: "100vh" },
         },
@@ -416,7 +416,7 @@ const ComplaintsPage = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-7 space-y-6" },
+          { className: "relative max-w-[640px] mx-auto px-4 py-6 sm:px-6 sm:py-7 space-y-6" },
           e.createElement(
             "div",
             { className: "text-center pt-6 mhub-hero-card rounded-3xl px-5 py-6 sm:px-7 sm:py-7" },
@@ -452,7 +452,7 @@ const ComplaintsPage = () => {
                 "span",
                 {
                   className:
-                    "bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent",
+                    "bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent dark:bg-clip-text dark:text-transparent",
                 },
                 r("complaint"),
               ),
@@ -570,7 +570,7 @@ const ComplaintsPage = () => {
                         "e.g., USER123456",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-gray-700 dark:focus:border-red-500/40",
                     }),
                   ),
                   e.createElement(
@@ -596,7 +596,7 @@ const ComplaintsPage = () => {
                         "e.g., POST001",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-gray-700 dark:focus:border-red-500/40",
                       required: !0,
                     }),
                   ),
@@ -626,7 +626,7 @@ const ComplaintsPage = () => {
                         "e.g., ABC123",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-gray-700 dark:focus:border-red-500/40",
                     }),
                   ),
                 ),
@@ -650,7 +650,7 @@ const ComplaintsPage = () => {
                       value: a.complaintType,
                       onChange: p,
                       className:
-                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40 dark:bg-slate-900",
+                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white dark:border-gray-700 dark:focus:border-red-500/40 dark:bg-slate-900",
                     },
                     e.createElement(
                       "option",
@@ -711,7 +711,7 @@ const ComplaintsPage = () => {
                     placeholder: r("describe_issue_detail"),
                     rows: 5,
                     className:
-                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none dark:border-gray-700 dark:focus:border-red-500/40",
                     required: !0,
                   }),
                 ),
@@ -729,7 +729,7 @@ const ComplaintsPage = () => {
                         { className: "flex items-center gap-3" },
                         e.createElement("div", {
                           className:
-                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-3 dark:border-white/30 dark:border-t-white",
+                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-t-white",
                         }),
                         r("submitting"),
                       )
@@ -748,7 +748,7 @@ const ComplaintsPage = () => {
               v,
               {
                 className:
-                  "shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden dark:border dark:border-blue-600/40 dark:bg-blue-950/20",
+                  "shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden dark:border-blue-600/40 dark:bg-blue-950/20",
               },
               e.createElement(
                 w,
@@ -837,21 +837,21 @@ const ComplaintsPage = () => {
               K
                 ? e.createElement(
                     "div",
-                    { className: "text-center py-8 dark:text-center" },
+                    { className: "text-center py-8" },
                     e.createElement("div", {
                       className:
-                        "w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-red-600/40 dark:border-t-red-500",
+                        "w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4 dark:border-t-red-500",
                     }),
                     e.createElement(
                       "p",
-                      { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                      { className: "text-gray-500 dark:text-gray-300" },
                       r("loading_complaints"),
                     ),
                   )
                 : j
                   ? e.createElement(
                       "div",
-                      { className: "text-center py-8 dark:text-center" },
+                      { className: "text-center py-8" },
                       e.createElement(
                         "p",
                         { className: "text-red-500 dark:text-red-400 mb-3 dark:text-red-300" },
@@ -866,7 +866,7 @@ const ComplaintsPage = () => {
                   : z.length === 0
                     ? e.createElement(
                         "div",
-                        { className: "text-center py-12 dark:text-center" },
+                        { className: "text-center py-12" },
                         e.createElement(
                           "div",
                           {
@@ -908,7 +908,7 @@ const ComplaintsPage = () => {
                             {
                               key: s,
                               className:
-                                "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all dark:bg-gradient-to-r dark:border dark:border-gray-700",
+                                "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all dark:bg-gradient-to-r dark:border-gray-700",
                             },
                             e.createElement(
                               "div",
@@ -999,7 +999,7 @@ const ComplaintsPage = () => {
                                 "div",
                                 {
                                   className:
-                                    "bg-green-50 border border-green-200 rounded-xl p-4 dark:bg-green-950/20 dark:border dark:border-green-600/40",
+                                    "bg-green-50 border border-green-200 rounded-xl p-4 dark:bg-green-950/20 dark:border-green-600/40",
                                 },
                                 e.createElement(
                                   "p",
@@ -1026,7 +1026,7 @@ const ComplaintsPage = () => {
             v,
             {
               className:
-                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-yellow-700 dark:border-0 dark:bg-gradient-to-r dark:border-2 dark:border-yellow-600/40",
+                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-0 dark:bg-gradient-to-r dark:border-yellow-600/40",
               "data-density": "extra",
             },
             e.createElement(
@@ -1059,7 +1059,7 @@ const ComplaintsPage = () => {
                     "ul",
                     {
                       className:
-                        "space-y-2 text-yellow-700 dark:text-yellow-400 dark:text-yellow-300",
+                        "space-y-2 text-yellow-700 dark:text-yellow-300",
                     },
                     e.createElement(
                       "li",
@@ -1124,7 +1124,7 @@ const ComplaintsPage = () => {
         },
         e.createElement(
           "div",
-          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-2xl mx-auto" },
+          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-[640px] mx-auto" },
           e.createElement(
             "div",
             {
@@ -1147,7 +1147,7 @@ const ComplaintsPage = () => {
         ),
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto px-6 space-y-4" },
+          { className: "max-w-[640px] mx-auto px-6 space-y-4" },
           e.createElement(
             J,
             {
@@ -1188,7 +1188,7 @@ const ComplaintsPage = () => {
             {
               to: "/signup",
               className:
-                "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border dark:border-white/20 dark:hover:bg-slate-900/20",
+                "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border-white/20 dark:hover:bg-slate-900/20",
             },
             e.createElement(
               "div",

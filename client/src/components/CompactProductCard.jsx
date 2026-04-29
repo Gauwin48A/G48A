@@ -88,7 +88,7 @@ const CompactProductCard = memo(function CompactProductCard({
       aria-label={post.title || "Product listing"}
     >
       {/* LEFT: Image */}
-      <div className="relative flex-shrink-0 w-[100px] h-[120px] rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700">
+      <div className="relative flex-shrink-0 w-[90px] h-[110px] rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700">
         {imageUrl ? (
           <SmartImage
             src={imageUrl}
@@ -102,7 +102,7 @@ const CompactProductCard = memo(function CompactProductCard({
           </div>
         )}
         {isTrending && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-1 rounded">
             🔥 {t("trending", { defaultValue: "HOT" })}
           </span>
         )}
@@ -125,7 +125,7 @@ const CompactProductCard = memo(function CompactProductCard({
         {/* Seller info */}
         <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
           <span
-            className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
             aria-hidden="true"
           >
             {sellerInitial}
@@ -133,7 +133,7 @@ const CompactProductCard = memo(function CompactProductCard({
           <span className="font-medium truncate">{sellerName}</span>
           {trustLabel && (
             <span
-              className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${trustBadgeClass}`}
+              className={`rounded-full px-2 py-1 text-xs font-semibold ${trustBadgeClass}`}
               title={trustScore != null ? `${trustLabel} · ${trustScore}` : trustLabel}
             >
               {trustLabel}
@@ -141,22 +141,22 @@ const CompactProductCard = memo(function CompactProductCard({
             </span>
           )}
           {isFrozen ? (
-            <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-rose-600 text-white">
+            <span className="rounded-full px-2 py-1 text-xs font-semibold bg-rose-600 text-white">
               Frozen
             </span>
           ) : underReview ? (
-            <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-amber-500 text-white">
+            <span className="rounded-full px-2 py-1 text-xs font-semibold bg-amber-500 text-white">
               Under Review
             </span>
           ) : null}
-          {rating && <span className="text-[10px]">⭐ {rating}</span>}
+          {rating && <span className="text-xs">⭐ {rating}</span>}
           {isVerified && (
-            <span className="text-[10px]" title="Verified seller" aria-label="Verified seller">✅</span>
+            <span className="text-xs" title="Verified seller" aria-label="Verified seller">✅</span>
           )}
         </div>
 
         {/* Meta: date + location + interest */}
-        <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-slate-500">
+        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
           {postedDaysAgo != null && <span>{postedDaysAgo}d ago</span>}
           {postedDaysAgo != null && location && <span>•</span>}
           {location && <span className="truncate">{location}</span>}
@@ -170,7 +170,7 @@ const CompactProductCard = memo(function CompactProductCard({
 
         {/* Recommendation reason */}
         {showReason && post.recommendation_reason && (
-          <div className="text-[10px] text-blue-600 dark:text-blue-400 truncate">
+          <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
             {post.recommendation_reason}
           </div>
         )}
@@ -179,18 +179,18 @@ const CompactProductCard = memo(function CompactProductCard({
         <div className="flex items-center gap-1 mt-1">
           <button
             onClick={(e) => { e.stopPropagation(); onMessage?.(post); }}
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 text-white text-[11px] font-semibold rounded-md transition-colors"
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-md transition-colors"
             aria-label={`Message ${sellerName}`}
           >
-            <MessageSquare className="w-3.5 h-3.5" />
+            <MessageSquare className="w-4 h-4" />
             <span className="hidden xs:inline">Message</span>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onAddToCart?.(post); }}
-            className="flex items-center justify-center px-2 py-1.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-[11px] font-semibold rounded-md transition-colors border border-gray-200 dark:border-slate-600"
+            className="flex items-center justify-center px-2 py-1.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-xs font-semibold rounded-md transition-colors border border-gray-200 dark:border-slate-600"
             aria-label="Add to cart"
           >
-            <ShoppingCart className="w-3.5 h-3.5" />
+            <ShoppingCart className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); }}

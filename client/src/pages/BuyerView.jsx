@@ -276,19 +276,19 @@ const normalizePrice = (value) => {
       "div",
       {
         className:
-          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 main-content page-shell page-pad dark:bg-gradient-to-br",
+          "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 max-w-[640px] mx-auto px-4 sm:px-6 lg:px-8 py-8 main-content page-shell page-pad dark:bg-gradient-to-br",
       },
       React.createElement(
         "div",
         { className: "mb-8" },
         React.createElement(
           "h1",
-          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
+          { className: "text-xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
           tr("browse_phones", "Browse Mobile Phones"),
         ),
         React.createElement(
           "p",
-          { className: "text-gray-600 dark:text-gray-400 dark:text-gray-200" },
+          { className: "text-gray-600 dark:text-gray-200" },
           tr(
             "buyer_view_subtitle",
             "Find your perfect mobile phone from verified sellers.",
@@ -417,7 +417,7 @@ const normalizePrice = (value) => {
         errorMsg &&
         React.createElement(PageErrorState, {
           marker: "error",
-          className: "border border-red-200 bg-red-50 dark:border dark:border-red-600/40 dark:bg-red-950/20",
+          className: "border border-red-200 bg-red-50 dark:border-red-600/40 dark:bg-red-950/20",
           title: tr("buyer_listings_unavailable", "Buyer listings unavailable"),
           description: errorMsg,
           onRetry: fetchListings,
@@ -432,7 +432,7 @@ const normalizePrice = (value) => {
         filteredListings.length === 0 &&
         React.createElement(PageEmptyState, {
           marker: "empty",
-          className: "border-2 border-dashed dark:border-2 dark:border-dashed",
+          className: "border-2 border-dashed dark:border-dashed",
           title: tr("buyer_listings_empty_title", "No matching listings found"),
           description: tr(
             "buyer_listings_empty_desc",
@@ -530,7 +530,7 @@ const normalizePrice = (value) => {
                     { className: "flex justify-between items-center" },
                     React.createElement(
                       "span",
-                      { className: "text-2xl font-bold text-green-600 dark:text-green-300" },
+                      { className: "text-lg sm:text-2xl font-bold text-green-600 dark:text-green-300" },
                       listing.price,
                     ),
                     React.createElement(
@@ -580,7 +580,7 @@ const normalizePrice = (value) => {
                       "button",
                       {
                         className:
-                          "btn btn-secondary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
+                          "btn btn-secondary flex-1 min-w-[110px] h-9 px-3 text-xs sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
                         onClick: () => navigate("/chat"),
                       },
                       React.createElement(PhoneIcon, { className: "w-4 h-4 mr-1" }),
@@ -590,7 +590,7 @@ const normalizePrice = (value) => {
                       "button",
                       {
                         className:
-                          "btn btn-primary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
+                          "btn btn-primary flex-1 min-w-[110px] h-9 px-3 text-xs sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
                         onClick: () => navigate("/all-posts"),
                       },
                       tr("view_details", "View Details"),
