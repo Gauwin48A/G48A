@@ -6,7 +6,9 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -39,12 +41,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.dp
 import com.mhub.app.BuildConfig
 import kotlinx.coroutines.delay
 
 private const val WEB_PARITY_TAG = "WebParityReplica"
 private const val WEB_REPLICA_USER_AGENT_TOKEN = "MhubAndroidWebReplica/1.0"
 private const val CURRENT_USER_PLACEHOLDER = "__CURRENT_USER__"
+private const val MAX_AUTO_RECOVERY_RELOADS = 2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
@@ -54,10 +58,14 @@ fun WebParityWebReplicaScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val route = remember(pageKey) { WebRouteCatalog.byKey(pageKey) }
+    val (normalizedPageKey, debugRouteOverridePath) = remember(pageKey) {
+        splitDebugPageKey(pageKey)
+    }
+    val route = remember(normalizedPageKey) { WebRouteCatalog.byKey(normalizedPageKey) }
     val baseUrl = remember { normalizeWebBaseUrl(BuildConfig.WEB_REFERENCE_BASE_URL) }
-    val routePath = remember(route) {
-        route?.canonicalPath?.let(::resolveRoutePath) ?: "/"
+    val routePath = remember(route, debugRouteOverridePath) {
+        val candidatePath = debugRouteOverridePath ?: route?.canonicalPath ?: "/"
+        resolveRoutePath(candidatePath)
     }
     val targetUrl = remember(baseUrl, routePath) { joinUrl(baseUrl, routePath) }
     val showReplicaChrome = false
@@ -68,15 +76,41 @@ fun WebParityWebReplicaScreen(
     var isLoading by remember(pageKey) { mutableStateOf(true) }
     var initialPageReady by remember(pageKey) { mutableStateOf(false) }
     var autoLoginTriggered by remember(pageKey) { mutableStateOf(false) }
+    var recoveryReloadCount by remember(pageKey) { mutableStateOf(0) }
+    var loadingSlowHint by remember(pageKey) { mutableStateOf(false) }
 
-    // Vite/HMR reconnects can keep WebView progress below 95 forever, which leaves
-    // a native spinner covering the page. Force-hide it after a sane boot window.
+    fun requestRecoveryReload(reason: String) {
+        if (recoveryReloadCount >= MAX_AUTO_RECOVERY_RELOADS) return
+        val view = webViewRef ?: return
+        recoveryReloadCount += 1
+        initialPageReady = false
+        isLoading = true
+        Log.w(
+            WEB_PARITY_TAG,
+            "recovery-reload route=$pageKey reason=$reason attempt=$recoveryReloadCount",
+        )
+        view.postDelayed({
+            runCatching {
+                view.stopLoading()
+                view.loadUrl(initialUrl)
+            }
+        }, 1200)
+    }
+
+    // Vite/HMR reconnects can keep WebView progress below 95 for long stretches.
+    // Trigger one recovery reload and then show a slow-loading hint without blanking the UI.
     LaunchedEffect(pageKey) {
         isLoading = true
         initialPageReady = false
-        delay(15000)
+        recoveryReloadCount = 0
+        loadingSlowHint = false
+        delay(9000)
         if (!initialPageReady) {
-            isLoading = false
+            requestRecoveryReload("startup_timeout")
+            delay(7000)
+            if (!initialPageReady) {
+                loadingSlowHint = true
+            }
         }
     }
 
@@ -195,9 +229,40 @@ fun WebParityWebReplicaScreen(
                                 request: WebResourceRequest?,
                             ): Boolean = false
 
+                            override fun onReceivedError(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                error: WebResourceError,
+                            ) {
+                                super.onReceivedError(view, request, error)
+                                if (!request.isForMainFrame) return
+                                Log.w(
+                                    WEB_PARITY_TAG,
+                                    "main-frame-error route=$pageKey code=${error.errorCode} desc=${error.description}",
+                                )
+                                requestRecoveryReload("main_frame_error_${error.errorCode}")
+                            }
+
+                            override fun onReceivedHttpError(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                errorResponse: WebResourceResponse,
+                            ) {
+                                super.onReceivedHttpError(view, request, errorResponse)
+                                if (!request.isForMainFrame) return
+                                if (errorResponse.statusCode >= 500) {
+                                    Log.w(
+                                        WEB_PARITY_TAG,
+                                        "main-frame-http-error route=$pageKey status=${errorResponse.statusCode}",
+                                    )
+                                    requestRecoveryReload("main_frame_http_${errorResponse.statusCode}")
+                                }
+                            }
+
                             override fun onPageFinished(view: WebView, url: String?) {
                                 initialPageReady = true
                                 isLoading = false
+                                loadingSlowHint = false
                                 view.evaluateJavascript(buildWebReplicaSurfaceScript(routePath)) { result ->
                                     Log.v(
                                         WEB_PARITY_TAG,
@@ -248,9 +313,26 @@ fun WebParityWebReplicaScreen(
             )
 
             if (isLoading) {
-                CircularProgressIndicator(
+                Column(
                     modifier = Modifier.align(Alignment.Center),
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    CircularProgressIndicator()
+                    if (loadingSlowHint) {
+                        Text(
+                            text = "Still loading live data…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 10.dp),
+                        )
+                        Text(
+                            text = "Keeping connection active and retrying.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -279,6 +361,18 @@ private fun resolveRoutePath(path: String): String {
         .replace(":token", "sample-token")
         .replace(":code", "INVITE123")
         .replace(":slug", "mobiles")
+}
+
+private fun splitDebugPageKey(rawPageKey: String): Pair<String, String?> {
+    val marker = "~route~"
+    val markerIndex = rawPageKey.indexOf(marker)
+    if (markerIndex <= 0) return rawPageKey to null
+    val key = rawPageKey.substring(0, markerIndex)
+    val encodedPath = rawPageKey.substring(markerIndex + marker.length)
+    if (encodedPath.isBlank()) return key to null
+    val decodedPath = runCatching { Uri.decode(encodedPath) }.getOrNull().orEmpty().trim()
+    if (decodedPath.isBlank()) return key to null
+    return key to decodedPath
 }
 
 private fun shouldAutoLoginForRoute(route: WebRouteReference): Boolean {
@@ -325,6 +419,36 @@ private fun buildWebReplicaSurfaceScript(targetPath: String): String {
             localStorage.setItem('mhub_layout_preview_mode', 'mobile');
             localStorage.setItem('mhub_layout_preview_user', '1');
             sessionStorage.setItem('mhub_layout_preview_session', '1');
+            localStorage.removeItem('mhub_parity_offline_auth');
+            sessionStorage.removeItem('mhub_parity_offline_auth');
+            var categoryGroup = '';
+            try {
+              var query = '';
+              if (targetPath.indexOf('?') >= 0) {
+                query = targetPath.split('?').slice(1).join('?');
+              }
+              var params = new URLSearchParams(query || '');
+              categoryGroup = String(
+                params.get('category_group') ||
+                params.get('categoryGroup') ||
+                params.get('group') ||
+                ''
+              ).trim().toLowerCase();
+              if (categoryGroup) {
+                if (categoryGroup.indexOf('electronic') === 0 || categoryGroup.indexOf('mobile') === 0) {
+                  categoryGroup = 'electronics';
+                } else if (categoryGroup.indexOf('fashion') === 0) {
+                  categoryGroup = 'fashion';
+                } else if (categoryGroup.indexOf('vehicle') === 0 || categoryGroup.indexOf('auto') === 0) {
+                  categoryGroup = 'vehicles';
+                } else if (categoryGroup === 'other') {
+                  categoryGroup = 'others';
+                }
+                localStorage.setItem('mhub:active-app', categoryGroup);
+                localStorage.removeItem('mhub:category-mode');
+                localStorage.removeItem('mhub:subcategory-mode');
+              }
+            } catch (_) {}
             if (!localStorage.getItem('mhub-theme')) {
               localStorage.setItem('mhub-theme', 'light');
               localStorage.setItem('darkMode', 'false');
@@ -332,26 +456,6 @@ private fun buildWebReplicaSurfaceScript(targetPath: String): String {
             var skipPayload = JSON.stringify({ skipped: true, timestamp: Date.now() });
             localStorage.setItem('mhub_location_skipped', skipPayload);
             sessionStorage.setItem('mhub_location_skipped', skipPayload);
-            localStorage.setItem('mhub_parity_offline_auth', '1');
-            sessionStorage.setItem(
-              'mhub_parity_offline_auth',
-              JSON.stringify({ enabled: true, reason: 'surface_bootstrap', at: Date.now() })
-            );
-            if (localStorage.getItem('authSession') !== 'true') {
-              var fallbackUser = {
-                id: '1',
-                user_id: '1',
-                name: 'Parity User',
-                full_name: 'Parity User',
-                username: 'parity_user',
-                email: 'parity.user@mhub.local',
-                role: 'user'
-              };
-              localStorage.setItem('authSession', 'true');
-              localStorage.setItem('user', JSON.stringify(fallbackUser));
-              localStorage.setItem('userId', '1');
-              localStorage.setItem('user_id', '1');
-            }
             localStorage.setItem('android_parity_target_path', targetPath);
             document.documentElement.setAttribute('data-layout-preview', 'mobile');
             if (document.body) {
@@ -365,21 +469,6 @@ private fun buildWebReplicaSurfaceScript(targetPath: String): String {
               style.id = 'mhub-android-replica-style';
               style.textContent = 'html,body{max-width:100%;overflow-x:hidden !important;}html[data-native-platform] body::before{display:none !important;}html[data-native-platform] #root{width:100% !important;max-width:none !important;margin-inline:0 !important;border:0 !important;box-shadow:none !important;transform:none !important;}.location-accuracy-badge-wrap,.location-accuracy-badge,.location-accuracy-badge-close{display:none !important;}';
               document.head.appendChild(style);
-            }
-          } catch (_) {}
-          try {
-            var path = window.location.pathname || '';
-            var isAuthPath =
-              path.startsWith('/login') ||
-              path.startsWith('/signup') ||
-              path.startsWith('/forgot-password') ||
-              path.startsWith('/reset-password');
-            if (isAuthPath && localStorage.getItem('authSession') === 'true') {
-              var redirectPath = localStorage.getItem('android_parity_target_path') || targetPath || '/category-hub';
-              if (!redirectPath.startsWith('/login') && !redirectPath.startsWith('/signup')) {
-                window.location.replace(redirectPath);
-                return 'surface_patch_redirect_auth_to_target';
-              }
             }
           } catch (_) {}
           return 'surface_patch_ok';
@@ -478,59 +567,70 @@ private fun buildAutoLoginScript(targetPath: String): String {
             const localId = String(userId || localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
             return template.replace(placeholder, encodeURIComponent(localId));
           };
-          const applyOfflineParitySession = (reason) => {
-            const fallbackUser = {
-              id: '1',
-              user_id: '1',
-              name: 'Parity User',
-              full_name: 'Parity User',
-              username: 'parity_user',
-              email: 'parity.user@mhub.local',
-              role: 'user'
-            };
+          const clearLocalSession = () => {
+            try {
+              localStorage.removeItem('authSession');
+              localStorage.removeItem('user');
+              localStorage.removeItem('userId');
+              localStorage.removeItem('user_id');
+            } catch (_) {}
+          };
+          const persistSessionFromUser = (user) => {
             try {
               localStorage.setItem('authSession', 'true');
-              localStorage.setItem('user', JSON.stringify(fallbackUser));
-              localStorage.setItem('userId', '1');
-              localStorage.setItem('user_id', '1');
-              localStorage.setItem('mhub_parity_offline_auth', '1');
-              sessionStorage.setItem(
-                'mhub_parity_offline_auth',
-                JSON.stringify({ enabled: true, reason: reason || null, at: Date.now() })
-              );
-            } catch (_) {}
-            window.location.assign(resolveTargetPath('1'));
-            return true;
-          };
-          const markSessionAndRedirect = async () => {
-            const localSessionReady =
-              localStorage.getItem('authSession') === 'true' &&
-              (localStorage.getItem('user') || localStorage.getItem('userId') || localStorage.getItem('user_id'));
-            if (localSessionReady) {
-              const localId = localStorage.getItem('userId') || localStorage.getItem('user_id') || '1';
-              window.location.assign(resolveTargetPath(localId));
-              return true;
-            }
-            let meResponse = null;
-            try {
-              meResponse = await fetchWithTimeout('/api/auth/me', { credentials: 'include' }, 6500);
-            } catch {
-              return false;
-            }
-            if (!meResponse.ok) return false;
-            localStorage.setItem('authSession', 'true');
-            let resolvedUserId = '';
-            try {
-              const user = await meResponse.json();
-              localStorage.setItem('user', JSON.stringify(user));
-              if (user && (user.id || user.user_id)) {
-                const id = String(user.id || user.user_id);
-                resolvedUserId = id;
+              if (user && typeof user === 'object') {
+                localStorage.setItem('user', JSON.stringify(user));
+              }
+              const rawId =
+                (user && (user.id ?? user.user_id)) ??
+                localStorage.getItem('userId') ??
+                localStorage.getItem('user_id');
+              if (rawId !== null && rawId !== undefined && String(rawId).trim()) {
+                const id = String(rawId).trim();
                 localStorage.setItem('userId', id);
                 localStorage.setItem('user_id', id);
+                return id;
               }
             } catch (_) {}
-            window.location.assign(resolveTargetPath(resolvedUserId));
+            return '';
+          };
+          const probeServerSession = async () => {
+            try {
+              const sessionResponse = await fetchWithTimeout('/api/auth/session', { credentials: 'include' }, 6500);
+              if (sessionResponse.ok) {
+                let sessionPayload = null;
+                try {
+                  sessionPayload = await sessionResponse.json();
+                } catch (_) {}
+                if (sessionPayload?.authenticated || sessionPayload?.hasRefreshCookie) {
+                  const idFromSession = persistSessionFromUser(
+                    sessionPayload?.user || sessionPayload?.profile || null
+                  );
+                  return { ok: true, userId: idFromSession };
+                }
+              }
+            } catch (_) {}
+
+            try {
+              const meResponse = await fetchWithTimeout('/api/auth/me', { credentials: 'include' }, 6500);
+              if (!meResponse.ok) return { ok: false, userId: '' };
+              let meUser = null;
+              try {
+                meUser = await meResponse.json();
+              } catch (_) {}
+              const idFromMe = persistSessionFromUser(meUser);
+              return { ok: true, userId: idFromMe };
+            } catch (_) {
+              return { ok: false, userId: '' };
+            }
+          };
+          const markSessionAndRedirect = async () => {
+            const probe = await probeServerSession();
+            if (!probe.ok) {
+              clearLocalSession();
+              return false;
+            }
+            window.location.assign(resolveTargetPath(probe.userId));
             return true;
           };
 
@@ -540,7 +640,7 @@ private fun buildAutoLoginScript(targetPath: String): String {
             watchdog = setTimeout(() => {
               try {
                 if (localStorage.getItem('authSession') === 'true') return;
-                applyOfflineParitySession('watchdog_timeout');
+                done('watchdog_timeout');
               } catch (_) {}
             }, 14000);
             if (await markSessionAndRedirect()) return done('already_authenticated');
@@ -589,8 +689,7 @@ private fun buildAutoLoginScript(targetPath: String): String {
                 await sleep(1200);
                 if (await markSessionAndRedirect()) return done('form_login_success_after_network_timeout', { attempt });
               }
-              applyOfflineParitySession('network_timeout');
-              return done('offline_fallback_network', String(error));
+              return done('network_timeout_login_failed', String(error));
             }
 
             if (!loginResponse.ok) {
@@ -604,8 +703,7 @@ private fun buildAutoLoginScript(targetPath: String): String {
                 await sleep(1200);
                 if (await markSessionAndRedirect()) return done('form_login_success_after_http_fail', { attempt });
               }
-              applyOfflineParitySession('http_fail');
-              return done('offline_fallback_http', { status: loginResponse.status, body: String(loginBody || '').slice(0, 280) });
+              return done('http_login_failed', { status: loginResponse.status, body: String(loginBody || '').slice(0, 280) });
             }
             if (await markSessionAndRedirect()) return done('api_login_success');
             formLogin();
@@ -613,12 +711,10 @@ private fun buildAutoLoginScript(targetPath: String): String {
               await sleep(1200);
               if (await markSessionAndRedirect()) return done('form_login_success_after_api_login', { attempt });
             }
-            applyOfflineParitySession('no_session_after_login');
-            return done('offline_fallback_no_session');
+            return done('no_session_after_login');
           } catch (error) {
             console.log('ANDROID_PARITY_LOGIN_ERROR', String(error || 'unknown'));
-            applyOfflineParitySession('script_error');
-            return done('offline_fallback_error', String(error));
+            return done('script_error', String(error));
           } finally {
             if (watchdog) {
               clearTimeout(watchdog);

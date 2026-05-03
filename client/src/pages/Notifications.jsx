@@ -881,7 +881,7 @@ const NotificationsPage = () => {
   if (!isAuth || !userId) {
     return (
       <div
-        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 dark:bg-gradient-to-br ${densityClass}`}
+        className={`mhub-page-notifications min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 dark:bg-gradient-to-br ${densityClass}`}
       >
         {/* Background blobs */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -926,7 +926,7 @@ const NotificationsPage = () => {
   if (isLoading) {
     return (
       <div
-        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+        className={`mhub-page-notifications min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
       >
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 profile-hero-bg" />
@@ -1050,7 +1050,7 @@ const NotificationsPage = () => {
   // --- Main content ---
   return (
     <div
-      className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+      className={`mhub-page-notifications min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
     >
       {/* Background decorative blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -1440,7 +1440,7 @@ const NotificationsPage = () => {
                                 toggleSelection(notificationId);
                               }}
                               aria-label="Select notification"
-                              className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-900"
+                              className="mt-1 h-11 w-11 sm:h-4 sm:w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-900"
                             />
                             <div className="mhub-notif-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center">
                               {renderIcon(notification.icon)}
@@ -1685,3 +1685,4 @@ const NotificationsPage = () => {
 };
 
 export default NotificationsPage;
+

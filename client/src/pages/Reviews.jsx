@@ -446,7 +446,7 @@ const R = () => {
                               key: r,
                               onClick: () => f((t) => ({ ...t, rating: r })),
                               className:
-                                "focus:outline-none transition-transform hover:scale-110",
+                                "focus:outline-none transition-transform hover:scale-110 p-1 min-w-[2.25rem] min-h-[2.25rem] inline-flex items-center justify-center",
                               "aria-label": `Rate ${r} stars`,
                             },
                             e.createElement(o, {

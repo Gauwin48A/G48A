@@ -181,7 +181,7 @@ const FeedbackPage = () => {
             key: a,
             type: "button",
             onClick: () => z(a + 1),
-            className: `text-2xl transition-all transform hover:scale-125 dark:text-2xl${a < o.rating ? "text-yellow-400" : "text-gray-300"} hover:text-yellow-400 dark:hover:text-yellow-200`,
+            className: `text-2xl transition-all transform hover:scale-125 p-1 min-w-[2.25rem] min-h-[2.25rem] inline-flex items-center justify-center dark:text-2xl ${a < o.rating ? "text-yellow-400" : "text-gray-300"} hover:text-yellow-400 dark:hover:text-yellow-200`,
           },
           e.createElement(V, { className: "w-8 h-8 fill-current" }),
         ),

@@ -134,221 +134,55 @@ export default function MobilePostCard({
 
   return (
     <article
-      className="mhub-mobile-card group"
+      className="mhub-mobile-card mhub-grid-card group"
       onClick={() => onClick?.(post)}
     >
-      {/* --- Seller Row --- */}
-      {showSeller && sellerName && (
-        <div className="mhub-mobile-card-seller">
-          <div className="mhub-mobile-card-avatar">
-            {sellerName.charAt(0).toUpperCase()}
-          </div>
-          <div className="mhub-mobile-card-seller-info">
-            <div className="mhub-mobile-card-seller-name">
-              <span>{sellerName}</span>
-              {sellerVerified && (
-                <svg className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
-            <div className="mhub-mobile-card-seller-meta">
-              {location && <span>{location}</span>}
-              {timeLabel && <><span className="mhub-dot">·</span><span>{timeLabel}</span></>}
-            </div>
-          </div>
-          {/* Menu trigger */}
-          <button
-            type="button"
-            className="mhub-mobile-card-menu-btn"
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-            aria-label={t("more_options", "More options")}
-          >
-            <FaEllipsisV className="w-4 h-4" />
-          </button>
-          {/* Dropdown menu */}
-          {menuOpen && (
-            <div
-              className="mhub-mobile-card-menu"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button type="button" onClick={() => { onShare?.(post); setMenuOpen(false); }}>
-                {t("share", "Share")}
-              </button>
-              <button type="button" onClick={() => { onSave?.(post); setMenuOpen(false); }}>
-                {isSaved ? t("saved", "Saved") : t("save", "Save")}
-              </button>
-              {isOwner && (
-                <button type="button" onClick={() => { onMenuAction?.("promote", post); setMenuOpen(false); }}>
-                  {t("promote", "Promote")}
-                </button>
-              )}
-              <button type="button" onClick={() => { onCartToggle?.(post); setMenuOpen(false); }}>
-                {inCart ? t("in_cart", "In Cart") : t("add_to_cart", "Add to Cart")}
-              </button>
-              <button
-                type="button"
-                className="mhub-mobile-card-menu-danger"
-                onClick={() => { onMenuAction?.("report", post); setMenuOpen(false); }}
-              >
-                {t("report", "Report")}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* --- Image Carousel --- */}
-      <div className="mhub-mobile-card-media">
-        {/* Price badge overlay */}
-        {priceLabel && (
-          <div className="mhub-mobile-card-price-badge">
-            {priceLabel}
-          </div>
-        )}
-
-        {/* Category / subcategory badges */}
-        {(categoryLabel || subcategoryLabel) && (
-          <div className="mhub-mobile-card-category-badges">
-            {categoryLabel && <span className="mhub-mobile-card-cat-badge">{categoryLabel}</span>}
-            {subcategoryLabel && <span className="mhub-mobile-card-subcat-badge">{subcategoryLabel}</span>}
-          </div>
-        )}
-
-        <div
-          ref={trackRef}
-          onScroll={handleScroll}
-          className="mhub-mobile-card-carousel"
-        >
-          {imageList.map((src, idx) => (
-            <div key={`${postId}-img-${idx}`} className="mhub-mobile-card-slide">
-              <img
-                src={src}
-                alt={`${title} ${t("image", "image")} ${idx + 1}`}
-                loading="lazy"
-                className={`mhub-mobile-card-img ${src === PLACEHOLDER ? "opacity-40 grayscale" : ""}`}
-                onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Carousel controls */}
+      {/* --- Image --- */}
+      <div className="mhub-grid-card-media">
+        <img
+          src={imageList[0]}
+          alt={title}
+          loading="lazy"
+          className={`mhub-grid-card-img ${imageList[0] === PLACEHOLDER ? "opacity-40 grayscale" : ""}`}
+          onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+        />
+        {/* Image count badge */}
         {imageList.length > 1 && (
-          <>
-            <button
-              type="button"
-              className="mhub-mobile-card-nav mhub-mobile-card-nav-left"
-              onClick={(e) => { e.stopPropagation(); scrollTo(carouselIdx - 1); }}
-              aria-label={t("previous_image", "Previous image")}
-            >
-              <FaChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="mhub-mobile-card-nav mhub-mobile-card-nav-right"
-              onClick={(e) => { e.stopPropagation(); scrollTo(carouselIdx + 1); }}
-              aria-label={t("next_image", "Next image")}
-            >
-              <FaChevronRight className="w-4 h-4" />
-            </button>
-            <div className="mhub-mobile-card-dots">
-              {imageList.map((_, idx) => (
-                <button
-                  key={`${postId}-dot-${idx}`}
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); scrollTo(idx); }}
-                  className={`mhub-mobile-card-dot ${idx === carouselIdx ? "active" : ""}`}
-                  aria-label={`${t("go_to_image", "Go to image")} ${idx + 1}`}
-                />
-              ))}
-            </div>
-            <div className="mhub-mobile-card-counter">
-              {carouselIdx + 1}/{imageList.length}
-            </div>
-          </>
+          <span className="mhub-grid-card-img-count">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            {imageList.length}
+          </span>
         )}
-      </div>
-
-      {/* --- Content --- */}
-      <div className="mhub-mobile-card-body">
-        <h3 className="mhub-mobile-card-title">{title}</h3>
-
-        {description && (
-          <p className="mhub-mobile-card-desc">
-            {description.length > 100 ? `${description.slice(0, 100)}...` : description}
-          </p>
-        )}
-
-        {/* Meta chips: condition, location */}
-        <div className="mhub-mobile-card-chips">
-          {condition && (
-            <span className="mhub-mobile-card-chip">{condition}</span>
-          )}
-          {location && (
-            <span className="mhub-mobile-card-chip">{location}</span>
-          )}
-        </div>
-      </div>
-
-      {/* --- Action Bar --- */}
-      <div className="mhub-mobile-card-actions">
+        {/* Wishlist heart */}
         <button
           type="button"
-          className="mhub-mobile-card-action"
-          onClick={(e) => { e.stopPropagation(); onLike?.(post); }}
-          aria-label={t("like", "Like")}
-        >
-          {isLiked
-            ? <FaHeart className="w-5 h-5 text-red-500" />
-            : <FaRegHeart className="w-5 h-5" />
-          }
-          {likeCount > 0 && <span>{likeCount}</span>}
-        </button>
-
-        <button
-          type="button"
-          className="mhub-mobile-card-action"
-          onClick={(e) => { e.stopPropagation(); onShare?.(post); }}
-          aria-label={t("share", "Share")}
-        >
-          <FaShare className="w-5 h-5" />
-        </button>
-
-        <button
-          type="button"
-          className="mhub-mobile-card-action"
+          className="mhub-grid-card-heart"
           onClick={(e) => { e.stopPropagation(); onSave?.(post); }}
           aria-label={isSaved ? t("saved", "Saved") : t("save", "Save")}
         >
           {isSaved
-            ? <FaBookmark className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            : <FaRegBookmark className="w-5 h-5" />
+            ? <FaHeart className="w-4 h-4 text-red-500" />
+            : <FaRegHeart className="w-4 h-4" />
           }
         </button>
+      </div>
 
-        <button
-          type="button"
-          className="mhub-mobile-card-action mhub-mobile-card-action-interest"
-          onClick={(e) => { e.stopPropagation(); onInterested?.(post); }}
-          aria-label={t("interested", "Interested")}
-        >
-          <FaHandHoldingHeart className="w-5 h-5" />
-          <span className="hidden sm:inline">{t("interested", "Interested")}</span>
-        </button>
-
-        <span className="mhub-mobile-card-action mhub-mobile-card-views">
-          <FaEye className="w-4 h-4" />
-          <span>{viewCount}</span>
-        </span>
-
-        <Button
-          size="sm"
-          className="mhub-mobile-card-cta"
-          onClick={(e) => { e.stopPropagation(); onClick?.(post); }}
-        >
-          {t("view_details", "View Details")}
-        </Button>
+      {/* --- Content --- */}
+      <div className="mhub-grid-card-body">
+        {priceLabel && (
+          <p className="mhub-grid-card-price">{priceLabel}</p>
+        )}
+        <h3 className="mhub-grid-card-title">{title}</h3>
+        {location && (
+          <p className="mhub-grid-card-location">{location}</p>
+        )}
+        {condition && (
+          <span className="mhub-grid-card-condition">{condition}</span>
+        )}
       </div>
     </article>
   );

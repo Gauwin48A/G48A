@@ -194,7 +194,7 @@ const X = () => {
                 {
                   onClick: () => navigate("/feed"),
                   className:
-                    "flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:text-gray-200 dark:hover:text-indigo-300",
+                    "flex items-center gap-2 min-w-[2.25rem] min-h-[2.25rem] px-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition font-medium dark:text-gray-200 dark:hover:text-indigo-300",
                 },
                 e.createElement(k, null),
                 " ",

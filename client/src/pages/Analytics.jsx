@@ -203,7 +203,7 @@ const D = [
           if (t !== l.current) return;
           q(ue(s, tr));
           import.meta.env.DEV &&
-            console.error("[Analytics] Fetch failed:", s);
+            console.warn("[Analytics] Fetch failed:", s);
         } finally {
           t === l.current && T(!1);
         }

@@ -1821,19 +1821,27 @@ function PostDetail() {
             "div",
             {
               className:
-                "absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5",
+                "absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5",
             },
             imageList.map((t, a) =>
-              React.createElement("button", {
-                key: a,
-                type: "button",
-                "aria-label": tr("view_image", "View image {{count}}", {
-                  count: a + 1,
+              React.createElement(
+                "button",
+                {
+                  key: a,
+                  type: "button",
+                  "aria-label": tr("view_image", "View image {{count}}", {
+                    count: a + 1,
+                  }),
+                  "aria-current": a === activeIndex ? "true" : "false",
+                  onClick: () => m(a),
+                  className:
+                    "inline-flex items-center justify-center w-9 h-9 bg-transparent",
+                },
+                React.createElement("span", {
+                  className: `block h-2 rounded-full transition-all ${a === activeIndex ? "bg-blue-500 w-6" : "bg-white/70 w-2"}`,
+                  "aria-hidden": "true",
                 }),
-                "aria-current": a === activeIndex ? "true" : "false",
-                onClick: () => m(a),
-                className: `w-2 h-2 rounded-full transition-all ${a === activeIndex ? "bg-blue-500 w-6" : "bg-white/70"}`,
-              }),
+              ),
             ),
           ),
         ),
@@ -2329,8 +2337,8 @@ function PostDetail() {
                     },
                     className:
                       activeSection === item.id
-                        ? "inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/25 truncate transition-all duration-200"
-                        : "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-200 transition-all duration-200 truncate",
+                        ? "inline-flex items-center justify-center whitespace-nowrap min-h-[2.25rem] min-w-[3rem] px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all duration-200"
+                        : "inline-flex items-center justify-center whitespace-nowrap min-h-[2.25rem] min-w-[3rem] px-3 py-1.5 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-200 transition-all duration-200",
                   },
                   item.label,
                 ),

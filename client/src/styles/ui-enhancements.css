@@ -1,8 +1,8 @@
-/**
+﻿/**
  * MHub UI/UX Enhancement Styles v3.0
  * 
  * COMPREHENSIVE FIX for issues identified in Deatiled_doc.txt:
- * - Excessive spacing (32-48px gaps → 8-16px) 
+ * - Excessive spacing (32-48px gaps â†’ 8-16px) 
  * - Dark mode contrast failures (WCAG AAA compliance)
  * - Mobile responsiveness improvements
  * - Card layout consistency
@@ -251,7 +251,7 @@
   box-shadow: var(--mhub-shadow-lg);
 }
 
-/* Compact density helpers — on mobile (<480px) show compact hero instead of hiding */
+/* Compact density helpers â€” on mobile (<480px) show compact hero instead of hiding */
 .mhub-compact [data-density="extra"],
 .mhub-compact .mhub-density-extra {
   display: none;
@@ -270,7 +270,7 @@
     font-size: 1.05rem !important;
     display: inline !important;
   }
-  /* Show subtitle in heroes — but smaller */
+  /* Show subtitle in heroes â€” but smaller */
   .mhub-compact [data-density="extra"] p:not(.foryou-hero-sub):not(.home-hero-sub) {
     display: none !important;
   }
@@ -278,7 +278,7 @@
   .mhub-compact [data-density="extra"] .home-hero-sub {
     display: block !important;
   }
-  /* Show hero stat pills — critical for "android friendly" features */
+  /* Show hero stat pills â€” critical for "android friendly" features */
   .mhub-compact [data-density="extra"] .foryou-hero-stats,
   .mhub-compact [data-density="extra"] .allposts-hero-stats,
   .mhub-compact [data-density="extra"] .home-hero-stats {
@@ -323,7 +323,7 @@
   .feed-sort-select {
     max-width: 110px !important;
     height: 36px !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
   .feed-refresh-btn {
     width: 36px !important;
@@ -351,7 +351,7 @@
   }
   .foryou-hero-sub {
     display: block !important;
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     margin-top: 2px !important;
   }
   .foryou-hero-stats {
@@ -364,7 +364,7 @@
   .foryou-stat {
     flex-shrink: 0 !important;
     padding: 3px 8px !important;
-    font-size: 0.65rem !important;
+    font-size: 12px !important;
   }
 
   /* ---- AllPosts hero stats ---- */
@@ -414,7 +414,7 @@
   }
   .rewards-tab-bar button {
     padding: 6px 10px !important;
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     border-radius: 12px !important;
     white-space: nowrap !important;
   }
@@ -452,7 +452,7 @@
   .home-hero-kicker {
     text-transform: uppercase;
     letter-spacing: 0.25em;
-    font-size: 0.6875rem;
+    font-size: 12px;
     color: rgba(255,255,255,0.85);
     margin-bottom: 2px;
   }
@@ -468,7 +468,7 @@
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(8px);
     color: #fff;
-    font-size: 0.625rem;
+    font-size: 12px;
     font-weight: 600;
     padding: 2px 8px;
     border-radius: 999px;
@@ -476,7 +476,7 @@
     flex-shrink: 0;
   }
   .home-hero-sub {
-    font-size: 0.7rem;
+    font-size: 12px;
     color: rgba(255,255,255,0.8);
     margin-top: 2px;
   }
@@ -495,7 +495,7 @@
     background: rgba(255,255,255,0.18);
     backdrop-filter: blur(6px);
     color: #fff;
-    font-size: 0.6875rem;
+    font-size: 12px;
     font-weight: 500;
     padding: 3px 8px;
     border-radius: 999px;
@@ -531,7 +531,7 @@
   .home-quick-actions .home-stat {
     background: rgba(16,185,129,0.08);
     color: #374151;
-    font-size: 0.65rem;
+    font-size: 12px;
   }
   .dark .home-quick-actions .home-stat {
     background: rgba(16,185,129,0.15);
@@ -558,7 +558,7 @@
     line-height: 1;
   }
   .home-action-label {
-    font-size: 0.6875rem;
+    font-size: 12px;
     font-weight: 600;
     color: #374151;
   }
@@ -645,7 +645,7 @@
     white-space: nowrap;
     padding: 4px 12px;
     border-radius: 999px;
-    font-size: 0.7rem;
+    font-size: 12px;
     font-weight: 500;
     border: 1px solid rgba(148,163,184,0.2);
     background: rgba(255,255,255,0.7);
@@ -688,7 +688,7 @@
     color: #f3f4f6;
   }
   .home-results-count {
-    font-size: 0.7rem;
+    font-size: 12px;
     color: #6b7280;
     font-weight: 500;
   }
@@ -777,6 +777,8 @@
 
 .mhub-bottom-nav-label {
   color: currentColor;
+  font-size: 12px !important;
+  line-height: 1.2;
   letter-spacing: 0.01em;
 }
 
@@ -1719,9 +1721,9 @@ button[class*="border"]:hover {
 
 /* Compact chip layout (used by sticky All Posts bars on mobile/native) */
 .mhub-chip-compact {
-  min-height: 34px !important;
+  min-height: 36px !important;
   min-width: 0 !important;
-  padding: 0.35rem 0.7rem !important;
+  padding: 0.4rem 0.7rem !important;
   border-radius: 999px !important;
 }
 
@@ -1859,7 +1861,7 @@ button[class*="border"]:hover {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  font-size: 0.6rem;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-weight: 700;
@@ -1902,7 +1904,7 @@ button[class*="border"]:hover {
 
 .mhub-page-allposts .mhub-allposts-hero-stat-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.75;
@@ -2005,7 +2007,7 @@ button[class*="border"]:hover {
 
 .mhub-page-allposts .mhub-hero-mini-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -2067,7 +2069,7 @@ button[class*="border"]:hover {
   gap: 0.35rem;
   padding: 0.5rem 0.75rem;
   min-height: 2.75rem;
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -2376,7 +2378,7 @@ button[class*="bg-green-500"] {
 [class*="w-10"][class*="h-10"] {
   width: 28px;
   height: 28px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* ============================================
@@ -2557,13 +2559,13 @@ button[class*="bg-green-500"] {
   transition: opacity 0.2s ease;
 }
 
-/* Left fade — visible when scrolled right */
+/* Left fade â€” visible when scrolled right */
 .scroll-edge-container::before {
   left: 0;
   background: linear-gradient(to right, var(--mhub-bg-secondary), transparent);
 }
 
-/* Right fade — visible when more content to the right */
+/* Right fade â€” visible when more content to the right */
 .scroll-edge-container::after {
   right: 0;
   background: linear-gradient(to left, var(--mhub-bg-secondary), transparent);
@@ -3068,13 +3070,13 @@ button[class*="bg-green-500"] {
    ============================================ */
 
 @media (max-width: 640px) {
-  /* ── Global spacing ── */
+  /* â”€â”€ Global spacing â”€â”€ */
   .container {
     padding-left: 8px;
     padding-right: 8px;
   }
 
-  /* Single column grids on mobile — only for NON-product grids */
+  /* Single column grids on mobile â€” only for NON-product grids */
   .grid-cols-2:not(.keep-cols):not(.gap-3):not(.gap-2) {
     grid-template-columns: 1fr;
   }
@@ -3086,10 +3088,10 @@ button[class*="bg-green-500"] {
   }
 
   /* ============================================
-     HOME PAGE – COMPACT HERO & CLEAN LAYOUT
+     HOME PAGE â€“ COMPACT HERO & CLEAN LAYOUT
      ============================================ */
 
-  /* Hero — ultra-compact on mobile */
+  /* Hero â€” ultra-compact on mobile */
   .home-hero {
     padding: 0.75rem 0 0.5rem !important;
   }
@@ -3099,15 +3101,15 @@ button[class*="bg-green-500"] {
     margin-bottom: 0.125rem !important;
   }
   .home-hero-sub {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     margin-top: 0 !important;
   }
   .home-hero-kicker {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     margin-bottom: 0.25rem !important;
   }
   .home-hero-live-badge {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.125rem 0.375rem !important;
   }
   .home-hero-stats {
@@ -3115,11 +3117,11 @@ button[class*="bg-green-500"] {
     gap: 0.5rem !important;
   }
   .home-stat {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.1875rem 0.375rem !important;
   }
 
-  /* Quick actions — tighter 4-col grid */
+  /* Quick actions â€” tighter 4-col grid */
   .home-quick-actions {
     gap: 0.375rem !important;
     padding: 0.5rem !important;
@@ -3136,17 +3138,17 @@ button[class*="bg-green-500"] {
     margin-bottom: 0.125rem !important;
   }
   .home-action-label {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
   }
 
-  /* Search bar — compact */
+  /* Search bar â€” compact */
   .home-sticky-bar {
     padding: 0.375rem 0.5rem !important;
   }
   .home-search-input {
     height: 2rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     padding: 0 0.625rem !important;
   }
   .home-refresh-btn {
@@ -3154,14 +3156,14 @@ button[class*="bg-green-500"] {
     height: 2rem !important;
   }
 
-  /* Category chips — smaller */
+  /* Category chips â€” smaller */
   .home-category-chip {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.25rem 0.5rem !important;
     border-radius: 9999px !important;
   }
 
-  /* Section headers — compact */
+  /* Section headers â€” compact */
   .home-section-header {
     padding: 0.5rem 0 0.375rem !important;
     margin-bottom: 0.25rem !important;
@@ -3170,17 +3172,17 @@ button[class*="bg-green-500"] {
     font-size: 0.875rem !important;
   }
   .home-results-count {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
 
-  /* Product grid — 2-col guaranteed */
+  /* Product grid â€” 2-col guaranteed */
   .home-section-header + div .grid.grid-cols-2,
   .grid.grid-cols-2.keep-cols {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 0.5rem !important;
   }
 
-  /* Home product cards — compact like Flipkart */
+  /* Home product cards â€” compact like Flipkart */
   .home-section-header + div .grid .mhub-premium-surface.rounded-xl {
     border-radius: 0.625rem !important;
     overflow: hidden !important;
@@ -3194,7 +3196,7 @@ button[class*="bg-green-500"] {
     padding: 0.375rem !important;
   }
   .home-section-header + div .grid .p-2 .font-semibold {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     line-height: 1.25 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
@@ -3202,7 +3204,7 @@ button[class*="bg-green-500"] {
     overflow: hidden !important;
   }
   .home-section-header + div .grid .p-2 .text-xs {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
   /* Price overlay on Home cards */
   .home-section-header + div .grid .absolute.bottom-2 {
@@ -3210,7 +3212,7 @@ button[class*="bg-green-500"] {
     left: 0.25rem !important;
   }
   .home-section-header + div .grid .absolute.bottom-2 .font-bold {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
   }
   /* Category badge on Home cards */
   .home-section-header + div .grid .absolute.top-1\.5 {
@@ -3220,14 +3222,14 @@ button[class*="bg-green-500"] {
     padding: 0.125rem 0.25rem !important;
   }
 
-  /* CentrePage Updates — limit height */
+  /* CentrePage Updates â€” limit height */
   .mb-6:has(> [class*="centre-updates"]),
   .mb-6:has(> [class*="featured-centre"]) {
     margin-bottom: 0.5rem !important;
   }
 
   /* ============================================
-     ALLPOSTS – COMPACT 2-COL MARKETPLACE CARDS
+     ALLPOSTS â€“ COMPACT 2-COL MARKETPLACE CARDS
      ============================================ */
   .mhub-allposts-card {
     border-radius: 0.625rem !important;
@@ -3240,7 +3242,7 @@ button[class*="bg-green-500"] {
     border-top: none !important;
   }
 
-  /* Header row — compact */
+  /* Header row â€” compact */
   .mhub-allposts-card > div:first-child {
     padding: 0.25rem 0.375rem 0.125rem !important;
     gap: 0.25rem !important;
@@ -3251,17 +3253,17 @@ button[class*="bg-green-500"] {
   .mhub-allposts-card > div:first-child > [class*="Avatar"] {
     display: none !important;
   }
-  /* Seller name — minimum readable */
+  /* Seller name â€” minimum readable */
   .mhub-allposts-card > div:first-child .font-semibold {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
   }
-  /* Verified badge — hide */
+  /* Verified badge â€” hide */
   .mhub-allposts-card > div:first-child .bg-blue-50 {
     display: none !important;
   }
 
-  /* Price pill — readable padding */
+  /* Price pill â€” readable padding */
   .mhub-allposts-card .mhub-price-pill {
     padding: 0.1875rem 0.375rem !important;
     gap: 0.1875rem !important;
@@ -3273,9 +3275,9 @@ button[class*="bg-green-500"] {
     font-size: 0.8125rem !important;
   }
 
-  /* Title — 2 lines max, minimum 12px */
+  /* Title â€” 2 lines max, minimum 12px */
   .mhub-allposts-card .mhub-card-title {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     line-height: 1.3 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
@@ -3284,22 +3286,22 @@ button[class*="bg-green-500"] {
     margin-top: 0.125rem !important;
   }
 
-  /* Meta chips — readable */
+  /* Meta chips â€” readable */
   .mhub-allposts-card .mhub-card-meta {
     margin-top: 0.125rem !important;
     gap: 0.125rem !important;
   }
   .mhub-allposts-card .mhub-card-meta .mhub-chip {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     padding: 0.125rem 0.3125rem !important;
   }
 
-  /* Image — constrained */
+  /* Image â€” constrained */
   .mhub-allposts-card .mhub-media-img {
     height: 120px !important;
   }
 
-  /* Hide carousel arrows on 2-col cards — keep images visible */
+  /* Hide carousel arrows on 2-col cards â€” keep images visible */
   .mhub-allposts-card .mhub-media-frame button {
     display: none !important;
   }
@@ -3308,15 +3310,15 @@ button[class*="bg-green-500"] {
     display: none !important;
   }
 
-  /* Image counter badge — minimum readable */
+  /* Image counter badge â€” minimum readable */
   .mhub-allposts-card .mhub-media-frame [class*="bg-black"] {
-    font-size: 0.625rem !important;
+    font-size: 12px !important;
     padding: 0.125rem 0.3125rem !important;
     top: 0.25rem !important;
     right: 0.25rem !important;
   }
 
-  /* Action row — force single horizontal line */
+  /* Action row â€” force single horizontal line */
   .mhub-allposts-card .post-action-row {
     flex-wrap: nowrap !important;
     gap: 0.25rem !important;
@@ -3324,7 +3326,7 @@ button[class*="bg-green-500"] {
     overflow: hidden !important;
     max-width: 100% !important;
   }
-  /* Card body container — reduce excess padding */
+  /* Card body container â€” reduce excess padding */
   .mhub-allposts-card .px-3.pb-3.pt-2 {
     padding: 0.25rem 0.375rem 0.25rem !important;
   }
@@ -3333,7 +3335,7 @@ button[class*="bg-green-500"] {
   .mhub-allposts-card .post-action-row .mhub-chip {
     height: 1.75rem !important;
     padding: 0 0.3125rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     flex-shrink: 0 !important;
   }
   .mhub-allposts-card .post-action-row button svg,
@@ -3343,14 +3345,14 @@ button[class*="bg-green-500"] {
   }
   .mhub-allposts-card .post-action-row button span,
   .mhub-allposts-card .post-action-row .mhub-chip span {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
-  /* Hide View Details CTA on compact 2-col — it doesn't fit */
+  /* Hide View Details CTA on compact 2-col â€” it doesn't fit */
   .mhub-allposts-card .post-action-row .mhub-cta {
     display: none !important;
   }
 
-  /* More options button — proper touch target */
+  /* More options button â€” proper touch target */
   .mhub-allposts-card .absolute.right-3.top-3 {
     right: 0.25rem !important;
     top: 0.25rem !important;
@@ -3367,21 +3369,21 @@ button[class*="bg-green-500"] {
     top: 0.1875rem !important;
   }
 
-  /* "+N more" meta chip — bigger touch */
+  /* "+N more" meta chip â€” bigger touch */
   .mhub-allposts-card .mhub-card-meta button.mhub-chip {
     min-height: 2.25rem !important;
     padding: 0.375rem 0.5rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
 
-  /* Hero stat/nav pills — bigger touch */
+  /* Hero stat/nav pills â€” bigger touch */
   .allposts-hero-stats span {
     padding: 0.375rem 0.625rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     min-height: 2rem !important;
   }
 
-  /* Category & subcategory chips — minimum touch height */
+  /* Category & subcategory chips â€” minimum touch height */
   .mhub-category-item,
   .mhub-allposts-toolbar .mhub-category-item,
   .mhub-allposts-toolbar .mhub-subcategory-item {
@@ -3392,7 +3394,7 @@ button[class*="bg-green-500"] {
   }
 
   /* ============================================
-     FOR YOU – COMPACT 2-COL CARDS
+     FOR YOU â€“ COMPACT 2-COL CARDS
      ============================================ */
   .for-you-post-card {
     border-radius: 0.625rem !important;
@@ -3404,17 +3406,17 @@ button[class*="bg-green-500"] {
   }
   .for-you-post-card > div:first-child .inline-flex {
     padding: 0.125rem 0.25rem !important;
-    font-size: 0.625rem !important;
+    font-size: 12px !important;
     gap: 0.125rem !important;
   }
   .for-you-post-card > div:first-child .uppercase {
     display: none !important;
   }
   .for-you-post-card > div:first-child .font-bold {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
 
-  /* Author row — compact, hide avatar */
+  /* Author row â€” compact, hide avatar */
   .for-you-post-card .flex.items-start.gap-2 {
     padding: 0.1875rem 0.25rem !important;
     gap: 0.1875rem !important;
@@ -3424,10 +3426,10 @@ button[class*="bg-green-500"] {
     display: none !important;
   }
   .for-you-post-card .flex.items-start.gap-2 .font-semibold {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
 
-  /* Image — constrained */
+  /* Image â€” constrained */
   .for-you-post-card .mhub-media-img,
   .for-you-post-card img[loading="lazy"] {
     height: 120px !important;
@@ -3436,7 +3438,7 @@ button[class*="bg-green-500"] {
 
   /* Title */
   .for-you-post-card .mhub-card-title {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
@@ -3446,7 +3448,7 @@ button[class*="bg-green-500"] {
 
   /* Meta/description text */
   .for-you-post-card .text-gray-800 {
-    font-size: 0.625rem !important;
+    font-size: 12px !important;
     line-height: 1.3 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
@@ -3486,7 +3488,7 @@ button[class*="bg-green-500"] {
     min-height: 1.75rem !important;
   }
 
-  /* ForYou hero — compact */
+  /* ForYou hero â€” compact */
   .foryou-hero {
     padding: 0.5rem 0 !important;
   }
@@ -3494,34 +3496,34 @@ button[class*="bg-green-500"] {
     font-size: 1.25rem !important;
   }
   .foryou-hero-sub {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
   .foryou-hero-stats {
     margin-top: 0.25rem !important;
     gap: 0.375rem !important;
   }
   .foryou-stat {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.1875rem 0.375rem !important;
   }
 
-  /* ForYou error state — centered, no excess whitespace */
+  /* ForYou error state â€” centered, no excess whitespace */
   .for-you-post-card ~ .max-w-2xl,
   .mhub-premium-page .max-w-2xl.mx-auto.p-6.text-center {
     padding: 1.5rem 1rem !important;
     margin-top: 1rem !important;
   }
 
-  /* ForYou loading skeleton — shorter */
+  /* ForYou loading skeleton â€” shorter */
   .mhub-premium-surface.rounded-2xl.h-96.animate-pulse {
     height: 10rem !important;
   }
 
   /* ============================================
-     FEED PAGE – CLEAN COMPACT CARDS
+     FEED PAGE â€“ CLEAN COMPACT CARDS
      ============================================ */
 
-  /* Feed hero — compact */
+  /* Feed hero â€” compact */
   .mhub-premium-page [class*="from-indigo-600"][data-density="extra"] {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
@@ -3531,10 +3533,10 @@ button[class*="bg-green-500"] {
     line-height: 1.3 !important;
   }
   .mhub-premium-page [class*="from-indigo-600"] .text-white\/70 {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
 
-  /* Feed sticky toolbar — compact */
+  /* Feed sticky toolbar â€” compact */
   .feed-sticky-toolbar {
     padding: 0.25rem 0 !important;
   }
@@ -3543,12 +3545,12 @@ button[class*="bg-green-500"] {
   }
   .feed-search-input {
     height: 2rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
     padding: 0 0.625rem !important;
   }
   .feed-sort-select {
     height: 2rem !important;
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0 0.5rem !important;
   }
   .feed-refresh-btn {
@@ -3559,44 +3561,44 @@ button[class*="bg-green-500"] {
     gap: 0.25rem !important;
   }
   .feed-sort-pill {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.25rem 0.5rem !important;
   }
 
-  /* Feed cards container — tighter */
+  /* Feed cards container â€” tighter */
   .space-y-2 {
     gap: 0.5rem !important;
   }
 
-  /* Feed compose card — compact */
+  /* Feed compose card â€” compact */
   .mb-6.p-4.mhub-premium-surface.rounded-2xl {
     padding: 0.5rem 0.75rem !important;
     margin-bottom: 0.5rem !important;
     border-radius: 0.75rem !important;
   }
 
-  /* Individual feed card — clean and compact */
+  /* Individual feed card â€” clean and compact */
   .space-y-2 > .mhub-premium-surface.rounded-2xl {
     border-radius: 0.75rem !important;
   }
 
-  /* Feed card author header — tighter */
+  /* Feed card author header â€” tighter */
   .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 {
     padding: 0.375rem 0.5rem 0.25rem !important;
     gap: 0.375rem !important;
   }
-  /* Avatar — smaller */
+  /* Avatar â€” smaller */
   .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 > span.w-11 {
     width: 2rem !important;
     height: 2rem !important;
     min-width: 2rem !important;
   }
   .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 > span.w-11 .text-sm {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
   /* Author name */
   .space-y-2 .mhub-premium-surface .font-semibold.text-gray-900 {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
   /* Category badges under name */
   .space-y-2 .mhub-premium-surface .flex.flex-wrap.items-center.gap-1.mt-0\.5 {
@@ -3604,7 +3606,7 @@ button[class*="bg-green-500"] {
     margin-top: 0.125rem !important;
   }
   .space-y-2 .mhub-premium-surface .flex.flex-wrap.items-center.gap-1.mt-0\.5 span {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.125rem 0.3125rem !important;
   }
 
@@ -3617,10 +3619,10 @@ button[class*="bg-green-500"] {
     line-height: 1.3 !important;
   }
   .space-y-2 .mhub-premium-surface .px-5.pb-4 .font-bold {
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
 
-  /* Feed card image — constrained height */
+  /* Feed card image â€” constrained height */
   .space-y-2 .mhub-premium-surface img.h-40,
   .space-y-2 .mhub-premium-surface img[loading="lazy"] {
     height: 140px !important;
@@ -3633,10 +3635,10 @@ button[class*="bg-green-500"] {
     border-radius: 0.5rem !important;
   }
 
-  /* Feed description — clamp to 2 lines */
+  /* Feed description â€” clamp to 2 lines */
   .space-y-2 .mhub-premium-surface .text-sm.text-gray-700,
   .space-y-2 .mhub-premium-surface .leading-snug {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
     line-height: 1.35 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
@@ -3645,7 +3647,7 @@ button[class*="bg-green-500"] {
     padding: 0 0.5rem !important;
   }
 
-  /* Feed action bar — compact */
+  /* Feed action bar â€” compact */
   .space-y-2 .mhub-premium-surface .px-3.py-2\.5.border-t {
     padding: 0.25rem 0.375rem !important;
   }
@@ -3653,7 +3655,7 @@ button[class*="bg-green-500"] {
     gap: 0.25rem !important;
   }
   .space-y-2 .post-action-row button {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.1875rem 0.375rem !important;
     height: 2.25rem !important;
   }
@@ -3663,13 +3665,13 @@ button[class*="bg-green-500"] {
   }
 
   /* ============================================
-     REWARDS PAGE – COMPACT & USER-FRIENDLY
+     REWARDS PAGE â€“ COMPACT & USER-FRIENDLY
      ============================================ */
   /* Tighter section spacing */
   .rewards-surface .space-y-3 {
     gap: 0.625rem !important;
   }
-  /* Rewards tabs bar — tighter padding */
+  /* Rewards tabs bar â€” tighter padding */
   .rewards-tabs-sticky .rounded-\[24px\] {
     padding: 0.375rem 0.5rem !important;
     border-radius: 1rem !important;
@@ -3680,17 +3682,17 @@ button[class*="bg-green-500"] {
     border-radius: 0.75rem !important;
   }
   .rewards-tab-bar button {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     padding: 0.375rem 0.625rem !important;
     min-height: 2rem !important;
   }
-  /* Rewards diagnostic chips — bigger touch targets */
+  /* Rewards diagnostic chips â€” bigger touch targets */
   .rewards-surface .inline-flex.items-center.gap-1.rounded-full {
     padding: 0.375rem 0.625rem !important;
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     min-height: 2rem !important;
   }
-  /* Rewards hero — compact */
+  /* Rewards hero â€” compact */
   .rewards-surface .rewards-hero-card {
     padding: 0.75rem !important;
   }
@@ -3700,27 +3702,27 @@ button[class*="bg-green-500"] {
   }
   .rewards-quick-share button {
     min-height: 2.25rem !important;
-    font-size: 0.75rem !important;
+    font-size: 12px !important;
   }
 
   /* ============================================
-     PROFILE PAGE – COMPACT & USER-FRIENDLY
+     PROFILE PAGE â€“ COMPACT & USER-FRIENDLY
      ============================================ */
-  /* Profile hero — tighter */
+  /* Profile hero â€” tighter */
   .profile-surface .profile-hero-bg + div + div {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
   }
-  /* Profile tab section — compact spacing */
+  /* Profile tab section â€” compact spacing */
   .profile-surface .space-y-5 {
     gap: 0.75rem !important;
   }
-  /* Profile tabs — same compact treatment as rewards */
+  /* Profile tabs â€” same compact treatment as rewards */
   .profile-tabs-sticky .rounded-\[24px\] {
     padding: 0.375rem 0.5rem !important;
     border-radius: 1rem !important;
   }
-  /* Profile feature grid cards — compact */
+  /* Profile feature grid cards â€” compact */
   .profile-surface .grid.grid-cols-2 .bg-white\/10 {
     padding: 0.625rem !important;
   }
@@ -3730,19 +3732,19 @@ button[class*="bg-green-500"] {
     margin-bottom: 0.25rem !important;
   }
   .profile-surface .grid.grid-cols-2 .bg-white\/10 p {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
   }
-  /* Settings sections — tighter */
+  /* Settings sections â€” tighter */
   .profile-surface .mhub-premium-surface {
     padding: 0.625rem !important;
   }
-  /* Profile stat cards — compact */
+  /* Profile stat cards â€” compact */
   .profile-surface .rewards-hero-card {
     padding: 0.625rem !important;
   }
 
   /* ============================================
-     DROPDOWN MENUS – PROPER TOUCH TARGETS
+     DROPDOWN MENUS â€“ PROPER TOUCH TARGETS
      ============================================ */
   [role="menuitem"],
   [role="menu"] button,
@@ -3754,7 +3756,7 @@ button[class*="bg-green-500"] {
   }
 
   /* ============================================
-     AUTH PAGES – TOUCH-FRIENDLY LINKS
+     AUTH PAGES â€“ TOUCH-FRIENDLY LINKS
      ============================================ */
   .mhub-premium-page a[href*="login"],
   .mhub-premium-page a[href*="signup"],
@@ -3777,7 +3779,7 @@ button[class*="bg-green-500"] {
   }
 
   /* ============================================
-     BOTTOM NAV BAR – PROPER ALIGNMENT
+     BOTTOM NAV BAR â€“ PROPER ALIGNMENT
      ============================================ */
   /* Ensure bottom nav icons are properly sized and aligned */
   nav[class*="fixed"][class*="bottom-0"] button,
@@ -3789,30 +3791,30 @@ button[class*="bg-green-500"] {
     height: 1.125rem !important;
   }
   nav[class*="fixed"][class*="bottom-0"] span {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
   }
 
   /* ============================================
      GENERAL CARD CLEANUP
      ============================================ */
-  /* All premium surface cards — consistent border radius */
+  /* All premium surface cards â€” consistent border radius */
   .mhub-premium-surface {
     border-radius: 0.625rem;
   }
 
-  /* Loading spinners — centered */
+  /* Loading spinners â€” centered */
   .animate-spin {
     margin-left: auto !important;
     margin-right: auto !important;
   }
 
-  /* Error cards — full width in grids */
+  /* Error cards â€” full width in grids */
   .col-span-2 {
     grid-column: span 2 / span 2 !important;
   }
 
-  /* Dropdown menus — better z-index */
+  /* Dropdown menus â€” better z-index */
   [role="menu"] {
     z-index: 100 !important;
   }
@@ -4195,12 +4197,12 @@ button[class*="bg-green-500"] {
 }
 
 .mhub-post-detail .mhub-safety-title {
-  font-size: 0.7rem;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .mhub-post-detail .mhub-safety-hint {
-  font-size: 0.7rem;
+  font-size: 12px;
   line-height: 1.3;
   color: rgba(15, 23, 42, 0.75);
 }
@@ -4209,7 +4211,7 @@ button[class*="bg-green-500"] {
   color: rgba(226, 232, 240, 0.75);
 }
 
-/* ─── Dark Mode: Additional overrides for uncovered rules ─── */
+/* â”€â”€â”€ Dark Mode: Additional overrides for uncovered rules â”€â”€â”€ */
 
 /* Price tag in dark mode */
 .dark [class*="PRICE"] {
@@ -4284,13 +4286,13 @@ button[class*="bg-green-500"] {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* ─────────────────────────────────────────────────────────
-   GLOBAL MOBILE FIXES — accessibility minimums
-   ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   GLOBAL MOBILE FIXES â€” accessibility minimums
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* 1. Bottom nav labels: 11px → 12px minimum */
+/* 1. Bottom nav labels: 11px â†’ 12px minimum */
 .mhub-bottom-nav-label {
-  font-size: 0.75rem !important;   /* 12px */
+  font-size: 12px !important;
   line-height: 1 !important;
 }
 
@@ -4298,17 +4300,17 @@ button[class*="bg-green-500"] {
 .mhub-fab + span,
 .mhub-fab ~ span,
 .absolute.left-1\/2.top-full {
-  font-size: 0.75rem !important;
+  font-size: 12px !important;
 }
 
-/* 3. Feed sort pills — min-height 44px */
+/* 3. Feed sort pills â€” min-height 44px */
 .feed-sort-pill {
   min-height: 2.75rem !important;  /* 44px */
   padding-top: 0.375rem !important;
   padding-bottom: 0.375rem !important;
 }
 
-/* 4. Feed/AllPosts action row buttons (like, share, save, etc.) — 44px min */
+/* 4. Feed/AllPosts action row buttons (like, share, save, etc.) â€” 44px min */
 button.shrink-0[class*="inline-flex"][class*="h-9"],
 button.shrink-0[class*="inline-flex"][class*="h-10"] {
   min-height: 2.75rem !important;  /* 44px */
@@ -4321,7 +4323,7 @@ button.shrink-0[class*="inline-flex"][class*="h-10"] {
   min-height: 2.75rem !important;
 }
 
-/* 6. Notification action buttons (mark-read, snooze, delete): 28x36 → 44px */
+/* 6. Notification action buttons (mark-read, snooze, delete): 28x36 â†’ 44px */
 button[class*="w-8 h-8"][class*="flex"][class*="items-center"][class*="justify-center"] {
   min-width: 2.75rem !important;
   min-height: 2.75rem !important;
@@ -4346,19 +4348,19 @@ button[class*="flex"][class*="items-center"][class*="gap-1.5"][class*="px-3.5"][
   min-height: 2.75rem !important;
 }
 
-/* 10. Profile quick action card descriptions — prevent truncation */
+/* 10. Profile quick action card descriptions â€” prevent truncation */
 .profile-quick-action p,
 [class*="quick-action"] p[class*="text-sm"][class*="text-slate-600"] {
   overflow-wrap: break-word !important;
   word-break: break-word !important;
 }
 
-/* 11. Notification "Alerts" clamp text — floor at 12px */
+/* 11. Notification "Alerts" clamp text â€” floor at 12px */
 p[class*="text-[clamp(9px"] {
-  font-size: 0.75rem !important;   /* 12px min */
+  font-size: 12px !important;   /* 12px min */
 }
 
-/* 12. ForYou + AllPosts filter pills — ensure 44px */
+/* 12. ForYou + AllPosts filter pills â€” ensure 44px */
 button[class*="inline-flex"][class*="h-10"][class*="shrink-0"][class*="items-center"] {
   min-height: 2.75rem !important;
 }
@@ -4368,17 +4370,17 @@ button[class*="relative"][class*="flex"][class*="items-center"][class*="gap-1.5"
   min-height: 2.75rem !important;
 }
 
-/* 14. AllPosts hero kicker — 11.2px → 12px */
+/* 14. AllPosts hero kicker â€” 11.2px â†’ 12px */
 .mhub-allposts-hero-kicker {
-  font-size: 0.75rem !important;
+  font-size: 12px !important;
 }
 
-/* 15. Feed category badges — 11px → 12px */
+/* 15. Feed category badges â€” 11px â†’ 12px */
 span[class*="inline-flex"][class*="items-center"][class*="px-1.5"][class*="py-1"][class*="rou"] {
-  font-size: 0.75rem !important;
+  font-size: 12px !important;
 }
 
-/* 16. Profile camera button — too small at 28x36 */
+/* 16. Profile camera button â€” too small at 28x36 */
 button[class*="absolute"][class*="-bottom-1"][class*="-right-1"][class*="w-7"][class*="h-7"] {
   min-width: 2.75rem !important;
   min-height: 2.75rem !important;
@@ -4386,7 +4388,7 @@ button[class*="absolute"][class*="-bottom-1"][class*="-right-1"][class*="w-7"][c
   height: 2.75rem !important;
 }
 
-/* 17. Back to top buttons on all pages — ensure 44x44 */
+/* 17. Back to top buttons on all pages â€” ensure 44x44 */
 button[class*="back-to-top"] {
   min-width: 2.75rem !important;
   min-height: 2.75rem !important;
@@ -4394,7 +4396,7 @@ button[class*="back-to-top"] {
   height: 2.75rem !important;
 }
 
-/* 18. AllPosts nav pill (Home) — h41 → 44 */
+/* 18. AllPosts nav pill (Home) â€” h41 â†’ 44 */
 a.mhub-nav-pill {
   min-height: 2.75rem !important;
 }

@@ -1016,16 +1016,15 @@ const te = 12,
             }),
               N("[ForYou] Fetching with params:", s);
             let u = null;
-            let usedFallback = !1;
+            let primaryError = null;
             try {
               u = await R.get("/recommendations", { params: s });
             } catch (err) {
               const status = err?.status ?? err?.response?.status ?? 0;
               if (status === 404 || status === 405) {
-                usedFallback = !0;
                 u = await R.get("/posts/for-you", { params: s });
               } else {
-                throw err;
+                primaryError = err;
               }
             }
             if (a !== B.current) return;
@@ -1035,7 +1034,7 @@ const te = 12,
               : Array.isArray(l)
                 ? l
                 : [];
-            if (!rawPosts.length && !usedFallback) {
+            if (!rawPosts.length) {
               try {
                 const fallbackResponse = await R.get("/posts/for-you", { params: s });
                 l = fallbackResponse?.data ?? fallbackResponse;
@@ -1044,10 +1043,27 @@ const te = 12,
                   : Array.isArray(l)
                     ? l
                     : [];
-                usedFallback = !0;
               } catch {
                 // ignore fallback failures and keep empty
               }
+            }
+            if (!rawPosts.length) {
+              try {
+                const broadParams = { ...s };
+                delete broadParams.userId;
+                const broadResponse = await R.get("/posts", { params: broadParams });
+                l = broadResponse?.data ?? broadResponse;
+                rawPosts = Array.isArray(l?.posts)
+                  ? l.posts
+                  : Array.isArray(l)
+                    ? l
+                    : [];
+              } catch {
+                // ignore broad fallback failures and keep empty
+              }
+            }
+            if (!rawPosts.length && primaryError) {
+              throw primaryError;
             }
             const k = rawPosts.filter(filterRecommendationPost);
             const likesSeed = {};

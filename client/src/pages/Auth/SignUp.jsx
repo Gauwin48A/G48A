@@ -473,7 +473,7 @@ export default function SignUp() {
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
                     {t("aadhaar_validation_hint") || "We validate Aadhaar in real time."}{" "}
-                    <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300 py-1.5 inline-block">
+                    <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300 py-2 inline-flex items-center min-h-[36px]">
                       {t("privacy_policy") || "Privacy Policy"}
                     </Link>
                   </p>

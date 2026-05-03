@@ -1,0 +1,74 @@
+{
+  "phase": "4",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T14:17:38.982Z",
+  "pages": [
+    {
+      "name": "post-detail",
+      "path": "/post/post-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "listing-detail",
+      "path": "/listing/post-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "add-post",
+      "path": "/add-post",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "sell",
+      "path": "/sell",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "edit-post",
+      "path": "/edit-post/post-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "post-add",
+      "path": "/post_add",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "feed-post-add",
+      "path": "/feed/feedpostadd",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "post-welcome",
+      "path": "/post-welcome",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    }
+  ]
+}

@@ -1446,6 +1446,11 @@ exports.getPostById = async (req, res) => {
   try {
     const postId = req.params.postId || req.params.id;
 
+    // Validate UUID format to avoid Postgres cast errors on invalid IDs
+    if (!postId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId)) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
     const postRes = await runQuery(
       `
       WITH updated_post AS (

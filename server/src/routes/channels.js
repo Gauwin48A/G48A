@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/auth");
+const { protect, optionalAuth } = require("../middleware/auth");
 const ChannelService = require("../services/ChannelService");
 const { runQuery, getAuthUserId, parseOptionalString, parsePositiveInt } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
@@ -296,10 +296,10 @@ router.post("/create", protect, createChannelHandler);
 /* ------------------------------------------------------------------ */
 
 /**
- * @route GET / - List all channels visible to the current user
+ * @route GET / - List all channels (public browse, optionally enriched for auth users)
  */
-router.get("/", protect, async (req, res) => {
-  const userId = getUserId(req);
+router.get("/", optionalAuth, publicReadSlowDown, async (req, res) => {
+  const userId = getUserId(req) || "";
   const channels = await ChannelService.listChannels(userId);
   res.json(channels);
 });

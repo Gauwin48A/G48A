@@ -44,6 +44,7 @@ const AllPostsQuickFilters = ({
   embedded = false,
   inline = false,
   inlineWrap = true,
+  hideTitle = false,
   children,
 }) => {
   const isForYouVariant = variant === "forYou";
@@ -94,7 +95,7 @@ const AllPostsQuickFilters = ({
     ? `for-you-quick-filters-row flex items-center ${inlineChipsWrapClass} ${isDenseForYouVariant ? "gap-1.5" : "gap-2"}`
     : `all-posts-quick-filters-row flex items-center ${inlineChipsWrapClass} ${compact ? "gap-1.5" : "gap-2"} ${inlineWrap ? "" : "overflow-x-auto scrollbar-hide"} ${inlineWrap ? "" : "min-w-0"}`;
 
-  const titleNode = isForYouVariant ? (
+  const titleNode = hideTitle ? null : isForYouVariant ? (
     <h3 className={`${isDenseForYouVariant ? "text-sm md:text-base" : "text-base md:text-lg"} font-bold text-gray-900 dark:text-white`}>
       {title}
     </h3>
@@ -201,7 +202,7 @@ const AllPostsQuickFilters = ({
   const content = isInlineLayout ? (
     <div className={`mhub-quick-filters-content flex flex-col ${hasChildren ? "gap-1" : ""}`}>
       <div className={`mhub-quick-filters-row flex items-center gap-2 ${inlineRowWrapClass}`}>
-        <div className="shrink-0">{titleNode}</div>
+        {titleNode ? <div className="shrink-0">{titleNode}</div> : null}
         <div className={`${inlineChipsRowClass} mhub-quick-filters-chips flex-1 min-w-0`}>
           {renderedChips}
         </div>

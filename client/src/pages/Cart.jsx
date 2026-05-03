@@ -205,7 +205,7 @@ const Cart = () => {
 
   return (
     <div
-      className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+      className={`mhub-page-cart min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
     >
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg" />
@@ -462,7 +462,7 @@ const Cart = () => {
                       <label className="flex items-center">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 sm:h-4 sm:w-4 mhub-cart-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                           checked={selectedIds.has(item.id)}
                           onChange={() => toggleSelectItem(item.id)}
                           aria-label={`Select ${item.title}`}
@@ -470,7 +470,7 @@ const Cart = () => {
                       </label>
                       {/* Image */}
                       <div
-                        className="relative w-24 h-24 sm:w-[100px] sm:h-[100px] rounded-xl overflow-hidden flex-shrink-0 cursor-pointer ring-1 ring-slate-200/60 dark:ring-gray-700/40"
+                        className="cart-item-img relative w-16 h-16 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer ring-1 ring-slate-200/60 dark:ring-gray-700/40"
                         onClick={() =>
                           (item.post_id || item.id) &&
                           navigate(`/post/${item.post_id || item.id}`)
@@ -494,7 +494,7 @@ const Cart = () => {
                       {/* Details */}
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <h3
-                          className="font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 text-sm dark:text-slate-100 dark:hover:text-indigo-300"
+                          className="font-bold text-slate-900 dark:text-white line-clamp-2 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 text-sm dark:text-slate-100 dark:hover:text-indigo-300"
                           onClick={() =>
                             (item.post_id || item.id) &&
                             navigate(`/post/${item.post_id || item.id}`)
@@ -858,3 +858,4 @@ const Cart = () => {
 };
 
 export default Cart;
+

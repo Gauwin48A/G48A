@@ -1644,6 +1644,14 @@ const ve = 5,
           vehicles: "Vehicles",
           others: "Others",
         })[String(t.categoryGroup || "").trim().toLowerCase()] || "",
+      activeCategoryBarLabel =
+        hasActiveCategory && effectiveCategoryLabel && effectiveCategoryLabel !== "All"
+          ? effectiveCategoryLabel
+          : activeAppLabel || "All",
+      showSubcategoryRail =
+        allPostsSubcategoryBarList.length > 0 &&
+        (hasActiveCategory ||
+          (activeSubcategoryLabel && activeSubcategoryLabel !== "All")),
       showModeBanner = !1,
       dealsContextLabel = useMemo(
         () => {
@@ -2746,7 +2754,11 @@ const ve = 5,
         !!Q &&
         !!t.location &&
         normalizeName(t.location) === normalizeName(Q),
-      quickFilterMax = 4,
+      isNarrowQuickFilterViewport =
+        typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(max-width: 767px)").matches,
+      quickFilterMax = isNarrowQuickFilterViewport ? 0 : 4,
       quickFilterChips = [
         {
           key: "posted-today",
@@ -2803,14 +2815,19 @@ const ve = 5,
       ],
       quickFiltersVisible = showAllQuickFilters
         ? quickFilterChips
-        : quickFilterChips.slice(0, quickFilterMax),
+        : quickFilterMax === 0
+          ? quickFilterChips.filter((chip) => chip.active)
+          : quickFilterChips.slice(0, quickFilterMax),
       quickFiltersChips = [
         ...quickFiltersVisible,
         {
           key: "toggle-filters",
-          label: showAllQuickFilters
-            ? tr("less_filters", "Less filters")
-            : tr("more_filters", "More filters"),
+          label:
+            quickFilterMax === 0 && !showAllQuickFilters
+              ? tr("quick_filters", "Quick filters")
+              : showAllQuickFilters
+                ? tr("less_filters", "Less filters")
+                : tr("more_filters", "More filters"),
           active: showAllQuickFilters,
           onClick: () => setShowAllQuickFilters((e) => !e),
           className:
@@ -3062,10 +3079,10 @@ const ve = 5,
                 name: c?.name || "",
                 post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
               })),
-          activeCategory: effectiveCategoryLabel || "All",
+          activeCategory: activeCategoryBarLabel,
           onSelectAll: handleCategoryBarSelectAll,
           onSelectCategory: handleCategoryBarSelect,
-          subcategories: allPostsSubcategoryBarList,
+          subcategories: showSubcategoryRail ? allPostsSubcategoryBarList : [],
           activeSubcategory: activeSubcategoryLabel || "All",
           onSelectAllSubcategories: Ee,
           onSelectSubcategory: handleSubcategoryBarSelect,
@@ -3088,6 +3105,7 @@ const ve = 5,
               compact: !0,
               inline: !0,
               inlineWrap: !1,
+              hideTitle: !0,
               showDivider: !1,
               chips: quickFiltersChips,
               maxWidthClass: pageMaxWidthClass,
@@ -3268,12 +3286,12 @@ const ve = 5,
         ),
       ),
       dealsBannerNode,
-      React.createElement(
-        "div",
-        {
-          id: "all-posts-feed",
-          className: `w-full flex flex-col items-center mb-4 transition-opacity duration-200 ${filterPulse ? "opacity-90" : "opacity-100"}`,
-        },
+        React.createElement(
+          "div",
+          {
+            id: "all-posts-feed",
+            className: `mhub-allposts-feed w-full flex flex-col items-center mb-4 transition-opacity duration-200 ${filterPulse ? "opacity-90" : "opacity-100"}`,
+          },
         React.createElement(
           "div",
           {
@@ -3313,12 +3331,12 @@ const ve = 5,
         React.createElement(
           "div",
           {
-            className: `w-full ${feedMaxWidthClass} mx-auto px-3 pt-4 md:px-0`,
+            className: `w-full ${feedMaxWidthClass} mx-auto px-2 pt-2 md:px-0`,
           },
           React.createElement(
             "div",
             {
-              className: "order-1 grid grid-cols-2 gap-2 keep-cols w-full min-w-0",
+              className: "order-1 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 w-full min-w-0 mhub-allposts-feed-grid mhub-product-grid",
             },
             E && f.length === 0 && !isStalledLoading
               ? Array.from({ length: 4 }).map((e, a) =>
@@ -3346,7 +3364,7 @@ const ve = 5,
                 ? React.createElement(Card,
                     {
                       className:
-                        "col-span-2 border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border-red-600/40 dark:bg-red-950/20",
+                        "col-span-full md:col-span-2 border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border-red-600/40 dark:bg-red-950/20",
                     },
                     React.createElement(
                       "p",
@@ -3383,7 +3401,7 @@ const ve = 5,
                   ? React.createElement(Card,
                       {
                         className:
-                          "col-span-2 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
+                          "col-span-full md:col-span-2 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
                       },
                       React.createElement(
                         "h3",
@@ -3684,7 +3702,7 @@ const ve = 5,
                                 "button",
                                 {
                                   className:
-                                    "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
+                                    "mhub-chip inline-flex items-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-full font-semibold text-[13px] text-gray-600 dark:text-gray-200",
                                   title: hiddenMetaTitle,
                                   onClick: () =>
                                     setExpandedMetaPostId((X) =>
@@ -3704,7 +3722,7 @@ const ve = 5,
                                 "button",
                                 {
                                   className:
-                                    "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
+                                    "mhub-chip inline-flex items-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-full font-semibold text-[13px] text-gray-600 dark:text-gray-200",
                                   onClick: () => setExpandedMetaPostId(null),
                                   "aria-expanded": !0,
                                   "aria-label": tr(
@@ -3844,7 +3862,10 @@ const ve = 5,
                                 React.createElement("img", {
                                   src: X,
                                   alt: `${e.title || s("post", { defaultValue: "Post" })} ${s("image", { defaultValue: "image" })} ${_t + 1}`,
-                                  loading: "lazy",
+                                  loading: index < 2 && _t === 0 ? "eager" : "lazy",
+                                  fetchpriority:
+                                    index === 0 && _t === 0 ? "high" : "auto",
+                                  decoding: "async",
                                   ref: (Nt) => {
                                     if (!Nt) return;
                                     if (Nt.complete && Nt.naturalWidth > 0) {
@@ -3956,7 +3977,7 @@ const ve = 5,
                             "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-xs font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
+                                  "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[13px] font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
                                 onClick: () => Me(a),
                               },
                               ae[a]
@@ -3982,7 +4003,7 @@ const ve = 5,
                               "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
+                                  "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[13px] font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
                                 onClick: () => {
                                   ie(e), le(!0);
                                 },
@@ -3998,7 +4019,7 @@ const ve = 5,
                               "span",
                               {
                                 className:
-                                  "mhub-chip shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full text-gray-600 dark:text-gray-300 text-xs font-semibold",
+                                  "mhub-chip shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full text-gray-600 dark:text-gray-300 text-[13px] font-semibold",
                               },
                               React.createElement(Qe, { className: "w-4 h-4" }),
                               De[a] || 0,

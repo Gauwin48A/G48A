@@ -57,6 +57,13 @@ exports.getPage = async (req, res) => {
       updatedAt: page.updatedAt,
     });
   } catch (err) {
+    // If the cms_pages table hasn't been provisioned yet (fresh DB / migration
+    // not applied), fall back to empty content rather than emitting a 500 that
+    // breaks every page consuming optional CMS slots.
+    if (err && (err.code === "42P01" || /relation\s+"cms_pages"\s+does not exist/i.test(String(err.message || "")))) {
+      logger.warn("CMS getPage: cms_pages table missing — returning empty content fallback");
+      return res.json({ success: true, slug, content: {}, updatedAt: null, fallback: true });
+    }
     logger.error("CMS getPage error:", err);
     return res.status(500).json({ error: "Failed to load CMS content" });
   }
@@ -90,6 +97,10 @@ exports.getPages = async (_req, res) => {
       })),
     });
   } catch (err) {
+    if (err && (err.code === "42P01" || /relation\s+"cms_pages"\s+does not exist/i.test(String(err.message || "")))) {
+      logger.warn("CMS getPages: cms_pages table missing — returning empty list fallback");
+      return res.json({ success: true, pages: [], fallback: true });
+    }
     logger.error("CMS getPages error:", err);
     return res.status(500).json({ error: "Failed to load CMS pages" });
   }

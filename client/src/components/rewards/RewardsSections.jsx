@@ -270,7 +270,7 @@ export function RewardsHero({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch gap-2">
+          <div className="rewards-hero-stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch gap-2">
             <div
               className="rewards-stat-card relative overflow-hidden rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-3 shadow-lg border border-amber-100/70 dark:border-amber-900/30"
               style={{ "--card-accent": "linear-gradient(90deg, #f59e0b, #fbbf24)" }}
@@ -793,7 +793,7 @@ export function RewardsOverview({
 
         <Card
           id="rewards-summary"
-          className="mhub-premium-surface border-0 shadow-xl rounded-2xl scroll-mt-24"
+          className="rewards-overview-summary mhub-premium-surface border-0 shadow-xl rounded-2xl scroll-mt-24"
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -803,7 +803,7 @@ export function RewardsOverview({
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-              <div className="relative overflow-hidden rounded-[28px] border border-amber-100/80 bg-gradient-to-br from-amber-50 via-white to-amber-100/50 p-5 shadow-sm dark:border-amber-900/40 dark:from-amber-900/20 dark:via-slate-900 dark:to-slate-900">
+              <div className="rewards-overview-coin-card relative overflow-hidden rounded-[28px] border border-amber-100/80 bg-gradient-to-br from-amber-50 via-white to-amber-100/50 p-5 shadow-sm dark:border-amber-900/40 dark:from-amber-900/20 dark:via-slate-900 dark:to-slate-900">
                 <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
                 <div className="relative space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -839,7 +839,7 @@ export function RewardsOverview({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rewards-overview-stats-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                         {tr("level", "Level")}
@@ -977,7 +977,7 @@ export function RewardsOverview({
           </CardContent>
         </Card>
 
-        <Card className="mhub-premium-surface border-0 shadow-xl rounded-2xl">
+        <Card className="rewards-summary-stats mhub-premium-surface border-0 shadow-xl rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-indigo-600" />
@@ -1100,7 +1100,7 @@ export function RewardsOverview({
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+            <div className="rewards-progress-grid grid grid-cols-1 gap-3 xl:grid-cols-3">
               <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-4 shadow-sm dark:border-amber-900/40 dark:from-amber-900/20 dark:via-slate-900 dark:to-slate-900">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -1789,7 +1789,7 @@ export function RewardsMilestones({
         </CardContent>
       </Card>
 
-      <Card className="mhub-premium-surface border-0 shadow-xl rounded-2xl">
+      <Card id="rewards-milestones" className="mhub-premium-surface border-0 shadow-xl rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-500" />

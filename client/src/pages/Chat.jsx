@@ -341,7 +341,7 @@ const ChatPage = () => {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center dark:bg-gradient-to-br" +
+            "mhub-page-chat min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center dark:bg-gradient-to-br" +
             densityClass,
         },
         React.createElement("div", {
@@ -353,7 +353,7 @@ const ChatPage = () => {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" +
+            "mhub-page-chat min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" +
             densityClass,
         },
         React.createElement(
@@ -997,3 +997,4 @@ const ChatWithBoundary = (props) =>
   React.createElement(ChatErrorBoundary, null, React.createElement(ChatPage, props));
 
 export { ChatWithBoundary as default };
+

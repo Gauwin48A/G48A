@@ -554,27 +554,57 @@ const RewardsPage = () => {
       }
       setSseStatus("connecting");
       setSseFallbackActive(false);
-      const t = new EventSource(buildApiPath("/rewards/stream"), {
-          withCredentials: !0,
-        }),
-        s = () => {
-          setLastSseUpdate(new Date().toISOString());
-          fetchRewards({ silent: !0 });
-        };
-      t.onopen = () => {
-        setSseStatus("connected");
-        setSseFallbackActive(false);
+      let es = null;
+      let cancelled = false;
+      const handler = () => {
+        setLastSseUpdate(new Date().toISOString());
+        fetchRewards({ silent: !0 });
       };
-      return (
-        t.addEventListener("reward_update", s),
-        (t.onerror = () => {
+      // Probe the endpoint first so we don't trigger a noisy browser console
+      // error when the backend responds with JSON (e.g., 401 / disabled SSE).
+      const streamUrl = buildApiPath("/rewards/stream");
+      fetch(streamUrl, {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "text/event-stream" },
+      })
+        .then((r) => {
+          const ct = (r.headers.get("content-type") || "").toLowerCase();
+          // Always close the probe connection.
+          try {
+            r.body && r.body.cancel && r.body.cancel();
+          } catch (_) {}
+          if (cancelled) return;
+          if (!r.ok || !ct.includes("text/event-stream")) {
+            setSseStatus("unsupported");
+            setSseFallbackActive(true);
+            return;
+          }
+          es = new EventSource(streamUrl, { withCredentials: !0 });
+          es.onopen = () => {
+            setSseStatus("connected");
+            setSseFallbackActive(false);
+          };
+          es.addEventListener("reward_update", handler);
+          es.onerror = () => {
+            setSseStatus("disconnected");
+            setSseFallbackActive(true);
+          };
+        })
+        .catch(() => {
+          if (cancelled) return;
           setSseStatus("disconnected");
           setSseFallbackActive(true);
-        }),
-        () => {
-          t.removeEventListener("reward_update", s), t.close();
+        });
+      return () => {
+        cancelled = true;
+        if (es) {
+          try {
+            es.removeEventListener("reward_update", handler);
+            es.close();
+          } catch (_) {}
         }
-      );
+      };
     }, [isAuthed, fetchRewards]);
   useEffect(() => {
     if (!isAuthed || !sseFallbackActive) {

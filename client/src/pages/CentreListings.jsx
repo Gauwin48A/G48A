@@ -322,7 +322,7 @@ export default function CentreListings() {
         {/* Back Button (overlay) */}
         <Link
           to={`/centre/${id}`}
-          className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-white hover:bg-black/50 transition-colors"
+          className="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md px-3 py-2 min-h-[2.25rem] text-xs font-medium text-white hover:bg-black/50 transition-colors btn-back"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {tr("back", "Back")}
@@ -331,7 +331,7 @@ export default function CentreListings() {
         {/* Share Button (overlay) */}
         <button
           type="button"
-          className="absolute top-4 right-4 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors"
+          className="absolute top-4 right-4 z-10 inline-flex items-center justify-center h-9 w-9 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors"
           onClick={() => {
             if (navigator.share) {
               navigator.share({ title: centreName, url: window.location.href }).catch(() => {});
@@ -459,11 +459,12 @@ export default function CentreListings() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+              className={`p-2 min-w-[2.25rem] min-h-[2.25rem] rounded-md transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
               aria-label="Grid view"
             >
               <Grid3X3 className="h-4 w-4" />
@@ -471,11 +472,20 @@ export default function CentreListings() {
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+              className={`p-2 min-w-[2.25rem] min-h-[2.25rem] rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
               aria-label="List view"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => loadListings(1)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[2.25rem] rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-xs font-semibold hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+            {tr("refresh", "Refresh")}
+          </button>
           </div>
         </div>
 

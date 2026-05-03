@@ -1,0 +1,154 @@
+[
+    {
+        "index":  43,
+        "file":  "043_account_delete.png",
+        "key":  "account_delete",
+        "title":  "Delete account",
+        "route":  "parity/page/account_delete",
+        "canonicalPath":  "/account/delete"
+    },
+    {
+        "index":  44,
+        "file":  "044_verification.png",
+        "key":  "verification",
+        "title":  "Verification",
+        "route":  "parity/page/verification",
+        "canonicalPath":  "/verification"
+    },
+    {
+        "index":  45,
+        "file":  "045_kyc.png",
+        "key":  "kyc",
+        "title":  "KYC",
+        "route":  "parity/page/kyc",
+        "canonicalPath":  "/kyc"
+    },
+    {
+        "index":  46,
+        "file":  "046_rewards.png",
+        "key":  "rewards",
+        "title":  "Rewards",
+        "route":  "parity/page/rewards",
+        "canonicalPath":  "/rewards"
+    },
+    {
+        "index":  47,
+        "file":  "047_analytics.png",
+        "key":  "analytics",
+        "title":  "Analytics",
+        "route":  "parity/page/analytics",
+        "canonicalPath":  "/analytics"
+    },
+    {
+        "index":  48,
+        "file":  "048_channels.png",
+        "key":  "channels",
+        "title":  "Channels",
+        "route":  "parity/page/channels",
+        "canonicalPath":  "/channels"
+    },
+    {
+        "index":  49,
+        "file":  "049_channel_create.png",
+        "key":  "channel_create",
+        "title":  "Create channel",
+        "route":  "parity/page/channel_create",
+        "canonicalPath":  "/channels/create"
+    },
+    {
+        "index":  50,
+        "file":  "050_channel_detail.png",
+        "key":  "channel_detail",
+        "title":  "Channel detail",
+        "route":  "parity/page/channel_detail",
+        "canonicalPath":  "/channels/:id"
+    },
+    {
+        "index":  51,
+        "file":  "051_centre_list.png",
+        "key":  "centre_list",
+        "title":  "Centre list",
+        "route":  "parity/page/centre_list",
+        "canonicalPath":  "/centre"
+    },
+    {
+        "index":  52,
+        "file":  "052_centre_create.png",
+        "key":  "centre_create",
+        "title":  "Create centre",
+        "route":  "parity/page/centre_create",
+        "canonicalPath":  "/centre/create"
+    },
+    {
+        "index":  53,
+        "file":  "053_centre_listings.png",
+        "key":  "centre_listings",
+        "title":  "Centre listings",
+        "route":  "parity/page/centre_listings",
+        "canonicalPath":  "/centre/:id/listings"
+    },
+    {
+        "index":  54,
+        "file":  "054_centre_detail.png",
+        "key":  "centre_detail",
+        "title":  "Centre detail",
+        "route":  "parity/page/centre_detail",
+        "canonicalPath":  "/centre/:id"
+    },
+    {
+        "index":  55,
+        "file":  "055_invite.png",
+        "key":  "invite",
+        "title":  "Invite redirect",
+        "route":  "parity/page/invite",
+        "canonicalPath":  "/invite/:code"
+    },
+    {
+        "index":  56,
+        "file":  "056_terms.png",
+        "key":  "terms",
+        "title":  "Terms and conditions",
+        "route":  "parity/page/terms",
+        "canonicalPath":  "/terms-and-conditions"
+    },
+    {
+        "index":  57,
+        "file":  "057_privacy.png",
+        "key":  "privacy",
+        "title":  "Privacy policy",
+        "route":  "parity/page/privacy",
+        "canonicalPath":  "/privacy-policy"
+    },
+    {
+        "index":  58,
+        "file":  "058_refund.png",
+        "key":  "refund",
+        "title":  "Refund policy",
+        "route":  "parity/page/refund",
+        "canonicalPath":  "/refund-policy"
+    },
+    {
+        "index":  59,
+        "file":  "059_support_policy.png",
+        "key":  "support_policy",
+        "title":  "Support ticket policy",
+        "route":  "parity/page/support_policy",
+        "canonicalPath":  "/support-ticket-policy"
+    },
+    {
+        "index":  60,
+        "file":  "060_admin_panel.png",
+        "key":  "admin_panel",
+        "title":  "Admin panel",
+        "route":  "parity/page/admin_panel",
+        "canonicalPath":  "/admin-panel"
+    },
+    {
+        "index":  61,
+        "file":  "061_not_found.png",
+        "key":  "not_found",
+        "title":  "Not found",
+        "route":  "parity/page/not_found",
+        "canonicalPath":  "*"
+    }
+]

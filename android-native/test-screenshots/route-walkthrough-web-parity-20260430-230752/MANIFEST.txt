@@ -1,0 +1,48 @@
+014_post_welcome.png | Post welcome | parity/page/post_welcome | /post-welcome
+015_edit_post.png | Edit post | parity/page/edit_post | /edit-post/:postId
+016_tiers.png | Tier selection | parity/page/tiers | /tier-selection
+017_payment.png | Payment | parity/page/payment | /payment
+018_cart.png | Cart | parity/page/cart | /cart
+019_wishlist.png | Wishlist | parity/page/wishlist | /wishlist
+020_recently_viewed.png | Recently viewed | parity/page/recently_viewed | /recently-viewed
+021_saved_searches.png | Saved searches | parity/page/saved_searches | /saved-searches
+022_compare.png | Compare | parity/page/compare | /compare
+023_bought_posts.png | Bought posts | parity/page/bought_posts | /bought-posts
+024_sold_posts.png | Sold posts | parity/page/sold_posts | /sold-posts
+025_buyer_view.png | Buyer view | parity/page/buyer_view | /buyer-view
+026_sale_done.png | Sale done | parity/page/sale_done | /saledone
+027_sale_undone.png | Sale undone | parity/page/sale_undone | /saleundone
+028_offers.png | Offers | parity/page/offers | /offers
+029_feed.png | Feed | parity/page/feed | /feed
+030_feed_detail.png | Feed detail | parity/page/feed_detail | /feed/:id
+031_my_feed.png | My feed | parity/page/my_feed | /my-feed
+032_post_add.png | Feed post add | parity/page/post_add | /post_add
+033_public_wall.png | Public wall | parity/page/public_wall | /public-wall
+034_chat.png | Chat | parity/page/chat | /chat
+035_notifications.png | Notifications | parity/page/notifications | /notifications
+036_complaints.png | Complaints | parity/page/complaints | /complaints
+037_feedback.png | Feedback | parity/page/feedback | /feedback
+038_reviews.png | Reviews | parity/page/reviews | /reviews/:userId
+039_dashboard.png | Dashboard | parity/page/dashboard | /dashboard
+040_activity.png | Activity hub | parity/page/activity | /activity
+041_profile.png | Profile | parity/page/profile | /profile
+042_security.png | Security | parity/page/security | /security
+043_account_delete.png | Delete account | parity/page/account_delete | /account/delete
+044_verification.png | Verification | parity/page/verification | /verification
+045_kyc.png | KYC | parity/page/kyc | /kyc
+046_rewards.png | Rewards | parity/page/rewards | /rewards
+047_analytics.png | Analytics | parity/page/analytics | /analytics
+048_channels.png | Channels | parity/page/channels | /channels
+049_channel_create.png | Create channel | parity/page/channel_create | /channels/create
+050_channel_detail.png | Channel detail | parity/page/channel_detail | /channels/:id
+051_centre_list.png | Centre list | parity/page/centre_list | /centre
+052_centre_create.png | Create centre | parity/page/centre_create | /centre/create
+053_centre_listings.png | Centre listings | parity/page/centre_listings | /centre/:id/listings
+054_centre_detail.png | Centre detail | parity/page/centre_detail | /centre/:id
+055_invite.png | Invite redirect | parity/page/invite | /invite/:code
+056_terms.png | Terms and conditions | parity/page/terms | /terms-and-conditions
+057_privacy.png | Privacy policy | parity/page/privacy | /privacy-policy
+058_refund.png | Refund policy | parity/page/refund | /refund-policy
+059_support_policy.png | Support ticket policy | parity/page/support_policy | /support-ticket-policy
+060_admin_panel.png | Admin panel | parity/page/admin_panel | /admin-panel
+061_not_found.png | Not found | parity/page/not_found | *

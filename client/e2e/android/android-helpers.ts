@@ -108,17 +108,25 @@ export async function setupLoggedInState(page: Page, user = MOCK_USER) {
 
 export async function enableDarkMode(page: Page) {
   await page.addInitScript(() => {
-    localStorage.setItem("theme", "dark");
-    localStorage.setItem("mhub_theme", "dark");
-    document.documentElement.classList.add("dark");
+    try {
+      localStorage.setItem("theme", "dark");
+      localStorage.setItem("mhub_theme", "dark");
+      if (document?.documentElement?.classList) {
+        document.documentElement.classList.add("dark");
+      }
+    } catch {}
   });
 }
 
 export async function enableLightMode(page: Page) {
   await page.addInitScript(() => {
-    localStorage.setItem("theme", "light");
-    localStorage.setItem("mhub_theme", "light");
-    document.documentElement.classList.remove("dark");
+    try {
+      localStorage.setItem("theme", "light");
+      localStorage.setItem("mhub_theme", "light");
+      if (document?.documentElement?.classList) {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
   });
 }
 
@@ -271,6 +279,49 @@ export async function mockRewardsApi(page: Page) {
         { name: "gold", minCoins: 500, benefits: ["Featured listings", "10% fee discount", "Premium badge"] }
       ]
     }));
+  // Subscription / pricing / payment mocks so /pricing, /tier-selection, /payment have data
+  await page.route("**/api/subscription/plans**", async (route) =>
+    jsonResponse(route, {
+      plans: [
+        { id: "basic",   name: "Basic",   price: 0,    interval: "month", features: ["List up to 5 items", "Basic visibility"] },
+        { id: "pro",     name: "Pro",     price: 199,  interval: "month", features: ["Unlimited listings", "Featured slots", "Priority support"] },
+        { id: "premium", name: "Premium", price: 499,  interval: "month", features: ["All Pro features", "Top placement", "Verified badge"] }
+      ]
+    }));
+  await page.route("**/api/subscription/current**", async (route) =>
+    jsonResponse(route, { plan: "basic", status: "active", renewsAt: "2026-06-01T00:00:00Z" }));
+  await page.route("**/api/payment/methods**", async (route) =>
+    jsonResponse(route, { methods: [
+      { id: "upi",  label: "UPI",          icon: "upi" },
+      { id: "card", label: "Credit/Debit", icon: "card" },
+      { id: "nb",   label: "Net Banking",  icon: "bank" }
+    ] }));
+  await page.route("**/api/payment/order**", async (route) =>
+    jsonResponse(route, { orderId: "order_e2e_1", amount: 19900, currency: "INR" }));
+  // PaymentPage actually hits /api/payments/* (plural)
+  await page.route("**/api/payments/upi-details**", async (route) =>
+    jsonResponse(route, {
+      upiId: "mhub@upi",
+      payeeName: "MHub",
+      tiers: {
+        bronze:  { price: 99,  durationDays: 30, label: "Bronze",  features: ["Basic visibility"] },
+        silver:  { price: 199, durationDays: 30, label: "Silver",  features: ["Priority listings", "5% fee discount"] },
+        gold:    { price: 499, durationDays: 30, label: "Gold",    features: ["Featured slots", "10% fee discount"] },
+        premium: { price: 999, durationDays: 30, label: "Premium", features: ["Top placement", "Verified badge"] }
+      },
+      boosts: {
+        feature_24h: { price: 49,  durationHours: 24,  label: "24h Featured" },
+        boost_7d:    { price: 199, durationDays: 7,    label: "7-day Boost" }
+      }
+    }));
+  await page.route("**/api/payments/status**", async (route) =>
+    jsonResponse(route, { status: "idle", lastPaymentAt: null }));
+  await page.route("**/api/payments/submit**", async (route) =>
+    jsonResponse(route, { success: true, transactionId: "tx_e2e_1" }));
+  await page.route("**/api/payments/razorpay/order**", async (route) =>
+    jsonResponse(route, { orderId: "order_e2e_1", amount: 19900, currency: "INR", razorpayKey: "rzp_test_e2e" }));
+  await page.route("**/api/payments/razorpay/verify**", async (route) =>
+    jsonResponse(route, { success: true }));
 }
 
 export async function mockProfileApi(page: Page, user = MOCK_USER) {

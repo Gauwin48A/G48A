@@ -100,13 +100,11 @@ const GreenNavbar = () => {
   ];
 
   const bottomNavLinks = [
-    { key: 'home', path: '/category-hub', icon: <FiHome />, matchPaths: ['/category-hub', '/home'] },
-    { key: 'all_posts', path: '/all-posts', icon: <FiGrid />, matchPaths: ['/all-posts', '/listings', '/'] },
-    { key: 'for_you', path: '/for-you', icon: <FiStar />, matchPaths: ['/for-you'] },
-    { key: 'feed', path: '/feed', icon: <FiFileText />, matchPaths: ['/feed'] },
-    { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
-    { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile'] },
-    { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
+    { key: 'home', path: '/category-hub', icon: <FiHome />, matchPaths: ['/category-hub', '/home', '/'] },
+    { key: 'all_posts', path: '/all-posts', icon: <FiSearch />, matchPaths: ['/all-posts', '/listings', '/search', '/nearby', '/for-you'] },
+    { key: 'sell', path: '/post-welcome', icon: <FiGrid />, matchPaths: ['/post-welcome', '/add-post', '/sell', '/post_add', '/edit-post'] },
+    { key: 'chat', path: '/chat', icon: <FiMessageCircle />, matchPaths: ['/chat', '/chats', '/channels'] },
+    { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile', '/rewards', '/notifications', '/dashboard'] },
   ];
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -1435,77 +1433,40 @@ const GreenNavbar = () => {
       )}
 
       {/* --- Bottom Navbar: hidden on auth-only pages and category-hub --- */}
-      {!isAuthPage && !hideChromeOnHub && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-between items-center px-2 py-1 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>
-        {/* Left nav links */}
-        <div className="flex flex-1 justify-evenly">
-          {bottomNavLeftLinks.map((link) => {
-            const isActive = isBottomNavLinkActive(link);
+      {!isAuthPage && !hideChromeOnHub && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-around items-center px-1 py-0 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>
+        {bottomNavLinks.map((link) => {
+          const isActive = isBottomNavLinkActive(link);
+          const isSellTab = link.key === 'sell';
 
-            return (
+          return (
             <button
               key={link.key}
               {...navButtonProps(t(link.key))}
               data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? handleMoreOpen : () => startTransition(() => navigate(link.path))}
-              onTouchEnd={link.key === 'more' ? handleMoreOpen : undefined}
+              onClick={() => startTransition(() => navigate(link.path))}
               style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[38px] min-h-[44px] px-1 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[52px] px-2 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''} ${isSellTab ? 'mhub-bottom-nav-sell' : ''}`}
             >
-              <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
-                {link.icon}
+              {isSellTab ? (
+                <span className="mhub-bottom-nav-sell-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </span>
+              ) : (
+                <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
+                  {link.icon}
+                </span>
+              )}
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '12px' }}>
+                {t(link.key, { defaultValue: link.key === 'sell' ? 'Sell' : link.key })}
               </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t(link.key)}
-              </span>
-              {isActive && <span className="mhub-bottom-nav-indicator" />}
+              {isActive && !isSellTab && <span className="mhub-bottom-nav-indicator" />}
             </button>
-            );
-          })}
-        </div>
-        {/* Center + (Sell) icon - Only show for logged-in users */}
-        {isLoggedIn && (
-          <div className="flex-none">
-            <button
-              aria-label={t('sell', { defaultValue: 'Sell' })}
-              className="mhub-fab relative group inline-flex items-center justify-center rounded-full w-11 h-11 text-2xl font-extrabold transition-all duration-200 -translate-y-3"
-              onClick={() => startTransition(() => navigate('/post-welcome'))}
-              style={{ zIndex: 130 }}
-            >
-              +
-              <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
-                {t('sell', { defaultValue: 'Add Post' })}
-              </span>
-            </button>
-          </div>
-        )}
-        {/* Right nav links */}
-        <div className="flex flex-1 justify-evenly">
-          {bottomNavRightLinks.map((link) => {
-            const isActive = isBottomNavLinkActive(link);
-
-            return (
-            <button
-              key={link.key}
-              {...navButtonProps(t(link.key))}
-              data-navkey={link.key}
-              aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? handleMoreOpen : () => startTransition(() => navigate(link.path))}
-              onTouchEnd={link.key === 'more' ? handleMoreOpen : undefined}
-              style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[38px] min-h-[44px] px-1 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
-            >
-              <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
-                {link.icon}
-              </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t(link.key)}
-              </span>
-              {isActive && <span className="mhub-bottom-nav-indicator" />}
-            </button>
-            );
-          })}
-        </div>
+          );
+        })}
       </nav>}
     </>
   );

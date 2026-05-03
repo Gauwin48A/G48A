@@ -1,0 +1,19 @@
+043_account_delete.png | Delete account | parity/page/account_delete | /account/delete
+044_verification.png | Verification | parity/page/verification | /verification
+045_kyc.png | KYC | parity/page/kyc | /kyc
+046_rewards.png | Rewards | parity/page/rewards | /rewards
+047_analytics.png | Analytics | parity/page/analytics | /analytics
+048_channels.png | Channels | parity/page/channels | /channels
+049_channel_create.png | Create channel | parity/page/channel_create | /channels/create
+050_channel_detail.png | Channel detail | parity/page/channel_detail | /channels/:id
+051_centre_list.png | Centre list | parity/page/centre_list | /centre
+052_centre_create.png | Create centre | parity/page/centre_create | /centre/create
+053_centre_listings.png | Centre listings | parity/page/centre_listings | /centre/:id/listings
+054_centre_detail.png | Centre detail | parity/page/centre_detail | /centre/:id
+055_invite.png | Invite redirect | parity/page/invite | /invite/:code
+056_terms.png | Terms and conditions | parity/page/terms | /terms-and-conditions
+057_privacy.png | Privacy policy | parity/page/privacy | /privacy-policy
+058_refund.png | Refund policy | parity/page/refund | /refund-policy
+059_support_policy.png | Support ticket policy | parity/page/support_policy | /support-ticket-policy
+060_admin_panel.png | Admin panel | parity/page/admin_panel | /admin-panel
+061_not_found.png | Not found | parity/page/not_found | *

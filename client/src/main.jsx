@@ -8,6 +8,7 @@ import './i18n/index';
 import './index.css';
 import './styles/ui-enhancements.css';
 import './styles/mobile-layout.css';
+import './styles/marketplace-redesign.css';
 import { ToastProvider } from '@/hooks/use-toast';
 import { activateDefenseMode, isAuthorizedHostname } from './utils/security';
 import { initCodeProtection } from './utils/codeProtection';
