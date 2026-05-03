@@ -17,6 +17,7 @@ const VPN_CACHE_TTL_MS = 30 * 1000; // Cache result for 30 seconds
 const VPN_IP_RATE_LIMIT_FALLBACK_MS = 60 * 1000;
 const VPN_IP_COOLDOWN_MAX_MS = 10 * 60 * 1000;
 const VPN_IP_COOLDOWN_KEY = "mhub_vpn_ip_cooldown_until";
+const WEB_REPLICA_USER_AGENT_TOKEN = "MhubAndroidWebReplica/1.0";
 
 let vpnCheckTimer = null;
 let vpnStatusListeners = [];
@@ -84,11 +85,29 @@ function isLocalhostHost() {
   return host === "localhost" || host === "127.0.0.1" || host === "::1";
 }
 
+function isAndroidWebReplicaSurface() {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.__MHUB_WEB_REPLICA__ === true) return true;
+  } catch {
+    /* ignore */
+  }
+  try {
+    const ua = String(window.navigator?.userAgent || "");
+    return ua.includes(WEB_REPLICA_USER_AGENT_TOKEN);
+  } catch {
+    return false;
+  }
+}
+
 function shouldSkipDnsTiming() {
-  return isDevEnvironment() || isLocalhostHost();
+  return isDevEnvironment() || isLocalhostHost() || isAndroidWebReplicaSurface();
 }
 function shouldSkipIpReputation() {
-  return isDevEnvironment() || isLocalhostHost();
+  return isDevEnvironment() || isLocalhostHost() || isAndroidWebReplicaSurface();
+}
+function shouldSkipWebRtcChecks() {
+  return isDevEnvironment() || isLocalhostHost() || isAndroidWebReplicaSurface();
 }
 
 /**
@@ -119,6 +138,9 @@ function notifyListeners(status) {
  * Creates a peer connection to detect local vs public IPs
  */
 async function detectWebRTCLeak() {
+  if (shouldSkipWebRtcChecks()) {
+    return { detected: false, reason: "webrtc_check_skipped" };
+  }
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve({ detected: false, reason: "timeout" }), 5000);
 
@@ -354,6 +376,13 @@ async function checkDNSTiming() {
  * Some VPN extensions modify navigator properties
  */
 function checkBrowserExtensionSignals() {
+  if (shouldSkipWebRtcChecks()) {
+    return {
+      detected: false,
+      signals: ["webrtc_check_skipped"],
+    };
+  }
+
   const signals = [];
 
   // Check for modified WebRTC

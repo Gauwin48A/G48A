@@ -167,7 +167,7 @@ function LocationGate({ children }) {
     }
   };
 
-  // L10: Accuracy badge component — clickable to force refresh
+  // L10: Accuracy badge component -- pill with detection state and dismiss button
   const AccuracyBadge = () => {
     if (!permissionGranted && !bypassed) return null;
     if (shouldHideBadge) return null;
@@ -226,7 +226,7 @@ function LocationGate({ children }) {
     );
   };
 
-  // Passed through — app renders with optional accuracy badge overlay
+  // app renders with optional accuracy badge overlay
   if ((permissionGranted && !loading) || shouldBypassGate) {
     return React.createElement(
       React.Fragment,
@@ -494,7 +494,7 @@ const badgeStyles = `
     border: 1px solid;
     border-radius: 16px;
     padding: 4px 9px;
-    font-size: 0.62rem;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.1;
     max-width: 70vw;
@@ -510,8 +510,8 @@ const badgeStyles = `
     max-width: 60vw;
   }
   .location-accuracy-badge-close {
-    width: 22px;
-    height: 22px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: rgba(15, 23, 42, 0.78);
     backdrop-filter: blur(8px);
@@ -530,8 +530,8 @@ const badgeStyles = `
     background: rgba(241, 245, 249, 0.12);
   }
   @media (max-width: 480px) {
-    .location-accuracy-badge { font-size: 0.58rem; padding: 3px 7px; }
-    .location-accuracy-badge-close { width: 20px; height: 20px; }
+    .location-accuracy-badge { font-size: 12px; padding: 3px 7px; }
+    .location-accuracy-badge-close { width: 36px; height: 36px; font-size: 16px; }
   }
 `;
 

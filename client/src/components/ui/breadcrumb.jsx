@@ -38,7 +38,7 @@ const BreadcrumbLink = forwardRef(({ asChild, className, ...props }, ref) => {
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground py-2 inline-block", className)}
+      className={cn("transition-colors hover:text-foreground inline-flex items-center min-h-[2.25rem] px-2 py-2", className)}
       {...props}
     />
   )
@@ -48,10 +48,8 @@ BreadcrumbLink.displayName = "BreadcrumbLink"
 const BreadcrumbPage = forwardRef(({ className, ...props }, ref) => (
   <span
     ref={ref}
-    role="link"
-    aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn("font-normal text-foreground inline-flex items-center min-h-[2.25rem] px-2 py-2", className)}
     {...props}
   />
 ))

@@ -1,0 +1,50 @@
+{
+  "phase": "3",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T11:41:10.300Z",
+  "pages": [
+    {
+      "name": "profile",
+      "path": "/profile",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "rewards",
+      "path": "/rewards",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "security",
+      "path": "/security",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "account-delete",
+      "path": "/account/delete",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "notifications",
+      "path": "/notifications",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    }
+  ]
+}

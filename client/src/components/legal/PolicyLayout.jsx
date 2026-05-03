@@ -45,25 +45,25 @@ export default function PolicyLayout({ title, subtitle, updatedOn, sections }) {
           <div className="flex flex-wrap gap-2">
             <Link
               to="/t&c"
-              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
+              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-2 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
             >
               Terms
             </Link>
             <Link
               to="/privacy-policy"
-              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
+              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-2 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
             >
               Privacy
             </Link>
             <Link
               to="/refund-policy"
-              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
+              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-2 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
             >
               Refund
             </Link>
             <Link
               to="/support-ticket-policy"
-              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
+              className="rounded-md border border-blue-200/70 bg-white/80 px-3 py-2 text-blue-700 hover:bg-blue-100 dark:border-blue-800/70 dark:bg-slate-900/70 dark:text-blue-200 dark:hover:bg-blue-900/40"
             >
               Support Tickets
             </Link>

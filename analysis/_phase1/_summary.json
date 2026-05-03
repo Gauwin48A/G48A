@@ -1,0 +1,26 @@
+{
+  "phase": "1",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T14:16:24.668Z",
+  "pages": [
+    {
+      "name": "all-posts",
+      "path": "/all-posts",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "listings",
+      "path": "/listings",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    }
+  ]
+}

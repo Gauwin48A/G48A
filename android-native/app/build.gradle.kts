@@ -97,7 +97,7 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             buildConfigField("String", "PARITY_TEST_IDENTIFIER", "\"9876543210\"")
-            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Pass12345\"")
+            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Test@12345\"")
             buildConfigField("boolean", "PARITY_AUTO_LOGIN_ENABLED", "true")
             buildConfigField("boolean", "WEB_REPLICA_MODE", "true")
         }

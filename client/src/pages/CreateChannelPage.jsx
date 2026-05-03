@@ -14,6 +14,7 @@ import {
   CardContent as A,
   CardDescription as T,
   CardHeader as D,
+  CardTitle as S,
 } from "@/components/ui/card";
 import { Button as m } from "@/components/ui/button";
 import { Input as B } from "@/components/ui/input";
@@ -32,17 +33,17 @@ import {
 const W = ({ variant = "channel" } = {}) => {
   const { t: a } = Y(),
     n = V(),
-    S = Se(),
+    loc = Se(),
     { user: L } = $(),
     I = j(),
     E = z(L),
     q = !!(I && E),
     isCentre = variant === "centre",
     editChannelId = G(() => {
-      const params = new URLSearchParams(S.search || "");
+      const params = new URLSearchParams(loc.search || "");
       const raw = params.get("channelId") || params.get("id") || "";
       return raw ? String(raw).trim() : "";
-    }, [S.search]),
+    }, [loc.search]),
     userTier = String(L?.current_plan || L?.tier || "").toLowerCase(),
     isPremium = ["premium", "pro", "business"].includes(userTier),
     [l, F] = s(""),

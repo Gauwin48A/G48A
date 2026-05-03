@@ -33,11 +33,11 @@ const AllPostsCategoryBar = ({
     : "py-1 px-2 md:px-2.5";
   const barGap = compact ? "gap-1.5 md:gap-2" : "gap-1.5 md:gap-2";
   const buttonPad = compact
-    ? "px-2.5 py-1 rounded-full min-h-[34px] min-w-0"
-    : "px-2.5 py-1.5 rounded-full min-w-[52px] sm:min-w-[60px]";
+    ? "px-3 py-2 rounded-full min-h-[44px] min-w-[44px]"
+    : "px-3 py-2 rounded-full min-h-[44px] min-w-[52px] sm:min-w-[60px]";
   const labelSize = compact
-    ? "text-xs"
-    : "text-xs md:text-sm";
+    ? "text-[13px]"
+    : "text-[13px] md:text-sm";
   const iconSize = compact
     ? "w-3.5 h-3.5"
     : "w-4 h-4 sm:w-5 sm:h-5";

@@ -248,7 +248,7 @@ html {
 
   .post-action-row button,
   .post-action-row a {
-    font-size: 0.65rem;
+    font-size: 12px !important;
     padding-inline: 0.5rem;
   }
 }
@@ -459,7 +459,7 @@ html[data-layout-preview="tablet"] body::before {
   z-index: 80;
   border-radius: 999px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
   pointer-events: none;
@@ -699,7 +699,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     margin-top: calc(var(--page-section-gap) * 1.4);
   }
 
-  /* Bottom-nav content clearance — apply to scrollable page wrappers */
+  /* Bottom-nav content clearance Ã¢â‚¬â€ apply to scrollable page wrappers */
   .nav-clearance {
     padding-bottom: calc(var(--bottom-nav-height) + var(--bottom-nav-safe) + 1rem);
   }
@@ -711,26 +711,26 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ─── Global dark-mode contrast & visibility overrides ───
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Global dark-mode contrast & visibility overrides Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
    Covers compiled pages that use Tailwind classes without dark: variants.
    These selectors match the actual class strings in compiled JSX. */
 
-/* 1. Cards / surfaces: bg-white → dark card bg */
+/* 1. Cards / surfaces: bg-white Ã¢â€ â€™ dark card bg */
 .dark .bg-white:not([class*="dark\:bg-"]):not([class*="bg-white/"]) {
   background-color: var(--card) !important;
 }
 
-/* 2. bg-gray-50 pages/sections → dark bg */
+/* 2. bg-gray-50 pages/sections Ã¢â€ â€™ dark bg */
 .dark .bg-gray-50:not([class*="dark\:bg-"]) {
   background-color: var(--background) !important;
 }
 
-/* 3. Low-contrast meta text: text-gray-500/600 → visible in dark */
+/* 3. Low-contrast meta text: text-gray-500/600 Ã¢â€ â€™ visible in dark */
 .dark .text-gray-500:not([class*="dark\:text-"]) {
   color: var(--text-faint) !important;
 }
 
-/* ─── MHUB DESIGN SYSTEM ─── Spacing, WCAG contrast, compact cards, skeletons */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ MHUB DESIGN SYSTEM Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Spacing, WCAG contrast, compact cards, skeletons */
 
 /* === DARK MODE WCAG AA CONTRAST FIXES === */
 .dark .text-gray-400:not([class*="dark\:text-"]) {
@@ -815,7 +815,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   background: rgba(96, 165, 250, 0.1);
 }
 @media (max-width: 640px) {
-  .mhub-comparison-table { font-size: 11px; }
+  .mhub-comparison-table { font-size: 12px; }
   .mhub-comparison-table th,
   .mhub-comparison-table td { padding: 8px 4px; }
 }
@@ -855,7 +855,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   border-color: var(--border) !important;
 }
 
-/* 5. Coloured accents on light surfaces → dark-safe */
+/* 5. Coloured accents on light surfaces Ã¢â€ â€™ dark-safe */
 .dark .bg-blue-50:not([class*="dark\:bg-"]) { background-color: rgba(59,130,246,0.12); }
 .dark .bg-green-50:not([class*="dark\:bg-"]) { background-color: rgba(34,197,94,0.12); }
 .dark .bg-red-50:not([class*="dark\:bg-"]) { background-color: rgba(239,68,68,0.12); }
@@ -1439,10 +1439,10 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ─────────────────────────────────────────────────
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
    ANDROID / MOBILE-SPECIFIC FIXES
    Capacitor WebView + mobile viewport optimizations
-   ───────────────────────────────────────────────── */
+   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 /* Safe-area CSS custom properties for Android/iOS */
 :root {
@@ -1491,6 +1491,16 @@ html[data-native-platform] .location-accuracy-badge-close {
     min-width: 48px;
     min-height: 48px;
     padding: 6px 4px;
+  }
+
+  /* Nav label: readable size on mobile */
+  .mhub-bottom-nav-label {
+    font-size: 12px !important;
+    line-height: 1.2;
+    max-width: 56px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Cards should not overflow viewport */
@@ -1557,7 +1567,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     font-size: 0.8125rem !important;
   }
   .quick-action-card p.text-xs {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1641,7 +1651,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     border-radius: 12px !important;
   }
 
-  /* --- Mobile-compact: Feed hero — reduce vertical space --- */
+  /* --- Mobile-compact: Feed hero Ã¢â‚¬â€ reduce vertical space --- */
   .mhub-premium-page > div[data-density="extra"] {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
@@ -1667,7 +1677,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     font-size: 0.75rem !important;
   }
 
-  /* --- Mobile-compact: Notifications stat cards — tighter on narrow screens --- */
+  /* --- Mobile-compact: Notifications stat cards Ã¢â‚¬â€ tighter on narrow screens --- */
   .grid.grid-cols-3.gap-3.mt-10 {
     gap: 6px !important;
     margin-top: 1.5rem !important;
@@ -1684,7 +1694,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     margin-bottom: 6px !important;
   }
 
-  /* --- Mobile-compact: Feed posts — tighter horizontal padding --- */
+  /* --- Mobile-compact: Feed posts Ã¢â‚¬â€ tighter horizontal padding --- */
   .max-w-3xl .px-5 {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
@@ -1709,7 +1719,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     flex-shrink: 0;
   }
 
-  /* --- Mobile-compact: Page containers — tighter top padding --- */
+  /* --- Mobile-compact: Page containers Ã¢â‚¬â€ tighter top padding --- */
   .page-shell {
     padding-top: 0 !important;
   }
@@ -1718,7 +1728,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     padding-right: 12px !important;
   }
 
-  /* --- Mobile-compact: Hero cards — reduce padding --- */
+  /* --- Mobile-compact: Hero cards Ã¢â‚¬â€ reduce padding --- */
   .mhub-hero-card {
     min-height: 110px !important;
     padding: 12px !important;
@@ -1736,25 +1746,25 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
   .rewards-tab-bar button {
     padding: 6px 10px !important;
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
   }
 
-  /* --- Mobile: Rewards hero — hide duplicate coin balance card in hero stat grid --- */
+  /* --- Mobile: Rewards hero Ã¢â‚¬â€ hide duplicate coin balance card in hero stat grid --- */
   .rewards-hero-card + .grid .rewards-stat-card:first-child {
     display: none !important;
   }
 
-  /* --- Mobile: Rewards impact dashboard — make cards more compact --- */
+  /* --- Mobile: Rewards impact dashboard Ã¢â‚¬â€ make cards more compact --- */
   .rewards-surface .grid.grid-cols-1.md\\:grid-cols-3 {
     gap: 8px !important;
   }
 
-  /* --- Mobile: ForYou — reduce gap between ribbon and sticky filters --- */
+  /* --- Mobile: ForYou Ã¢â‚¬â€ reduce gap between ribbon and sticky filters --- */
   .mhub-premium-page .mhub-premium-bar {
     margin-top: 0 !important;
   }
 
-  /* --- Mobile: ForYou quick filters — tighter padding --- */
+  /* --- Mobile: ForYou quick filters Ã¢â‚¬â€ tighter padding --- */
   .mhub-premium-bar .mhub-premium-surface {
     padding: 8px !important;
     border-radius: 12px !important;
@@ -1764,7 +1774,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     margin-bottom: 4px !important;
   }
 
-  /* --- Mobile: AllPosts hero — compact version for mobile --- */
+  /* --- Mobile: AllPosts hero Ã¢â‚¬â€ compact version for mobile --- */
   .mhub-allposts-hero[data-density="extra"] {
     padding: 6px 12px !important;
   }
@@ -1783,6 +1793,345 @@ html[data-native-platform] .location-accuracy-badge-close {
   /* --- Mobile-compact: CategoryHub tiles --- */
   .min-h-\\[100dvh\\] .grid.grid-cols-2 {
     gap: 8px !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     ALLPOSTS MOBILE CARD REDESIGN Ã¢â‚¬â€ Production-Ready Compact Feed
+     Target: .mhub-allposts-card inside .keep-cols grid
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Keep 2-col grid but reduce gap for tighter layout */
+  .keep-cols {
+    gap: 6px !important;
+  }
+
+  /* Card: reduce border-radius, tighter overflow */
+  .mhub-allposts-card {
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  }
+
+  /* Card header: hide avatar, make username + price more compact */
+  .mhub-allposts-card > .flex.items-start.gap-3 {
+    padding: 8px 8px 4px !important;
+    gap: 0 !important;
+  }
+
+  /* Hide avatar on compact cards */
+  .mhub-allposts-card > .flex.items-start.gap-3 > .w-9,
+  .mhub-allposts-card > .flex.items-start.gap-3 > [class*="Avatar"] {
+    display: none !important;
+  }
+
+  /* User info section: full width without avatar */
+  .mhub-allposts-card > .flex.items-start.gap-3 > .flex-1 {
+    padding-right: 28px !important;
+  }
+
+  /* Username: smaller on compact */
+  .mhub-allposts-card > .flex.items-start.gap-3 .font-semibold.text-slate-700 {
+    font-size: 12px !important;
+    opacity: 0.7;
+  }
+
+  /* Hide verified badge on compact cards */
+  .mhub-allposts-card > .flex.items-start.gap-3 .inline-flex.items-center.gap-1.px-2.py-1.bg-blue-50 {
+    display: none !important;
+  }
+
+  /* Price pill: make it the star of the card */
+  .mhub-allposts-card .mhub-price-pill {
+    padding: 2px 6px !important;
+    font-size: 0.75rem !important;
+    margin-top: 2px;
+  }
+  .mhub-allposts-card .mhub-price-pill .uppercase.tracking-wide {
+    display: none !important;
+  }
+
+  /* Card title: compact */
+  .mhub-allposts-card .mhub-card-title {
+    font-size: 0.8rem !important;
+    line-height: 1.3 !important;
+    margin-top: 2px !important;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Meta chips: hide on compact cards to save space */
+  .mhub-allposts-card .mhub-card-meta {
+    margin-top: 4px !important;
+    gap: 4px !important;
+  }
+  .mhub-allposts-card .mhub-card-meta .mhub-chip {
+    padding: 1px 5px !important;
+    font-size: 12px !important;
+  }
+  /* Hide "+N more" and keep only first 2 chips */
+  .mhub-allposts-card .mhub-card-meta .mhub-chip:nth-child(n+3) {
+    display: none !important;
+  }
+
+  /* Image: reduce height for compact 2-col cards */
+  .mhub-allposts-card .mhub-media-frame {
+    border-width: 0 !important;
+  }
+  .mhub-allposts-card .mhub-media-img {
+    height: 140px !important;
+    object-fit: cover;
+  }
+  /* Hide carousel nav buttons on compact cards (use swipe) */
+  .mhub-allposts-card .mhub-media-frame button[aria-label] {
+    display: none !important;
+  }
+  /* Smaller dots indicator */
+  .mhub-allposts-card .mhub-media-frame .absolute.bottom-3 {
+    bottom: 6px !important;
+    gap: 3px !important;
+    padding: 2px 6px !important;
+  }
+  .mhub-allposts-card .mhub-media-frame .absolute.bottom-3 button {
+    width: 6px !important;
+    height: 6px !important;
+  }
+  /* Counter badge: smaller */
+  .mhub-allposts-card .mhub-media-frame .absolute.top-3.right-3 {
+    top: 4px !important;
+    right: 4px !important;
+    font-size: 0.6rem !important;
+    padding: 1px 4px !important;
+  }
+
+  /* Action buttons row: more compact */
+  .mhub-allposts-card .post-action-row {
+    gap: 4px !important;
+  }
+  .mhub-allposts-card .post-action-row button {
+    height: 32px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+    gap: 3px !important;
+  }
+  .mhub-allposts-card .post-action-row button svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  /* Action buttons bottom padding */
+  .mhub-allposts-card .px-3.pb-3.pt-2 {
+    padding: 4px 6px 6px !important;
+  }
+
+  /* More options menu button: smaller on compact */
+  .mhub-allposts-card .absolute.right-3.top-3 {
+    right: 4px !important;
+    top: 4px !important;
+    padding: 4px !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     PROFILE PAGE Ã¢â‚¬â€ Mobile-Compact Layout
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Profile header card: reduce padding */
+  .profile-header-card {
+    padding: 12px !important;
+  }
+
+  /* Profile avatar: slightly smaller */
+  .profile-header-card .w-20,
+  .profile-header-card .h-20 {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  /* Profile stats grid: 2-col not 3-col */
+  .profile-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Profile sections: reduce spacing */
+  .profile-section {
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+  }
+
+  /* Profile section headers */
+  .profile-section h2,
+  .profile-section h3 {
+    font-size: 1rem !important;
+  }
+
+  /* Profile info items: compact */
+  .profile-info-item {
+    padding: 8px 0 !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     REWARDS PAGE Ã¢â‚¬â€ Mobile-Compact Layout
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Rewards hero: compact */
+  .rewards-hero-section {
+    padding: 12px !important;
+    min-height: auto !important;
+  }
+  .rewards-hero-section h1 {
+    font-size: 1.25rem !important;
+  }
+  .rewards-hero-section p {
+    font-size: 0.8rem !important;
+  }
+
+  /* Rewards stat grid: tighter */
+  .rewards-stats-grid {
+    gap: 8px !important;
+  }
+  .rewards-stats-grid > div {
+    padding: 10px !important;
+  }
+  .rewards-stats-grid .text-2xl,
+  .rewards-stats-grid .text-3xl {
+    font-size: 1.25rem !important;
+  }
+
+  /* Rewards sections: reduce vertical space */
+  .rewards-section {
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+  }
+  .rewards-section h2 {
+    font-size: 1rem !important;
+  }
+
+  /* Rewards action cards: compact */
+  .rewards-action-card {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+  .rewards-action-card h3 {
+    font-size: 0.875rem !important;
+  }
+  .rewards-action-card p {
+    font-size: 0.75rem !important;
+  }
+
+  /* Rewards progress bars: thinner */
+  .rewards-progress-bar {
+    height: 6px !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     FEED PAGE Ã¢â‚¬â€ Touch Target & Spacing Fixes
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Feed post cards: ensure touch targets */
+  .feed-post-card a,
+  .feed-post-card button,
+  .feed-post-card [role="button"] {
+    min-height: 36px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Feed post header: proper spacing */
+  .feed-post-card .flex.items-center.gap-2 span {
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     SEARCH PAGE Ã¢â‚¬â€ Fix Header Overlap
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Search results heading: proper spacing below search input */
+  .search-results-heading {
+    margin-top: 8px !important;
+    padding-top: 0 !important;
+  }
+
+  /* Search filters: more compact layout */
+  .search-filters-form {
+    gap: 12px !important;
+  }
+  .search-filters-form label {
+    font-size: 0.8rem !important;
+    margin-bottom: 2px !important;
+  }
+  .search-filters-form input,
+  .search-filters-form select {
+    height: 40px !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     TIER SELECTION Ã¢â‚¬â€ Mobile Compact
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* Tier cards: reduce size */
+  .tier-card {
+    padding: 12px !important;
+  }
+  .tier-card .text-3xl,
+  .tier-card .text-4xl {
+    font-size: 1.5rem !important;
+  }
+  .tier-card .text-lg {
+    font-size: 0.875rem !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     DASHBOARD Ã¢â‚¬â€ Mobile Compact
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .dashboard-stat-card {
+    padding: 10px !important;
+  }
+  .dashboard-stat-card .text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+     GLOBAL: Spacing Harmonization for All Pages
+     Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+
+  /* All section gaps: consistent mobile spacing */
+  .space-y-6 > * + * {
+    margin-top: 12px !important;
+  }
+  .space-y-8 > * + * {
+    margin-top: 16px !important;
+  }
+  .gap-6 {
+    gap: 12px !important;
+  }
+  .gap-8 {
+    gap: 16px !important;
+  }
+
+  /* Page-level padding: consistent */
+  .p-6, .p-8 {
+    padding: 12px !important;
+  }
+  .px-6, .px-8 {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .py-6, .py-8 {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* Large margins: reduce */
+  .mb-6, .mb-8 {
+    margin-bottom: 12px !important;
+  }
+  .mt-6, .mt-8 {
+    margin-top: 12px !important;
   }
 }
 
@@ -1803,7 +2152,7 @@ html[data-native-platform] .location-accuracy-badge-close {
 
   /* Larger font for mobile readability */
   .mhub-bottom-nav-label {
-    font-size: 0.6875rem !important;
+    font-size: 12px !important;
     line-height: 1.2;
     max-width: 56px;
     overflow: hidden;
@@ -1872,13 +2221,13 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ─────────────────────────────────────────────────
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
    ANDROID-FIRST: Comprehensive mobile UI fixes
    Addresses: cramped navbar, quick-filters overlap,
    bottom nav crowding, touch target sizing
-   ───────────────────────────────────────────────── */
+   Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
-/* ── 1. AllPosts quick-filter toolbar: mobile simplification ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 1. AllPosts quick-filter toolbar: mobile simplification Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   /* Hide the Browse/Shuffle/Live and Sort button groups on mobile.
      Users access sort via the main Filter button in the top nav.     */
@@ -1914,7 +2263,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 2. Top navbar: proper sizing and spacing on mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 2. Top navbar: proper sizing and spacing on mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   .mhub-top-nav-main {
     gap: 0.45rem;
@@ -1957,7 +2306,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 3. Bottom nav: compact sizing for mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 3. Bottom nav: compact sizing for mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 /* On very small screens (< 360px), reduce bottom nav button padding */
 @media (max-width: 359px) {
   .mhub-bottom-nav-button {
@@ -1966,12 +2315,12 @@ html[data-native-platform] .location-accuracy-badge-close {
     padding-right: 0.125rem !important;
   }
   .mhub-bottom-nav-label {
-    font-size: 0.64rem !important;
+    font-size: 12px !important;
     max-width: 44px !important;
   }
 }
 
-/* ── 4. FAB positioning: don't let it overlap neighbour buttons ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 4. FAB positioning: don't let it overlap neighbour buttons Ã¢â€â‚¬Ã¢â€â‚¬ */
 .mhub-fab {
   /* Raise FAB above bar but not too much to avoid viewport clipping */
   transform: translateY(-14px);
@@ -1986,7 +2335,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 5. Login CTA card: ensure clearance from bottom nav ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 5. Login CTA card: ensure clearance from bottom nav Ã¢â€â‚¬Ã¢â€â‚¬ */
 /* The guestPreviewLimited card's Login button should not be hidden
    behind the bottom nav bar.                                      */
 .mhub-page-allposts {
@@ -1994,13 +2343,13 @@ html[data-native-platform] .location-accuracy-badge-close {
   scroll-padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 1rem);
 }
 
-/* ── 6. General page bottom clearance ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 6. General page bottom clearance Ã¢â€â‚¬Ã¢â€â‚¬ */
 /* All pages with the sticky bottom nav need clearance */
 .app-main {
   padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
 }
 
-/* ── 7. Post action row: wrap properly on mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 7. Post action row: wrap properly on mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 480px) {
   .post-action-row button,
   .post-action-row a {
@@ -2009,7 +2358,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 8. Hero section: compact on mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 8. Hero section: compact on mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   .mhub-allposts-hero {
     padding-top: 0.5rem !important;
@@ -2027,11 +2376,11 @@ html[data-native-platform] .location-accuracy-badge-close {
     font-size: 0.78rem !important;
   }
   .mhub-allposts-hero-kicker {
-    font-size: 0.7rem !important;
+    font-size: 12px !important;
   }
 }
 
-/* ── 9. Cards: appropriate sizing for mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 9. Cards: appropriate sizing for mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   /* Ensure cards don't have excessive padding */
   .mhub-allposts-card {
@@ -2045,9 +2394,9 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 10. More menu drawer: removed broken bottom-sheet (vh=0 in WebView) ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 10. More menu drawer: removed broken bottom-sheet (vh=0 in WebView) Ã¢â€â‚¬Ã¢â€â‚¬ */
 
-/* ── 11. Category bar chips: compact on mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 11. Category bar chips: compact on mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   /* Subcategory bar chips: shorter, easier to scan */
   .mhub-category-chip,
@@ -2058,7 +2407,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 12. Filter modal: proper safe area on mobile ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 12. Filter modal: proper safe area on mobile Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
   .fixed.inset-0.z-\[1000\] > div.mhub-premium-surface,
   .fixed.inset-0 .mhub-premium-surface {
@@ -2071,7 +2420,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 }
 
-/* ── 13. Prevent horizontal scroll on all pages ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ 13. Prevent horizontal scroll on all pages Ã¢â€â‚¬Ã¢â€â‚¬ */
 html, body {
   max-width: 100%;
   overflow-x: hidden;

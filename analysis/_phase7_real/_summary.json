@@ -1,0 +1,74 @@
+{
+  "phase": "7",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T11:44:53.336Z",
+  "pages": [
+    {
+      "name": "bought-posts",
+      "path": "/bought-posts",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "sold-posts",
+      "path": "/sold-posts",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "buyer-view",
+      "path": "/buyer-view",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "saledone",
+      "path": "/saledone",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "saleundone",
+      "path": "/saleundone",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "dashboard",
+      "path": "/dashboard",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "activity",
+      "path": "/activity",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "analytics",
+      "path": "/analytics",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    }
+  ]
+}

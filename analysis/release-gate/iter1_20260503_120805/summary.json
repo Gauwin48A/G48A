@@ -1,0 +1,2838 @@
+{
+  "runId": "iter1_20260503_120805",
+  "generatedAt": "2026-05-03T06:41:49.827Z",
+  "totals": {
+    "tests": 59,
+    "passed": 57,
+    "failed": 2,
+    "routes": 35,
+    "assertions": 266,
+    "assertionFailures": 28,
+    "consoleErrors": 7,
+    "networkFailures": 12
+  },
+  "phases": [
+    {
+      "phase": "01-entry-nav",
+      "tests": 8,
+      "passed": 6,
+      "failed": 2,
+      "routes": [
+        "/all-posts",
+        "/category-hub",
+        "/listings",
+        "/this-route-does-not-exist"
+      ],
+      "assertions": 35,
+      "assertionFailures": 5,
+      "consoleErrors": 3,
+      "networkFailures": 5
+    },
+    {
+      "phase": "02-browse-discovery",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "routes": [
+        "/all-posts",
+        "/category-hub",
+        "/feed",
+        "/for-you",
+        "/listings",
+        "/recently-viewed",
+        "/search"
+      ],
+      "assertions": 49,
+      "assertionFailures": 9,
+      "consoleErrors": 4,
+      "networkFailures": 5
+    },
+    {
+      "phase": "03-post-detail",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "routes": [
+        "/post/post-1"
+      ],
+      "assertions": 25,
+      "assertionFailures": 5,
+      "consoleErrors": 0,
+      "networkFailures": 0
+    },
+    {
+      "phase": "04-commerce",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "routes": [
+        "/cart",
+        "/compare",
+        "/post/post-1",
+        "/wishlist"
+      ],
+      "assertions": 35,
+      "assertionFailures": 3,
+      "consoleErrors": 0,
+      "networkFailures": 0
+    },
+    {
+      "phase": "05-sales-seller",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "routes": [
+        "/dashboard",
+        "/kyc",
+        "/my-posts",
+        "/post-add"
+      ],
+      "assertions": 18,
+      "assertionFailures": 0,
+      "consoleErrors": 0,
+      "networkFailures": 1
+    },
+    {
+      "phase": "06-social",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "routes": [
+        "/channels",
+        "/feed",
+        "/notifications"
+      ],
+      "assertions": 20,
+      "assertionFailures": 3,
+      "consoleErrors": 0,
+      "networkFailures": 0
+    },
+    {
+      "phase": "07-profile-account",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "routes": [
+        "/complaints",
+        "/dashboard",
+        "/feedback",
+        "/offers",
+        "/profile",
+        "/rewards",
+        "/settings",
+        "/tiers"
+      ],
+      "assertions": 36,
+      "assertionFailures": 3,
+      "consoleErrors": 0,
+      "networkFailures": 1
+    },
+    {
+      "phase": "08-static-legal",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "routes": [
+        "/about",
+        "/community-guidelines",
+        "/contact",
+        "/help",
+        "/privacy",
+        "/refund",
+        "/safety",
+        "/terms"
+      ],
+      "assertions": 32,
+      "assertionFailures": 0,
+      "consoleErrors": 0,
+      "networkFailures": 0
+    },
+    {
+      "phase": "09-auth",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "routes": [
+        "/login",
+        "/signup"
+      ],
+      "assertions": 16,
+      "assertionFailures": 0,
+      "consoleErrors": 0,
+      "networkFailures": 0
+    }
+  ],
+  "records": [
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /all-posts",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 21605,
+      "startedAt": "2026-05-03T06:38:20.375Z",
+      "routesVisited": [
+        "/all-posts"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=109 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=1"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "landing /all-posts renders",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 21812,
+      "startedAt": "2026-05-03T06:38:20.248Z",
+      "routesVisited": [
+        "/all-posts"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=133 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=1"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "03-post-detail",
+      "test": "renders post detail page",
+      "file": "Mhub/client/e2e/release-gate/03-post-detail.pw.ts",
+      "status": "passed",
+      "durationMs": 21633,
+      "startedAt": "2026-05-03T06:38:20.287Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=1"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "cart page renders with items",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 24642,
+      "startedAt": "2026-05-03T06:38:20.490Z",
+      "routesVisited": [
+        "/cart"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=1"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "category-hub renders",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 15644,
+      "startedAt": "2026-05-03T06:38:42.160Z",
+      "routesVisited": [
+        "/category-hub"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=438 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /listings",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 16188,
+      "startedAt": "2026-05-03T06:38:42.098Z",
+      "routesVisited": [
+        "/listings"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=133 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790335372",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "03-post-detail",
+      "test": "image gallery present",
+      "file": "Mhub/client/e2e/release-gate/03-post-detail.pw.ts",
+      "status": "passed",
+      "durationMs": 16943,
+      "startedAt": "2026-05-03T06:38:42.255Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "image-count=6"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "cart quantity stepper works (mocked)",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 14730,
+      "startedAt": "2026-05-03T06:38:45.353Z",
+      "routesVisited": [
+        "/cart"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=633 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "qty-incremented"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /category-hub",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 11917,
+      "startedAt": "2026-05-03T06:39:00.052Z",
+      "routesVisited": [
+        "/category-hub"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=438 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "cart item remove",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 13441,
+      "startedAt": "2026-05-03T06:39:01.560Z",
+      "routesVisited": [
+        "/cart"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=657 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "item-removed"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "bottom nav links navigate",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 14966,
+      "startedAt": "2026-05-03T06:38:59.904Z",
+      "routesVisited": [
+        "/all-posts",
+        "/category-hub"
+      ],
+      "selectorsClicked": [
+        "bottom-nav:/home/i"
+      ],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=133 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790349668",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "03-post-detail",
+      "test": "seller card visible",
+      "file": "Mhub/client/e2e/release-gate/03-post-detail.pw.ts",
+      "status": "passed",
+      "durationMs": 16380,
+      "startedAt": "2026-05-03T06:39:01.701Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=106 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "seller-card-found"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /for-you",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 9854,
+      "startedAt": "2026-05-03T06:39:14.474Z",
+      "routesVisited": [
+        "/for-you"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=109 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "top navbar logo returns home",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 9250,
+      "startedAt": "2026-05-03T06:39:15.856Z",
+      "routesVisited": [
+        "/category-hub"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=438 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "wishlist renders",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 10181,
+      "startedAt": "2026-05-03T06:39:15.723Z",
+      "routesVisited": [
+        "/wishlist"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=304 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "03-post-detail",
+      "test": "share button click does not error",
+      "file": "Mhub/client/e2e/release-gate/03-post-detail.pw.ts",
+      "status": "passed",
+      "durationMs": 11886,
+      "startedAt": "2026-05-03T06:39:20.146Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "share-clicked"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /feed",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 8822,
+      "startedAt": "2026-05-03T06:39:24.993Z",
+      "routesVisited": [
+        "/feed"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "deep link to /listings hydrates",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 8726,
+      "startedAt": "2026-05-03T06:39:26.356Z",
+      "routesVisited": [
+        "/listings"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=109 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790373074",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "wishlist toggle from a post",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 13278,
+      "startedAt": "2026-05-03T06:39:28.578Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=72 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "wishlist-toggled"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "unknown route routes to 404 or fallback",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "failed",
+      "durationMs": 6791,
+      "startedAt": "2026-05-03T06:39:36.920Z",
+      "routesVisited": [
+        "/this-route-does-not-exist"
+      ],
+      "selectorsClicked": [],
+      "assertions": [],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [
+        "Mhub/client/test-results/release-gate-01-entry-nav.-55071-e-routes-to-404-or-fallback-release-gate/test-failed-1.png"
+      ],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "03-post-detail",
+      "test": "report button surfaces (modal or route)",
+      "file": "Mhub/client/e2e/release-gate/03-post-detail.pw.ts",
+      "status": "passed",
+      "durationMs": 11014,
+      "startedAt": "2026-05-03T06:39:33.599Z",
+      "routesVisited": [
+        "/post/post-1"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "renders /search",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 9949,
+      "startedAt": "2026-05-03T06:39:35.676Z",
+      "routesVisited": [
+        "/search"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=685 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "compare page renders",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 8561,
+      "startedAt": "2026-05-03T06:39:43.020Z",
+      "routesVisited": [
+        "/compare"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=181 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "05-sales-seller",
+      "test": "/my-posts renders",
+      "file": "Mhub/client/e2e/release-gate/05-sales-seller.pw.ts",
+      "status": "passed",
+      "durationMs": 6644,
+      "startedAt": "2026-05-03T06:39:46.905Z",
+      "routesVisited": [
+        "/my-posts"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=146 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "category bar selection on /all-posts",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 8935,
+      "startedAt": "2026-05-03T06:39:47.222Z",
+      "routesVisited": [
+        "/all-posts"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=133 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790393045",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:4173/api/posts?category_id=101&page=2&limit=6&refresh=1777790394653",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2",
+        "category-chip-clicked"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "04-commerce",
+      "test": "checkout reaches payment screen but does not pay",
+      "file": "Mhub/client/e2e/release-gate/04-commerce.pw.ts",
+      "status": "passed",
+      "durationMs": 8780,
+      "startedAt": "2026-05-03T06:39:51.936Z",
+      "routesVisited": [
+        "/cart"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=657 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "after-checkout-url=http://127.0.0.1:4173/payment?returnTo=/cart"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "05-sales-seller",
+      "test": "/post-add form renders & validates",
+      "file": "Mhub/client/e2e/release-gate/05-sales-seller.pw.ts",
+      "status": "passed",
+      "durationMs": 7404,
+      "startedAt": "2026-05-03T06:39:54.466Z",
+      "routesVisited": [
+        "/post-add"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790400708",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "after-submit-url=http://127.0.0.1:4173/all-posts"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "search submits a query",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 8963,
+      "startedAt": "2026-05-03T06:39:57.432Z",
+      "routesVisited": [
+        "/search"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=709 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?search=camera&page=2&limit=6&refresh=1777790404106",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "search-submitted"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "06-social",
+      "test": "/feed renders",
+      "file": "Mhub/client/e2e/release-gate/06-social.pw.ts",
+      "status": "passed",
+      "durationMs": 8495,
+      "startedAt": "2026-05-03T06:40:01.417Z",
+      "routesVisited": [
+        "/feed"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=72 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "05-sales-seller",
+      "test": "/kyc form renders & validates",
+      "file": "Mhub/client/e2e/release-gate/05-sales-seller.pw.ts",
+      "status": "passed",
+      "durationMs": 6905,
+      "startedAt": "2026-05-03T06:40:03.578Z",
+      "routesVisited": [
+        "/kyc"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "kyc-submit-clicked"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "infinite scroll triggers (no errors)",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 9703,
+      "startedAt": "2026-05-03T06:40:07.254Z",
+      "routesVisited": [
+        "/all-posts"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=133 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790412259",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2",
+        "scrolled-4x"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "06-social",
+      "test": "/channels renders",
+      "file": "Mhub/client/e2e/release-gate/06-social.pw.ts",
+      "status": "passed",
+      "durationMs": 6196,
+      "startedAt": "2026-05-03T06:40:11.368Z",
+      "routesVisited": [
+        "/channels"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=162 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "05-sales-seller",
+      "test": "/dashboard renders",
+      "file": "Mhub/client/e2e/release-gate/05-sales-seller.pw.ts",
+      "status": "passed",
+      "durationMs": 6366,
+      "startedAt": "2026-05-03T06:40:11.546Z",
+      "routesVisited": [
+        "/dashboard"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=98 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "02-browse-discovery",
+      "test": "recently-viewed renders",
+      "file": "Mhub/client/e2e/release-gate/02-browse-discovery.pw.ts",
+      "status": "passed",
+      "durationMs": 7495,
+      "startedAt": "2026-05-03T06:40:17.445Z",
+      "routesVisited": [
+        "/recently-viewed"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "06-social",
+      "test": "/notifications renders & mark-as-read clickable",
+      "file": "Mhub/client/e2e/release-gate/06-social.pw.ts",
+      "status": "passed",
+      "durationMs": 9097,
+      "startedAt": "2026-05-03T06:40:18.504Z",
+      "routesVisited": [
+        "/notifications"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=72 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "mark-read-clicked"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /profile",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 9584,
+      "startedAt": "2026-05-03T06:40:19.108Z",
+      "routesVisited": [
+        "/profile"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=2"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "unknown route routes to 404 or fallback",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "failed",
+      "durationMs": 8768,
+      "startedAt": "2026-05-03T06:40:21.888Z",
+      "routesVisited": [
+        "/this-route-does-not-exist"
+      ],
+      "selectorsClicked": [],
+      "assertions": [],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [
+        "Mhub/client/test-results/release-gate-01-entry-nav.-55071-e-routes-to-404-or-fallback-release-gate-retry1/test-failed-1.png"
+      ],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /about",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 8625,
+      "startedAt": "2026-05-03T06:40:27.175Z",
+      "routesVisited": [
+        "/about"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /dashboard",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 8896,
+      "startedAt": "2026-05-03T06:40:32.302Z",
+      "routesVisited": [
+        "/dashboard"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "06-social",
+      "test": "feed like button (mocked)",
+      "file": "Mhub/client/e2e/release-gate/06-social.pw.ts",
+      "status": "passed",
+      "durationMs": 10871,
+      "startedAt": "2026-05-03T06:40:29.662Z",
+      "routesVisited": [
+        "/feed"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=96 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=2"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /contact",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 5982,
+      "startedAt": "2026-05-03T06:40:36.991Z",
+      "routesVisited": [
+        "/contact"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /settings",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 4875,
+      "startedAt": "2026-05-03T06:40:40.483Z",
+      "routesVisited": [
+        "/settings"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "09-auth",
+      "test": "login page renders",
+      "file": "Mhub/client/e2e/release-gate/09-auth.pw.ts",
+      "status": "passed",
+      "durationMs": 5955,
+      "startedAt": "2026-05-03T06:40:41.559Z",
+      "routesVisited": [
+        "/login"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /privacy",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 5775,
+      "startedAt": "2026-05-03T06:40:43.503Z",
+      "routesVisited": [
+        "/privacy"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "09-auth",
+      "test": "signup page renders",
+      "file": "Mhub/client/e2e/release-gate/09-auth.pw.ts",
+      "status": "passed",
+      "durationMs": 5794,
+      "startedAt": "2026-05-03T06:40:48.225Z",
+      "routesVisited": [
+        "/signup"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /rewards",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 7936,
+      "startedAt": "2026-05-03T06:40:46.761Z",
+      "routesVisited": [
+        "/rewards"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/rewards/stream",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "persistent-spinner=1"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /terms",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 5859,
+      "startedAt": "2026-05-03T06:40:50.220Z",
+      "routesVisited": [
+        "/terms"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "09-auth",
+      "test": "login submit shows mocked error (not a crash)",
+      "file": "Mhub/client/e2e/release-gate/09-auth.pw.ts",
+      "status": "passed",
+      "durationMs": 6576,
+      "startedAt": "2026-05-03T06:40:54.820Z",
+      "routesVisited": [
+        "/login"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /refund",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 6793,
+      "startedAt": "2026-05-03T06:40:56.770Z",
+      "routesVisited": [
+        "/refund"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /tiers",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 12524,
+      "startedAt": "2026-05-03T06:40:56.019Z",
+      "routesVisited": [
+        "/tiers"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "09-auth",
+      "test": "signup validation surfaces on empty submit",
+      "file": "Mhub/client/e2e/release-gate/09-auth.pw.ts",
+      "status": "passed",
+      "durationMs": 7427,
+      "startedAt": "2026-05-03T06:41:02.584Z",
+      "routesVisited": [
+        "/signup"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /safety",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 8130,
+      "startedAt": "2026-05-03T06:41:05.091Z",
+      "routesVisited": [
+        "/safety"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /offers",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 7564,
+      "startedAt": "2026-05-03T06:41:11.967Z",
+      "routesVisited": [
+        "/offers"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": false,
+          "detail": "count=1"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "01-entry-nav",
+      "test": "back button returns to previous route",
+      "file": "Mhub/client/e2e/release-gate/01-entry-nav.pw.ts",
+      "status": "passed",
+      "durationMs": 18383,
+      "startedAt": "2026-05-03T06:41:02.579Z",
+      "routesVisited": [
+        "/all-posts",
+        "/category-hub"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=245 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": false,
+          "detail": "DIV:11.52:MARKETPLACE | BUTTON:11.84:Quick filters"
+        },
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "primary-content",
+          "passed": true,
+          "detail": "text=438 cards=0"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [
+        "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority \n    at img\n    at div\n    at div\n    at div\n    at div\n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at div\n    at div\n    at div\n    at div\n    at AllPosts (http://127.0.0.1:4173/src/page"
+      ],
+      "networkFailures": [
+        {
+          "url": "http://127.0.0.1:4173/api/posts?page=1&limit=6&refresh=1777790470000",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:4173/api/telemetry/ingest",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:4173/api/telemetry/ingest",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in",
+        "font-floor-violations=2"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /help",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 6718,
+      "startedAt": "2026-05-03T06:41:14.051Z",
+      "routesVisited": [
+        "/help"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /feedback",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 5008,
+      "startedAt": "2026-05-03T06:41:20.241Z",
+      "routesVisited": [
+        "/feedback"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "08-static-legal",
+      "test": "renders /community-guidelines",
+      "file": "Mhub/client/e2e/release-gate/08-static-legal.pw.ts",
+      "status": "passed",
+      "durationMs": 4914,
+      "startedAt": "2026-05-03T06:41:20.863Z",
+      "routesVisited": [
+        "/community-guidelines"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-out"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "renders /complaints",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 3624,
+      "startedAt": "2026-05-03T06:41:25.643Z",
+      "routesVisited": [
+        "/complaints"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    },
+    {
+      "runId": "iter1_20260503_120805",
+      "phase": "07-profile-account",
+      "test": "dark-mode toggle (if surfaced) flips html.dark",
+      "file": "Mhub/client/e2e/release-gate/07-profile-account.pw.ts",
+      "status": "passed",
+      "durationMs": 2670,
+      "startedAt": "2026-05-03T06:41:29.623Z",
+      "routesVisited": [
+        "/settings"
+      ],
+      "selectorsClicked": [],
+      "assertions": [
+        {
+          "name": "navigation",
+          "passed": true,
+          "detail": "status=200"
+        },
+        {
+          "name": "no-spinner-after-settle",
+          "passed": true,
+          "detail": "count=0"
+        },
+        {
+          "name": "no-mojibake",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "font-floor-12px",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "consoleErrors": [],
+      "networkFailures": [],
+      "screenshots": [],
+      "notes": [
+        "mode=logged-in"
+      ]
+    }
+  ]
+}

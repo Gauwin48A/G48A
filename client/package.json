@@ -22,6 +22,10 @@
     "test:e2e:android": "npx playwright test -c playwright.config.mjs --project=android --workers=2",
     "test:e2e:android:headed": "npx playwright test -c playwright.config.mjs --project=android --headed --workers=1",
     "test:e2e:android:screenshots": "npx playwright test -c playwright.config.mjs --project=android --workers=2 --reporter=list",
+    "test:release-gate": "node scripts/release-gate-run.mjs",
+    "test:release-gate:360": "npx playwright test -c playwright.config.mjs --project=release-gate --workers=4 --reporter=list",
+    "test:release-gate:412": "npx playwright test -c playwright.config.mjs --project=release-gate-pixel7 --workers=4 --reporter=list",
+    "test:release-gate:summary": "node scripts/release-gate-summary.mjs",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run"

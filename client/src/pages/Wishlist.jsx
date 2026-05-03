@@ -171,14 +171,21 @@ const Wishlist = () => {
         setCursor(nextCursor);
         cursorRef.current = nextCursor;
         setHasMore(Boolean(data?.hasMore));
+        // Extract resolved ids outside the updater so replaceSavedPostIds can be
+        // called *after* setItems returns. Calling it inside the updater fires a
+        // synchronous DOM CustomEvent which triggers GreenNavbar's subscribeSavedPosts
+        // listener → setState mid-render → React "Cannot update (GreenNavbar) while
+        // rendering (Wishlist)" warning.
+        let resolvedIds;
         setItems((prev) => {
           const next = reset ? list : [...prev, ...list];
           const deduped = dedupeWishlistItems(next);
           const ids = extractSavedPostIds(deduped);
           savedIdsRef.current = new Set(ids);
-          replaceSavedPostIds(ids);
+          resolvedIds = ids;
           return deduped;
         });
+        if (resolvedIds) replaceSavedPostIds(resolvedIds);
         setError(null);
       } catch (err) {
         if (import.meta.env.DEV) console.error("Failed to fetch wishlist:", err);
@@ -574,7 +581,7 @@ const Wishlist = () => {
   if (!isAuth || !userId) {
     return (
       <div
-        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br ${densityClass}`}
+        className={`mhub-page-wishlist min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br ${densityClass}`}
       >
         {/* Decorative blobs */}
         <div className="absolute top-20 -left-32 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/30" />
@@ -610,7 +617,7 @@ const Wishlist = () => {
 
   return (
     <div
-      className={`min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom relative overflow-hidden dark:bg-gradient-to-b ${densityClass}`}
+      className={`mhub-page-wishlist min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom relative overflow-hidden dark:bg-gradient-to-b ${densityClass}`}
     >
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg bg-gradient-to-r from-sky-500/95 via-blue-500/95 to-violet-500/95 dark:from-sky-700/90 dark:via-blue-700/90 dark:to-violet-700/90" />
@@ -798,7 +805,7 @@ const Wishlist = () => {
                   type="button"
                   onClick={() => setViewMode("grid")}
                   aria-pressed={viewMode === "grid"}
-                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition ${
+                  className={`h-9 w-9 min-w-[2.25rem] min-h-[2.25rem] sm:h-8 sm:w-8 shrink-0 rounded-lg flex items-center justify-center transition ${
                     viewMode === "grid"
                       ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
                       : "text-gray-500 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/10"
@@ -810,7 +817,7 @@ const Wishlist = () => {
                   type="button"
                   onClick={() => setViewMode("list")}
                   aria-pressed={viewMode === "list"}
-                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition ${
+                  className={`h-9 w-9 min-w-[2.25rem] min-h-[2.25rem] sm:h-8 sm:w-8 shrink-0 rounded-lg flex items-center justify-center transition ${
                     viewMode === "list"
                       ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
                       : "text-gray-500 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/10"
@@ -1202,3 +1209,4 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+

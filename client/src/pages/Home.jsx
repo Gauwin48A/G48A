@@ -109,13 +109,13 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="mhub-page-home min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-[640px] mx-auto px-4 py-10 page-shell page-pad">
           <div className="mb-8 space-y-3">
             <div className="h-8 w-48 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse" />
             <div className="h-4 w-72 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse" />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 keep-cols">
+          <div className="home-post-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 keep-cols">
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
@@ -130,7 +130,7 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="mhub-page-home min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center">
           <h2 className="text-lg sm:text-2xl font-bold text-rose-700 dark:text-rose-300 mb-2">
             {t("something_went_wrong", { defaultValue: "Something went wrong" })}
@@ -153,7 +153,7 @@ export default function Home() {
 
   if (posts.length === 0) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="mhub-page-home min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-[640px] mx-auto px-4 py-12 page-shell page-pad">
           <EmptyState
             type="posts"
@@ -168,202 +168,120 @@ export default function Home() {
   }
 
   return (
-    <div ref={contentRef} className="min-h-screen overflow-x-hidden mhub-premium-page nav-clearance bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
-      {/* ── Heroic Banner ── */}
-      <div className="home-hero" data-density="extra">
-        <div className="max-w-[640px] mx-auto px-4">
-          <p className="home-hero-kicker">
-            {t("trust_first_marketplace", { defaultValue: "Trust-First Marketplace" })}
-          </p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="home-hero-title">
-              {t("discover_near_you", { defaultValue: "Discover what is moving near you" })}
-            </h1>
-            <span className="home-hero-live-badge">⚡ Live</span>
-          </div>
-          <p className="home-hero-sub">
-            {t("home_subtitle", { defaultValue: "Fresh listings, verified sellers, and quick actions." })}
-          </p>
-        </div>
-      </div>
+    <div ref={contentRef} className="mp-home min-h-screen overflow-x-hidden" style={{ background: 'var(--mp-color-bg)', paddingBottom: 'calc(var(--mp-nav-height) + 24px)' }}>
 
-      {/* ── Quick Actions Grid + Stats ── */}
-      <div className="max-w-[640px] mx-auto px-3 -mt-5 relative z-10">
-        <div className="home-quick-actions">
-          <button type="button" className="home-action-card" onClick={() => navigate("/all-posts")}>
-            <span className="home-action-icon">🛒</span>
-            <span className="home-action-label">Browse All</span>
-          </button>
-          <button type="button" className="home-action-card" onClick={() => navigate("/for-you")}>
-            <span className="home-action-icon">⭐</span>
-            <span className="home-action-label">For You</span>
-          </button>
-          <button type="button" className="home-action-card" onClick={() => navigate("/feed")}>
-            <span className="home-action-icon">📰</span>
-            <span className="home-action-label">Feed</span>
-          </button>
-          <button type="button" className="home-action-card" onClick={() => navigate("/rewards")}>
-            <span className="home-action-icon">🏆</span>
-            <span className="home-action-label">Rewards</span>
-          </button>
-          <div className="home-hero-stats col-span-4">
-            <span className="home-stat">📦 {posts.length} listings</span>
-            <span className="home-stat">🏷️ {categories.length} {categories.length === 1 ? 'category' : 'categories'}</span>
-            <span className="home-stat">✅ Verified sellers</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Sticky Search + Category Bar ── */}
-      <div className="home-sticky-bar mhub-premium-bar">
-        <div className="max-w-[640px] mx-auto px-3">
-          <div className="home-search-row">
-            <input
-              type="text"
-              className="home-search-input"
-              placeholder="Search listings..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              type="button"
-              className="home-refresh-btn"
-              onClick={() => loadPosts()}
-              title="Refresh"
-            >
-              ↻
+      {/* ── Category Quick Access ── */}
+      <div style={{ background: 'var(--mp-color-surface)', padding: '12px 16px 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          {[
+            { icon: '📱', label: 'Electronics', path: '/categories?cat=Electronics' },
+            { icon: '👗', label: 'Fashion', path: '/categories?cat=Fashion' },
+            { icon: '🚗', label: 'Vehicles', path: '/categories?cat=Vehicles' },
+            { icon: '🏠', label: 'Home', path: '/categories?cat=Others' },
+            { icon: '⭐', label: 'For You', path: '/for-you' },
+            { icon: '📰', label: 'Feed', path: '/feed' },
+            { icon: '🏷️', label: 'Deals', path: '/all-posts' },
+            { icon: '📂', label: 'All', path: '/category-hub' },
+          ].map((item) => (
+            <button key={item.label} type="button" onClick={() => navigate(item.path)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+              <span style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--mp-color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>{item.icon}</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--mp-color-title)', lineHeight: 1.2, textAlign: 'center' }}>{item.label}</span>
             </button>
-          </div>
-          <div className="home-category-scroll scrollbar-hide">
-            <button
-              type="button"
-              className={`home-category-chip ${activeCategory === "all" ? "active" : ""}`}
-              onClick={() => setActiveCategory("all")}
-            >
-              All ({posts.length})
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.name}
-                type="button"
-                className={`home-category-chip ${activeCategory === cat.name ? "active" : ""}`}
-                onClick={() => setActiveCategory(cat.name)}
-              >
-                {cat.name} ({cat.count})
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-[640px] mx-auto px-3 pt-2 pb-8 page-shell page-pad">
+      {/* ── Spacer ── */}
+      <div style={{ height: '8px' }} />
 
-        {/* ── Section Header ── */}
-        <div className="home-section-header">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🔥</span>
-            <h2 className="home-section-title">
-              {activeCategory === "all" ? "Trending Near You" : activeCategory}
-            </h2>
-          </div>
-          <span className="home-results-count">
-            {filteredPosts.length} {filteredPosts.length === 1 ? "item" : "items"}
-          </span>
+      {/* ── Category Filter Chips ── */}
+      <div style={{ background: 'var(--mp-color-surface)', padding: '10px 16px' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <button type="button" onClick={() => setActiveCategory("all")} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: activeCategory === 'all' ? 'var(--mp-color-primary)' : 'var(--mp-color-bg)', color: activeCategory === 'all' ? '#fff' : 'var(--mp-color-title)' }}>
+            All
+          </button>
+          {categories.map((cat) => (
+            <button key={cat.name} type="button" onClick={() => setActiveCategory(cat.name)} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: activeCategory === cat.name ? 'var(--mp-color-primary)' : 'var(--mp-color-bg)', color: activeCategory === cat.name ? '#fff' : 'var(--mp-color-title)' }}>
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Section: Trending ── */}
+      <div style={{ padding: '16px 12px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--mp-color-price)', margin: 0, letterSpacing: '-0.02em' }}>
+            {activeCategory === "all" ? "Trending Near You" : activeCategory}
+          </h2>
+          <button type="button" onClick={() => navigate("/all-posts")} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--mp-color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            See all →
+          </button>
         </div>
 
-        {/* ── Posts Grid ── */}
         {filteredPosts.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <p style={{ color: 'var(--mp-color-muted)', fontSize: '14px', margin: '0 0 12px' }}>
               {searchQuery ? `No results for "${searchQuery}"` : "No listings in this category"}
             </p>
-            <button
-              type="button"
-              className="mt-3 text-emerald-600 dark:text-emerald-400 text-sm font-medium"
-              onClick={() => { setActiveCategory("all"); setSearchQuery(""); }}
-            >
-              ← Show all listings
+            <button type="button" onClick={() => { setActiveCategory("all"); setSearchQuery(""); }} style={{ color: 'var(--mp-color-primary)', fontSize: '14px', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+              Show all listings
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 keep-cols">
+          <div className="mhub-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
             {filteredPosts.slice(0, 8).map((post) => {
-              const image = resolveImage(
-                post.image_url || post.images?.[0] || "",
-              );
+              const image = resolveImage(post.image_url || post.images?.[0] || "");
               return (
                 <button
                   key={post.post_id || post.id}
                   type="button"
                   onClick={() => navigate(`/post/${post.post_id || post.id}`)}
-                  className="group text-left mhub-premium-surface rounded-xl hover:shadow-lg transition-all overflow-hidden"
+                  className="mhub-grid-card"
+                  style={{ textAlign: 'left', overflow: 'hidden', border: 'none', cursor: 'pointer' }}
                 >
-                  <div className="relative aspect-square overflow-hidden">
-                    <img
-                      src={image}
-                      alt={post.title || t("listing", { defaultValue: "Listing" })}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src = "/placeholder.svg";
-                      }}
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-2 left-2">
-                      <p className="text-white text-sm font-bold">
-                        ₹{Number(post.price || 0).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                    {post.category_name && (
-                      <span className="absolute top-1.5 right-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full text-gray-700 dark:text-gray-200">
-                        {post.category_name}
-                      </span>
-                    )}
+                  <div className="mhub-grid-card-media">
+                    <img src={image} alt={post.title || "Listing"} className="mhub-grid-card-img" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/placeholder.svg"; }} />
                   </div>
-                  <div className="p-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-xs line-clamp-1">
-                      {post.title ||
-                        t("untitled_listing", { defaultValue: "Untitled Listing" })}
-                    </h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                      📍 {post.location || "Location N/A"}
-                    </span>
+                  <div className="mhub-grid-card-body">
+                    <p className="mhub-grid-card-price">₹{Number(post.price || 0).toLocaleString("en-IN")}</p>
+                    <h3 className="mhub-grid-card-title">{post.title || "Untitled"}</h3>
+                    <p className="mhub-grid-card-location">{post.location || ""}</p>
                   </div>
                 </button>
               );
             })}
           </div>
         )}
-
-        {/* ── View All CTA ── */}
-        {filteredPosts.length > 0 && (
-          <div className="flex justify-center mt-6">
-            <Button
-              onClick={() => navigate("/all-posts")}
-              className="home-view-all-btn"
-            >
-              View All Listings →
-            </Button>
-          </div>
-        )}
-
-        {/* ── Centre Updates (below product grid) ── */}
-        {isLoggedIn && <CentreUpdatesFeed className="mt-6 mb-4" />}
-        {isLoggedIn && <FeaturedCentrePages className="mb-4" />}
       </div>
 
-      {/* ── Back to Top FAB ── */}
+      {/* ── Quick Stats Banner ── */}
+      <div style={{ margin: '8px 12px', padding: '14px 16px', background: 'var(--mp-color-surface)', borderRadius: '12px', display: 'flex', justifyContent: 'space-around', boxShadow: 'var(--mp-shadow-card)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--mp-color-price)' }}>{posts.length}</div>
+          <div style={{ fontSize: '12px', color: 'var(--mp-color-muted)' }}>Listings</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--mp-color-price)' }}>{categories.length}</div>
+          <div style={{ fontSize: '12px', color: 'var(--mp-color-muted)' }}>Categories</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--mp-color-primary)' }}>✓</div>
+          <div style={{ fontSize: '12px', color: 'var(--mp-color-muted)' }}>Verified</div>
+        </div>
+      </div>
+
+      {/* ── Centre Updates ── */}
+      {isLoggedIn && <CentreUpdatesFeed className="mt-2 mx-3 mb-2" />}
+      {isLoggedIn && <FeaturedCentrePages className="mx-3 mb-4" />}
+
+      {/* ── Back to Top ── */}
       {showBackToTop && (
-        <button
-          type="button"
-          className="home-back-to-top"
-          onClick={scrollToTop}
-          aria-label="Back to top"
-        >
+        <button type="button" onClick={scrollToTop} aria-label="Back to top" style={{ position: 'fixed', bottom: '80px', right: '16px', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--mp-color-primary)', color: '#fff', border: 'none', fontSize: '18px', boxShadow: 'var(--mp-shadow-float)', cursor: 'pointer', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           ↑
         </button>
       )}
     </div>
   );
 }
+

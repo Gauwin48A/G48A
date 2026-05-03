@@ -42,6 +42,37 @@ export default defineConfig({
         userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36',
         screenshot: 'on',
       }
+    },
+    {
+      // Pre-launch release gate. Mobile-floor viewport (360x800), all routes
+      // mocked, deterministic. See e2e/release-gate/README.md.
+      name: 'release-gate',
+      testMatch: 'release-gate/**/*.pw.ts',
+      timeout: 45_000,
+      retries: process.env.CI ? 2 : 1,
+      use: {
+        viewport: { width: 360, height: 800 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36',
+        screenshot: 'only-on-failure'
+      }
+    },
+    {
+      // Same suite, larger Pixel 7 viewport — catches layout that breaks at 412x915.
+      name: 'release-gate-pixel7',
+      testMatch: 'release-gate/**/*.pw.ts',
+      timeout: 45_000,
+      retries: process.env.CI ? 2 : 1,
+      use: {
+        viewport: { width: 412, height: 915 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36',
+        screenshot: 'only-on-failure'
+      }
     }
   ],
   use: {

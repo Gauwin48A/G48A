@@ -20,7 +20,7 @@ const SERIAL   = process.env.ANDROID_SERIAL || "emulator-5554";
 const PKG      = "com.mhub.app.debug";   // native Kotlin debug build
 const BASE_URL = "http://localhost:8081";
 const IDENTIFIER = process.env.MHUB_LOGIN_IDENTIFIER || "9876543210";
-const PASS       = process.env.MHUB_LOGIN_PASSWORD || "Pass12345";
+const PASS       = process.env.MHUB_LOGIN_PASSWORD || "Test@12345";
 
 const STAMP = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
 const WEB_DIR = path.join(SHOTS, `web-live-${STAMP}`);
@@ -123,13 +123,45 @@ function typeText(text) {
   return sleep(500);
 }
 
+function extractPackageName(rawText) {
+  if (!rawText) return "";
+  const match = String(rawText).match(/ ([a-zA-Z0-9_.]+)\/[a-zA-Z0-9_.$]+/);
+  return match ? match[1] : "";
+}
+
 function currentFocusedPackage() {
-  const out = adb("shell", "dumpsys", "window", "windows");
-  const current = out.split(/\r?\n/).find(line => line.includes("mCurrentFocus")) || "";
-  const focused = out.split(/\r?\n/).find(line => line.includes("mFocusedApp")) || "";
-  const line = `${current} ${focused}`;
-  const m = line.match(/ ([a-zA-Z0-9_.]+)\/[a-zA-Z0-9_.$]+/);
-  return m ? m[1] : "";
+  const windowOut = adb("shell", "dumpsys", "window", "windows");
+  const current = windowOut.split(/\r?\n/).find((line) => line.includes("mCurrentFocus")) || "";
+  const focused = windowOut.split(/\r?\n/).find((line) => line.includes("mFocusedApp")) || "";
+  const windowPkg = extractPackageName(`${current} ${focused}`);
+  if (windowPkg) return windowPkg;
+
+  const activityOut = adb("shell", "dumpsys", "activity", "activities");
+  const resumedLine =
+    activityOut.split(/\r?\n/).find((line) => line.includes("mResumedActivity")) ||
+    activityOut.split(/\r?\n/).find((line) => line.includes("topResumedActivity")) ||
+    "";
+  return extractPackageName(resumedLine);
+}
+
+function hasLoadingMarkers(texts = []) {
+  const joined = texts.join(" ").toLowerCase();
+  return [
+    "verifying network security",
+    "loading",
+    "please wait",
+    "signing in",
+    "syncing",
+    "just a moment",
+  ].some((token) => joined.includes(token));
+}
+
+function hasContentMarkers(texts = []) {
+  const normalized = (texts || []).map((text) => String(text || "").trim()).filter(Boolean);
+  if (normalized.length >= 4) return true;
+  return normalized.some((text) =>
+    /all posts|for you|rewards|profile|wishlist|cart|chat|notifications|dashboard|category|subcategor|search|feed|payment|plan|membership|review|rating/i.test(text),
+  );
 }
 
 async function waitForAppForeground(timeoutMs = 35000) {
@@ -381,13 +413,29 @@ async function captureAndroidPages() {
     // Navigate via debug_route intent
     adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`,
       "--es", "debug_route", page.route);
-    const inForeground = await waitForAppForeground(14000);
-    await sleep(2200);
-    const uiXml = dumpUi();
-    const onAppSurface = uiXml.includes(`package="${PKG}"`) || uiXml.includes(`package='${PKG}'`);
+    let inForeground = await waitForAppForeground(14000);
+    let uiXml = "";
+    let texts = [];
+    let onAppSurface = false;
+    let loadingState = true;
+    const slowRoutes = new Set(["/payment", "/tier-selection", "/reviews/1", "/categories", "/subcategories"]);
+    const settleDeadline = Date.now() + (slowRoutes.has(page.route) ? 32000 : 18000);
+    while (Date.now() < settleDeadline) {
+      inForeground = inForeground || currentFocusedPackage() === PKG;
+      uiXml = dumpUi();
+      texts = getTexts(uiXml);
+      onAppSurface = uiXml.includes(`package="${PKG}"`) || uiXml.includes(`package='${PKG}'`);
+      const hasContent = hasContentMarkers(texts);
+      const isLoading = hasLoadingMarkers(texts) && !hasContent;
+      if ((inForeground || onAppSurface) && hasContent && !isLoading) {
+        loadingState = false;
+        break;
+      }
+      await sleep(1200);
+    }
 
     const sz = screencap(filepath);
-    const ok = sz > 20000 && inForeground && onAppSurface;
+    const ok = sz > 20000 && (inForeground || onAppSurface) && !loadingState;
     log(`  [${idx}/${KEY_PAGES.length}] ${page.route} → ${filename} ${ok ? `✓ (${(sz/1024).toFixed(0)}KB)` : "✗ (small/missing)"}`);
     manifest.push({
       ...page,
@@ -396,6 +444,7 @@ async function captureAndroidPages() {
       sizeKb: Math.round(sz / 1024),
       inForeground,
       onAppSurface,
+      loadingState,
     });
   }
 

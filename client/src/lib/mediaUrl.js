@@ -25,6 +25,7 @@ const ALLOWED_MEDIA_HOSTS = [
   /^(.*\.)?mhub\.in$/i,
   /^(.*\.)?imgur\.com$/i,
   /^(.*\.)?googleusercontent\.com$/i,
+  /^(.*\.)?unsplash\.com$/i,
   LOCALHOST_HOSTNAME_PATTERN,
 ];
 

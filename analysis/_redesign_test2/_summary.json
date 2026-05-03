@@ -1,0 +1,42 @@
+{
+  "phase": "2",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T12:34:51.337Z",
+  "pages": [
+    {
+      "name": "home",
+      "path": "/home",
+      "score": 9.3,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "root",
+      "path": "/",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "my-home",
+      "path": "/my-home",
+      "score": 9.3,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "my-posts",
+      "path": "/my-posts",
+      "score": 9.3,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    }
+  ]
+}

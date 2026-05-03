@@ -15,7 +15,7 @@ adb("shell", "am", "force-stop", "com.mhub.app.debug");
 sleep(1000);
 
 adb("shell", "am", "start", "-n", "com.mhub.app.debug/com.mhub.app.MainActivity",
-    "--es", "debug_route", '"parity/page/category_hub"');
+    "--es", "debug_route", "parity/page/category_hub");
 console.log("Launched. Waiting 30s for cold start + auto-login...");
 sleep(30000);
 
@@ -25,7 +25,7 @@ console.log(`30s: ${Math.round(buf.length / 1024)}KB`);
 
 // Now test onNewIntent navigation
 adb("shell", "am", "start", "-n", "com.mhub.app.debug/com.mhub.app.MainActivity",
-    "--activity-single-top", "--es", "debug_route", '"parity/page/all_posts"');
+    "--activity-single-top", "--es", "debug_route", "parity/page/all_posts");
 console.log("Sent all_posts intent. Waiting 8s...");
 sleep(8000);
 
@@ -35,7 +35,7 @@ console.log(`all_posts: ${Math.round(buf2.length / 1024)}KB`);
 
 // One more
 adb("shell", "am", "start", "-n", "com.mhub.app.debug/com.mhub.app.MainActivity",
-    "--activity-single-top", "--es", "debug_route", '"parity/page/login"');
+    "--activity-single-top", "--es", "debug_route", "parity/page/login");
 console.log("Sent login intent. Waiting 8s...");
 sleep(8000);
 

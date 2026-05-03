@@ -1,0 +1,66 @@
+{
+  "phase": "6",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T11:57:35.061Z",
+  "pages": [
+    {
+      "name": "cart",
+      "path": "/cart",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "wishlist",
+      "path": "/wishlist",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "offers",
+      "path": "/offers",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "tier-selection",
+      "path": "/tier-selection",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "tiers",
+      "path": "/tiers",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "pricing",
+      "path": "/pricing",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "payment",
+      "path": "/payment",
+      "score": 9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    }
+  ]
+}

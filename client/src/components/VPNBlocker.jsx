@@ -15,6 +15,18 @@ import {
 
 const VPN_BLOCK_ENABLED =
   import.meta.env.VITE_VPN_BLOCK_ENABLED !== "false"; // Enabled by default
+const WEB_REPLICA_USER_AGENT_TOKEN = "MhubAndroidWebReplica/1.0";
+const VPN_INITIAL_CHECK_TIMEOUT_MS = 4500;
+
+function shouldBypassVpnGate() {
+  if (typeof window === "undefined") return false;
+  const host = String(window.location?.hostname || "");
+  const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  const ua = String(window.navigator?.userAgent || "");
+  const isWebReplicaUa = ua.includes(WEB_REPLICA_USER_AGENT_TOKEN);
+  const isReplicaFlag = window.__MHUB_WEB_REPLICA__ === true;
+  return (import.meta.env.DEV && isLocalHost) || isWebReplicaUa || isReplicaFlag;
+}
 
 export default function VPNBlocker({ children }) {
   const [vpnDetected, setVpnDetected] = useState(false);
@@ -22,10 +34,15 @@ export default function VPNBlocker({ children }) {
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
-    if (!VPN_BLOCK_ENABLED) {
+    if (!VPN_BLOCK_ENABLED || shouldBypassVpnGate()) {
+      setVpnDetected(false);
       setChecking(false);
       return;
     }
+
+    const fallbackTimer = window.setTimeout(() => {
+      setChecking(false);
+    }, VPN_INITIAL_CHECK_TIMEOUT_MS);
 
     // Start monitoring
     const cleanup = startVPNMonitoring();
@@ -34,13 +51,22 @@ export default function VPNBlocker({ children }) {
     const unsubscribe = onVpnStatusChange((status) => {
       setVpnDetected(status?.vpnDetected || false);
       setChecking(false);
+      window.clearTimeout(fallbackTimer);
     });
 
     // Initial check
-    detectVPN().then((result) => {
-      setVpnDetected(result?.vpnDetected || false);
-      setChecking(false);
-    });
+    detectVPN()
+      .then((result) => {
+        setVpnDetected(result?.vpnDetected || false);
+        setChecking(false);
+      })
+      .catch(() => {
+        setVpnDetected(false);
+        setChecking(false);
+      })
+      .finally(() => {
+        window.clearTimeout(fallbackTimer);
+      });
 
     // Listen for server-side VPN blocks forwarded from API interceptor
     const handleServerVpnBlock = (e) => {
@@ -55,6 +81,7 @@ export default function VPNBlocker({ children }) {
       cleanup();
       unsubscribe();
       stopVPNMonitoring();
+      window.clearTimeout(fallbackTimer);
       window.removeEventListener("mhub:vpn-blocked", handleServerVpnBlock);
     };
   }, []);
@@ -91,8 +118,8 @@ export default function VPNBlocker({ children }) {
     }
   }, [retrying, retryCooldown]);
 
-  // Skip VPN check in dev mode if explicitly disabled
-  if (!VPN_BLOCK_ENABLED) {
+  // Skip VPN check in dev mode if explicitly disabled or in Android web replica parity surface
+  if (!VPN_BLOCK_ENABLED || shouldBypassVpnGate()) {
     return children;
   }
 

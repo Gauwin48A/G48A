@@ -1,5 +1,6 @@
 package com.mhub.app.ui
 
+import android.net.Uri
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
@@ -910,14 +911,25 @@ fun MhubApp(
 }
 
 private fun normalizeDebugRoute(rawRoute: String?): String {
-    val route = rawRoute?.trim().orEmpty()
+    val route = rawRoute
+        ?.trim()
+        ?.removeSurrounding("\"")
+        ?.removeSurrounding("'")
+        ?.trim()
+        .orEmpty()
     if (route.isEmpty()) return ""
     if (route.startsWith("parity/page/") || route == Routes.WEB_PARITY_HUB) return route
 
     val normalizedPath = route.substringBefore("?").substringBefore("#")
     if (route.startsWith("/") || !route.contains("/")) {
         val key = resolveRouteKeyFromPath(normalizedPath)
-        if (key != null) return Routes.webParityDetail(key)
+        if (key != null) {
+            if (route.contains("?") || route.contains("#")) {
+                val encodedRoute = Uri.encode(route)
+                return Routes.webParityDetail("$key~route~$encodedRoute")
+            }
+            return Routes.webParityDetail(key)
+        }
     }
     return route
 }

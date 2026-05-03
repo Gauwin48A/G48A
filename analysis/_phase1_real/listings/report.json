@@ -1,0 +1,635 @@
+{
+  "name": "listings",
+  "path": "/listings",
+  "loggedIn": false,
+  "category": "marketplace",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "scrollHeight": 2873,
+  "screens": {
+    "scrollH": 2873,
+    "viewH": 800,
+    "steps": 5,
+    "shots": [
+      "listings-scroll00.png",
+      "listings-scroll01.png",
+      "listings-scroll02.png",
+      "listings-scroll03.png",
+      "listings-scroll04.png"
+    ],
+    "full": "listings-full.png"
+  },
+  "scan": {
+    "viewport": {
+      "w": 360,
+      "h": 800
+    },
+    "scrollHeight": 2873,
+    "overflow": {
+      "bodyX": false,
+      "htmlX": false,
+      "bodyScrollW": 360
+    },
+    "stats": {
+      "total": 484,
+      "interactive": 48,
+      "text": 183,
+      "images": 5,
+      "brokenImages": 0
+    },
+    "tinyFonts": [
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "Home",
+        "classes": "mhub-bottom-nav-label "
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "All Posts",
+        "classes": "mhub-bottom-nav-label is-active"
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "For You",
+        "classes": "mhub-bottom-nav-label "
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "Feed",
+        "classes": "mhub-bottom-nav-label "
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "Rewards",
+        "classes": "mhub-bottom-nav-label "
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "Profile",
+        "classes": "mhub-bottom-nav-label "
+      },
+      {
+        "tag": "span",
+        "fs": "11px",
+        "text": "More",
+        "classes": "mhub-bottom-nav-label "
+      }
+    ],
+    "smallTouchTargets": [
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "65",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chi"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "34",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chi"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "9",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chi"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "48",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chi"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chi"
+      },
+      {
+        "tag": "button",
+        "w": 95,
+        "h": 35,
+        "text": "",
+        "classes": "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50"
+      }
+    ],
+    "overflowElements": [],
+    "missingDarkVariants": [],
+    "brokenImageList": [],
+    "stickyBars": [
+      {
+        "h": 61,
+        "w": 360,
+        "top": 0,
+        "bottom": 739,
+        "z": "200",
+        "pos": "sticky",
+        "classes": "mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300"
+      },
+      {
+        "h": 64,
+        "w": 360,
+        "top": 736,
+        "bottom": 0,
+        "z": "120",
+        "pos": "fixed",
+        "classes": "mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-be"
+      },
+      {
+        "h": 64,
+        "w": 360,
+        "top": 172,
+        "bottom": 565,
+        "z": "95",
+        "pos": "sticky",
+        "classes": "w-full sticky z-30 mhub-premium-bar mhub-allposts-toolbar"
+      },
+      {
+        "h": 16,
+        "w": 360,
+        "top": 0,
+        "bottom": 784,
+        "z": "300",
+        "pos": "fixed",
+        "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
+      }
+    ],
+    "bottomNav": {
+      "h": 64,
+      "w": 360,
+      "top": 736
+    },
+    "heroDetected": true,
+    "cardCount": 5,
+    "whiteScreen": false,
+    "missingPrimaryCta": false,
+    "placeholderText": 0,
+    "mojibakeText": [],
+    "stillLoading": false,
+    "mainTextLen": 2885,
+    "visibleSpinners": 0
+  },
+  "console": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "warning",
+      "text": "Something has shimmed the React DevTools global hook (__REACT_DEVTOOLS_GLOBAL_HOOK__). Fast Refresh is not compatible with this shim and will be disabled."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+    },
+    {
+      "type": "log",
+      "text": "[i18n] Language: en, Direction: ltr, Cached: true"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:api.js] module loaded; baseURL=/api"
+    },
+    {
+      "type": "warning",
+      "text": "[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled."
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language hi {24_48_hours: 24-48 घंटे, 24_48h_response: 24-48 घंटे प्रतिक्रिया, 24h_validity: 24 घंटे वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language te {24_48_hours: 24-48 గంటలు, 24_48h_response: 24-48 గంటల్లో ప్రతిస్పందన, 24h_validity: 24 గంటల వ్యాలిడిటీ, 2k_to_10k: ₹2K నుండి ₹10K, 500_to_2k: ₹500 నుండి ₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language ta {24_48_hours: 24-48 மணி நேரம், 24_48h_response: 24-48 மணி நேர பதில், 24h_validity: 24 மணி நேர செல்லுபடி, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language kn {24_48_hours: 24-48 ಗಂಟೆಗಳು, 24_48h_response: 24-48 ಗಂಟೆಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯೆ, 24h_validity: 24 ಗಂಟೆ ವ್ಯಾಲಿಡಿಟಿ, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language mr {24_48_hours: 24-48 तास, 24_48h_response: 24-48 तासांत प्रतिसाद, 24h_validity: 24 तास वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language bn {24_48_hours: 24-48 ঘন্টা, 24_48h_response: 24-48 ঘন্টার মধ্যে প্রতিক্রিয়া, 24h_validity: 24 ঘন্টা বৈধতা, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Initializing location context"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation reload Reload"
+    },
+    {
+      "type": "warning",
+      "text": "Service Worker registration blocked by Playwright"
+    },
+    {
+      "type": "log",
+      "text": "[LocationGate] Device info sent: fp_o88yng"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /posts?page=1&limit=6&refresh=1777798900217"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /posts?page=1&limit=6&refresh=1777798900217"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /posts?page=1&limit=6&refresh=1777798900281"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /posts?page=1&limit=6&refresh=1777798900281"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] ERR url=/posts?page=1&limit=6&refresh=1777798900217 status=undefined msg=canceled code=ERR_CANCELED"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /posts?page=1&limit=6&refresh=1777798900281"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation agriculture Agriculture"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation food_&_grocery Food & Grocery"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation hobbies_&_collectibles Hobbies & Collectibles"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation home_&_living Home & Living"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation jobs Jobs"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation kids_&_baby Kids & Baby"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation real_estate Real Estate"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation services Services"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation reload Reload"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /posts?page=1&limit=6&refresh=1777798901208"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    }
+  ],
+  "network": [],
+  "score": {
+    "rubric": {
+      "layout": 2,
+      "typography": 0.5,
+      "touch": 0.5,
+      "spacing": 1.5,
+      "darkmode": 1,
+      "perf": 1.5,
+      "functionality": 1,
+      "total": 8
+    },
+    "blockers": [],
+    "warnings": [
+      "7 tiny fonts (<12px)",
+      "10 small touch targets (<36×36)"
+    ]
+  },
+  "navError": null
+}
