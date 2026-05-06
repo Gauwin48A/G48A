@@ -27,8 +27,9 @@ const isAndroidRuntime = () =>
   isCapacitorNativeAndroid() || isAndroidReplicaWebView();
 
 const remapLocalhostForCapacitor = (origin) => {
-  if (!origin || !isAndroidRuntime()) return origin;
-  return origin.replace(/\/\/(localhost|127\.0\.0\.1)(:\d+)/i, "//10.0.2.2$2");
+  // With adb reverse, localhost on the emulator maps to host machine directly.
+  // No remap needed — keeps cookies same-origin (page=localhost, API=localhost).
+  return origin;
 };
 const normalize = (value) =>
   String(value || "")

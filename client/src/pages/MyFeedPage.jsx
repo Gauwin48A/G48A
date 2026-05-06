@@ -646,8 +646,8 @@ const MyFeedPage = () => {
   return (
     <div className="mhub-premium-page bg-gradient-to-b from-slate-50 via-blue-50 to-white dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 min-h-screen nav-clearance dark:bg-gradient-to-b">
       {pullIndicator}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 profile-hero-bg" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700">
+        <div className="absolute inset-0 bg-black/10" />
         <div
           className="absolute inset-0 opacity-10"
           style={{

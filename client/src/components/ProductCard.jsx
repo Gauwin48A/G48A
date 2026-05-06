@@ -4,6 +4,8 @@ import { AiFillStar } from "react-icons/ai";
 import { useTranslation } from "react-i18next";
 import { getApiOriginBase } from "@/lib/networkConfig";
 import { Button } from "@/components/ui/button";
+import SafeImage from "@/components/SafeImage";
+import CardContextMenu from "@/components/CardContextMenu";
 import {
   useTrustScore,
   getTrustBadgeClass,
@@ -78,6 +80,7 @@ const ProductCard = memo(function ProductCard({ product }) {
   };
 
   return (
+    <CardContextMenu onShare={() => navigator.share?.({ title: safeProduct.name, url: window.location.href }).catch(() => {})} onSave={() => {}} onReport={() => {}}>
     <div
       className="mhub-card overflow-hidden flex flex-col transition focus-within:ring-2 focus-within:ring-primary"
       tabIndex={0}
@@ -90,15 +93,12 @@ const ProductCard = memo(function ProductCard({ product }) {
         }
       }}
     >
-      <img
+      <SafeImage
         src={getImageUrl(safeProduct.image_url || safeProduct.image)}
         alt={safeProduct.name}
         className="h-40 w-full object-contain bg-light"
         loading="lazy"
-        onError={e => {
-          e.target.onerror = null;
-          e.target.src = "/placeholder.svg";
-        }}
+        fallbackSrc="/placeholder.svg"
       />
       <div className="p-4 flex-1 flex flex-col justify-between">
         <h2 className="text-lg font-semibold mb-2 text-dark">{safeProduct.name}</h2>
@@ -140,6 +140,7 @@ const ProductCard = memo(function ProductCard({ product }) {
         </div>
       </div>
     </div>
+    </CardContextMenu>
   );
 });
 

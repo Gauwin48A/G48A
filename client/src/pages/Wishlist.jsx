@@ -54,6 +54,7 @@ import {
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 /* ─── helpers ─── */
 
@@ -248,6 +249,7 @@ const Wishlist = () => {
       fetchWishlist({ reset: true });
     }
   }, [authLoading, isAuth, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  usePageRefresh(useCallback(() => fetchWishlist({ reset: true }), [fetchWishlist]));
 
   useEffect(() => {
     if (!isAuth || !userId || !mountedRef.current) return;
@@ -634,7 +636,7 @@ const Wishlist = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)] hover:bg-white/30 transition"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3.5 py-2.5 min-h-[44px] text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)] hover:bg-white/30 transition"
                 aria-label={t("back", { defaultValue: "Back" })}
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -645,7 +647,7 @@ const Wishlist = () => {
                   type="button"
                   onClick={() => fetchWishlist({ reset: true })}
                   disabled={loading}
-                  className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/85 shadow-[0_8px_18px_rgba(15,23,42,0.15)] hover:bg-white/20 transition disabled:opacity-70"
+                  className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-3.5 py-2.5 min-h-[44px] text-xs font-semibold text-white/85 shadow-[0_8px_18px_rgba(15,23,42,0.15)] hover:bg-white/20 transition disabled:opacity-70"
                   aria-label="Refresh wishlist"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -753,6 +755,7 @@ const Wishlist = () => {
 
         <div className="mt-4 flex flex-col gap-3">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            {items.length > 0 && (
             <div className="flex flex-1 flex-col sm:flex-row gap-2">
               <Input
                 value={searchQuery}
@@ -782,6 +785,7 @@ const Wishlist = () => {
                 <option value="sold">{t("status_sold") || "Sold"}</option>
               </select>
             </div>
+            )}
             <div className="flex items-center gap-2">
               {displayItems.length > 0 && (
                 <Button
@@ -805,7 +809,7 @@ const Wishlist = () => {
                   type="button"
                   onClick={() => setViewMode("grid")}
                   aria-pressed={viewMode === "grid"}
-                  className={`h-9 w-9 min-w-[2.25rem] min-h-[2.25rem] sm:h-8 sm:w-8 shrink-0 rounded-lg flex items-center justify-center transition ${
+                  className={`h-11 w-11 min-w-[2.75rem] min-h-[2.75rem] shrink-0 rounded-lg flex items-center justify-center transition ${
                     viewMode === "grid"
                       ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
                       : "text-gray-500 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/10"
@@ -817,7 +821,7 @@ const Wishlist = () => {
                   type="button"
                   onClick={() => setViewMode("list")}
                   aria-pressed={viewMode === "list"}
-                  className={`h-9 w-9 min-w-[2.25rem] min-h-[2.25rem] sm:h-8 sm:w-8 shrink-0 rounded-lg flex items-center justify-center transition ${
+                  className={`h-11 w-11 min-w-[2.75rem] min-h-[2.75rem] shrink-0 rounded-lg flex items-center justify-center transition ${
                     viewMode === "list"
                       ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
                       : "text-gray-500 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/10"

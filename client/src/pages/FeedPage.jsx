@@ -62,6 +62,7 @@ import {
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const Ve = 5,
   FEED_TRANSLATE_PATHS = [
     "title",
@@ -480,7 +481,8 @@ const Ve = 5,
     );
     T(() => {
       y(!0);
-    }, [y]),
+    }, [y]);
+    usePageRefresh(D(() => y(!0), [y]));
       T(() => {
         if (!Array.isArray(n) || n.length === 0) return;
         let t = !1;

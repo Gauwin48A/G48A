@@ -23,21 +23,28 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
-// Routes where pull-to-refresh is enabled
-const PULL_ENABLED_ROUTES = new Set([
-  '/all-posts',
-  '/feed',
-  '/my-feed',
-  '/for-you',
-  '/',
+// Routes where pull-to-refresh is DISABLED (static/form pages)
+const PULL_DISABLED_ROUTES = new Set([
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/add-post',
+  '/edit-post',
+  '/payment',
+  '/kyc',
+  '/admin-panel',
+  '/aadhaar-verify',
 ]);
 
 function isPullEnabled(pathname) {
-  // Exact match or starts with a known feed prefix
-  if (PULL_ENABLED_ROUTES.has(pathname)) return true;
-  if (pathname.startsWith('/all-posts')) return true;
-  if (pathname.startsWith('/feed')) return true;
-  return false;
+  if (PULL_DISABLED_ROUTES.has(pathname)) return false;
+  // Disable on form-heavy sub-routes
+  if (pathname.startsWith('/edit-post/')) return false;
+  if (pathname.startsWith('/reset-password/')) return false;
+  if (pathname.startsWith('/centre/create')) return false;
+  if (pathname.startsWith('/channels/create')) return false;
+  return true;
 }
 
 /**

@@ -1,0 +1,106 @@
+{
+  "phase": "5",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T18:03:22.994Z",
+  "pages": [
+    {
+      "name": "category-hub",
+      "path": "/category-hub",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "categories",
+      "path": "/categories",
+      "score": 9.9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "subcategories",
+      "path": "/subcategories",
+      "score": 9.9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "for-you",
+      "path": "/for-you",
+      "score": 9.4,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "feed",
+      "path": "/feed",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "feed-detail",
+      "path": "/feed/feed-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "my-feed",
+      "path": "/my-feed",
+      "score": 9.6,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "search",
+      "path": "/search?q=camera",
+      "score": 9.9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "nearby",
+      "path": "/nearby",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "recently-viewed",
+      "path": "/recently-viewed",
+      "score": 9.7,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "saved-searches",
+      "path": "/saved-searches",
+      "score": 9.9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    },
+    {
+      "name": "compare",
+      "path": "/compare",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    }
+  ]
+}

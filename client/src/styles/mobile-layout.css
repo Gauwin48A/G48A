@@ -685,16 +685,16 @@ main[role="main"] {
 
   .mhub-category-item,
   .mhub-subcategory-item {
-    min-height: 40px !important;
-    padding: 6px 14px !important;
-    font-size: 12px !important;
+    min-height: 44px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
   }
 
   /* Quick filter chips - touch friendly */
   .mhub-quick-filter-chip,
   .all-posts-quick-filters-row button,
   .for-you-quick-filters-row button {
-    min-height: 40px !important;
+    min-height: 44px !important;
     padding: 8px 14px !important;
     font-size: 13px !important;
   }
@@ -1407,9 +1407,9 @@ main[role="main"] {
 
   .mhub-page-allposts .mhub-category-item,
   .mhub-page-allposts .mhub-subcategory-item {
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 0.4rem 0.6rem !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0.5rem 0.75rem !important;
   }
 
   .mhub-page-allposts .mhub-allposts-feed-grid .mhub-allposts-card .mhub-media-img {
@@ -1480,10 +1480,10 @@ main[role="main"] {
   }
 
   .mhub-page-allposts .mhub-allposts-filters .all-posts-quick-filters-row > button {
-    min-height: 2rem !important;
-    height: 2rem !important;
-    padding-inline: 0.62rem !important;
-    font-size: 0.74rem !important;
+    min-height: 2.75rem !important;
+    height: 2.75rem !important;
+    padding-inline: 0.7rem !important;
+    font-size: 0.8rem !important;
   }
 }
 

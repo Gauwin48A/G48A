@@ -29,6 +29,7 @@ import { useCategoryMode } from "@/context/CategoryModeContext";
 import { isAuthenticated as Y } from "@/utils/authStorage";
 import { navigateBack } from "@/utils/navigation";
 import { useTranslation as te } from "react-i18next";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const Z = () => {
   const i = W(),
     { t: trn } = te(),
@@ -85,6 +86,7 @@ const Z = () => {
     ),
     [x, g],
   );
+  usePageRefresh(g);
   const A = async () => {
       if (!s.name || !s.searchQuery) {
         l(tr("saved_searches_name_required", "Name and search query required"), "error");

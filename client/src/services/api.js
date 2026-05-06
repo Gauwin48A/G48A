@@ -520,8 +520,24 @@ const getCookieValue = (name) => {
 };
 let csrfBootstrapRetryCount = 0;
 const CSRF_MAX_RETRIES = 3;
-async function ensureCsrfTokenCookie(apiRootUrl) {
-  if (getCookieValue(CSRF_COOKIE_NAME)) {
+// In-memory CSRF token from response body (fallback for cross-origin cookie issues)
+let csrfTokenFromBody = "";
+let csrfTokenTimestamp = 0;
+const CSRF_TOKEN_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+
+function getCsrfToken() {
+  // Prefer fresh cookie
+  const cookieVal = getCookieValue(CSRF_COOKIE_NAME);
+  if (cookieVal) return cookieVal;
+  // Fallback to body-extracted token if within max age
+  if (csrfTokenFromBody && (Date.now() - csrfTokenTimestamp) < CSRF_TOKEN_MAX_AGE_MS) {
+    return csrfTokenFromBody;
+  }
+  return "";
+}
+
+async function ensureCsrfTokenCookie(apiRootUrl, forceRefresh = false) {
+  if (!forceRefresh && getCsrfToken()) {
     csrfBootstrapRetryCount = 0;
     return true;
   }
@@ -536,9 +552,15 @@ async function ensureCsrfTokenCookie(apiRootUrl) {
         withCredentials: true,
         timeout: 10e3,
       })
-      .then(() => {
+      .then((res) => {
         csrfBootstrapRetryCount = 0;
-        return Boolean(getCookieValue(CSRF_COOKIE_NAME));
+        // Store token from response body as fallback for cross-origin scenarios
+        const bodyToken = res?.data?.csrfToken || res?.data?.token;
+        if (bodyToken) {
+          csrfTokenFromBody = bodyToken;
+          csrfTokenTimestamp = Date.now();
+        }
+        return Boolean(getCsrfToken());
       })
       .catch(() => {
         csrfBootstrapRetryCount++;
@@ -646,7 +668,7 @@ async function refreshAccessToken() {
         timeout: 15e3,
         headers: {
           [CSRF_HEADER_NAME]: await ensureCsrfTokenCookie(apiRootUrl)
-            ? getCookieValue(CSRF_COOKIE_NAME)
+            ? getCsrfToken()
             : "",
           "X-MHub-Timestamp": String(refreshTimestamp),
           "X-MHub-Nonce": refreshNonce,
@@ -838,7 +860,10 @@ api.interceptors.request.use(
       }
     }
     if (["post", "put", "patch", "delete"].includes(method)) {
-      const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
+      // Ensure CSRF token is available (refresh from server if needed)
+      const apiRootUrl = config.baseURL || getCurrentApiRootUrl();
+      await ensureCsrfTokenCookie(apiRootUrl);
+      const csrfToken = getCsrfToken();
       if (csrfToken && !headers[CSRF_HEADER_NAME]) {
         headers[CSRF_HEADER_NAME] = csrfToken;
       }
@@ -909,6 +934,28 @@ api.interceptors.response.use(
       }
     }
     const shouldSkipRefresh = shouldSkipAuthRefresh(originalRequest?.url);
+    // Handle CSRF token mismatch (403 with "CSRF token missing") - force refresh and retry once
+    if (
+      originalRequest &&
+      status === 403 &&
+      !originalRequest._csrfRetry &&
+      (backendErrorText.includes("csrf") || backendErrorText.includes("xsrf"))
+    ) {
+      originalRequest._csrfRetry = true;
+      try {
+        const apiRootUrl = originalRequest.baseURL || getCurrentApiRootUrl();
+        // Invalidate cached token
+        csrfTokenFromBody = "";
+        csrfTokenTimestamp = 0;
+        csrfBootstrapRetryCount = 0;
+        await ensureCsrfTokenCookie(apiRootUrl, true);
+        const freshToken = getCsrfToken();
+        if (freshToken) {
+          originalRequest.headers[CSRF_HEADER_NAME] = freshToken;
+          return api(originalRequest);
+        }
+      } catch {}
+    }
     if (
       originalRequest &&
       (status === 401 || (status === 403 && authErrorFromApi)) &&

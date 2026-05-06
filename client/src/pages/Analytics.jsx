@@ -41,6 +41,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { useTranslation as pe } from "react-i18next";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const D = [
     { value: "7d", label: "7D", days: 7 },
     { value: "30d", label: "30D", days: 30 },
@@ -211,6 +212,7 @@ const D = [
     Z(() => {
       b();
     }, [b]);
+    usePageRefresh(b);
     const {
         activeCategory: categoryModeCategory,
         activeApp,

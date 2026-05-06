@@ -73,6 +73,12 @@ export default {
         'theme-soft': 'var(--shadow-soft)',
         'theme-btn': 'var(--btn-shadow)',
       },
+      fontSize: {
+        'display': ['1.5rem', { lineHeight: '1.75rem', fontWeight: '600', letterSpacing: '-0.02em' }],
+        'heading': ['1.125rem', { lineHeight: '1.5rem', fontWeight: '600', letterSpacing: '-0.02em' }],
+        'body': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400', letterSpacing: '-0.01em' }],
+        'caption': ['0.75rem', { lineHeight: '1rem', fontWeight: '500', letterSpacing: '0em' }],
+      },
     },
   },
   plugins: [],

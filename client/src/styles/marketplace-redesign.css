@@ -350,7 +350,7 @@
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
   border-radius: var(--mp-radius-full) !important;
   padding: 10px 16px !important;
-  min-height: 40px !important;
+  min-height: 44px !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 

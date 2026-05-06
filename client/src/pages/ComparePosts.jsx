@@ -10,6 +10,7 @@ import {
   Eye,
   X,
   Trash2,
+  Search,
 } from "lucide-react";
 import { FaExchangeAlt as CompareIcon } from "react-icons/fa";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
@@ -164,26 +165,49 @@ export default function ComparePosts() {
 
   if (!items.length) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
-        <Card className="mhub-premium-surface max-w-md w-full p-8 text-center">
-          <CompareIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            {t("no_items_to_compare", { defaultValue: "No items to compare" })}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {t("select_items_first", { defaultValue: "Select items from listings to compare them side by side." })}
-          </p>
-          <Button onClick={() => navigateBack(navigate, "/all-posts")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t("back_to_listings", { defaultValue: "Back to Listings" })}
-          </Button>
-        </Card>
+      <div data-ux-state="empty" className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-emerald-50/20 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-sm w-full text-center space-y-6">
+          {/* Split-screen illustration */}
+          <div className="relative mx-auto w-32 h-24">
+            <div className="absolute left-0 top-0 w-[46%] h-full rounded-l-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-white/30" />
+            </div>
+            <div className="absolute right-0 top-0 w-[46%] h-full rounded-r-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-white/30" />
+            </div>
+            <div className="absolute inset-x-0 top-0 bottom-0 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 shadow-md flex items-center justify-center z-10">
+                <CompareIcon className="w-4 h-4 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              {t("no_items_to_compare", { defaultValue: "No items to compare" })}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              {t("select_items_first", { defaultValue: "Browse listings and tap Compare to add items here for a side-by-side view." })}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button className="w-full gap-2 min-h-[48px]" onClick={() => navigateBack(navigate, "/all-posts")}>
+              <Search className="w-4 h-4" />
+              {t("browse_listings", { defaultValue: "Browse Listings" })}
+            </Button>
+            <Button variant="outline" className="w-full gap-2 min-h-[48px]" onClick={() => navigateBack(navigate, "/all-posts")}>
+              <ArrowLeft className="w-4 h-4" />
+              {t("back_to_listings", { defaultValue: "Back to Listings" })}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 to-white dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-emerald-50/20 via-slate-50 to-white dark:from-gray-950 dark:to-gray-900">
       {/* ── Sticky header ── */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-[640px] mx-auto px-4 py-3 flex items-center justify-between">

@@ -1,0 +1,607 @@
+{
+  "timestamp": "2026-05-04T12:56:28.044Z",
+  "loginStatus": true,
+  "bottomNav": {
+    "count": 2,
+    "items": [
+      {
+        "key": "Home",
+        "visible": true
+      },
+      {
+        "key": "Filter",
+        "visible": true
+      }
+    ]
+  },
+  "missingMoreButton": true,
+  "pages": [
+    {
+      "page": "all-posts",
+      "path": "/all-posts",
+      "actualUrl": "/all-posts",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "NO_BOTTOM_NAV"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "401 cart",
+        "403 auth/refresh-token",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": false
+    },
+    {
+      "page": "categories",
+      "path": "/categories",
+      "actualUrl": "/categories",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "NO_BOTTOM_NAV"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": false
+    },
+    {
+      "page": "category-hub",
+      "path": "/category-hub",
+      "actualUrl": "/category-hub",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "STILL_LOADING"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "search",
+      "path": "/search",
+      "actualUrl": "/search",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "STILL_LOADING"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "for-you",
+      "path": "/for-you",
+      "actualUrl": "/for-you",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "STILL_LOADING"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "nearby",
+      "path": "/nearby",
+      "actualUrl": "/nearby",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "NO_BOTTOM_NAV"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": false
+    },
+    {
+      "page": "public-wall",
+      "path": "/public-wall",
+      "actualUrl": "/public-wall",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "STILL_LOADING"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "compare",
+      "path": "/compare",
+      "actualUrl": "/compare",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": true,
+      "hasBottomNav": true
+    },
+    {
+      "page": "channels",
+      "path": "/channels",
+      "actualUrl": "/channels",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "dashboard",
+      "path": "/dashboard",
+      "actualUrl": "/dashboard",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "my-feed",
+      "path": "/my-feed",
+      "actualUrl": "/my-feed",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "my-posts",
+      "path": "/my-posts",
+      "actualUrl": "/my-posts",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "profile",
+      "path": "/profile",
+      "actualUrl": "/profile",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "add-post",
+      "path": "/add-post",
+      "actualUrl": "/add-post",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "sold-posts",
+      "path": "/sold-posts",
+      "actualUrl": "/sold-posts",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "bought-posts",
+      "path": "/bought-posts",
+      "actualUrl": "/bought-posts",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "cart",
+      "path": "/cart",
+      "actualUrl": "/cart",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "wishlist",
+      "path": "/wishlist",
+      "actualUrl": "/wishlist",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "chat",
+      "path": "/chat",
+      "actualUrl": "/chat",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "notifications",
+      "path": "/notifications",
+      "actualUrl": "/notifications",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "offers",
+      "path": "/offers",
+      "actualUrl": "/offers",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "saved-searches",
+      "path": "/saved-searches",
+      "actualUrl": "/saved-searches",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "recently-viewed",
+      "path": "/recently-viewed",
+      "actualUrl": "/recently-viewed",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "activity",
+      "path": "/activity",
+      "actualUrl": "/activity",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "reviews",
+      "path": "/reviews",
+      "actualUrl": "/reviews",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "complaints",
+      "path": "/complaints",
+      "actualUrl": "/complaints",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "feedback",
+      "path": "/feedback",
+      "actualUrl": "/feedback",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "NO_BOTTOM_NAV"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": false
+    },
+    {
+      "page": "rewards",
+      "path": "/rewards",
+      "actualUrl": "/rewards",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "analytics",
+      "path": "/analytics",
+      "actualUrl": "/analytics",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "verification",
+      "path": "/verification",
+      "actualUrl": "/verification",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "get-verified",
+      "path": "/get-verified",
+      "actualUrl": "/get-verified",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "tier-selection",
+      "path": "/tier-selection",
+      "actualUrl": "/tier-selection",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "payment",
+      "path": "/payment",
+      "actualUrl": "/payment",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "invite",
+      "path": "/invite",
+      "actualUrl": "/invite",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED",
+        "net::ERR_ABORTED"
+      ],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "account-deletion",
+      "path": "/account-deletion",
+      "actualUrl": "/account-deletion",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "terms",
+      "path": "/terms",
+      "actualUrl": "/terms",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "privacy-policy",
+      "path": "/privacy-policy",
+      "actualUrl": "/privacy-policy",
+      "title": "MHub - Verified Marketplace",
+      "issues": [],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    },
+    {
+      "page": "pricing",
+      "path": "/pricing",
+      "actualUrl": "/tier-selection",
+      "title": "MHub - Verified Marketplace",
+      "issues": [
+        "AUTH_GATE_SHOWN"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "hasEmptyState": false,
+      "hasBottomNav": true
+    }
+  ],
+  "summary": {
+    "total": 38,
+    "withIssues": 30,
+    "withErrors": 11
+  }
+}

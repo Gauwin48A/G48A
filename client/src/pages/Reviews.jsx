@@ -30,6 +30,7 @@ import x from "@/services/api";
 import { useToast as Q } from "@/hooks/use-toast";
 import { useAuth as V } from "@/context/AuthContext";
 import { navigateBack } from "@/utils/navigation";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 import {
   PageEmptyState as X,
   PageErrorState as Y,
@@ -75,6 +76,7 @@ const R = () => {
   H(() => {
     m();
   }, [m]);
+  usePageRefresh(m);
   const E = async () => {
       if (!B) {
         g("/login", { state: { returnTo: `/reviews/${a}` } });

@@ -22,6 +22,7 @@ import {
 } from "@/utils/categoryModeFilters";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 25, 50, 100];
 
@@ -138,6 +139,7 @@ export default function NearbyPosts() {
     }
     requestFreshLocation();
   }, [locationBlocked, locationReady, requestFreshLocation]);
+  usePageRefresh(requestFreshLocation);
 
   useEffect(() => {
     if (!locationReady) return;
@@ -361,11 +363,43 @@ export default function NearbyPosts() {
         )}
 
         {hasError && !loading && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center dark:bg-red-950/20 dark:border-red-600/40">
-            <p className="text-red-600 dark:text-red-300">{errorMessage}</p>
-            <Button onClick={requestFreshLocation} className="mt-4" variant="outline">
-              {tr("try_again", "Try again")}
-            </Button>
+          <div className="space-y-4">
+            {/* Map placeholder illustration */}
+            <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-950/30 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-700/40" style={{ height: 200 }}>
+              <svg viewBox="0 0 640 200" className="absolute inset-0 w-full h-full opacity-40 dark:opacity-20" aria-hidden="true">
+                <rect x="0" y="0" width="640" height="200" fill="#d1fae5" />
+                {/* Grid lines */}
+                {[40,80,120,160,200,240,280,320,360,400,440,480,520,560,600].map(x => <line key={x} x1={x} y1="0" x2={x} y2="200" stroke="#6ee7b7" strokeWidth="1" />)}
+                {[40,80,120,160].map(y => <line key={y} x1="0" y1={y} x2="640" y2={y} stroke="#6ee7b7" strokeWidth="1" />)}
+                {/* Roads */}
+                <path d="M0 100 Q160 80 320 100 Q480 120 640 100" stroke="#a7f3d0" strokeWidth="12" fill="none" strokeLinecap="round" />
+                <path d="M200 0 Q210 100 220 200" stroke="#a7f3d0" strokeWidth="8" fill="none" strokeLinecap="round" />
+                <path d="M420 0 Q430 100 440 200" stroke="#a7f3d0" strokeWidth="8" fill="none" strokeLinecap="round" />
+                {/* Pins */}
+                <circle cx="160" cy="95" r="10" fill="#10b981" />
+                <circle cx="310" cy="105" r="8" fill="#059669" />
+                <circle cx="450" cy="90" r="12" fill="#10b981" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                <MapPin className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{tr("map_unavailable", "Map unavailable offline")}</span>
+              </div>
+            </div>
+
+            {/* Error card */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 text-center space-y-3">
+              <p className="text-sm text-red-600 dark:text-red-300 font-medium">{errorMessage}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{tr("nearby_retry_hint", "Check your connection, allow location access, then try again.")}</p>
+              <div className="flex justify-center gap-2">
+                <Button onClick={requestFreshLocation} className="gap-2 min-h-[44px]">
+                  <RefreshCw className="w-4 h-4" />
+                  {tr("try_again", "Try again")}
+                </Button>
+                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate("/all-posts")}>
+                  {tr("browse_all", "Browse all")}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 

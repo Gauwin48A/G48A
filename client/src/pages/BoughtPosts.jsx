@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const BoughtPosts = () => {
   const { t: translate } = useTranslation(),
     navigate = useNavigate(),
@@ -117,6 +118,7 @@ const BoughtPosts = () => {
         }
       );
     }, [authLoading, isAuthenticated, refreshCounter, translate, userId, categoryModeCategoryId]),
+    usePageRefresh(useCallback(() => setRefreshCounter(c => c + 1), [])),
     authLoading
       ? React.createElement(
           "div",

@@ -82,6 +82,7 @@ import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
 import { normalizeTrustPayload, isComplaintRiskState } from "@/hooks/useTrustScore";
 import { isParityOfflineAuthMode } from "@/utils/parityMode";
 import { buildParityProfileFallback } from "@/utils/parityFallbackData";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const PREFERENCE_RADIUS_STORAGE_KEY = "profile_preferences_radius_km";
 const DEFAULT_PREFERENCE_RADIUS_KM = "25";
@@ -409,6 +410,7 @@ const ProfilePage = () => {
       );
     }
   }, [O, G, X]);
+  usePageRefresh(X);
   const k = L(async ({ force: r = !1, guard: a = () => !0 } = {}) => {
     fe(!0), ve(null);
     try {

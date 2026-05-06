@@ -105,6 +105,7 @@ const GreenNavbar = () => {
     { key: 'sell', path: '/post-welcome', icon: <FiGrid />, matchPaths: ['/post-welcome', '/add-post', '/sell', '/post_add', '/edit-post'] },
     { key: 'chat', path: '/chat', icon: <FiMessageCircle />, matchPaths: ['/chat', '/chats', '/channels'] },
     { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile', '/rewards', '/notifications', '/dashboard'] },
+    { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
   ];
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -482,7 +483,6 @@ const GreenNavbar = () => {
   const isForYouPage = normalizedPath === '/for-you';
   const hideFilterOnGate = isForYouPage && !isLoggedIn;
   const hideChromeOnHub =
-    normalizedPath === '/category-hub' ||
     normalizedPath === '/category-mode';
   // Build the most specific area name - colony/neighbourhood > village > locality > area > city
   // Skip values that duplicate city/mandal level names (e.g. area = "Bachupally mandal" equals city)
@@ -761,7 +761,7 @@ const GreenNavbar = () => {
                     openSearchPage();
                   }
                 }}
-                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-2.5 sm:px-4 sm:py-2.5 transition-all cursor-pointer group min-h-[44px]"
+                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-3 sm:px-4 sm:py-2.5 transition-all cursor-pointer group h-[44px]"
                 role="button"
                 tabIndex={0}
                 aria-label={t('search', { defaultValue: 'Search' })}
@@ -1437,6 +1437,7 @@ const GreenNavbar = () => {
         {bottomNavLinks.map((link) => {
           const isActive = isBottomNavLinkActive(link);
           const isSellTab = link.key === 'sell';
+          const isMoreTab = link.key === 'more';
 
           return (
             <button
@@ -1444,7 +1445,13 @@ const GreenNavbar = () => {
               {...navButtonProps(t(link.key))}
               data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
-              onClick={() => startTransition(() => navigate(link.path))}
+              onClick={(e) => {
+                if (isMoreTab) {
+                  handleMoreOpen(e);
+                } else {
+                  startTransition(() => navigate(link.path));
+                }
+              }}
               style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
               className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[52px] px-2 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''} ${isSellTab ? 'mhub-bottom-nav-sell' : ''}`}
             >
@@ -1461,7 +1468,7 @@ const GreenNavbar = () => {
                 </span>
               )}
               <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '12px' }}>
-                {t(link.key, { defaultValue: link.key === 'sell' ? 'Sell' : link.key })}
+                {t(link.key, { defaultValue: link.key === 'sell' ? 'Sell' : isMoreTab ? 'More' : link.key })}
               </span>
               {isActive && !isSellTab && <span className="mhub-bottom-nav-indicator" />}
             </button>

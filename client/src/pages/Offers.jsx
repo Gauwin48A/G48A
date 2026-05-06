@@ -41,6 +41,7 @@ import { useCategoryMode } from "@/context/CategoryModeContext";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { getUserId, isAuthenticated } from "@/utils/authStorage";
 import { navigateBack } from "@/utils/navigation";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -466,6 +467,7 @@ const OffersPage = () => {
       requestRef.current += 1;
     };
   }, [fetchOffers]);
+  usePageRefresh(fetchOffers);
 
   const handleOfferAction = async (offerId, action, counterPrice = null) => {
     if (!canUseOffers || processingOfferId) return;
