@@ -433,7 +433,7 @@ const Verification = () => {
                 CardHeader,
                 {
                   className:
-                    "bg-gradient-to-r from-sky-300 to-blue-600 text-white dark:bg-gradient-to-r dark:text-white",
+                    "bg-gradient-to-r from-sky-600 to-blue-700 text-white dark:bg-gradient-to-r dark:text-white",
                 },
                 React.createElement(
                   CardTitle,

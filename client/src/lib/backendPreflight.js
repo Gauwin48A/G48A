@@ -1,13 +1,18 @@
 import { getApiRootUrl } from "@/lib/networkConfig";
 
 const PRECHECK_TIMEOUT_MS = Number.parseInt(
-  import.meta.env.VITE_BACKEND_PREFLIGHT_TIMEOUT_MS || "3500",
+  import.meta.env.VITE_BACKEND_PREFLIGHT_TIMEOUT_MS || "8000",
   10,
 );
 const BACKUP_PROBE_STAGGER_MS = Number.parseInt(
   import.meta.env.VITE_BACKEND_PREFLIGHT_STAGGER_MS || "75",
   10,
 );
+
+// On Capacitor native, skip health check entirely — app has demo fallbacks
+const isCapacitorNative = () =>
+  typeof window !== "undefined" &&
+  window.Capacitor?.isNativePlatform?.() === true;
 
 // Keep default dev probing strict to the expected local backend port.
 // Additional fallback origins can be supplied via VITE_BACKEND_PREFLIGHT_ORIGINS.
@@ -212,6 +217,11 @@ async function firstSuccessfulProbe(probePromises) {
 }
 
 export async function runBackendPreflight() {
+  // Skip health check on Capacitor native — app works offline with demo fallbacks
+  if (isCapacitorNative()) {
+    return { ok: true, healthUrl: "capacitor://skip", resolvedOrigin: "" };
+  }
+
   const candidateUrls = getCandidateHealthUrls();
   const failuresByUrl = new Map();
 

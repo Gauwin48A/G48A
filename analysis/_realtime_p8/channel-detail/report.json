@@ -1,0 +1,245 @@
+{
+  "name": "channel-detail",
+  "path": "/channels/ch-1",
+  "loggedIn": false,
+  "category": "social",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "scrollHeight": 920,
+  "screens": {
+    "scrollH": 920,
+    "viewH": 800,
+    "steps": 2,
+    "shots": [
+      "channel-detail-scroll00.png",
+      "channel-detail-scroll01.png"
+    ],
+    "full": "channel-detail-full.png"
+  },
+  "scan": {
+    "viewport": {
+      "w": 360,
+      "h": 800
+    },
+    "scrollHeight": 920,
+    "overflow": {
+      "bodyX": false,
+      "htmlX": false,
+      "bodyScrollW": 360
+    },
+    "stats": {
+      "total": 117,
+      "interactive": 9,
+      "text": 36,
+      "images": 0,
+      "brokenImages": 0
+    },
+    "tinyFonts": [],
+    "smallTouchTargets": [],
+    "overflowElements": [],
+    "missingDarkVariants": [],
+    "brokenImageList": [],
+    "stickyBars": [
+      {
+        "h": 64,
+        "w": 360,
+        "top": 736,
+        "bottom": 0,
+        "z": "120",
+        "pos": "fixed",
+        "classes": "mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-ar"
+      },
+      {
+        "h": 16,
+        "w": 360,
+        "top": 0,
+        "bottom": 784,
+        "z": "300",
+        "pos": "fixed",
+        "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
+      }
+    ],
+    "bottomNav": {
+      "h": 64,
+      "w": 360,
+      "top": 736
+    },
+    "heroDetected": false,
+    "cardCount": 0,
+    "whiteScreen": false,
+    "missingPrimaryCta": false,
+    "placeholderText": 0,
+    "mojibakeText": [],
+    "stillLoading": false,
+    "mainTextLen": 1777,
+    "visibleSpinners": 0
+  },
+  "console": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "warning",
+      "text": "Something has shimmed the React DevTools global hook (__REACT_DEVTOOLS_GLOBAL_HOOK__). Fast Refresh is not compatible with this shim and will be disabled."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+    },
+    {
+      "type": "log",
+      "text": "[i18n] Language: en, Direction: ltr, Cached: true"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:api.js] module loaded; baseURL=/api"
+    },
+    {
+      "type": "warning",
+      "text": "[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled."
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language hi {24_48_hours: 24-48 घंटे, 24_48h_response: 24-48 घंटे प्रतिक्रिया, 24h_validity: 24 घंटे वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language te {24_48_hours: 24-48 గంటలు, 24_48h_response: 24-48 గంటల్లో ప్రతిస్పందన, 24h_validity: 24 గంటల వ్యాలిడిటీ, 2k_to_10k: ₹2K నుండి ₹10K, 500_to_2k: ₹500 నుండి ₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language ta {24_48_hours: 24-48 மணி நேரம், 24_48h_response: 24-48 மணி நேர பதில், 24h_validity: 24 மணி நேர செல்லுபடி, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language kn {24_48_hours: 24-48 ಗಂಟೆಗಳು, 24_48h_response: 24-48 ಗಂಟೆಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯೆ, 24h_validity: 24 ಗಂಟೆ ವ್ಯಾಲಿಡಿಟಿ, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language mr {24_48_hours: 24-48 तास, 24_48h_response: 24-48 तासांत प्रतिसाद, 24h_validity: 24 तास वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language bn {24_48_hours: 24-48 ঘন্টা, 24_48h_response: 24-48 ঘন্টার মধ্যে প্রতিক্রিয়া, 24h_validity: 24 ঘন্টা বৈধতা, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Initializing location context"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation reload Reload"
+    },
+    {
+      "type": "warning",
+      "text": "Service Worker registration blocked by Playwright"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[LocationGate] Device info sent: fp_o88yng"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /channels/ch-1"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /channels/ch-1"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /channels/ch-1"
+    },
+    {
+      "type": "error",
+      "text": "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `UpdatesFeed`.  \n    at http://127.0.0.1:4173/src/components/ui/card.jsx:3:52\n    at UpdatesFeed (http://127.0.0.1:4173/src/pages/ChannelPage.jsx:652:243)\n    at div\n    at div\n    at ChannelPage (http://127.0.0.1:4173/src/pages/ChannelPage.jsx:880:19)\n    at RenderedRoute (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:4131:5)\n    at Outlet (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:4537:26)\n    at ErrorBoundary (http://127.0.0.1:4173/src/components/ErrorBoundary.jsx:150:9)\n    at RouteBoundary\n    at RenderedRoute (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:4131:5)\n    at Routes (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:4601:5)\n    at Suspense\n    at main\n    at PullToRefreshWrapper (http://127.0.0.1:4173/src/components/PullToRefreshWrapper.jsx:61:52)\n    at div\n    at AppShell (http://127.0.0.1:4173/src/App.jsx:393:19)\n    at LocationGate (http://127.0.0.1:4173/src/components/LocationGate.jsx:80:25)\n    at CartProvider (http://127.0.0.1:4173/src/context/CartContext.jsx:112:32)\n    at AuthProvider (http://127.0.0.1:4173/src/context/AuthContext.jsx:269:32)\n    at FilterProvider (http://127.0.0.1:4173/src/context/FilterContext.jsx:74:34)\n    at LocationProvider (http://127.0.0.1:4173/src/context/LocationContext.jsx:273:36)\n    at VPNBlocker (http://127.0.0.1:4173/src/components/VPNBlocker.jsx:41:38)\n    at App\n    at CategoryModeProvider (http://127.0.0.1:4173/src/context/CategoryModeContext.jsx:223:40)\n    at ErrorBoundary (http://127.0.0.1:4173/src/components/ErrorBoundary.jsx:150:9)\n    at Provider (http://127.0.0.1:4173/node_modules/.vite/deps/chunk-3CQMBSTV.js?v=262a2cd2:44:15)\n    at Provider (http://127.0.0.1:4173/node_modules/.vite/deps/chunk-3CQMBSTV.js?v=262a2cd2:44:15)\n    at CollectionProvider (http://127.0.0.1:4173/node_modules/.vite/deps/chunk-PSVVG4UR.js?v=262a2cd2:33:13)\n    at ToastProvider (http://127.0.0.1:4173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=262a2cd2:86:5)\n    at Router (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:4544:15)\n    at BrowserRouter (http://127.0.0.1:4173/node_modules/.vite/deps/react-router-dom.js?v=262a2cd2:5290:5)\n    at Suspense\n    at ThemeProvider (http://127.0.0.1:4173/src/context/ThemeContext.jsx:71:33)\n    at _a (http://127.0.0.1:4173/node_modules/.vite/deps/react-helmet-async.js?v=262a2cd2:627:5)\n    at QueryClientProvider (http://127.0.0.1:4173/node_modules/.vite/deps/@tanstack_react-query.js?v=262a2cd2:3155:3)"
+    }
+  ],
+  "network": [],
+  "score": {
+    "rubric": {
+      "layout": 2,
+      "typography": 1.5,
+      "touch": 1.5,
+      "spacing": 1.5,
+      "darkmode": 1,
+      "perf": 1.5,
+      "functionality": 1,
+      "total": 10
+    },
+    "blockers": [],
+    "warnings": []
+  },
+  "navError": null
+}

@@ -474,16 +474,24 @@ function LocationGate({ children }) {
 }
 
 const badgeStyles = `
+  /* Anchored to top app bar area (right side), so it never overlaps page content
+     or sticky CTAs. Hides on scroll-down via .nav-scrolled-down class set by app shell. */
   .location-accuracy-badge-wrap {
     position: fixed;
-    bottom: calc(var(--bottom-nav-height, 64px) + var(--bottom-nav-safe, 0px) + 12px);
-    left: 8px;
+    top: calc(var(--top-nav-height, 60px) + env(safe-area-inset-top, 0px) + 6px);
+    right: 8px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     z-index: 40;
     pointer-events: auto;
     max-width: calc(100vw - 16px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  html.nav-scrolled-down .location-accuracy-badge-wrap {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
   }
   .location-accuracy-badge {
     display: inline-flex;
@@ -510,8 +518,8 @@ const badgeStyles = `
     max-width: 60vw;
   }
   .location-accuracy-badge-close {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: rgba(15, 23, 42, 0.78);
     backdrop-filter: blur(8px);
@@ -530,8 +538,8 @@ const badgeStyles = `
     background: rgba(241, 245, 249, 0.12);
   }
   @media (max-width: 480px) {
-    .location-accuracy-badge { font-size: 12px; padding: 3px 7px; }
-    .location-accuracy-badge-close { width: 36px; height: 36px; font-size: 16px; }
+    .location-accuracy-badge { font-size: 11px; padding: 3px 7px; max-width: 55vw; }
+    .location-accuracy-badge-close { width: 26px; height: 26px; font-size: 14px; }
   }
 `;
 

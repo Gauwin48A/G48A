@@ -17,6 +17,7 @@ import {
 } from "@/components/page-state/PageStateBlocks";
 import { useTranslation } from "react-i18next";
 import { hasAuthSession } from "@/utils/authStorage";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 const KycVerification = () => {
   const navigate = useNavigate();
@@ -225,32 +226,83 @@ const KycVerification = () => {
   }
 
   if (kycStatus?.status === "PENDING") {
+    const steps = [
+      { label: tr("kyc_step_submitted", "Submitted"), done: true },
+      { label: tr("kyc_step_reviewing", "Under Review"), done: false, active: true },
+      { label: tr("kyc_step_verified", "Verified"), done: false },
+    ];
     return (
-      <div className={`${pageClassName} flex items-center justify-center p-4`}>
-        <Card className="max-w-lg w-full border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20">
-          <CardContent className="pt-8 text-center space-y-4">
-            <h2 className="text-xl sm:text-3xl font-bold text-amber-800 dark:text-amber-200">
-              {tr("kyc_pending_title", "Verification in progress")}
-            </h2>
-            <p className="text-amber-700 dark:text-amber-300">
-              {tr(
-                "kyc_pending_desc",
-                "We are reviewing your documents. Most requests are reviewed within 24 hours.",
-              )}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700/40 dark:hover:bg-amber-700/40 dark:text-white"
-                onClick={fetchStatus}
-              >
-                {tr("refresh_status", "Refresh status")}
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/profile")}>
-                {tr("back_to_profile", "Back to profile")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className={`${pageClassName} py-8 px-4`}>
+        <div className="max-w-[640px] mx-auto space-y-6 page-shell page-pad">
+          {/* Stepper */}
+          <div className="flex items-center justify-between gap-2">
+            {steps.map((step, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    step.done
+                      ? "bg-emerald-500 text-white"
+                      : step.active
+                        ? "bg-amber-500 text-white ring-4 ring-amber-200 dark:ring-amber-800/40"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                  }`}
+                >
+                  {step.done ? <CheckCircle className="w-5 h-5" /> : i + 1}
+                </div>
+                <span className={`text-xs font-semibold text-center ${step.active ? "text-amber-700 dark:text-amber-300" : step.done ? "text-emerald-700 dark:text-emerald-300" : "text-gray-400"}`}>
+                  {step.label}
+                </span>
+                {i < steps.length - 1 && (
+                  <div className={`absolute h-0.5 w-full ${step.done ? "bg-emerald-400" : "bg-gray-200 dark:bg-gray-700"}`} style={{ display: "none" }} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 dark:border-amber-600/40 dark:bg-amber-950/20">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-amber-600 dark:text-amber-400 animate-spin" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-amber-800 dark:text-amber-200">
+                    {tr("kyc_pending_title", "Verification in progress")}
+                  </h2>
+                  <p className="text-sm text-amber-600 dark:text-amber-300">
+                    {tr(
+                      "kyc_pending_desc",
+                      "We are reviewing your documents. Most requests are reviewed within 24 hours.",
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white/60 dark:bg-slate-900/40 rounded-xl p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">{tr("kyc_estimated_time", "Estimated time")}</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-300">~24 {tr("hours", "hours")}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">{tr("kyc_status_label", "Status")}</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-300">{tr("under_review", "Under Review")}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700/40 dark:hover:bg-amber-700/40 dark:text-white flex-1"
+                  onClick={fetchStatus}
+                >
+                  {tr("refresh_status", "Refresh status")}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/profile")} className="flex-1">
+                  {tr("back_to_profile", "Back to profile")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

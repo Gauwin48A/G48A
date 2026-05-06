@@ -23,10 +23,13 @@ import {
   Package as PackageIcon,
   Edit3,
   Share2,
+  Hash,
+  Store,
+  Wifi,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import EmptyState from "@/components/EmptyState";
+import SmartEmptyState from "@/components/SmartEmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +42,7 @@ import CentrePageTabs, {
   CentreVerificationBadge,
 } from "@/components/centre/CentrePageTabs";
 import CentrePageAnalytics from "@/components/centre/CentrePageAnalytics";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 /* ------------------------------------------------------------------ */
 /*  Skeleton loader                                                   */
@@ -429,8 +433,8 @@ function UpdatesFeed({
         </div>
       )}
       {sortedPosts.length === 0 ? (
-        <EmptyState
-          type="posts"
+        <SmartEmptyState
+          type="feed"
           title={t("no_posts") || "No posts yet"}
           message={
             isOwner
@@ -552,6 +556,7 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
 
   useEffect(() => { tRef.current = t; trRef.current = tr; }, [t, tr]);
   useEffect(() => { fetchChannel(); }, [fetchChannel]);
+  usePageRefresh(fetchChannel);
 
   const backPath = isCentre ? "/centre" : "/channels";
   const backLabel = isCentre ? tr("back_to_centre_pages", "Back to CentrePages") : tr("back_to_channels", "Back to Channels");
@@ -685,25 +690,47 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
 
   // --- Error / no channel ---
   if (!channel) {
+    const Icon = isCentre ? Store : Hash;
     return (
-      <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <p className="text-sm text-red-600 dark:text-red-300">{error || t("something_went_wrong") || "Failed to load channel"}</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="outline" className="gap-2" onClick={fetchChannel}>
-                <RefreshCw className="h-4 w-4" />
-                {t("retry") || "Retry"}
-              </Button>
-              <Link to={backPath}>
-                <Button className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  {backLabel}
-                </Button>
-              </Link>
+      <div data-ux-state="empty" className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-emerald-50/30 to-blue-50 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center space-y-5">
+          {/* Illustration */}
+          <div className="relative inline-flex items-center justify-center mx-auto">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center shadow-xl">
+              <Icon className="w-12 h-12 text-white" />
             </div>
-          </CardContent>
-        </Card>
+            <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center">
+              <Wifi className="w-4 h-4 text-white" />
+            </span>
+          </div>
+
+          {/* Title + description */}
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              {isCentre ? (t("centre_unavailable") || "CentrePage unavailable") : (t("channel_unavailable") || "Channel unavailable")}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              {error || (isCentre
+                ? (t("centre_load_failed_hint") || "This CentrePage could not be loaded. It may have been removed or there's a connection issue. Please check your internet connection and try again, or go back to browse other available centres.")
+                : (t("channel_load_failed_hint") || "This channel could not be loaded. It may have been removed or there's a connection issue. Please check your internet connection and try again, or go back to browse other available channels.")
+              )}
+            </p>
+          </div>
+
+          {/* CTAs */}
+          <div className="flex flex-col gap-3">
+            <Button className="w-full gap-2 min-h-[48px]" onClick={fetchChannel}>
+              <RefreshCw className="h-4 w-4" />
+              {t("retry") || "Retry"}
+            </Button>
+            <Link to={backPath} className="w-full">
+              <Button variant="outline" className="w-full gap-2 min-h-[48px]">
+                <ArrowLeft className="h-4 w-4" />
+                {backLabel}
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

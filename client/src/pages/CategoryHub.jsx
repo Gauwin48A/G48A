@@ -9,6 +9,7 @@ import api from "@/services/api";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { Smartphone, Tablet, Monitor } from "lucide-react";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const LAYOUT_STORAGE_KEY = 'mhub_layout_preview_mode';
 const LAYOUT_USER_KEY = 'mhub_layout_preview_user';
@@ -366,6 +367,8 @@ export default function CategoryHub() {
     : "border border-slate-200 bg-white text-slate-600 shadow-sm";
 
   // Fetch hub stats (with stale-while-revalidate behaviour)
+  const [refreshKey, setRefreshKey] = useState(0);
+  usePageRefresh(useCallback(() => setRefreshKey(k => k + 1), []));
   useEffect(() => {
     let live = true;
     const cached = sessionStorage.getItem("mhub:hub_stats");
@@ -423,7 +426,7 @@ export default function CategoryHub() {
 
     loadStats();
     return () => { live = false; };
-  }, [categories, categoriesLoading]);
+  }, [categories, categoriesLoading, refreshKey]);
 
   const handleSelect = useCallback((appKey) => {
     clearCategory();

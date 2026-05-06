@@ -983,7 +983,7 @@ const Xe = 2 * 1024 * 1024,
                   {
                     to: "/all-posts",
                     className:
-                      "inline-flex items-center text-white/80 hover:text-white mb-3 font-medium transition-colors duration-200 text-sm dark:text-white/80 dark:hover:text-white",
+                      "inline-flex items-center text-white/80 hover:text-white mb-3 font-medium transition-colors duration-200 text-sm h-11 dark:text-white/80 dark:hover:text-white",
                   },
                   e.createElement(be, { className: "w-4 h-4 mr-2" }),
                   a("back_to_browse"),
@@ -2007,7 +2007,7 @@ const Xe = 2 * 1024 * 1024,
                             {
                               type: "button",
                               onClick: () => ve(!N),
-                              className: `relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${N ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"}`,
+                              className: `relative inline-flex h-11 w-14 items-center rounded-full transition-colors ${N ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"}`,
                             },
                             e.createElement("span", {
                               className: `inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform dark:bg-slate-900${N ? "translate-x-7" : "translate-x-1"}`,

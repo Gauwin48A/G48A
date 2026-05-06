@@ -1,12 +1,14 @@
 import React, { Suspense, lazy, useEffect, startTransition } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet, useLocation as useRouterLocation } from "react-router-dom";
 import GreenNavbar from "./components/GreenNavbar.jsx";
+import AuthShell from "./components/AuthShell.jsx";
 import PullToRefreshWrapper from "./components/PullToRefreshWrapper.jsx";
 import LocationGate from "./components/LocationGate.jsx";
 import NotificationPermission from "./components/NotificationPermission.jsx";
 import RouteTelemetry from "./components/RouteTelemetry.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
+import PageEnhancer, { PAGE_CONFIGS } from "./components/PageEnhancer.jsx";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
@@ -25,6 +27,14 @@ import { getUserId } from "@/utils/authStorage";
 import { MapPin } from "lucide-react";
 import { registerSoftReloadHandler, requestSoftReload } from "@/utils/softReload";
 import { registerSoftNavigationHandler } from "@/utils/softNavigate";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
+import "@/styles/page-enhance.css";
+
+/** Invisible component that activates swipe-back gesture on all pages */
+function SwipeBackProvider() {
+  useSwipeBack();
+  return null;
+}
 
 const LAZY_CACHE_KEY_PREFIX = "mhub:lazy-retry:";
 const LAZY_RETRY_WINDOW_MS = 60 * 1000;
@@ -132,7 +142,7 @@ const ComparePostsPage = lazyWithRetry(
 );
 const FeedPage = lazyWithRetry(() => import("./pages/FeedPage.jsx"), "FeedPage");
 const FeedPostDetailPage = lazyWithRetry(
-  () => import("./pages/FeedPostDetail.jsx"),
+  () => import("./pages/FeedPostDetail_v2.jsx"),
   "FeedPostDetail",
 );
 const MyFeedPage = lazyWithRetry(() => import("./pages/MyFeedPage.jsx"), "MyFeedPage");
@@ -238,7 +248,7 @@ function ScrollToTop() {
       // Use requestAnimationFrame to let the DOM render first
       requestAnimationFrame(() => window.scrollTo(0, savedPos));
     } else {
-      // New page — scroll to top
+      // New page â€” scroll to top
       window.scrollTo(0, 0);
     }
 
@@ -320,6 +330,32 @@ function AppShell() {
     }
   }, []);
 
+  // Global haptic feedback on button taps (works even with minified button.jsx)
+  useEffect(() => {
+    const handler = (e) => {
+      const btn = e.target.closest('button, [role="button"]');
+      if (btn && navigator.vibrate) {
+        navigator.vibrate(8);
+      }
+    };
+    // Haptic on toggle/checkbox/switch interactions
+    const changeHandler = (e) => {
+      const el = e.target;
+      if (
+        (el.type === "checkbox" || el.type === "radio" || el.role === "switch") &&
+        navigator.vibrate
+      ) {
+        navigator.vibrate(12);
+      }
+    };
+    document.addEventListener("pointerdown", handler, { passive: true });
+    document.addEventListener("change", changeHandler, { passive: true });
+    return () => {
+      document.removeEventListener("pointerdown", handler);
+      document.removeEventListener("change", changeHandler);
+    };
+  }, []);
+
   useEffect(() => {
     const syncLocation = async () => {
       const userId = getUserId(user);
@@ -349,7 +385,7 @@ function AppShell() {
     // F-10: Deep link handler for mhub:// URL scheme
     const deepLinkPromise = CapacitorApp.addListener("appUrlOpen", ({ url }) => {
       try {
-        // Strip scheme: mhub://post/123 → post/123
+        // Strip scheme: mhub://post/123 â†’ post/123
         const path = url.replace(/^mhub:\/\//, "");
         if (path.startsWith("post/")) {
           const postId = path.slice(5).split("?")[0];
@@ -472,6 +508,7 @@ function AppShell() {
           <GreenNavbar />
           <RouteTelemetry />
           <ScrollToTop />
+          <SwipeBackProvider />
           <PullToRefreshWrapper>
           <main
             className="flex-1 app-main"
@@ -487,90 +524,88 @@ function AppShell() {
             >
               <Routes>
                 <Route element={<RouteBoundary />}>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignUpPage />} />
-                  <Route path="/invite/:code" element={<InviteRedirectPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                  <Route path="/login" element={<PageEnhancer config={PAGE_CONFIGS["login"]}><AuthShell><LoginPage /></AuthShell></PageEnhancer>} />
+                  <Route path="/signup" element={<PageEnhancer config={PAGE_CONFIGS["signup"]}><AuthShell><SignUpPage /></AuthShell></PageEnhancer>} />
+                  <Route path="/invite/:code" element={<PageEnhancer config={PAGE_CONFIGS["invite"]}><AuthShell><InviteRedirectPage /></AuthShell></PageEnhancer>} />
+                  <Route path="/forgot-password" element={<PageEnhancer config={PAGE_CONFIGS["forgot-password"]}><AuthShell><ForgotPasswordPage /></AuthShell></PageEnhancer>} />
+                  <Route path="/reset-password" element={<PageEnhancer config={PAGE_CONFIGS["reset-password"]}><AuthShell><ResetPasswordPage /></AuthShell></PageEnhancer>} />
+                  <Route path="/reset-password/:token" element={<PageEnhancer config={PAGE_CONFIGS["reset-password"]}><AuthShell><ResetPasswordPage /></AuthShell></PageEnhancer>} />
                   <Route path="/" element={<Navigate to="/category-hub" replace />} />
-                  <Route path="/all-posts" element={<AllPostsPage />} />
-                  <Route path="/listings" element={<AllPostsPage />} />
-                  <Route path="/post/:id" element={<PostDetailPage />} />
-                  <Route path="/listing/:id" element={<PostDetailPage />} />
-                  <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
-                  <Route path="/activity" element={<RequireAuth><ActivityHubPage /></RequireAuth>} />
-                  <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
-                  <Route path="/security" element={<RequireAuth><SecuritySettingsPage /></RequireAuth>} />
-                  <Route path="/account/delete" element={<RequireAuth><AccountDeletionPage /></RequireAuth>} />
-                  <Route path="/add-post" element={<RequireAuth><AddPostPage /></RequireAuth>} />
-                  <Route path="/post-welcome" element={<RequireAuth><PostWelcomePage /></RequireAuth>} />
-                  <Route path="/sell" element={<RequireAuth><AddPostPage /></RequireAuth>} />
-                  <Route path="/category-hub" element={<CategoryHubPage />} />
-                  <Route path="/edit-post/:postId" element={<RequireAuth><EditPostPage /></RequireAuth>} />
-                  <Route path="/tier-selection" element={<RequireAuth><TierSelectionPage /></RequireAuth>} />
-                  <Route path="/tiers" element={<RequireAuth><TierSelectionPage /></RequireAuth>} />
-                  <Route path="/pricing" element={<RequireAuth><TierSelectionPage /></RequireAuth>} />
-                  <Route path="/my-home" element={<RequireAuth><MyHomePage /></RequireAuth>} />
-                  <Route path="/home" element={<HomePage />} />
-                  <Route path="/for-you" element={<ForYouPage />} />
-                  <Route path="/bought-posts" element={<RequireAuth><BoughtPostsPage /></RequireAuth>} />
-                  <Route path="/sold-posts" element={<RequireAuth><SoldPostsPage /></RequireAuth>} />
-                  <Route path="/buyer-view" element={<RequireAuth><BuyerViewPage /></RequireAuth>} />
-                  <Route path="/saledone" element={<RequireAuth><SaledonePage /></RequireAuth>} />
-                  <Route path="/saleundone" element={<RequireAuth><SaleUndonePage /></RequireAuth>} />
+                  <Route path="/all-posts" element={<PageEnhancer config={PAGE_CONFIGS["all-posts"]}><AllPostsPage /></PageEnhancer>} />
+                  <Route path="/listings" element={<Navigate to="/all-posts" replace />} />
+                  <Route path="/post/:id" element={<PageEnhancer config={PAGE_CONFIGS["post-detail"]}><PostDetailPage /></PageEnhancer>} />
+                  <Route path="/listing/:id" element={<PageEnhancer config={PAGE_CONFIGS["post-detail"]}><PostDetailPage /></PageEnhancer>} />
+                  <Route path="/dashboard" element={<PageEnhancer config={PAGE_CONFIGS["dashboard"]}><RequireAuth><DashboardPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/activity" element={<PageEnhancer config={PAGE_CONFIGS["activity"]}><RequireAuth><ActivityHubPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/profile" element={<PageEnhancer config={PAGE_CONFIGS["profile"]}><RequireAuth><ProfilePage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/security" element={<PageEnhancer config={PAGE_CONFIGS["security"]}><RequireAuth><SecuritySettingsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/account/delete" element={<PageEnhancer config={PAGE_CONFIGS["account-delete"]}><RequireAuth><AccountDeletionPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/add-post" element={<PageEnhancer config={PAGE_CONFIGS["add-post"]}><RequireAuth><AddPostPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/post-welcome" element={<Navigate to="/add-post" replace />} />
+                  <Route path="/sell" element={<Navigate to="/add-post" replace />} />
+                  <Route path="/category-hub" element={<PageEnhancer config={PAGE_CONFIGS["category-hub"]}><CategoryHubPage /></PageEnhancer>} />
+                  <Route path="/edit-post/:postId" element={<PageEnhancer config={PAGE_CONFIGS["edit-post"]}><RequireAuth><EditPostPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/tier-selection" element={<PageEnhancer config={PAGE_CONFIGS["tier-selection"]}><RequireAuth><TierSelectionPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/tiers" element={<Navigate to="/tier-selection" replace />} />
+                  <Route path="/pricing" element={<Navigate to="/tier-selection" replace />} />
+                  <Route path="/my-home" element={<PageEnhancer config={PAGE_CONFIGS["my-home"]}><RequireAuth><MyHomePage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/home" element={<Navigate to="/all-posts" replace />} />
+                  <Route path="/for-you" element={<PageEnhancer config={PAGE_CONFIGS["for-you"]}><ForYouPage /></PageEnhancer>} />
+                  <Route path="/bought-posts" element={<PageEnhancer config={PAGE_CONFIGS["bought-posts"]}><RequireAuth><BoughtPostsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/sold-posts" element={<PageEnhancer config={PAGE_CONFIGS["sold-posts"]}><RequireAuth><SoldPostsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/buyer-view" element={<PageEnhancer config={PAGE_CONFIGS["buyer-view"]}><RequireAuth><BuyerViewPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/saledone" element={<PageEnhancer config={PAGE_CONFIGS["saledone"]}><RequireAuth><SaledonePage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/saleundone" element={<PageEnhancer config={PAGE_CONFIGS["saleundone"]}><RequireAuth><SaleUndonePage /></RequireAuth></PageEnhancer>} />
                   <Route
                     path="/admin-panel"
                     element={
-                      <RequireAuth requiredRoles={["admin", "super_admin", "superadmin"]}>
-                        <AdminPanelPage />
-                      </RequireAuth>
+                      <PageEnhancer config={PAGE_CONFIGS["admin-panel"]}><RequireAuth requiredRoles={["admin", "super_admin", "superadmin"]}><AdminPanelPage /></RequireAuth></PageEnhancer>
                     }
                   />
-                  <Route path="/aadhaar-verify" element={<RequireAuth><AadhaarVerifyPage /></RequireAuth>} />
-                  <Route path="/public-wall" element={<PublicWallPage />} />
-                  <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-                  <Route path="/complaints" element={<RequireAuth><ComplaintsPage /></RequireAuth>} />
-                  <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
-                  <Route path="/rewards" element={<RequireAuth><RewardsPage /></RequireAuth>} />
-                  <Route path="/categories" element={<SubcategoriesPage />} />
-                  <Route path="/subcategories" element={<SubcategoriesPage />} />
-                  <Route path="/compare" element={<ComparePostsPage />} />
+                  <Route path="/aadhaar-verify" element={<PageEnhancer config={PAGE_CONFIGS["aadhaar-verify"]}><RequireAuth><AadhaarVerifyPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/public-wall" element={<PageEnhancer config={PAGE_CONFIGS["public-wall"]}><PublicWallPage /></PageEnhancer>} />
+                  <Route path="/notifications" element={<PageEnhancer config={PAGE_CONFIGS["notifications"]}><RequireAuth><NotificationsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/complaints" element={<PageEnhancer config={PAGE_CONFIGS["complaints"]}><RequireAuth><ComplaintsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/feedback" element={<PageEnhancer config={PAGE_CONFIGS["feedback"]}><RequireAuth><FeedbackPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/rewards" element={<PageEnhancer config={PAGE_CONFIGS["rewards"]}><RequireAuth><RewardsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/categories" element={<PageEnhancer config={PAGE_CONFIGS["category-hub"]}><SubcategoriesPage /></PageEnhancer>} />
+                  <Route path="/subcategories" element={<PageEnhancer config={PAGE_CONFIGS["category-hub"]}><SubcategoriesPage /></PageEnhancer>} />
+                  <Route path="/compare" element={<PageEnhancer config={PAGE_CONFIGS["compare"]}><ComparePostsPage /></PageEnhancer>} />
                   <Route path="/categories/:slug" element={<Navigate to="/all-posts" replace />} />
-                  <Route path="/feed" element={<FeedPage />} />
-                  <Route path="/feed/:id" element={<FeedPostDetailPage />} />
-                  <Route path="/my-feed" element={<RequireAuth><MyFeedPage /></RequireAuth>} />
-                  <Route path="/my-posts" element={<RequireAuth><MyHomePage /></RequireAuth>} />
-                  <Route path="/post_add" element={<RequireAuth><PostAddPage /></RequireAuth>} />
-                  <Route path="/feed/feedpostadd" element={<RequireAuth><PostAddPage noImageUpload={true} /></RequireAuth>} />
-                  <Route path="/wishlist" element={<RequireAuth><WishlistPage /></RequireAuth>} />
-                  <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
-                  <Route path="/recently-viewed" element={<RequireAuth><RecentlyViewedPage /></RequireAuth>} />
-                  <Route path="/saved-searches" element={<RequireAuth><SavedSearchesPage /></RequireAuth>} />
-                  <Route path="/verification" element={<RequireAuth><VerificationPage /></RequireAuth>} />
-                  <Route path="/nearby" element={<RequireAuth><NearbyPostsPage /></RequireAuth>} />
-                  <Route path="/chat" element={<RequireAuth><ProtectedChatPage /></RequireAuth>} />
-                  <Route path="/chats" element={<RequireAuth><ProtectedChatPage /></RequireAuth>} />
-                  <Route path="/t&c" element={<TermsPage />} />
-                  <Route path="/terms" element={<TermsPage />} />
-                  <Route path="/terms-and-conditions" element={<TermsPage />} />
-                  <Route path="/privacy-policy" element={<PrivacyPage />} />
-                  <Route path="/refund-policy" element={<RefundPage />} />
-                  <Route path="/support-ticket-policy" element={<SupportTicketPage />} />
-                  <Route path="/search" element={<SearchPage />} />
-                  <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
-                  <Route path="/channels" element={<ChannelsListPage />} />
-                  <Route path="/channels/create" element={<RequireAuth><CreateChannelPage /></RequireAuth>} />
-                  <Route path="/channels/:id" element={<ChannelPage />} />
-                  <Route path="/centre" element={<RequireAuth><ChannelsListPage variant="centre" /></RequireAuth>} />
-                  <Route path="/centre/create" element={<RequireAuth><CreateChannelPage variant="centre" /></RequireAuth>} />
-                  <Route path="/centre/:id/listings" element={<RequireAuth><CentreListingsPage /></RequireAuth>} />
-                  <Route path="/centre/:id" element={<RequireAuth><ChannelPage variant="centre" /></RequireAuth>} />
-                  <Route path="/kyc" element={<RequireAuth><KycVerificationPage /></RequireAuth>} />
-                  <Route path="/payment" element={<RequireAuth><PaymentPage /></RequireAuth>} />
-                  <Route path="/offers" element={<OffersPage />} />
-                  <Route path="/reviews/:userId" element={<ReviewsPage />} />
-                  <Route path="*" element={<NotFoundPage />} />
+                  <Route path="/feed" element={<PageEnhancer config={PAGE_CONFIGS["feed"]}><FeedPage /></PageEnhancer>} />
+                  <Route path="/feed/:id" element={<PageEnhancer config={PAGE_CONFIGS["feed-detail"]}><FeedPostDetailPage /></PageEnhancer>} />
+                  <Route path="/my-feed" element={<PageEnhancer config={PAGE_CONFIGS["my-feed"]}><RequireAuth><MyFeedPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/my-posts" element={<PageEnhancer config={PAGE_CONFIGS["my-posts"]}><RequireAuth><MyHomePage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/post_add" element={<Navigate to="/add-post" replace />} />
+                  <Route path="/feed/feedpostadd" element={<Navigate to="/add-post?source=feed" replace />} />
+                  <Route path="/wishlist" element={<PageEnhancer config={PAGE_CONFIGS["wishlist"]}><RequireAuth><WishlistPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/cart" element={<PageEnhancer config={PAGE_CONFIGS["cart"]}><RequireAuth><CartPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/recently-viewed" element={<PageEnhancer config={PAGE_CONFIGS["recently-viewed"]}><RequireAuth><RecentlyViewedPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/saved-searches" element={<PageEnhancer config={PAGE_CONFIGS["saved-searches"]}><RequireAuth><SavedSearchesPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/verification" element={<PageEnhancer config={PAGE_CONFIGS["verification"]}><RequireAuth><VerificationPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/nearby" element={<PageEnhancer config={PAGE_CONFIGS["nearby"]}><RequireAuth><NearbyPostsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/chat" element={<PageEnhancer config={PAGE_CONFIGS["chat"]}><RequireAuth><ProtectedChatPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/chats" element={<Navigate to="/chat" replace />} />
+                  <Route path="/t&c" element={<PageEnhancer config={PAGE_CONFIGS["terms"]}><TermsPage /></PageEnhancer>} />
+                  <Route path="/terms" element={<PageEnhancer config={PAGE_CONFIGS["terms"]}><TermsPage /></PageEnhancer>} />
+                  <Route path="/terms-and-conditions" element={<Navigate to="/t&c" replace />} />
+                  <Route path="/privacy-policy" element={<PageEnhancer config={PAGE_CONFIGS["privacy-policy"]}><PrivacyPage /></PageEnhancer>} />
+                  <Route path="/refund-policy" element={<PageEnhancer config={PAGE_CONFIGS["refund-policy"]}><RefundPage /></PageEnhancer>} />
+                  <Route path="/support-ticket-policy" element={<PageEnhancer config={PAGE_CONFIGS["support-ticket-policy"]}><SupportTicketPage /></PageEnhancer>} />
+                  <Route path="/search" element={<PageEnhancer config={PAGE_CONFIGS["search"]}><SearchPage /></PageEnhancer>} />
+                  <Route path="/analytics" element={<PageEnhancer config={PAGE_CONFIGS["analytics"]}><RequireAuth><AnalyticsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/channels" element={<PageEnhancer config={PAGE_CONFIGS["channels"]}><ChannelsListPage /></PageEnhancer>} />
+                  <Route path="/channels/create" element={<PageEnhancer config={PAGE_CONFIGS["channels-create"]}><RequireAuth><CreateChannelPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/channels/:id" element={<PageEnhancer config={PAGE_CONFIGS["channels-detail"]}><ChannelPage /></PageEnhancer>} />
+                  <Route path="/centre" element={<PageEnhancer config={PAGE_CONFIGS["centre"]}><RequireAuth><ChannelsListPage variant="centre" /></RequireAuth></PageEnhancer>} />
+                  <Route path="/centre/create" element={<PageEnhancer config={PAGE_CONFIGS["centre-create"]}><RequireAuth><CreateChannelPage variant="centre" /></RequireAuth></PageEnhancer>} />
+                  <Route path="/centre/:id/listings" element={<PageEnhancer config={PAGE_CONFIGS["centre-listings"]}><RequireAuth><CentreListingsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/centre/:id" element={<PageEnhancer config={PAGE_CONFIGS["centre-detail"]}><RequireAuth><ChannelPage variant="centre" /></RequireAuth></PageEnhancer>} />
+                  <Route path="/kyc" element={<PageEnhancer config={PAGE_CONFIGS["kyc"]}><RequireAuth><KycVerificationPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/payment" element={<PageEnhancer config={PAGE_CONFIGS["payment"]}><RequireAuth><PaymentPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/offers" element={<PageEnhancer config={PAGE_CONFIGS["offers"]}><RequireAuth><OffersPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/reviews/:userId" element={<PageEnhancer config={PAGE_CONFIGS["reviews"]}><ReviewsPage /></PageEnhancer>} />
+                  <Route path="*" element={<PageEnhancer config={PAGE_CONFIGS["not-found"]}><NotFoundPage /></PageEnhancer>} />
                 </Route>
               </Routes>
             </Suspense>

@@ -1,0 +1,369 @@
+{
+  "name": "chat",
+  "path": "/chat",
+  "loggedIn": true,
+  "category": "social",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "scrollHeight": 946,
+  "screens": {
+    "scrollH": 946,
+    "viewH": 800,
+    "steps": 2,
+    "shots": [
+      "chat-scroll00.png",
+      "chat-scroll01.png"
+    ],
+    "full": "chat-full.png"
+  },
+  "scan": {
+    "viewport": {
+      "w": 360,
+      "h": 800
+    },
+    "scrollHeight": 946,
+    "overflow": {
+      "bodyX": false,
+      "htmlX": false,
+      "bodyScrollW": 360
+    },
+    "stats": {
+      "total": 153,
+      "interactive": 12,
+      "text": 38,
+      "images": 0,
+      "brokenImages": 0
+    },
+    "tinyFonts": [],
+    "smallTouchTargets": [],
+    "overflowElements": [],
+    "missingDarkVariants": [],
+    "brokenImageList": [],
+    "stickyBars": [
+      {
+        "h": 64,
+        "w": 360,
+        "top": 736,
+        "bottom": 0,
+        "z": "120",
+        "pos": "fixed",
+        "classes": "mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-ar"
+      },
+      {
+        "h": 16,
+        "w": 360,
+        "top": 0,
+        "bottom": 784,
+        "z": "300",
+        "pos": "fixed",
+        "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
+      }
+    ],
+    "bottomNav": {
+      "h": 64,
+      "w": 360,
+      "top": 736
+    },
+    "heroDetected": false,
+    "cardCount": 0,
+    "whiteScreen": false,
+    "missingPrimaryCta": false,
+    "placeholderText": 0,
+    "mojibakeText": [],
+    "stillLoading": false,
+    "mainTextLen": 1856,
+    "visibleSpinners": 0
+  },
+  "console": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "warning",
+      "text": "Something has shimmed the React DevTools global hook (__REACT_DEVTOOLS_GLOBAL_HOOK__). Fast Refresh is not compatible with this shim and will be disabled."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+    },
+    {
+      "type": "log",
+      "text": "[i18n] Language: en, Direction: ltr, Cached: true"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:api.js] module loaded; baseURL=/api"
+    },
+    {
+      "type": "warning",
+      "text": "[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled."
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language hi {24_48_hours: 24-48 घंटे, 24_48h_response: 24-48 घंटे प्रतिक्रिया, 24h_validity: 24 घंटे वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language te {24_48_hours: 24-48 గంటలు, 24_48h_response: 24-48 గంటల్లో ప్రతిస్పందన, 24h_validity: 24 గంటల వ్యాలిడిటీ, 2k_to_10k: ₹2K నుండి ₹10K, 500_to_2k: ₹500 నుండి ₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language ta {24_48_hours: 24-48 மணி நேரம், 24_48h_response: 24-48 மணி நேர பதில், 24h_validity: 24 மணி நேர செல்லுபடி, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language kn {24_48_hours: 24-48 ಗಂಟೆಗಳು, 24_48h_response: 24-48 ಗಂಟೆಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯೆ, 24h_validity: 24 ಗಂಟೆ ವ್ಯಾಲಿಡಿಟಿ, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language mr {24_48_hours: 24-48 तास, 24_48h_response: 24-48 तासांत प्रतिसाद, 24h_validity: 24 तास वैधता, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::backendConnector: loaded namespace translation for language bn {24_48_hours: 24-48 ঘন্টা, 24_48h_response: 24-48 ঘন্টার মধ্যে প্রতিক্রিয়া, 24h_validity: 24 ঘন্টা বৈধতা, 2k_to_10k: ₹2K-₹10K, 500_to_2k: ₹500-₹2K}"
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Initializing location context"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /coins/engagement"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /coins/engagement"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /categories/with-subcategories"
+    },
+    {
+      "type": "warning",
+      "text": "[socket] connect_error (http://127.0.0.1:4173/socket.io): Authentication required"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /auth/session"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /auth/me"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /auth/me"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /coins/engagement"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /categories/with-subcategories"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /auth/me"
+    },
+    {
+      "type": "log",
+      "text": "[DEFENDER] App Active. Syncing Banking-Grade Location..."
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Starting location capture {silent: true}"
+    },
+    {
+      "type": "log",
+      "text": "i18next::translator: missingKey en-US translation reload Reload"
+    },
+    {
+      "type": "warning",
+      "text": "Service Worker registration blocked by Playwright"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /api/notifications/unread-count"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /notifications/unread-count"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /cart"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /cart"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] START /coins/engagement"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] baseURL /api"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] deviceId ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] nonce ok"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Interceptor] DONE /coins/engagement"
+    },
+    {
+      "type": "warning",
+      "text": "[LocationService] Location permission denied by user/browser settings."
+    },
+    {
+      "type": "log",
+      "text": "[LocationGate] Device info sent: fp_o88yng"
+    },
+    {
+      "type": "warning",
+      "text": "[socket] connect_error (http://127.0.0.1:4173/socket.io): Authentication required"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /notifications/unread-count"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /cart"
+    },
+    {
+      "type": "log",
+      "text": "[MHub:Response] OK 200 /coins/engagement"
+    },
+    {
+      "type": "warning",
+      "text": "[LocationService] Location permission denied by user/browser settings."
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Permission denied, not sending fallback"
+    },
+    {
+      "type": "log",
+      "text": "[LocationContext] Silent refresh failed Location permission denied in browser settings."
+    }
+  ],
+  "network": [],
+  "score": {
+    "rubric": {
+      "layout": 2,
+      "typography": 1.5,
+      "touch": 1.5,
+      "spacing": 1.5,
+      "darkmode": 1,
+      "perf": 1.5,
+      "functionality": 1,
+      "total": 10
+    },
+    "blockers": [],
+    "warnings": []
+  },
+  "navError": null
+}

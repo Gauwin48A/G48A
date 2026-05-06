@@ -29,6 +29,8 @@ import {
   PlusCircle as O,
   AlertTriangle as _,
   CheckCircle2 as Q,
+  Store,
+  Sparkles,
 } from "lucide-react";
 const W = ({ variant = "channel" } = {}) => {
   const { t: a } = Y(),
@@ -254,47 +256,81 @@ const W = ({ variant = "channel" } = {}) => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 px-4 py-20 dark:bg-gradient-to-br",
+              "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center px-4 py-8 dark:bg-gradient-to-br",
           },
           e.createElement(
             k,
-            { className: "max-w-lg mx-auto" },
-            e.createElement(
-              D,
-              null,
-              e.createElement(
-                S,
-                null,
-                a("premium_required", { defaultValue: "Premium required" }),
-              ),
-              e.createElement(
-                T,
-                null,
-                a("premium_required_desc", {
-                  defaultValue:
-                    "Upgrade to Premium to create and manage your CentrePage.",
-                }),
-              ),
-            ),
+            { className: "max-w-sm w-full text-center border-amber-200/60 dark:border-amber-700/30" },
             e.createElement(
               A,
-              { className: "space-y-4" },
+              { className: "pt-8 space-y-5" },
+              /* Illustration */
               e.createElement(
-                m,
-                {
-                  onClick: () => n("/tier-selection"),
-                  className: "w-full",
-                },
-                a("upgrade_to_premium", { defaultValue: "Upgrade to Premium" }),
+                "div",
+                { className: "relative inline-flex items-center justify-center mx-auto" },
+                e.createElement(
+                  "div",
+                  { className: "w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-xl" },
+                  e.createElement(Store, { className: "w-10 h-10 text-white" }),
+                ),
+                e.createElement(
+                  "span",
+                  { className: "absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center" },
+                  e.createElement(Sparkles, { className: "w-4 h-4 text-white" }),
+                ),
               ),
+              /* Title */
               e.createElement(
-                m,
-                {
-                  variant: "outline",
-                  className: "w-full",
-                  onClick: () => n(backPath),
-                },
-                a("back", { defaultValue: "Back" }),
+                "div",
+                { className: "space-y-1" },
+                e.createElement(
+                  "h2",
+                  { className: "text-xl font-bold text-slate-900 dark:text-white" },
+                  a("premium_required", { defaultValue: "Premium required" }),
+                ),
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-slate-500 dark:text-slate-400" },
+                  a("premium_required_desc", {
+                    defaultValue:
+                      "Upgrade to Premium to create and manage your CentrePage.",
+                  }),
+                ),
+              ),
+              /* Feature list */
+              e.createElement(
+                "ul",
+                { className: "text-left space-y-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4" },
+                [
+                  a("centre_feature_1", { defaultValue: "✓ Custom storefront with logo & cover" }),
+                  a("centre_feature_2", { defaultValue: "✓ Post unlimited listings" }),
+                  a("centre_feature_3", { defaultValue: "✓ Analytics & buyer reviews" }),
+                ].map((feat, i) =>
+                  e.createElement("li", { key: i, className: "text-xs text-amber-800 dark:text-amber-200 font-medium" }, feat)
+                ),
+              ),
+              /* CTAs */
+              e.createElement(
+                "div",
+                { className: "space-y-3 pb-2" },
+                e.createElement(
+                  m,
+                  {
+                    onClick: () => n("/tier-selection"),
+                    className: "w-full min-h-[48px] gap-2 bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600/80",
+                  },
+                  e.createElement(Sparkles, { className: "w-4 h-4" }),
+                  a("upgrade_to_premium", { defaultValue: "Upgrade to Premium" }),
+                ),
+                e.createElement(
+                  m,
+                  {
+                    variant: "outline",
+                    className: "w-full min-h-[44px]",
+                    onClick: () => n(backPath),
+                  },
+                  a("back", { defaultValue: "Back" }),
+                ),
               ),
             ),
           ),

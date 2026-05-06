@@ -13,6 +13,7 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const U = () => {
   const { t: s } = _(),
     i = C(),
@@ -118,6 +119,7 @@ const U = () => {
         }
       );
     }, [m, p, N, s, r, categoryModeCategoryId]),
+    usePageRefresh(() => f(c => c + 1)),
     m
       ? e.createElement(
           "div",

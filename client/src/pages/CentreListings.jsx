@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const LISTING_PAGE_SIZE = 12;
 
@@ -234,6 +235,8 @@ export default function CentreListings() {
     setPage(1);
     loadListings(1, { append: false });
   }, [ownerId, loadListings]);
+
+  usePageRefresh(useCallback(() => { loadChannel(); loadListings(1, { append: false }); }, [loadChannel, loadListings]));
 
   const handleLoadMore = async () => {
     if (!hasMore || listingsLoading) return;

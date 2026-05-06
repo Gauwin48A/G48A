@@ -1,0 +1,74 @@
+{
+  "phase": "10",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T18:10:32.054Z",
+  "pages": [
+    {
+      "name": "terms",
+      "path": "/terms",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "terms-and-conditions",
+      "path": "/terms-and-conditions",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "privacy-policy",
+      "path": "/privacy-policy",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "refund-policy",
+      "path": "/refund-policy",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "support-ticket-policy",
+      "path": "/support-ticket-policy",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "complaints",
+      "path": "/complaints",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "feedback",
+      "path": "/feedback",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "not-found",
+      "path": "/__nope__deliberately_404",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    }
+  ]
+}

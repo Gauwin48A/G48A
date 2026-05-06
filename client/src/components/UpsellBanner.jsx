@@ -52,10 +52,10 @@ export default function UpsellBanner({ trigger, className = "" }) {
     >
       <button
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-white/70 hover:text-white"
+        className="absolute top-1 right-1 text-white/70 hover:text-white w-11 h-11 flex items-center justify-center rounded-full"
         aria-label="Dismiss"
       >
-        <X className="w-4 h-4" />
+        <X className="w-5 h-5" />
       </button>
       <div className="flex items-center gap-3">
         <TrendingUp className="w-6 h-6 flex-shrink-0" />

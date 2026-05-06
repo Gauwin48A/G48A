@@ -48,6 +48,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { navigateBack } from "@/utils/navigation";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const PAGE_LIMIT = 24;
 const TOAST_TIMEOUT = 3000;
@@ -215,6 +216,7 @@ const RecentlyViewed = () => {
       requestIdRef.current += 1;
     };
   }, [authLoading, fetchHistory, searchQuery, sortBy, sourceFilter, seededHistory]);
+  usePageRefresh(useCallback(() => fetchHistory({ reset: true }), [fetchHistory]));
 
   const showToast = useCallback((message, type = "success") => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -703,8 +705,8 @@ const RecentlyViewed = () => {
         </div>
       )}
 
-      {/* ── Source Filter Tabs — segmented control ── */}
-      <div className="max-w-[640px] mx-auto px-4 py-3 page-shell page-pad">
+      {/* ── Source Filter Tabs — segmented control (hidden on empty state) ── */}
+      {items.length > 0 && <div className="max-w-[640px] mx-auto px-4 py-3 page-shell page-pad">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide bg-gray-100/90 dark:bg-white/[0.06] rounded-xl p-1 dark:bg-gray-950/90">
           {sourceFilterTabs.map((tab) => {
             const Icon = tab.icon;
@@ -733,8 +735,8 @@ const RecentlyViewed = () => {
             );
           })}
         </div>
-      </div>
-      <div className="max-w-[640px] mx-auto px-4 pb-2 page-shell page-pad">
+      </div>}
+      {items.length > 0 && <div className="max-w-[640px] mx-auto px-4 pb-2 page-shell page-pad">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-1 flex-col sm:flex-row gap-2">
             <input
@@ -797,7 +799,7 @@ const RecentlyViewed = () => {
             </Button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* ── Main Content ── */}
       <div className="max-w-[640px] mx-auto px-4 pb-32 page-shell page-pad">

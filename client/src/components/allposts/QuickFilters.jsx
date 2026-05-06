@@ -59,15 +59,15 @@ const AllPostsQuickFilters = ({
   const chipSize = isDenseForYouVariant
     ? "h-8 px-3 text-xs"
     : isForYouVariant
-      ? "min-h-[44px] h-9 px-4 text-sm"
+      ? "min-h-[44px] h-11 px-4 text-sm"
     : compact
-      ? "min-h-[44px] h-9 px-3 text-xs"
-      : "min-h-[44px] h-9 px-3.5 text-xs";
+      ? "min-h-[44px] h-11 px-3 text-xs"
+      : "min-h-[44px] h-11 px-3.5 text-xs";
   const iconSize = compact ? "w-4 h-4" : "w-3.5 h-3.5";
   const chipBase = isDenseForYouVariant
     ? "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-xs font-semibold transition-colors whitespace-nowrap"
     : isForYouVariant
-      ? "inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap"
+      ? "inline-flex h-11 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap"
     : "mhub-quick-filter-chip rounded-full border inline-flex items-center gap-1.5 shrink-0 font-semibold transition-colors";
   const chipActive = isForYouVariant
     ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"

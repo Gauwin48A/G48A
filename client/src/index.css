@@ -16,8 +16,8 @@
     --radius-btn: 12px;
     --card-padding: clamp(16px, 2vw, 24px);
     --card-gap: 0.75rem;
-    --btn-height-sm: 34px;
-    --btn-height-md: 40px;
+    --btn-height-sm: 36px;
+    --btn-height-md: 44px;
     --btn-height-lg: 46px;
     --btn-pad-x-sm: 0.75rem;
     --btn-pad-x-md: 1rem;
@@ -215,6 +215,82 @@ html {
     background-position: 200% 0;
   }
 }
+
+/* ===== Phase A3: Micro-interactions ===== */
+
+/* Button press scale — gives tactile feel to all tappable buttons */
+button:active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 100ms ease;
+}
+
+/* Card tap highlight */
+.card-interactive {
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Skeleton → content morph */
+.skeleton-exit {
+  animation: skeletonFadeOut 300ms ease forwards;
+}
+@keyframes skeletonFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(4px); }
+}
+.content-enter {
+  animation: contentFadeIn 300ms ease forwards;
+}
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Route page transition */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.page-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+/* Bottom sheet slide-up */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slideUp {
+  animation: slideUp 250ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Toggle switch spring */
+[data-state="checked"] > span,
+[role="switch"][data-state="checked"]::after {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Consistent border-radius enforcement */
+.rounded-card { border-radius: var(--radius-card, 18px); }
+.rounded-btn { border-radius: var(--radius-btn, 12px); }
+
+/* ===== End Phase A3 ===== */
 
 .post-action-row {
   display: flex;
@@ -560,11 +636,11 @@ html[data-native-platform] .location-accuracy-badge-close {
     --nav-bg: linear-gradient(90deg, rgba(37, 99, 235, 0.98) 0%, rgba(59, 130, 246, 0.94) 48%, rgba(14, 165, 233, 0.92) 100%);
     --nav-border: rgba(37, 99, 235, 0.4);
     --nav-text: #ffffff;
-    --nav-pill-bg: rgba(255, 255, 255, 0.16);
-    --nav-pill-hover: rgba(255, 255, 255, 0.26);
+    --nav-pill-bg: rgba(0, 50, 150, 0.35);
+    --nav-pill-hover: rgba(0, 50, 150, 0.45);
     --nav-pill-border: rgba(255, 255, 255, 0.28);
-    --nav-icon-bg: rgba(255, 255, 255, 0.14);
-    --nav-icon-hover: rgba(255, 255, 255, 0.24);
+    --nav-icon-bg: rgba(0, 50, 150, 0.3);
+    --nav-icon-hover: rgba(0, 50, 150, 0.4);
   }
 
   .mhub-top-nav a,
@@ -596,6 +672,7 @@ html[data-native-platform] .location-accuracy-badge-close {
     background: var(--surface-1);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-soft);
+    color: var(--text-primary);
   }
 
   .mhub-nav-search {

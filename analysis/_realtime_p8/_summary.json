@@ -1,0 +1,98 @@
+{
+  "phase": "8",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-05-03T18:07:57.038Z",
+  "pages": [
+    {
+      "name": "channels",
+      "path": "/channels",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "channels-create",
+      "path": "/channels/create",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "channel-detail",
+      "path": "/channels/ch-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "centre",
+      "path": "/centre",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "centre-create",
+      "path": "/centre/create",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "centre-detail",
+      "path": "/centre/ch-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "centre-listings",
+      "path": "/centre/ch-1/listings",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "public-wall",
+      "path": "/public-wall",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "reviews",
+      "path": "/reviews/user-1",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "chat",
+      "path": "/chat",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    },
+    {
+      "name": "chats",
+      "path": "/chats",
+      "score": 10,
+      "blockers": 0,
+      "warnings": 0,
+      "navError": null
+    }
+  ]
+}

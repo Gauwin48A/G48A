@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, Loader2, Lock, SearchX } from "lucide-react";
+import { AlertTriangle, Loader2, Lock, SearchX, ShieldCheck } from "lucide-react";
 
 /**
  * A loading-state card with a spinner, title, and description.
@@ -71,25 +71,25 @@ const PageErrorState = ({
     { className: `mhub-state-card ${className}`.trim(), "data-ux-state": marker },
     React.createElement(
       CardContent,
-      { className: "py-12 px-6 text-center", role: "alert", "aria-live": "assertive" },
+      { className: "py-10 px-6 text-center", role: "alert", "aria-live": "assertive" },
       React.createElement(
         "div",
         {
           className:
-            "w-12 h-12 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-red-50 text-red-600 shadow-sm dark:bg-red-900/30 dark:text-red-300",
+            "w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center bg-red-50 text-red-500 shadow-lg dark:bg-red-900/30 dark:text-red-300",
         },
         React.createElement(AlertTriangle, {
-          className: "w-6 h-6",
+          className: "w-8 h-8",
         }),
       ),
       React.createElement(
-        "p",
-        { className: "font-semibold text-red-800 dark:text-red-200 text-lg" },
+        "h3",
+        { className: "font-bold text-red-800 dark:text-red-200 text-lg" },
         title
       ),
       React.createElement(
         "p",
-        { className: "text-sm text-red-700 dark:text-red-400 mt-1 mb-5" },
+        { className: "text-sm text-red-600/80 dark:text-red-400 mt-1.5 mb-5 max-w-xs mx-auto" },
         description
       ),
       React.createElement(
@@ -176,6 +176,8 @@ const PageAuthGateState = ({
   badge,
   highlights = [],
   tone = "default",
+  icon: IconProp,
+  benefits = [],
   className = "",
   marker = "auth-gate",
 }) => {
@@ -232,16 +234,40 @@ const PageAuthGateState = ({
     },
   };
   const resolvedTone = tonePalette[tone] || tonePalette.default;
+  const ResolvedIcon = IconProp || Lock;
   return React.createElement(
     Card,
     { className: `mhub-state-card ${className}`.trim(), "data-ux-state": marker },
     React.createElement(
       CardContent,
-      { className: "py-12 px-6 text-center", role: "status", "aria-live": "polite" },
+      { className: "py-8 px-6 text-center", role: "status", "aria-live": "polite" },
+      // Large illustration circle
+      React.createElement(
+        "div",
+        { className: "mb-5 flex justify-center" },
+        React.createElement(
+          "div",
+          {
+            className:
+              `relative w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg ${resolvedTone.iconWrap}`,
+          },
+          React.createElement(ResolvedIcon, { className: "w-9 h-9" }),
+          React.createElement(
+            "div",
+            {
+              className:
+                "absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-md border border-slate-100 dark:border-slate-700",
+            },
+            React.createElement(ShieldCheck, {
+              className: "w-4 h-4 text-emerald-500",
+            }),
+          ),
+        ),
+      ),
       badge
         ? React.createElement(
             "div",
-            { className: "mb-4 flex justify-center" },
+            { className: "mb-3 flex justify-center" },
             React.createElement(
               "span",
               {
@@ -253,38 +279,55 @@ const PageAuthGateState = ({
           )
         : null,
       React.createElement(
-        "div",
-        {
-          className:
-            `w-12 h-12 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-sm ${resolvedTone.iconWrap}`,
-        },
-        React.createElement(Lock, {
-          className: "w-6 h-6",
-        }),
-      ),
-      React.createElement(
-        "p",
-        { className: `font-semibold text-lg ${resolvedTone.title}` },
+        "h2",
+        { className: `font-bold text-xl leading-tight ${resolvedTone.title}` },
         title
       ),
       React.createElement(
         "p",
-        { className: `text-sm mt-1 mb-5 ${resolvedTone.description}` },
+        { className: `text-sm mt-2 mb-4 max-w-xs mx-auto ${resolvedTone.description}` },
         description
       ),
       Array.isArray(highlights) && highlights.length
         ? React.createElement(
             "div",
-            { className: "mb-6 flex flex-wrap justify-center gap-2" },
+            { className: "mb-5 flex flex-wrap justify-center gap-2" },
             highlights.map((item, index) =>
               React.createElement(
                 "span",
                 {
                   key: `${item}-${index}`,
                   className:
-                    `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ${resolvedTone.highlight}`,
+                    `inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm ${resolvedTone.highlight}`,
                 },
                 item,
+              ),
+            ),
+          )
+        : null,
+      // Benefit preview cards (fill dead whitespace)
+      Array.isArray(benefits) && benefits.length
+        ? React.createElement(
+            "div",
+            { className: "mb-5 grid grid-cols-2 gap-2 text-left" },
+            benefits.map((b, i) =>
+              React.createElement(
+                "div",
+                {
+                  key: i,
+                  className:
+                    "rounded-xl border border-slate-200/70 bg-slate-50/80 dark:border-slate-700/50 dark:bg-slate-800/50 p-3",
+                },
+                React.createElement(
+                  "p",
+                  { className: "text-xs font-semibold text-slate-700 dark:text-slate-200" },
+                  b.label
+                ),
+                React.createElement(
+                  "p",
+                  { className: "text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" },
+                  b.hint
+                ),
               ),
             ),
           )

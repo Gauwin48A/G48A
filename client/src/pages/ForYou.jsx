@@ -77,6 +77,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const te = 12,
   PLACEHOLDER_IMAGE = "/placeholder.svg",
   getPostId = (r) => {
@@ -1132,6 +1133,7 @@ const te = 12,
         latestWindowValue,
         filterRecommendationPost,
       ]);
+    usePageRefresh(A(() => le(t => t + 1), []));
     const formatPrice = (t) => {
       const a = parsePrice(t);
       if (!Number.isFinite(a) || a <= 0) return "INR --";
@@ -1370,7 +1372,7 @@ const te = 12,
                 ),
                 e.createElement(
                   "span",
-                  { className: "foryou-hero-badge text-xs font-bold text-white/90 bg-white/20 rounded-full px-3 py-1" },
+                  { className: "foryou-hero-badge text-xs font-bold text-white bg-white/30 rounded-full px-3 py-1" },
                   "\uD83E\uDD16 " + (tr("ai_curated", "AI Curated")),
                 ),
               ),

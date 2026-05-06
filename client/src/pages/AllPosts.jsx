@@ -66,6 +66,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const ve = 5,
   SHOW_POST_ID_CHIP = !1,
   LOAD_MORE_COOLDOWN_MS = 1200,
@@ -621,6 +622,7 @@ const ve = 5,
       [L, T] = useState(1),
       [H, ee] = useState(!0),
       [Pe, Ce] = useState(0),
+      [_refreshKey, _setRefreshKey] = useState(0),
       [shuffleSeed, setShuffleSeed] = useState(() => {
         if (
           typeof window === "undefined" ||
@@ -2063,7 +2065,9 @@ const ve = 5,
       t.subcategory,
       t.categoryGroup,
       tr,
+      _refreshKey,
     ]),
+      usePageRefresh(useCallback(() => _setRefreshKey(k => k + 1), [])),
       useEffect(() => {
         T(1);
       }, [
@@ -2909,7 +2913,7 @@ const ve = 5,
       "div",
       {
           className:
-            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 ${density === "compact" ? "mhub-compact" : ""}`,
+            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`,
       },
       showModeBanner &&
         React.createElement(
@@ -3234,7 +3238,7 @@ const ve = 5,
                   "span",
                   {
                     className:
-                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-600/40 dark:bg-indigo-900/30 dark:text-indigo-200",
+                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-600/40 dark:bg-indigo-900/30 dark:text-indigo-200",
                   },
                   `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
                 ),
@@ -3247,7 +3251,7 @@ const ve = 5,
                       b({ subcategory: "All" });
                     },
                     className:
-                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                   },
                   tr("show_all_in_category", "Show all in category"),
                 ),
@@ -3257,7 +3261,7 @@ const ve = 5,
                     type: "button",
                     onClick: () => y(browseOtherSubcategoriesPath),
                     className:
-                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-sky-200 bg-sky-50 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-600/40 dark:bg-sky-900/30 dark:text-slate-200 dark:hover:bg-sky-950/20",
+                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-sky-200 bg-sky-50 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-600/40 dark:bg-sky-900/30 dark:text-slate-200 dark:hover:bg-sky-950/20",
                   },
                   tr("browse_other_subcategories", "Browse other subcategories"),
                 ),
@@ -3274,7 +3278,7 @@ const ve = 5,
                       type: "button",
                       onClick: () => Te(e.key),
                       className:
-                        "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                        "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                       title: tr("remove_filter", "Remove filter"),
                     },
                     React.createElement("span", null, e.label),
@@ -3929,7 +3933,8 @@ const ve = 5,
                                 "div",
                                 {
                                   className:
-                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-xs font-medium dark:bg-black/55 dark:text-white",
+                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white font-medium dark:bg-black/55 dark:text-white",
+                                  style: { fontSize: "14px" },
                                 },
                                 activeImageIndex + 1,
                                 "/",

@@ -51,6 +51,7 @@ import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { socket } from "@/lib/socket";
 import { navigateBack } from "@/utils/navigation";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const KNOWN_ROUTES = [
   "/all-posts",
@@ -313,6 +314,7 @@ const NotificationsPage = () => {
     ),
     [authLoading, fetchNotifications],
   );
+  usePageRefresh(useCallback(() => fetchNotifications({ reset: true }), [fetchNotifications]));
 
   useEffect(() => {
     if (!isAuth || !userId) return;

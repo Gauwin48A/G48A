@@ -21,6 +21,7 @@ import {
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
 import api from "@/services/api";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const normalizePrice = (value) => {
     const parsed = Number(String(value || "").replace(/[^\d.]/g, ""));
     return Number.isFinite(parsed) ? parsed : 0;
@@ -244,6 +245,7 @@ const normalizePrice = (value) => {
       ),
       [fetchListings],
     );
+    usePageRefresh(fetchListings);
     const filteredListings = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
         return listings.filter((item) => {

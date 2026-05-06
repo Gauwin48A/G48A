@@ -55,6 +55,7 @@ import {
   RewardsRedeem,
   RewardsReferrals,
 } from "@/components/rewards/RewardsSections";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
@@ -418,6 +419,7 @@ const RewardsPage = () => {
         : undefined,
     [isAuthed, fetchRewards, fetchEngagement],
   );
+  usePageRefresh(useCallback(() => fetchRewards({ silent: false }), [fetchRewards]));
   const scrollToSection = useCallback((sectionKey, options = {}) => {
     if (typeof document === "undefined") {
       return false;

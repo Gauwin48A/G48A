@@ -34,6 +34,7 @@ import {
   matchesCategoryModeItem,
   normalizeAppGroup,
 } from "@/utils/categoryModeFilters";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 const u = "recentSearches",
   ae = 10,
   oe = {
@@ -543,6 +544,8 @@ const u = "recentSearches",
       ),
       [x],
     );
+    usePageRefresh(x);
+
     L(() => {
       const list = Array.isArray(appScopedCategoryOptions)
         ? appScopedCategoryOptions
@@ -826,7 +829,7 @@ const u = "recentSearches",
                 onClick: () => navigateBack(s, y),
                 "aria-label": n("go_back", { defaultValue: "Go back" }),
                 className:
-                  "p-2 rounded-full hover:bg-[var(--surface-2)] transition dark:hover:bg-[var(--surface-2)]",
+                  "p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[var(--surface-2)] transition dark:hover:bg-[var(--surface-2)]",
               },
               e.createElement(q, {
                 className: "w-6 h-6 text-gray-600 dark:text-gray-200",
@@ -853,7 +856,7 @@ const u = "recentSearches",
                     "aria-label": n("clear_search", "Clear search"),
                     onClick: () => h(""),
                     className:
-                      "absolute right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-[var(--surface-2)] dark:hover:bg-[var(--surface-2)]",
+                      "absolute right-12 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[var(--surface-2)] dark:hover:bg-[var(--surface-2)]",
                   },
                   e.createElement(Y, { className: "w-4 h-4 text-gray-500 dark:text-gray-300" }),
                 ),
@@ -1093,7 +1096,7 @@ const u = "recentSearches",
                     onClick: () => clearFilterKey(filter.key),
                     "aria-label": n("remove_filter", { defaultValue: `Remove filter: ${filter.label}` }),
                     className:
-                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200",
+                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3.5 h-11 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200",
                   },
                   filter.label,
                   filter.key === "category" && categoryLock
@@ -1409,7 +1412,7 @@ const u = "recentSearches",
                       key: r,
                       onClick: () => k(r),
                       className:
-                        "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200/50 dark:border-orange-800/30 rounded-full text-gray-700 dark:text-gray-200 hover:shadow-md hover:shadow-orange-500/10 hover:border-orange-400 active:scale-[0.97] transition-all duration-150 flex items-center gap-2 font-medium dark:bg-gradient-to-r dark:border-orange-600/50 dark:hover:border-orange-600/40",
+                        "px-4 h-11 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200/50 dark:border-orange-800/30 rounded-full text-gray-700 dark:text-gray-200 hover:shadow-md hover:shadow-orange-500/10 hover:border-orange-400 active:scale-[0.97] transition-all duration-150 flex items-center gap-2 font-medium dark:bg-gradient-to-r dark:border-orange-600/50 dark:hover:border-orange-600/40",
                     },
                     e.createElement(I, {
                       className: "w-3.5 h-3.5 text-orange-500 dark:text-orange-300",
@@ -1500,7 +1503,7 @@ const u = "recentSearches",
                           key: r.category_id || r.subcategory_id || r.id || r.name,
                           onClick: () => j(r.name || r.subcategory_name || r.title, r),
                           className:
-                            "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/10 dark:hover:shadow-indigo-400/5 hover:-translate-y-0.5 transition-all duration-200 border border-gray-100 dark:border-gray-700 dark:hover:bg-gray-950 dark:border",
+                            "flex flex-col items-center justify-center gap-2 p-4 h-[60px] rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/10 dark:hover:shadow-indigo-400/5 hover:-translate-y-0.5 transition-all duration-200 border border-gray-100 dark:border-gray-700 dark:hover:bg-gray-950 dark:border",
                         },
                         e.createElement(
                           "span",

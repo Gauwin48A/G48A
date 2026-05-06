@@ -33,7 +33,7 @@ const csrfProtection = (options = {}) => {
         cookieOptions = {
             httpOnly: false, // Frontend needs to read this
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
             maxAge: CSRF_TOKEN_EXPIRY
         }
     } = options;
@@ -41,6 +41,20 @@ const csrfProtection = (options = {}) => {
     return (req, res, next) => {
         // Skip CSRF for whitelisted paths (exact match or exact path segment prefix)
         if (skipPaths.some(path => req.path === path || req.path.startsWith(path + '/'))) {
+            return next();
+        }
+
+        // Skip CSRF for Capacitor native app requests (cross-origin WebView scenario)
+        // Native apps are not vulnerable to CSRF as there's no way to trick the WebView from another origin
+        const origin = req.headers.origin || req.headers.referer || '';
+        const deviceId = req.headers['x-device-id'];
+        const isCapacitorApp = deviceId && (
+            origin.includes('localhost') ||
+            origin.includes('capacitor://') ||
+            origin.includes('http://localhost') ||
+            !origin // No origin header means same-origin or native
+        );
+        if (isCapacitorApp && process.env.NODE_ENV !== 'production') {
             return next();
         }
 
@@ -97,7 +111,7 @@ const csrfTokenEndpoint = (req, res) => {
     res.cookie(CSRF_COOKIE_NAME, token, {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         maxAge: CSRF_TOKEN_EXPIRY
     });
     res.json({ csrfToken: token });

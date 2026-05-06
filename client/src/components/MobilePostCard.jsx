@@ -15,6 +15,8 @@ import {
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { normalizeMediaList, resolveMediaUrl } from "@/lib/mediaUrl";
+import SafeImage from "@/components/SafeImage";
+import CardContextMenu from "@/components/CardContextMenu";
 
 const PLACEHOLDER = "/placeholder.svg";
 
@@ -133,18 +135,19 @@ export default function MobilePostCard({
   }, [imageList.length]);
 
   return (
+    <CardContextMenu onShare={() => navigator.share?.({ title, url: window.location.href }).catch(() => {})} onSave={() => {}} onReport={() => {}}>
     <article
       className="mhub-mobile-card mhub-grid-card group"
       onClick={() => onClick?.(post)}
     >
       {/* --- Image --- */}
       <div className="mhub-grid-card-media">
-        <img
+        <SafeImage
           src={imageList[0]}
           alt={title}
           loading="lazy"
           className={`mhub-grid-card-img ${imageList[0] === PLACEHOLDER ? "opacity-40 grayscale" : ""}`}
-          onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+          fallbackSrc={PLACEHOLDER}
         />
         {/* Image count badge */}
         {imageList.length > 1 && (
@@ -185,5 +188,6 @@ export default function MobilePostCard({
         )}
       </div>
     </article>
+    </CardContextMenu>
   );
 }

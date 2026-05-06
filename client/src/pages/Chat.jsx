@@ -30,6 +30,7 @@ import { socket, connectSocketWithToken } from "../lib/socket";
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 import { useTranslation } from "react-i18next";
 const ChatPage = () => {
   const { t } = useTranslation();
@@ -105,7 +106,8 @@ const ChatPage = () => {
     }, [tr]);
   useEffect(() => {
     fetchConversations();
-  }, [fetchConversations]),
+  }, [fetchConversations]);
+  usePageRefresh(fetchConversations);
     useEffect(() => {
       if (!currentUserId) return;
       socket.connected ? setConnectionStatus("connected") : (setConnectionStatus("connecting"), connectSocketWithToken()),
@@ -409,31 +411,28 @@ const ChatPage = () => {
             "div",
             {
               className:
-                "bg-amber-50 border-b border-amber-200 dark:bg-amber-500/10 dark:border-amber-400/30 px-4 py-3 dark:bg-amber-950/20 dark:border-amber-600/40",
+                "border-b border-amber-200/60 dark:border-amber-400/20 px-4 py-2 dark:bg-amber-950/10 bg-amber-50/80",
             },
             React.createElement(
               "div",
               {
                 className:
-                  "max-w-[640px] mx-auto flex items-center justify-between gap-3 text-amber-800 dark:text-amber-200",
+                  "max-w-[640px] mx-auto flex items-center justify-between gap-2 text-amber-700 dark:text-amber-300",
               },
               React.createElement(
                 "div",
-                { className: "flex items-center gap-2 text-sm" },
+                { className: "flex items-center gap-1.5 text-xs" },
                 connectionStatus === "offline"
-                  ? React.createElement(WifiOff, { className: "w-4 h-4" })
-                  : React.createElement(Wifi, { className: "w-4 h-4" }),
+                  ? React.createElement(WifiOff, { className: "w-3.5 h-3.5 shrink-0" })
+                  : React.createElement(Wifi, { className: "w-3.5 h-3.5 shrink-0 animate-pulse" }),
                 React.createElement(
                   "span",
                   null,
                   connectionStatus === "reconnecting"
-                    ? tr("chat_reconnecting", "Reconnecting to chat service...")
+                    ? tr("chat_reconnecting", "Reconnecting...")
                     : connectionStatus === "offline"
-                      ? tr(
-                          "chat_disconnected",
-                          "Realtime chat disconnected. You can still retry sending manually.",
-                        )
-                      : tr("chat_connecting", "Connecting to chat service..."),
+                      ? tr("chat_disconnected", "Offline — messages may be delayed.")
+                      : tr("chat_connecting", "Connecting to chat..."),
                 ),
               ),
               React.createElement(
@@ -441,9 +440,8 @@ const ChatPage = () => {
                 {
                   type: "button",
                   size: "sm",
-                  variant: "outline",
-                  className:
-                    "border-amber-300 text-amber-800 dark:border-amber-400/40 dark:text-amber-200 dark:border-amber-600/40",
+                  variant: "ghost",
+                  className: "h-6 px-2 text-xs text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30",
                   onClick: () => {
                     setConnectionStatus("connecting"), connectSocketWithToken();
                   },
@@ -494,37 +492,33 @@ const ChatPage = () => {
                   filteredConversations.length === 0
                     ? React.createElement(
                         "div",
-                        { className: "p-8 text-center text-gray-500 dark:text-gray-300" },
-                        React.createElement(MessageCircle, {
-                          className: "w-12 h-12 mx-auto mb-4 opacity-50",
-                        }),
-                          React.createElement(
-                          "p",
-                          null,
-                          searchFilter
-                            ? tr("no_matching_conversations", "No matching conversations")
-                            : tr("no_conversations_yet", "No conversations yet"),
-                        ),
-                        !searchFilter &&
-                          React.createElement(
-                            "p",
-                            { className: "text-sm" },
-                            tr(
-                              "start_chatting_hint",
-                              "Start chatting by inquiring on a post",
-                            ),
-                          ),
+                        { className: "p-8 text-center space-y-4" },
                         React.createElement(
                           "div",
-                          {
-                            className:
-                              "mt-4 flex flex-wrap justify-center gap-2",
-                          },
+                          { className: "w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg" },
+                          React.createElement(MessageCircle, { className: "w-8 h-8 text-white" }),
+                        ),
+                          React.createElement(
+                          "div",
+                          { className: "space-y-1" },
+                          React.createElement("p", { className: "font-semibold text-slate-900 dark:text-white" },
+                            searchFilter
+                              ? tr("no_matching_conversations", "No matching conversations")
+                              : tr("no_conversations_yet", "No conversations yet"),
+                          ),
+                          React.createElement("p", { className: "text-xs text-slate-500 dark:text-slate-400" },
+                            !searchFilter && tr("start_chatting_hint", "Inquire on a listing to start chatting with sellers"),
+                          ),
+                        ),
+                        React.createElement(
+                          "div",
+                          { className: "flex flex-col gap-2" },
                             React.createElement(
                               Button,
                               {
                                 type: "button",
                                 size: "sm",
+                                className: "gap-2",
                                 onClick: () => navigate("/all-posts"),
                               },
                               tr("browse_listings", "Browse Listings"),
@@ -956,6 +950,19 @@ const ChatPage = () => {
             ),
           ),
         ),
+        // New-chat FAB — table-stakes for messaging apps
+        !selectedConversation &&
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              className:
+                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+16px)] right-4 z-50 w-14 h-14 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center dark:bg-blue-700 dark:hover:bg-blue-800",
+              onClick: () => navigate("/all-posts"),
+              "aria-label": tr("new_chat", "New chat"),
+            },
+            React.createElement(MessageCircle, { className: "w-6 h-6" }),
+          ),
       );
 };
 // Chat-specific error boundary wrapper (#90)
