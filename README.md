@@ -699,6 +699,470 @@ The core differentiator that makes MHub unique:
 
 ---
 
+## 🗺️ Page-by-Page Feature Map
+
+### Discovery Pages
+
+#### `/category-hub` — Category Hub (Landing Page)
+
+The main entry point. Displays a grid of all marketplace categories, each as a card with icon, name, and listing count.
+
+> **User perspective:** Tap a category to enter that vertical. The entire app experience pivots to your chosen category — feed, filters, search, post forms, and navbar all adapt instantly.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `CategoryHubPage` |
+| Auth | Public |
+| API | `GET /api/categories` |
+| Context | Sets `CategoryModeContext` on selection |
+| State | Category persists in localStorage |
+
+---
+
+#### `/all-posts` — All Posts Discovery Feed
+
+Primary marketplace feed. Infinite scroll, real-time search, multi-faceted filtering, sort modes.
+
+> **User perspective:** Scroll through listings. Filter by price, category, condition, location. Sort by newest, price, or relevance. Save to wishlist, add to cart, or chat with the seller directly from the card.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `AllPostsPage` (~2800 lines) |
+| Auth | Public (enhanced features when logged in) |
+| API | `GET /api/posts` (search, filters, sort, cursor) |
+| Hooks | `useInfiniteScroll`, `CategoryModeContext` |
+| Cards | `GreenProductCard` with trust badge, price, location |
+| Performance | Lazy image loading, virtualized grid, deduplication |
+
+---
+
+#### `/for-you` — Personalized Recommendations
+
+AI-powered personalized feed based on browsing history, saved searches, and category affinity.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ForYouPage` |
+| Auth | Public (personalized when logged in) |
+| API | `GET /api/recommendations` |
+
+---
+
+#### `/nearby` — Nearby Posts (GPS-based)
+
+Location-based discovery. Listings within a configurable radius, sorted by distance.
+
+> **User perspective:** See what's being sold near you. Adjust the radius from 1 km to 100 km. Distance badge on every card.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `NearbyPostsPage` |
+| Auth | Required |
+| API | `GET /api/nearby?lat=&long=&radius=` |
+| Context | `LocationContext` for GPS coordinates |
+| Radius options | 1, 2, 5, 10, 25, 50, 100 km |
+| Native | Capacitor GPS bridge on Android |
+
+---
+
+#### `/search` — Global Search
+
+Full-text search with rich filtering, autocomplete, and saved search history.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `SearchPage` |
+| Auth | Public |
+| API | `GET /api/posts?q={query}` |
+| Features | Debounced input, saved searches, filter persistence |
+
+---
+
+#### `/feed` — Community Feed
+
+Social-style timeline for community updates, discussions, and text posts.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `FeedPage` |
+| Auth | Public (posting requires auth) |
+| API | `GET /api/feed` |
+| Hooks | `useFeed` (infinite scroll, real-time updates) |
+
+---
+
+#### `/public-wall` — Public Wall
+
+Open community board for announcements and discussions.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `PublicWallPage` |
+| Auth | Public |
+| API | `GET /api/publicwall` |
+
+---
+
+#### `/offers` — Deals & Offers
+
+Curated deals, flash sales, and special offers from sellers.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `OffersPage` |
+| Auth | Public |
+| API | `GET /api/offers` |
+| Hooks | `useOffers` |
+
+---
+
+### Listing Pages
+
+#### `/post/:id` — Listing Detail
+
+Full listing detail: image gallery, description, pricing, seller info, trust badges, action buttons.
+
+> **User perspective:** View seller's trust score, ratings, verification badges. Start a chat, make an offer, or buy directly. See similar listings below.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `PostDetailPage` |
+| Auth | Public (actions require auth) |
+| API | `GET /api/posts/:id` with trust enrichment |
+| Features | Lightbox gallery, trust badges, price history, report listing, similar listings |
+
+---
+
+#### `/add-post` — Create Listing
+
+Guided multi-step listing creation with category-aware fields.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `AddPostPage` |
+| Auth | Required |
+| API | `POST /api/posts` |
+| Features | Cloudinary image upload, location picker, category-specific fields, tier-based limits |
+| Aliases | `/sell` |
+
+---
+
+#### `/edit-post/:postId` — Edit Listing
+
+Edit an existing listing with pre-populated form.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `EditPostPage` |
+| Auth | Required (owner only) |
+| API | `PATCH /api/posts/:id` |
+
+---
+
+#### `/my-home` — My Listings Dashboard
+
+Management hub for all user listings with status tabs, quick actions, analytics summary.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `MyHomePage` |
+| Auth | Required |
+| API | `GET /api/posts/my` |
+| Aliases | `/my-posts` |
+
+---
+
+### Commerce Pages
+
+#### `/cart` — Shopping Cart
+
+Full cart with quantity management, price totals, and checkout flow.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `CartPage` |
+| Auth | Required |
+| Context | `CartContext` (global cart state) |
+| API | `GET/POST/DELETE /api/cart` |
+
+---
+
+#### `/wishlist` — Saved Favorites
+
+Wishlist with search, sort, filter, bulk actions, grid/list toggle.
+
+> **User perspective:** All saved items in one place. Select multiple to add to cart or remove at once. Premium glass-morphism hero card.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `WishlistPage` |
+| Auth | Required |
+| API | `GET /api/wishlist` (cursor, search, sort, filter) |
+| Features | Cursor pagination (24/page), bulk actions, undo via toast, `subscribeSavedPosts` sync |
+
+---
+
+#### `/saledone` — Sale Completion
+
+Confirms a sale. Triggers coin rewards and referral chain distribution.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `SaledonePage` |
+| Auth | Required |
+| API | `POST /api/sale/confirm` |
+| Side effects | `transactionRewardService`, `referralChainRewards` |
+
+---
+
+#### `/payment` — Payment Processing
+
+| Detail | Value |
+|:-------|:------|
+| Component | `PaymentPage` |
+| Auth | Required |
+| API | `POST /api/payments` |
+| Services | `paymentGateway.js`, `paymentReconciliationService.js` |
+
+---
+
+### Social Pages
+
+#### `/chat` — Realtime Messaging
+
+Full-featured chat: real-time delivery, read receipts, conversations per listing.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ProtectedChatPage` |
+| Auth | Required |
+| Realtime | Socket.IO rooms per conversation |
+| Hooks | `useRealtimeChat` |
+| Aliases | `/chats` |
+
+---
+
+#### `/centre` — Centre Pages
+
+Professional seller pages (like Facebook Pages / YouTube Channels).
+
+> **User perspective:** Browse seller pages with their listings, updates, reviews, and about info. Follow pages to get updates in your feed.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ChannelsListPage` (variant="centre") |
+| Auth | Required |
+| API | `GET /api/channel?variant=centre` |
+| Tabs | About, Listings, Updates, Reviews, Analytics (owner-only) |
+| Features | Follow/unfollow, featured showcase, verification badges, premium creation gate |
+
+---
+
+#### `/reviews/:userId` — User Reviews
+
+Public review page showing all reviews for a user (seller and buyer).
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ReviewsPage` |
+| Auth | Public |
+| API | `GET /api/reviews/user/:userId`, `GET /api/reviews/stats/:userId` |
+| Features | Star distribution chart, category breakdown, helpful votes |
+
+---
+
+### Rewards & Gamification
+
+#### `/rewards` — Rewards Hub (5 Tabs)
+
+The gamification center with coin balance, tier progress, and all earning methods.
+
+> **User perspective:** See your coin balance (Rs equivalent at 100:1), tier progress bar, referral code to share, and every way to earn. History tab shows transaction log.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `RewardsPage` |
+| Auth | Required |
+| API | `GET /api/coins/rewards-config`, `GET /api/coins/wallet-stats` |
+
+**Tabs:**
+
+| Tab | Content |
+|:----|:--------|
+| Overview | Balance + Rs conversion, tier progress, referral code, achievement badges |
+| Network | `ReferralChainTree` — 5-level hierarchy, color-coded, expand/collapse |
+| Earn | Daily check-in, spin wheel, scratch cards, streak progress |
+| Store | Coin redemption marketplace (coming soon) |
+| History | Transaction ledger with filters |
+
+---
+
+### Account & Settings
+
+#### `/profile` — User Profile
+
+Multi-tab profile: personal info, trust score, rating summary, activity stats.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ProfilePage` |
+| Auth | Required |
+| API | `GET /api/profile`, `GET /api/reviews/stats/:userId`, `GET /api/posts/trust/:userId` |
+
+---
+
+#### `/security` — Security Settings
+
+Password change, 2FA setup, active sessions, trusted devices, passkey management.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `SecuritySettingsPage` |
+| Auth | Required |
+| Features | TOTP 2FA, session management, device list, WebAuthn passkey registration |
+
+---
+
+#### `/complaints` — Complaints & SLA
+
+File and track complaints. SLA timer with automatic breach detection.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `ComplaintsPage` |
+| Auth | Required |
+| API | `GET /api/complaints/my`, `POST /api/complaints` |
+| Features | Severity levels, evidence upload, SLA timer, status history, admin response |
+
+---
+
+#### `/admin-panel` — Admin Dashboard
+
+Full platform management: user management, listing moderation, complaint resolution, analytics.
+
+| Detail | Value |
+|:-------|:------|
+| Component | `AdminPanelPage` |
+| Auth | Required (admin, super_admin, superadmin) |
+| Guard | `RequireAuth` with `requiredRoles` prop |
+
+---
+
+## 🧭 Navigation Architecture
+
+### GreenNavbar — Responsive Navigation
+
+The primary navigation component adapts to screen size and authentication state:
+
+```
+Desktop (top bar)
+┌──────────────────────────────────────────────────────────────────┐
+│  MHub Logo  │  Search Bar  │  All Posts | For You | Feed | ...  │  Cart  Notifs  Profile  │
+└──────────────────────────────────────────────────────────────────┘
+
+Mobile (bottom bar)
+┌──────────────────────────────────────────────────────────────────┐
+│   Home   │   Explore   │   (+) Sell   │   Chat   │   Profile    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Key behaviors:**
+- Dynamic subcategory dropdowns based on active `CategoryModeContext`
+- Badge counts on Cart, Notifications, and Chat icons
+- Auth-aware: shows Login/Signup buttons for unauthenticated users
+- Responsive breakpoint: collapses to bottom navigation bar on mobile
+- Category mode indicator in top nav when a mode is active
+
+### Route Guards
+
+```mermaid
+flowchart TD
+    Request["Page Request"] --> RequireAuth{"RequireAuth?"}
+    RequireAuth -->|"No"| Public["Render Page"]
+    RequireAuth -->|"Yes"| CheckAuth{"Is Authenticated?"}
+    CheckAuth -->|"No"| Login["Redirect to /login\nwith ?returnTo="]
+    CheckAuth -->|"Yes"| CheckRole{"Role Required?"}
+    CheckRole -->|"No"| Render["Render Page"]
+    CheckRole -->|"Yes"| HasRole{"Has Required Role?"}
+    HasRole -->|"Yes"| Render
+    HasRole -->|"No"| Forbidden["Redirect to /"]
+```
+
+**`RequireAuth` component props:**
+
+| Prop | Type | Purpose |
+|:-----|:-----|:--------|
+| `children` | ReactNode | Page component to render when authorized |
+| `requiredRoles` | string[] | Roles required (e.g., `['admin','super_admin']`) |
+| `redirectTo` | string | Custom redirect path (default: `/login`) |
+
+### Category Mode Routing
+
+When `CategoryModeContext` has an active category, navigation links include it as a context parameter. The Navbar dynamically shows subcategory dropdowns relevant to the active category. Selecting a new category from the hub or the navbar switcher triggers a full context pivot.
+
+---
+
+## 🔐 Authentication & Access Control
+
+### Authentication Methods
+
+| Method | Implementation | Security Properties |
+|:-------|:---------------|:--------------------|
+| Email + Password | Argon2 hashing, bcrypt fallback | Memory-hard, timing-safe comparison |
+| OTP | `otpService.js` + `otpDeliveryService.js` | Rate-limited, time-bound |
+| WebAuthn / Passkeys | `SimpleWebAuthn`, FIDO2 | Phishing-resistant, device-bound |
+| TOTP 2FA | `twoFactorController.js` | 6-digit rotating code + backup codes |
+| JWT + Refresh | Short-lived access (15 min) + long refresh | Auto-rotation, revocation support |
+
+### Auth Flow (Sequence)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Client
+    participant A as /api/auth
+    participant R as Redis
+
+    Note over U,R: Registration
+    U->>C: Fill signup form
+    C->>A: POST /api/auth/signup
+    A->>A: Hash password (Argon2)
+    A->>A: Generate JWT + refresh token
+    A-->>C: {accessToken, refreshToken, user}
+    C->>C: Store in authStorage.js
+
+    Note over U,R: Login
+    U->>C: Enter credentials
+    C->>A: POST /api/auth/login
+    A->>A: Verify password + check 2FA
+    A->>R: Create session
+    A-->>C: {accessToken, refreshToken}
+
+    Note over U,R: Token Refresh
+    C->>A: POST /api/auth/refresh
+    A->>A: Verify + rotate refresh token
+    A-->>C: {newAccessToken, newRefreshToken}
+
+    Note over U,R: Passkey Login
+    U->>C: Tap Sign in with Passkey
+    C->>A: POST /api/auth/webauthn/login/options
+    A-->>C: Challenge
+    C->>C: navigator.credentials.get()
+    C->>A: POST /api/auth/webauthn/login/verify
+    A-->>C: {accessToken, refreshToken}
+```
+
+### Role-Based Access Control
+
+| Role | Capabilities |
+|:-----|:-------------|
+| `user` | Browse, buy, sell, chat, earn rewards |
+| `seller` | + Centre Pages, seller analytics, listing boosts |
+| `admin` | + User management, listing moderation, complaint resolution |
+| `super_admin` | All admin capabilities + system configuration |
+
+---
+
 ## 📡 API Reference
 
 ### Endpoint Groups (61 Route Files)
@@ -1106,6 +1570,51 @@ The core differentiator that makes MHub unique:
 | `coinHooks` | Coin event hooks |
 
 </details>
+
+---
+
+## ⚙️ Background Jobs & Workers
+
+The `server/worker/` directory handles all asynchronous background processing that runs outside the HTTP request lifecycle.
+
+### Job Categories
+
+| Job | Trigger | Purpose |
+|:----|:--------|:--------|
+| **Post Expiry Cleanup** | Scheduled (cron) | Marks expired listings as inactive; frees tier quota |
+| **SLA Breach Detection** | Scheduled (cron) | Scans open complaints, sets `sla_breached_at` for overdue items |
+| **SLA Auto-Escalation** | On breach | Escalates severity level; notifies admin; triggers audit event |
+| **Cache Warming** | App startup | Pre-loads hot data (categories, trending posts, leaderboards) into Redis |
+| **Notification Delivery Queue** | Event-driven | Processes queued push notifications (Web Push + FCM) with retry logic |
+| **Reward Distribution Pipeline** | Event-driven | Processes pending coin distributions (referral chains, streak bonuses) |
+| **Analytics Aggregation** | Scheduled (cron) | Aggregates daily view counts, engagement stats, seller analytics |
+| **View Count Buffer Flush** | Scheduled (interval) | Flushes `postViewBufferService.js` batched writes to the database |
+| **Session Cleanup** | Scheduled (cron) | Purges expired sessions and stale device binding records |
+| **Leaderboard Recalculation** | Weekly (cron) | Recalculates weekly leaderboard rankings, distributes leaderboard rewards |
+| **Coin Expiry Processing** | Scheduled (cron) | Expires coins past their `expires_at` timestamp; FIFO-safe |
+| **Referral Chain Backfill** | On-demand | Re-processes historical referral closures for new reward rules |
+
+### Services Involved
+
+| Service | Worker Use |
+|:--------|:-----------|
+| `cacheWarming.js` | Pre-load categories, trending, leaderboard on startup |
+| `postViewBufferService.js` | Batch-flush view increments to `posts.view_count` |
+| `leaderboardRewardsService.js` | Weekly leaderboard calculation + reward distribution |
+| `streakRewardsService.js` | Visit/post streak evaluation on daily trigger |
+| `rewardsLedgerService.js` | Idempotent coin writes for all background reward events |
+| `rewardsRealtimeService.js` | Push SSE balance updates after background coin grants |
+| `referralChainRewards.js` | Activity-triggered chain reward propagation |
+| `authSessionRetentionService.js` | Session expiry and cleanup |
+| `failoverSafetyService.js` | Failover health checks and circuit breaker resets |
+| `notificationEmitter.js` | Dispatch notifications from background events |
+
+### Reliability
+
+Background jobs use:
+- **Idempotency keys** — All coin/reward writes use `reward_idempotency` table to prevent duplicate distributions
+- **Error isolation** — Each job runs in a try/catch; failures are logged to structured audit log without crashing the process
+- **PM2 management** — Background worker process managed alongside the API server via `ecosystem.config.js`
 
 ---
 
@@ -1717,6 +2226,99 @@ docker compose down -v && docker compose up -d
 | Deployment | 8/10 | ⚠️ Port mismatch tracked |
 | SEO/Accessibility | 7/10 | ⚠️ Hardcoded titles |
 | Feature Completeness | 9/10 | ✅ All core flows work |
+
+---
+
+## 📋 Migration History (67 Migrations)
+
+All database migrations live in `server/database/migrations/`. Migrations are applied via `node scripts/ops/run_migration.js`.
+
+### Numbered Sequential Migrations (001–022)
+
+| # | Migration Name | Category |
+|:-:|:---------------|:---------|
+| 001 | `location_village_colony` | Core schema — location fields |
+| 002 | `add_aadhaar_kyc_fields` | KYC & verification |
+| 003 | `add_profile_and_channels` | Profiles + Channels/Centre |
+| 004 | `add_listing_subcategory` | Subcategory support |
+| 005 | `add_search_indexes` | Full-text search indexes |
+| 006 | `add_wishlist_and_cart` | Commerce tables |
+| 007 | `add_notifications_schema` | Notifications queue |
+| 008 | `add_rewards_gamification` | Rewards + coins + streaks |
+| 009 | `add_composite_indexes` | Multi-column query optimization |
+| 010 | `add_referral_system` | Referral + closure tables |
+| 011 | `webauthn_passkeys` | FIDO2 passkey storage |
+| 012 | `rewards_engagement` | Spin, scratch, daily check-in |
+| 013 | `add_complaint_sla_and_evidence` | Complaints + SLA tracking |
+| 014 | `add_review_moderation_controls` | Review flags + abuse scoring |
+| 015 | `add_price_alerts` | Price alert notifications |
+| 016 | `referral_chain_rewards` | Activity-triggered chain rewards |
+| 017 | `add_trusted_devices` | Device binding records |
+| 018 | `add_session_tracking` | Active session management |
+| 019 | `flipkart_auth_migration` | Extended auth options |
+| 020 | `add_offers_and_flash_sales` | Deals + offers schema |
+| 021 | `add_centre_page_features` | Centre Page analytics + badges |
+| 022 | `operation_polish_indexes` | Final production index sweep |
+
+### Named Feature & Maintenance Migrations
+
+| Migration File | Purpose |
+|:---------------|:--------|
+| `zero_trust_hardening` | Zero-trust device/session schema |
+| `device_binding_and_rate_limiting` | Device binding + rate limit tables |
+| `performance_optimization_2025` | Query plan indexes + vacuums |
+| `prod_readiness_indexes` | Production-grade index coverage |
+| `defender_schema` | WAF and fraud detection tables |
+| `add_coin_transactions_expiry` | FIFO coin expiry with `expires_at` |
+| `reward_idempotency_table` | Duplicate reward prevention |
+| `add_post_view_tracking` | View count buffer table |
+| `add_recently_viewed` | Browsing history table |
+| `add_saved_searches` | Search persistence table |
+| `add_seller_analytics` | Seller performance metrics |
+| `add_subscription_plans` | Tier/subscription schema |
+| `add_feed_posts` | Text-only feed post support |
+| `add_public_wall` | Public wall post table |
+| `add_geo_location_fields` | Enhanced location columns |
+| `add_push_subscriptions` | Web Push + FCM tokens |
+| `add_cms_content` | CMS/legal page content |
+| `add_telemetry_events` | Event ingestion pipeline |
+| `add_price_history` | Listing price change log |
+| `add_referral_leaderboard` | Top referrer tracking |
+| `add_contact_list` | User contact directory |
+| `add_weekly_leaderboard` | Weekly ranking snapshots |
+| `add_audit_log_table` | Structured audit trail |
+| `add_brand_catalog` | Brand/product catalog |
+| `add_feature_flags` | Feature flag storage |
+| `add_automation_rules` | Automation engine schema |
+| `add_fleet_orchestration` | Fleet service schema |
+| `add_reliability_ops` | DR + backup schema |
+| `add_security_operations` | Security ops schema |
+| `add_operator_platform` | Operator workflow schema |
+| `add_launch_governance` | Launch readiness schema |
+| `add_intelligence_finops` | Cost optimization schema |
+| `add_device_lifecycle` | Device provisioning schema |
+| `add_gdpr_exports` | GDPR data export/deletion |
+| `backfill_trust_scores` | Back-populate trust scores |
+| `backfill_referral_closure` | Rebuild referral closure table |
+| `backfill_coin_balances` | Reconcile coin totals |
+| `seed_categories` | Initial category/subcategory data |
+| `seed_subscription_tiers` | Default tier definitions |
+| `seed_rewards_config` | Default rewards configuration |
+| `seed_feature_flags` | Default feature flag values |
+| `seed_cms_pages` | Legal page content |
+| `seed_sample_data` | Development sample posts/users |
+| `index_maintenance_2025` | Quarterly index maintenance |
+
+### Migration Statistics
+
+| Stat | Value |
+|:-----|:------|
+| Total migrations | 67 |
+| Sequential (numbered) | 22 |
+| Named feature/maintenance | 45 |
+| Tables created | 40+ |
+| Indexes created | 60+ |
+| Seed scripts | 6 |
 
 ---
 
