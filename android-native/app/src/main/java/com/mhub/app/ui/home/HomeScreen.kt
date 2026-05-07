@@ -59,6 +59,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,7 +98,6 @@ fun HomeScreen(
     onCreatePost: () -> Unit = {},
     onOpenExplore: () -> Unit = {},
     onOpenCategories: () -> Unit = {},
-    onOpenWebParity: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -154,12 +154,6 @@ fun HomeScreen(
                         Icon(
                             imageVector = if (showSearch) Icons.Default.Close else Icons.Default.Search,
                             contentDescription = "Search",
-                        )
-                    }
-                    FilledTonalIconButton(onClick = onOpenWebParity) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ViewList,
-                            contentDescription = "Web parity pages",
                         )
                     }
                     FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
@@ -294,6 +288,18 @@ fun HomeScreen(
                     } else {
                         items(filteredPosts, key = { it.stableId }) { post ->
                             ListPostCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                        }
+                    }
+
+                    // Infinite scroll: load more when reaching end
+                    if (state.hasMore && filteredPosts.isNotEmpty()) {
+                        item {
+                            LaunchedEffect(Unit) { viewModel.loadMore() }
+                            if (state.loadingMore) {
+                                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                }
+                            }
                         }
                     }
                 }

@@ -10,6 +10,7 @@ import com.mhub.app.data.remote.AuthInterceptor
 import com.mhub.app.data.remote.MhubApi
 import com.mhub.app.data.remote.RetryInterceptor
 import com.mhub.app.data.remote.SecurityHeadersInterceptor
+import com.mhub.app.data.remote.TokenRefreshAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -43,11 +44,21 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttp(tokenStore: TokenStore, cookieJar: AppCookieJar): OkHttpClient {
+    fun provideOkHttp(
+        tokenStore: TokenStore,
+        cookieJar: AppCookieJar,
+        json: Json,
+        appPreferences: AppPreferences,
+    ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
             else HttpLoggingInterceptor.Level.NONE
         }
+        val authenticator = TokenRefreshAuthenticator(
+            tokenStore = tokenStore,
+            json = json,
+            baseUrlProvider = { runBlocking { appPreferences.baseUrlOrDefault() } },
+        )
         return OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -55,6 +66,7 @@ object NetworkModule {
             .callTimeout(45, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .cookieJar(cookieJar)
+            .authenticator(authenticator)
             .addInterceptor(AuthInterceptor(tokenStore))
             .addInterceptor(SecurityHeadersInterceptor(cookieJar))
             .addInterceptor(RetryInterceptor())

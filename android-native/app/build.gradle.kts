@@ -8,6 +8,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+    id("androidx.baselineprofile")
 }
 
 val keystorePropsFile = rootProject.file("keystore.properties")
@@ -16,6 +19,14 @@ val keystoreProps = Properties().apply {
         load(FileInputStream(keystorePropsFile))
     }
 }
+
+// Load secrets from local.properties (never committed to VCS)
+val localPropsFile = rootProject.file("local.properties")
+val localProps = Properties().apply {
+    if (localPropsFile.exists()) load(FileInputStream(localPropsFile))
+}
+fun localProp(key: String, fallback: String = "") =
+    (System.getenv(key.replace(".", "_")) ?: localProps.getProperty(key) ?: fallback)
 
 android {
     val stagingApiBaseUrl = System.getenv("MHUB_STAGING_API_BASE_URL") ?: ""
@@ -26,53 +37,30 @@ android {
         applicationId = "com.mhub.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // Default production API URL — override at runtime via Settings screen.
+        // Default API URL — override at runtime via Settings screen.
         buildConfigField(
             "String",
             "DEFAULT_API_BASE_URL",
-            "\"http://10.0.2.2:5001/\""
+            "\"${localProp("MHUB_API_BASE_URL", "http://10.0.2.2:5001/")}\""
         )
-        // Google OAuth 2.0 Web Client ID (type "Web application" in Google Cloud Console).
-        // REPLACE with your own; this is the `audience` the server verifies.
+        // Google OAuth 2.0 Web Client ID — set GOOGLE_WEB_CLIENT_ID in local.properties
         buildConfigField(
             "String",
             "GOOGLE_WEB_CLIENT_ID",
-            "\"REPLACE_WITH_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com\""
+            "\"${localProp("GOOGLE_WEB_CLIENT_ID")}\""
         )
         buildConfigField(
             "String",
             "STAGING_API_BASE_URL",
             "\"$stagingApiBaseUrl\""
         )
-        // Web reference base URL used by parity WebView screens.
-        buildConfigField(
-            "String",
-            "WEB_REFERENCE_BASE_URL",
-            "\"http://10.0.2.2:8081/\""
-        )
-        // Debug parity login defaults (kept empty by default; set in debug build type).
-        buildConfigField(
-            "String",
-            "PARITY_TEST_IDENTIFIER",
-            "\"\""
-        )
-        buildConfigField(
-            "String",
-            "PARITY_TEST_PASSWORD",
-            "\"\""
-        )
-        buildConfigField(
-            "boolean",
-            "PARITY_AUTO_LOGIN_ENABLED",
-            "false"
-        )
-        // When enabled, primary Android routes render the same web pages inside WebView.
+        // Native-only mode — WEB_REPLICA_MODE permanently disabled.
         buildConfigField(
             "boolean",
             "WEB_REPLICA_MODE",
@@ -96,10 +84,7 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("String", "PARITY_TEST_IDENTIFIER", "\"9876543210\"")
-            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Test@12345\"")
-            buildConfigField("boolean", "PARITY_AUTO_LOGIN_ENABLED", "true")
-            buildConfigField("boolean", "WEB_REPLICA_MODE", "true")
+            buildConfigField("boolean", "WEB_REPLICA_MODE", "false")
         }
         release {
             isMinifyEnabled = true
@@ -210,6 +195,17 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    // Firebase BOM — manages all Firebase library versions
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
+    // Room — offline cache
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
@@ -217,4 +213,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // Baseline Profile — wired to :baselineprofile module
+    baselineProfile(project(":baselineprofile"))
 }

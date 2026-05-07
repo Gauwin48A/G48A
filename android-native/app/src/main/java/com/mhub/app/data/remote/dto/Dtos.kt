@@ -7,6 +7,22 @@ import com.mhub.app.domain.model.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+// -------- Health --------
+@Serializable
+data class HealthResponse(
+    val service: String = "",
+    val status: String = "",
+    val db: String = "",
+)
+
+// -------- Push Notifications --------
+@Serializable
+data class PushTokenRequest(
+    val token: String,
+    val deviceType: String = "android",
+    val deviceName: String = "Android",
+)
+
 // -------- Auth --------
 @Serializable
 data class GoogleAuthRequest(val idToken: String)

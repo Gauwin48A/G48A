@@ -1,8 +1,13 @@
 package com.mhub.app.di
 
 import android.content.Context
+import androidx.room.Room
+import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.data.local.AppPreferences
 import com.mhub.app.data.local.TokenStore
+import com.mhub.app.data.local.db.CategoryDao
+import com.mhub.app.data.local.db.MhubDatabase
+import com.mhub.app.data.local.db.PostDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,4 +26,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences = AppPreferences(context)
+
+    @Provides
+    @Singleton
+    fun provideConnectivityObserver(@ApplicationContext context: Context): ConnectivityObserver =
+        ConnectivityObserver(context)
+
+    @Provides
+    @Singleton
+    fun provideMhubDatabase(@ApplicationContext context: Context): MhubDatabase =
+        Room.databaseBuilder(context, MhubDatabase::class.java, "mhub.db")
+            .fallbackToDestructiveMigration()
+            .build()
+
+    @Provides fun providePostDao(db: MhubDatabase): PostDao = db.postDao()
+
+    @Provides fun provideCategoryDao(db: MhubDatabase): CategoryDao = db.categoryDao()
 }

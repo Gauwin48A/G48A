@@ -42,6 +42,7 @@ class TokenStore @Inject constructor(context: Context) {
     val isAuthenticated: Boolean get() = !_accessToken.value.isNullOrBlank()
 
     suspend fun accessTokenBlocking(): String? = withContext(Dispatchers.IO) { _accessToken.value }
+    suspend fun refreshTokenBlocking(): String? = withContext(Dispatchers.IO) { _refreshToken.value }
 
     suspend fun save(accessToken: String?, refreshToken: String?) = withContext(Dispatchers.IO) {
         prefs.edit().apply {

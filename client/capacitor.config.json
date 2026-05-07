@@ -3,13 +3,13 @@
   "appName": "MHub",
   "webDir": "dist",
   "android": {
-    "loggingBehavior": "debug",
-    "webContentsDebuggingEnabled": true
+    "loggingBehavior": "none",
+    "webContentsDebuggingEnabled": false
   },
   "server": {
-    "androidScheme": "http",
-    "cleartext": true,
-    "allowNavigation": ["10.0.2.2", "localhost"]
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": ["api.mhub.app"]
   },
   "plugins": {
     "App": {

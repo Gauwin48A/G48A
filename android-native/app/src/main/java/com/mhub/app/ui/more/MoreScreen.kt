@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -73,7 +72,6 @@ fun MoreScreen(
     onOpenChat: () -> Unit,
     onOpenKyc: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenParityHub: () -> Unit,
     onOpenForYou: () -> Unit,
     onOpenRewards: () -> Unit,
     onOpenOffers: () -> Unit = {},
@@ -171,13 +169,6 @@ fun MoreScreen(
             icon = Icons.Outlined.Security,
             tint = Color(0xFF64748B),
             onClick = onOpenSettings,
-        ),
-        MoreEntry(
-            title = "Web Parity Hub",
-            subtitle = "Reference every localhost route mapping",
-            icon = Icons.Outlined.ViewList,
-            tint = Color(0xFFF59E0B),
-            onClick = onOpenParityHub,
         ),
     )
 

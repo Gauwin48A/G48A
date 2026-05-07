@@ -2,26 +2,112 @@ package com.mhub.app.data.repository
 
 import com.mhub.app.core.ApiResult
 import com.mhub.app.core.safeApiCall
+import com.mhub.app.data.local.db.CategoryDao
+import com.mhub.app.data.local.db.CategoryEntity
+import com.mhub.app.data.local.db.PostDao
+import com.mhub.app.data.local.db.PostEntity
 import com.mhub.app.data.remote.MhubApi
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Notification
 import com.mhub.app.domain.model.Post
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// Cache TTL: 10 minutes
+private const val CACHE_TTL_MS = 10 * 60 * 1000L
+
+private fun Post.toEntity() = PostEntity(
+    id = stableId,
+    title = title,
+    description = description,
+    price = price,
+    currency = currency,
+    imageUrl = imageUrl,
+    imagesJson = Json.encodeToString(images),
+    category = category,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    location = location,
+    createdAt = createdAt,
+    userId = userId,
+    userName = userName,
+    status = status,
+    viewCount = viewCount,
+    condition = condition,
+    brand = brand,
+    sellerName = sellerName,
+)
+
+private fun PostEntity.toDomain() = Post(
+    id = id,
+    title = title,
+    description = description,
+    price = price,
+    currency = currency,
+    imageUrl = imageUrl,
+    images = runCatching { Json.decodeFromString<List<String>>(imagesJson) }.getOrDefault(emptyList()),
+    category = category,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    location = location,
+    createdAt = createdAt,
+    userId = userId,
+    userName = userName,
+    status = status,
+    viewCount = viewCount,
+    condition = condition,
+    brand = brand,
+    sellerName = sellerName,
+)
+
+private fun Category.toEntity() = CategoryEntity(
+    id = stableId,
+    name = name,
+    iconUrl = iconUrl,
+    slug = slug,
+    categoryGroup = categoryGroup,
+    productCount = productCount,
+)
+
+private fun CategoryEntity.toDomain() = Category(
+    id = id,
+    name = name,
+    iconUrl = iconUrl,
+    slug = slug,
+    categoryGroup = categoryGroup,
+    productCount = productCount,
+)
+
 @Singleton
-class PostsRepository @Inject constructor(private val api: MhubApi) {
+class PostsRepository @Inject constructor(
+    private val api: MhubApi,
+    private val postDao: PostDao,
+) {
     suspend fun feed(
         page: Int = 1,
         limit: Int = 20,
         categoryId: String? = null,
         query: String? = null,
-    ): ApiResult<List<Post>> = safeApiCall {
-        api.posts(page, limit, categoryId, query).items
+    ): ApiResult<List<Post>> {
+        val result = safeApiCall { api.posts(page, limit, categoryId, query).items }
+        if (result is ApiResult.Success && page == 1) {
+            // Cache page 1 results; evict entries older than TTL
+            postDao.evictStale(System.currentTimeMillis() - CACHE_TTL_MS)
+            postDao.insertAll(result.data.map { it.toEntity() })
+        }
+        if (result is ApiResult.Failure) {
+            // Return cached posts as fallback on network failure
+            val cached = if (categoryId != null) postDao.getByCategory(categoryId)
+                         else postDao.getAll()
+            if (cached.isNotEmpty()) return ApiResult.Success(cached.map { it.toDomain() })
+        }
+        return result
     }
 
     suspend fun detail(id: String): ApiResult<Post> = safeApiCall { api.post(id) }
@@ -54,8 +140,21 @@ class PostsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class CategoriesRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun all(): ApiResult<List<Category>> = safeApiCall { api.categories().items }
+class CategoriesRepository @Inject constructor(
+    private val api: MhubApi,
+    private val categoryDao: CategoryDao,
+) {
+    suspend fun all(): ApiResult<List<Category>> {
+        val result = safeApiCall { api.categories().items }
+        if (result is ApiResult.Success) {
+            categoryDao.insertAll(result.data.map { it.toEntity() })
+        }
+        if (result is ApiResult.Failure) {
+            val cached = categoryDao.getAll()
+            if (cached.isNotEmpty()) return ApiResult.Success(cached.map { it.toDomain() })
+        }
+        return result
+    }
     suspend fun stats(): ApiResult<List<CategoryStat>> = safeApiCall { api.categoryStats().stats }
 }
 

@@ -2266,6 +2266,21 @@ Node: 20+
 | No error boundaries per page | All pages | Single crash takes down entire app |
 | Redux not used (Context only) | All state | Performance risk at scale |
 
+### Per-Page Audit Issues (from production audit)
+
+| Page | Low Contrast | Small Targets | Key Issue |
+|------|:-----------:|:-------------:|-----------|
+| Home/Category Hub | 6 | 0 | Highest contrast issues — subtitle text on cards |
+| All Posts | 2 | 1 | "All" chip button 41px wide (needs ≥48px) |
+| For You | 2 | 0 | Minor badge/label contrast |
+| Wishlist | 3 | 0 | Price/discount text contrast |
+| Cart | 3 | 0 | Secondary text contrast |
+| Rewards | 3 | 0 | Tier/badge label contrast |
+| Notifications | 2 | 0 | Metadata text contrast |
+| Profile | 1 | 0 | Scroll ratio 4.0 (very long page) |
+
+> Full details: see `errorlog.md` in workspace root.
+
 ### Accessibility Issues (Resolved at 98/100)
 
 | Fix Applied | Before | After |

@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MhubNative"
 include(":app")
+include(":baselineprofile")
