@@ -174,7 +174,6 @@ fun ProfileScreen(
     onOpenMyPosts: () -> Unit,
     onOpenKyc: () -> Unit,
     onOpenChat: () -> Unit = {},
-    onOpenWebParity: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
     onOpenDashboard: () -> Unit = {},
@@ -429,13 +428,6 @@ fun ProfileScreen(
                             label = "Settings",
                             subtitle = "API endpoint and app preferences",
                             onClick = onOpenSettings,
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
-                        ProfileMenuItem(
-                            icon = Icons.Default.Language,
-                            label = "Web parity pages",
-                            subtitle = "All localhost route references",
-                            onClick = onOpenWebParity,
                         )
                     }
 

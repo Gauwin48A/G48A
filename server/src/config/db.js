@@ -95,9 +95,11 @@ const pool = new Pool({
   database: dbName,
   password: dbPassword,
   port: dbPort,
-  max: parseInteger(process.env.DB_POOL_MAX, 20, { min: 1, max: 200 }),
+  max: parseInteger(process.env.DB_POOL_MAX, 50, { min: 1, max: 200 }),
   idleTimeoutMillis: parseInteger(process.env.DB_IDLE_TIMEOUT_MS, 3e4, { min: 1e3 }),
   connectionTimeoutMillis: parseInteger(process.env.DB_CONNECT_TIMEOUT_MS, 5e3, { min: 1e3 }),
+  statement_timeout: parseInteger(process.env.DB_STATEMENT_TIMEOUT_MS, 30000, { min: 1e3 }),
+  query_timeout: parseInteger(process.env.DB_QUERY_TIMEOUT_MS, 30000, { min: 1e3 }),
   ssl: sslEnabled ? { rejectUnauthorized: sslRejectUnauthorized } : false,
 });
 

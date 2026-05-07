@@ -6,44 +6,84 @@ Production-ready native Android app for MHub, written in **100% Kotlin** with Je
 
 | Layer | Stack |
 |---|---|
-| UI | Jetpack Compose, Material 3 (light & dark), Navigation-Compose, Coil |
+| UI | Jetpack Compose, Material 3 (light & dark), Navigation-Compose, Coil 2.7 |
 | State | Hilt ViewModels + StateFlow |
-| DI | Hilt (KSP) |
-| Network | Retrofit 2.11 + OkHttp 4.12 + kotlinx-serialization |
-| Storage | DataStore (prefs), EncryptedSharedPreferences (tokens, AES-256-GCM via Android Keystore) |
+| DI | Hilt 2.52 (KSP) |
+| Network | Retrofit 2.11 + OkHttp 4.12 + kotlinx-serialization 1.7.3 |
+| Storage | Room 2.6.1 (offline cache), EncryptedSharedPreferences (tokens, AES-256-GCM) |
+| Observability | Firebase Crashlytics + Analytics (opt-in, disabled in debug) |
+| Push | Firebase Cloud Messaging (FCM) |
+| Performance | Baseline Profile (Macrobenchmark), R8 full-mode |
 | Build | Kotlin 2.0.21, AGP 8.7.2, Gradle 8.10.2, minSdk 24, targetSdk 35 |
 
 ### Source map
 ```
 app/src/main/java/com/mhub/app/
-├── MhubApplication.kt            Hilt entry
+├── MhubApplication.kt            Hilt entry + Firebase init + Coil ImageLoaderFactory
 ├── MainActivity.kt               Splash + edge-to-edge + Compose root
-├── core/                         ApiResult, safeApiCall
-├── domain/model/                 User, Post, Category
+├── core/
+│   ├── ApiResult.kt              Sealed result type
+│   ├── SafeApiCall.kt            Network error → ApiResult mapping
+│   └── ConnectivityObserver.kt   Real-time network state (NET_CAPABILITY_VALIDATED)
+├── domain/model/                 User, Post, Category, ChatConversation, Notification
 ├── data/
-│   ├── local/                    TokenStore (encrypted), AppPreferences (DataStore)
-│   ├── remote/                   MhubApi (Retrofit), AuthInterceptor, RetryInterceptor, dto/
-│   └── repository/               AuthRepository, PostsRepository, CategoriesRepository
-├── di/                           AppModule, NetworkModule
+│   ├── local/
+│   │   ├── TokenStore.kt         EncryptedSharedPreferences (JWT)
+│   │   ├── AppPreferences.kt     DataStore prefs (settings, runtime API URL)
+│   │   └── db/                   Room offline cache
+│   │       ├── MhubDatabase.kt   @Database (posts, categories)
+│   │       ├── PostEntity.kt     Cached posts
+│   │       ├── CategoryEntity.kt Cached categories
+│   │       ├── PostDao.kt        Insert/query/evict
+│   │       └── CategoryDao.kt    Insert/query
+│   ├── remote/
+│   │   ├── MhubApi.kt            Retrofit interface (40+ endpoints)
+│   │   ├── SecurityInterceptors.kt  X-MHub-Timestamp, Nonce, Signature
+│   │   ├── TokenRefreshAuthenticator.kt  Auto-refresh JWT on 401
+│   │   └── dto/Dtos.kt           Request/response DTOs
+│   └── repository/               AuthRepository, PostsRepository (Room fallback),
+│                                  CategoriesRepository (Room fallback), Wishlist,
+│                                  Upload, KYC, Notifications, Chat
+├── di/
+│   ├── AppModule.kt              TokenStore, Prefs, ConnectivityObserver, Room DB
+│   └── NetworkModule.kt          OkHttp, Retrofit, MhubApi
+├── service/
+│   └── MhubFirebaseMessagingService.kt  FCM token registration + notifications
 └── ui/
     ├── theme/                    Color, Theme (light/dark), Type
     ├── navigation/Routes.kt
-    ├── components/               AppTextField, PrimaryButton, ErrorBanner
-    ├── auth/                     LoginScreen, SignupScreen, AuthViewModel
-    ├── home/                     HomeScreen, PostDetailScreen, HomeViewModel
-    ├── categories/               CategoriesScreen
-    ├── profile/                  ProfileScreen
-    ├── settings/                 SettingsScreen (runtime API URL config)
-    └── MhubApp.kt                Root composable + NavHost + bottom nav
+    ├── components/               AppTextField, PrimaryButton, ErrorBanner, OfflineBanner
+    ├── auth/                     LoginScreen, SignUpScreen, ResetPasswordScreen, AuthViewModel
+    ├── home/                     HomeScreen, PostDetailScreen, CategoryHubScreen, HomeViewModel
+    ├── explore/                  ExploreScreen
+    ├── account/                  AccountScreens (profile, settings, security)
+    ├── commerce/                 CommerceScreens (wishlist, offers, sell)
+    ├── discovery/                NearbyScreen
+    └── MhubApp.kt                Root composable + NavHost + bottom nav + OfflineBanner
 ```
+
+## Key Features (v1.1.0)
+
+- **Offline-first**: Room caches posts and categories; shows cached data when network fails
+- **Push notifications**: FCM service receives messages and shows notifications in foreground
+- **Crash reporting**: Firebase Crashlytics (production only) for automatic crash logs
+- **Token auto-refresh**: OkHttp Authenticator silently refreshes expired JWTs on 401
+- **Connectivity banner**: Real-time "No internet" banner appears/disappears with animation
+- **Session expiry redirect**: Automatic logout → login when token is invalidated
+- **Infinite scroll**: Paginated feed with `loadMore()` triggered at scroll bottom
+- **Baseline Profile**: Pre-compiled hot paths for ~30% faster cold start
+- **Image caching**: Coil with 100MB disk cache + 25% memory cache
 
 ## Security
 
-- TLS-only in release (network_security_config: `cleartextTrafficPermitted=false`).
-- JWT access token stored with `EncryptedSharedPreferences` (AES-256-GCM, Android Keystore–backed master key).
-- R8 full minify + resource shrinking enabled for release.
-- `android:allowBackup="false"`; sensitive prefs excluded from auto backup & device transfer.
-- No debuggable release, no network calls over HTTP.
+- TLS-only in release (network_security_config: `cleartextTrafficPermitted=false`)
+- JWT access token stored with `EncryptedSharedPreferences` (AES-256-GCM, Android Keystore–backed master key)
+- R8 full minify + resource shrinking enabled for release
+- `android:allowBackup="false"`; sensitive prefs excluded from auto backup & device transfer
+- No debuggable release, no network calls over HTTP
+- API integrity: every write request includes `X-MHub-Timestamp` + `X-MHub-Nonce`
+- Google Client ID + API URL read from `local.properties` (git-ignored), never hardcoded
+- Firebase auto-init disabled in manifest; graceful fallback if `google-services.json` has placeholder values
 
 ## Build
 
@@ -54,7 +94,7 @@ cd Mhub\android-native
 .\gradlew.bat :app:assembleRelease --no-configuration-cache
 ```
 
-Output: `app/build/outputs/apk/release/app-release.apk` (~1.83 MB)
+Output: `app/build/outputs/apk/release/app-release.apk` (~3.24 MB)
 
 ## Signing
 
@@ -67,7 +107,22 @@ Save a backup of the keystore — if lost you cannot publish updates to the Play
 
 ## API base URL
 
-Compile-time default lives in `app/build.gradle.kts` (`DEFAULT_API_BASE_URL`). Users can override at runtime via **Settings** in the app (persisted via DataStore; requires app restart).
+Compile-time default lives in `local.properties` as `MHUB_API_BASE_URL` (read by `app/build.gradle.kts` via `localProp()` helper). Falls back to `http://10.0.2.2:5001/` for local emulator development. Users can override at runtime via **Settings** in the app (persisted via DataStore; requires app restart).
+
+## Firebase Setup
+
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Add an Android app with package name `com.mhub.app` (and optionally `com.mhub.app.debug`)
+3. Download `google-services.json` and place it in `app/google-services.json`
+4. The stub file works for building without Firebase — Crashlytics/FCM will be inactive until a real config is provided
+
+## Baseline Profile
+
+Generate optimized startup profile (requires a connected device/emulator):
+```powershell
+.\gradlew.bat :app:generateBaselineProfile
+```
+The generated `baseline-prof.txt` is automatically packaged into the release APK.
 
 ## Install on a phone
 
@@ -99,9 +154,23 @@ Then update the app's API URL via Settings to `https://api.yourdomain.com/` and 
 
 ## What's in scope today vs. roadmap
 
-**Implemented:** Splash, Login, Signup, Feed (posts list), Post Detail, Categories grid, Profile, Settings, logout, encrypted token storage, auto-retry interceptor, edge-to-edge Material 3 UI (light/dark), Hilt DI, ProGuard/R8 hardened, release signing.
+**Implemented (v1.1.0):**
+- Splash, Login (mobile+password), Signup (Aadhaar+OTP+PAN flow), Password Reset
+- Category Hub, All Posts (filtered/sorted), Feed (social-style), Post Detail
+- Profile, Dashboard, Wishlist, Offers, Notifications, Nearby, Search
+- Encrypted token storage, token auto-refresh (OkHttp Authenticator)
+- Infinite scroll pagination, 300ms debounced search
+- Room offline cache (posts + categories, 10-min TTL, network-first + fallback)
+- Firebase Crashlytics + Analytics (production only)
+- FCM push notifications (foreground + background, device registration with backend)
+- Baseline Profile for startup optimization
+- Connectivity Observer + animated OfflineBanner
+- Session expiry auto-redirect to login
+- Coil image caching (100MB disk, 25% memory)
+- Edge-to-edge Material 3 UI (light/dark), Hilt DI, ProGuard/R8 full-mode
+- Release signing, version 1.1.0 (versionCode=2)
 
-**Roadmap (next iterations):** Chat & Socket.IO, wishlist, offers, rewards, push notifications (FCM), image upload/create-post flow, advanced search, admin features, 2FA, profile editing. The architecture (Retrofit + Hilt + Compose + repository pattern) is set up so each of these is a new screen + repository method.
+**Roadmap (next iterations):** Real-time chat (Socket.IO), image upload/create-post flow, 2FA enrollment, profile editing, admin panel features.
 
 ## Route walkthrough and visual regression
 

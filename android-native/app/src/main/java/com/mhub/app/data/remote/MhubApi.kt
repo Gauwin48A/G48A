@@ -8,6 +8,17 @@ import retrofit2.http.*
 
 interface MhubApi {
 
+    // ---- Health ----
+    @GET("api/health")
+    suspend fun health(): HealthResponse
+
+    // ---- Push Notifications ----
+    @POST("api/push/register")
+    suspend fun registerPushToken(@Body body: PushTokenRequest): MessageResponse
+
+    @DELETE("api/push/unregister")
+    suspend fun unregisterPushToken(@Body body: PushTokenRequest): MessageResponse
+
     // ---- Auth ----
     @POST("api/auth/google")
     suspend fun googleSignIn(@Body body: GoogleAuthRequest): AuthResponse

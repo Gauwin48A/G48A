@@ -17,9 +17,12 @@ import javax.inject.Inject
 data class HomeUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
+    val loadingMore: Boolean = false,
     val posts: List<Post> = emptyList(),
     val categories: List<Category> = emptyList(),
     val error: String? = null,
+    val currentPage: Int = 1,
+    val hasMore: Boolean = true,
 )
 
 @HiltViewModel
@@ -38,13 +41,17 @@ class HomeViewModel @Inject constructor(
             loading = initial || _state.value.posts.isEmpty(),
             refreshing = !initial,
             error = null,
+            currentPage = 1,
+            hasMore = true,
         )
         viewModelScope.launch {
-            when (val res = repo.feed(page = 1, limit = 30)) {
+            when (val res = repo.feed(page = 1, limit = PAGE_SIZE)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
                     posts = res.data,
+                    currentPage = 1,
+                    hasMore = res.data.size >= PAGE_SIZE,
                     error = null,
                 )
                 is ApiResult.Failure -> _state.value = _state.value.copy(
@@ -60,6 +67,32 @@ class HomeViewModel @Inject constructor(
                 is ApiResult.Failure -> Unit
             }
         }
+    }
+
+    fun loadMore() {
+        val current = _state.value
+        if (current.loadingMore || !current.hasMore) return
+
+        val nextPage = current.currentPage + 1
+        _state.value = current.copy(loadingMore = true)
+
+        viewModelScope.launch {
+            when (val res = repo.feed(page = nextPage, limit = PAGE_SIZE)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        loadingMore = false,
+                        posts = _state.value.posts + res.data,
+                        currentPage = nextPage,
+                        hasMore = res.data.size >= PAGE_SIZE,
+                    )
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(loadingMore = false)
+            }
+        }
+    }
+
+    private companion object {
+        const val PAGE_SIZE = 20
     }
 }
 

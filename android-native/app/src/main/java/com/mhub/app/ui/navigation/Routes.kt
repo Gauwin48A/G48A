@@ -94,8 +94,4 @@ object Routes {
     const val ADMIN_PANEL = "admin-panel"
     const val INVITE = "invite/{code}"
     fun invite(code: String): String = "invite/$code"
-
-    const val WEB_PARITY_HUB = "parity/hub"
-    const val WEB_PARITY_DETAIL = "parity/page/{pageKey}"
-    fun webParityDetail(key: String): String = "parity/page/$key"
 }
