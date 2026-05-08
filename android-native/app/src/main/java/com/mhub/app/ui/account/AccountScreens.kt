@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -76,7 +78,7 @@ private val periodLabels = listOf("Today", "This Week", "This Month", "All Time"
 @Composable
 fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val statMeta = listOf(Icons.Filled.List to Color(0xFF2563EB), Icons.Filled.ShoppingCart to Color(0xFF22C55E), Icons.Filled.Visibility to Color(0xFF8B5CF6), Icons.Filled.Stars to Color(0xFFF59E0B))
+    val statMeta = listOf(Icons.AutoMirrored.Filled.List to Color(0xFF2563EB), Icons.Filled.ShoppingCart to Color(0xFF22C55E), Icons.Filled.Visibility to Color(0xFF8B5CF6), Icons.Filled.Stars to Color(0xFFF59E0B))
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             AccountTopBar("Dashboard", onBack)
@@ -601,7 +603,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             AStatCard(Modifier.weight(1f), "${ss?.soldPosts ?: d?.totalSales ?: 0}", "Sold Posts", Icons.Filled.ShoppingCart, Color(0xFF22C55E))
-                            AStatCard(Modifier.weight(1f), "${ss?.activePosts ?: d?.totalListings ?: 0}", "Active Posts", Icons.Filled.List, Color(0xFFF59E0B))
+                            AStatCard(Modifier.weight(1f), "${ss?.activePosts ?: d?.totalListings ?: 0}", "Active Posts", Icons.AutoMirrored.Filled.List, Color(0xFFF59E0B))
                         }
                     }
                     // Revenue + conversion
@@ -652,7 +654,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                         items(state.postAnalytics.take(10), key = { it.postId ?: it.title ?: "" }) { pa ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.TrendingUp, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(pa.title ?: "Post", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1)
@@ -681,7 +683,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                         items(d.topPerforming.take(5)) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.TrendingUp, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(post.displayTitle, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1)

@@ -38,9 +38,12 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ImageNotSupported
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -112,6 +115,8 @@ data class PostDetailState(
     val offerError: String? = null,
     val reported: Boolean = false,
     val similarPosts: List<Post> = emptyList(),
+    val priceAlertSubscribed: Boolean = false,
+    val boostStatus: com.mhub.app.data.remote.dto.BoostStatusResponse? = null,
 )
 
 @HiltViewModel
@@ -122,6 +127,8 @@ class PostDetailViewModel @Inject constructor(
     private val trustRepo: TrustRepository,
     private val offersRepo: OffersRepository,
     private val socialRepo: SocialRepository,
+    private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
+    private val boostRepo: com.mhub.app.data.repository.BoostRepository,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
     private val _state = MutableStateFlow(PostDetailState())
@@ -198,6 +205,28 @@ class PostDetailViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repo.report(postId) }
             _state.value = _state.value.copy(reported = true)
+        }
+    }
+
+    fun togglePriceAlert() {
+        viewModelScope.launch {
+            if (_state.value.priceAlertSubscribed) {
+                priceAlertsRepo.unsubscribe(postId)
+                _state.value = _state.value.copy(priceAlertSubscribed = false)
+            } else {
+                priceAlertsRepo.subscribe(postId)
+                _state.value = _state.value.copy(priceAlertSubscribed = true)
+            }
+        }
+    }
+
+    fun boostPost(tier: String = "basic", duration: Int = 24) {
+        viewModelScope.launch {
+            boostRepo.boost(postId, tier, duration)
+            when (val r = boostRepo.status(postId)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data)
+                is ApiResult.Failure -> {}
+            }
         }
     }
 }
@@ -625,10 +654,31 @@ fun PostDetailScreen(
                             // Make Offer / Report row
                             var showOfferDialog by remember { mutableStateOf(false) }
                             var offerAmount by remember { mutableStateOf("") }
+                            var showBoostPanel by remember { mutableStateOf(false) }
 
                             if (state.offerSent) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Text("Offer sent successfully!", color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
+                                }
+                            }
+
+                            // Bargain quick actions
+                            if (showOfferDialog && post.price != null) {
+                                Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    listOf(10 to "-10%", 20 to "-20%", 30 to "-30%").forEach { (pct, label) ->
+                                        val discounted = post.price!! * (100 - pct) / 100
+                                        Surface(
+                                            onClick = { viewModel.makeOffer(discounted); showOfferDialog = false },
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            modifier = Modifier.weight(1f),
+                                        ) {
+                                            Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                Text("₹${"%,.0f".format(discounted)}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -651,17 +701,44 @@ fun PostDetailScreen(
                                 }
                             }
 
+                            // Boost panel (for own posts)
+                            if (showBoostPanel) {
+                                Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Boost Your Listing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf("basic" to "⚡ Basic\n10 coins", "featured" to "⭐ Featured\n25 coins", "spotlight" to "🔥 Spotlight\n50 coins").forEach { (tier, label) ->
+                                                OutlinedButton(onClick = { viewModel.boostPost(tier); showBoostPanel = false }, shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f)) {
+                                                    Text(label, fontSize = 11.sp, lineHeight = 14.sp)
+                                                }
+                                            }
+                                        }
+                                        state.boostStatus?.let { bs ->
+                                            if (bs.boosted) Text("✅ Currently boosted (${bs.tier}) — ${bs.viewsGained} extra views", fontSize = 11.sp, color = Color(0xFF22C55E))
+                                        }
+                                    }
+                                }
+                            }
+
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { showOfferDialog = !showOfferDialog }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Filled.LocalOffer, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(4.dp))
                                     Text("Make Offer")
                                 }
-                                OutlinedButton(onClick = { if (!state.reported) viewModel.reportPost() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp),
+                                // Price Alert toggle
+                                OutlinedButton(
+                                    onClick = { viewModel.togglePriceAlert() },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.priceAlertSubscribed) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurface),
+                                ) {
+                                    Icon(if (state.priceAlertSubscribed) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone, null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(if (state.priceAlertSubscribed) "Alert On" else "Price Alert", fontSize = 12.sp)
+                                }
+                                OutlinedButton(onClick = { if (!state.reported) viewModel.reportPost() }, shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.reported) Color(0xFF94A3B8) else Color(0xFFEF4444))) {
                                     Icon(Icons.Filled.Flag, null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(if (state.reported) "Reported" else "Report")
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
@@ -671,10 +748,10 @@ fun PostDetailScreen(
                                     Spacer(Modifier.width(6.dp))
                                     Text("Interested")
                                 }
-                                OutlinedButton(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
-                                    Icon(Icons.Default.Chat, contentDescription = null)
+                                OutlinedButton(onClick = { showBoostPanel = !showBoostPanel }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Chat")
+                                    Text("Boost")
                                 }
                                 Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Default.ShoppingBag, contentDescription = null)

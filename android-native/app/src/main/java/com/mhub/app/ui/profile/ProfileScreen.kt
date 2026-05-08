@@ -44,7 +44,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -485,7 +485,7 @@ fun ProfileScreen(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                 ) {
-                                                    Icon(Icons.Default.TrendingUp, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color.White, modifier = Modifier.size(12.dp))
                                                     Text(
                                                         text = trustLabel,
                                                         style = MaterialTheme.typography.labelSmall,

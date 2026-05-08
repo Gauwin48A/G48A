@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">एमहब</string>
+    <string name="login_title">पुन्हा स्वागत आहे</string>
+    <string name="login_subtitle">सुरू ठेवण्यासाठी साइन इन करा</string>
+    <string name="signup_title">खाते तयार करा</string>
+    <string name="signup_subtitle">एका मिनिटात एमहबमध्ये सामील व्हा</string>
+    <string name="auth_brand_subtitle">स्थानिक पातळीवर खरेदी आणि विक्री करा</string>
+    <string name="auth_tab_signin">साइन इन</string>
+    <string name="auth_tab_signup">खाते तयार करा</string>
+    <string name="field_identifier">ईमेल किंवा फोन</string>
+    <string name="field_password">पासवर्ड</string>
+    <string name="field_full_name">पूर्ण नाव</string>
+    <string name="field_email">ईमेल</string>
+    <string name="field_phone">फोन नंबर</string>
+    <string name="action_sign_in">साइन इन</string>
+    <string name="action_create_account">खाते तयार करा</string>
+    <string name="action_sign_in_google">Google सह सुरू ठेवा</string>
+    <string name="action_cancel">रद्द करा</string>
+    <string name="action_delete">हटवा</string>
+    <string name="action_confirm_delete">तुम्हाला हे आयटम हटवायचे आहे का?</string>
+    <string name="tab_home">होम</string>
+    <string name="tab_explore">शोधा</string>
+    <string name="tab_feed">फीड</string>
+    <string name="tab_more">अधिक</string>
+    <string name="tab_profile">प्रोफाइल</string>
+    <string name="profile_my_posts">माझ्या पोस्ट</string>
+    <string name="my_posts_empty">तुम्ही अजून काही पोस्ट केले नाही.</string>
+    <string name="generic_error_network">नेटवर्क त्रुटी. कृपया पुन्हा प्रयत्न करा.</string>
+    <string name="generic_loading">लोड होत आहे...</string>
+    <string name="shortcut_new_post">नवीन पोस्ट</string>
+    <string name="shortcut_new_post_long">नवीन यादी तयार करा</string>
+    <string name="shortcut_search">शोधा</string>
+    <string name="shortcut_search_long">यादी शोधा</string>
+    <string name="shortcut_chat">चॅट</string>
+    <string name="shortcut_chat_long">संदेश उघडा</string>
+</resources>

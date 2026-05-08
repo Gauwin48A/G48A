@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -186,7 +186,7 @@ fun WishlistScreen(
                 actions = {
                     IconButton(onClick = { gridMode = !gridMode }) {
                         Icon(
-                            imageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView,
+                            imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
                             contentDescription = "Toggle view",
                         )
                     }

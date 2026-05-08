@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ఎంహబ్</string>
+    <string name="login_title">తిరిగి స్వాగతం</string>
+    <string name="login_subtitle">కొనసాగించడానికి సైన్ ఇన్ చేయండి</string>
+    <string name="signup_title">ఖాతా సృష్టించండి</string>
+    <string name="signup_subtitle">ఒక నిమిషంలో ఎంహబ్‌లో చేరండి</string>
+    <string name="auth_brand_subtitle">స్థానికంగా కొనండి మరియు అమ్మండి</string>
+    <string name="auth_tab_signin">సైన్ ఇన్</string>
+    <string name="auth_tab_signup">ఖాతా సృష్టించండి</string>
+    <string name="field_identifier">ఇమెయిల్ లేదా ఫోన్</string>
+    <string name="field_password">పాస్‌వర్డ్</string>
+    <string name="field_full_name">పూర్తి పేరు</string>
+    <string name="field_email">ఇమెయిల్</string>
+    <string name="field_phone">ఫోన్ నంబర్</string>
+    <string name="action_sign_in">సైన్ ఇన్</string>
+    <string name="action_create_account">ఖాతా సృష్టించండి</string>
+    <string name="action_sign_in_google">Google తో కొనసాగించండి</string>
+    <string name="action_cancel">రద్దు</string>
+    <string name="action_delete">తొలగించు</string>
+    <string name="action_confirm_delete">మీరు ఈ అంశాన్ని తొలగించాలనుకుంటున్నారా?</string>
+    <string name="tab_home">హోమ్</string>
+    <string name="tab_explore">అన్వేషించు</string>
+    <string name="tab_feed">ఫీడ్</string>
+    <string name="tab_more">మరింత</string>
+    <string name="tab_profile">ప్రొఫైల్</string>
+    <string name="profile_my_posts">నా పోస్ట్‌లు</string>
+    <string name="my_posts_empty">మీరు ఇంకా ఏమీ పోస్ట్ చేయలేదు.</string>
+    <string name="generic_error_network">నెట్‌వర్క్ లోపం. దయచేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="generic_loading">లోడ్ అవుతోంది...</string>
+    <string name="shortcut_new_post">కొత్త పోస్ట్</string>
+    <string name="shortcut_new_post_long">కొత్త లిస్టింగ్ సృష్టించండి</string>
+    <string name="shortcut_search">శోధన</string>
+    <string name="shortcut_search_long">లిస్టింగ్‌లు శోధించండి</string>
+    <string name="shortcut_chat">చాట్</string>
+    <string name="shortcut_chat_long">సందేశాలు తెరవండి</string>
+</resources>

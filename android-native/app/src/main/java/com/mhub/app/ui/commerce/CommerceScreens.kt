@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -999,7 +1000,7 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                 Text("Recently Viewed", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
                 if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
                 IconButton(onClick = { isGrid = !isGrid }, modifier = Modifier.size(36.dp)) {
-                    Icon(if (isGrid) Icons.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
+                    Icon(if (isGrid) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
                 }
             }
             when {

@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -90,7 +92,7 @@ fun ShareLinkBottomSheet(
                 ShareActionItem(
                     icon = {
                         Icon(
-                            Icons.Default.Chat,
+                            Icons.AutoMirrored.Filled.Chat,
                             contentDescription = "WhatsApp",
                             tint = Color(0xFF25D366),
                         )
@@ -430,7 +432,7 @@ fun PostMoreMenuButton(
             if (isOwner) {
                 DropdownMenuItem(
                     text = { Text("Promote") },
-                    leadingIcon = { Icon(Icons.Default.TrendingUp, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null) },
                     onClick = { expanded = false; onPromote() },
                 )
                 DropdownMenuItem(
