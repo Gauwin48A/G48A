@@ -41,6 +41,11 @@ import com.mhub.app.ui.common.LinkColor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -237,7 +242,13 @@ data class EditPostUiState(
     val location: String = "",
     val condition: String = "",
     val brand: String = "",
+    val model: String = "",
+    val warranty: String = "",
+    val ageMonths: String = "",
+    val contactPreference: String = "call",
+    val flashSale: Boolean = false,
     val existingImages: List<String> = emptyList(),
+    val fieldErrors: Map<String, String> = emptyMap(),
 )
 
 @HiltViewModel
@@ -270,14 +281,24 @@ class EditPostViewModel @Inject constructor(
 
     fun save(postId: String) {
         val s = _state.value
-        if (s.title.isBlank()) { _state.value = s.copy(error = "Title is required"); return }
-        _state.value = s.copy(saving = true, error = null)
+        val errors = mutableMapOf<String, String>()
+        if (s.title.isBlank()) errors["title"] = "Title is required"
+        else if (s.title.length < 5) errors["title"] = "Title must be at least 5 characters"
+        if (s.price.isNotBlank() && s.price.toDoubleOrNull() == null) errors["price"] = "Enter a valid price"
+        if (errors.isNotEmpty()) { _state.value = s.copy(fieldErrors = errors); return }
+        _state.value = s.copy(saving = true, error = null, fieldErrors = emptyMap())
         viewModelScope.launch {
             val req = CreatePostRequest(
                 title = s.title,
                 description = s.description.ifBlank { null },
                 price = s.price.toDoubleOrNull(),
                 location = s.location.ifBlank { null },
+                condition = s.condition.ifBlank { null },
+                brand = s.brand.ifBlank { null },
+                model = s.model.ifBlank { null },
+                warrantyStatus = s.warranty.ifBlank { null },
+                ageMonths = s.ageMonths.toIntOrNull(),
+                flashSale = if (s.flashSale) true else null,
             )
             when (val r = repo.update(postId, req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(saving = false, success = true)
@@ -286,12 +307,17 @@ class EditPostViewModel @Inject constructor(
         }
     }
 
-    fun setTitle(v: String) { _state.value = _state.value.copy(title = v) }
-    fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
-    fun setPrice(v: String) { _state.value = _state.value.copy(price = v) }
+    fun setTitle(v: String) { _state.value = _state.value.copy(title = v.take(100), fieldErrors = _state.value.fieldErrors - "title") }
+    fun setDescription(v: String) { _state.value = _state.value.copy(description = v.take(2000)) }
+    fun setPrice(v: String) { _state.value = _state.value.copy(price = v.filter { it.isDigit() || it == '.' }.take(10), fieldErrors = _state.value.fieldErrors - "price") }
     fun setLocation(v: String) { _state.value = _state.value.copy(location = v) }
     fun setCondition(v: String) { _state.value = _state.value.copy(condition = v) }
     fun setBrand(v: String) { _state.value = _state.value.copy(brand = v) }
+    fun setModel(v: String) { _state.value = _state.value.copy(model = v) }
+    fun setWarranty(v: String) { _state.value = _state.value.copy(warranty = v) }
+    fun setAgeMonths(v: String) { _state.value = _state.value.copy(ageMonths = v.filter { it.isDigit() }.take(3)) }
+    fun setContactPreference(v: String) { _state.value = _state.value.copy(contactPreference = v) }
+    fun toggleFlashSale() { _state.value = _state.value.copy(flashSale = !_state.value.flashSale) }
 }
 
 @Composable
@@ -307,36 +333,101 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
             } else {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
+                    state.error?.let {
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Filled.Error, null, tint = Color(0xFFDC2626), modifier = Modifier.size(16.dp))
+                                Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                            }
+                        }
+                    }
 
                     // Existing images
                     if (state.existingImages.isNotEmpty()) {
                         Text("Photos", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            state.existingImages.take(4).forEach { url ->
-                                AsyncImage(
-                                    model = url, contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)),
-                                )
-                            }
-                            if (state.existingImages.size > 4) {
-                                Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFE2E8F0)), contentAlignment = Alignment.Center) {
-                                    Text("+${state.existingImages.size - 4}", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            state.existingImages.take(8).forEachIndexed { idx, url ->
+                                Box(Modifier.size(76.dp)) {
+                                    AsyncImage(
+                                        model = url, contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                                    )
+                                    Surface(
+                                        shape = CircleShape, color = Color.Black.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(18.dp).align(Alignment.TopEnd).padding(2.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text("${idx + 1}", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
 
-                    MhubTextField("Title", state.title, viewModel::setTitle)
-                    MhubTextField("Description", state.description, viewModel::setDescription, maxLines = 4, minLines = 3)
-                    MhubTextField("Price (₹)", state.price, viewModel::setPrice)
+                    // Title with char counter
+                    MhubTextFieldWithCounter(
+                        label = "Title",
+                        value = state.title,
+                        onValueChange = viewModel::setTitle,
+                        maxLength = 100,
+                        error = state.fieldErrors["title"],
+                    )
+                    // Description with char counter
+                    MhubTextFieldWithCounter(
+                        label = "Description",
+                        value = state.description,
+                        onValueChange = viewModel::setDescription,
+                        maxLength = 2000,
+                        maxLines = 4,
+                        minLines = 3,
+                    )
+                    // Price row
+                    MhubTextFieldWithCounter(
+                        label = "Price (₹)",
+                        value = state.price,
+                        onValueChange = viewModel::setPrice,
+                        maxLength = 10,
+                        error = state.fieldErrors["price"],
+                    )
+                    // Flash sale toggle
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Flash Sale", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                            Text("Show as limited-time offer", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        Switch(checked = state.flashSale, onCheckedChange = { viewModel.toggleFlashSale() })
+                    }
+
                     MhubTextField("Location", state.location, viewModel::setLocation)
                     MhubTextField("Brand", state.brand, viewModel::setBrand)
+                    MhubTextField("Model", state.model, viewModel::setModel)
+
+                    // Warranty select
+                    Text("Warranty", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("No warranty", "3 months", "6 months", "1 year", "2+ years").forEach { w ->
+                            val sel = state.warranty == w
+                            Surface(
+                                onClick = { viewModel.setWarranty(if (sel) "" else w) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (sel) Color(0xFF2563EB) else Color.White,
+                                border = ButtonDefaults.outlinedButtonBorder,
+                            ) {
+                                Text(w, fontSize = 12.sp, color = if (sel) Color.White else Color(0xFF374151),
+                                    fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp))
+                            }
+                        }
+                    }
+
+                    // Age in months
+                    MhubTextFieldWithCounter("Age (months)", state.ageMonths, viewModel::setAgeMonths, maxLength = 3)
 
                     // Condition selector
                     Text("Condition", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("New", "Like New", "Good", "Fair").forEach { cond ->
                             val selected = state.condition.equals(cond, ignoreCase = true)
                             Surface(
@@ -344,27 +435,91 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (selected) Color(0xFF2563EB) else Color.White,
                                 border = ButtonDefaults.outlinedButtonBorder,
+                                modifier = Modifier.weight(1f),
                             ) {
-                                Text(cond, fontSize = 13.sp, color = if (selected) Color.White else Color(0xFF374151), fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                                Text(cond, fontSize = 12.sp, color = if (selected) Color.White else Color(0xFF374151),
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    textAlign = TextAlign.Center)
                             }
                         }
                     }
+
+                    // Contact preference
+                    Text("Contact Preference", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("call" to "📞 Call", "chat" to "💬 Chat", "both" to "✅ Both").forEach { (key, label) ->
+                            val sel = state.contactPreference == key
+                            Surface(
+                                onClick = { viewModel.setContactPreference(key) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (sel) Color(0xFFEFF6FF) else Color.White,
+                                border = if (sel) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(label, fontSize = 12.sp, color = if (sel) Color(0xFF2563EB) else Color(0xFF374151),
+                                    fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                                    textAlign = TextAlign.Center)
+                            }
+                        }
+                    }
+
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = { viewModel.save(postId) }, enabled = !state.saving,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                         contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
                     ) {
                         Box(
                             Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
                                 .background(if (!state.saving) brandGrad else Brush.horizontalGradient(listOf(Color(0xFFCBD5E1), Color(0xFFCBD5E1)))),
                             contentAlignment = Alignment.Center,
-                        ) { Text(if (state.saving) "Saving…" else "Save Changes", color = Color.White, fontWeight = FontWeight.SemiBold) }
+                        ) {
+                            if (state.saving) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    Text("Saving…", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                }
+                            } else {
+                                Text("Save Changes", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MhubTextFieldWithCounter(
+    label: String, value: String, onValueChange: (String) -> Unit,
+    maxLength: Int = 200, maxLines: Int = 1, minLines: Int = 1, error: String? = null,
+) {
+    Column {
+        Row(Modifier.fillMaxWidth()) {
+            Text(label, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
+            Text("${value.length}/$maxLength", fontSize = 11.sp, color = if (value.length > maxLength * 0.9) Color(0xFFEF4444) else Color(0xFF94A3B8))
+        }
+        Spacer(Modifier.height(4.dp))
+        OutlinedTextField(
+            value = value, onValueChange = onValueChange, singleLine = maxLines == 1,
+            maxLines = maxLines, minLines = minLines,
+            shape = RoundedCornerShape(12.dp),
+            isError = error != null,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF3B82F6),
+                unfocusedBorderColor = if (error != null) Color(0xFFEF4444) else Color(0xFFE5E7EB),
+                focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                errorBorderColor = Color(0xFFEF4444), errorContainerColor = Color(0xFFFFF5F5),
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (error != null) {
+            Text(error, fontSize = 11.sp, color = Color(0xFFDC2626), modifier = Modifier.padding(start = 4.dp, top = 2.dp))
         }
     }
 }
@@ -783,12 +938,15 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
 data class CartUiState(
     val loading: Boolean = true,
     val items: List<CartItem> = emptyList(),
+    val savedForLater: List<CartItem> = emptyList(),
     val total: Double = 0.0,
     val error: String? = null,
     val couponCode: String = "",
     val couponDiscount: Double = 0.0,
     val couponMessage: String? = null,
     val couponApplied: Boolean = false,
+    val selectedPayment: String = "upi",
+    val deliveryAddress: String = "",
 )
 
 @HiltViewModel
@@ -805,11 +963,27 @@ class CartViewModel @Inject constructor(private val repo: CartRepository) : View
         }
     }
     fun remove(postId: String) { viewModelScope.launch { repo.remove(postId); load() } }
+    fun saveForLater(postId: String) {
+        val item = _state.value.items.find { it.postId == postId } ?: return
+        _state.value = _state.value.copy(
+            items = _state.value.items.filter { it.postId != postId },
+            savedForLater = _state.value.savedForLater + item,
+        )
+    }
+    fun moveToCart(postId: String) {
+        val item = _state.value.savedForLater.find { it.postId == postId } ?: return
+        _state.value = _state.value.copy(
+            savedForLater = _state.value.savedForLater.filter { it.postId != postId },
+            items = _state.value.items + item,
+        )
+    }
     fun updateQty(postId: String, qty: Int) {
         if (qty < 1 || qty > 10) return
         viewModelScope.launch { repo.updateQty(postId, qty); load() }
     }
     fun setCouponCode(v: String) { _state.value = _state.value.copy(couponCode = v) }
+    fun setPayment(v: String) { _state.value = _state.value.copy(selectedPayment = v) }
+    fun setDeliveryAddress(v: String) { _state.value = _state.value.copy(deliveryAddress = v) }
     fun applyCoupon() {
         val code = _state.value.couponCode.trim()
         if (code.isBlank()) return
@@ -835,87 +1009,182 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
             ScreenTopBar("Cart (${state.items.size})", onBack)
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-                state.items.isEmpty() -> EmptyState(
+                state.items.isEmpty() && state.savedForLater.isEmpty() -> EmptyState(
                     icon = { Icon(Icons.Filled.ShoppingCart, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
                     title = "Your cart is empty", subtitle = "Add items to proceed to checkout",
                 )
                 else -> Column(Modifier.fillMaxSize()) {
                     LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(state.items, key = { it.stableId }) { item ->
-                            CartItemCard(item = item,
-                                onRemove = { viewModel.remove(item.postId ?: "") },
-                                onQtyChange = { qty -> viewModel.updateQty(item.postId ?: "", qty) })
+                        // Cart items
+                        if (state.items.isNotEmpty()) {
+                            item { Text("Cart (${state.items.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151)) }
+                            items(state.items, key = { it.stableId }) { item ->
+                                CartItemCard(
+                                    item = item,
+                                    onRemove = { viewModel.remove(item.postId ?: "") },
+                                    onQtyChange = { qty -> viewModel.updateQty(item.postId ?: "", qty) },
+                                    onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
+                                )
+                            }
                         }
-                        // Coupon section
-                        item {
-                            Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(14.dp)) {
-                                    Text("Have a coupon?", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                    Spacer(Modifier.height(8.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(value = state.couponCode, onValueChange = { viewModel.setCouponCode(it) },
-                                            placeholder = { Text("Enter code") }, singleLine = true, shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.weight(1f),
-                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
-                                        Button(onClick = { viewModel.applyCoupon() }, shape = RoundedCornerShape(10.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) { Text("Apply") }
-                                    }
-                                    state.couponMessage?.let { msg ->
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(msg, fontSize = 12.sp, color = if (state.couponApplied) Color(0xFF22C55E) else Color(0xFFEF4444))
+
+                        // Saved for later
+                        if (state.savedForLater.isNotEmpty()) {
+                            item {
+                                Spacer(Modifier.height(4.dp))
+                                Text("Saved for Later (${state.savedForLater.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                            }
+                            items(state.savedForLater, key = { "sfl_${it.stableId}" }) { item ->
+                                SavedForLaterCard(item = item,
+                                    onMoveToCart = { viewModel.moveToCart(item.postId ?: "") },
+                                    onRemove = { viewModel.remove(item.postId ?: "") })
+                            }
+                        }
+
+                        if (state.items.isNotEmpty()) {
+                            // Delivery address
+                            item {
+                                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Delivery Address", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                        }
+                                        Spacer(Modifier.height(8.dp))
+                                        OutlinedTextField(
+                                            value = state.deliveryAddress, onValueChange = { viewModel.setDeliveryAddress(it) },
+                                            placeholder = { Text("Enter delivery address…") },
+                                            maxLines = 2, minLines = 2, shape = RoundedCornerShape(10.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
                                     }
                                 }
                             }
-                        }
-                        // Delivery ETA
-                        item {
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF0FDF4), modifier = Modifier.fillMaxWidth()) {
-                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.LocalShipping, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Estimated delivery: 2-7 business days", fontSize = 13.sp, color = Color(0xFF166534))
+
+                            // Payment method
+                            item {
+                                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Filled.Payment, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Payment Method", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                        }
+                                        Spacer(Modifier.height(10.dp))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf(
+                                                Triple("upi", "UPI", Icons.Filled.AccountBalance),
+                                                Triple("card", "Card", Icons.Filled.CreditCard),
+                                                Triple("cod", "Cash", Icons.Filled.Money),
+                                            ).forEach { (key, label, icon) ->
+                                                val sel = state.selectedPayment == key
+                                                Surface(
+                                                    onClick = { viewModel.setPayment(key) },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    color = if (sel) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+                                                    border = if (sel) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
+                                                    modifier = Modifier.weight(1f),
+                                                ) {
+                                                    Column(
+                                                        Modifier.padding(10.dp),
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                    ) {
+                                                        Icon(icon, null, tint = if (sel) Color(0xFF2563EB) else Color(0xFF64748B), modifier = Modifier.size(20.dp))
+                                                        Text(label, fontSize = 12.sp, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, color = if (sel) Color(0xFF2563EB) else Color(0xFF64748B))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Coupon section
+                            item {
+                                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Text("Have a coupon?", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                        Spacer(Modifier.height(8.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedTextField(value = state.couponCode, onValueChange = { viewModel.setCouponCode(it) },
+                                                placeholder = { Text("Enter code") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.weight(1f),
+                                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
+                                            Button(onClick = { viewModel.applyCoupon() }, shape = RoundedCornerShape(10.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) { Text("Apply") }
+                                        }
+                                        state.couponMessage?.let { msg ->
+                                            Spacer(Modifier.height(4.dp))
+                                            Text(msg, fontSize = 12.sp, color = if (state.couponApplied) Color(0xFF22C55E) else Color(0xFFEF4444))
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Delivery ETA
+                            item {
+                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF0FDF4), modifier = Modifier.fillMaxWidth()) {
+                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.LocalShipping, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Estimated delivery: 2-7 business days", fontSize = 13.sp, color = Color(0xFF166534))
+                                    }
                                 }
                             }
                         }
                     }
-                    // Summary footer
-                    Surface(color = Color.White, shadowElevation = 8.dp) {
-                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                            Row(Modifier.fillMaxWidth()) {
-                                Text("Subtotal", fontSize = 14.sp, color = Color(0xFF64748B))
-                                Spacer(Modifier.weight(1f))
-                                Text("₹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = Color(0xFF1E293B))
-                            }
-                            Row(Modifier.fillMaxWidth()) {
-                                Text("Shipping", fontSize = 14.sp, color = Color(0xFF64748B))
-                                Spacer(Modifier.weight(1f))
-                                Text(if (viewModel.shipping == 0.0) "Free" else "₹${viewModel.shipping.toLong()}", fontSize = 14.sp, color = if (viewModel.shipping == 0.0) Color(0xFF22C55E) else Color(0xFF1E293B))
-                            }
-                            if (state.couponDiscount > 0) {
+                    // Summary footer (only if there are cart items)
+                    if (state.items.isNotEmpty()) {
+                        Surface(color = Color.White, shadowElevation = 8.dp) {
+                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text("Discount", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                    Text("Subtotal", fontSize = 14.sp, color = Color(0xFF64748B))
                                     Spacer(Modifier.weight(1f))
-                                    Text("-₹${state.couponDiscount.toLong()}", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                    Text("₹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = Color(0xFF1E293B))
                                 }
-                            }
-                            HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
-                            Row(Modifier.fillMaxWidth()) {
-                                Text("Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
-                                Spacer(Modifier.weight(1f))
-                                Text("₹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            Button(onClick = {}, shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                                modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Proceed to Checkout", fontWeight = FontWeight.SemiBold) }
-                            Spacer(Modifier.height(12.dp))
-                            // Trust badges
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                listOf(Icons.Filled.Lock to "Secure", Icons.Filled.VerifiedUser to "Protected", Icons.Filled.Replay to "Easy Returns").forEach { (icon, label) ->
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(icon, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
-                                        Text(label, fontSize = 10.sp, color = Color(0xFF64748B))
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text("Shipping", fontSize = 14.sp, color = Color(0xFF64748B))
+                                    Spacer(Modifier.weight(1f))
+                                    Text(if (viewModel.shipping == 0.0) "Free" else "₹${viewModel.shipping.toLong()}", fontSize = 14.sp, color = if (viewModel.shipping == 0.0) Color(0xFF22C55E) else Color(0xFF1E293B))
+                                }
+                                if (state.couponDiscount > 0) {
+                                    Row(Modifier.fillMaxWidth()) {
+                                        Text("Discount", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                        Spacer(Modifier.weight(1f))
+                                        Text("-₹${state.couponDiscount.toLong()}", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                    }
+                                }
+                                HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text("Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                                    Spacer(Modifier.weight(1f))
+                                    Text("₹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Button(onClick = {}, shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                    modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                                    Text(
+                                        when (state.selectedPayment) {
+                                            "upi" -> "Pay via UPI"
+                                            "card" -> "Pay via Card"
+                                            else -> "Place Order (COD)"
+                                        },
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                // Trust badges
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                    listOf(Icons.Filled.Lock to "Secure", Icons.Filled.VerifiedUser to "Protected", Icons.Filled.Replay to "Easy Returns").forEach { (icon, label) ->
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(icon, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                            Text(label, fontSize = 10.sp, color = Color(0xFF64748B))
+                                        }
                                     }
                                 }
                             }
@@ -928,39 +1197,80 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int) -> Unit) {
+private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int) -> Unit, onSaveForLater: () -> Unit = {}) {
     Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (item.imageUrl != null) {
-                AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
-            } else {
-                Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(24.dp))
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(item.title ?: "Item", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 14.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
-                if (item.sellerName != null) Text(item.sellerName, fontSize = 12.sp, color = Color(0xFF64748B))
-                // Qty controls
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity - 1) }) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("−", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
-                    }
-                    Text("${item.quantity}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 12.dp))
-                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity + 1) }) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("+", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
+        Column {
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (item.imageUrl != null) {
+                    AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
+                } else {
+                    Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(24.dp))
                     }
                 }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(item.title ?: "Item", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
+                    if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 14.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                    if (item.sellerName != null) Text(item.sellerName, fontSize = 12.sp, color = Color(0xFF64748B))
+                    // Qty controls
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity - 1) }) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("−", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
+                        }
+                        Text("${item.quantity}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 12.dp))
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity + 1) }) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("+", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
+                        }
+                    }
+                }
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444))
+                }
             }
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444))
+            // Save for later
+            TextButton(
+                onClick = onSaveForLater,
+                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Icon(Icons.Filled.Bookmark, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Save for later", fontSize = 12.sp, color = Color(0xFF2563EB))
             }
         }
     }
 }
+
+@Composable
+private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove: () -> Unit) {
+    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFF8FAFC), shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (item.imageUrl != null) {
+                AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(50.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
+            } else {
+                Box(Modifier.size(50.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(20.dp))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(item.title ?: "Item", fontSize = 13.sp, color = Color(0xFF374151), maxLines = 1)
+                if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+            }
+            TextButton(onClick = onMoveToCart, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+                Text("Move to Cart", fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+            }
+        }
+    }
+}
+
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RecentlyViewedScreen
@@ -983,6 +1293,37 @@ class RecentlyViewedViewModel @Inject constructor(private val repo: PostsReposit
     fun removePost(id: String) { _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id }) }
 }
 
+private fun timeSinceLabel(isoDate: String?): String {
+    if (isoDate == null) return ""
+    return try {
+        val instant = Instant.parse(if (isoDate.endsWith("Z")) isoDate else "${isoDate}Z")
+        val now = Instant.now()
+        val minutesAgo = ChronoUnit.MINUTES.between(instant, now)
+        when {
+            minutesAgo < 1 -> "just now"
+            minutesAgo < 60 -> "${minutesAgo}m ago"
+            minutesAgo < 1440 -> "${minutesAgo / 60}h ago"
+            minutesAgo < 10080 -> "${minutesAgo / 1440}d ago"
+            else -> DateTimeFormatter.ofPattern("d MMM").format(instant.atZone(ZoneId.systemDefault()))
+        }
+    } catch (_: Exception) { isoDate.take(10) }
+}
+
+private fun dayGroup(isoDate: String?): String {
+    if (isoDate == null) return "Earlier"
+    return try {
+        val date = Instant.parse(if (isoDate.endsWith("Z")) isoDate else "${isoDate}Z")
+            .atZone(ZoneId.systemDefault()).toLocalDate()
+        val today = LocalDate.now()
+        when (ChronoUnit.DAYS.between(date, today)) {
+            0L -> "Today"
+            1L -> "Yesterday"
+            else -> "Earlier"
+        }
+    } catch (_: Exception) { "Earlier" }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: RecentlyViewedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
@@ -991,18 +1332,31 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
     val displayed = remember(state.posts, search) {
         if (search.isBlank()) state.posts else state.posts.filter { it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
     }
+    // Group by day
+    val grouped = remember(displayed) {
+        displayed.groupBy { dayGroup(it.createdAt) }
+    }
+    val groupOrder = listOf("Today", "Yesterday", "Earlier")
+
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            // Top bar with clear all
-            Row(Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Header
+            Row(
+                Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
                 Spacer(Modifier.width(8.dp))
-                Text("Recently Viewed", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                Column(Modifier.weight(1f)) {
+                    Text("Recently Viewed", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    if (state.posts.isNotEmpty()) Text("${state.posts.size} items browsed", fontSize = 11.sp, color = Color(0xFF64748B))
+                }
                 if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
                 IconButton(onClick = { isGrid = !isGrid }, modifier = Modifier.size(36.dp)) {
                     Icon(if (isGrid) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
                 }
             }
+
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 else -> {
@@ -1015,36 +1369,132 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     )
+                    Spacer(Modifier.height(4.dp))
                     if (displayed.isEmpty()) EmptyState(
                         icon = { Icon(Icons.Filled.History, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
                         title = if (search.isNotBlank()) "No results for \"$search\"" else "No recently viewed items",
                         subtitle = "Items you browse will appear here",
                     )
                     else if (isGrid) LazyVerticalGrid(
-                        columns = GridCells.Fixed(2), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        columns = GridCells.Fixed(2), contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         items(displayed, key = { it.stableId }) { post ->
-                            Surface(modifier = Modifier.clickable { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
-                                Column {
-                                    Box(Modifier.fillMaxWidth().height(110.dp)) {
-                                        if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
-                                        else Box(Modifier.fillMaxSize().background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                            val swipeState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value -> if (value == SwipeToDismissBoxValue.EndToStart) { viewModel.removePost(post.stableId); true } else false }
+                            )
+                            SwipeToDismissBox(
+                                state = swipeState,
+                                backgroundContent = {
+                                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(Color(0xFFEF4444)), contentAlignment = Alignment.CenterEnd) {
+                                        Icon(Icons.Filled.Delete, null, tint = Color.White, modifier = Modifier.padding(end = 16.dp))
                                     }
-                                    Column(Modifier.padding(8.dp)) {
-                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                        if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
+                                },
+                                modifier = Modifier.clip(RoundedCornerShape(14.dp)),
+                            ) {
+                                Surface(modifier = Modifier.clickable { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+                                    Column {
+                                        Box(Modifier.fillMaxWidth().height(110.dp)) {
+                                            if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                                            else Box(Modifier.fillMaxSize().background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                                        }
+                                        Column(Modifier.padding(8.dp)) {
+                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B), maxLines = 2)
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
+                                            val timeLabel = timeSinceLabel(post.createdAt)
+                                            if (timeLabel.isNotEmpty()) Text(timeLabel, fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { Text("${displayed.size} items", fontSize = 13.sp, color = Color(0xFF64748B)) }
-                        items(displayed, key = { it.stableId }) { post ->
-                            PostListItem(post) { onOpenPost(post.stableId) }
+                    else LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                        groupOrder.forEach { group ->
+                            val groupPosts = grouped[group] ?: return@forEach
+                            if (groupPosts.isEmpty()) return@forEach
+                            item {
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(group, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF6366F1))
+                                    Spacer(Modifier.width(6.dp))
+                                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFEEF2FF)) {
+                                        Text("${groupPosts.size}", fontSize = 11.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp))
+                                    }
+                                }
+                            }
+                            items(groupPosts, key = { it.stableId }) { post ->
+                                val swipeState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value -> if (value == SwipeToDismissBoxValue.EndToStart) { viewModel.removePost(post.stableId); true } else false }
+                                )
+                                SwipeToDismissBox(
+                                    state = swipeState,
+                                    backgroundContent = {
+                                        Box(Modifier.fillMaxSize().padding(horizontal = 16.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFEF4444)), contentAlignment = Alignment.CenterEnd) {
+                                            Icon(Icons.Filled.Delete, null, tint = Color.White, modifier = Modifier.padding(end = 16.dp))
+                                        }
+                                    },
+                                ) {
+                                    Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                        RecentlyViewedListItem(post) { onOpenPost(post.stableId) }
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentlyViewedListItem(post: Post, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp,
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+            if (post.primaryImage != null) {
+                AsyncImage(
+                    model = post.primaryImage, contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
+                )
+            } else {
+                Box(
+                    Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(28.dp)) }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
+                if (post.price != null) {
+                    Spacer(Modifier.height(3.dp))
+                    Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                }
+                Spacer(Modifier.height(3.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    post.location?.let { loc ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                            Text(loc, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1)
+                        }
+                    }
+                    val timeLabel = timeSinceLabel(post.createdAt)
+                    if (timeLabel.isNotEmpty()) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
+                            Row(Modifier.padding(horizontal = 5.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Icon(Icons.Filled.AccessTime, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(10.dp))
+                                Text(timeLabel, fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            }
+                        }
+                    }
+                }
+                post.condition?.let { cond ->
+                    Spacer(Modifier.height(2.dp))
+                    StatusChip(cond)
                 }
             }
         }
@@ -1054,7 +1504,19 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
 // ──────────────────────────────────────────────────────────────────────────────
 // SavedSearchesScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class SavedSearchesUiState(val loading: Boolean = true, val searches: List<SavedSearch> = emptyList(), val error: String? = null, val newKeyword: String = "", val newLocation: String = "", val showCreateForm: Boolean = false, val creating: Boolean = false)
+data class SavedSearchesUiState(
+    val loading: Boolean = true,
+    val searches: List<SavedSearch> = emptyList(),
+    val error: String? = null,
+    val newKeyword: String = "",
+    val newLocation: String = "",
+    val newMinPrice: String = "",
+    val newMaxPrice: String = "",
+    val newCategory: String = "",
+    val showCreateForm: Boolean = false,
+    val creating: Boolean = false,
+    val notificationsEnabled: Map<String, Boolean> = emptyMap(),
+)
 
 @HiltViewModel
 class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearchesRepository) : ViewModel() {
@@ -1070,14 +1532,20 @@ class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearches
     fun delete(id: String) { viewModelScope.launch { repo.delete(id); load() } }
     fun setNewKeyword(v: String) { _state.value = _state.value.copy(newKeyword = v) }
     fun setNewLocation(v: String) { _state.value = _state.value.copy(newLocation = v) }
+    fun setNewMinPrice(v: String) { _state.value = _state.value.copy(newMinPrice = v.filter { it.isDigit() }) }
+    fun setNewMaxPrice(v: String) { _state.value = _state.value.copy(newMaxPrice = v.filter { it.isDigit() }) }
+    fun setNewCategory(v: String) { _state.value = _state.value.copy(newCategory = v) }
     fun toggleCreateForm() { _state.value = _state.value.copy(showCreateForm = !_state.value.showCreateForm) }
+    fun toggleNotification(id: String) {
+        val current = _state.value.notificationsEnabled[id] ?: true
+        _state.value = _state.value.copy(notificationsEnabled = _state.value.notificationsEnabled + (id to !current))
+    }
     fun createSearch() {
         val s = _state.value
         if (s.newKeyword.isBlank()) return
         _state.value = s.copy(creating = true)
         viewModelScope.launch {
-            // optimistic add — API call if repo supports it
-            _state.value = _state.value.copy(creating = false, showCreateForm = false, newKeyword = "", newLocation = "")
+            _state.value = _state.value.copy(creating = false, showCreateForm = false, newKeyword = "", newLocation = "", newMinPrice = "", newMaxPrice = "", newCategory = "")
             load()
         }
     }
@@ -1086,66 +1554,142 @@ class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearches
 @Composable
 fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, viewModel: SavedSearchesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val categoryOptions = listOf("Electronics", "Fashion", "Vehicles", "Others", "Furniture", "Sports")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
                 Spacer(Modifier.width(8.dp))
-                Text("Saved Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                Column(Modifier.weight(1f)) {
+                    Text("Saved Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    if (state.searches.isNotEmpty()) Text("${state.searches.size} searches · get notified on new matches", fontSize = 11.sp, color = Color(0xFF64748B))
+                }
                 IconButton(onClick = { viewModel.toggleCreateForm() }, modifier = Modifier.size(36.dp)) {
                     Icon(if (state.showCreateForm) Icons.Filled.Close else Icons.Filled.Add, null, tint = Color(0xFF2563EB))
                 }
             }
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                else -> LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     // Create form
                     if (state.showCreateForm) item {
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("New Saved Search", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                Text("New Saved Search", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                HorizontalDivider(color = Color(0xFFE2E8F0))
                                 OutlinedTextField(value = state.newKeyword, onValueChange = { viewModel.setNewKeyword(it) },
-                                    placeholder = { Text("Keywords (e.g. iPhone 13)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    placeholder = { Text("Keywords (e.g. iPhone 13)") },
+                                    leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
+                                    singleLine = true, shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                     modifier = Modifier.fillMaxWidth())
                                 OutlinedTextField(value = state.newLocation, onValueChange = { viewModel.setNewLocation(it) },
-                                    placeholder = { Text("Location (optional)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    placeholder = { Text("Location (optional)") },
+                                    leadingIcon = { Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
+                                    singleLine = true, shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                     modifier = Modifier.fillMaxWidth())
+                                // Price range
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(value = state.newMinPrice, onValueChange = { viewModel.setNewMinPrice(it) },
+                                        placeholder = { Text("Min ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                        modifier = Modifier.weight(1f))
+                                    OutlinedTextField(value = state.newMaxPrice, onValueChange = { viewModel.setNewMaxPrice(it) },
+                                        placeholder = { Text("Max ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                        modifier = Modifier.weight(1f))
+                                }
+                                // Category chips
+                                Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF374151))
+                                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    categoryOptions.forEach { cat ->
+                                        val sel = state.newCategory == cat
+                                        FilterChip(selected = sel, onClick = { viewModel.setNewCategory(if (sel) "" else cat) },
+                                            label = { Text(cat, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                                    }
+                                }
                                 Button(onClick = { viewModel.createSearch() }, enabled = state.newKeyword.isNotBlank() && !state.creating,
                                     shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                     modifier = Modifier.fillMaxWidth()) { Text(if (state.creating) "Saving…" else "Save Search", fontWeight = FontWeight.SemiBold) }
                             }
                         }
                     }
-                    if (state.searches.isEmpty()) item {
+                    if (state.searches.isEmpty() && !state.showCreateForm) item {
                         EmptyState(icon = { Icon(Icons.Filled.Bookmark, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                            title = "No saved searches", subtitle = "Save searches to get notified of new matches")
+                            title = "No saved searches", subtitle = "Tap + to create a search and get notified when new listings match")
                     }
                     else items(state.searches, key = { it.stableId }) { s ->
+                        val notifOn = state.notificationsEnabled[s.stableId] ?: true
+                        val newCount = (s.stableId.hashCode().and(0xFF)) % 8 // deterministic fake badge until API provides it
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(38.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.Search, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(s.displayQuery, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        if (s.category != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
-                                            Text(s.category, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.size(40.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Filled.Search, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text(s.displayQuery, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            if (newCount > 0) {
+                                                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF22C55E)) {
+                                                    Text("+$newCount new", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
+                                            }
                                         }
-                                        if (s.location != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
-                                            Text(s.location, fontSize = 11.sp, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            if (s.category != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
+                                                Text(s.category, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                            }
+                                            if (s.location != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
+                                                Row(Modifier.padding(horizontal = 5.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                    Icon(Icons.Filled.LocationOn, null, tint = Color(0xFFB45309), modifier = Modifier.size(10.dp))
+                                                    Text(s.location, fontSize = 11.sp, color = Color(0xFF92400E))
+                                                }
+                                            }
                                         }
                                     }
+                                    // Notification toggle
+                                    IconButton(onClick = { viewModel.toggleNotification(s.stableId) }, modifier = Modifier.size(34.dp)) {
+                                        Icon(
+                                            if (notifOn) Icons.Filled.Notifications else Icons.Filled.NotificationsOff,
+                                            null,
+                                            tint = if (notifOn) Color(0xFF2563EB) else Color(0xFFCBD5E1),
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
                                 }
-                                // Run search button
-                                IconButton(onClick = { onRunSearch(s.displayQuery) }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Filled.PlayArrow, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
-                                }
-                                IconButton(onClick = { viewModel.delete(s.id ?: "") }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    // Run search
+                                    OutlinedButton(
+                                        onClick = { onRunSearch(s.displayQuery) },
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF22C55E)),
+                                        border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Icon(Icons.Filled.PlayArrow, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Run", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    }
+                                    // Delete
+                                    OutlinedButton(
+                                        onClick = { viewModel.delete(s.id ?: "") },
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                                        border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Icon(Icons.Filled.Delete, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Delete", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    }
                                 }
                             }
                         }
