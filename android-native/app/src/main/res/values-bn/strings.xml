@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">এমহাব</string>
+    <string name="login_title">আবার স্বাগতম</string>
+    <string name="login_subtitle">চালিয়ে যেতে সাইন ইন করুন</string>
+    <string name="signup_title">অ্যাকাউন্ট তৈরি করুন</string>
+    <string name="signup_subtitle">এক মিনিটে এমহাবে যোগ দিন</string>
+    <string name="auth_brand_subtitle">স্থানীয়ভাবে কিনুন এবং বিক্রি করুন</string>
+    <string name="auth_tab_signin">সাইন ইন</string>
+    <string name="auth_tab_signup">অ্যাকাউন্ট তৈরি করুন</string>
+    <string name="field_identifier">ইমেইল বা ফোন</string>
+    <string name="field_password">পাসওয়ার্ড</string>
+    <string name="field_full_name">পুরো নাম</string>
+    <string name="field_email">ইমেইল</string>
+    <string name="field_phone">ফোন নম্বর</string>
+    <string name="action_sign_in">সাইন ইন</string>
+    <string name="action_create_account">অ্যাকাউন্ট তৈরি করুন</string>
+    <string name="action_sign_in_google">Google দিয়ে চালিয়ে যান</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="action_delete">মুছুন</string>
+    <string name="action_confirm_delete">আপনি কি এই আইটেমটি মুছতে চান?</string>
+    <string name="tab_home">হোম</string>
+    <string name="tab_explore">অনুসন্ধান</string>
+    <string name="tab_feed">ফিড</string>
+    <string name="tab_more">আরও</string>
+    <string name="tab_profile">প্রোফাইল</string>
+    <string name="profile_my_posts">আমার পোস্ট</string>
+    <string name="my_posts_empty">আপনি এখনও কিছু পোস্ট করেননি।</string>
+    <string name="generic_error_network">নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।</string>
+    <string name="generic_loading">লোড হচ্ছে...</string>
+    <string name="shortcut_new_post">নতুন পোস্ট</string>
+    <string name="shortcut_new_post_long">একটি নতুন তালিকা তৈরি করুন</string>
+    <string name="shortcut_search">খুঁজুন</string>
+    <string name="shortcut_search_long">তালিকা খুঁজুন</string>
+    <string name="shortcut_chat">চ্যাট</string>
+    <string name="shortcut_chat_long">বার্তা খুলুন</string>
+</resources>

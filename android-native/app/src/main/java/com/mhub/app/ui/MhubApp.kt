@@ -54,6 +54,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import com.mhub.app.R
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.mhub.app.ui.auth.AuthViewModel
 import com.mhub.app.ui.auth.ForgotPasswordScreen
 import com.mhub.app.ui.auth.LoginScreen
@@ -137,6 +140,8 @@ class AppThemeViewModel @Inject constructor(
 fun MhubApp(
     onReady: () -> Unit = {},
     connectivityObserver: ConnectivityObserver? = null,
+    deepLinkUri: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
 ) {
     val themeVm: AppThemeViewModel = hiltViewModel()
     val themeMode by themeVm.themeMode.collectAsState()
@@ -144,8 +149,17 @@ fun MhubApp(
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+        var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
 
         LaunchedEffect(Unit) { onReady() }
+
+        // Handle deep links
+        LaunchedEffect(deepLinkUri) {
+            if (deepLinkUri != null && isAuthenticated) {
+                handleDeepLink(deepLinkUri, navController)
+                onDeepLinkConsumed()
+            }
+        }
 
         // When session expires (token cleared by authenticator), redirect to login
         LaunchedEffect(isAuthenticated) {
@@ -231,14 +245,26 @@ fun MhubApp(
             // ── Main Graph (Bottom Nav) ──
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
-                    MainShell(navController = navController, selected = BottomTab.HOME) {
-                        CategoryHubScreen(
-                            onOpenCategory = { navController.navigate(Routes.ALL_POSTS) },
-                            onOpenAllPosts = { navController.navigate(Routes.ALL_POSTS) },
-                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
-                            onSelectApp = { key -> navController.navigate(Routes.categoryDetail(key)) },
-                        )
-                    }
+                    // CategoryHub is the launcher — no MainShell, no bottom nav
+                    CategoryHubScreen(
+                        onOpenCategory = {
+                            activeCategoryKey = null
+                            navController.navigate(Routes.ALL_POSTS)
+                        },
+                        onOpenAllPosts = {
+                            activeCategoryKey = null
+                            navController.navigate(Routes.ALL_POSTS)
+                        },
+                        onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                        onSelectApp = { key ->
+                            activeCategoryKey = key
+                            navController.navigate(Routes.ALL_POSTS) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    )
                 }
 
                 composable(Routes.ALL_POSTS) {
@@ -249,18 +275,26 @@ fun MhubApp(
                             onCreatePost = { navController.navigate(Routes.CREATE_POST) },
                             onOpenExplore = { navController.navigate(Routes.FOR_YOU) },
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
+                            activeCategoryKey = activeCategoryKey,
+                            onChangeApp = {
+                                activeCategoryKey = null
+                                navController.navigate(Routes.HOME) {
+                                    popUpTo(Routes.HOME) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            },
+                            onOpenCart = { navController.navigate(Routes.CART) },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) },
                         )
                     }
                 }
 
                 composable(Routes.FOR_YOU) {
                     MainShell(navController = navController, selected = BottomTab.MORE) {
-                        ExploreScreen(
+                        com.mhub.app.ui.foryou.ForYouScreen(
+                            onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
-                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
-                            title = "For You",
-                            subtitle = "Personalized picks based on your activity",
                         )
                     }
                 }
@@ -397,6 +431,18 @@ fun MhubApp(
 
             composable(Routes.AADHAAR_VERIFY) {
                 com.mhub.app.ui.kyc.AadhaarVerifyScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.NOTIFICATION_PREFS) {
+                com.mhub.app.ui.notifications.NotificationPrefsScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.DAILY_CODE) {
+                com.mhub.app.ui.rewards.DailyCodeScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.REFERRAL_TREE) {
+                com.mhub.app.ui.rewards.ReferralTreeScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Routes.CATEGORY_MODE) {
@@ -748,5 +794,36 @@ fun MainShell(
         Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
             content()
         }
+    }
+}
+
+/**
+ * Route deep link URIs to the appropriate composable routes.
+ * Supports: mhub://post/{id}, mhub://chat/{id}, mhub://search, mhub://create-post,
+ * https://mhub.app/post/{id}, https://mhub.app/chat/{id}
+ */
+private fun handleDeepLink(uri: String, navController: NavHostController) {
+    val path = uri.removePrefix("mhub://").removePrefix("https://mhub.app/").trimEnd('/')
+    val segments = path.split("/")
+    when (segments.firstOrNull()) {
+        "post", "posts", "listing" -> {
+            val id = segments.getOrNull(1) ?: return
+            navController.navigate("${Routes.POST_DETAIL}/$id")
+        }
+        "chat", "messages" -> {
+            val id = segments.getOrNull(1)
+            if (id != null) navController.navigate("${Routes.CHAT}/$id")
+            else navController.navigate(Routes.CHAT_LIST)
+        }
+        "search" -> navController.navigate(Routes.SEARCH)
+        "create-post", "sell" -> navController.navigate(Routes.CREATE_POST)
+        "profile" -> {
+            val id = segments.getOrNull(1)
+            if (id != null) navController.navigate("${Routes.PROFILE}/$id")
+        }
+        "wishlist", "saved" -> navController.navigate(Routes.WISHLIST)
+        "cart" -> navController.navigate(Routes.CART)
+        "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
+        "settings" -> navController.navigate(Routes.SETTINGS)
     }
 }

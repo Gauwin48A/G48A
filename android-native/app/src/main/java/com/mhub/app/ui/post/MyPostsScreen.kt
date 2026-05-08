@@ -20,7 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -32,6 +36,7 @@ import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -90,6 +95,8 @@ data class MyPostsState(
     val items: List<Post> = emptyList(),
     val error: String? = null,
     val statusFilter: String? = null,
+    val selectedIds: Set<String> = emptySet(),
+    val bulkMode: Boolean = false,
 )
 
 @HiltViewModel
@@ -136,6 +143,28 @@ class MyPostsViewModel @Inject constructor(
             load()
         }
     }
+
+    fun toggleBulkMode() { _state.value = _state.value.copy(bulkMode = !_state.value.bulkMode, selectedIds = emptySet()) }
+    fun toggleSelection(id: String) {
+        val current = _state.value.selectedIds
+        _state.value = _state.value.copy(selectedIds = if (id in current) current - id else current + id)
+    }
+    fun selectAll() { _state.value = _state.value.copy(selectedIds = _state.value.items.map { it.stableId }.toSet()) }
+    fun clearSelection() { _state.value = _state.value.copy(selectedIds = emptySet()) }
+    fun bulkDelete() {
+        viewModelScope.launch {
+            _state.value.selectedIds.forEach { id -> runCatching { repo.delete(id) } }
+            _state.value = _state.value.copy(bulkMode = false, selectedIds = emptySet())
+            load()
+        }
+    }
+    fun bulkMarkSold() {
+        viewModelScope.launch {
+            _state.value.selectedIds.forEach { id -> runCatching { repo.markSold(id) } }
+            _state.value = _state.value.copy(bulkMode = false, selectedIds = emptySet())
+            load()
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,15 +203,25 @@ fun MyPostsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.profile_my_posts), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
+            if (state.bulkMode) {
+                TopAppBar(
+                    title = { Text("${state.selectedIds.size} selected", fontWeight = FontWeight.Bold) },
+                    navigationIcon = { IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Close, null) } },
+                    actions = {
+                        TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
+                        IconButton(onClick = { viewModel.bulkMarkSold() }) { Icon(Icons.Default.CheckCircle, "Mark Sold", tint = Color(0xFF22C55E)) }
+                        IconButton(onClick = { viewModel.bulkDelete() }) { Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error) }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.profile_my_posts), fontWeight = FontWeight.Bold) },
+                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
+                    actions = { IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") } },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                )
+            }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = onCreatePost, icon = { Icon(Icons.Default.Add, null) }, text = { Text("New Listing") })
@@ -232,7 +271,7 @@ fun MyPostsScreen(
                                     Text("Manage and track your listings", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         StatMiniCard("Total", "${allItems.size}", Icons.Default.ShoppingBag, Color(0xFF3B82F6), Modifier.weight(1f))
-                                        StatMiniCard("Active", "$activeCount", Icons.Default.TrendingUp, Color(0xFF22C55E), Modifier.weight(1f))
+                                        StatMiniCard("Active", "$activeCount", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF22C55E), Modifier.weight(1f))
                                         StatMiniCard("Sold", "$soldCount", Icons.Default.Favorite, Color(0xFFF59E0B), Modifier.weight(1f))
                                         StatMiniCard("Views", "$totalViews", Icons.Default.Visibility, Color(0xFF8B5CF6), Modifier.weight(1f))
                                     }
@@ -299,9 +338,9 @@ fun MyPostsScreen(
                             }
                             items(filtered, key = { it.stableId }) { post ->
                                 Card(
-                                    onClick = { onOpenPost(post.stableId) },
+                                    onClick = { if (state.bulkMode) viewModel.toggleSelection(post.stableId) else onOpenPost(post.stableId) },
                                     shape = RoundedCornerShape(0.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
                                     Row(
@@ -309,6 +348,9 @@ fun MyPostsScreen(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        if (state.bulkMode) {
+                                            Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
+                                        }
                                         Box(
                                             modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
                                             contentAlignment = Alignment.Center,

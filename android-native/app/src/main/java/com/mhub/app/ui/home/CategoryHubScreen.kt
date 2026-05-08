@@ -23,9 +23,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
@@ -137,6 +140,8 @@ fun CategoryHubScreen(
     onOpenAllPosts: () -> Unit,
     onOpenSearch: () -> Unit,
     onSelectApp: (String) -> Unit = { _ -> onOpenAllPosts() },
+    onOpenNotifications: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -156,7 +161,20 @@ fun CategoryHubScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(24.dp))
+            // Top action row (notifications + settings)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onOpenNotifications) {
+                    Icon(Icons.Default.Notifications, "Notifications", tint = Color(0xFF64748B))
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Default.Settings, "Settings", tint = Color(0xFF64748B))
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             // Title
             Text(
@@ -256,7 +274,7 @@ private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, onClick:
                         .background(Color.White.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
                 }
             }
         }

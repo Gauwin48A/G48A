@@ -140,6 +140,8 @@ class PostsRepository @Inject constructor(
     suspend fun report(id: String): ApiResult<Unit> = safeApiCall { api.reportPost(id); Unit }
 
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deletePost(id); Unit }
+
+    suspend fun markSold(id: String): ApiResult<Unit> = safeApiCall { api.markPostSold(id); Unit }
 }
 
 @Singleton
@@ -431,4 +433,45 @@ class SocialRepository @Inject constructor(private val api: MhubApi) {
     suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
         api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit
     }
+}
+
+@Singleton
+class PriceAlertsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun subscribe(postId: String): ApiResult<Unit> = safeApiCall { api.subscribePriceAlert(PriceAlertRequest(postId)); Unit }
+    suspend fun unsubscribe(postId: String): ApiResult<Unit> = safeApiCall { api.unsubscribePriceAlert(postId); Unit }
+}
+
+@Singleton
+class BoostRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun boost(postId: String, tier: String = "basic", duration: Int = 24): ApiResult<Unit> = safeApiCall { api.boostPost(postId, BoostRequest(tier, duration)); Unit }
+    suspend fun status(postId: String): ApiResult<BoostStatusResponse> = safeApiCall { api.boostStatus(postId) }
+}
+
+@Singleton
+class SponsoredRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).items }
+    suspend fun forYou(limit: Int = 20): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit).items }
+}
+
+@Singleton
+class DraftRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<DraftResponse> = safeApiCall { api.getDraft() }
+    suspend fun save(req: DraftRequest): ApiResult<Unit> = safeApiCall { api.saveDraft(req); Unit }
+    suspend fun clear(): ApiResult<Unit> = safeApiCall { api.clearDraft(); Unit }
+}
+
+@Singleton
+class NotificationPrefsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<NotificationPrefsResponse> = safeApiCall { api.notificationPreferences() }
+    suspend fun update(req: NotificationPrefsRequest): ApiResult<Unit> = safeApiCall { api.updateNotificationPreferences(req); Unit }
+}
+
+@Singleton
+class DailyCodeRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<DailyCodeResponse> = safeApiCall { api.dailyCode() }
+}
+
+@Singleton
+class ReferralTreeRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun tree(): ApiResult<ReferralTreeResponse> = safeApiCall { api.referralTree() }
 }

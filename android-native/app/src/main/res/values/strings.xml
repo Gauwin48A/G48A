@@ -159,4 +159,12 @@
     <string name="generic_loading">Loading...</string>
     <string name="google_signin_failed">Google sign-in failed. Try again.</string>
     <string name="google_signin_not_configured">Google sign-in is not configured.</string>
+
+    <!-- App Shortcuts -->
+    <string name="shortcut_new_post">New Post</string>
+    <string name="shortcut_new_post_long">Create a new listing</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_search_long">Search listings</string>
+    <string name="shortcut_chat">Chat</string>
+    <string name="shortcut_chat_long">Open messages</string>
 </resources>

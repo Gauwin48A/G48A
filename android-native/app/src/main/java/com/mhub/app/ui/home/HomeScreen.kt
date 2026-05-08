@@ -41,10 +41,15 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,6 +90,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -186,6 +192,168 @@ private fun FilterBottomSheet(
     }
 }
 
+/* ── Category theme data ──────────────────────────────────────────────── */
+
+private data class CategoryTheme(
+    val key: String,
+    val label: String,
+    val emoji: String,
+    val tagline: String,
+    val gradient: List<Color>,
+)
+
+private val CATEGORY_THEMES = mapOf(
+    "electronics" to CategoryTheme("electronics", "Electronics", "📱", "Phones, laptops & gadgets",
+        listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
+    "fashion" to CategoryTheme("fashion", "Fashion", "👗", "Clothing, shoes & accessories",
+        listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
+    "vehicles" to CategoryTheme("vehicles", "Vehicles", "🚗", "Cars, bikes & spare parts",
+        listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
+    "others" to CategoryTheme("others", "Others", "✨", "Home, services, jobs & more",
+        listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
+)
+
+/* ── Hero banner for active category ──────────────────────────────────── */
+
+@Composable
+private fun CategoryHeroBanner(
+    theme: CategoryTheme,
+    listingsCount: Int,
+    onChangeApp: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.horizontalGradient(theme.gradient))
+            .padding(20.dp),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(theme.emoji, fontSize = 32.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(theme.label, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                        Text(theme.tagline, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                    }
+                }
+                Surface(
+                    onClick = onChangeApp,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.2f),
+                ) {
+                    Text(
+                        "Switch",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                }
+            }
+            if (listingsCount > 0) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "$listingsCount listings available",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+/* ── Quick-access row (Cart / Wishlist / Recently Viewed) ─────────────── */
+
+@Composable
+private fun QuickAccessRow(
+    onOpenCart: () -> Unit,
+    onOpenWishlist: () -> Unit,
+    onOpenRecentlyViewed: () -> Unit,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        QuickAccessChip(Icons.Default.ShoppingCart, "Cart", accentColor, Modifier.weight(1f), onOpenCart)
+        QuickAccessChip(Icons.Default.FavoriteBorder, "Wishlist", accentColor, Modifier.weight(1f), onOpenWishlist)
+        QuickAccessChip(Icons.Default.History, "Recent", accentColor, Modifier.weight(1f), onOpenRecentlyViewed)
+    }
+}
+
+@Composable
+private fun QuickAccessChip(
+    icon: ImageVector,
+    label: String,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = accentColor.copy(alpha = 0.08f),
+        modifier = modifier,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, null, tint = accentColor, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(label, color = accentColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+/* ── Subcategory strip (shown when a category app is active) ──────────── */
+
+@Composable
+private fun SubcategoryStrip(
+    subcategories: List<Category>,
+    selected: String?,
+    accentColor: Color,
+    onSelect: (String?) -> Unit,
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        item {
+            FilterChip(
+                selected = selected == null,
+                onClick = { onSelect(null) },
+                label = { Text("All", style = MaterialTheme.typography.labelMedium) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = accentColor,
+                    selectedLabelColor = Color.White,
+                ),
+            )
+        }
+        items(subcategories, key = { it.stableId }) { sub ->
+            FilterChip(
+                selected = selected == sub.stableId,
+                onClick = { onSelect(sub.stableId) },
+                label = { Text(sub.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = accentColor,
+                    selectedLabelColor = Color.White,
+                ),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -194,6 +362,11 @@ fun HomeScreen(
     onCreatePost: () -> Unit = {},
     onOpenExplore: () -> Unit = {},
     onOpenCategories: () -> Unit = {},
+    activeCategoryKey: String? = null,
+    onChangeApp: () -> Unit = {},
+    onOpenCart: () -> Unit = {},
+    onOpenWishlist: () -> Unit = {},
+    onOpenRecentlyViewed: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -214,6 +387,12 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val categoryTheme = activeCategoryKey?.let { CATEGORY_THEMES[it] }
+
+    // Sync category key with ViewModel
+    LaunchedEffect(activeCategoryKey) {
+        viewModel.setCategoryKey(activeCategoryKey)
+    }
 
     // Auto-refresh every 30 seconds
     LaunchedEffect(Unit) {
@@ -274,6 +453,47 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
+            if (categoryTheme != null) {
+                // Category-branded top bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Brush.horizontalGradient(categoryTheme.gradient))
+                        .padding(top = with(androidx.compose.ui.platform.LocalDensity.current) {
+                            androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(this).toDp()
+                        }),
+                ) {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(categoryTheme.emoji, fontSize = 22.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(categoryTheme.label, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
+                                    Text(categoryTheme.tagline, color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp)
+                                }
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { showSearch = !showSearch }) {
+                                Icon(if (showSearch) Icons.Default.Close else Icons.Default.Search, "Search", tint = Color.White)
+                            }
+                            IconButton(onClick = { showFilterSheet = true }) {
+                                Icon(Icons.Default.Tune, "Filters", tint = Color.White)
+                            }
+                            FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
+                                Icon(if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, "Toggle view")
+                            }
+                            Spacer(Modifier.width(4.dp))
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent,
+                        ),
+                    )
+                }
+            } else {
+                // Default top bar
             TopAppBar(
                 title = {
                     Column {
@@ -314,6 +534,7 @@ fun HomeScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
+            }
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -356,12 +577,34 @@ fun HomeScreen(
                     contentPadding = PaddingValues(bottom = 100.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    // Great Deals promotional banner
-                    item {
-                        com.mhub.app.ui.components.GreatDealsBanner(
-                            onShopNow = { quickFilter = "Under ₹500" },
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
+                    // Category hero banner when inside a category app
+                    if (categoryTheme != null) {
+                        item {
+                            CategoryHeroBanner(
+                                theme = categoryTheme,
+                                listingsCount = state.posts.size,
+                                onChangeApp = onChangeApp,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
+                        // Quick access row (Cart, Wishlist, Recently Viewed)
+                        item {
+                            QuickAccessRow(
+                                onOpenCart = onOpenCart,
+                                onOpenWishlist = onOpenWishlist,
+                                onOpenRecentlyViewed = onOpenRecentlyViewed,
+                                accentColor = categoryTheme.gradient.first(),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            )
+                        }
+                    } else {
+                        // Great Deals promotional banner (no category active)
+                        item {
+                            com.mhub.app.ui.components.GreatDealsBanner(
+                                onShopNow = { quickFilter = "Under ₹500" },
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
                     }
 
                     if (showSearch) {
@@ -389,7 +632,17 @@ fun HomeScreen(
                         }
                     }
 
-                    if (state.categories.isNotEmpty()) {
+                    // Subcategory chips (category app) or category chips (all-posts)
+                    if (categoryTheme != null && state.subcategories.isNotEmpty()) {
+                        item {
+                            SubcategoryStrip(
+                                subcategories = state.subcategories,
+                                selected = state.selectedSubcategory,
+                                accentColor = categoryTheme.gradient.first(),
+                                onSelect = { viewModel.selectSubcategory(it) },
+                            )
+                        }
+                    } else if (state.categories.isNotEmpty()) {
                         item {
                             CategoriesStrip(categories = state.categories, selected = selectedCategory, onSelect = { tapped ->
                                 selectedCategory = if (selectedCategory == tapped) null else tapped

@@ -1087,3 +1087,97 @@ data class InviteResponse(
     @SerialName("inviter_id") val inviterId: String? = null,
     val bonus: Int = 0,
 )
+
+// -------- Price Alerts --------
+@Serializable
+data class PriceAlertRequest(
+    @SerialName("post_id") val postId: String,
+)
+
+// -------- Post Boost --------
+@Serializable
+data class BoostRequest(
+    val tier: String = "basic", // basic | featured | spotlight
+    val duration: Int = 24, // hours
+)
+
+@Serializable
+data class BoostStatusResponse(
+    val boosted: Boolean = false,
+    val tier: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("views_gained") val viewsGained: Int = 0,
+)
+
+// -------- Draft --------
+@Serializable
+data class DraftResponse(
+    val title: String? = null,
+    val description: String? = null,
+    val price: Double? = null,
+    @SerialName("category_id") val categoryId: String? = null,
+    val location: String? = null,
+    val condition: String? = null,
+    val brand: String? = null,
+)
+
+@Serializable
+data class DraftRequest(
+    val title: String? = null,
+    val description: String? = null,
+    val price: Double? = null,
+    @SerialName("category_id") val categoryId: String? = null,
+    val location: String? = null,
+    val condition: String? = null,
+    val brand: String? = null,
+)
+
+// -------- Notification Preferences --------
+@Serializable
+data class NotificationPrefsResponse(
+    val chat: Boolean = true,
+    val offers: Boolean = true,
+    @SerialName("price_drops") val priceDrops: Boolean = true,
+    val sales: Boolean = true,
+    val system: Boolean = true,
+    val marketing: Boolean = false,
+)
+
+@Serializable
+data class NotificationPrefsRequest(
+    val chat: Boolean? = null,
+    val offers: Boolean? = null,
+    @SerialName("price_drops") val priceDrops: Boolean? = null,
+    val sales: Boolean? = null,
+    val system: Boolean? = null,
+    val marketing: Boolean? = null,
+)
+
+// -------- Daily Code --------
+@Serializable
+data class DailyCodeResponse(
+    val code: String = "",
+    val reward: Int = 0,
+    @SerialName("expires_at") val expiresAt: String? = null,
+    val claimed: Boolean = false,
+)
+
+// -------- Referral Tree --------
+@Serializable
+data class ReferralTreeResponse(
+    val total: Int = 0,
+    @SerialName("level_1") val level1: Int = 0,
+    @SerialName("level_2") val level2: Int = 0,
+    @SerialName("level_3") val level3: Int = 0,
+    val earnings: Double = 0.0,
+    val referrals: List<ReferralNode> = emptyList(),
+)
+
+@Serializable
+data class ReferralNode(
+    val id: String = "",
+    val name: String = "",
+    val level: Int = 1,
+    @SerialName("joined_at") val joinedAt: String? = null,
+    val earnings: Double = 0.0,
+)

@@ -42,4 +42,6 @@ object AppModule {
     @Provides fun providePostDao(db: MhubDatabase): PostDao = db.postDao()
 
     @Provides fun provideCategoryDao(db: MhubDatabase): CategoryDao = db.categoryDao()
+
+    @Provides fun provideOfflineQueueDao(db: MhubDatabase): com.mhub.app.data.local.OfflineQueueDao = db.offlineQueueDao()
 }

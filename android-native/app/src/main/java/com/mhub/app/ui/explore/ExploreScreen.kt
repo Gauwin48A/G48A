@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.LocalOffer
@@ -210,7 +211,7 @@ private fun categoryEmoji(name: String): String {
 private data class QuickFilter(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 private val quickFilters = listOf(
     QuickFilter("New", Icons.Outlined.NewReleases),
-    QuickFilter("Trending", Icons.Filled.TrendingUp),
+    QuickFilter("Trending", Icons.AutoMirrored.Filled.TrendingUp),
     QuickFilter("Top Rated", Icons.Outlined.Star),
     QuickFilter("Offers", Icons.Outlined.LocalOffer),
 )

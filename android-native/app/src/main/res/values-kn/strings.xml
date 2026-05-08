@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ಎಂಹಬ್</string>
+    <string name="login_title">ಮತ್ತೆ ಸ್ವಾಗತ</string>
+    <string name="login_subtitle">ಮುಂದುವರಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ</string>
+    <string name="signup_title">ಖಾತೆ ರಚಿಸಿ</string>
+    <string name="signup_subtitle">ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಎಂಹಬ್ ಸೇರಿ</string>
+    <string name="auth_brand_subtitle">ಸ್ಥಳೀಯವಾಗಿ ಖರೀದಿಸಿ ಮತ್ತು ಮಾರಾಟ ಮಾಡಿ</string>
+    <string name="auth_tab_signin">ಸೈನ್ ಇನ್</string>
+    <string name="auth_tab_signup">ಖಾತೆ ರಚಿಸಿ</string>
+    <string name="field_identifier">ಇಮೇಲ್ ಅಥವಾ ಫೋನ್</string>
+    <string name="field_password">ಪಾಸ್‌ವರ್ಡ್</string>
+    <string name="field_full_name">ಪೂರ್ಣ ಹೆಸರು</string>
+    <string name="field_email">ಇಮೇಲ್</string>
+    <string name="field_phone">ಫೋನ್ ಸಂಖ್ಯೆ</string>
+    <string name="action_sign_in">ಸೈನ್ ಇನ್</string>
+    <string name="action_create_account">ಖಾತೆ ರಚಿಸಿ</string>
+    <string name="action_sign_in_google">Google ನೊಂದಿಗೆ ಮುಂದುವರಿಸಿ</string>
+    <string name="action_cancel">ರದ್ದುಮಾಡಿ</string>
+    <string name="action_delete">ಅಳಿಸಿ</string>
+    <string name="action_confirm_delete">ನೀವು ಈ ಐಟಂ ಅನ್ನು ಅಳಿಸಲು ಬಯಸುವಿರಾ?</string>
+    <string name="tab_home">ಹೋಮ್</string>
+    <string name="tab_explore">ಅನ್ವೇಷಿಸಿ</string>
+    <string name="tab_feed">ಫೀಡ್</string>
+    <string name="tab_more">ಹೆಚ್ಚು</string>
+    <string name="tab_profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="profile_my_posts">ನನ್ನ ಪೋಸ್ಟ್‌ಗಳು</string>
+    <string name="my_posts_empty">ನೀವು ಇನ್ನೂ ಏನೂ ಪೋಸ್ಟ್ ಮಾಡಿಲ್ಲ.</string>
+    <string name="generic_error_network">ನೆಟ್‌ವರ್ಕ್ ದೋಷ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="generic_loading">ಲೋಡ್ ಆಗುತ್ತಿದೆ...</string>
+    <string name="shortcut_new_post">ಹೊಸ ಪೋಸ್ಟ್</string>
+    <string name="shortcut_new_post_long">ಹೊಸ ಪಟ್ಟಿ ರಚಿಸಿ</string>
+    <string name="shortcut_search">ಹುಡುಕಿ</string>
+    <string name="shortcut_search_long">ಪಟ್ಟಿಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="shortcut_chat">ಚಾಟ್</string>
+    <string name="shortcut_chat_long">ಸಂದೇಶಗಳನ್ನು ತೆರೆಯಿರಿ</string>
+</resources>

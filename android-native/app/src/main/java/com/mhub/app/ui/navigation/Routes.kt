@@ -103,4 +103,8 @@ object Routes {
     const val ACTIVITY_HUB = "activity"
     const val CATEGORY_MODE = "category-mode"
     const val AADHAAR_VERIFY = "aadhaar-verify"
+    const val NOTIFICATION_PREFS = "notification-prefs"
+    const val DAILY_CODE = "daily-code"
+    const val REFERRAL_TREE = "referral-tree"
+    const val CHAT_LIST = "chat-list"
 }

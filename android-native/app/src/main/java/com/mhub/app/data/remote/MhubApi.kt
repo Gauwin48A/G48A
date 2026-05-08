@@ -94,6 +94,9 @@ interface MhubApi {
     @DELETE("api/posts/{id}")
     suspend fun deletePost(@Path("id") id: String): MessageResponse
 
+    @PATCH("api/posts/{id}/sold")
+    suspend fun markPostSold(@Path("id") id: String): MessageResponse
+
     @PUT("api/posts/{id}")
     suspend fun updatePostMultipart(
         @Path("id") id: String,
@@ -502,4 +505,50 @@ interface MhubApi {
     // ---- Invite ----
     @GET("api/invite/{code}")
     suspend fun inviteInfo(@Path("code") code: String): InviteResponse
+
+    // ---- Price Alerts ----
+    @POST("api/price-alerts/subscribe")
+    suspend fun subscribePriceAlert(@Body body: PriceAlertRequest): MessageResponse
+
+    @DELETE("api/price-alerts/{postId}")
+    suspend fun unsubscribePriceAlert(@Path("postId") postId: String): MessageResponse
+
+    // ---- Post Boost ----
+    @POST("api/posts/{id}/boost")
+    suspend fun boostPost(@Path("id") id: String, @Body body: BoostRequest): MessageResponse
+
+    @GET("api/posts/{id}/boost-status")
+    suspend fun boostStatus(@Path("id") id: String): BoostStatusResponse
+
+    // ---- Sponsored / For-You ----
+    @GET("api/posts/sponsored")
+    suspend fun sponsoredPosts(@Query("limit") limit: Int = 10): PostsResponse
+
+    @GET("api/posts/for-you")
+    suspend fun forYouPosts(@Query("limit") limit: Int = 20): PostsResponse
+
+    // ---- Post Draft ----
+    @GET("api/posts/draft")
+    suspend fun getDraft(): DraftResponse
+
+    @PUT("api/posts/draft")
+    suspend fun saveDraft(@Body body: DraftRequest): MessageResponse
+
+    @DELETE("api/posts/draft")
+    suspend fun clearDraft(): MessageResponse
+
+    // ---- Notification Preferences ----
+    @GET("api/notifications/preferences")
+    suspend fun notificationPreferences(): NotificationPrefsResponse
+
+    @PUT("api/notifications/preferences")
+    suspend fun updateNotificationPreferences(@Body body: NotificationPrefsRequest): MessageResponse
+
+    // ---- Daily Code ----
+    @GET("api/dailycode")
+    suspend fun dailyCode(): DailyCodeResponse
+
+    // ---- Referral Tree ----
+    @GET("api/referral/tree")
+    suspend fun referralTree(): ReferralTreeResponse
 }
