@@ -709,6 +709,7 @@ const apiRouteMounts = [
   ["/api/dailycode", dailyCodeRoutes],
   ["/api/login-audit", loginAuditRoutes],
   ["/api/saleundone", saleUndoneRoutes],
+  ["/api/trust", require("./routes/trust.js")],
 ];
 
 for (const [routePath, routeHandler] of apiRouteMounts) {

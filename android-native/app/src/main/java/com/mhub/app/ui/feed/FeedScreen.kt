@@ -1,6 +1,11 @@
 package com.mhub.app.ui.feed
 
+import android.content.Intent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +23,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Visibility
@@ -32,23 +40,32 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -62,6 +79,7 @@ import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.ListShimmer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,13 +90,19 @@ import javax.inject.Inject
 data class FeedState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
+    val loadingMore: Boolean = false,
     val posts: List<Post> = emptyList(),
     val error: String? = null,
+    val selectedTab: Int = 0,
+    val currentPage: Int = 1,
+    val hasMore: Boolean = true,
+    val likedIds: Set<String> = emptySet(),
 )
 
 @HiltViewModel
 class FeedViewModel @Inject constructor(
     private val postsRepository: PostsRepository,
+    private val socialRepo: com.mhub.app.data.repository.SocialRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(FeedState())
     val state: StateFlow<FeedState> = _state.asStateFlow()
@@ -92,12 +116,22 @@ class FeedViewModel @Inject constructor(
             loading = !refresh && _state.value.posts.isEmpty(),
             refreshing = refresh,
             error = null,
+            currentPage = 1,
+            hasMore = true,
         )
         viewModelScope.launch {
-            when (val result = postsRepository.feed(limit = 24)) {
-                is ApiResult.Success -> _state.value = FeedState(
+            val sort = when (_state.value.selectedTab) {
+                1 -> "popular"
+                2 -> "newest"
+                else -> null
+            }
+            when (val result = postsRepository.feed(page = 1, limit = 20, sort = sort)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
+                    refreshing = false,
                     posts = result.data,
+                    currentPage = 1,
+                    hasMore = result.data.size >= 20,
                 )
 
                 is ApiResult.Failure -> _state.value = _state.value.copy(
@@ -108,7 +142,40 @@ class FeedViewModel @Inject constructor(
             }
         }
     }
+
+    fun selectTab(index: Int) {
+        _state.value = _state.value.copy(selectedTab = index)
+        load(refresh = true)
+    }
+
+    fun loadMore() {
+        val current = _state.value
+        if (current.loadingMore || !current.hasMore) return
+        val nextPage = current.currentPage + 1
+        _state.value = current.copy(loadingMore = true)
+        viewModelScope.launch {
+            val sort = when (current.selectedTab) { 1 -> "popular"; 2 -> "newest"; else -> null }
+            when (val result = postsRepository.feed(page = nextPage, limit = 20, sort = sort)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    loadingMore = false,
+                    posts = _state.value.posts + result.data,
+                    currentPage = nextPage,
+                    hasMore = result.data.size >= 20,
+                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(loadingMore = false)
+            }
+        }
+    }
+
+    fun toggleLike(postId: String) {
+        val current = _state.value
+        val newLiked = if (postId in current.likedIds) current.likedIds - postId else current.likedIds + postId
+        _state.value = current.copy(likedIds = newLiked)
+        viewModelScope.launch { runCatching { socialRepo.likePost(postId) } }
+    }
 }
+
+private val feedTabs = listOf("For You", "Trending", "Latest")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,41 +184,97 @@ fun FeedScreen(
     viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+    var showImageZoom by remember { mutableStateOf(false) }
+    var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+
+    val filteredPosts = remember(state.posts, searchQuery) {
+        if (searchQuery.isBlank()) state.posts
+        else state.posts.filter {
+            it.displayTitle.contains(searchQuery, ignoreCase = true) ||
+                it.description?.contains(searchQuery, ignoreCase = true) == true ||
+                it.userName?.contains(searchQuery, ignoreCase = true) == true
+        }
+    }
+
+    if (showImageZoom && zoomImages.isNotEmpty()) {
+        com.mhub.app.ui.components.ImageZoomDialog(
+            imageUrls = zoomImages,
+            onDismiss = { showImageZoom = false },
+        )
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Feed", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Community updates adapted for Android",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Feed", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Community updates",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showSearch = !showSearch }) {
+                            Icon(
+                                if (showSearch) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Search",
+                            )
+                        }
+                        IconButton(onClick = { viewModel.load(refresh = true) }) {
+                            Icon(Icons.Outlined.Update, contentDescription = "Refresh")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                )
+                if (showSearch) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search in feed...") },
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null) }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    )
+                }
+                TabRow(
+                    selectedTabIndex = state.selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    feedTabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = state.selectedTab == index,
+                            onClick = { viewModel.selectTab(index) },
+                            text = { Text(title, fontWeight = if (state.selectedTab == index) FontWeight.SemiBold else FontWeight.Normal) },
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.load(refresh = true) }) {
-                        Icon(Icons.Outlined.Update, contentDescription = "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
+                }
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.load(refresh = true) },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                state.loading -> ListShimmer(count = 5, modifier = Modifier.padding(top = 12.dp))
 
                 state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
@@ -170,15 +293,43 @@ fun FeedScreen(
                     )
                 }
 
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    items(state.posts, key = { it.stableId }) { post ->
-                        FeedCard(post = post, onOpenPost = { onOpenPost(post.stableId) })
+                else -> {
+                    Box(Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(filteredPosts, key = { it.stableId }) { post ->
+                                FeedCard(
+                                    post = post,
+                                    onOpenPost = { onOpenPost(post.stableId) },
+                                    onImageZoom = { urls ->
+                                        zoomImages = urls
+                                        showImageZoom = true
+                                    },
+                                )
+                            }
+                            if (state.hasMore && filteredPosts.isNotEmpty()) {
+                                item {
+                                    LaunchedEffect(Unit) { viewModel.loadMore() }
+                                    if (state.loadingMore) {
+                                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                        }
+                                    }
+                                }
+                            }
+                            item { Box(modifier = Modifier.height(56.dp)) }
+                        }
+                        // Back-to-top button
+                        com.mhub.app.ui.components.BackToTopButton(
+                            listState = listState,
+                            coroutineScope = coroutineScope,
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
+                        )
                     }
-                    item { Box(modifier = Modifier.height(56.dp)) }
                 }
             }
         }
@@ -189,8 +340,20 @@ fun FeedScreen(
 private fun FeedCard(
     post: Post,
     onOpenPost: () -> Unit,
+    onImageZoom: (List<String>) -> Unit = {},
 ) {
     var liked by remember { mutableStateOf(false) }
+    var showComments by remember { mutableStateOf(false) }
+    var commentText by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    // Like animation
+    val likeScale by animateFloatAsState(
+        targetValue = if (liked) 1.0f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "like_scale",
+    )
+
     Card(
         onClick = onOpenPost,
         shape = RoundedCornerShape(16.dp),
@@ -281,28 +444,91 @@ private fun FeedCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { liked = !liked }, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = null,
-                            tint = if (liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                    Text("Like", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Like button with animation
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable {
+                        liked = !liked
+                    },
+                ) {
+                    Icon(
+                        if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp).scale(if (liked) likeScale else 1f),
+                    )
+                    Text(
+                        if (liked) "Liked" else "Like",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Comment button
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { showComments = !showComments },
+                ) {
                     Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     Text("Comment", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                // Share + views
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     post.viewCount?.let { views ->
                         Icon(Icons.Default.Visibility, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         Text("$views", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(8.dp))
                     }
-                    Icon(Icons.Outlined.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    IconButton(
+                        onClick = {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on MHub!")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                        },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(Icons.Outlined.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+
+            // Inline comment section
+            if (showComments) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Comments", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "No comments yet. Be the first!",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = commentText,
+                                onValueChange = { commentText = it },
+                                placeholder = { Text("Write a comment...", fontSize = 13.sp) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(20.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                ),
+                                modifier = Modifier.weight(1f).height(44.dp),
+                            )
+                            IconButton(
+                                onClick = { commentText = "" },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
                 }
             }
         }

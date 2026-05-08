@@ -79,15 +79,16 @@ interface MhubApi {
         @Query("limit") limit: Int = 20,
         @Query("category") categoryId: String? = null,
         @Query("q") query: String? = null,
+        @Query("sort") sort: String? = null,
     ): PostsResponse
 
     @GET("api/posts/{id}")
-    suspend fun post(@Path("id") id: String): Post
+    suspend fun post(@Path("id") id: String): PostDetailResponse
 
     @POST("api/posts")
     suspend fun createPost(@Body body: CreatePostRequest): IdResponse
 
-    @GET("api/posts/mine/list")
+    @GET("api/posts/mine")
     suspend fun myPosts(): PostsResponse
 
     @DELETE("api/posts/{id}")
@@ -145,16 +146,16 @@ interface MhubApi {
     suspend fun uploadPostImage(@Body body: RequestBody): UploadResponse
 
     // ---- KYC ----
-    @POST("api/kyc/upload")
+    @POST("api/users/kyc/upload")
     suspend fun uploadKycDoc(
         @Query("slot") slot: String,
         @Body body: RequestBody,
     ): KycUploadResponse
 
-    @POST("api/kyc/submit")
+    @POST("api/users/kyc/submit")
     suspend fun submitKyc(@Body body: KycSubmitRequest): KycSubmitResponse
 
-    @GET("api/kyc/status")
+    @GET("api/users/kyc/status")
     suspend fun kycStatus(): KycStatusResponse
 
     // ---- Wishlist ----
@@ -176,6 +177,9 @@ interface MhubApi {
 
     @POST("api/notifications/{id}/read")
     suspend fun markRead(@Path("id") id: String): MessageResponse
+
+    @DELETE("api/notifications/{id}")
+    suspend fun deleteNotification(@Path("id") id: String): MessageResponse
 
     @POST("api/notifications/mark-all-read")
     suspend fun markAllRead(): MessageResponse
@@ -202,6 +206,44 @@ interface MhubApi {
     // ---- Rewards ----
     @GET("api/rewards")
     suspend fun rewards(): RewardsOverviewResponse
+
+    // ---- Coins / Engagement ----
+    @GET("api/coins/balance")
+    suspend fun coinBalance(): CoinBalanceResponse
+
+    @GET("api/coins/history")
+    suspend fun coinHistory(@Query("limit") limit: Int = 50): CoinHistoryResponse
+
+    @GET("api/coins/engagement")
+    suspend fun engagementStatus(): EngagementStatusResponse
+
+    @GET("api/coins/rewards-config")
+    suspend fun rewardsConfig(): RewardsConfigResponse
+
+    @POST("api/coins/daily-checkin")
+    suspend fun dailyCheckIn(): DailyCheckInResponse
+
+    @POST("api/coins/spin")
+    suspend fun spinWheel(): SpinResultResponse
+
+    @POST("api/coins/scratch")
+    suspend fun scratchCard(): ScratchResultResponse
+
+    @POST("api/coins/store-redeem")
+    suspend fun storeRedeem(@Body body: StoreRedeemRequest): StoreRedeemResponse
+
+    @POST("api/coins/referral-milestones")
+    suspend fun claimReferralMilestone(): MessageResponse
+
+    @GET("api/referral/leaderboard")
+    suspend fun referralLeaderboard(
+        @Query("period") period: String = "weekly",
+        @Query("limit") limit: Int = 5,
+    ): ReferralLeaderboardResponse
+
+    // ---- Profile Update ----
+    @POST("api/profile/update")
+    suspend fun updateProfile(@Body body: ProfileUpdateRequest): MessageResponse
 
     // ---- Dashboard ----
     @GET("api/dashboard")

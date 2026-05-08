@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.mhub.app.data.local.ThemeMode
 
 private val LightColors = lightColorScheme(
     primary = BrandPrimary,
@@ -67,9 +68,14 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun MhubTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
+    val useDarkTheme = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colors = if (useDarkTheme) DarkColors else LightColors
     val view = LocalView.current
     if (!view.isInEditMode) {

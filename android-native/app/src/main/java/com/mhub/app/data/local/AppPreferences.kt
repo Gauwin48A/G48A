@@ -15,10 +15,25 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "mhub_prefs")
 
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
 @Singleton
 class AppPreferences @Inject constructor(private val context: Context) {
 
     private val baseUrlKey = stringPreferencesKey("api_base_url")
+    private val themeModeKey = stringPreferencesKey("theme_mode")
+
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        when (prefs[themeModeKey]) {
+            "light" -> ThemeMode.LIGHT
+            "dark" -> ThemeMode.DARK
+            else -> ThemeMode.SYSTEM
+        }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { it[themeModeKey] = mode.name.lowercase() }
+    }
 
     val baseUrl: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[baseUrlKey]?.takeIf { it.isNotBlank() } ?: BuildConfig.DEFAULT_API_BASE_URL

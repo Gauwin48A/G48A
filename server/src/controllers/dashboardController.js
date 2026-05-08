@@ -123,9 +123,11 @@ exports.getDashboard = async (req, res) => {
       async () => {
         /* ---------- fetch user row ---------- */
         const userResult = await runQuery(
-          `SELECT user_id, username, email, rating, created_at
-           FROM users
-           WHERE user_id::text = $1
+          `SELECT u.user_id, u.username, u.email, u.rating, u.created_at,
+                  p.full_name
+           FROM users u
+           LEFT JOIN profiles p ON u.user_id::text = p.user_id::text
+           WHERE u.user_id::text = $1
            LIMIT 1`,
           [userIdText]
         );
@@ -177,7 +179,7 @@ exports.getDashboard = async (req, res) => {
 
         const user = {
           id: userData.user_id,
-          name: userData.username || "User",
+          name: userData.full_name || userData.username || "User",
           email: userData.email,
           rating: Number.parseFloat(userData.rating || 0).toFixed(1),
           rank:

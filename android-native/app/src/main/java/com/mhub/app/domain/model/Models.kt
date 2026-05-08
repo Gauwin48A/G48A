@@ -46,6 +46,7 @@ data class Post(
     @SerialName("user_name") val userName: String? = null,
     val status: String? = null,
     @SerialName("view_count") val viewCount: Int? = null,
+    @SerialName("like_count") val likeCount: Int? = null,
     val condition: String? = null,
     val brand: String? = null,
     @SerialName("seller_name") val sellerName: String? = null,

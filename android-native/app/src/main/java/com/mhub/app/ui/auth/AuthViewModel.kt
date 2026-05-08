@@ -99,6 +99,26 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState()
     }
 
+    /** Quick demo login — bypasses validation, uses hardcoded test credentials. */
+    fun demoLogin() {
+        if (_state.value.loading) return
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            when (val res = repo.signInWithEmail("9876543210", "Testing123")) {
+                is ApiResult.Success -> {
+                    val authRes = res.data
+                    if (authRes.requireOtp) {
+                        _state.value = AuthUiState(loading = false, requireOtp = true, otpPhone = "9876543210", otpCountdown = 120)
+                        startOtpCountdown()
+                    } else {
+                        _state.value = AuthUiState(loading = false, success = true)
+                    }
+                }
+                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = "Demo login failed: ${res.error.message}")
+            }
+        }
+    }
+
     private fun startOtpCountdown() {
         viewModelScope.launch {
             var count = _state.value.otpCountdown

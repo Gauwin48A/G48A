@@ -1,5 +1,7 @@
 package com.mhub.app.ui.account
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,7 +54,7 @@ private fun AccountTopBar(title: String, onBack: () -> Unit) {
 }
 
 // ─── DashboardScreen ────────────────────────────────────────────────────────
-data class DashboardUiState(val loading: Boolean = true, val error: String? = null, val stats: List<DashboardStat> = emptyList(), val activity: List<DashboardActivity> = emptyList(), val userName: String = "User")
+data class DashboardUiState(val loading: Boolean = true, val error: String? = null, val stats: List<DashboardStat> = emptyList(), val activity: List<DashboardActivity> = emptyList(), val userName: String = "User", val selectedPeriod: Int = 2)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(private val repo: DashboardRepository) : ViewModel() {
@@ -60,13 +62,16 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
     init { load() }
     fun load() { viewModelScope.launch {
-        _state.value = DashboardUiState(loading = true)
+        _state.value = _state.value.copy(loading = true, error = null)
         when (val r = repo.get()) {
-            is ApiResult.Success -> _state.value = DashboardUiState(loading = false, stats = r.data.quickStats, activity = r.data.recentActivity, userName = r.data.user?.displayName ?: "User")
-            is ApiResult.Failure -> _state.value = DashboardUiState(loading = false, error = r.error.message)
+            is ApiResult.Success -> _state.value = _state.value.copy(loading = false, stats = r.data.quickStats, activity = r.data.recentActivity, userName = r.data.user?.displayName ?: "User")
+            is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
         }
     } }
+    fun selectPeriod(index: Int) { _state.value = _state.value.copy(selectedPeriod = index); load() }
 }
+
+private val periodLabels = listOf("Today", "This Week", "This Month", "All Time")
 
 @Composable
 fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltViewModel()) {
@@ -88,6 +93,22 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                 Text("Welcome back,", color = Color(0xFFBFDBFE), fontSize = 13.sp)
                                 Text(state.userName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             }
+                        }
+                    }
+                }
+                // Period selector
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        periodLabels.forEachIndexed { index, label ->
+                            FilterChip(
+                                selected = state.selectedPeriod == index,
+                                onClick = { viewModel.selectPeriod(index) },
+                                label = { Text(label, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF2563EB),
+                                    selectedLabelColor = Color.White,
+                                ),
+                            )
                         }
                     }
                 }
@@ -130,13 +151,15 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
 
 @Composable
 private fun StatCard(modifier: Modifier, value: String, label: String, color: Color, icon: ImageVector) {
+    val targetValue = value.toIntOrNull() ?: 0
+    val animatedValue by animateIntAsState(targetValue = targetValue, animationSpec = tween(durationMillis = 800), label = "stat_anim")
     Surface(modifier = modifier, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
         Column(Modifier.padding(16.dp)) {
             Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+            Text(if (targetValue > 0) "$animatedValue" else value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
             Text(label.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1)
         }
     }

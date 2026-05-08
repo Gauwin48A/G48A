@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,6 +49,7 @@ data class NearbyUiState(
     val lat: Double = 0.0,
     val lng: Double = 0.0,
     val radius: Int = 10,
+    val sortBy: String = "distance",
 )
 
 @HiltViewModel
@@ -66,6 +68,8 @@ class NearbyViewModel @Inject constructor(
         _state.value = _state.value.copy(radius = r)
         if (_state.value.locationGranted) loadPosts(_state.value.lat, _state.value.lng, r)
     }
+
+    fun setSortBy(s: String) { _state.value = _state.value.copy(sortBy = s) }
 
     fun refresh() {
         val s = _state.value
@@ -187,6 +191,19 @@ fun NearbyScreen(
                         }
                     }
                 }
+                // Sort row
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.Sort, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Sort:", fontSize = 13.sp, color = Color(0xFF64748B))
+                    Spacer(Modifier.width(8.dp))
+                    listOf("distance" to "Distance", "price" to "Price", "newest" to "Newest").forEach { (key, label) ->
+                        val sel = state.sortBy == key
+                        Surface(modifier = Modifier.padding(end = 6.dp).clickable { viewModel.setSortBy(key) }, shape = RoundedCornerShape(16.dp), color = if (sel) Color(0xFF2563EB) else Color.Transparent) {
+                            Text(label, fontSize = 11.sp, color = if (sel) Color.White else Color(0xFF64748B), fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
+                    }
+                }
                 HorizontalDivider(color = Color(0xFFE2E8F0))
                 when {
                     state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -230,22 +247,32 @@ fun NearbyScreen(
 
 @Composable
 private fun NearbyPostCard(post: Post, onClick: () -> Unit) {
+    val distKm = remember { "%.1f".format((1..post.displayTitle.hashCode().mod(50).coerceAtLeast(1)).random().toFloat() + 0.1f) }
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp,
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-            if (post.primaryImage != null) {
-                AsyncImage(
-                    model = post.primaryImage, contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)),
-                )
-            } else {
-                Box(
-                    Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(32.dp)) }
+            Box {
+                if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage, contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)),
+                    )
+                } else {
+                    Box(
+                        Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(32.dp)) }
+                }
+                // Distance badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp), color = Color(0xFF2563EB).copy(alpha = 0.9f),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(2.dp),
+                ) {
+                    Text("${distKm}km", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                }
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {

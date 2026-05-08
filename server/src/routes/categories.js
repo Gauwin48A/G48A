@@ -13,6 +13,7 @@ router.get("/", publicReadSlowDown, categoryController.getAllCategories);
 router.get("/with-subcategories", publicReadSlowDown, categoryController.getCategoriesWithSubcategories);
 router.get("/resolve", publicReadSlowDown, categoryController.resolveCategory);
 router.get("/hub-stats", publicReadSlowDown, categoryController.getHubStats);
+router.get("/stats", publicReadSlowDown, categoryController.getStats);
 router.use("/brands", brandsRoutes);
 
 module.exports = router;

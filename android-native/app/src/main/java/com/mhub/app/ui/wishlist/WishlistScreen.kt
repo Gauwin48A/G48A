@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
@@ -135,6 +136,7 @@ private enum class WishlistSort(val label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WishlistScreen(
+    onBack: () -> Unit = {},
     onOpenPost: (String) -> Unit,
     viewModel: WishlistViewModel = hiltViewModel(),
 ) {
@@ -174,6 +176,11 @@ fun WishlistScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {

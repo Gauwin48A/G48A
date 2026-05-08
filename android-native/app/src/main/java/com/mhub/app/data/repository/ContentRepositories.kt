@@ -94,8 +94,9 @@ class PostsRepository @Inject constructor(
         limit: Int = 20,
         categoryId: String? = null,
         query: String? = null,
+        sort: String? = null,
     ): ApiResult<List<Post>> {
-        val result = safeApiCall { api.posts(page, limit, categoryId, query).items }
+        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort).items }
         if (result is ApiResult.Success && page == 1) {
             // Cache page 1 results; evict entries older than TTL
             postDao.evictStale(System.currentTimeMillis() - CACHE_TTL_MS)
@@ -110,7 +111,9 @@ class PostsRepository @Inject constructor(
         return result
     }
 
-    suspend fun detail(id: String): ApiResult<Post> = safeApiCall { api.post(id) }
+    suspend fun detail(id: String): ApiResult<Post> = safeApiCall {
+        api.post(id).post ?: error("Post not found")
+    }
 
     suspend fun create(req: CreatePostRequest): ApiResult<String> = safeApiCall {
         api.createPost(req).id ?: error("No id returned")
@@ -183,6 +186,10 @@ class KycRepository @Inject constructor(private val api: MhubApi) {
     suspend fun status(): ApiResult<KycStatusResponse> = safeApiCall { api.kycStatus() }
     suspend fun submit(req: KycSubmitRequest): ApiResult<KycSubmitResponse> =
         safeApiCall { api.submitKyc(req) }
+    suspend fun aadhaarSendOtp(req: AadhaarSendOtpRequest): ApiResult<AadhaarOtpResponse> =
+        safeApiCall { api.aadhaarSendOtp(req) }
+    suspend fun aadhaarVerifyOtp(req: AadhaarVerifyOtpRequest): ApiResult<AadhaarVerifyResponse> =
+        safeApiCall { api.aadhaarVerifyOtp(req) }
 }
 
 @Singleton
@@ -192,6 +199,7 @@ class NotificationsRepository @Inject constructor(private val api: MhubApi) {
     }
     suspend fun markRead(id: String): ApiResult<Unit> = safeApiCall { api.markRead(id); Unit }
     suspend fun markAllRead(): ApiResult<Unit> = safeApiCall { api.markAllRead(); Unit }
+    suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteNotification(id); Unit }
 }
 
 @Singleton
@@ -210,6 +218,19 @@ class ChatRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class RewardsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun overview(): ApiResult<RewardsOverviewResponse> = safeApiCall { api.rewards() }
+    suspend fun coinBalance(): ApiResult<com.mhub.app.data.remote.dto.CoinBalanceResponse> = safeApiCall { api.coinBalance() }
+    suspend fun coinHistory(): ApiResult<com.mhub.app.data.remote.dto.CoinHistoryResponse> = safeApiCall { api.coinHistory() }
+    suspend fun engagementStatus(): ApiResult<com.mhub.app.data.remote.dto.EngagementStatusResponse> = safeApiCall { api.engagementStatus() }
+    suspend fun rewardsConfig(): ApiResult<com.mhub.app.data.remote.dto.RewardsConfigResponse> = safeApiCall { api.rewardsConfig() }
+    suspend fun dailyCheckIn(): ApiResult<com.mhub.app.data.remote.dto.DailyCheckInResponse> = safeApiCall { api.dailyCheckIn() }
+    suspend fun spinWheel(): ApiResult<com.mhub.app.data.remote.dto.SpinResultResponse> = safeApiCall { api.spinWheel() }
+    suspend fun scratchCard(): ApiResult<com.mhub.app.data.remote.dto.ScratchResultResponse> = safeApiCall { api.scratchCard() }
+    suspend fun storeRedeem(type: String, postId: String? = null): ApiResult<com.mhub.app.data.remote.dto.StoreRedeemResponse> =
+        safeApiCall { api.storeRedeem(com.mhub.app.data.remote.dto.StoreRedeemRequest(type, postId)) }
+    suspend fun claimReferralMilestone(): ApiResult<com.mhub.app.data.remote.dto.MessageResponse> = safeApiCall { api.claimReferralMilestone() }
+    suspend fun referralLeaderboard(): ApiResult<com.mhub.app.data.remote.dto.ReferralLeaderboardResponse> = safeApiCall { api.referralLeaderboard() }
+    suspend fun updateProfile(body: com.mhub.app.data.remote.dto.ProfileUpdateRequest): ApiResult<com.mhub.app.data.remote.dto.MessageResponse> =
+        safeApiCall { api.updateProfile(body) }
 }
 
 @Singleton

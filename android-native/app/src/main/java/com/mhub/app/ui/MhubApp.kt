@@ -39,6 +39,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mhub.app.data.local.AppPreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -110,17 +117,30 @@ import com.mhub.app.ui.social.FeedPostAddScreen
 import com.mhub.app.ui.social.MyFeedScreen
 import com.mhub.app.ui.social.PublicWallScreen
 import com.mhub.app.ui.social.ReviewsScreen
+import com.mhub.app.ui.home.CategoryDetailScreen
 import com.mhub.app.ui.theme.MhubTheme
 import com.mhub.app.ui.wishlist.WishlistScreen
 import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.ui.components.OfflineBanner
+import com.mhub.app.ui.components.MhubTopBar
+import com.mhub.app.data.local.ThemeMode
+
+@HiltViewModel
+class AppThemeViewModel @Inject constructor(
+    private val prefs: AppPreferences,
+) : ViewModel() {
+    val themeMode: StateFlow<ThemeMode> = prefs.themeMode
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, ThemeMode.SYSTEM)
+}
 
 @Composable
 fun MhubApp(
     onReady: () -> Unit = {},
     connectivityObserver: ConnectivityObserver? = null,
 ) {
-    MhubTheme {
+    val themeVm: AppThemeViewModel = hiltViewModel()
+    val themeMode by themeVm.themeMode.collectAsState()
+    MhubTheme(themeMode = themeMode) {
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
@@ -216,6 +236,7 @@ fun MhubApp(
                             onOpenCategory = { navController.navigate(Routes.ALL_POSTS) },
                             onOpenAllPosts = { navController.navigate(Routes.ALL_POSTS) },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                            onSelectApp = { key -> navController.navigate(Routes.categoryDetail(key)) },
                         )
                     }
                 }
@@ -318,7 +339,7 @@ fun MhubApp(
 
                 composable(Routes.WISHLIST) {
                     MainShell(navController = navController, selected = BottomTab.MORE) {
-                        WishlistScreen(onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
+                        WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
                     }
                 }
             }
@@ -341,7 +362,17 @@ fun MhubApp(
             composable(Routes.CATEGORIES) {
                 CategoriesScreen(
                     onBack = { navController.popBackStack() },
-                    onCategoryClick = { _, _ -> navController.navigate(Routes.ALL_POSTS) },
+                    onCategoryClick = { _, name ->
+                        val key = name.lowercase().trim().let { n ->
+                            when {
+                                n.contains("electron") -> "electronics"
+                                n.contains("fashion") || n.contains("cloth") -> "fashion"
+                                n.contains("vehicle") || n.contains("car") || n.contains("bike") -> "vehicles"
+                                else -> "others"
+                            }
+                        }
+                        navController.navigate(Routes.categoryDetail(key))
+                    },
                 )
             }
 
@@ -356,11 +387,31 @@ fun MhubApp(
                 MyPostsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    onCreatePost = { navController.navigate(Routes.CREATE_POST) },
                 )
             }
 
             composable(Routes.KYC) {
                 KycScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.AADHAAR_VERIFY) {
+                com.mhub.app.ui.kyc.AadhaarVerifyScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.CATEGORY_MODE) {
+                com.mhub.app.ui.home.CategoryModeScreen(
+                    onBack = { navController.popBackStack() },
+                    onSelectApp = { appKey ->
+                        if (appKey.isNotBlank()) {
+                            navController.navigate("${Routes.ALL_POSTS}?category_group=${appKey}") {
+                                popUpTo(Routes.CATEGORY_MODE)
+                            }
+                        } else {
+                            navController.popBackStack()
+                        }
+                    },
+                )
             }
 
             composable(Routes.CHAT) {
@@ -393,6 +444,17 @@ fun MhubApp(
 
             composable(Routes.NEARBY) {
                 NearbyScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                )
+            }
+
+            composable(
+                route = Routes.CATEGORY_DETAIL,
+                arguments = listOf(navArgument("categoryKey") { type = NavType.StringType }),
+            ) { entry ->
+                val key = entry.arguments?.getString("categoryKey").orEmpty()
+                CategoryDetailScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                 )
@@ -444,7 +506,7 @@ fun MhubApp(
             }
 
             composable(Routes.SAVED_SEARCHES) {
-                SavedSearchesScreen(onBack = { navController.popBackStack() })
+                SavedSearchesScreen(onBack = { navController.popBackStack() }, onRunSearch = { q -> navController.navigate("search?query=${q}") })
             }
 
             composable(Routes.COMPARE) {
@@ -586,6 +648,25 @@ fun MhubApp(
                 val code = entry.arguments?.getString("code").orEmpty()
                 InviteScreen(code = code, onBack = { navController.popBackStack() })
             }
+
+            // ── New screens ──
+            composable(Routes.ACTIVITY_HUB) {
+                com.mhub.app.ui.discovery.ActivityHubScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigate = { key ->
+                        when (key) {
+                            "chat" -> navController.navigate(Routes.CHAT)
+                            "offers" -> navController.navigate(Routes.OFFERS)
+                            "reviews" -> navController.navigate(Routes.PROFILE)
+                            "nearby" -> navController.navigate(Routes.NEARBY)
+                            "wishlist" -> navController.navigate(Routes.WISHLIST)
+                            "cart" -> navController.navigate(Routes.CART)
+                            "my-posts" -> navController.navigate(Routes.MY_POSTS)
+                            "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
+                        }
+                    },
+                )
+            }
         }
         }
     }
@@ -611,6 +692,13 @@ fun MainShell(
     content: @Composable () -> Unit,
 ) {
     Scaffold(
+        topBar = {
+            MhubTopBar(
+                onSearch = { navController.navigate(Routes.SEARCH) },
+                onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                onCart = { navController.navigate(Routes.CART) },
+            )
+        },
         bottomBar = {
             NavigationBar(
                 tonalElevation = 0.dp,
@@ -624,11 +712,12 @@ fun MainShell(
                     NavigationBarItem(
                         selected = tab == selected,
                         onClick = {
-                            if (tab != selected) {
+                            val currentRoute = navController.currentDestination?.route
+                            if (tab.route != currentRoute) {
                                 navController.navigate(tab.route) {
                                     popUpTo(Routes.HOME) { saveState = true; inclusive = false }
                                     launchSingleTop = true
-                                    restoreState = true
+                                    restoreState = tab.route == currentRoute
                                 }
                             }
                         },

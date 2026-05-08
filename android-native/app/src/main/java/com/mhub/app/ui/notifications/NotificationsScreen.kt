@@ -46,12 +46,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -130,6 +133,11 @@ class NotificationsViewModel @Inject constructor(
             _state.value = _state.value.copy(items = _state.value.items.map { it.copy(isRead = true) })
         }
     }
+
+    fun dismiss(id: String) {
+        _state.value = _state.value.copy(items = _state.value.items.filter { it.stableId != id })
+        viewModelScope.launch { repo.delete(id) }
+    }
 }
 
 private data class NotifIconStyle(val icon: ImageVector, val tint: Color, val bg: Color)
@@ -172,14 +180,26 @@ fun NotificationsScreen(
     val unreadCount = state.items.count { !it.isRead }
     var searchQuery by remember { mutableStateOf("") }
     var showUnreadOnly by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf("All") }
     val focusManager = LocalFocusManager.current
 
-    val displayItems = remember(state.items, searchQuery, showUnreadOnly) {
+    val filterOptions = listOf("All", "Offers", "Chat", "System")
+
+    val displayItems = remember(state.items, searchQuery, showUnreadOnly, selectedFilter) {
         state.items.filter { n ->
             (!showUnreadOnly || !n.isRead) &&
                 (searchQuery.isBlank() ||
                     n.displayTitle.contains(searchQuery, ignoreCase = true) ||
-                    n.displayMessage.contains(searchQuery, ignoreCase = true))
+                    n.displayMessage.contains(searchQuery, ignoreCase = true)) &&
+                (selectedFilter == "All" || run {
+                    val t = n.type?.lowercase() ?: ""
+                    when (selectedFilter) {
+                        "Offers" -> t.contains("offer") || t.contains("price") || t.contains("deal")
+                        "Chat" -> t.contains("message") || t.contains("chat") || t.contains("inquiry")
+                        "System" -> t.contains("security") || t.contains("auth") || t.contains("alert") || t.contains("system")
+                        else -> true
+                    }
+                })
         }
     }
     val unread = displayItems.filter { !it.isRead }
@@ -277,6 +297,53 @@ fun NotificationsScreen(
                         )
                     }
 
+                    // Notification statistics card
+                    if (state.items.isNotEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                            ) {
+                                Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("${state.items.size}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                                        Text("Total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("$unreadCount", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFFEF4444))
+                                        Text("Unread", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        val readPct = if (state.items.isNotEmpty()) ((state.items.size - unreadCount) * 100 / state.items.size) else 0
+                                        Text("${readPct}%", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF22C55E))
+                                        Text("Read Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Category filter chips
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            filterOptions.forEach { filter ->
+                                FilterChip(
+                                    selected = selectedFilter == filter,
+                                    onClick = { selectedFilter = filter },
+                                    label = { Text(filter) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
                     // Unread filter toggle
                     item {
                         Row(
@@ -327,14 +394,18 @@ fun NotificationsScreen(
                                 SectionLabel("New (${unread.size})")
                             }
                             items(unread, key = { it.stableId }) { notif ->
-                                NotificationRow(
-                                    notification = notif,
-                                    isUnread = true,
-                                    onClick = {
-                                        viewModel.markRead(notif.stableId)
-                                        notif.postId?.let { onOpenPost(it) }
-                                    },
-                                )
+                                SwipeToDismissNotification(
+                                    onDismiss = { viewModel.dismiss(notif.stableId) },
+                                ) {
+                                    NotificationRow(
+                                        notification = notif,
+                                        isUnread = true,
+                                        onClick = {
+                                            viewModel.markRead(notif.stableId)
+                                            notif.postId?.let { onOpenPost(it) }
+                                        },
+                                    )
+                                }
                             }
                         }
 
@@ -343,17 +414,54 @@ fun NotificationsScreen(
                                 SectionLabel("Earlier")
                             }
                             items(read, key = { it.stableId }) { notif ->
-                                NotificationRow(
-                                    notification = notif,
-                                    isUnread = false,
-                                    onClick = { notif.postId?.let { onOpenPost(it) } },
-                                )
+                                SwipeToDismissNotification(
+                                    onDismiss = { viewModel.dismiss(notif.stableId) },
+                                ) {
+                                    NotificationRow(
+                                        notification = notif,
+                                        isUnread = false,
+                                        onClick = { notif.postId?.let { onOpenPost(it) } },
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToDismissNotification(
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onDismiss()
+                true
+            } else false
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFEF4444))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.White)
+            }
+        },
+        enableDismissFromStartToEnd = false,
+    ) {
+        content()
     }
 }
 

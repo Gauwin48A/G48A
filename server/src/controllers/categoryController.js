@@ -250,6 +250,50 @@ exports.getHubStats = async (req, res) => {
   }
 };
 
+// Mobile-friendly flat stats array (used by Android client)
+exports.getStats = async (req, res) => {
+  const NAMES = { electronics: "Electronics", fashion: "Fashion", vehicles: "Vehicles", others: "Others" };
+  try {
+    // Reuse the same hub-stats logic
+    const result = await runQuery(`
+      SELECT
+        COALESCE(
+          NULLIF(to_jsonb(c)->>'category_group', ''),
+          CASE
+            WHEN LOWER(c.name) LIKE '%electronics%' OR LOWER(c.name) IN ('mobiles','mobile') THEN 'electronics'
+            WHEN LOWER(c.name) LIKE '%fashion%' THEN 'fashion'
+            WHEN LOWER(c.name) LIKE '%vehicle%' THEN 'vehicles'
+            ELSE 'others'
+          END
+        ) AS grp,
+        COUNT(DISTINCT p.post_id)::int AS active_count,
+        COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '24 hours' THEN p.post_id END)::int AS new_today,
+        COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '7 days'  THEN p.post_id END)::int AS new_week
+      FROM posts p
+      JOIN categories c ON p.category_id = c.category_id
+      WHERE p.status = 'active'
+        AND (p.expires_at IS NULL OR p.expires_at > NOW())
+      GROUP BY grp
+    `);
+
+    const stats = [];
+    const seen = new Set();
+    for (const row of result.rows || []) {
+      const key = row.grp || "others";
+      seen.add(key);
+      stats.push({ key, name: NAMES[key] || key, active_count: Number(row.active_count || 0), new_today: Number(row.new_today || 0), new_week: Number(row.new_week || 0) });
+    }
+    // Fill in any missing groups with zeros
+    for (const [key, name] of Object.entries(NAMES)) {
+      if (!seen.has(key)) stats.push({ key, name, active_count: 0, new_today: 0, new_week: 0 });
+    }
+    res.json({ stats });
+  } catch (err) {
+    logger.error("Error fetching category stats:", err);
+    res.status(500).json({ stats: [] });
+  }
+};
+
 exports.resolveCategory = async (req, res) => {
   try {
     const { name, id } = req.query;

@@ -114,6 +114,36 @@ fun KycScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             StatusCard(status = state.status.kycStatus)
+
+            // Step progress indicator
+            if (state.status.kycStatus != "verified" && state.status.kycStatus != "pending") {
+                val currentStep = when {
+                    state.docNumber.isBlank() -> 1
+                    state.frontUri == null -> 2
+                    state.selfieUri == null -> 3
+                    else -> 4
+                }
+                val steps = listOf("Document", "Upload", "Selfie", "Submit")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    steps.forEachIndexed { idx, label ->
+                        val stepNum = idx + 1
+                        val isComplete = stepNum < currentStep
+                        val isCurrent = stepNum == currentStep
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                Modifier.size(28.dp).clip(RoundedCornerShape(14.dp)).background(
+                                    when { isComplete -> Color(0xFF22C55E); isCurrent -> Color(0xFF2563EB); else -> Color(0xFFE2E8F0) }
+                                ), contentAlignment = Alignment.Center,
+                            ) {
+                                if (isComplete) Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                else Text("$stepNum", color = if (isCurrent) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = if (isCurrent || isComplete) Color(0xFF1E293B) else Color(0xFF94A3B8))
+                        }
+                    }
+                }
+            }
+
             Text(
                 text = stringResource(R.string.kyc_intro),
                 style = MaterialTheme.typography.bodyMedium,
@@ -156,7 +186,7 @@ fun KycScreen(
                 )
                 UploadSlot(
                     label = if (requiresBackImage) {
-                        "${stringResource(R.string.kyc_upload_back)} (required)"
+                        "Upload back image (required)"
                     } else {
                         stringResource(R.string.kyc_upload_back)
                     },

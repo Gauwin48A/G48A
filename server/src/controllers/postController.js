@@ -679,7 +679,7 @@ exports.getUserPosts = async (req, res) => {
   try {
     // Enforce that users can only view their own posts via this endpoint
     const authenticatedUserId = req.user?.id || req.user?.userId || req.user?.user_id;
-    const requestedUserId = req.query.userId;
+    const requestedUserId = req.query.userId || authenticatedUserId;
 
     if (!requestedUserId) return res.status(400).json({ error: "userId required" });
 
@@ -1477,10 +1477,7 @@ exports.getPostById = async (req, res) => {
         up.views_count,
         up.likes,
         up.shares,
-        up.condition,
-        up.discount_percentage,
         up.boost_level,
-        up.tier_id,
         up.sold_at,
         COALESCE(to_jsonb(up)->>'audio_url', NULL) AS audio_url,
         up.is_flash_sale,
