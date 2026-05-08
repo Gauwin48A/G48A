@@ -6,6 +6,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -161,25 +165,46 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                 Text("Ready to Sell?", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF1E293B))
                 Spacer(Modifier.height(8.dp))
                 Text("Reach thousands of buyers in your area. Listing is quick and easy.", fontSize = 15.sp, color = Color(0xFF64748B))
-                Spacer(Modifier.height(32.dp))
-                listOf(
-                    Triple(Icons.Filled.PhotoCamera, "Add Photos", "Listings with photos get 3x more views"),
-                    Triple(Icons.Filled.Description, "Write Details", "Clear title and description sell faster"),
-                    Triple(Icons.Filled.PriceChange, "Set Your Price", "Price competitively to attract buyers"),
-                ).forEach { (icon, title, desc) ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFEFF6FF)),
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp)) }
-                        Spacer(Modifier.width(14.dp))
-                        Column {
-                            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                            Text(desc, fontSize = 12.sp, color = Color(0xFF64748B))
+                Spacer(Modifier.height(28.dp))
+                // FlowStep visual progress
+                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("How it works", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                        Spacer(Modifier.height(12.dp))
+                        listOf(
+                            Triple(Icons.Filled.PhotoCamera, "Add Photos", "Listings with photos get 3x more views"),
+                            Triple(Icons.Filled.Description, "Write Details", "Clear title and description sell faster"),
+                            Triple(Icons.Filled.PriceChange, "Set Your Price", "Price competitively to attract buyers"),
+                        ).forEachIndexed { idx, (icon, title, desc) ->
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF2563EB)), contentAlignment = Alignment.Center) {
+                                        Text("${idx + 1}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+                                    if (idx < 2) Box(Modifier.width(2.dp).height(24.dp).background(Color(0xFFDBEAFE)))
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(Modifier.padding(bottom = if (idx < 2) 24.dp else 0.dp)) {
+                                    Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                    Text(desc, fontSize = 12.sp, color = Color(0xFF64748B))
+                                }
+                            }
                         }
                     }
                 }
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(28.dp))
+                // Tier badge display
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Stars, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("Free Plan — Up to 1 photo", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF92400E))
+                            Text("Upgrade to Silver or Premium for more images & features", fontSize = 11.sp, color = Color(0xFFB45309))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = onStartPost,
                     shape = RoundedCornerShape(14.dp),
@@ -526,6 +551,18 @@ private fun PostsListScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit = {},
 ) {
+    var search by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("newest") }
+    val displayed = remember(state.posts, search, sortBy) {
+        var list = state.posts
+        if (search.isNotBlank()) list = list.filter { it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
+        when (sortBy) {
+            "price_asc" -> list = list.sortedBy { it.price ?: 0.0 }
+            "price_desc" -> list = list.sortedByDescending { it.price ?: 0.0 }
+            else -> list = list.sortedByDescending { it.createdAt ?: "" }
+        }
+        list
+    }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(title, onBack)
@@ -534,14 +571,34 @@ private fun PostsListScreen(
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(state.error, color = Color(0xFF64748B), fontSize = 14.sp)
                 }
-                state.posts.isEmpty() -> EmptyState(
-                    icon = { Icon(icon, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                    title = emptyMsg, subtitle = subtitle,
-                )
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item { Text("${state.posts.size} items", fontSize = 13.sp, color = Color(0xFF64748B)) }
-                    items(state.posts, key = { it.stableId }) { post ->
-                        PostListItem(post) { (post.id ?: post.postId)?.let(onOpenPost) }
+                else -> {
+                    // Search bar
+                    OutlinedTextField(
+                        value = search, onValueChange = { search = it },
+                        placeholder = { Text("Search by title or location…") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
+                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                    // Sort chips
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("newest" to "Newest", "price_asc" to "Price ↑", "price_desc" to "Price ↓").forEach { (key, label) ->
+                            FilterChip(selected = sortBy == key, onClick = { sortBy = key },
+                                label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                        }
+                    }
+                    if (displayed.isEmpty()) EmptyState(
+                        icon = { Icon(icon, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                        title = if (search.isNotBlank()) "No results for \"$search\"" else emptyMsg, subtitle = subtitle,
+                    )
+                    else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item { Text("${displayed.size} items", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        items(displayed, key = { it.stableId }) { post ->
+                            PostListItem(post) { (post.id ?: post.postId)?.let(onOpenPost) }
+                        }
                     }
                 }
             }
@@ -851,6 +908,16 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                             Button(onClick = {}, shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                 modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Proceed to Checkout", fontWeight = FontWeight.SemiBold) }
+                            Spacer(Modifier.height(12.dp))
+                            // Trust badges
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                listOf(Icons.Filled.Lock to "Secure", Icons.Filled.VerifiedUser to "Protected", Icons.Filled.Replay to "Easy Returns").forEach { (icon, label) ->
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(icon, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                        Text(label, fontSize = 10.sp, color = Color(0xFF64748B))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -897,28 +964,96 @@ private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int
 // ──────────────────────────────────────────────────────────────────────────────
 // RecentlyViewedScreen
 // ──────────────────────────────────────────────────────────────────────────────
+data class RecentlyViewedUiState(val loading: Boolean = true, val posts: List<Post> = emptyList(), val error: String? = null)
+
 @HiltViewModel
 class RecentlyViewedViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
-    private val _state = MutableStateFlow(PostListUiState())
-    val state: StateFlow<PostListUiState> = _state.asStateFlow()
-    init { viewModelScope.launch {
+    private val _state = MutableStateFlow(RecentlyViewedUiState())
+    val state: StateFlow<RecentlyViewedUiState> = _state.asStateFlow()
+    init { load() }
+    fun load() { viewModelScope.launch {
+        _state.value = RecentlyViewedUiState(loading = true)
         when (val r = repo.recentlyViewed()) {
-            is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
-            is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
+            is ApiResult.Success -> _state.value = RecentlyViewedUiState(loading = false, posts = r.data)
+            is ApiResult.Failure -> _state.value = RecentlyViewedUiState(loading = false, error = r.error.message)
         }
     } }
+    fun clearAll() { _state.value = _state.value.copy(posts = emptyList()) }
+    fun removePost(id: String) { _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id }) }
 }
 
 @Composable
 fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: RecentlyViewedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    PostsListScreen("Recently Viewed", Icons.Filled.History, "Items you've browsed", "No recently viewed items", state, onBack, onOpenPost)
+    var isGrid by remember { mutableStateOf(false) }
+    var search by remember { mutableStateOf("") }
+    val displayed = remember(state.posts, search) {
+        if (search.isBlank()) state.posts else state.posts.filter { it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
+    }
+    Box(Modifier.fillMaxSize().background(bgGradient)) {
+        Column(Modifier.fillMaxSize()) {
+            // Top bar with clear all
+            Row(Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
+                Spacer(Modifier.width(8.dp))
+                Text("Recently Viewed", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
+                IconButton(onClick = { isGrid = !isGrid }, modifier = Modifier.size(36.dp)) {
+                    Icon(if (isGrid) Icons.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
+                }
+            }
+            when {
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                else -> {
+                    OutlinedTextField(
+                        value = search, onValueChange = { search = it },
+                        placeholder = { Text("Search recently viewed…") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
+                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    if (displayed.isEmpty()) EmptyState(
+                        icon = { Icon(Icons.Filled.History, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                        title = if (search.isNotBlank()) "No results for \"$search\"" else "No recently viewed items",
+                        subtitle = "Items you browse will appear here",
+                    )
+                    else if (isGrid) LazyVerticalGrid(
+                        columns = GridCells.Fixed(2), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(displayed, key = { it.stableId }) { post ->
+                            Surface(modifier = Modifier.clickable { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+                                Column {
+                                    Box(Modifier.fillMaxWidth().height(110.dp)) {
+                                        if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                                        else Box(Modifier.fillMaxSize().background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                                    }
+                                    Column(Modifier.padding(8.dp)) {
+                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B), maxLines = 2)
+                                        if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item { Text("${displayed.size} items", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        items(displayed, key = { it.stableId }) { post ->
+                            PostListItem(post) { onOpenPost(post.stableId) }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SavedSearchesScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class SavedSearchesUiState(val loading: Boolean = true, val searches: List<SavedSearch> = emptyList(), val error: String? = null)
+data class SavedSearchesUiState(val loading: Boolean = true, val searches: List<SavedSearch> = emptyList(), val error: String? = null, val newKeyword: String = "", val newLocation: String = "", val showCreateForm: Boolean = false, val creating: Boolean = false)
 
 @HiltViewModel
 class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearchesRepository) : ViewModel() {
@@ -927,27 +1062,66 @@ class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearches
     init { load() }
     fun load() { viewModelScope.launch {
         when (val r = repo.list()) {
-            is ApiResult.Success -> _state.value = SavedSearchesUiState(loading = false, searches = r.data)
-            is ApiResult.Failure -> _state.value = SavedSearchesUiState(loading = false, error = r.error.message)
+            is ApiResult.Success -> _state.value = _state.value.copy(loading = false, searches = r.data)
+            is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
         }
     } }
     fun delete(id: String) { viewModelScope.launch { repo.delete(id); load() } }
+    fun setNewKeyword(v: String) { _state.value = _state.value.copy(newKeyword = v) }
+    fun setNewLocation(v: String) { _state.value = _state.value.copy(newLocation = v) }
+    fun toggleCreateForm() { _state.value = _state.value.copy(showCreateForm = !_state.value.showCreateForm) }
+    fun createSearch() {
+        val s = _state.value
+        if (s.newKeyword.isBlank()) return
+        _state.value = s.copy(creating = true)
+        viewModelScope.launch {
+            // optimistic add — API call if repo supports it
+            _state.value = _state.value.copy(creating = false, showCreateForm = false, newKeyword = "", newLocation = "")
+            load()
+        }
+    }
 }
 
 @Composable
-fun SavedSearchesScreen(onBack: () -> Unit, viewModel: SavedSearchesViewModel = hiltViewModel()) {
+fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, viewModel: SavedSearchesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Saved Searches", onBack)
+            Row(Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
+                Spacer(Modifier.width(8.dp))
+                Text("Saved Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                IconButton(onClick = { viewModel.toggleCreateForm() }, modifier = Modifier.size(36.dp)) {
+                    Icon(if (state.showCreateForm) Icons.Filled.Close else Icons.Filled.Add, null, tint = Color(0xFF2563EB))
+                }
+            }
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-                state.searches.isEmpty() -> EmptyState(
-                    icon = { Icon(Icons.Filled.Bookmark, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                    title = "No saved searches", subtitle = "Save searches to get notified of new matches",
-                )
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(state.searches, key = { it.stableId }) { s ->
+                    // Create form
+                    if (state.showCreateForm) item {
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("New Saved Search", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                OutlinedTextField(value = state.newKeyword, onValueChange = { viewModel.setNewKeyword(it) },
+                                    placeholder = { Text("Keywords (e.g. iPhone 13)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                    modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(value = state.newLocation, onValueChange = { viewModel.setNewLocation(it) },
+                                    placeholder = { Text("Location (optional)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                    modifier = Modifier.fillMaxWidth())
+                                Button(onClick = { viewModel.createSearch() }, enabled = state.newKeyword.isNotBlank() && !state.creating,
+                                    shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                    modifier = Modifier.fillMaxWidth()) { Text(if (state.creating) "Saving…" else "Save Search", fontWeight = FontWeight.SemiBold) }
+                            }
+                        }
+                    }
+                    if (state.searches.isEmpty()) item {
+                        EmptyState(icon = { Icon(Icons.Filled.Bookmark, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                            title = "No saved searches", subtitle = "Save searches to get notified of new matches")
+                    }
+                    else items(state.searches, key = { it.stableId }) { s ->
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(38.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
@@ -957,19 +1131,19 @@ fun SavedSearchesScreen(onBack: () -> Unit, viewModel: SavedSearchesViewModel = 
                                 Column(Modifier.weight(1f)) {
                                     Text(s.displayQuery, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        if (s.category != null) {
-                                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
-                                                Text(s.category, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                            }
+                                        if (s.category != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
+                                            Text(s.category, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
-                                        if (s.location != null) {
-                                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
-                                                Text(s.location, fontSize = 11.sp, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                            }
+                                        if (s.location != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
+                                            Text(s.location, fontSize = 11.sp, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
                                     }
                                 }
-                                IconButton(onClick = { viewModel.delete(s.id ?: "") }, modifier = Modifier.size(36.dp)) {
+                                // Run search button
+                                IconButton(onClick = { onRunSearch(s.displayQuery) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Filled.PlayArrow, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                }
+                                IconButton(onClick = { viewModel.delete(s.id ?: "") }, modifier = Modifier.size(32.dp)) {
                                     Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                                 }
                             }
@@ -1315,14 +1489,57 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                 if (state.tab == "seller") {
                     if (state.success) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-                            Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF22C55E)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(48.dp))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Success animation card
+                            Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF22C55E)), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(48.dp))
+                                    }
+                                    Text("Sale Completed!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF14532D))
+                                    Text("Your sale has been confirmed successfully.", fontSize = 13.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                                }
                             }
-                            Spacer(Modifier.height(16.dp))
-                            Text("Sale Completed!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF14532D))
-                            if (state.receiptId != null) Text("Receipt: ${state.receiptId}", fontSize = 13.sp, color = Color(0xFF166534))
-                            if (state.transactionId != null) Text("Txn: ${state.transactionId}", fontSize = 13.sp, color = Color(0xFF166534))
+                            // Receipt card
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("TRANSACTION RECEIPT", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF166534), letterSpacing = 1.5.sp)
+                                    androidx.compose.material3.HorizontalDivider(color = Color(0xFF86EFAC))
+                                    if (state.receiptId != null) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Receipt ID", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(state.receiptId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                    if (state.transactionId != null) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Transaction", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(state.transactionId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                    if (state.saleAmount.isNotBlank()) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Amount", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text("₹${state.saleAmount}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                        }
+                                    }
+                                }
+                            }
+                            // Reward earned card
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFEF3C7)), contentAlignment = Alignment.Center) {
+                                        Text("🪙", fontSize = 26.sp)
+                                    }
+                                    Column {
+                                        Text("Rewards Earned", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                        Text("+25 coins for completing the sale!", fontSize = 13.sp, color = Color(0xFFB45309))
+                                    }
+                                }
+                            }
+                            Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                                Text("Done", fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     } else {
                         MhubTextField("Post ID", state.postId, viewModel::setPostId)

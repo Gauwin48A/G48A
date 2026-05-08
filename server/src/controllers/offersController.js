@@ -165,7 +165,7 @@ const getOffers = async (req, res) => {
         COALESCE(bpr.full_name, bu.username) AS buyer_name,
         COALESCE(spr.full_name, su.username) AS seller_name
       FROM offers o
-      JOIN posts    p   ON p.post_id        = o.post_id
+      JOIN posts    p   ON p.post_id::text  = o.post_id::text
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
       JOIN users    bu  ON bu.user_id::text  = o.buyer_id::text

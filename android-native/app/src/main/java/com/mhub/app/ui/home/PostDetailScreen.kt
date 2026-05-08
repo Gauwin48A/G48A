@@ -2,6 +2,7 @@ package com.mhub.app.ui.home
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -46,6 +50,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -106,6 +111,7 @@ data class PostDetailState(
     val offerSent: Boolean = false,
     val offerError: String? = null,
     val reported: Boolean = false,
+    val similarPosts: List<Post> = emptyList(),
 )
 
 @HiltViewModel
@@ -139,6 +145,17 @@ class PostDetailViewModel @Inject constructor(
                         launch {
                             when (val t = trustRepo.score(userId)) {
                                 is ApiResult.Success -> _state.value = _state.value.copy(trustScore = t.data)
+                                is ApiResult.Failure -> {} // non-critical
+                            }
+                        }
+                    }
+                    // Load similar posts from same category
+                    result.data.categoryId?.let { catId ->
+                        launch {
+                            when (val s = repo.feed(limit = 6, categoryId = catId)) {
+                                is ApiResult.Success -> _state.value = _state.value.copy(
+                                    similarPosts = s.data.filter { it.stableId != postId }.take(5)
+                                )
                                 is ApiResult.Failure -> {} // non-critical
                             }
                         }
@@ -189,10 +206,31 @@ class PostDetailViewModel @Inject constructor(
 @Composable
 fun PostDetailScreen(
     onBack: () -> Unit,
+    onOpenPost: (String) -> Unit = {},
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    var showShareSheet by remember { mutableStateOf(false) }
+    var showInterestModal by remember { mutableStateOf(false) }
+    var showImageZoom by remember { mutableStateOf(false) }
+    var zoomImageIndex by remember { mutableStateOf(0) }
+
+    if (showShareSheet && state.post != null) {
+        com.mhub.app.ui.components.ShareLinkBottomSheet(
+            title = state.post!!.displayTitle,
+            postId = state.post!!.stableId,
+            onDismiss = { showShareSheet = false },
+        )
+    }
+    if (showInterestModal && state.post != null) {
+        com.mhub.app.ui.components.BuyerInterestModal(
+            postId = state.post!!.stableId,
+            postTitle = state.post!!.displayTitle,
+            onDismiss = { showInterestModal = false },
+            onSubmit = { _, _, _ -> showInterestModal = false },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -218,16 +256,7 @@ fun PostDetailScreen(
                         )
                     }
                     Spacer(Modifier.width(8.dp))
-                    FilledIconButton(
-                        onClick = {
-                            val post = state.post ?: return@FilledIconButton
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "Check this listing: ${post.displayTitle}")
-                            }
-                            context.startActivity(Intent.createChooser(intent, "Share listing"))
-                        },
-                    ) {
+                    FilledIconButton(onClick = { showShareSheet = true }) {
                         Icon(Icons.Default.Share, contentDescription = null)
                     }
                     Spacer(Modifier.width(8.dp))
@@ -283,13 +312,34 @@ fun PostDetailScreen(
                     post.images.filter { it != post.primaryImage }.forEach { add(it) }
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
+                val lazyState = rememberLazyListState()
+                val sectionLabels = listOf("Overview", "Details", "Specs", "Trust", "Description", "Seller")
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
                 ) {
+                    // Section navigation strip
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
+                    ) {
+                        items(sectionLabels) { label ->
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                                onClick = {},
+                            ) {
+                                Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+
                     LazyColumn(
+                        state = lazyState,
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(bottom = 20.dp),
                     ) {
@@ -308,7 +358,12 @@ fun PostDetailScreen(
                                             model = img,
                                             contentDescription = null,
                                             contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier = Modifier.fillMaxSize().then(
+                                                Modifier.clickable(onClick = {
+                                                    zoomImageIndex = page
+                                                    showImageZoom = true
+                                                }),
+                                            ),
                                         )
                                     } else {
                                         Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
@@ -317,11 +372,20 @@ fun PostDetailScreen(
 
                                 if (images.size > 1) {
                                     AssistChip(
-                                        onClick = {},
-                                        label = { Text("${pagerState.currentPage + 1}/${images.size}") },
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(10.dp),
+                                        onClick = { zoomImageIndex = pagerState.currentPage; showImageZoom = true },
+                                        label = { Text("${pagerState.currentPage + 1}/${images.size} · Tap to zoom") },
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                                    )
+                                }
+                            }
+                            // Image zoom dialog
+                            if (showImageZoom) {
+                                val zoomUrls = images.filterNotNull()
+                                if (zoomUrls.isNotEmpty()) {
+                                    com.mhub.app.ui.components.ImageZoomDialog(
+                                        imageUrls = zoomUrls,
+                                        initialIndex = zoomImageIndex.coerceIn(0, zoomUrls.lastIndex),
+                                        onDismiss = { showImageZoom = false },
                                     )
                                 }
                             }
@@ -364,11 +428,73 @@ fun PostDetailScreen(
                                 }
 
                                 post.description?.takeIf { it.isNotBlank() }?.let {
-                                    Text(
-                                        text = it,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
+                                    var expanded by remember { mutableStateOf(false) }
+                                    Column {
+                                        Text(
+                                            text = "Description",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = if (expanded) Int.MAX_VALUE else 4,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        if (it.length > 200) {
+                                            TextButton(onClick = { expanded = !expanded }) {
+                                                Text(if (expanded) "Show less" else "Read more")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Specifications table
+                                val specs = remember(post) {
+                                    buildList {
+                                        post.condition?.let { add("Condition" to it.replaceFirstChar(Char::uppercase)) }
+                                        post.brand?.let { add("Brand" to it) }
+                                        post.location?.let { add("Location" to it) }
+                                        post.price?.let { add("Price" to "₹${"%,.0f".format(it)}") }
+                                        post.categoryName?.let { add("Category" to it) }
+                                    }
+                                }
+                                if (specs.isNotEmpty()) {
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Specifications", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                            specs.forEach { (key, value) ->
+                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text(key, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                                }
+                                                if (specs.last().first != key) {
+                                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Posted time
+                                post.createdAt?.let { dateStr ->
+                                    val timeAgo = try {
+                                        val then = java.time.Instant.parse(dateStr)
+                                        val mins = java.time.temporal.ChronoUnit.MINUTES.between(then, java.time.Instant.now())
+                                        when {
+                                            mins < 60 -> "${mins}m ago"
+                                            mins < 1440 -> "${mins / 60}h ago"
+                                            mins < 10080 -> "${mins / 1440}d ago"
+                                            else -> "${mins / 10080}w ago"
+                                        }
+                                    } catch (_: Exception) { dateStr }
+                                    Text("Posted $timeAgo", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
 
                                 post.viewCount?.let {
@@ -377,6 +503,16 @@ fun PostDetailScreen(
                                         Spacer(Modifier.width(6.dp))
                                         Text("$it views", style = MaterialTheme.typography.bodySmall)
                                     }
+                                }
+
+                                // Engagement stats row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    EngagementChip("👁", "${post.viewCount ?: 0}", "Views")
+                                    EngagementChip("❤️", "${post.likeCount ?: 0}", "Likes")
+                                    EngagementChip("🔗", "0", "Shares")
                                 }
 
                                 // Trust Score Badge
@@ -399,6 +535,54 @@ fun PostDetailScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     post.condition?.let { c -> AssistChip(onClick = {}, label = { Text(c) }) }
                                     post.brand?.let { b -> AssistChip(onClick = {}, label = { Text(b) }) }
+                                }
+
+                                // Safety Tips
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("⚠️ Safety Tips", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                        Text("• Meet in a public place for exchanges", fontSize = 12.sp, color = Color(0xFF78350F))
+                                        Text("• Inspect the item thoroughly before paying", fontSize = 12.sp, color = Color(0xFF78350F))
+                                        Text("• Don't share personal financial information", fontSize = 12.sp, color = Color(0xFF78350F))
+                                        Text("• Use MHub secure payment when possible", fontSize = 12.sp, color = Color(0xFF78350F))
+                                    }
+                                }
+
+                                // Similar Posts section
+                                state.similarPosts.takeIf { it.isNotEmpty() }?.let { similar ->
+                                    Text("Similar Listings", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        items(similar, key = { it.stableId }) { simPost ->
+                                            Card(
+                                                onClick = { onOpenPost(simPost.stableId) },
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.width(150.dp),
+                                            ) {
+                                                Column {
+                                                    simPost.primaryImage?.let { img ->
+                                                        AsyncImage(
+                                                            model = img,
+                                                            contentDescription = null,
+                                                            contentScale = ContentScale.Crop,
+                                                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                                                        )
+                                                    }
+                                                    Column(Modifier.padding(8.dp)) {
+                                                        Text(simPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                                        simPost.price?.let { p ->
+                                                            Text("₹${"%,.0f".format(p)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
 
                                 post.userName?.let {
@@ -482,6 +666,11 @@ fun PostDetailScreen(
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                OutlinedButton(onClick = { showInterestModal = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Interested")
+                                }
                                 OutlinedButton(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Default.Chat, contentDescription = null)
                                     Spacer(Modifier.width(6.dp))
@@ -490,13 +679,24 @@ fun PostDetailScreen(
                                 Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Default.ShoppingBag, contentDescription = null)
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Buy now")
+                                    Text("Buy")
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EngagementChip(emoji: String, count: String, label: String) {
+    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(emoji, fontSize = 14.sp)
+            Text(count, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

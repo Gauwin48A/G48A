@@ -57,6 +57,10 @@ object Routes {
     const val COMPARE = "compare"
     const val NEARBY = "nearby"
 
+    // Category sub-app
+    const val CATEGORY_DETAIL = "category/{categoryKey}"
+    fun categoryDetail(key: String): String = "category/$key"
+
     // Social
     const val FEED_DETAIL = "feed/{feedId}"
     fun feedDetail(id: String): String = "feed/$id"
@@ -94,4 +98,9 @@ object Routes {
     const val ADMIN_PANEL = "admin-panel"
     const val INVITE = "invite/{code}"
     fun invite(code: String): String = "invite/$code"
+
+    // New screens
+    const val ACTIVITY_HUB = "activity"
+    const val CATEGORY_MODE = "category-mode"
+    const val AADHAAR_VERIFY = "aadhaar-verify"
 }

@@ -160,7 +160,7 @@ router.get("/", async (req, res) => {
     ) {
       try {
         const prefResult = await runQuery(
-          "SELECT location, min_price, max_price, categories FROM preferences WHERE user_id = $1 LIMIT 1",
+          "SELECT location, min_price, max_price, categories FROM preferences WHERE user_id = $1::text LIMIT 1",
           [effectiveUserId]
         );
 
@@ -203,7 +203,7 @@ router.get("/", async (req, res) => {
     const whereClauses = [`p.status = 'active'`];
 
     if (effectiveUserId) {
-      whereClauses.push(`p.user_id != ${addParam(effectiveUserId)}`);
+      whereClauses.push(`p.user_id != ${addParam(effectiveUserId)}::uuid`);
     }
 
     if (trimmedSearch) {
@@ -278,7 +278,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN LATERAL (
         SELECT full_name
         FROM profiles
-        WHERE user_id = p.user_id
+        WHERE user_id = p.user_id::text
         LIMIT 1
       ) pr ON TRUE
       WHERE ${whereClauses.join(" AND ")}

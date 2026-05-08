@@ -68,7 +68,7 @@ data class SendOtpRequest(
 @Serializable
 data class AadhaarSendOtpRequest(
     val aadhaarNumber: String,
-    val mobileNumber: String,
+    val mobileNumber: String? = null,
 )
 
 @Serializable
@@ -81,7 +81,7 @@ data class AadhaarOtpResponse(
 @Serializable
 data class AadhaarVerifyOtpRequest(
     val aadhaarNumber: String,
-    val mobileNumber: String,
+    val mobileNumber: String? = null,
     val otp: String,
     val txnId: String? = null,
 )
@@ -400,6 +400,12 @@ data class PostsResponse(
 }
 
 @Serializable
+data class PostDetailResponse(
+    val success: Boolean = false,
+    val post: Post? = null,
+)
+
+@Serializable
 data class CreatePostRequest(
     val title: String,
     val description: String? = null,
@@ -408,6 +414,13 @@ data class CreatePostRequest(
     val location: String? = null,
     @SerialName("category_id") val categoryId: String? = null,
     val images: List<String> = emptyList(),
+    val brand: String? = null,
+    val model: String? = null,
+    val condition: String? = null,
+    @SerialName("contact_number") val contactNumber: String? = null,
+    @SerialName("warranty_status") val warrantyStatus: String? = null,
+    @SerialName("flash_sale") val flashSale: Boolean? = null,
+    @SerialName("age_months") val ageMonths: Int? = null,
 )
 
 // -------- Categories --------
@@ -569,7 +582,160 @@ data class RewardsReferralNodeDto(
 @Serializable
 data class RewardsChainRuleDto(
     val depth: Int = 0,
-    val points: Int = 0,
+    val points: Double = 0.0,
+)
+
+// -------- Coins / Engagement --------
+@Serializable
+data class CoinBalanceResponse(
+    val balance: Int = 0,
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class CoinHistoryResponse(
+    val history: List<CoinTransaction> = emptyList(),
+    val total: Int = 0,
+)
+
+@Serializable
+data class CoinTransaction(
+    val id: String? = null,
+    val action: String? = null,
+    val description: String? = null,
+    val amount: Int = 0,
+    val balance: Int = 0,
+    val createdAt: String? = null,
+)
+
+@Serializable
+data class EngagementStatusResponse(
+    val dailyCheckIn: DailyCheckInStatus = DailyCheckInStatus(),
+    val spin: SpinStatus = SpinStatus(),
+    val scratch: ScratchStatus = ScratchStatus(),
+    val referralMilestones: ReferralMilestoneStatus = ReferralMilestoneStatus(),
+)
+
+@Serializable
+data class DailyCheckInStatus(
+    val canClaim: Boolean = false,
+    val streak: Int = 0,
+    val lastClaimDate: String? = null,
+    val todayReward: Int = 5,
+    val weekProgress: List<Boolean> = emptyList(),
+)
+
+@Serializable
+data class SpinStatus(
+    val canSpin: Boolean = false,
+    val lastSpinDate: String? = null,
+)
+
+@Serializable
+data class ScratchStatus(
+    val available: Int = 0,
+    val canScratch: Boolean = false,
+)
+
+@Serializable
+data class ReferralMilestoneStatus(
+    val canClaim: Boolean = false,
+    val currentReferrals: Int = 0,
+    val target: Int = 3,
+    val reward: Int = 50,
+)
+
+@Serializable
+data class DailyCheckInResponse(
+    val success: Boolean = false,
+    val reward: Int = 0,
+    val streak: Int = 0,
+    val message: String? = null,
+)
+
+@Serializable
+data class SpinResultResponse(
+    val success: Boolean = false,
+    val reward: Int = 0,
+    val message: String? = null,
+)
+
+@Serializable
+data class ScratchResultResponse(
+    val success: Boolean = false,
+    val reward: Int = 0,
+    val message: String? = null,
+)
+
+@Serializable
+data class StoreRedeemRequest(
+    val type: String,
+    val postId: String? = null,
+)
+
+@Serializable
+data class StoreRedeemResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val remainingBalance: Int = 0,
+)
+
+@Serializable
+data class RewardsConfigResponse(
+    val earnRules: List<EarnRuleDto> = emptyList(),
+    val tiers: List<TierDto> = emptyList(),
+    val referralLadder: List<RewardsChainRuleDto> = emptyList(),
+    val spinPool: List<Int> = emptyList(),
+    val scratchPool: List<Int> = emptyList(),
+    val storeItems: List<StoreItemDto> = emptyList(),
+)
+
+@Serializable
+data class EarnRuleDto(
+    val action: String = "",
+    val label: String = "",
+    val reward: Int = 0,
+    val description: String? = null,
+)
+
+@Serializable
+data class TierDto(
+    val name: String = "",
+    val level: Int = 0,
+    val xpRequired: Int = 0,
+    val perks: List<String> = emptyList(),
+)
+
+@Serializable
+data class StoreItemDto(
+    val type: String = "",
+    val name: String = "",
+    val cost: Int = 0,
+    val description: String? = null,
+    val requiresPost: Boolean = false,
+    val badge: String? = null,
+)
+
+@Serializable
+data class ReferralLeaderboardResponse(
+    val leaderboard: List<LeaderboardEntry> = emptyList(),
+    val myPosition: Int = 0,
+    val myReferrals: Int = 0,
+)
+
+@Serializable
+data class LeaderboardEntry(
+    val name: String = "",
+    val referrals: Int = 0,
+    val position: Int = 0,
+)
+
+@Serializable
+data class ProfileUpdateRequest(
+    @SerialName("full_name") val fullName: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
+    val bio: String? = null,
 )
 
 // -------- Dashboard --------

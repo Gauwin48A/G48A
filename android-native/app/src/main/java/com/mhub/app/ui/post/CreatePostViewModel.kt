@@ -26,6 +26,7 @@ data class CreatePostState(
     val submitting: Boolean = false,
     val success: Boolean = false,
     val error: String? = null,
+    val draftSaved: Boolean = false,
 )
 
 @HiltViewModel
@@ -63,6 +64,13 @@ class CreatePostViewModel @Inject constructor(
         description: String,
         priceText: String,
         location: String,
+        brand: String = "",
+        model: String = "",
+        condition: String = "",
+        contactNumber: String = "",
+        warrantyStatus: String = "",
+        flashSale: Boolean = false,
+        ageMonths: String = "",
         bytesProvider: suspend (Uri) -> Pair<ByteArray, String>?,
     ) {
         if (_state.value.submitting || _state.value.uploading) return
@@ -104,6 +112,13 @@ class CreatePostViewModel @Inject constructor(
                 location = location.trim().ifBlank { null },
                 categoryId = snapshot.selectedCategory?.stableId,
                 images = urls,
+                brand = brand.trim().ifBlank { null },
+                model = model.trim().ifBlank { null },
+                condition = condition.ifBlank { null },
+                contactNumber = contactNumber.trim().takeIf { it.length == 10 },
+                warrantyStatus = warrantyStatus.ifBlank { null },
+                flashSale = if (flashSale) true else null,
+                ageMonths = ageMonths.trim().toIntOrNull(),
             )
             when (val r = postsRepo.create(req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(submitting = false, success = true)

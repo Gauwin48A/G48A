@@ -2,6 +2,7 @@ package com.mhub.app.ui.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -178,7 +181,14 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
                                     Text("${item.commentCount}", fontSize = 14.sp, color = Color(0xFF64748B))
                                 }
                                 // Share
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                val context = androidx.compose.ui.platform.LocalContext.current
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub: ${item.title ?: item.content?.take(80) ?: ""}")
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(intent, "Share"))
+                                }) {
                                     Icon(Icons.Filled.Share, null, tint = Color(0xFF64748B), modifier = Modifier.size(22.dp))
                                     Spacer(Modifier.width(4.dp))
                                     Text("Share", fontSize = 14.sp, color = Color(0xFF64748B))
@@ -216,6 +226,7 @@ class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : 
 @Composable
 fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    var sortBy by remember { mutableStateOf("newest") }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("My Feed", onBack)
@@ -231,6 +242,32 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     }
                 }
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Metrics row
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            listOf("Total" to "${state.items.size}" to Color(0xFF2563EB), "Likes" to "${state.items.sumOf { it.likeCount }}" to Color(0xFFEF4444), "This Week" to "${state.items.size.coerceAtMost(5)}" to Color(0xFF22C55E)).forEach { (pair, color) ->
+                                val (label, value) = pair
+                                Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp) {
+                                    Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(value, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
+                                        Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Sort row
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Sort, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                            listOf("newest" to "Newest", "popular" to "Popular", "oldest" to "Oldest").forEach { (key, label) ->
+                                val sel = sortBy == key
+                                Surface(modifier = Modifier.clickable { sortBy = key }, shape = RoundedCornerShape(16.dp), color = if (sel) Color(0xFF2563EB) else Color.Transparent) {
+                                    Text(label, fontSize = 11.sp, color = if (sel) Color.White else Color(0xFF64748B), fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
                     items(state.items, key = { it.stableId }) { FeedCard(it) }
                 }
             }
@@ -377,6 +414,33 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                             }
                         }
                     }
+                    // Leaderboard rank badges
+                    item {
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text("Community Ranking", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                Spacer(Modifier.height(10.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    val totalPosts = state.items.size
+                                    val rank = when { totalPosts >= 20 -> Triple("Gold", "🥇", Color(0xFFF59E0B)); totalPosts >= 10 -> Triple("Silver", "🥈", Color(0xFF94A3B8)); totalPosts >= 5 -> Triple("Bronze", "🥉", Color(0xFFCD7F32)); else -> Triple("Starter", "⭐", Color(0xFF64748B)) }
+                                    Surface(shape = RoundedCornerShape(20.dp), color = rank.third.copy(alpha = 0.1f)) {
+                                        Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(rank.second, fontSize = 16.sp)
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(rank.first, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = rank.third)
+                                        }
+                                    }
+                                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F9FF)) {
+                                        Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("${state.items.sumOf { it.likeCount }} likes", fontSize = 12.sp, color = Color(0xFF2563EB))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     items(state.items, key = { it.stableId }) { FeedCard(it) }
                 }
             }
@@ -387,7 +451,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
 // ──────────────────────────────────────────────────────────────────────────────
 // ComplaintsScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class ComplaintsUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val subject: String = "", val description: String = "")
+data class ComplaintsUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val subject: String = "", val description: String = "", val type: String = "transaction", val postId: String = "")
 
 @HiltViewModel
 class ComplaintsViewModel @Inject constructor(private val repo: ComplaintsRepository) : ViewModel() {
@@ -395,6 +459,8 @@ class ComplaintsViewModel @Inject constructor(private val repo: ComplaintsReposi
     val state: StateFlow<ComplaintsUiState> = _state.asStateFlow()
     fun setSubject(v: String) { _state.value = _state.value.copy(subject = v) }
     fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
+    fun setType(v: String) { _state.value = _state.value.copy(type = v) }
+    fun setPostId(v: String) { _state.value = _state.value.copy(postId = v) }
     fun submit() {
         val s = _state.value
         if (s.subject.isBlank() || s.description.isBlank()) { _state.value = s.copy(error = "All fields are required"); return }
@@ -411,6 +477,7 @@ class ComplaintsViewModel @Inject constructor(private val repo: ComplaintsReposi
 @Composable
 fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val complaintTypes = listOf("transaction" to "Transaction", "quality" to "Quality", "delivery" to "Delivery", "service" to "Service", "other" to "Other")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Complaints", onBack)
@@ -425,6 +492,16 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                     }
                 } else {
                     state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
+                    // Complaint type selector
+                    Text("Complaint Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        complaintTypes.forEach { (key, label) ->
+                            FilterChip(selected = state.type == key, onClick = { viewModel.setType(key) },
+                                label = { Text(label, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                        }
+                    }
+                    FormField("Post / Seller ID (optional)", state.postId, viewModel::setPostId, "e.g. post123 or seller456")
                     FormField("Subject", state.subject, viewModel::setSubject, "e.g. Fake listing, Fraud buyer…")
                     FormField("Description", state.description, viewModel::setDescription, "Describe the issue in detail…", maxLines = 5, minLines = 4)
                     Button(
@@ -441,13 +518,14 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
 // ──────────────────────────────────────────────────────────────────────────────
 // FeedbackScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class FeedbackUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val type: String = "general", val message: String = "", val rating: Int = 5)
+data class FeedbackUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val type: String = "general", val subject: String = "", val message: String = "", val rating: Int = 5, val refId: String = "FB-${System.currentTimeMillis().toString(36).uppercase().takeLast(6)}")
 
 @HiltViewModel
 class FeedbackViewModel @Inject constructor(private val repo: ComplaintsRepository) : ViewModel() {
     private val _state = MutableStateFlow(FeedbackUiState())
     val state: StateFlow<FeedbackUiState> = _state.asStateFlow()
     fun setType(v: String) { _state.value = _state.value.copy(type = v) }
+    fun setSubject(v: String) { _state.value = _state.value.copy(subject = v) }
     fun setMessage(v: String) { _state.value = _state.value.copy(message = v) }
     fun setRating(v: Int) { _state.value = _state.value.copy(rating = v) }
     fun submit() {
@@ -466,7 +544,7 @@ class FeedbackViewModel @Inject constructor(private val repo: ComplaintsReposito
 @Composable
 fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val feedbackTypes = listOf("general" to "General", "bug" to "Bug Report", "feature" to "Feature Request", "other" to "Other")
+    val feedbackTypes = listOf("general" to "General", "bug" to "Bug Report", "feature" to "Feature Request", "ui_ux" to "UI/UX", "performance" to "Performance")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Feedback", onBack)
@@ -481,13 +559,22 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                     }
                 } else {
                     state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
-                    Text("Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Reference ID
+                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Tag, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Reference: ${state.refId}", fontSize = 12.sp, color = Color(0xFF2563EB))
+                        }
+                    }
+                    // Category buttons
+                    Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                         feedbackTypes.forEach { (key, label) ->
                             FilterChip(
                                 selected = state.type == key, onClick = { viewModel.setType(key) },
                                 label = { Text(label, fontSize = 12.sp) },
-                            )
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                         }
                     }
                     Text("Rating", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))

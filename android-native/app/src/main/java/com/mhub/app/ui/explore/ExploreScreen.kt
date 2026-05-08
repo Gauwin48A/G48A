@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
@@ -53,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -218,44 +221,58 @@ fun ExploreScreen(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
-    title: String = "Explore",
-    subtitle: String = "Discover categories & trending",
+    title: String = "For You",
+    subtitle: String = "Personalized picks based on your activity",
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.refresh() },
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // AI Hero banner
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF4F46E5), Color(0xFF7C3AED))),
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // AI badge
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color.White.copy(alpha = 0.25f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                        Text("AI Powered", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Text(
+                        title,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                    )
+                    Text(subtitle, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
+                    // Stats chips
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val recCount = state.recommendations.size + state.trending.size
+                        StatChip("$recCount items curated")
+                        StatChip("${state.categories.size} categories")
+                    }
+                }
+            }
+
             // Search bar
             OutlinedTextField(
                 value = state.searchQuery,
@@ -294,11 +311,25 @@ fun ExploreScreen(
 }
 
 @Composable
+private fun StatChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = 0.15f))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text(text, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
 private fun DiscoveryFeed(
     state: ExploreState,
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
 ) {
+    val priceFilters = listOf("Under ₹1K", "₹1K-5K", "₹5K-20K", "Above ₹20K")
+
     LazyColumn(contentPadding = PaddingValues(bottom = 90.dp)) {
         // Quick filter chips
         item {
@@ -317,6 +348,27 @@ private fun DiscoveryFeed(
                         },
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                    )
+                }
+            }
+        }
+
+        // Price range quick filters
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
+            ) {
+                items(priceFilters) { label ->
+                    FilterChip(
+                        selected = false,
+                        onClick = onOpenSearch,
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                         ),
                     )
                 }
@@ -380,6 +432,8 @@ private fun DiscoveryFeed(
             SectionHeader(
                 title = "Trending Now",
                 subtitle = "Most viewed listings",
+                actionLabel = "See All",
+                onAction = onOpenSearch,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
@@ -410,6 +464,8 @@ private fun DiscoveryFeed(
             SectionHeader(
                 title = "For You",
                 subtitle = "Personalized recommendations",
+                actionLabel = "See All",
+                onAction = onOpenSearch,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }

@@ -1,5 +1,6 @@
 package com.mhub.app.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -32,17 +36,22 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -50,10 +59,14 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -62,8 +75,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,18 +91,99 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.PostGridShimmer
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 private enum class SortOption(val label: String) {
     NEWEST("New"),
     POPULAR("Popular"),
     PRICE_ASC("Price low-high"),
     PRICE_DESC("Price high-low"),
+}
+
+// Relative time formatting: "2h ago", "3d ago"
+private fun relativeTime(isoDate: String?): String {
+    if (isoDate.isNullOrBlank()) return ""
+    return try {
+        val then = Instant.parse(isoDate)
+        val now = Instant.now()
+        val mins = ChronoUnit.MINUTES.between(then, now)
+        when {
+            mins < 1 -> "now"
+            mins < 60 -> "${mins}m ago"
+            mins < 1440 -> "${mins / 60}h ago"
+            mins < 10080 -> "${mins / 1440}d ago"
+            else -> "${mins / 10080}w ago"
+        }
+    } catch (_: Exception) { "" }
+}
+
+private data class PostFilters(
+    val minPrice: Float = 0f,
+    val maxPrice: Float = 100000f,
+    val condition: String = "Any",
+    val location: String = "",
+    val verifiedOnly: Boolean = false,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterBottomSheet(
+    filters: PostFilters,
+    onApply: (PostFilters) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var priceRange by remember { mutableStateOf(filters.minPrice..filters.maxPrice) }
+    var condition by remember { mutableStateOf(filters.condition) }
+    var location by remember { mutableStateOf(filters.location) }
+    var verifiedOnly by remember { mutableStateOf(filters.verifiedOnly) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
+
+            Text("Price Range: ₹${"%,.0f".format(priceRange.start)} — ₹${"%,.0f".format(priceRange.endInclusive)}", style = MaterialTheme.typography.labelMedium)
+            RangeSlider(value = priceRange, onValueChange = { priceRange = it }, valueRange = 0f..500000f, steps = 9)
+            Spacer(Modifier.height(12.dp))
+
+            Text("Condition", style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+                listOf("Any", "New", "Used", "Like New").forEach { opt ->
+                    FilterChip(selected = condition == opt, onClick = { condition = opt }, label = { Text(opt) })
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Location") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(12.dp))
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Verified sellers only")
+                Switch(checked = verifiedOnly, onCheckedChange = { verifiedOnly = it })
+            }
+            Spacer(Modifier.height(16.dp))
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                androidx.compose.material3.OutlinedButton(onClick = {
+                    onApply(PostFilters()); onDismiss()
+                }, modifier = Modifier.weight(1f)) { Text("Reset") }
+                androidx.compose.material3.Button(onClick = {
+                    onApply(PostFilters(priceRange.start, priceRange.endInclusive, condition, location, verifiedOnly)); onDismiss()
+                }, modifier = Modifier.weight(1f)) { Text("Apply") }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,16 +202,61 @@ fun HomeScreen(
     var sortBy by remember { mutableStateOf(SortOption.NEWEST) }
     var searchQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    var filters by remember { mutableStateOf(PostFilters()) }
+    var quickFilter by remember { mutableStateOf<String?>(null) }
+    var showShareSheet by remember { mutableStateOf(false) }
+    var sharePostId by remember { mutableStateOf("") }
+    var sharePostTitle by remember { mutableStateOf("") }
+    var showInterestModal by remember { mutableStateOf(false) }
+    var interestPostId by remember { mutableStateOf("") }
+    var interestPostTitle by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    val filteredPosts = remember(state.posts, selectedCategory, sortBy, searchQuery) {
+    // Auto-refresh every 30 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000L)
+            viewModel.load()
+        }
+    }
+
+    if (showShareSheet) {
+        com.mhub.app.ui.components.ShareLinkBottomSheet(
+            title = sharePostTitle, postId = sharePostId,
+            onDismiss = { showShareSheet = false },
+        )
+    }
+    if (showInterestModal) {
+        com.mhub.app.ui.components.BuyerInterestModal(
+            postId = interestPostId, postTitle = interestPostTitle,
+            onDismiss = { showInterestModal = false },
+            onSubmit = { _, _, _ -> showInterestModal = false },
+        )
+    }
+
+    val filteredPosts = remember(state.posts, selectedCategory, sortBy, searchQuery, filters, quickFilter) {
         state.posts
             .filter { post ->
                 (selectedCategory == null || post.categoryName == selectedCategory) &&
                     (searchQuery.isBlank() ||
                         post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                         post.location?.contains(searchQuery, ignoreCase = true) == true ||
-                        post.categoryName?.contains(searchQuery, ignoreCase = true) == true)
+                        post.categoryName?.contains(searchQuery, ignoreCase = true) == true) &&
+                    (filters.condition == "Any" || post.condition?.equals(filters.condition, ignoreCase = true) == true) &&
+                    (filters.location.isBlank() || post.location?.contains(filters.location, ignoreCase = true) == true) &&
+                    (!filters.verifiedOnly || post.sellerName != null) &&
+                    (post.price == null || (post.price >= filters.minPrice && post.price <= filters.maxPrice))
+            }
+            .let { list ->
+                when (quickFilter) {
+                    "Under ₹500" -> list.filter { (it.price ?: Double.MAX_VALUE) < 500.0 }
+                    "New Arrivals" -> list // already sorted by newest
+                    "Near Me" -> list.filter { it.location != null }
+                    else -> list
+                }
             }
             .let { list ->
                 when (sortBy) {
@@ -125,6 +266,10 @@ fun HomeScreen(
                     SortOption.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
                 }
             }
+    }
+
+    if (showFilterSheet) {
+        FilterBottomSheet(filters = filters, onApply = { filters = it }, onDismiss = { showFilterSheet = false })
     }
 
     Scaffold(
@@ -156,6 +301,9 @@ fun HomeScreen(
                             contentDescription = "Search",
                         )
                     }
+                    IconButton(onClick = { showFilterSheet = true }) {
+                        Icon(Icons.Default.Tune, contentDescription = "Filters")
+                    }
                     FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
                         Icon(
                             imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
@@ -168,14 +316,17 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreatePost,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Sell", fontWeight = FontWeight.SemiBold) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-            )
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.mhub.app.ui.components.BackToTopButton(listState = listState, coroutineScope = coroutineScope)
+                ExtendedFloatingActionButton(
+                    onClick = onCreatePost,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("Sell", fontWeight = FontWeight.SemiBold) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
@@ -185,9 +336,10 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when {
-                state.loading && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                state.loading && state.posts.isEmpty() -> PostGridShimmer(
+                    count = 6,
+                    modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                )
                 state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
                         title = "Feed unavailable",
@@ -200,10 +352,18 @@ fun HomeScreen(
                     AppEmptyState(icon = Icons.Outlined.Inventory2, title = "No listings yet", subtitle = "Pull to refresh or create the first listing.")
                 }
                 else -> LazyColumn(
-                    state = rememberLazyListState(),
+                    state = listState,
                     contentPadding = PaddingValues(bottom = 100.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    // Great Deals promotional banner
+                    item {
+                        com.mhub.app.ui.components.GreatDealsBanner(
+                            onShopNow = { quickFilter = "Under ₹500" },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+
                     if (showSearch) {
                         item {
                             OutlinedTextField(
@@ -262,6 +422,29 @@ fun HomeScreen(
                         }
                     }
 
+                    // Quick filter chips
+                    item {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                        ) {
+                            val quickFilters = listOf("Under ₹500" to Icons.Default.LocalOffer, "Near Me" to Icons.Default.LocationOn, "New Arrivals" to Icons.Default.NewReleases)
+                            items(quickFilters, key = { it.first }) { (label, icon) ->
+                                FilterChip(
+                                    selected = quickFilter == label,
+                                    onClick = { quickFilter = if (quickFilter == label) null else label },
+                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                    leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onTertiary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
                     item {
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("${filteredPosts.size} listing${if (filteredPosts.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -287,7 +470,21 @@ fun HomeScreen(
                         }
                     } else {
                         items(filteredPosts, key = { it.stableId }) { post ->
-                            ListPostCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                            ListPostCard(
+                                post = post,
+                                onClick = { onOpenPost(post.stableId) },
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                onShare = {
+                                    sharePostId = post.stableId
+                                    sharePostTitle = post.displayTitle
+                                    showShareSheet = true
+                                },
+                                onInterested = {
+                                    interestPostId = post.stableId
+                                    interestPostTitle = post.displayTitle
+                                    showInterestModal = true
+                                },
+                            )
                         }
                     }
 
@@ -327,12 +524,66 @@ private fun CategoriesStrip(categories: List<Category>, selected: String?, onSel
 }
 
 @Composable
-fun ListPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ListPostCard(
+    post: Post,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onShare: (() -> Unit)? = null,
+    onInterested: (() -> Unit)? = null,
+    isOwner: Boolean = false,
+) {
     var wishlisted by remember { mutableStateOf(false) }
+    var liked by remember { mutableStateOf(false) }
+    val allImages = remember(post) {
+        buildList {
+            post.primaryImage?.let { add(it) }
+            post.images.filter { it != post.primaryImage }.forEach { add(it) }
+        }
+    }
     Card(onClick = onClick, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = modifier.fillMaxWidth()) {
         Column {
+            // Seller header row
+            if (post.sellerName != null || post.userName != null) {
+                val name = post.sellerName ?: post.userName ?: "Seller"
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(name.take(1).uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp))
+                        if (post.sellerName != null) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
+                        }
+                    }
+                    com.mhub.app.ui.components.PostMoreMenuButton(
+                        postId = post.stableId, isOwner = isOwner,
+                        onShare = { onShare?.invoke() }, onReport = {},
+                        onAddToCart = {}, onSave = { wishlisted = !wishlisted },
+                    )
+                }
+            }
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-                if (post.primaryImage != null) {
+                if (allImages.size > 1) {
+                    val pagerState = rememberPagerState(pageCount = { allImages.size })
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                        AsyncImage(model = allImages[page], contentDescription = post.displayTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)))
+                    }
+                    // Page indicator dots
+                    Row(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        repeat(allImages.size) { i ->
+                            Box(modifier = Modifier.size(if (i == pagerState.currentPage) 8.dp else 6.dp).clip(CircleShape).background(if (i == pagerState.currentPage) Color.White else Color.White.copy(alpha = 0.5f)))
+                        }
+                    }
+                } else if (post.primaryImage != null) {
                     AsyncImage(model = post.primaryImage, contentDescription = post.displayTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)))
                 } else {
                     Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
@@ -371,10 +622,15 @@ fun ListPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
                         Spacer(Modifier.width(3.dp))
                         Text(post.location ?: "Nearby", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    val timeAgo = relativeTime(post.createdAt)
+                    if (timeAgo.isNotBlank()) {
+                        Text(timeAgo, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
                     }
                     post.viewCount?.let { views ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -384,6 +640,19 @@ fun ListPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                         }
                     }
                 }
+                // Action row
+                HorizontalDivider(modifier = Modifier.padding(top = 6.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                com.mhub.app.ui.components.PostActionRow(
+                    postId = post.stableId,
+                    viewCount = post.viewCount ?: 0,
+                    isLiked = liked,
+                    isWishlisted = wishlisted,
+                    onLike = { liked = !liked },
+                    onWishlist = { wishlisted = !wishlisted },
+                    onInterested = { onInterested?.invoke() },
+                    onShare = { onShare?.invoke() },
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                )
             }
         }
     }

@@ -211,6 +211,16 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, viewModel: Channe
                 state.channel != null -> {
                     val ch = state.channel!!
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Hero cover banner
+                        item {
+                            Box(Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(16.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))), contentAlignment = Alignment.BottomStart) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text(ch.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                    if (ch.description != null) Text(ch.description, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, maxLines = 2)
+                                }
+                            }
+                        }
+                        // Profile card with stats
                         item {
                             Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -218,16 +228,29 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, viewModel: Channe
                                         Text(ch.displayName.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 28.sp)
                                     }
                                     Spacer(Modifier.height(12.dp))
-                                    Text(ch.displayName, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
-                                    if (ch.description != null) { Spacer(Modifier.height(6.dp)); Text(ch.description, fontSize = 13.sp, color = Color(0xFF64748B)) }
-                                    Spacer(Modifier.height(12.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.memberCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B)); Text("Members", fontSize = 11.sp, color = Color(0xFF64748B)) }
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.postCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B)); Text("Posts", fontSize = 11.sp, color = Color(0xFF64748B)) }
                                     }
                                     Spacer(Modifier.height(14.dp))
                                     Button(onClick = { viewModel.toggleFollow(channelId) }, enabled = !state.toggling, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = if (ch.isMember) Color(0xFFF1F5F9) else Color(0xFF2563EB)), modifier = Modifier.fillMaxWidth().height(44.dp)) {
-                                        Text(if (ch.isMember) "Unfollow" else "Follow", color = if (ch.isMember) Color(0xFF374151) else Color.White, fontWeight = FontWeight.SemiBold)
+                                        Icon(if (ch.isMember) Icons.Filled.Check else Icons.Filled.PersonAdd, null, tint = if (ch.isMember) Color(0xFF374151) else Color.White, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(if (ch.isMember) "Following" else "Follow Channel", color = if (ch.isMember) Color(0xFF374151) else Color.White, fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                        }
+                        // Analytics summary
+                        item {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                listOf("Engagement" to "Active" to Color(0xFF22C55E), "Growth" to "Growing" to Color(0xFF2563EB), "Rank" to "Top 10%" to Color(0xFFF59E0B)).forEach { (pair, color) ->
+                                    val (label, value) = pair
+                                    Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp) {
+                                        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = color)
+                                            Text(label, fontSize = 10.sp, color = Color(0xFF64748B))
+                                        }
                                     }
                                 }
                             }
