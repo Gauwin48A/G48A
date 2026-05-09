@@ -18,6 +18,14 @@ data class User(
     @SerialName("profile_image_url") val profileImageUrl: String? = null,
     @SerialName("current_plan") val currentPlan: String? = null,
     @SerialName("rewards_rank") val rewardsRank: String? = null,
+    @SerialName("cover_image") val coverImage: String? = null,
+    @SerialName("follower_count") val followerCount: Int? = null,
+    @SerialName("following_count") val followingCount: Int? = null,
+    @SerialName("is_verified") val isVerified: Boolean? = null,
+    @SerialName("shares_count") val sharesCount: Int? = null,
+    @SerialName("bio") val bio: String? = null,
+    @SerialName("website") val website: String? = null,
+    @SerialName("social_links") val socialLinks: Map<String, String>? = null,
 ) {
     val stableId: String get() = userId ?: id ?: email ?: phone ?: "unknown"
     val displayName: String get() = fullName ?: name ?: username ?: email ?: phone ?: "User"
@@ -50,10 +58,17 @@ data class Post(
     val condition: String? = null,
     val brand: String? = null,
     @SerialName("seller_name") val sellerName: String? = null,
+    @SerialName("subcategory") val subcategory: String? = null,
+    @SerialName("subcategory_name") val subcategoryName: String? = null,
+    @SerialName("model") val model: String? = null,
+    @SerialName("interested_buyers") val interestedBuyers: Int? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()
     val displayTitle: String get() = title ?: "Untitled"
+    // Aliases for backward compatibility
+    val views: Int? get() = viewCount
+    val likes: Int? get() = likeCount
 }
 
 @Serializable

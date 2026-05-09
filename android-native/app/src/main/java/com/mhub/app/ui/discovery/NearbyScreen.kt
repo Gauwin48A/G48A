@@ -95,6 +95,7 @@ class NearbyViewModel @Inject constructor(
 }
 
 @SuppressLint("MissingPermission")
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun NearbyScreen(
     onBack: () -> Unit,

@@ -247,12 +247,7 @@ class ChannelDetailViewModel @Inject constructor(private val repo: ChannelsRepos
     fun load(id: String) { viewModelScope.launch {
         when (val r = repo.detail(id)) {
             is ApiResult.Success -> {
-                _state.value = ChannelDetailUiState(loading = false, channel = r.data)
-                // Load channel posts
-                when (val p = repo.posts(id)) {
-                    is ApiResult.Success -> _state.value = _state.value.copy(posts = p.data)
-                    is ApiResult.Failure -> {}
-                }
+                _state.value = ChannelDetailUiState(loading = false, channel = r.data, posts = r.data.posts)
             }
             is ApiResult.Failure -> _state.value = ChannelDetailUiState(loading = false, error = r.error.message)
         }

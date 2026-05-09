@@ -437,6 +437,7 @@ class SocialRepository @Inject constructor(private val api: MhubApi) {
         api.createFeedPost(req).id ?: error("No id")
     }
     suspend fun likePost(id: String): ApiResult<Unit> = safeApiCall { api.likePost(id); Unit }
+    suspend fun bookmarkPost(id: String): ApiResult<Unit> = safeApiCall { api.addWishlist(id); Unit }
     suspend fun viewPost(id: String): ApiResult<Unit> = safeApiCall { api.viewPost(id); Unit }
     suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
         api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit

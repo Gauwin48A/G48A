@@ -508,7 +508,10 @@ fun NotificationsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-privisExpanded: Boolean = false,
+fun NotificationRow(
+    notification: Notification,
+    isUnread: Boolean = false,
+    isExpanded: Boolean = false,
     onToggleExpand: () -> Unit = {},
     onClick: () -> Unit,
     onAcceptOffer: () -> Unit = {},
@@ -631,57 +634,11 @@ privisExpanded: Boolean = false,
                             Spacer(Modifier.width(4.dp))
                             Text("View Post", fontSize = 13.sp)
                         }
-                    }ier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(style.bg),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = style.icon,
-                    contentDescription = null,
-                    tint = style.tint,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = notification.displayTitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (isUnread) FontWeight.SemiBold else FontWeight.Normal,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (isUnread) {
-                        Spacer(Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                        )
                     }
                 }
-                Text(
-                    text = notification.displayMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                notification.createdAt?.let { ts ->
-                    Text(
-                        text = formatRelativeTime(ts),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    )
-                }
             }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
     }
 }
 

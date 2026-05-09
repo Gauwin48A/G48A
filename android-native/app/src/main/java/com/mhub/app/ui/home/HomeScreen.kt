@@ -136,7 +136,7 @@ private enum class SortOption(val label: String) {
     PRICE_DESC("Price high-low"),
 }
 
-private enum class PageDensity(val label: String, val cardPadding: Int) {
+internal enum class PageDensity(val label: String, val cardPadding: Int) {
     COMPACT("Compact", 4),
     NORMAL("Normal", 8),
     SPACIOUS("Spacious", 12),
@@ -1483,7 +1483,7 @@ fun ListPostCard(
                     Icon(imageVector = if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = heartColor, modifier = Modifier.size(18.dp))
                 }
                 // Promo badges overlay
-                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -1571,7 +1571,7 @@ fun GridPostCard(
                 Box(modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable { wishlisted = !wishlisted }, contentAlignment = Alignment.Center) {
                     Icon(imageVector = if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = heartColor, modifier = Modifier.size(14.dp))
                 }
-                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(6.dp))
+                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(6.dp))
             }
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(text = post.displayTitle, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
