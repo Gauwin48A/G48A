@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,8 +49,10 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -101,6 +104,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -113,6 +117,7 @@ import com.mhub.app.data.remote.dto.ProfileUpdateRequest
 import com.mhub.app.data.repository.AuthRepository
 import com.mhub.app.data.repository.RewardsRepository
 import com.mhub.app.domain.model.User
+import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ErrorBanner
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -353,9 +358,9 @@ fun ProfileScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(
-                                        if (user?.coverImage != null) Color.Transparent
-                                        else Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF8B5CF6)))
+                                    .then(
+                                        if (user?.coverImage != null) Modifier.background(Color.Transparent)
+                                        else Modifier.background(Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF8B5CF6))))
                                     )
                             ) {
                                 user?.coverImage?.let { coverUrl ->

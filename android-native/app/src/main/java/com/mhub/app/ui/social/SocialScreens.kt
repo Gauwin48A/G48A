@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -270,6 +271,7 @@ class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : 
     } }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
@@ -321,6 +323,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
     }
     // Share dialog
     val context = androidx.compose.ui.platform.LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     shareTarget?.let { post ->
         AlertDialog(
             onDismissRequest = { shareTarget = null },
@@ -334,7 +337,6 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                         shareTarget = null
                     }, modifier = Modifier.fillMaxWidth()) { Text("💬 Share anywhere") }
                     OutlinedButton(onClick = {
-                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
                         clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://mhub.app/post/${post.stableId}"))
                         shareTarget = null
                     }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
@@ -533,6 +535,7 @@ class PublicWallViewModel @Inject constructor(private val repo: SocialRepository
     fun retry() { _state.value = FeedListUiState(); load(userId) }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()

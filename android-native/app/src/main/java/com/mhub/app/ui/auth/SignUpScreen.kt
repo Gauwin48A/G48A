@@ -196,7 +196,7 @@ fun SignUpScreen(
                                     Text("Identity verified!", color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text("Create Password", fontWeight = FontWeight.SemiBold, fontSize = 14.dp, color = labelText)
+                                Text("Create Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 // Password requirements checklist
                                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF9FAFB), modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

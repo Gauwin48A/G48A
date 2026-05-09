@@ -507,6 +507,8 @@ data class RewardsOverviewResponse(
 data class RewardsUserDto(
     val id: String? = null,
     val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
     val rank: String? = null,
     val tier: String? = null,
     val membershipPlan: String? = null,
@@ -544,6 +546,7 @@ data class RewardsActivityStatsDto(
     val purchasesCount: Int = 0,
     val referralsCount: Int = 0,
     val postsCount: Int = 0,
+    val sharesCount: Int = 0,
     val visitsCount: Int = 0,
     val salesToday: Int = 0,
     val purchasesToday: Int = 0,
@@ -1184,4 +1187,10 @@ data class ReferralNode(
     val level: Int = 1,
     @SerialName("joined_at") val joinedAt: String? = null,
     val earnings: Double = 0.0,
+)
+
+@Serializable
+data class SaveSearchRequest(
+    val query: String,
+    val category: String? = null,
 )
