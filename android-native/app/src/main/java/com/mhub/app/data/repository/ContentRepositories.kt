@@ -287,6 +287,7 @@ class CartRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
     suspend fun list(): ApiResult<List<SavedSearch>> = safeApiCall { api.savedSearches().searches }
+    suspend fun save(query: String, category: String?): ApiResult<Unit> = safeApiCall { api.saveSearch(SaveSearchRequest(query, category)); Unit }
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteSavedSearch(id); Unit }
 }
 

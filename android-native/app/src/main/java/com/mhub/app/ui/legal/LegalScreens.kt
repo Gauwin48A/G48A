@@ -294,6 +294,7 @@ class AdminViewModel @Inject constructor(private val repo: AdminRepository) : Vi
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()

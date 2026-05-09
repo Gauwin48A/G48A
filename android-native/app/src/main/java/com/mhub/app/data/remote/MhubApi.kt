@@ -357,6 +357,9 @@ interface MhubApi {
     @DELETE("api/saved-searches/{id}")
     suspend fun deleteSavedSearch(@Path("id") id: String): MessageResponse
 
+    @POST("api/saved-searches")
+    suspend fun saveSearch(@Body request: SaveSearchRequest): MessageResponse
+
     // ---- Compare ----
     @GET("api/compare")
     suspend fun compareList(): PostsResponse

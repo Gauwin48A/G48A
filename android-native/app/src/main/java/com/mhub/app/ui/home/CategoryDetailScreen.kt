@@ -312,7 +312,7 @@ fun CategoryDetailScreen(
                         val brands = state.posts.mapNotNull { it.brand }.distinct().take(5)
                         if (brands.isNotEmpty()) {
                             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                item { Text("Brand:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically)) }
+                                item { Text("Brand:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                 items(brands) { brand ->
                                     FilterChip(selected = false, onClick = {}, label = { Text(brand, fontSize = 11.sp) })
                                 }

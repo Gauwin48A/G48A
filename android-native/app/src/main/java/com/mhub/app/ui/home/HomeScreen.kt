@@ -136,7 +136,7 @@ private enum class SortOption(val label: String) {
     PRICE_DESC("Price high-low"),
 }
 
-internal enum class PageDensity(val label: String, val cardPadding: Int) {
+enum class PageDensity(val label: String, val cardPadding: Int) {
     COMPACT("Compact", 4),
     NORMAL("Normal", 8),
     SPACIOUS("Spacious", 12),

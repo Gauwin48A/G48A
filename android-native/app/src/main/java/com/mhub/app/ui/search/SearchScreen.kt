@@ -701,7 +701,7 @@ private fun SearchResultCard(post: Post, onClick: () -> Unit, onZoom: (String) -
                 ) {
                     Icon(if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (wishlisted) Color(0xFFEF4444) else Color.White, modifier = Modifier.size(16.dp))
                 }
-                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }
 
             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
