@@ -95,9 +95,9 @@ private val APPS = listOf(
         listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
     AppDef("fashion", "Fashion", "Clothing, shoes & accessories", "👗",
         listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
-    AppDef("vehicles", "Vehicles", "Cars, bikes & spare parts", "🚗",
+    AppDef("grocery", "Grocery", "Fresh food, staples & more", "🛒",
         listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
-    AppDef("others", "Others", "Home, services, jobs & more", "✨",
+    AppDef("furniture", "Furniture", "Home, office & décor", "🪑",
         listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
 )
 
@@ -280,8 +280,8 @@ fun CategoryHubScreen(
                 ) {
                     itemsIndexed(filteredApps, key = { _, app -> app.key }) { index, app ->
                         val catCount = state.categories.count { cat ->
-                            val group = (cat.categoryGroup ?: "others").lowercase()
-                            group == app.key || (app.key == "others" && group !in listOf("electronics", "fashion", "vehicles"))
+                            val group = (cat.categoryGroup ?: "furniture").lowercase()
+                            group == app.key || (app.key == "furniture" && group !in listOf("electronics", "fashion", "grocery"))
                         }
                         val stat = state.stats.find { it.key?.lowercase() == app.key }
                         val activeCount = stat?.activeCount ?: catCount

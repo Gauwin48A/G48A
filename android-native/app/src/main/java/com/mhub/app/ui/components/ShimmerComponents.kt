@@ -140,3 +140,35 @@ fun ListShimmer(count: Int = 5, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** Shimmer for a full-width hero banner placeholder */
+@Composable
+fun BannerShimmer(modifier: Modifier = Modifier) {
+    ShimmerBox(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(horizontal = 16.dp),
+        radius = 12.dp,
+    )
+}
+
+/** Shimmer row of circular subcategory chips */
+@Composable
+fun SubcategoryChipShimmer(count: Int = 6, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        repeat(count) {
+            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                ShimmerBox(
+                    modifier = Modifier.width(64.dp).height(64.dp),
+                    radius = 32.dp,
+                )
+                Spacer(Modifier.height(6.dp))
+                ShimmerBox(modifier = Modifier.width(50.dp).height(10.dp))
+            }
+        }
+    }
+}

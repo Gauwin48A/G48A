@@ -127,6 +127,17 @@ import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.ui.components.OfflineBanner
 import com.mhub.app.ui.components.MhubTopBar
 import com.mhub.app.data.local.ThemeMode
+import com.mhub.app.ui.categoryapp.CategoryAppShell
+import com.mhub.app.ui.categoryapp.MockProductDetailScreen
+import com.mhub.app.ui.checkout.CheckoutAddressScreen
+import com.mhub.app.ui.checkout.CheckoutPaymentScreen
+import com.mhub.app.ui.checkout.CheckoutReviewScreen
+import com.mhub.app.ui.checkout.OrderConfirmationScreen
+import com.mhub.app.ui.checkout.OrderFailedScreen
+import com.mhub.app.ui.recentlyviewed.RecentlyViewedFullScreen
+import com.mhub.app.ui.staticpages.AboutUsScreen
+import com.mhub.app.ui.staticpages.ContactUsScreen
+import com.mhub.app.ui.staticpages.FAQScreen
 
 @HiltViewModel
 class AppThemeViewModel @Inject constructor(
@@ -258,7 +269,7 @@ fun MhubApp(
                         onOpenSearch = { navController.navigate(Routes.SEARCH) },
                         onSelectApp = { key ->
                             activeCategoryKey = key
-                            navController.navigate(Routes.ALL_POSTS) {
+                            navController.navigate("cat/$key") {
                                 launchSingleTop = true
                             }
                         },
@@ -712,6 +723,121 @@ fun MhubApp(
                         }
                     },
                 )
+            }
+
+            // ── Category App Shell (per-category mini-app) ──────────────────
+            composable(
+                route = "cat/{catKey}",
+                arguments = listOf(navArgument("catKey") { type = NavType.StringType }),
+            ) { entry ->
+                val catKey = entry.arguments?.getString("catKey").orEmpty()
+                CategoryAppShell(
+                    categoryKey = catKey,
+                    onBackToLauncher = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.HOME) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenPostDetail = { id ->
+                        // route mock product IDs to MockProductDetailScreen
+                        if (id.startsWith("ep") || id.startsWith("fp") || id.startsWith("gp") || id.startsWith("fup")) {
+                            navController.navigate("cat-product/$id")
+                        } else {
+                            navController.navigate(Routes.postDetail(id))
+                        }
+                    },
+                )
+            }
+
+            // ── Mock Product Detail (category app products) ──────────────────
+            composable(
+                route = "cat-product/{productId}",
+                arguments = listOf(navArgument("productId") { type = NavType.StringType }),
+            ) { entry ->
+                val productId = entry.arguments?.getString("productId").orEmpty()
+                MockProductDetailScreen(
+                    productId = productId,
+                    onBack = { navController.popBackStack() },
+                    onOpenProduct = { id -> navController.navigate("cat-product/$id") },
+                )
+            }
+
+            // ── Checkout Flow ────────────────────────────────────────────────
+            composable(Routes.CHECKOUT_ADDRESS) {
+                CheckoutAddressScreen(
+                    onBack = { navController.popBackStack() },
+                    onNext = { _, _, address ->
+                        navController.navigate(Routes.CHECKOUT_PAYMENT)
+                    },
+                )
+            }
+
+            composable(Routes.CHECKOUT_PAYMENT) {
+                CheckoutPaymentScreen(
+                    onBack = { navController.popBackStack() },
+                    onNext = { method ->
+                        navController.navigate(Routes.CHECKOUT_REVIEW + "?method=" + method)
+                    },
+                )
+            }
+
+            composable(
+                route = Routes.CHECKOUT_REVIEW + "?method={method}",
+                arguments = listOf(navArgument("method") { type = NavType.StringType; defaultValue = "UPI" }),
+            ) { entry ->
+                val method = entry.arguments?.getString("method") ?: "UPI"
+                CheckoutReviewScreen(
+                    address = "Selected delivery address",
+                    paymentMethod = method,
+                    onBack = { navController.popBackStack() },
+                    onPlaceOrder = {
+                        navController.navigate(Routes.CHECKOUT_CONFIRM) {
+                            popUpTo(Routes.CHECKOUT_ADDRESS) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.CHECKOUT_CONFIRM) {
+                OrderConfirmationScreen(
+                    onContinueShopping = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onViewOrder = { navController.navigate(Routes.BOUGHT_POSTS) },
+                )
+            }
+
+            composable(Routes.CHECKOUT_FAILED) {
+                OrderFailedScreen(
+                    onRetry = { navController.popBackStack() },
+                    onGoToCart = { navController.navigate(Routes.CART) },
+                )
+            }
+
+            // ── Recently Viewed (full screen) ────────────────────────────────
+            composable(Routes.RECENTLY_VIEWED_SCREEN) {
+                RecentlyViewedFullScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenProduct = { id -> navController.navigate("cat-product/$id") },
+                )
+            }
+
+            // ── Static pages ─────────────────────────────────────────────────
+            composable(Routes.ABOUT_US) {
+                AboutUsScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.CONTACT_US) {
+                ContactUsScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.FAQ) {
+                FAQScreen(onBack = { navController.popBackStack() })
             }
         }
         }
