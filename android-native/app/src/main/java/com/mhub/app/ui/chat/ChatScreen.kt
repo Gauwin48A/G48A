@@ -41,7 +41,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -74,7 +77,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -216,9 +221,38 @@ class ChatViewModel @Inject constructor(
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
+    onNavigateToLogin: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+
+    // ProtectedChat gate (web-parity: ChatScreen.jsx ProtectedChat wrapper)
+    if (state.currentUserId.isNullOrBlank()) {
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+            androidx.compose.foundation.layout.Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                modifier = androidx.compose.ui.Modifier.padding(32.dp),
+            ) {
+                Text("🔒", fontSize = 48.sp)
+                Text("Sign in to Message", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
+                Text("Create an account or sign in to send and receive messages with sellers.", color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                Button(
+                    onClick = onNavigateToLogin,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                ) { Text("Sign In / Sign Up", fontWeight = FontWeight.SemiBold) }
+                OutlinedButton(onClick = onBack, shape = RoundedCornerShape(12.dp), modifier = androidx.compose.ui.Modifier.fillMaxWidth()) {
+                    Text("Go Back")
+                }
+            }
+        }
+        return
+    }
 
     if (state.selectedConversation != null) {
         MessageThreadScreen(

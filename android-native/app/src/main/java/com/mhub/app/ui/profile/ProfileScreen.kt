@@ -143,6 +143,7 @@ data class ProfileState(
     val isFollowing: Boolean = false,
     val responseTimeMinutes: Int? = null,
     val socialLinks: Map<String, String> = emptyMap(),
+    val isOwnProfile: Boolean = true,
     val userPosts: List<com.mhub.app.domain.model.Post> = emptyList(),
     val reviews: List<UserReview> = emptyList(),
 )
@@ -231,6 +232,14 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun clearEditResult() { _state.value = _state.value.copy(editResult = null) }
+
+    fun updateSocialLinks(links: Map<String, String>) {
+        // Optimistic update — persist via profile update endpoint
+        _state.value = _state.value.copy(socialLinks = links)
+        viewModelScope.launch {
+            rewardsRepo.updateProfile(ProfileUpdateRequest(socialLinks = links))
+        }
+    }
 
     fun logout(onDone: () -> Unit) {
         viewModelScope.launch { repo.logout(); onDone() }
@@ -455,17 +464,47 @@ fun ProfileScreen(
                                         color = Color.White.copy(alpha = 0.8f),
                                     )
 
-                                    // Social links row
-                                    if (state.socialLinks.isNotEmpty()) {
+                                    // Copy-handle pill (web-parity: EditProfile.jsx copy address)
+                                    val handle = user?.username ?: user?.email ?: ""
+                                    if (handle.isNotBlank()) {
+                                        val clipboardManager = LocalClipboardManager.current
+                                        Surface(
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = Color.White.copy(alpha = 0.15f),
+                                            modifier = Modifier.clickable {
+                                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(handle))
+                                            },
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            ) {
+                                                Icon(Icons.Default.ContentCopy, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(12.dp))
+                                                Text(handle, fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium)
+                                            }
+                                        }
+                                    }
+
+                                    // Social links row (with edit pencil when own profile)
+                                    if (state.socialLinks.isNotEmpty() || state.isOwnProfile) {
+                                        var showSocialDialog by remember { mutableStateOf(false) }
+                                        if (showSocialDialog) {
+                                            SocialLinksEditDialog(
+                                                initial = state.socialLinks,
+                                                onDismiss = { showSocialDialog = false },
+                                                onSave = { links -> viewModel.updateSocialLinks(links); showSocialDialog = false },
+                                            )
+                                        }
                                         Row(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            state.socialLinks.forEach { (platform, url) ->
+                                            state.socialLinks.forEach { (platform, _) ->
                                                 Surface(
                                                     shape = CircleShape,
                                                     color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(32.dp).clickable { /* Open URL */ }
+                                                    modifier = Modifier.size(32.dp),
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                                         Text(
@@ -479,6 +518,17 @@ fun ProfileScreen(
                                                             fontSize = 14.sp,
                                                             fontWeight = FontWeight.Bold
                                                         )
+                                                    }
+                                                }
+                                            }
+                                            if (state.isOwnProfile) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.15f),
+                                                    modifier = Modifier.size(28.dp).clickable { showSocialDialog = true },
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                        Icon(Icons.Default.Edit, "Edit social links", tint = Color.White, modifier = Modifier.size(14.dp))
                                                     }
                                                 }
                                             }
@@ -1257,6 +1307,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
     var selectedRadius by remember { mutableIntStateOf(25) }
     var minPrice by remember { mutableStateOf("") }
     var maxPrice by remember { mutableStateOf("") }
+    var pageDensity by remember { mutableStateOf("comfortable") }
     val radii = listOf(5, 10, 25, 50)
 
     Column(
@@ -1348,6 +1399,26 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                     Text("Select your active app experience (Electronics, Fashion, Vehicles…)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
                 }
                 Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+            }
+        }
+
+        // Page-density selector (web-parity: Profile.jsx densityPreference C8)
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Page Density", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Text("Controls spacing between list items.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("compact" to "Compact", "comfortable" to "Comfortable", "spacious" to "Spacious").forEach { (mode, label) ->
+                        val sel = pageDensity == mode
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable { pageDensity = mode },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (sel) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
+                        ) {
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth())
+                        }
+                    }
+                }
             }
         }
 
@@ -2087,6 +2158,62 @@ private fun EditProfileDialog(
                 onClick = { onSave(name.ifBlank { null }, phone.ifBlank { null }, bio.ifBlank { null }) },
                 enabled = !saving,
             ) { Text(if (saving) "Saving..." else "Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+/* ── Social Links Edit Dialog (web-parity: EditProfile.jsx socialLinks) ── */
+@Composable
+private fun SocialLinksEditDialog(
+    initial: Map<String, String>,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, String>) -> Unit,
+) {
+    var twitter by remember { mutableStateOf(initial["twitter"] ?: "") }
+    var instagram by remember { mutableStateOf(initial["instagram"] ?: "") }
+    var linkedin by remember { mutableStateOf(initial["linkedin"] ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Social Links", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = twitter,
+                    onValueChange = { twitter = it },
+                    label = { Text("𝕏 / Twitter handle") },
+                    placeholder = { Text("@yourhandle") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = instagram,
+                    onValueChange = { instagram = it },
+                    label = { Text("📷 Instagram handle") },
+                    placeholder = { Text("@yourhandle") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = linkedin,
+                    onValueChange = { linkedin = it },
+                    label = { Text("LinkedIn URL") },
+                    placeholder = { Text("linkedin.com/in/…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val links = buildMap<String, String> {
+                    if (twitter.isNotBlank()) put("twitter", twitter.trim().removePrefix("@"))
+                    if (instagram.isNotBlank()) put("instagram", instagram.trim().removePrefix("@"))
+                    if (linkedin.isNotBlank()) put("linkedin", linkedin.trim())
+                }
+                onSave(links)
+            }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

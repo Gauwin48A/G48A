@@ -164,6 +164,7 @@ fun CategoryHubScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var layoutMode by remember { mutableStateOf("mobile") } // mobile=2col, tablet=3col, desktop=4col
     val filteredApps = remember(searchQuery) {
         if (searchQuery.isBlank()) APPS
         else APPS.filter { it.label.contains(searchQuery, true) || it.tagline.contains(searchQuery, true) }
@@ -270,9 +271,28 @@ fun CategoryHubScreen(
                     }
                 }
             } else {
-                // App grid — 2 columns
+                // Layout-preview toggle (web-parity: CategoryHub.jsx previewMode selector)
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Layout:", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
+                    listOf("mobile" to "📱", "tablet" to "📲", "desktop" to "🖥").forEach { (mode, emoji) ->
+                        val sel = layoutMode == mode
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (sel) Color(0xFF6366F1) else Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(2.dp).clickable { layoutMode = mode },
+                        ) {
+                            Text(emoji, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+                }
+                // App grid — columns vary by layoutMode
+                val gridCols = when (layoutMode) { "tablet" -> 3; "desktop" -> 4; else -> 2 }
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(gridCols),
                     contentPadding = PaddingValues(bottom = 100.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

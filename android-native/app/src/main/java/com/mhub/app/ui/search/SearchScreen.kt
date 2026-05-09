@@ -88,6 +88,8 @@ data class SearchState(
     val selectedCategory: String? = null,
     val suggestions: List<String> = emptyList(),
     val refreshing: Boolean = false,
+    /** Last 10 query strings shown as recent-search chips (web-parity: localStorage in SearchPage.jsx) */
+    val recentQueries: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -198,9 +200,32 @@ class SearchViewModel @Inject constructor(
     private suspend fun doSearch(query: String) {
         _state.value = _state.value.copy(loading = true, error = null)
         when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
-            is ApiResult.Success -> _state.value = _state.value.copy(loading = false, items = result.data, searched = true)
+            is ApiResult.Success -> {
+                // 20-field multi-token AND-logic (web-parity: SearchPage.jsx matchesAllTokens)
+                val tokens = query.trim().lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
+                val filtered = if (tokens.isEmpty()) result.data else result.data.filter { post ->
+                    val searchable = listOf(
+                        post.title, post.description, post.brand, post.model,
+                        post.categoryName, post.subcategoryName, post.location,
+                        post.city, post.state, post.condition, post.color,
+                        post.size, post.tags?.joinToString(" "), post.userName,
+                        post.userHandle, post.hashtags?.joinToString(" "),
+                        post.price?.toLong()?.toString(), post.year?.toString(),
+                        post.mileage?.toString(), post.ramStorage,
+                    ).mapNotNull { it?.lowercase() }.joinToString(" ")
+                    tokens.all { token -> searchable.contains(token) }
+                }
+                // Persist to recent queries (keep last 10, deduplicate)
+                val trimmed = query.trim()
+                val updated = (_state.value.recentQueries.filter { it != trimmed } + trimmed).takeLast(10).reversed()
+                _state.value = _state.value.copy(loading = false, items = filtered, searched = true, recentQueries = updated)
+            }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
         }
+    }
+
+    fun removeRecentQuery(q: String) {
+        _state.value = _state.value.copy(recentQueries = _state.value.recentQueries.filter { it != q })
     }
 }
 
@@ -209,12 +234,20 @@ class SearchViewModel @Inject constructor(
 fun SearchScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
+    prefillQuery: String = "",
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val focusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    // Apply prefill query from deep-link (B7: SavedSearches "Run")
+    LaunchedEffect(prefillQuery) {
+        if (prefillQuery.isNotBlank() && state.query.isBlank()) {
+            viewModel.onQueryChange(prefillQuery)
+            viewModel.search(prefillQuery)
+        }
+    }
     var showFilters by remember { mutableStateOf(false) }
     var minPrice by remember { mutableStateOf("") }
     var maxPrice by remember { mutableStateOf("") }
@@ -315,6 +348,30 @@ fun SearchScreen(
                                 Icon(Icons.Default.TrendingUp, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 Text(suggestion, style = MaterialTheme.typography.bodyMedium)
                             }
+                        }
+                    }
+                }
+            }
+
+            // Recent queries chips (web-parity: SearchPage.jsx recentSearches localStorage row)
+            AnimatedVisibility(visible = state.recentQueries.isNotEmpty() && state.query.isBlank()) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.History, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Recent searches", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(state.recentQueries, key = { it }) { q ->
+                            InputChip(
+                                selected = false,
+                                onClick = { viewModel.onQueryChange(q); viewModel.search(q) },
+                                label = { Text(q, style = MaterialTheme.typography.labelSmall) },
+                                trailingIcon = {
+                                    Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp).clickable { viewModel.removeRecentQuery(q) })
+                                },
+                            )
                         }
                     }
                 }

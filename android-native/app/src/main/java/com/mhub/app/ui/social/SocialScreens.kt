@@ -279,6 +279,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
     val searchQuery by viewModel.search.collectAsState()
     var sortBy by remember { mutableStateOf("newest") }
     var statusFilter by remember { mutableStateOf("All") }
+    var density by remember { mutableStateOf("comfortable") } // compact / comfortable / spacious
     var deleteTarget by remember { mutableStateOf<String?>(null) }
     var promoteTarget by remember { mutableStateOf<FeedItem?>(null) }
     var shareTarget by remember { mutableStateOf<FeedItem?>(null) }
@@ -370,6 +371,16 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     )
                 }
             }
+            // Page-density toggle (web-parity: MyFeed.jsx densitySelector C8)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text("Density:", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
+                listOf("compact" to "▤", "comfortable" to "≡", "spacious" to "☰").forEach { (mode, icon) ->
+                    val sel = density == mode
+                    Surface(modifier = Modifier.padding(2.dp).clickable { density = mode }, shape = RoundedCornerShape(6.dp), color = if (sel) Color(0xFF2563EB) else Color.Transparent) {
+                        Text(icon, fontSize = 14.sp, color = if (sel) Color.White else Color(0xFF94A3B8), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                    }
+                }
+            }
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -381,7 +392,9 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                         Text("Share something with your community", fontSize = 13.sp, color = Color(0xFF64748B))
                     }
                 }
-                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
+                    val itemSpacing = when (density) { "compact" -> 6.dp; "spacious" -> 20.dp; else -> 12.dp }
+                    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(itemSpacing)) {
                     // Metrics row
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
