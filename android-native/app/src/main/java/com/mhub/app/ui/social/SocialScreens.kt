@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -214,6 +215,10 @@ data class FeedListUiState(val loading: Boolean = true, val items: List<FeedItem
 class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : ViewModel() {
     private val _state = MutableStateFlow(FeedListUiState())
     val state: StateFlow<FeedListUiState> = _state.asStateFlow()
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+    private val _search = MutableStateFlow("")
+    val search: StateFlow<String> = _search.asStateFlow()
     init { load() }
     fun load() { viewModelScope.launch {
         when (val r = repo.myFeed()) {
@@ -221,15 +226,43 @@ class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : 
             is ApiResult.Failure -> _state.value = FeedListUiState(loading = false, error = r.error.message)
         }
     } }
+    fun refresh() { viewModelScope.launch { _refreshing.value = true; load(); _refreshing.value = false } }
+    fun setSearch(v: String) { _search.value = v }
+    fun deletePost(id: String) { viewModelScope.launch {
+        _state.value = _state.value.copy(items = _state.value.items.filter { it.stableId != id })
+    } }
 }
 
 @Composable
 fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
+    val searchQuery by viewModel.search.collectAsState()
     var sortBy by remember { mutableStateOf("newest") }
+    var deleteTarget by remember { mutableStateOf<String?>(null) }
+    // Delete confirmation dialog
+    deleteTarget?.let { id ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete Post") },
+            text = { Text("Are you sure you want to delete this post? This cannot be undone.") },
+            confirmButton = { TextButton(onClick = { viewModel.deletePost(id); deleteTarget = null }) { Text("Delete", color = Color(0xFFEF4444)) } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } },
+        )
+    }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("My Feed", onBack)
+            // Search bar
+            OutlinedTextField(
+                value = searchQuery, onValueChange = viewModel::setSearch,
+                placeholder = { Text("Search your posts…") },
+                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { viewModel.setSearch("") }) { Icon(Icons.Filled.Clear, null) } },
+                singleLine = true, shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -241,7 +274,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                         Text("Share something with your community", fontSize = 13.sp, color = Color(0xFF64748B))
                     }
                 }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Metrics row
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -268,8 +301,19 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                             }
                         }
                     }
-                    items(state.items, key = { it.stableId }) { FeedCard(it) }
-                }
+                    val filteredItems = state.items.filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, true) || it.displayContent.contains(searchQuery, true) }
+                    items(filteredItems, key = { it.stableId }) { item ->
+                        FeedCard(item, onClick = null)
+                        // Delete button row
+                        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
+                            TextButton(onClick = { deleteTarget = item.stableId }) {
+                                Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Delete", color = Color(0xFFEF4444), fontSize = 12.sp)
+                            }
+                        }
+                    }
+                } }
             }
         }
     }
@@ -371,22 +415,37 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
 class PublicWallViewModel @Inject constructor(private val repo: SocialRepository) : ViewModel() {
     private val _state = MutableStateFlow(FeedListUiState())
     val state: StateFlow<FeedListUiState> = _state.asStateFlow()
-    fun load(userId: String) { viewModelScope.launch {
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+    private var userId: String = ""
+    fun load(userId: String) { this.userId = userId; viewModelScope.launch {
         when (val r = repo.publicWall(userId)) {
             is ApiResult.Success -> _state.value = FeedListUiState(loading = false, items = r.data)
             is ApiResult.Failure -> _state.value = FeedListUiState(loading = false, error = r.error.message)
         }
     } }
+    fun refresh() { viewModelScope.launch { _refreshing.value = true; load(userId); _refreshing.value = false } }
+    fun retry() { _state.value = FeedListUiState(); load(userId) }
 }
 
 @Composable
 fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Public Wall", onBack)
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                        Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text(state.error ?: "Failed to load", color = Color(0xFF64748B), fontSize = 14.sp)
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { viewModel.retry() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text("Retry") }
+                    }
+                }
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.Person, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
@@ -396,7 +455,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                         Text("Posts shared by this user will appear here", fontSize = 13.sp, color = Color(0xFF64748B))
                     }
                 }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Profile header card
                     item {
                         val firstPost = state.items.firstOrNull()
@@ -442,7 +501,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                         }
                     }
                     items(state.items, key = { it.stableId }) { FeedCard(it) }
-                }
+                } }
             }
         }
     }

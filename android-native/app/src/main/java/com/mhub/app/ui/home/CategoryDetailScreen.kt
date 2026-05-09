@@ -113,6 +113,8 @@ data class CategoryDetailState(
     val page: Int = 1,
     val hasMore: Boolean = true,
     val error: String? = null,
+    val searchQuery: String = "",
+    val isGridView: Boolean = true,
 )
 
 /* ── ViewModel ────────────────────────────────────────────────────────── */
@@ -165,6 +167,9 @@ class CategoryDetailViewModel @Inject constructor(
         _state.value = _state.value.copy(sortBy = sort, page = 1, posts = emptyList(), loading = true)
         viewModelScope.launch { fetchPosts(reset = true) }
     }
+
+    fun setSearch(q: String) { _state.value = _state.value.copy(searchQuery = q) }
+    fun toggleViewMode() { _state.value = _state.value.copy(isGridView = !_state.value.isGridView) }
 
     fun loadMore() {
         if (!_state.value.hasMore || _state.value.loading) return
@@ -228,6 +233,9 @@ fun CategoryDetailScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = { viewModel.toggleViewMode() }) {
+                            Icon(if (state.isGridView) Icons.Filled.ViewList else Icons.AutoMirrored.Filled.ViewList, "Toggle view", tint = Color.White)
+                        }
                         IconButton(onClick = { showSortSheet = true }) {
                             Icon(Icons.AutoMirrored.Filled.Sort, "Sort", tint = Color.White)
                         }
@@ -274,6 +282,19 @@ fun CategoryDetailScreen(
                             }
                         }
                     }
+                }
+
+                // Search bar
+                item {
+                    OutlinedTextField(
+                        value = state.searchQuery, onValueChange = viewModel::setSearch,
+                        placeholder = { Text("Search in $title…") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null) },
+                        trailingIcon = { if (state.searchQuery.isNotEmpty()) IconButton(onClick = { viewModel.setSearch("") }) { Icon(Icons.Filled.Clear, null) } },
+                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = gradients.first(), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
                 }
 
                 // Sort + count bar
@@ -330,8 +351,18 @@ fun CategoryDetailScreen(
                         )
                     }
                 } else {
+                    val filteredPosts = if (state.searchQuery.isBlank()) state.posts else state.posts.filter { it.displayTitle.contains(state.searchQuery, true) }
+                    if (filteredPosts.isEmpty()) {
+                        item {
+                            AppEmptyState(
+                                icon = Icons.Outlined.Inventory2,
+                                title = "No results",
+                                subtitle = "Try a different search term",
+                            )
+                        }
+                    } else if (state.isGridView) {
                     // Chunk into rows of 2
-                    val chunked = state.posts.chunked(2)
+                    val chunked = filteredPosts.chunked(2)
                     items(chunked, key = { it.first().stableId }) { row ->
                         Row(
                             modifier = Modifier
@@ -349,6 +380,29 @@ fun CategoryDetailScreen(
                                 }
                             }
                             if (row.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                    } else {
+                        // List view
+                        items(filteredPosts, key = { it.stableId }) { post ->
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable { onOpenPost(post.stableId) },
+                                shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp,
+                            ) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    if (post.primaryImage != null) {
+                                        AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)))
+                                    } else {
+                                        Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2, color = Color(0xFF1E293B))
+                                        if (post.price != null) { Spacer(Modifier.height(4.dp)); Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, color = gradients.first()) }
+                                        if (post.location != null) { Spacer(Modifier.height(2.dp)); Text(post.location, fontSize = 12.sp, color = Color(0xFF64748B)) }
+                                    }
+                                }
+                            }
                         }
                     }
 

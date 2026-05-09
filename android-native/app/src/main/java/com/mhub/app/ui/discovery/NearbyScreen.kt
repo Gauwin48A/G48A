@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,9 +72,12 @@ class NearbyViewModel @Inject constructor(
 
     fun setSortBy(s: String) { _state.value = _state.value.copy(sortBy = s) }
 
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+
     fun refresh() {
         val s = _state.value
-        if (s.locationGranted) loadPosts(s.lat, s.lng, s.radius)
+        if (s.locationGranted) { viewModelScope.launch { _refreshing.value = true; loadPosts(s.lat, s.lng, s.radius); _refreshing.value = false } }
     }
 
     private fun loadPosts(lat: Double, lng: Double, radius: Int) {
@@ -95,6 +99,7 @@ fun NearbyScreen(
     viewModel: NearbyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
     val ctx = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -231,14 +236,14 @@ fun NearbyScreen(
                             Text("Try increasing the radius", color = Color(0xFF64748B), fontSize = 13.sp)
                         }
                     }
-                    else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item {
                             Text("${state.posts.size} listings within ${state.radius}km", fontSize = 13.sp, color = Color(0xFF64748B))
                         }
                         items(state.posts, key = { it.stableId }) { post ->
                             NearbyPostCard(post = post, onClick = { onOpenPost(post.stableId) })
                         }
-                    }
+                    } }
                 }
             }
         }

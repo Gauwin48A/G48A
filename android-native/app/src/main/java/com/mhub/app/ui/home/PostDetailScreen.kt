@@ -97,6 +97,7 @@ import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.ui.components.PromoBadgeRow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -406,6 +407,8 @@ fun PostDetailScreen(
                                         modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
                                     )
                                 }
+                                // Promo badges
+                                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
                             }
                             // Image zoom dialog
                             if (showImageZoom) {

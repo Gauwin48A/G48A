@@ -235,14 +235,26 @@ private fun ConversationListScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        var searchQuery by remember { mutableStateOf("") }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // Search bar
+            OutlinedTextField(
+                value = searchQuery, onValueChange = { searchQuery = it },
+                placeholder = { Text("Search messages\u2026") },
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Chat, null) },
+                trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { searchQuery = "" }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Clear") } },
+                singleLine = true, shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = Color(0xFFE5E7EB)),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         when {
             state.loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
 
             state.error != null -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 AppErrorState(
@@ -254,7 +266,7 @@ private fun ConversationListScreen(
             }
 
             state.conversations.isEmpty() -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 AppEmptyState(
@@ -264,11 +276,15 @@ private fun ConversationListScreen(
                 )
             }
 
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+            else -> {
+                val filteredConvs = state.conversations.filter { conv ->
+                    searchQuery.isBlank() || (conv.otherUserName ?: "").contains(searchQuery, true) || (conv.postTitle ?: "").contains(searchQuery, true) || (conv.lastMessage ?: "").contains(searchQuery, true)
+                }
+                LazyColumn(
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 90.dp),
             ) {
-                items(state.conversations, key = { it.stableId }) { conv ->
+                items(filteredConvs, key = { it.stableId }) { conv ->
                     ConversationItem(conv = conv, onClick = { onConversationClick(conv) })
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 76.dp),
@@ -276,7 +292,8 @@ private fun ConversationListScreen(
                         color = MaterialTheme.colorScheme.outlineVariant,
                     )
                 }
-            }
+            } }
+        }
         }
     }
 }
