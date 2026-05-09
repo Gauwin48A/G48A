@@ -46,6 +46,12 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.foundation.layout.WindowInsets
@@ -69,6 +75,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -109,13 +123,23 @@ import com.mhub.app.ui.components.PromoBadgeRow
 import com.mhub.app.ui.components.ImageZoomDialog
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 private enum class SortOption(val label: String) {
     NEWEST("New"),
     POPULAR("Popular"),
     PRICE_ASC("Price low-high"),
     PRICE_DESC("Price high-low"),
+}
+
+private enum class PageDensity(val label: String, val cardPadding: Int) {
+    COMPACT("Compact", 4),
+    NORMAL("Normal", 8),
+    SPACIOUS("Spacious", 12),
 }
 
 // Relative time formatting: "2h ago", "3d ago"
@@ -141,6 +165,8 @@ private data class PostFilters(
     val condition: String = "Any",
     val location: String = "",
     val verifiedOnly: Boolean = false,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,6 +180,10 @@ private fun FilterBottomSheet(
     var condition by remember { mutableStateOf(filters.condition) }
     var location by remember { mutableStateOf(filters.location) }
     var verifiedOnly by remember { mutableStateOf(filters.verifiedOnly) }
+    var startDate by remember { mutableStateOf(filters.startDate) }
+    var endDate by remember { mutableStateOf(filters.endDate) }
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -175,6 +205,30 @@ private fun FilterBottomSheet(
             OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Location") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
 
+            Text("Date Range", style = MaterialTheme.typography.labelMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = startDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
+                    onValueChange = {},
+                    label = { Text("From") },
+                    readOnly = true,
+                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                    modifier = Modifier.weight(1f).clickable { showStartDatePicker = true },
+                    shape = RoundedCornerShape(12.dp),
+                )
+                OutlinedTextField(
+                    value = endDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
+                    onValueChange = {},
+                    label = { Text("To") },
+                    readOnly = true,
+                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                    modifier = Modifier.weight(1f).clickable { showEndDatePicker = true },
+                    shape = RoundedCornerShape(12.dp),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Verified sellers only")
                 Switch(checked = verifiedOnly, onCheckedChange = { verifiedOnly = it })
@@ -186,12 +240,222 @@ private fun FilterBottomSheet(
                     onApply(PostFilters()); onDismiss()
                 }, modifier = Modifier.weight(1f)) { Text("Reset") }
                 androidx.compose.material3.Button(onClick = {
-                    onApply(PostFilters(priceRange.start, priceRange.endInclusive, condition, location, verifiedOnly)); onDismiss()
+                    onApply(PostFilters(priceRange.start, priceRange.endInclusive, condition, location, verifiedOnly, startDate, endDate)); onDismiss()
                 }, modifier = Modifier.weight(1f)) { Text("Apply") }
             }
             Spacer(Modifier.height(24.dp))
         }
     }
+
+    if (showStartDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showStartDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        startDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    }
+                    showStartDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") } }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showEndDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        endDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel") } }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+/* ── Compare Dialog: side-by-side comparison ─────────────────────────── */
+
+@Composable
+private fun CompareDialog(
+    posts: List<Post>,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Compare ${posts.size} Items", fontWeight = FontWeight.Bold) },
+        text = {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Spec", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                        posts.forEach { _ ->
+                            Text("Item", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Title", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Text(post.displayTitle, Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Price", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Text(post.price?.let { "₹${"%,.0f".format(it)}" } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Condition", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Text(post.condition ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Brand", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Text(post.brand ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Location", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Text(post.location ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Seller", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        posts.forEach { post ->
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(post.sellerName ?: post.userName ?: "N/A", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                if (post.sellerName != null) {
+                                    Icon(Icons.Default.VerifiedUser, null, Modifier.size(10.dp), tint = Color(0xFF3B82F6))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
+}
+
+/* ── Promote Dialog: post boost options ──────────────────────────────── */
+
+@Composable
+private fun PromoteDialog(
+    postId: String,
+    postTitle: String,
+    onDismiss: () -> Unit,
+) {
+    var selectedTier by remember { mutableStateOf("Basic") }
+    var duration by remember { mutableStateOf(7) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Campaign, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        title = { Text("Promote \"$postTitle\"", fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Boost your listing visibility", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(4.dp))
+
+                listOf("Basic" to "₹49", "Featured" to "₹99", "Spotlight" to "₹199").forEach { (tier, price) ->
+                    Surface(
+                        onClick = { selectedTier = tier },
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (selectedTier == tier) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        ),
+                        color = if (selectedTier == tier) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else Color.Transparent,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(tier, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    when (tier) {
+                                        "Basic" -> "2x visibility"
+                                        "Featured" -> "5x + homepage"
+                                        else -> "10x + top slot"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(price, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                RadioButton(selected = selectedTier == tier, onClick = { selectedTier = tier })
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text("Duration", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(3, 7, 14, 30).forEach { days ->
+                        FilterChip(
+                            selected = duration == days,
+                            onClick = { duration = days },
+                            label = { Text("$days days") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.Button(onClick = {
+                // TODO: Call promotion API with selectedTier and duration
+                onDismiss()
+            }) {
+                Text("Confirm & Pay")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 /* ── Category theme data ──────────────────────────────────────────────── */
@@ -369,6 +633,7 @@ fun HomeScreen(
     onOpenCart: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
+    isGuest: Boolean = false,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -386,6 +651,14 @@ fun HomeScreen(
     var showInterestModal by remember { mutableStateOf(false) }
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
+    var compareItems by remember { mutableStateOf(listOf<Post>()) }
+    var showCompareDialog by remember { mutableStateOf(false) }
+    var showPromoteDialog by remember { mutableStateOf(false) }
+    var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    var promotePostId by remember { mutableStateOf("") }
+    var promotePostTitle by remember { mutableStateOf("") }
+    var pageDensity by remember { mutableStateOf(PageDensity.NORMAL) }
+    var loadingStartTime by remember { mutableStateOf(0L) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -394,6 +667,13 @@ fun HomeScreen(
     // Sync category key with ViewModel
     LaunchedEffect(activeCategoryKey) {
         viewModel.setCategoryKey(activeCategoryKey)
+    }
+
+    // Track loading time for stalled state
+    LaunchedEffect(state.loading) {
+        if (state.loading && state.posts.isEmpty()) {
+            loadingStartTime = System.currentTimeMillis()
+        }
     }
 
     // Auto-refresh every 30 seconds
@@ -417,19 +697,55 @@ fun HomeScreen(
             onSubmit = { _, _, _ -> showInterestModal = false },
         )
     }
+    if (zoomImages.isNotEmpty()) {
+        ImageZoomDialog(imageUrls = zoomImages, onDismiss = { zoomImages = emptyList() })
+    }
+    if (showCompareDialog && compareItems.isNotEmpty()) {
+        CompareDialog(
+            posts = compareItems,
+            onDismiss = { showCompareDialog = false },
+        )
+    }
+    if (showPromoteDialog) {
+        PromoteDialog(
+            postId = promotePostId,
+            postTitle = promotePostTitle,
+            onDismiss = { showPromoteDialog = false },
+        )
+    }
 
     val filteredPosts = remember(state.posts, selectedCategory, sortBy, searchQuery, filters, quickFilter) {
+        // Multi-token search: split query into tokens
+        val searchTokens = searchQuery.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
+        
         state.posts
             .filter { post ->
                 (selectedCategory == null || post.categoryName == selectedCategory) &&
-                    (searchQuery.isBlank() ||
-                        post.displayTitle.contains(searchQuery, ignoreCase = true) ||
-                        post.location?.contains(searchQuery, ignoreCase = true) == true ||
-                        post.categoryName?.contains(searchQuery, ignoreCase = true) == true) &&
+                    // Multi-token search: all tokens must match
+                    (searchTokens.isEmpty() || searchTokens.all { token ->
+                        post.displayTitle.contains(token, ignoreCase = true) ||
+                        post.description?.contains(token, ignoreCase = true) == true ||
+                        post.location?.contains(token, ignoreCase = true) == true ||
+                        post.categoryName?.contains(token, ignoreCase = true) == true ||
+                        post.subcategoryName?.contains(token, ignoreCase = true) == true ||
+                        post.brand?.contains(token, ignoreCase = true) == true ||
+                        post.model?.contains(token, ignoreCase = true) == true ||
+                        post.sellerName?.contains(token, ignoreCase = true) == true ||
+                        post.userName?.contains(token, ignoreCase = true) == true
+                    }) &&
                     (filters.condition == "Any" || post.condition?.equals(filters.condition, ignoreCase = true) == true) &&
                     (filters.location.isBlank() || post.location?.contains(filters.location, ignoreCase = true) == true) &&
                     (!filters.verifiedOnly || post.sellerName != null) &&
-                    (post.price == null || (post.price >= filters.minPrice && post.price <= filters.maxPrice))
+                    (post.price == null || (post.price >= filters.minPrice && post.price <= filters.maxPrice)) &&
+                    // Date range filter
+                    (filters.startDate == null || try {
+                        val postDate = Instant.parse(post.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                        !postDate.isBefore(filters.startDate)
+                    } catch (_: Exception) { true }) &&
+                    (filters.endDate == null || try {
+                        val postDate = Instant.parse(post.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                        !postDate.isAfter(filters.endDate)
+                    } catch (_: Exception) { true })
             }
             .let { list ->
                 when (quickFilter) {
@@ -447,6 +763,8 @@ fun HomeScreen(
                     SortOption.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
                 }
             }
+            // Guest preview limit: take only 5 for guests
+            .let { list -> if (isGuest) list.take(5) else list }
     }
 
     if (showFilterSheet) {
@@ -482,6 +800,24 @@ fun HomeScreen(
                             }
                             IconButton(onClick = { showFilterSheet = true }) {
                                 Icon(Icons.Default.Tune, "Filters", tint = Color.White)
+                            }
+                            // Density toggle
+                            IconButton(onClick = {
+                                pageDensity = when (pageDensity) {
+                                    PageDensity.COMPACT -> PageDensity.NORMAL
+                                    PageDensity.NORMAL -> PageDensity.SPACIOUS
+                                    PageDensity.SPACIOUS -> PageDensity.COMPACT
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = when (pageDensity) {
+                                        PageDensity.COMPACT -> Icons.Default.GridView
+                                        PageDensity.NORMAL -> Icons.AutoMirrored.Filled.ViewList
+                                        PageDensity.SPACIOUS -> Icons.Outlined.Inventory2
+                                    },
+                                    contentDescription = "Density: ${pageDensity.label}",
+                                    tint = Color.White,
+                                )
                             }
                             FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
                                 Icon(if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, "Toggle view")
@@ -526,6 +862,23 @@ fun HomeScreen(
                     IconButton(onClick = { showFilterSheet = true }) {
                         Icon(Icons.Default.Tune, contentDescription = "Filters")
                     }
+                    // Density toggle
+                    IconButton(onClick = {
+                        pageDensity = when (pageDensity) {
+                            PageDensity.COMPACT -> PageDensity.NORMAL
+                            PageDensity.NORMAL -> PageDensity.SPACIOUS
+                            PageDensity.SPACIOUS -> PageDensity.COMPACT
+                        }
+                    }) {
+                        Icon(
+                            imageVector = when (pageDensity) {
+                                PageDensity.COMPACT -> Icons.Default.GridView
+                                PageDensity.NORMAL -> Icons.AutoMirrored.Filled.ViewList
+                                PageDensity.SPACIOUS -> Icons.Outlined.Inventory2
+                            },
+                            contentDescription = "Density: ${pageDensity.label}",
+                        )
+                    }
                     FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
                         Icon(
                             imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
@@ -553,16 +906,56 @@ fun HomeScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = { viewModel.load() },
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            PullToRefreshBox(
+                isRefreshing = state.refreshing,
+                onRefresh = { viewModel.load() },
+                modifier = Modifier.fillMaxSize().padding(padding),
+            ) {
             when {
-                state.loading && state.posts.isEmpty() -> PostGridShimmer(
-                    count = 6,
-                    modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-                )
+                state.loading && state.posts.isEmpty() -> {
+                    // Stalled loading state check
+                    val isStalled = remember(loadingStartTime) {
+                        loadingStartTime > 0 && (System.currentTimeMillis() - loadingStartTime) > 15_000
+                    }
+                    if (isStalled) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Card(
+                                modifier = Modifier.padding(16.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Icon(Icons.Outlined.Inventory2, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
+                                    Text("Loading is taking too long", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                    Text("The feed might be temporarily unavailable", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        androidx.compose.material3.OutlinedButton(onClick = {
+                                            filters = PostFilters()
+                                            quickFilter = null
+                                            selectedCategory = null
+                                            searchQuery = ""
+                                        }) {
+                                            Text("Reset Filters")
+                                        }
+                                        androidx.compose.material3.Button(onClick = { viewModel.load(initial = true) }) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        PostGridShimmer(
+                            count = 6,
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
+                }
                 state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
                         title = "Feed unavailable",
@@ -631,6 +1024,85 @@ fun HomeScreen(
                                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                             )
+                        }
+                    }
+
+                    // Active filter badges: show when filters are applied
+                    val hasActiveFilters = selectedCategory != null || filters.condition != "Any" || filters.location.isNotBlank() ||
+                            filters.verifiedOnly || filters.minPrice > 0f || filters.maxPrice < 100000f ||
+                            filters.startDate != null || filters.endDate != null
+                    if (hasActiveFilters) {
+                        item {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                            ) {
+                                if (selectedCategory != null) {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { selectedCategory = null },
+                                            label = { Text(selectedCategory!!, style = MaterialTheme.typography.labelSmall) },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                                if (filters.condition != "Any") {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { filters = filters.copy(condition = "Any") },
+                                            label = { Text(filters.condition, style = MaterialTheme.typography.labelSmall) },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                                if (filters.location.isNotBlank()) {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { filters = filters.copy(location = "") },
+                                            label = { Text(filters.location, style = MaterialTheme.typography.labelSmall) },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                                if (filters.verifiedOnly) {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { filters = filters.copy(verifiedOnly = false) },
+                                            label = { Text("Verified only", style = MaterialTheme.typography.labelSmall) },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                                if (filters.minPrice > 0f || filters.maxPrice < 100000f) {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { filters = filters.copy(minPrice = 0f, maxPrice = 100000f) },
+                                            label = { Text("₹${"%,.0f".format(filters.minPrice)}-₹${"%,.0f".format(filters.maxPrice)}", style = MaterialTheme.typography.labelSmall) },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                                if (filters.startDate != null || filters.endDate != null) {
+                                    item {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = { filters = filters.copy(startDate = null, endDate = null) },
+                                            label = {
+                                                Text(
+                                                    "${filters.startDate?.format(DateTimeFormatter.ofPattern("MMM dd")) ?: "Start"} - ${filters.endDate?.format(DateTimeFormatter.ofPattern("MMM dd")) ?: "End"}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            },
+                                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -719,7 +1191,14 @@ fun HomeScreen(
                     } else if (gridMode) {
                         items(filteredPosts.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                row.forEach { post -> GridPostCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.weight(1f)) }
+                                row.forEach { post ->
+                                    GridPostCard(
+                                        post = post,
+                                        onClick = { onOpenPost(post.stableId) },
+                                        modifier = Modifier.weight(1f),
+                                        pageDensity = pageDensity,
+                                    )
+                                }
                                 if (row.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
@@ -739,7 +1218,50 @@ fun HomeScreen(
                                     interestPostTitle = post.displayTitle
                                     showInterestModal = true
                                 },
+                                onCompare = {
+                                    if (compareItems.none { it.stableId == post.stableId }) {
+                                        if (compareItems.size < 4) {
+                                            compareItems = compareItems + post
+                                        }
+                                    } else {
+                                        compareItems = compareItems.filter { it.stableId != post.stableId }
+                                    }
+                                },
+                                onPromote = {
+                                    promotePostId = post.stableId
+                                    promotePostTitle = post.displayTitle
+                                    showPromoteDialog = true
+                                },
+                                isInCompare = compareItems.any { it.stableId == post.stableId },
+                                pageDensity = pageDensity,
                             )
+                        }
+                    }
+
+                    // Guest preview sign-in card (shown after 5 posts for guests)
+                    if (isGuest && filteredPosts.size >= 5) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Icon(Icons.Default.Visibility, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Text("Unlock more listings", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                    Text("Sign in to view all available items and access exclusive features", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    androidx.compose.material3.Button(
+                                        onClick = { /* TODO: Navigate to sign in */ },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("Sign In")
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -752,6 +1274,42 @@ fun HomeScreen(
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            }
+            
+            // Compare panel floater bar
+            AnimatedVisibility(
+                visible = compareItems.isNotEmpty(),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(50.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Compare, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "${compareItems.size} item${if (compareItems.size != 1) "s" else ""} selected",
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        androidx.compose.material3.Button(
+                            onClick = { showCompareDialog = true },
+                            enabled = compareItems.size >= 2,
+                        ) {
+                            Text("Compare Now")
+                        }
+                        IconButton(onClick = { compareItems = emptyList() }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, "Clear", Modifier.size(16.dp))
                         }
                     }
                 }
@@ -785,7 +1343,11 @@ fun ListPostCard(
     modifier: Modifier = Modifier,
     onShare: (() -> Unit)? = null,
     onInterested: (() -> Unit)? = null,
+    onCompare: (() -> Unit)? = null,
+    onPromote: (() -> Unit)? = null,
     isOwner: Boolean = false,
+    isInCompare: Boolean = false,
+    pageDensity: PageDensity = PageDensity.NORMAL,
 ) {
     var wishlisted by remember { mutableStateOf(false) }
     var liked by remember { mutableStateOf(false) }
@@ -795,13 +1357,20 @@ fun ListPostCard(
             post.images.filter { it != post.primaryImage }.forEach { add(it) }
         }
     }
-    Card(onClick = onClick, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = modifier.fillMaxWidth()) {
+    val cardPadding = pageDensity.cardPadding.dp
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
         Column {
             // Seller header row
             if (post.sellerName != null || post.userName != null) {
                 val name = post.sellerName ?: post.userName ?: "Seller"
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -819,19 +1388,79 @@ fun ListPostCard(
                             Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
                         }
                     }
-                    com.mhub.app.ui.components.PostMoreMenuButton(
-                        postId = post.stableId, isOwner = isOwner,
-                        onShare = { onShare?.invoke() }, onReport = {},
-                        onAddToCart = {}, onSave = { wishlisted = !wishlisted },
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (onCompare != null) {
+                            IconButton(onClick = onCompare, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    Icons.Default.Compare,
+                                    "Compare",
+                                    Modifier.size(18.dp),
+                                    tint = if (isInCompare) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        if (isOwner && onPromote != null) {
+                            IconButton(onClick = onPromote, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Campaign, "Promote", Modifier.size(18.dp))
+                            }
+                        }
+                        com.mhub.app.ui.components.PostMoreMenuButton(
+                            postId = post.stableId, isOwner = isOwner,
+                            onShare = { onShare?.invoke() }, onReport = {},
+                            onAddToCart = {}, onSave = { wishlisted = !wishlisted },
+                        )
+                    }
                 }
             }
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
                 if (allImages.size > 1) {
                     val pagerState = rememberPagerState(pageCount = { allImages.size })
+                    val scope = rememberCoroutineScope()
                     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                         AsyncImage(model = allImages[page], contentDescription = post.displayTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)))
                     }
+                    
+                    // Carousel navigation arrows
+                    if (pagerState.currentPage > 0) {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            },
+                            modifier = Modifier.align(Alignment.CenterStart).padding(8.dp).size(32.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowLeft, "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    if (pagerState.currentPage < allImages.size - 1) {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            },
+                            modifier = Modifier.align(Alignment.CenterEnd).padding(8.dp).size(32.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowRight, "Next", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    
+                    // Page counter overlay
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.Black.copy(alpha = 0.6f),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                    ) {
+                        Text(
+                            "${pagerState.currentPage + 1}/${allImages.size}",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                    }
+                    
                     // Page indicator dots
                     Row(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         repeat(allImages.size) { i ->
@@ -856,7 +1485,7 @@ fun ListPostCard(
                 // Promo badges overlay
                 PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 post.categoryName?.let { cat ->
                     Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.align(Alignment.Start)) {
@@ -916,8 +1545,14 @@ fun ListPostCard(
 }
 
 @Composable
-fun GridPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GridPostCard(
+    post: Post,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    pageDensity: PageDensity = PageDensity.NORMAL,
+) {
     var wishlisted by remember { mutableStateOf(false) }
+    val cardPadding = pageDensity.cardPadding.dp
     Card(onClick = onClick, shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = modifier) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f)) {
@@ -938,7 +1573,7 @@ fun GridPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                 }
                 PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(6.dp))
             }
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(text = post.displayTitle, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     post.condition?.let { cond ->

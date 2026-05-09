@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun SignUpScreen(
@@ -115,6 +116,7 @@ fun SignUpScreen(
                                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp),
                                     colors = suTfColors(borderColor),
+                                    trailingIcon = { if (aadhaar.length == 12) Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E)) },
                                     supportingText = { Text("${aadhaar.length}/12", fontSize = 11.sp, color = if (aadhaar.length == 12) Color(0xFF22C55E) else mutedText) }
                                 )
                                 Text("Mobile Number", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
@@ -137,8 +139,24 @@ fun SignUpScreen(
                                 }
                             }
                             2 -> {
+                                var resendCountdown by remember { mutableStateOf(60) }
+                                LaunchedEffect(Unit) {
+                                    while (resendCountdown > 0) {
+                                        delay(1000)
+                                        resendCountdown--
+                                    }
+                                }
                                 Text("Enter OTP", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
-                                Text("We sent a 6-digit OTP to +91 $mobile", fontSize = 12.sp, color = mutedText)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("We sent a 6-digit OTP to +91 $mobile", fontSize = 12.sp, color = mutedText)
+                                    if (resendCountdown > 0) {
+                                        Text("Resend in ${resendCountdown}s", fontSize = 11.sp, color = mutedText)
+                                    } else {
+                                        TextButton(onClick = { resendCountdown = 60 }, contentPadding = PaddingValues(0.dp)) {
+                                            Text("Resend OTP", fontSize = 11.sp, color = linkColor)
+                                        }
+                                    }
+                                }
                                 OutlinedTextField(
                                     value = otp, onValueChange = { otp = it.filter(Char::isDigit).take(6) },
                                     placeholder = { Text("Enter 6-digit OTP", color = Color(0xFFD1D5DB)) },
@@ -178,7 +196,27 @@ fun SignUpScreen(
                                     Text("Identity verified!", color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text("Create Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
+                                Text("Create Password", fontWeight = FontWeight.SemiBold, fontSize = 14.dp, color = labelText)
+                                // Password requirements checklist
+                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF9FAFB), modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("Requirements:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelText)
+                                        val reqs = listOf(
+                                            "12+ characters" to (password.length >= 12),
+                                            "Uppercase letter" to password.any { it.isUpperCase() },
+                                            "Lowercase letter" to password.any { it.isLowerCase() },
+                                            "Number" to password.any { it.isDigit() },
+                                            "Special character" to password.any { !it.isLetterOrDigit() }
+                                        )
+                                        reqs.forEach { (label, met) ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(if (met) "✅" else "❌", fontSize = 10.sp)
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(label, fontSize = 11.sp, color = if (met) Color(0xFF22C55E) else mutedText)
+                                            }
+                                        }
+                                    }
+                                }
                                 OutlinedTextField(
                                     value = password, onValueChange = { password = it },
                                     placeholder = { Text("Min 12 characters", color = Color(0xFFD1D5DB)) },

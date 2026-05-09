@@ -327,6 +327,17 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                             }
                         }
                     }
+                    // Sort options for listings tab
+                    if (selectedTab == 1 && state.posts.isNotEmpty()) {
+                        item {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("Sort:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically))
+                                listOf("Newest", "Price", "Popular").forEach { sort ->
+                                    FilterChip(selected = false, onClick = {}, label = { Text(sort, fontSize = 11.sp) })
+                                }
+                            }
+                        }
+                    }
                     // Tab content
                     when (selectedTab) {
                         0 -> {

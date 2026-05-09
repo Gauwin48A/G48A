@@ -1,6 +1,13 @@
 package com.mhub.app.ui.chat
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +34,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -83,6 +100,8 @@ data class ChatState(
     val error: String? = null,
     val currentUserId: String? = null,
     val sending: Boolean = false,
+    val searchQuery: String = "",
+    val isTyping: Boolean = false,
 )
 
 @HiltViewModel
@@ -170,6 +189,25 @@ class ChatViewModel @Inject constructor(
     fun closeConversation() {
         pollingJob?.cancel()
         _state.value = _state.value.copy(selectedConversation = null, messages = emptyList())
+    }
+
+    fun setSearchQuery(query: String) {
+        _state.value = _state.value.copy(searchQuery = query)
+    }
+
+    fun deleteMessage(msgId: String) {
+        _state.value = _state.value.copy(messages = _state.value.messages.filter { it.stableId != msgId })
+        viewModelScope.launch { /* repo.deleteMessage(msgId) */ }
+    }
+
+    fun blockUser() {
+        val conv = _state.value.selectedConversation ?: return
+        viewModelScope.launch { /* repo.blockUser(conv.otherUserId) */ }
+    }
+
+    fun reportConversation() {
+        val conv = _state.value.selectedConversation ?: return
+        viewModelScope.launch { /* repo.reportConversation(conv.stableId) */ }
     }
 }
 
@@ -422,7 +460,7 @@ private fun ConversationItem(conv: ChatConversation, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun MessageThreadScreen(
     conversation: ChatConversation,
@@ -433,10 +471,61 @@ private fun MessageThreadScreen(
     errorMessage: String?,
     onSend: (String) -> Unit,
     onBack: () -> Unit,
+    viewModel: ChatViewModel = hiltViewModel(),
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
+    val state by viewModel.state.collectAsState()
+    var showMenu by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var showSearchBar by remember { mutableStateOf(false) }
+    var deleteTargetId by remember { mutableStateOf<String?>(null) }
+    var reactionTargetId by remember { mutableStateOf<String?>(null) }
+
+    // Confirmation dialogs
+    if (showBlockDialog) {
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            title = { Text("Block User") },
+            text = { Text("Are you sure you want to block ${conversation.displayName}? They won't be able to message you.") },
+            confirmButton = { TextButton(onClick = { viewModel.blockUser(); showBlockDialog = false; onBack() }) { Text("Block", color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { showBlockDialog = false }) { Text("Cancel") } },
+        )
+    }
+    if (showReportDialog) {
+        AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text("Report Conversation") },
+            text = { Text("Report this conversation for spam, harassment, or inappropriate content?") },
+            confirmButton = { TextButton(onClick = { viewModel.reportConversation(); showReportDialog = false; onBack() }) { Text("Report", color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { showReportDialog = false }) { Text("Cancel") } },
+        )
+    }
+    deleteTargetId?.let { id ->
+        AlertDialog(
+            onDismissRequest = { deleteTargetId = null },
+            title = { Text("Delete Message") },
+            text = { Text("Delete this message? This cannot be undone.") },
+            confirmButton = { TextButton(onClick = { viewModel.deleteMessage(id); deleteTargetId = null }) { Text("Delete", color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text("Cancel") } },
+        )
+    }
+    reactionTargetId?.let { id ->
+        AlertDialog(
+            onDismissRequest = { reactionTargetId = null },
+            title = { Text("React to message") },
+            text = {
+                Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                    listOf("❤️", "👍", "😂", "😮", "😢", "🙏").forEach { emoji ->
+                        Text(emoji, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(8.dp))
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { reactionTargetId = null }) { Text("Done") } },
+        )
+    }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
@@ -478,6 +567,26 @@ private fun MessageThreadScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search messages")
+                    }
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Block, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Block User") } },
+                                onClick = { showMenu = false; showBlockDialog = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Report, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Report Conversation") } },
+                                onClick = { showMenu = false; showReportDialog = true },
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
@@ -499,6 +608,11 @@ private fun MessageThreadScreen(
                         value = input,
                         onValueChange = { input = it },
                         placeholder = { Text("Type a message...") },
+                        leadingIcon = {
+                            IconButton(onClick = { /* TODO: attach file */ }) {
+                                Icon(Icons.Filled.AttachFile, "Attach", tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                            }
+                        },
                         singleLine = false,
                         maxLines = 4,
                         shape = RoundedCornerShape(24.dp),
@@ -558,6 +672,24 @@ private fun MessageThreadScreen(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
 
+                // Search bar in thread
+                if (showSearchBar) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.setSearchQuery(it) },
+                        placeholder = { Text("Search in conversation…") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null) },
+                        trailingIcon = { if (state.searchQuery.isNotEmpty()) IconButton(onClick = { viewModel.setSearchQuery("") }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Clear") } },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
+
                 if (messages.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -570,19 +702,39 @@ private fun MessageThreadScreen(
                         )
                     }
                 } else {
+                    val filteredMessages = if (state.searchQuery.isBlank()) messages else messages.filter {
+                        it.displayContent.contains(state.searchQuery, ignoreCase = true)
+                    }
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        items(messages, key = { it.stableId }) { msg ->
+                        items(filteredMessages, key = { it.stableId }) { msg ->
                             val isMe = msg.senderId == currentUserId || msg.senderId == "me"
-                            MessageBubble(message = msg, isMe = isMe)
+                            MessageBubble(
+                                message = msg,
+                                isMe = isMe,
+                                onLongPress = {
+                                    if (isMe) deleteTargetId = msg.stableId
+                                    else reactionTargetId = msg.stableId
+                                },
+                            )
                         }
-                        // Typing indicator (simulated)
-                        if (sending) {
+                        // Enhanced typing indicator
+                        if (state.isTyping || sending) {
                             item {
+                                val infiniteTransition = rememberInfiniteTransition(label = "typing")
+                                val dotAlpha1 by infiniteTransition.animateFloat(
+                                    0.3f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "dot1"
+                                )
+                                val dotAlpha2 by infiniteTransition.animateFloat(
+                                    0.3f, 1f, infiniteRepeatable(tween(600, delayMillis = 200), RepeatMode.Reverse), label = "dot2"
+                                )
+                                val dotAlpha3 by infiniteTransition.animateFloat(
+                                    0.3f, 1f, infiniteRepeatable(tween(600, delayMillis = 400), RepeatMode.Reverse), label = "dot3"
+                                )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.Start,
@@ -591,12 +743,14 @@ private fun MessageThreadScreen(
                                         shape = RoundedCornerShape(18.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant,
                                     ) {
-                                        Text(
-                                            text = "typing •••",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                        )
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                        ) {
+                                            Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = dotAlpha1), CircleShape))
+                                            Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = dotAlpha2), CircleShape))
+                                            Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = dotAlpha3), CircleShape))
+                                        }
                                     }
                                 }
                             }
@@ -608,8 +762,9 @@ private fun MessageThreadScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MessageBubble(message: ChatMessage, isMe: Boolean) {
+private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -643,6 +798,10 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean) {
                 color = if (isMe) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.surface,
                 shadowElevation = 1.dp,
+                modifier = Modifier.combinedClickable(
+                    onClick = {},
+                    onLongClick = onLongPress,
+                ),
             ) {
                 Text(
                     text = message.displayContent,

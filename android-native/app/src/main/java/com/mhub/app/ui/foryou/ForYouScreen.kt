@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -24,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,11 +46,20 @@ import com.mhub.app.ui.components.PostActionRow
 import com.mhub.app.ui.components.PromoBadgeRow
 import com.mhub.app.ui.components.ImageZoomDialog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.snapshotFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, POPULAR, TRENDING }
+enum class PageDensity { COMPACT, NORMAL, SPACIOUS }
 
 data class ForYouState(
     val loading: Boolean = true,
@@ -56,6 +68,10 @@ data class ForYouState(
     val sponsored: List<Post> = emptyList(),
     val error: String? = null,
     val selectedCategory: String? = null,
+    val sortBy: SortBy = SortBy.RELEVANCE,
+    val sortAscending: Boolean = true,
+    val currentPage: Int = 1,
+    val hasMorePosts: Boolean = true,
 )
 
 @HiltViewModel
@@ -65,6 +81,8 @@ class ForYouViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ForYouState())
     val state: StateFlow<ForYouState> = _state.asStateFlow()
+    private val viewedPostIds = mutableSetOf<String>()
+    private var batchViewJob: Job? = null
 
     init { load() }
 
@@ -109,6 +127,51 @@ class ForYouViewModel @Inject constructor(
     fun setCategory(cat: String?) {
         _state.value = _state.value.copy(selectedCategory = cat)
     }
+
+    fun setSortBy(sort: SortBy) {
+        _state.value = _state.value.copy(sortBy = sort)
+    }
+
+    fun toggleSortDirection() {
+        _state.value = _state.value.copy(sortAscending = !_state.value.sortAscending)
+    }
+
+    fun loadMore() {
+        if (!_state.value.hasMorePosts || _state.value.loading) return
+        viewModelScope.launch {
+            val nextPage = _state.value.currentPage + 1
+            when (val r = sponsoredRepo.forYou(30 * nextPage)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        posts = r.data,
+                        currentPage = nextPage,
+                        hasMorePosts = r.data.size >= 30 * nextPage
+                    )
+                }
+                is ApiResult.Failure -> {}
+            }
+        }
+    }
+
+    fun markPostViewed(postId: String) {
+        viewedPostIds.add(postId)
+        if (batchViewJob == null) {
+            batchViewJob = viewModelScope.launch {
+                delay(5000)
+                if (viewedPostIds.isNotEmpty()) {
+                    postsRepo.batchView(viewedPostIds.toList())
+                    viewedPostIds.clear()
+                }
+                batchViewJob = null
+            }
+        }
+    }
+
+    fun toggleBookmark(postId: String) {
+        viewModelScope.launch {
+            postsRepo.toggleWishlist(postId)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,6 +179,7 @@ class ForYouViewModel @Inject constructor(
 fun ForYouScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
+    isGuest: Boolean = false,
     viewModel: ForYouViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -135,6 +199,9 @@ fun ForYouScreen(
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    var searchQuery by remember { mutableStateOf("") }
+    var density by remember { mutableStateOf(PageDensity.NORMAL) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
 
     if (showShareSheet) {
         ShareLinkBottomSheet(title = sharePostTitle, postId = sharePostId, onDismiss = { showShareSheet = false })
@@ -150,10 +217,23 @@ fun ForYouScreen(
         ImageZoomDialog(imageUrls = zoomImages, onDismiss = { zoomImages = emptyList() })
     }
 
-    val displayed = remember(state.posts, state.selectedCategory, quickFilter) {
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                visibleItems.forEach { item ->
+                    val post = state.posts.getOrNull(item.index - 7)
+                    post?.let { viewModel.markPostViewed(it.stableId) }
+                }
+            }
+    }
+
+    val displayed = remember(state.posts, state.selectedCategory, quickFilter, searchQuery, state.sortBy, state.sortAscending) {
         state.posts
             .filter { post ->
                 state.selectedCategory == null || post.categoryName?.contains(state.selectedCategory!!, ignoreCase = true) == true
+            }
+            .filter { post ->
+                searchQuery.isBlank() || post.displayTitle.contains(searchQuery, ignoreCase = true) || post.description?.contains(searchQuery, ignoreCase = true) == true
             }
             .let { list ->
                 when (quickFilter) {
@@ -162,6 +242,18 @@ fun ForYouScreen(
                     else -> list
                 }
             }
+            .let { list ->
+                val sorted = when (state.sortBy) {
+                    SortBy.RELEVANCE -> list
+                    SortBy.PRICE_ASC -> list.sortedBy { it.price ?: Double.MAX_VALUE }
+                    SortBy.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
+                    SortBy.NEWEST -> list.sortedByDescending { it.createdAt ?: "" }
+                    SortBy.POPULAR -> list.sortedByDescending { it.viewCount ?: 0 }
+                    SortBy.TRENDING -> list.sortedByDescending { (it.viewCount ?: 0) + (it.interestedBuyers?.size ?: 0) * 10 }
+                }
+                if (state.sortAscending) sorted else sorted.reversed()
+            }
+            .let { list -> if (isGuest) list.take(3) else list }
     }
 
     Scaffold(
@@ -169,7 +261,21 @@ fun ForYouScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("For You", fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("For You", fontWeight = FontWeight.Bold)
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                            ) {
+                                Text(
+                                    "🤖 AI Curated",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
                         Text("Personalized recommendations", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -203,6 +309,99 @@ fun ForYouScreen(
                     contentPadding = PaddingValues(bottom = 80.dp),
                 ) {
                     item { GreatDealsBanner(onShopNow = { quickFilter = "Under ₹500" }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+
+                    item {
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search posts...", style = MaterialTheme.typography.bodySmall) },
+                                leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                shape = RoundedCornerShape(12.dp),
+                            )
+                        }
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "${displayed.size} items · ${categories.count { (k, _) -> k == null || state.posts.any { p -> p.categoryName?.contains(it.second, ignoreCase = true) == true } }} categories · 🟢 Live",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Box {
+                                FilterChip(
+                                    selected = false,
+                                    onClick = { sortMenuExpanded = true },
+                                    label = { Text("Sort: ${state.sortBy.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.labelSmall) },
+                                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp)) }
+                                )
+                                DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
+                                    SortBy.entries.forEach { sort ->
+                                        DropdownMenuItem(
+                                            text = { Text(sort.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }) },
+                                            onClick = {
+                                                viewModel.setSortBy(sort)
+                                                sortMenuExpanded = false
+                                            },
+                                            leadingIcon = { if (state.sortBy == sort) Icon(Icons.Default.Check, null) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = state.sortAscending,
+                                onClick = { if (!state.sortAscending) viewModel.toggleSortDirection() },
+                                label = { Text("Ascending", style = MaterialTheme.typography.labelSmall) },
+                                leadingIcon = { Icon(Icons.Default.ArrowUpward, null, modifier = Modifier.size(14.dp)) }
+                            )
+                            FilterChip(
+                                selected = !state.sortAscending,
+                                onClick = { if (state.sortAscending) viewModel.toggleSortDirection() },
+                                label = { Text("Descending", style = MaterialTheme.typography.labelSmall) },
+                                leadingIcon = { Icon(Icons.Default.ArrowDownward, null, modifier = Modifier.size(14.dp)) }
+                            )
+                            Spacer(Modifier.weight(1f))
+                            FilterChip(
+                                selected = density == PageDensity.COMPACT,
+                                onClick = { density = PageDensity.COMPACT },
+                                label = { Text("Compact", style = MaterialTheme.typography.labelSmall) }
+                            )
+                            FilterChip(
+                                selected = density == PageDensity.NORMAL,
+                                onClick = { density = PageDensity.NORMAL },
+                                label = { Text("Normal", style = MaterialTheme.typography.labelSmall) }
+                            )
+                            FilterChip(
+                                selected = density == PageDensity.SPACIOUS,
+                                onClick = { density = PageDensity.SPACIOUS },
+                                label = { Text("Spacious", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
 
                     item {
                         LazyRow(
@@ -315,12 +514,18 @@ fun ForYouScreen(
                         var wishlisted by remember { mutableStateOf(false) }
                         var liked by remember { mutableStateOf(false) }
 
+                        val cardPadding = when (density) {
+                            PageDensity.COMPACT -> PaddingValues(horizontal = 16.dp, vertical = 2.dp)
+                            PageDensity.NORMAL -> PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                            PageDensity.SPACIOUS -> PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        }
+
                         Card(
                             onClick = { onOpenPost(post.stableId) },
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(cardPadding),
                         ) {
                             Column {
                                 Box(Modifier.fillMaxWidth().height(200.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
@@ -338,10 +543,13 @@ fun ForYouScreen(
                                         Text("₹${"%,.0f".format(p)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
                                     }
                                     IconButton(
-                                        onClick = { wishlisted = !wishlisted },
+                                        onClick = {
+                                            wishlisted = !wishlisted
+                                            viewModel.toggleBookmark(post.stableId)
+                                        },
                                         modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape),
                                     ) {
-                                        Icon(if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, "Wishlist", tint = if (wishlisted) Color(0xFFEF4444) else Color.White, modifier = Modifier.size(18.dp))
+                                        Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark", tint = if (wishlisted) Color(0xFFFBBF24) else Color.White, modifier = Modifier.size(18.dp))
                                     }
                                     PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
                                 }
@@ -413,6 +621,58 @@ fun ForYouScreen(
                                             showShareSheet = true
                                         },
                                     )
+                                }
+                            }
+                        }
+                    }
+
+                    if (isGuest && displayed.size >= 3) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(Icons.Default.Lock, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        "Sign in for more",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "Create an account to see personalized recommendations",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                    Spacer(Modifier.height(16.dp))
+                                    Button(onClick = onBack) {
+                                        Text("Sign In")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!isGuest && state.hasMorePosts && displayed.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Button(
+                                    onClick = { viewModel.loadMore() },
+                                    modifier = Modifier.fillMaxWidth(0.5f)
+                                ) {
+                                    Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Load More")
                                 }
                             }
                         }

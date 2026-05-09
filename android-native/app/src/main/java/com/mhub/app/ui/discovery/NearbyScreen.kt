@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material.icons.filled.ShoppingBag
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -170,30 +173,55 @@ fun NearbyScreen(
                     }
                 }
             } else {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Tune, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Radius:", fontSize = 13.sp, color = Color(0xFF64748B))
+                // Shopping banner
+                Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), shape = RoundedCornerShape(12.dp), color = Color(0xFF2563EB).copy(alpha = 0.1f)) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.ShoppingBag, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(RADIUS_OPTIONS) { r ->
-                                val sel = r == state.radius
-                                Surface(
-                                    modifier = Modifier.clickable { viewModel.setRadius(r) },
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = if (sel) Color(0xFF2563EB) else Color.White,
-                                    border = if (!sel) ButtonDefaults.outlinedButtonBorder else null,
-                                ) {
-                                    Text(
-                                        "${r}km", fontSize = 12.sp,
-                                        fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (sel) Color.White else Color(0xFF374151),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    )
+                        Column {
+                            Text("Shopping in your area", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                            Text("Discover local deals", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                    }
+                }
+                // Map placeholder
+                Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Map View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF0F9FF))) {
+                            // Placeholder grid map with markers
+                            Canvas(Modifier.fillMaxSize()) {
+                                val cols = 8; val rows = 5
+                                (0 until cols * rows).forEach { i ->
+                                    if ((i + i / cols) % 3 == 0) {
+                                        val x = (size.width / cols) * (i % cols) + (size.width / cols / 2)
+                                        val y = (size.height / rows) * (i / cols) + (size.height / rows / 2)
+                                        drawCircle(color = androidx.compose.ui.graphics.Color(0xFF2563EB), radius = 6f, center = androidx.compose.ui.geometry.Offset(x, y))
+                                    }
                                 }
                             }
+                            Text("${state.posts.size} nearby listings", modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(0.9f)).padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Tune, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Distance: ${state.radius}km", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Slider(
+                            value = state.radius.toFloat(),
+                            onValueChange = { viewModel.setRadius(it.toInt()) },
+                            valueRange = 1f..100f,
+                            steps = 98,
+                            colors = SliderDefaults.colors(thumbColor = Color(0xFF2563EB), activeTrackColor = Color(0xFF2563EB)),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
                 // Sort row
@@ -242,6 +270,14 @@ fun NearbyScreen(
                         }
                         items(state.posts, key = { it.stableId }) { post ->
                             NearbyPostCard(post = post, onClick = { onOpenPost(post.stableId) })
+                        }
+                        if (state.posts.size >= 20 && !state.loading) {
+                            item {
+                                LaunchedEffect(Unit) { /* Trigger pagination */ }
+                                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
+                                }
+                            }
                         }
                     } }
                 }

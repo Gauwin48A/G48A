@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -41,6 +43,8 @@ import androidx.compose.material.icons.outlined.Upgrade
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +52,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedButton\nimport androidx.compose.material3.OutlinedTextField\nimport androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -415,12 +419,51 @@ fun RewardsScreen(
                                                 HeroChip("Lv.${max(user.level, 1)}")
                                                 HeroChip((user.currentPlan ?: user.membershipPlan ?: "Basic").replaceFirstChar { it.uppercase() })
                                             }
-                                            // Daily Secret Code
+                                            // Daily Secret Code Display + Input
                                             user.dailySecretCode?.let { code ->
                                                 Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                     Text("\uD83D\uDD11 Secret: $code", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
                                                     Text("Copy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6EE7B7), fontWeight = FontWeight.Bold, modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(code)) })
                                                 }
+                                            }
+                                            // Daily Code Claim Input
+                                            var codeInput by remember { mutableStateOf("") }
+                                            var codeResult by remember { mutableStateOf<String?>(null) }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                OutlinedTextField(
+                                                    value = codeInput,
+                                                    onValueChange = { codeInput = it.uppercase().take(10) },
+                                                    placeholder = { Text("Enter daily code", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp) },
+                                                    singleLine = true,
+                                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                                                    modifier = Modifier.weight(1f).height(44.dp),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = Color(0xFF6EE7B7),
+                                                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                                                        cursorColor = Color.White,
+                                                    ),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                Surface(
+                                                    onClick = {
+                                                        if (codeInput.isNotBlank()) {
+                                                            codeResult = if (codeInput == (user.dailySecretCode ?: "")) "\u2705 Code claimed!" else "\u274C Invalid code"
+                                                            if (codeResult?.startsWith("\u2705") == true) codeInput = ""
+                                                        }
+                                                    },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = Color(0xFF6EE7B7),
+                                                    modifier = Modifier.height(44.dp),
+                                                ) {
+                                                    Text("Claim", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF064E3B), modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
+                                                }
+                                            }
+                                            codeResult?.let { result ->
+                                                Text(result, style = MaterialTheme.typography.labelSmall, color = if (result.startsWith("\u2705")) Color(0xFF6EE7B7) else Color(0xFFFCA5A5))
                                             }
                                             // XP progress
                                             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -433,6 +476,18 @@ fun RewardsScreen(
                                             }
                                         }
                                     }
+                                }
+                            }
+                        }
+
+                        // ─── Tier Progression Carousel ───────────────────
+                        if (selectedTab == 0) item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("TIER PROGRESSION", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    TierCard("Bronze 🥉", listOf("Basic rewards", "+5% bonus", "Weekly challenges"), user.rank == "Bronze" || user.rank == null, Color(0xFFCD7F32))
+                                    TierCard("Silver 🥈", listOf("Premium rewards", "+10% bonus", "Daily spins", "Priority support"), user.rank == "Silver", Color(0xFF94A3B8))
+                                    TierCard("Gold 🥇", listOf("Elite rewards", "+20% bonus", "Exclusive perks", "VIP events", "Ad-free"), user.rank == "Gold", Color(0xFFF59E0B))
                                 }
                             }
                         }
@@ -601,30 +656,62 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── How to Earn (real progress) ─────────────────
+                        // ─── 7 Challenge Types ───────────────────────────
                         if (selectedTab == 1) item {
                             val stats = user.activityStats
                             Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("How to Earn", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    EarnPlaybookRow("\uD83D\uDC65", "Refer a friend", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), Color(0xFF6366F1))
-                                    EarnPlaybookRow("\uD83D\uDCDD", "Post a listing", "+5 coins", (stats.postsCount / 10f).coerceIn(0f, 1f), Color(0xFF10B981))
-                                    EarnPlaybookRow("\u2B50", "Complete a sale", "+25 coins", (stats.salesCount / 5f).coerceIn(0f, 1f), Color(0xFFF59E0B))
-                                    EarnPlaybookRow("\uD83D\uDD17", "Build referral chain", "+25 coins", (rewards.referralChain.size / 5f).coerceIn(0f, 1f), Color(0xFF8B5CF6))
+                                    Text("Challenge Board (7 Types)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    EarnPlaybookRow("👥", "Invite Friends", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), Color(0xFF6366F1))
+                                    EarnPlaybookRow("📅", "Daily Visit", "+2 coins", (user.visitStreak / 7f).coerceIn(0f, 1f), Color(0xFF10B981))
+                                    EarnPlaybookRow("📝", "Create Post", "+5 coins", (stats.postsCount / 10f).coerceIn(0f, 1f), Color(0xFF0EA5E9))
+                                    EarnPlaybookRow("📤", "Share Post", "+3 coins", (stats.sharesCount / 10f).coerceIn(0f, 1f), Color(0xFF8B5CF6))
+                                    EarnPlaybookRow("✅", "Complete Profile", "+15 coins", if ((user.email ?: "").isNotBlank() && (user.phone ?: "").isNotBlank()) 1f else 0.5f, Color(0xFFF59E0B))
+                                    EarnPlaybookRow("💰", "Complete Sale", "+25 coins", (stats.salesCount / 5f).coerceIn(0f, 1f), Color(0xFF059669))
+                                    EarnPlaybookRow("🛒", "Make Purchase", "+10 coins", (stats.purchasesCount / 5f).coerceIn(0f, 1f), Color(0xFFEC4899))
                                 }
                             }
                         }
 
-                        // ─── Redeem Store (clickable with dialog) ────────
+                        // ─── Redeem Store with Category Filter ───────────
                         if (selectedTab == 1) item {
+                            var redeemFilter by remember { mutableStateOf("All") }
                             Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text("Redeem Store", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    // Category filter chips
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                                        listOf("All", "Premium", "Accessories", "Gift Cards").forEach { cat ->
+                                            FilterChip(
+                                                selected = redeemFilter == cat,
+                                                onClick = { redeemFilter = cat },
+                                                label = { Text(cat, fontSize = 11.sp) },
+                                                shape = RoundedCornerShape(16.dp),
+                                            )
+                                        }
+                                    }
                                     Text("Spend your coins on exclusive perks", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        RedeemCard("\uD83D\uDE80", "Listing Boost", 100, user.totalCoins >= 100, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
-                                        RedeemCard("\u2B50", "Featured Badge", 200, user.totalCoins >= 200, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
-                                        RedeemCard("\uD83D\uDC51", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
+                                    // Premium items
+                                    if (redeemFilter == "All" || redeemFilter == "Premium") {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            RedeemCard("🚀", "Listing Boost", 100, user.totalCoins >= 100, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("⭐", "Featured Badge", 200, user.totalCoins >= 200, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
+                                            RedeemCard("👑", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
+                                        }
+                                    }
+                                    // Gift Cards
+                                    if (redeemFilter == "All" || redeemFilter == "Gift Cards") {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            RedeemCard("🎁", "$5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
+                                            RedeemCard("💳", "$10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
+                                        }
+                                    }
+                                    // Accessories
+                                    if (redeemFilter == "All" || redeemFilter == "Accessories") {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            RedeemCard("🎨", "Custom Theme", 150, user.totalCoins >= 150, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
+                                            RedeemCard("🏷️", "Badge Pack", 80, user.totalCoins >= 80, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badges" }
+                                        }
                                     }
                                 }
                             }
@@ -844,6 +931,69 @@ private fun RedeemCard(emoji: String, title: String, cost: Int, affordable: Bool
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .border(1.5.dp, if (affordable) accentColor.copy(alpha = 0.5f) else Color(0xFF94A3B8).copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+            .background(if (affordable && !darkTheme) accentColor.copy(alpha = 0.04f) else Color.Transparent)
+            .clickable(enabled = affordable, onClick = onClick)
+            .padding(10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(emoji, style = MaterialTheme.typography.headlineSmall)
+            Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 2)
+            Surface(shape = RoundedCornerShape(999.dp), color = if (affordable) accentColor.copy(alpha = 0.15f) else Color(0xFF94A3B8).copy(alpha = 0.12f)) {
+                Text("$cost \uD83E\uDE99", modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = if (affordable) accentColor else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TierCard(title: String, perks: List<String>, unlocked: Boolean, accentColor: Color) {
+    val darkTheme = isSystemInDarkTheme()
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color.White),
+        elevation = CardDefaults.cardElevation(if (unlocked) 8.dp else 2.dp),
+        modifier = Modifier.width(180.dp).border(2.dp, if (unlocked) accentColor else Color.Transparent, RoundedCornerShape(16.dp)),
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accentColor)
+            perks.forEach { perk ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(modifier = Modifier.size(6.dp).background(if (unlocked) accentColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape))
+                    Text(perk, style = MaterialTheme.typography.bodySmall, color = if (unlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                }
+            }
+            if (!unlocked) {
+                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+                    Text("🔒 Locked", modifier = Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfettiAnimation() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Simple confetti effect using animated emojis
+    var showConfetti by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2000)
+        showConfetti = false
+    }
+    if (showConfetti) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                repeat(5) { i ->
+                    val offset by rememberInfiniteTransition(label = "confetti$i").animateFloat(
+                        -50f, 50f, infiniteRepeatable(tween(800 + i * 100), RepeatMode.Reverse), label = "offset$i"
+                    )
+                    Text("🎉", style = MaterialTheme.typography.displayLarge, modifier = Modifier.offset(x = offset.dp, y = (i * 20).dp))
+                }
+            }
+        }
+    }
+}
             .background(if (affordable && !darkTheme) accentColor.copy(alpha = 0.04f) else Color.Transparent)
             .clickable(enabled = affordable, onClick = onClick)
             .padding(10.dp),

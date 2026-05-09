@@ -57,10 +57,12 @@ private fun SocialTopBar(title: String, onBack: () -> Unit) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Feed item card (shared)
+// Feed item card (shared) with expand/collapse
 // ──────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null) {
+private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null, onPromote: (() -> Unit)? = null, onShare: (() -> Unit)? = null) {
+    var expanded by remember { mutableStateOf(false) }
+    val descriptionLines = if (expanded) Int.MAX_VALUE else 3
     Surface(
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
@@ -78,16 +80,37 @@ private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null) {
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Text(item.displayContent, fontSize = 14.sp, color = Color(0xFF374151))
+            Text(item.displayContent, fontSize = 14.sp, color = Color(0xFF374151), maxLines = descriptionLines)
+            if (item.displayContent.length > 100) {
+                Text(
+                    if (expanded) "Show less" else "Read more",
+                    fontSize = 12.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { expanded = !expanded }.padding(top = 4.dp)
+                )
+            }
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Favorite, null, tint = if (item.isLiked) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("${item.likeCount}", fontSize = 13.sp, color = Color(0xFF64748B))
-                Spacer(Modifier.width(16.dp))
-                Icon(Icons.Filled.ChatBubbleOutline, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("${item.commentCount}", fontSize = 13.sp, color = Color(0xFF64748B))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Favorite, null, tint = if (item.isLiked) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("${item.likeCount}", fontSize = 13.sp, color = Color(0xFF64748B))
+                    Spacer(Modifier.width(16.dp))
+                    Icon(Icons.Filled.ChatBubbleOutline, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("${item.commentCount}", fontSize = 13.sp, color = Color(0xFF64748B))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    onShare?.let {
+                        IconButton(onClick = it, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Filled.Share, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    onPromote?.let {
+                        IconButton(onClick = it, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -207,7 +230,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MyFeedScreen
+// MyFeedScreen with status filters, promote, share dialogs
 // ──────────────────────────────────────────────────────────────────────────────
 data class FeedListUiState(val loading: Boolean = true, val items: List<FeedItem> = emptyList(), val error: String? = null)
 
@@ -219,7 +242,21 @@ class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : 
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
     private val _search = MutableStateFlow("")
     val search: StateFlow<String> = _search.asStateFlow()
-    init { load() }
+    
+    init {
+        load()
+        startAutoRefresh()
+    }
+    
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(45000) // 45 seconds
+                load()
+            }
+        }
+    }
+    
     fun load() { viewModelScope.launch {
         when (val r = repo.myFeed()) {
             is ApiResult.Success -> _state.value = FeedListUiState(loading = false, items = r.data)
@@ -239,7 +276,11 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
     val refreshing by viewModel.refreshing.collectAsState()
     val searchQuery by viewModel.search.collectAsState()
     var sortBy by remember { mutableStateOf("newest") }
+    var statusFilter by remember { mutableStateOf("All") }
     var deleteTarget by remember { mutableStateOf<String?>(null) }
+    var promoteTarget by remember { mutableStateOf<FeedItem?>(null) }
+    var shareTarget by remember { mutableStateOf<FeedItem?>(null) }
+    
     // Delete confirmation dialog
     deleteTarget?.let { id ->
         AlertDialog(
@@ -250,6 +291,59 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } },
         )
     }
+    // Promote dialog
+    promoteTarget?.let { post ->
+        AlertDialog(
+            onDismissRequest = { promoteTarget = null },
+            title = { Text("Promote Post 🚀") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Boost visibility for \"${post.title ?: post.displayContent.take(40)}...\"", fontSize = 14.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🪙 50", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                Text("24 hours", fontSize = 11.sp, color = Color(0xFF064E3B))
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🪙 150", fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                Text("7 days", fontSize = 11.sp, color = Color(0xFF78350F))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { promoteTarget = null }) { Text("Promote", color = Color(0xFF2563EB)) } },
+            dismissButton = { TextButton(onClick = { promoteTarget = null }) { Text("Cancel") } },
+        )
+    }
+    // Share dialog
+    val context = androidx.compose.ui.platform.LocalContext.current
+    shareTarget?.let { post ->
+        AlertDialog(
+            onDismissRequest = { shareTarget = null },
+            title = { Text("📤 Share Post") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = {
+                        val text = "Check out this post: ${post.title ?: post.displayContent.take(60)}..."
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, text) }
+                        context.startActivity(android.content.Intent.createChooser(intent, "Share via"))
+                        shareTarget = null
+                    }, modifier = Modifier.fillMaxWidth()) { Text("💬 Share anywhere") }
+                    OutlinedButton(onClick = {
+                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://mhub.app/post/${post.stableId}"))
+                        shareTarget = null
+                    }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
+                }
+            },
+            confirmButton = { TextButton(onClick = { shareTarget = null }) { Text("Close") } },
+        )
+    }
+    
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("My Feed", onBack)
@@ -263,6 +357,17 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             )
+            // Status filter tabs
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp)) {
+                listOf("All", "Active", "Draft", "Sold", "Archived").forEach { status ->
+                    FilterChip(
+                        selected = statusFilter == status,
+                        onClick = { statusFilter = status },
+                        label = { Text(status, fontSize = 11.sp) },
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                }
+            }
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -303,7 +408,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     }
                     val filteredItems = state.items.filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, true) || it.displayContent.contains(searchQuery, true) }
                     items(filteredItems, key = { it.stableId }) { item ->
-                        FeedCard(item, onClick = null)
+                        FeedCard(item, onClick = null, onPromote = { promoteTarget = item }, onShare = { shareTarget = item })
                         // Delete button row
                         Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = { deleteTarget = item.stableId }) {
@@ -432,9 +537,44 @@ class PublicWallViewModel @Inject constructor(private val repo: SocialRepository
 fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
+    var leaderboardTab by remember { mutableStateOf("Top Users") }
+    var userSearchQuery by remember { mutableStateOf("") }
+    
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Public Wall", onBack)
+            // Leaderboard tabs
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
+                listOf("Top Users", "Top Sellers", "Top Buyers").forEach { tab ->
+                    FilterChip(
+                        selected = leaderboardTab == tab,
+                        onClick = { leaderboardTab = tab },
+                        label = { Text(tab, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF2563EB),
+                            selectedLabelColor = Color.White,
+                        ),
+                    )
+                }
+            }
+            // User search
+            OutlinedTextField(
+                value = userSearchQuery,
+                onValueChange = { userSearchQuery = it },
+                placeholder = { Text("Search leaderboard by name…") },
+                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                trailingIcon = { if (userSearchQuery.isNotEmpty()) IconButton(onClick = { userSearchQuery = "" }) { Icon(Icons.Filled.Clear, null) } },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                ),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            )
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

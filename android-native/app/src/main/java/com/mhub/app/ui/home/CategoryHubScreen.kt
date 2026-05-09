@@ -296,6 +296,14 @@ fun CategoryHubScreen(
     }
 }
 
+/* ── Stat formatting (1.2k, 3.5M) ─────────────────────────────────────── */
+
+private fun formatCompact(n: Int): String = when {
+    n >= 1_000_000 -> "${"%.1f".format(n / 1_000_000.0)}M"
+    n >= 1_000 -> "${"%.1f".format(n / 1_000.0)}k"
+    else -> "$n+"
+}
+
 /* ── Hub Stats Row ─────────────────────────────────────────────────────── */
 
 @Composable
@@ -310,7 +318,7 @@ private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int) {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            HubStat("🏪", if (totalListings > 0) "$totalListings+" else "—", "Listings")
+            HubStat("🏪", if (totalListings > 0) formatCompact(totalListings) else "—", "Listings")
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
             HubStat("🔥", if (newToday > 0) "+$newToday" else "0", "New Today")
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))

@@ -154,8 +154,20 @@ data class AdminUiState(
     val recentActivity: List<AdminActivity> = emptyList(),
     val error: String? = null,
     val tab: String = "users",
-    val search: String = "",
+    val search: String = "",    val hasAdminAccess: Boolean = false,
+    val selectedUsers: Set<String> = emptySet(),
+    val selectedPosts: Set<String> = emptySet(),
+    val undoAction: UndoAction? = null,
+    val showWarningDialog: String? = null,
+    val warningMessage: String = "",
+    val flagCategory: String = "all"
 )
+
+data class UndoAction(
+    val type: String,
+    val targetId: String,
+    val previousStatus: String,
+    val timestamp: Long = System.currentTimeMillis())
 
 @HiltViewModel
 class AdminViewModel @Inject constructor(private val repo: AdminRepository) : ViewModel() {
@@ -165,28 +177,149 @@ class AdminViewModel @Inject constructor(private val repo: AdminRepository) : Vi
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
     init { load() }
     fun load() { viewModelScope.launch {
+        // Check admin access (mock - replace with real role check)
+        val hasAccess = true // TODO: Check user role from AuthRepository
+        if (!hasAccess) {
+            _state.value = AdminUiState(loading = false, hasAdminAccess = false, error = "Access Denied")
+            return@launch
+        }
         when (val r = repo.dashboard()) {
-            is ApiResult.Success -> _state.value = AdminUiState(loading = false, stats = r.data.stats, flaggedUsers = r.data.flaggedUsers, flaggedPosts = r.data.flaggedPosts, recentActivity = r.data.recentActivity)
-            is ApiResult.Failure -> _state.value = AdminUiState(loading = false, error = r.error.message)
+            is ApiResult.Success -> _state.value = AdminUiState(loading = false, stats = r.data.stats, flaggedUsers = r.data.flaggedUsers, flaggedPosts = r.data.flaggedPosts, recentActivity = r.data.recentActivity, hasAdminAccess = true)
+            is ApiResult.Failure -> _state.value = AdminUiState(loading = false, error = r.error.message, hasAdminAccess = true)
         }
     } }
     fun refresh() { viewModelScope.launch { _refreshing.value = true; load(); _refreshing.value = false } }
     fun setTab(t: String) { _state.value = _state.value.copy(tab = t) }
     fun setSearch(v: String) { _state.value = _state.value.copy(search = v) }
-    fun approveUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it }) }
-    fun rejectUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "rejected") else it }) }
-    fun banUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "banned") else it }) }
-    fun approvePost(id: String) { _state.value = _state.value.copy(flaggedPosts = _state.value.flaggedPosts.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it }) }
-    fun removePost(id: String) { _state.value = _state.value.copy(flaggedPosts = _state.value.flaggedPosts.filter { (it.id ?: "") != id }) }
+    fun setFlagCategory(c: String) { _state.value = _state.value.copy(flagCategory = c) }
+    fun toggleUserSelection(id: String) {
+        val current = _state.value.selectedUsers
+        _state.value = _state.value.copy(selectedUsers = if (current.contains(id)) current - id else current + id)
+    }
+    fun togglePostSelection(id: String) {
+        val current = _state.value.selectedPosts
+        _state.value = _state.value.copy(selectedPosts = if (current.contains(id)) current - id else current + id)
+    }
+    fun selectAllUsers() {
+        val allIds = _state.value.flaggedUsers.mapNotNull { it.id }.toSet()
+        _state.value = _state.value.copy(selectedUsers = allIds)
+    }
+    fun clearUserSelection() { _state.value = _state.value.copy(selectedUsers = emptySet()) }
+    fun selectAllPosts() {
+        val allIds = _state.value.flaggedPosts.mapNotNull { it.id }.toSet()
+        _state.value = _state.value.copy(selectedPosts = allIds)
+    }
+    fun clearPostSelection() { _state.value = _state.value.copy(selectedPosts = emptySet()) }
+    fun approveUser(id: String) { 
+        val user = _state.value.flaggedUsers.find { it.id == id }
+        val prevStatus = user?.status ?: "flagged"
+        _state.value = _state.value.copy(
+            flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it },
+            undoAction = UndoAction("approve_user", id, prevStatus)
+        )
+    }
+    fun rejectUser(id: String) { 
+        val user = _state.value.flaggedUsers.find { it.id == id }
+        val prevStatus = user?.status ?: "flagged"
+        _state.value = _state.value.copy(
+            flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "rejected") else it },
+            undoAction = UndoAction("reject_user", id, prevStatus)
+        )
+    }
+    fun banUser(id: String) { 
+        val user = _state.value.flaggedUsers.find { it.id == id }
+        val prevStatus = user?.status ?: "flagged"
+        _state.value = _state.value.copy(
+            flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "banned") else it },
+            undoAction = UndoAction("ban_user", id, prevStatus)
+        )
+    }
+    fun approvePost(id: String) { 
+        val post = _state.value.flaggedPosts.find { it.id == id }
+        val prevStatus = post?.status ?: "flagged"
+        _state.value = _state.value.copy(
+            flaggedPosts = _state.value.flaggedPosts.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it },
+            undoAction = UndoAction("approve_post", id, prevStatus)
+        )
+    }
+    fun removePost(id: String) { 
+        val post = _state.value.flaggedPosts.find { it.id == id }
+        _state.value = _state.value.copy(
+            flaggedPosts = _state.value.flaggedPosts.filter { (it.id ?: "") != id },
+            undoAction = UndoAction("remove_post", id, post?.status ?: "flagged")
+        )
+    }
+    fun bulkBanUsers() {
+        val ids = _state.value.selectedUsers
+        _state.value = _state.value.copy(
+            flaggedUsers = _state.value.flaggedUsers.map { if (ids.contains(it.id)) it.copy(status = "banned") else it },
+            selectedUsers = emptySet()
+        )
+    }
+    fun bulkRemovePosts() {
+        val ids = _state.value.selectedPosts
+        _state.value = _state.value.copy(
+            flaggedPosts = _state.value.flaggedPosts.filter { !ids.contains(it.id) },
+            selectedPosts = emptySet()
+        )
+    }
+    fun undo() {
+        val undo = _state.value.undoAction ?: return
+        when (undo.type) {
+            "approve_user", "reject_user", "ban_user" -> {
+                _state.value = _state.value.copy(
+                    flaggedUsers = _state.value.flaggedUsers.map { if (it.id == undo.targetId) it.copy(status = undo.previousStatus) else it },
+                    undoAction = null
+                )
+            }
+            "approve_post" -> {
+                _state.value = _state.value.copy(
+                    flaggedPosts = _state.value.flaggedPosts.map { if (it.id == undo.targetId) it.copy(status = undo.previousStatus) else it },
+                    undoAction = null
+                )
+            }
+            "remove_post" -> {
+                // Can't undo removal easily - would need to store removed post
+                _state.value = _state.value.copy(undoAction = null)
+            }
+        }
+    }
+    fun clearUndo() { _state.value = _state.value.copy(undoAction = null) }
+    fun showWarningDialog(userId: String) { _state.value = _state.value.copy(showWarningDialog = userId) }
+    fun hideWarningDialog() { _state.value = _state.value.copy(showWarningDialog = null, warningMessage = "") }
+    fun setWarningMessage(msg: String) { _state.value = _state.value.copy(warningMessage = msg) }
+    fun sendWarning() {
+        // TODO: Call API to send warning
+        _state.value = _state.value.copy(showWarningDialog = null, warningMessage = "")
+    }
 }
 
 @Composable
 fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
-    val tabs = listOf("users" to "Users", "posts" to "Posts", "activity" to "Activity")
+    val tabs = listOf("users" to "Users", "posts" to "Posts", "flags" to "Flags", "activity" to "Activity")
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Auto-dismiss undo after 12 seconds
+    LaunchedEffect(state.undoAction) {
+        state.undoAction?.let { undo ->
+            val result = snackbarHostState.showSnackbar(
+                message = "Action performed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undo()
+            } else {
+                kotlinx.coroutines.delay(500)
+                viewModel.clearUndo()
+            }
+        }
+    }
+    
     // Confirmation dialog state
-    var confirmAction by remember { mutableStateOf<Triple<String, String, () -> Unit>?>(null) } // (title, message, action)
+    var confirmAction by remember { mutableStateOf<Triple<String, String, () -> Unit>?>(null) }
     confirmAction?.let { (title, message, action) ->
         AlertDialog(
             onDismissRequest = { confirmAction = null },
@@ -196,11 +329,67 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
             dismissButton = { TextButton(onClick = { confirmAction = null }) { Text("Cancel") } },
         )
     }
+    
+    // Warning dialog
+    state.showWarningDialog?.let { userId ->
+        AlertDialog(
+            onDismissRequest = { viewModel.hideWarningDialog() },
+            title = { Text("Send Warning") },
+            text = {
+                Column {
+                    Text("Send a warning to this user:")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = state.warningMessage,
+                        onValueChange = { viewModel.setWarningMessage(it) },
+                        placeholder = { Text("Enter warning message...") },
+                        minLines = 3,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.sendWarning() },
+                    enabled = state.warningMessage.isNotBlank()
+                ) { Text("Send") }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.hideWarningDialog() }) { Text("Cancel") } }
+        )
+    }
+    
+    // Access denied screen
+    if (!state.loading && !state.hasAdminAccess) {
+        Box(Modifier.fillMaxSize().background(bgGradient), contentAlignment = Alignment.Center) {
+            Column(Modifier.fillMaxSize()) {
+                LegalTopBar("Admin Panel", onBack)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                        Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFFFEE2E2)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Block, null, tint = Color(0xFFEF4444), modifier = Modifier.size(40.dp))
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Text("Access Denied", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFFEF4444))
+                        Spacer(Modifier.height(8.dp))
+                        Text("You don't have permission to access this area.", fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Spacer(Modifier.height(20.dp))
+                        Button(onClick = onBack, shape = RoundedCornerShape(12.dp)) { Text("Go Back") }
+                    }
+                }
+            }
+        }
+        return
+    }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
-        Column(Modifier.fillMaxSize()) {
-            LegalTopBar("Admin Panel", onBack)
-            if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-            else PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            containerColor = Color.Transparent
+        ) { paddingValues ->
+            Column(Modifier.fillMaxSize().padding(paddingValues)) {
+                LegalTopBar("Admin Panel", onBack)
+                if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                else PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Stats grid
                 item {
                     val s = state.stats
@@ -247,12 +436,41 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                 }
                 when (state.tab) {
                     "users" -> {
+                        // Bulk action toolbar
+                        if (state.selectedUsers.isNotEmpty()) {
+                            item {
+                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF2563EB), modifier = Modifier.fillMaxWidth()) {
+                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${state.selectedUsers.size} selected", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                        Spacer(Modifier.weight(1f))
+                                        TextButton(onClick = { viewModel.clearUserSelection() }) { Text("Clear", color = Color.White) }
+                                        Button(
+                                            onClick = { confirmAction = Triple("Ban Selected Users", "Ban ${state.selectedUsers.size} users?") { viewModel.bulkBanUsers() } },
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) { Text("Ban Selected", fontSize = 12.sp) }
+                                    }
+                                }
+                            }
+                        } else {
+                            item {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = state.flaggedUsers.isNotEmpty() && state.selectedUsers.size == state.flaggedUsers.size, onCheckedChange = { if (it) viewModel.selectAllUsers() else viewModel.clearUserSelection() })
+                                    Text("Select All", fontSize = 13.sp, color = Color(0xFF374151))
+                                }
+                            }
+                        }
                         val filtered = state.flaggedUsers.filter { u -> state.search.isBlank() || (u.name ?: "").contains(state.search, true) || (u.email ?: "").contains(state.search, true) }
                         if (filtered.isEmpty()) item { Text("No flagged users", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.name ?: "" }) { user ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
                                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = state.selectedUsers.contains(user.id),
+                                            onCheckedChange = { user.id?.let { viewModel.toggleUserSelection(it) } }
+                                        )
                                         Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFFEE2E2)), contentAlignment = Alignment.Center) {
                                             Icon(Icons.Filled.Person, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                                         }
@@ -270,6 +488,9 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                                         Surface(shape = RoundedCornerShape(8.dp), color = statusColor.copy(alpha = 0.1f)) {
                                             Text(user.status ?: "flagged", fontSize = 10.sp, color = statusColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
+                                        IconButton(onClick = { user.id?.let { viewModel.showWarningDialog(it) } }) {
+                                            Icon(Icons.Filled.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                                        }
                                     }
                                     // Action buttons
                                     if (user.status == null || user.status == "flagged") {
@@ -284,12 +505,41 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         }
                     }
                     "posts" -> {
+                        // Bulk action toolbar
+                        if (state.selectedPosts.isNotEmpty()) {
+                            item {
+                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF2563EB), modifier = Modifier.fillMaxWidth()) {
+                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${state.selectedPosts.size} selected", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                        Spacer(Modifier.weight(1f))
+                                        TextButton(onClick = { viewModel.clearPostSelection() }) { Text("Clear", color = Color.White) }
+                                        Button(
+                                            onClick = { confirmAction = Triple("Remove Selected Posts", "Remove ${state.selectedPosts.size} posts?") { viewModel.bulkRemovePosts() } },
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) { Text("Remove Selected", fontSize = 12.sp) }
+                                    }
+                                }
+                            }
+                        } else {
+                            item {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = state.flaggedPosts.isNotEmpty() && state.selectedPosts.size == state.flaggedPosts.size, onCheckedChange = { if (it) viewModel.selectAllPosts() else viewModel.clearPostSelection() })
+                                    Text("Select All", fontSize = 13.sp, color = Color(0xFF374151))
+                                }
+                            }
+                        }
                         val filtered = state.flaggedPosts.filter { p -> state.search.isBlank() || (p.title ?: "").contains(state.search, true) }
                         if (filtered.isEmpty()) item { Text("No flagged posts", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.title ?: "" }) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
                                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = state.selectedPosts.contains(post.id),
+                                            onCheckedChange = { post.id?.let { viewModel.togglePostSelection(it) } }
+                                        )
                                         Icon(Icons.Filled.Flag, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(10.dp))
                                         Column(Modifier.weight(1f)) {
@@ -307,6 +557,51 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                                             Button(onClick = { viewModel.approvePost(post.id ?: "") }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Approve", fontSize = 11.sp) }
                                             Button(onClick = { confirmAction = Triple("Remove Post", "Are you sure you want to remove this flagged post?") { viewModel.removePost(post.id ?: "") } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Remove", fontSize = 11.sp) }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "flags" -> {
+                        item { Text("Auto-Detection Rules", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                        item {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("all" to "All", "spam" to "Spam", "scam" to "Scam", "fake" to "Fake", "duplicate" to "Duplicate", "inappropriate" to "Inappropriate").forEach { (key, label) ->
+                                    FilterChip(
+                                        selected = state.flagCategory == key,
+                                        onClick = { viewModel.setFlagCategory(key) },
+                                        label = { Text(label, fontSize = 11.sp) },
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                        val flaggedByCategory = when (state.flagCategory) {
+                            "all" -> state.flaggedPosts
+                            else -> state.flaggedPosts.filter { (it.reason ?: "").contains(state.flagCategory, true) }
+                        }
+                        if (flaggedByCategory.isEmpty()) item { Text("No flags in this category", color = Color(0xFF64748B)) }
+                        items(flaggedByCategory, key = { it.id ?: it.title ?: "" }) { post ->
+                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    val categoryColor = when {
+                                        (post.reason ?: "").contains("spam", true) -> Color(0xFFEF4444)
+                                        (post.reason ?: "").contains("scam", true) -> Color(0xFFDC2626)
+                                        (post.reason ?: "").contains("fake", true) -> Color(0xFFF59E0B)
+                                        (post.reason ?: "").contains("duplicate", true) -> Color(0xFF8B5CF6)
+                                        else -> Color(0xFF64748B)
+                                    }
+                                    Box(Modifier.size(8.dp).clip(CircleShape).background(categoryColor))
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1)
+                                        Text(post.reason ?: "Flagged", fontSize = 11.sp, color = categoryColor)
+                                    }
+                                    IconButton(onClick = { post.id?.let { viewModel.approvePost(it) } }) {
+                                        Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                    }
+                                    IconButton(onClick = { post.id?.let { viewModel.removePost(it) } }) {
+                                        Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
