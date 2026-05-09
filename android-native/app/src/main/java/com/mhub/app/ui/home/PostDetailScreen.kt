@@ -497,7 +497,7 @@ fun PostDetailScreen(
                                     )
                                 }
                                 // Promo badges
-                                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
+                                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
                             }
                             // Image zoom dialog
                             if (showImageZoom) {

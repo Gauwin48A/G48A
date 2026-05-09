@@ -670,7 +670,7 @@ class MyPostsViewModel @Inject constructor(private val repo: PostsRepository) : 
     fun load() {
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true)
-            when (val r = repo.my()) {
+            when (val r = repo.mine()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, posts = r.data)
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
             }

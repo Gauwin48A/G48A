@@ -368,10 +368,15 @@ fun WishlistScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                    isMultiSelectMode = state.isMultiSelectMode,
-                                    isSelected = post.stableId in state.selectedItems,
-                                    onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
-                                )
+                                        .padding(vertical = 64.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    AppEmptyState(
+                                        icon = Icons.Default.Search,
+                                        title = "No items match",
+                                        subtitle = "Try adjusting your filters.",
+                                    )
+                                }
                             }
                         }
                     }
@@ -596,53 +601,6 @@ private fun WishlistGridCard(
                         }
                     }
                 }
-                 Unit,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        onClick = onOpen,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = modifier,
-    ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-            ) {
-                if (post.primaryImage != null) {
-                    AsyncImage(
-                        model = post.primaryImage,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
-                                startY = 60f,
-                            ),
-                        ),
-                )
                 post.price?.let {
                     Text(
                         text = "₹${"%,.0f".format(it)}",

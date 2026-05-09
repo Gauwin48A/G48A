@@ -627,6 +627,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
         }
     }
 }
+}
 
 // ─── InviteScreen ─────────────────────────────────────────────────────────────
 data class InviteUiState(val loading: Boolean = true, val inviterName: String? = null, val bonus: String? = null, val valid: Boolean = false, val error: String? = null)

@@ -54,8 +54,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.snapshotFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.snapshotFlow
 import javax.inject.Inject
 
 enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, POPULAR, TRENDING }
@@ -249,7 +249,7 @@ fun ForYouScreen(
                     SortBy.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
                     SortBy.NEWEST -> list.sortedByDescending { it.createdAt ?: "" }
                     SortBy.POPULAR -> list.sortedByDescending { it.viewCount ?: 0 }
-                    SortBy.TRENDING -> list.sortedByDescending { (it.viewCount ?: 0) + (it.interestedBuyers?.size ?: 0) * 10 }
+                    SortBy.TRENDING -> list.sortedByDescending { (it.viewCount ?: 0) + (it.interestedBuyers ?: 0) * 10 }
                 }
                 if (state.sortAscending) sorted else sorted.reversed()
             }
@@ -339,7 +339,7 @@ fun ForYouScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "${displayed.size} items · ${categories.count { (k, _) -> k == null || state.posts.any { p -> p.categoryName?.contains(it.second, ignoreCase = true) == true } }} categories · 🟢 Live",
+                                "${displayed.size} items · ${categories.count { (catKey, catName) -> catKey == null || state.posts.any { p -> p.categoryName?.contains(catName, ignoreCase = true) == true } }} categories · 🟢 Live",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
@@ -551,7 +551,7 @@ fun ForYouScreen(
                                     ) {
                                         Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark", tint = if (wishlisted) Color(0xFFFBBF24) else Color.White, modifier = Modifier.size(18.dp))
                                     }
-                                    PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                                    PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
                                 }
 
                                 Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

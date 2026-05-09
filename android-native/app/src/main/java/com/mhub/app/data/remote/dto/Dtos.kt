@@ -923,6 +923,9 @@ data class Channel(
     @SerialName("owner_name") val ownerName: String? = null,
     @SerialName("is_member") val isMember: Boolean = false,
     @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("is_verified") val isVerified: Boolean = false,
+    @SerialName("follower_count") val followerCount: Int = 0,
+    val posts: List<com.mhub.app.domain.model.Post> = emptyList(),
 ) {
     val stableId: String get() = id ?: channelId ?: name.orEmpty()
     val displayName: String get() = name ?: "Channel"
@@ -952,6 +955,7 @@ data class Centre(
     @SerialName("owner_id") val ownerId: String? = null,
     @SerialName("owner_name") val ownerName: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("follower_count") val followerCount: Int? = null,
 ) {
     val stableId: String get() = id ?: centreId ?: name.orEmpty()
     val displayName: String get() = name ?: "Centre"
