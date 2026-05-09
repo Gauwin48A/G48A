@@ -107,4 +107,44 @@ object Routes {
     const val DAILY_CODE = "daily-code"
     const val REFERRAL_TREE = "referral-tree"
     const val CHAT_LIST = "chat-list"
+
+    // ── Category App Shell routes (prefixed with category key) ──────────────
+    const val CATEGORY_HOME       = "cat/{catKey}/home"
+    const val CATEGORY_SUBCATS    = "cat/{catKey}/subcategories"
+    const val CATEGORY_SUBCATS_ID = "cat/{catKey}/subcategories/{subcatId}"
+    const val CATEGORY_LISTING    = "cat/{catKey}/listing"
+    const val CATEGORY_CART       = "cat/{catKey}/cart"
+    const val CATEGORY_WISHLIST   = "cat/{catKey}/wishlist"
+    const val CATEGORY_PROFILE    = "cat/{catKey}/profile"
+    fun categoryHome(key: String)      = "cat/$key/home"
+    fun categorySubcats(key: String)   = "cat/$key/subcategories"
+    fun categorySubcatDetail(key: String, subcatId: String) = "cat/$key/subcategories/$subcatId"
+    fun categoryListing(key: String)   = "cat/$key/listing"
+    fun categoryCart(key: String)      = "cat/$key/cart"
+    fun categoryWishlist(key: String)  = "cat/$key/wishlist"
+    fun categoryProfileTab(key: String) = "cat/$key/profile"
+
+    // ── Checkout Flow ──────────────────────────────────────────────────────
+    const val CHECKOUT_ADDRESS  = "checkout/address"
+    const val CHECKOUT_PAYMENT  = "checkout/payment"
+    const val CHECKOUT_REVIEW   = "checkout/review"
+    const val CHECKOUT_CONFIRM  = "checkout/confirm"
+    const val CHECKOUT_FAILED   = "checkout/failed"
+
+    // ── Profile sub-screens ──────────────────────────────────────────────────
+    const val EDIT_PROFILE    = "profile/edit"
+    const val ORDER_HISTORY   = "profile/orders"
+    const val ORDER_DETAIL    = "profile/orders/{orderId}"
+    const val ADDRESS_BOOK    = "profile/addresses"
+    const val ADDRESS_ADD     = "profile/addresses/add"
+    const val ADDRESS_EDIT    = "profile/addresses/{addressId}/edit"
+    fun orderDetail(id: String)      = "profile/orders/$id"
+    fun addressEdit(id: String)      = "profile/addresses/$id/edit"
+
+    // ── Static pages ──────────────────────────────────────────────────────
+    const val ABOUT_US        = "about"
+    const val CONTACT_US      = "contact"
+    const val FAQ             = "faq"
+    const val SHIPPING_POLICY = "shipping-policy"
+    const val RECENTLY_VIEWED_SCREEN = "recently-viewed-screen"
 }

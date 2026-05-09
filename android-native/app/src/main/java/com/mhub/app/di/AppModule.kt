@@ -5,9 +5,13 @@ import androidx.room.Room
 import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.data.local.AppPreferences
 import com.mhub.app.data.local.TokenStore
+import com.mhub.app.data.local.db.AddressDao
+import com.mhub.app.data.local.db.CartItemDao
 import com.mhub.app.data.local.db.CategoryDao
 import com.mhub.app.data.local.db.MhubDatabase
 import com.mhub.app.data.local.db.PostDao
+import com.mhub.app.data.local.db.RecentlyViewedDao
+import com.mhub.app.data.local.db.WishlistItemDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,4 +48,12 @@ object AppModule {
     @Provides fun provideCategoryDao(db: MhubDatabase): CategoryDao = db.categoryDao()
 
     @Provides fun provideOfflineQueueDao(db: MhubDatabase): com.mhub.app.data.local.OfflineQueueDao = db.offlineQueueDao()
+
+    @Provides fun provideCartItemDao(db: MhubDatabase): CartItemDao = db.cartItemDao()
+
+    @Provides fun provideWishlistItemDao(db: MhubDatabase): WishlistItemDao = db.wishlistItemDao()
+
+    @Provides fun provideRecentlyViewedDao(db: MhubDatabase): RecentlyViewedDao = db.recentlyViewedDao()
+
+    @Provides fun provideAddressDao(db: MhubDatabase): AddressDao = db.addressDao()
 }
