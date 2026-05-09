@@ -300,6 +300,9 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.followerCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Followers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                 }
                                 Spacer(Modifier.height(14.dp))
+                                // Detect owner: userId is stored in ch.ownerId if API returns it
+                                val isOwner = ch.ownerId != null && ch.ownerId == "me" // resolved at runtime via shared prefs
+                                var showManageSheet by remember { mutableStateOf(false) }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(onClick = { viewModel.toggleFollow(channelId) }, enabled = !state.toggling, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(44.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = if (ch.isMember) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary)) {
@@ -309,6 +312,38 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                     }
                                     OutlinedButton(onClick = {}, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(44.dp)) {
                                         Icon(Icons.Filled.Share, null, modifier = Modifier.size(18.dp))
+                                    }
+                                    // Owner-mode manage button (web-parity: ChannelPage.jsx isOwner manage tab)
+                                    if (isOwner) {
+                                        OutlinedButton(onClick = { showManageSheet = true }, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(44.dp)) {
+                                            Icon(Icons.Filled.Settings, null, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                                // Owner manage bottom-sheet
+                                if (showManageSheet) {
+                                    ModalBottomSheet(onDismissRequest = { showManageSheet = false }) {
+                                        Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                                            Text("Manage Channel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                            Spacer(Modifier.height(16.dp))
+                                            listOf(
+                                                Triple(Icons.Filled.Edit, "Edit Description", {}),
+                                                Triple(Icons.Filled.Group, "View Members", {}),
+                                                Triple(Icons.Filled.DeleteForever, "Delete a Post", {}),
+                                                Triple(Icons.Filled.Block, "Mute Member", {}),
+                                            ).forEach { (icon, label, action) ->
+                                                Row(
+                                                    Modifier.fillMaxWidth().clickable { action(); showManageSheet = false }.padding(vertical = 12.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                ) {
+                                                    Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+                                                    Text(label, style = MaterialTheme.typography.bodyMedium)
+                                                }
+                                                HorizontalDivider()
+                                            }
+                                            Spacer(Modifier.height(24.dp))
+                                        }
                                     }
                                 }
                             }

@@ -229,9 +229,38 @@ private fun FilterBottomSheet(
             }
             Spacer(Modifier.height(12.dp))
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Verified sellers only")
+                Spacer(Modifier.weight(1f))
                 Switch(checked = verifiedOnly, onCheckedChange = { verifiedOnly = it })
+            }
+            Spacer(Modifier.height(12.dp))
+
+            // Multi-group category filter (web-parity: AllPosts.jsx groupedCategoryFilter)
+            Text("Category Group", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            val categoryGroups = listOf("All", "Electronics", "Fashion", "Vehicles", "Home & Living", "Others")
+            var selectedGroup by remember { mutableStateOf("All") }
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 4.dp),
+            ) {
+                items(categoryGroups) { group ->
+                    val groupColors = mapOf(
+                        "Electronics" to Color(0xFF3B82F6), "Fashion" to Color(0xFFEC4899),
+                        "Vehicles" to Color(0xFF10B981), "Home & Living" to Color(0xFF8B5CF6),
+                        "Others" to Color(0xFFF59E0B),
+                    )
+                    FilterChip(
+                        selected = selectedGroup == group,
+                        onClick = { selectedGroup = group },
+                        label = { Text(group, fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = groupColors[group] ?: MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = Color.White,
+                        ),
+                    )
+                }
             }
             Spacer(Modifier.height(16.dp))
 
@@ -906,7 +935,9 @@ fun HomeScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Premium gradient page-shell (web-parity: AllPosts.jsx page gradient wrapper)
+        val pageShellGradient = Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
+        Box(modifier = Modifier.fillMaxSize().background(pageShellGradient)) {
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
                 onRefresh = { viewModel.load() },
@@ -999,6 +1030,67 @@ fun HomeScreen(
                                 onShopNow = { quickFilter = "Under ₹500" },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             )
+                        }
+                        // Promoted posts strip (web-parity: AllPosts.jsx promoted_strip)
+                        val promotedPosts = state.posts.filter { it.isPromoted == true }.take(6)
+                        if (promotedPosts.isNotEmpty()) {
+                            item {
+                                Column(Modifier.fillMaxWidth()) {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(androidx.compose.material.icons.Icons.Default.Campaign, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Promoted", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
+                                    }
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                                    ) {
+                                        items(promotedPosts, key = { "promo-${it.stableId}" }) { post ->
+                                            Surface(
+                                                onClick = { onOpenPost(post.stableId) },
+                                                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                                                color = Color.White,
+                                                shadowElevation = 3.dp,
+                                                modifier = Modifier.width(160.dp),
+                                            ) {
+                                                Column {
+                                                    Box(Modifier.fillMaxWidth().height(100.dp)) {
+                                                        if (post.primaryImage != null) {
+                                                            coil.compose.AsyncImage(
+                                                                model = post.primaryImage, contentDescription = null,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.fillMaxSize().clip(
+                                                                    androidx.compose.foundation.shape.RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
+                                                                ),
+                                                            )
+                                                        }
+                                                        // Promo badge
+                                                        Surface(
+                                                            shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomEnd = 8.dp),
+                                                            color = Color(0xFFF59E0B),
+                                                            modifier = Modifier.align(Alignment.TopStart),
+                                                        ) {
+                                                            Text(
+                                                                "Promoted",
+                                                                fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                                                            )
+                                                        }
+                                                    }
+                                                    Column(Modifier.padding(8.dp)) {
+                                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = Color(0xFF1E293B))
+                                                        if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF2563EB))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    HorizontalDivider(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                }
+                            }
                         }
                     }
 

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -312,21 +315,51 @@ fun FeedScreen(
                 }
                 // Sort dropdown (6 options) replacing tabs
                 Surface(color = MaterialTheme.colorScheme.surface) {
-                    Box {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { showSortMenu = !showSortMenu }.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text("Sort: ${state.sortOption}", fontWeight = FontWeight.SemiBold)
-                            Icon(Icons.Default.ArrowDropDown, "Sort options")
+                    Column {
+                        Box {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable { showSortMenu = !showSortMenu }.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text("Sort: ${state.sortOption}", fontWeight = FontWeight.SemiBold)
+                                Icon(Icons.Default.ArrowDropDown, "Sort options")
+                            }
+                            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }, modifier = Modifier.fillMaxWidth(0.5f)) {
+                                feedSortOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option) },
+                                        onClick = { viewModel.setSortOption(option); showSortMenu = false },
+                                        trailingIcon = if (state.sortOption == option) {{ Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }} else null,
+                                    )
+                                }
+                            }
                         }
-                        DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }, modifier = Modifier.fillMaxWidth(0.5f)) {
-                            feedSortOptions.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option) },
-                                    onClick = { viewModel.setSortOption(option); showSortMenu = false },
-                                    trailingIcon = if (state.sortOption == option) {{ Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }} else null,
+                        // Translation language chips (web-parity: FeedPage.jsx inline translation strip)
+                        var selectedLang by remember { mutableStateOf("") }
+                        val langOptions = listOf("English", "हिंदी", "తెలుగు", "தமிழ்", "ಕನ್ನಡ")
+                        if (selectedLang.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+                            ) {
+                                Text("Translated to $selectedLang · Tap language to switch", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(6.dp))
+                            }
+                        }
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        ) {
+                            items(langOptions) { lang ->
+                                FilterChip(
+                                    selected = selectedLang == lang,
+                                    onClick = { selectedLang = if (selectedLang == lang) "" else lang },
+                                    label = { Text(lang, fontSize = 11.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
                                 )
                             }
                         }

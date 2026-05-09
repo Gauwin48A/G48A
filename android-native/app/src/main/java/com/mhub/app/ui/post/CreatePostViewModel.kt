@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.CreatePostRequest
+import com.mhub.app.data.repository.AuthRepository
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.UploadRepository
@@ -27,18 +28,57 @@ data class CreatePostState(
     val success: Boolean = false,
     val error: String? = null,
     val draftSaved: Boolean = false,
-)
+    /** Plan-tier-derived per-listing image cap (web-parity: basic=1, bronze=3, silver=5, gold/premium=10). */
+    val maxImages: Int = 1,
+    val planTier: String = "basic",
+    val kycVerified: Boolean = false,
+    val showKycGate: Boolean = false,
+) {
+    companion object {
+        /** Mirror of web `client/src/utils/planLimits.js` image caps. */
+        val IMAGE_LIMIT: Map<String, Int> = mapOf(
+            "basic" to 1,
+            "bronze" to 3,
+            "silver" to 5,
+            "gold" to 10,
+            "premium" to 10,
+            "platinum" to 10,
+        )
+        fun limitFor(tier: String?): Int = IMAGE_LIMIT[tier?.lowercase()?.trim()] ?: 1
+    }
+}
 
 @HiltViewModel
 class CreatePostViewModel @Inject constructor(
     private val postsRepo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
     private val uploadRepo: UploadRepository,
+    private val authRepo: AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreatePostState())
     val state: StateFlow<CreatePostState> = _state.asStateFlow()
 
-    init { loadCategories() }
+    init {
+        loadCategories()
+        loadUserPlan()
+    }
+
+    private fun loadUserPlan() = viewModelScope.launch {
+        when (val r = authRepo.me()) {
+            is ApiResult.Success -> {
+                val tier = r.data.currentPlan?.lowercase()?.trim() ?: "basic"
+                _state.value = _state.value.copy(
+                    planTier = tier,
+                    maxImages = CreatePostState.limitFor(tier),
+                    kycVerified = r.data.isKycVerified,
+                    showKycGate = !r.data.isKycVerified,
+                )
+            }
+            is ApiResult.Failure -> Unit // keep defaults; user may be logged-out
+        }
+    }
+
+    fun dismissKycGate() { _state.value = _state.value.copy(showKycGate = false) }
 
     private fun loadCategories() = viewModelScope.launch {
         when (val r = categoriesRepo.all()) {
@@ -52,8 +92,9 @@ class CreatePostViewModel @Inject constructor(
     fun clearError() { _state.value = _state.value.copy(error = null) }
 
     fun setImages(uris: List<Uri>) {
+        val cap = _state.value.maxImages.coerceAtLeast(1)
         _state.value = _state.value.copy(
-            imageUris = uris.take(8),
+            imageUris = uris.take(cap),
             uploadedUrls = emptyList(),
             error = null,
         )

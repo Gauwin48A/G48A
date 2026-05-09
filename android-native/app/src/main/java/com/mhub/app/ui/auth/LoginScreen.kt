@@ -43,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -536,6 +538,29 @@ fun LoginScreen(
         // ── OTP 2FA Challenge Overlay ──
         if (state.requireOtp) {
             var otpCode by rememberSaveable { mutableStateOf("") }
+            val context = LocalContext.current
+            // SMS Retriever — auto-fill OTP from incoming SMS (web-parity: Auth/Login.jsx webOTP)
+            DisposableEffect(Unit) {
+                val intentFilter = android.content.IntentFilter("com.google.android.gms.auth.api.phone.SMS_RETRIEVED")
+                val receiver = object : android.content.BroadcastReceiver() {
+                    override fun onReceive(ctx: android.content.Context?, intent: android.content.Intent?) {
+                        if (intent?.action == "com.google.android.gms.auth.api.phone.SMS_RETRIEVED") {
+                            val extras = intent.extras ?: return
+                            val status = extras.get("com.google.android.gms.common.api.Status")
+                            val message = extras.getString("com.google.android.gms.auth.api.phone.EXTRA_SMS_MESSAGE") ?: return
+                            // Extract 6-digit OTP from the message
+                            val matched = Regex("\\b(\\d{6})\\b").find(message)?.groupValues?.get(1)
+                            if (matched != null) otpCode = matched
+                        }
+                    }
+                }
+                try {
+                    context.registerReceiver(receiver, intentFilter)
+                } catch (_: Exception) { /* non-fatal: SMS retriever not available */ }
+                onDispose {
+                    try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
+                }
+            }
             Box(
                 Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center,

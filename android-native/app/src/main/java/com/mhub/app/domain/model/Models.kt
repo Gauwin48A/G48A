@@ -62,6 +62,18 @@ data class Post(
     @SerialName("subcategory_name") val subcategoryName: String? = null,
     @SerialName("model") val model: String? = null,
     @SerialName("interested_buyers") val interestedBuyers: Int? = null,
+    // Extended fields for 20-field multi-token search (web-parity: SearchPage.jsx)
+    val city: String? = null,
+    val state: String? = null,
+    val color: String? = null,
+    val size: String? = null,
+    val tags: List<String>? = null,
+    @SerialName("user_handle") val userHandle: String? = null,
+    val hashtags: List<String>? = null,
+    val year: Int? = null,
+    val mileage: Int? = null,
+    @SerialName("ram_storage") val ramStorage: String? = null,
+    @SerialName("is_promoted") val isPromoted: Boolean? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()

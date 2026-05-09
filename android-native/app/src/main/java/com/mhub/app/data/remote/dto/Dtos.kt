@@ -739,6 +739,7 @@ data class ProfileUpdateRequest(
     val phone: String? = null,
     val address: String? = null,
     val bio: String? = null,
+    @SerialName("social_links") val socialLinks: Map<String, String>? = null,
 )
 
 // -------- Dashboard --------

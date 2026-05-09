@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -588,8 +589,66 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                     item {
                         Text("Select the plan that fits your needs", fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(bottom = 8.dp))
                     }
+                    // Trial-period banner (web-parity: TierSelection.jsx trial banner)
+                    item {
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF9C3), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Filled.Bolt, null, tint = Color(0xFFCA8A04), modifier = Modifier.size(20.dp))
+                                Column {
+                                    Text("7-day free trial on all paid plans", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
+                                    Text("No payment required to start. Cancel anytime.", fontSize = 11.sp, color = Color(0xFFB45309))
+                                }
+                            }
+                        }
+                    }
                     items(state.tiers, key = { it.id ?: it.name ?: "" }) { tier ->
                         TierCard(tier = tier, onSelect = { viewModel.subscribe(tier.id ?: "") })
+                    }
+                    // Feature-matrix comparison table (web-parity: TierSelection.jsx featureMatrix)
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Feature Comparison", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(bottom = 8.dp))
+                        val tierNames = listOf("Basic", "Bronze", "Silver", "Gold", "Premium")
+                        val featureMatrixRows = listOf(
+                            "Post listings" to listOf("1", "3", "5", "10", "Unlimited"),
+                            "Photos per post" to listOf("1", "3", "5", "8", "10"),
+                            "Promoted posts" to listOf("✗", "1", "2", "5", "Unlimited"),
+                            "Analytics" to listOf("✗", "Basic", "Basic", "Advanced", "Full"),
+                            "Priority support" to listOf("✗", "✗", "✓", "✓", "✓"),
+                            "Badge on profile" to listOf("✗", "Bronze", "Silver", "Gold", "Premium"),
+                            "KYC verified" to listOf("✓", "✓", "✓", "✓", "✓"),
+                            "Chat support" to listOf("✗", "✗", "✓", "✓", "✓"),
+                            "Bulk manage posts" to listOf("✗", "✗", "✗", "✓", "✓"),
+                            "Export analytics" to listOf("✗", "✗", "✗", "✓", "✓"),
+                            "Custom storefront" to listOf("✗", "✗", "✗", "✗", "✓"),
+                            "Dedicated manager" to listOf("✗", "✗", "✗", "✗", "✓"),
+                        )
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                // Header row
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text("Feature", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(120.dp))
+                                    tierNames.forEach { name ->
+                                        Text(name, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF1E293B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+                                    }
+                                }
+                                HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                                featureMatrixRows.forEach { (feature, values) ->
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(feature, fontSize = 11.sp, color = Color(0xFF374151), modifier = Modifier.width(120.dp))
+                                        values.forEach { v ->
+                                            Text(
+                                                v, fontSize = 10.sp,
+                                                color = when { v == "✓" || v == "Unlimited" || v == "Full" -> Color(0xFF22C55E); v == "✗" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
+                                                fontWeight = if (v == "✓" || v == "✗") FontWeight.Bold else FontWeight.Normal,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -955,7 +1014,94 @@ class BoughtPostsViewModel @Inject constructor(private val repo: PostsRepository
 @Composable
 fun SoldPostsScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: SoldPostsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    PostsListScreen("Sales History", Icons.Filled.Inventory, "Items you've sold", "No sales yet", state, onBack, onOpenPost)
+    SoldPostsListScreen(state, onBack, onOpenPost)
+}
+
+@Composable
+private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOpenPost: (String) -> Unit) {
+    var search by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("newest") }
+    val displayed = remember(state.posts, search, sortBy) {
+        var list = state.posts
+        if (search.isNotBlank()) list = list.filter { it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
+        when (sortBy) {
+            "price_asc" -> list = list.sortedBy { it.price ?: 0.0 }
+            "price_desc" -> list = list.sortedByDescending { it.price ?: 0.0 }
+            "views" -> list = list.sortedByDescending { it.viewCount ?: 0 }
+            "likes" -> list = list.sortedByDescending { it.likeCount ?: 0 }
+            else -> list = list.sortedByDescending { it.createdAt ?: "" }
+        }
+        list
+    }
+    Box(Modifier.fillMaxSize().background(bgGradient)) {
+        Column(Modifier.fillMaxSize()) {
+            ScreenTopBar("Sales History", onBack)
+            when {
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(state.error, color = Color(0xFF64748B), fontSize = 14.sp) }
+                else -> {
+                    OutlinedTextField(
+                        value = search, onValueChange = { search = it },
+                        placeholder = { Text("Search sales…") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
+                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // Extended sort: now includes views/likes (web-parity: SoldPosts.jsx sort options)
+                        listOf("newest" to "Newest", "price_desc" to "Price ↓", "views" to "Views", "likes" to "Likes").forEach { (key, label) ->
+                            FilterChip(selected = sortBy == key, onClick = { sortBy = key },
+                                label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                        }
+                    }
+                    if (displayed.isEmpty()) EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) }, title = "No sales yet", subtitle = "Items you've sold will appear here")
+                    else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item { Text("${displayed.size} sales", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        items(displayed, key = { it.stableId }) { post ->
+                            // Rich card with per-item analytics mini-row (web-parity: SoldPosts.jsx statRow)
+                            Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.clickable { (post.id ?: post.postId)?.let(onOpenPost) }) {
+                                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
+                                        else Box(Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                                        }
+                                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
+                                            Text("SOLD", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                        }
+                                    }
+                                    // Per-item analytics row (web-parity: SoldPosts.jsx inline stats)
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                            Icon(Icons.Filled.Visibility, null, tint = Color(0xFF64748B), modifier = Modifier.size(13.dp))
+                                            Text("${post.viewCount ?: 0} views", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                            Icon(Icons.Filled.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(13.dp))
+                                            Text("${post.likeCount ?: 0} likes", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        }
+                                        post.createdAt?.take(10)?.let { date ->
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                Icon(Icons.Filled.CalendarToday, null, tint = Color(0xFF64748B), modifier = Modifier.size(13.dp))
+                                                Text(date, fontSize = 11.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -1640,8 +1786,19 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
     val state by viewModel.state.collectAsState()
     var isGrid by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
-    val displayed = remember(state.posts, search) {
-        if (search.isBlank()) state.posts else state.posts.filter { it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
+    var statusFilter by remember { mutableStateOf("All") }
+    var bulkSelect by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf(setOf<String>()) }
+    val statusOptions = listOf("All", "Available", "Sold", "Promoted")
+    val displayed = remember(state.posts, search, statusFilter) {
+        state.posts
+            .filter { if (search.isBlank()) true else it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
+            .filter { post -> when (statusFilter) {
+                "Available" -> post.status?.lowercase()?.let { it != "sold" } ?: true
+                "Sold" -> post.status?.lowercase() == "sold"
+                "Promoted" -> post.isPromoted == true
+                else -> true
+            } }
     }
     // Group by day
     val grouped = remember(displayed) {
@@ -1663,6 +1820,9 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                     if (state.posts.isNotEmpty()) Text("${state.posts.size} items browsed", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
                 if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
+                IconButton(onClick = { bulkSelect = !bulkSelect; if (!bulkSelect) selectedIds = emptySet() }, modifier = Modifier.size(36.dp)) {
+                    Icon(if (bulkSelect) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank, null, tint = if (bulkSelect) Color(0xFF2563EB) else Color(0xFF64748B))
+                }
                 IconButton(onClick = { isGrid = !isGrid }, modifier = Modifier.size(36.dp)) {
                     Icon(if (isGrid) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
                 }
@@ -1680,6 +1840,31 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     )
+                    // Status filter chips (web-parity: RecentlyViewed.jsx filterTabs)
+                    androidx.compose.foundation.lazy.LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(statusOptions) { opt ->
+                            FilterChip(
+                                selected = statusFilter == opt,
+                                onClick = { statusFilter = opt },
+                                label = { Text(opt, fontSize = 12.sp) },
+                            )
+                        }
+                    }
+                    // Bulk-select toolbar
+                    if (bulkSelect && selectedIds.isNotEmpty()) {
+                        Surface(color = Color(0xFFFEE2E2)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("${selectedIds.size} selected", fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
+                                TextButton(onClick = { selectedIds.forEach { viewModel.removePost(it) }; selectedIds = emptySet(); bulkSelect = false }) {
+                                    Text("Delete Selected", color = Color(0xFFDC2626))
+                                }
+                                TextButton(onClick = { selectedIds = emptySet(); bulkSelect = false }) { Text("Cancel") }
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     if (displayed.isEmpty()) EmptyState(
                         icon = { Icon(Icons.Filled.History, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },

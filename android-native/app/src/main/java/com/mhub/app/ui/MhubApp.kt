@@ -397,10 +397,15 @@ fun MhubApp(
                 PostDetailScreen(onBack = { navController.popBackStack() })
             }
 
-            composable(Routes.SEARCH) {
+            composable(
+                route = "${Routes.SEARCH}?query={query}",
+                arguments = listOf(androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true }),
+            ) { backStack ->
+                val prefillQuery = backStack.arguments?.getString("query") ?: ""
                 SearchScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    prefillQuery = prefillQuery,
                 )
             }
 
@@ -444,6 +449,13 @@ fun MhubApp(
                 com.mhub.app.ui.kyc.AadhaarVerifyScreen(onBack = { navController.popBackStack() })
             }
 
+            composable(Routes.GET_VERIFIED) {
+                com.mhub.app.ui.kyc.GetVerifiedScreen(
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() },
+                )
+            }
+
             composable(Routes.NOTIFICATION_PREFS) {
                 com.mhub.app.ui.notifications.NotificationPrefsScreen(onBack = { navController.popBackStack() })
             }
@@ -472,7 +484,7 @@ fun MhubApp(
             }
 
             composable(Routes.CHAT) {
-                ChatScreen(onBack = { navController.popBackStack() })
+                ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { navController.navigate(Routes.LOGIN) })
             }
 
             composable(Routes.SETTINGS) {

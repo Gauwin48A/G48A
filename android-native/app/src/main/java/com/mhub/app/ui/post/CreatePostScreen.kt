@@ -155,11 +155,42 @@ fun CreatePostScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        // KYC gate (web-parity: AddPost.jsx blocks unverified users with CTA → /kyc)
+        if (state.showKycGate) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissKycGate() },
+                title = { Text("Verify your identity to list") },
+                text = { Text("Sellers must complete KYC before publishing a listing. This keeps the marketplace safe and unlocks higher trust scores.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.dismissKycGate()
+                        onBack()
+                    }) { Text("Go to KYC") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissKycGate() }) { Text("Continue anyway") }
+                },
+            )
+        }
+
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ErrorBanner(message = state.error)
+
+            // Plan-tier image-cap badge (web parity: AddPost.jsx renders plan + remaining)
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+            ) {
+                Text(
+                    text = "${state.planTier.replaceFirstChar { it.titlecase() }} plan \u2022 up to ${state.maxImages} photo${if (state.maxImages == 1) "" else "s"} per listing",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
 
             if (showDuplicateWarning) {
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFFBEB), modifier = Modifier.fillMaxWidth()) {
@@ -211,7 +242,7 @@ fun CreatePostScreen(
                     ) {
                         Icon(Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(36.dp))
                         Text(text = stringResource(R.string.post_add_images))
-                        Text(text = "Up to 8 photos · JPG/PNG/WEBP", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = "Up to ${state.maxImages} photo${if (state.maxImages == 1) "" else "s"} on your ${state.planTier.replaceFirstChar { it.titlecase() }} plan · JPG/PNG/WEBP", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     Column(
@@ -252,7 +283,7 @@ fun CreatePostScreen(
                                 }
                             }
                             // Add more button
-                            if (state.imageUris.size < 8) {
+                            if (state.imageUris.size < state.maxImages) {
                                 item {
                                     Box(
                                         Modifier.size(94.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp)).clickable {
@@ -268,7 +299,7 @@ fun CreatePostScreen(
                                 }
                             }
                         }
-                        Text(text = "${state.imageUris.size}/8 selected · Tap an image to reorder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = "${state.imageUris.size}/${state.maxImages} selected · Tap an image to reorder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
