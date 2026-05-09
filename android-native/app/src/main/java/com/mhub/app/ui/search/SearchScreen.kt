@@ -1,9 +1,10 @@
-﻿package com.mhub.app.ui.search
+package com.mhub.app.ui.search
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,48 +20,39 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.ImageNotSupported
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -71,6 +63,12 @@ import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.SavedSearchesRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.ui.components.BackToTopButton
+import com.mhub.app.ui.components.ShareLinkBottomSheet
+import com.mhub.app.ui.components.BuyerInterestModal
+import com.mhub.app.ui.components.PostActionRow
+import com.mhub.app.ui.components.PromoBadgeRow
+import com.mhub.app.ui.components.ImageZoomDialog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -88,6 +86,8 @@ data class SearchState(
     val error: String? = null,
     val savedSearches: List<SavedSearch> = emptyList(),
     val selectedCategory: String? = null,
+    val suggestions: List<String> = emptyList(),
+    val refreshing: Boolean = false,
 )
 
 @HiltViewModel
@@ -120,18 +120,23 @@ class SearchViewModel @Inject constructor(
         _state.value = _state.value.copy(query = query)
         job?.cancel()
         if (query.isBlank()) {
-            _state.value = _state.value.copy(items = emptyList(), searched = false)
+            _state.value = _state.value.copy(items = emptyList(), searched = false, suggestions = emptyList())
             return
         }
+        // Generate autocomplete suggestions
+        val brands = listOf("Apple", "Samsung", "Nike", "Adidas", "Sony", "Dell", "HP", "Lenovo", "OnePlus", "Xiaomi", "Asus", "LG", "Bose", "Canon", "Toyota", "Honda", "Hyundai", "Maruti")
+        val matchedBrands = brands.filter { it.contains(query, ignoreCase = true) }.take(5)
+        _state.value = _state.value.copy(suggestions = matchedBrands)
+
         job = viewModelScope.launch {
             delay(300)
             doSearch(query)
         }
     }
 
-    fun search(query: String, minPrice: Double? = null, maxPrice: Double? = null, condition: String? = null, sortBy: String? = null) {
+    fun search(query: String, minPrice: Double? = null, maxPrice: Double? = null, condition: String? = null, sortBy: String? = null, brand: String? = null, rating: Int? = null) {
         job?.cancel()
-        _state.value = _state.value.copy(query = query, loading = true, error = null)
+        _state.value = _state.value.copy(query = query, loading = true, error = null, suggestions = emptyList())
         job = viewModelScope.launch {
             when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
                 is ApiResult.Success -> {
@@ -139,11 +144,45 @@ class SearchViewModel @Inject constructor(
                     if (minPrice != null) list = list.filter { (it.price ?: 0.0) >= minPrice }
                     if (maxPrice != null) list = list.filter { (it.price ?: Double.MAX_VALUE) <= maxPrice }
                     if (condition != null) list = list.filter { it.condition?.equals(condition, ignoreCase = true) == true }
+                    if (brand != null) list = list.filter { it.brand?.contains(brand, ignoreCase = true) == true }
                     if (sortBy == "price_asc") list = list.sortedBy { it.price ?: Double.MAX_VALUE }
                     if (sortBy == "price_desc") list = list.sortedByDescending { it.price ?: 0.0 }
+                    if (sortBy == "newest") list = list.sortedByDescending { it.createdAt ?: "" }
                     _state.value = _state.value.copy(loading = false, items = list, searched = true)
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
+            }
+        }
+    }
+
+    fun refresh() {
+        if (_state.value.query.isNotBlank()) {
+            _state.value = _state.value.copy(refreshing = true)
+            viewModelScope.launch {
+                doSearch(_state.value.query)
+                _state.value = _state.value.copy(refreshing = false)
+            }
+        }
+    }
+
+    fun saveSearch() {
+        val q = _state.value.query
+        if (q.isBlank()) return
+        viewModelScope.launch {
+            savedSearchesRepo.save(q, _state.value.selectedCategory)
+            when (val r = savedSearchesRepo.list()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(savedSearches = r.data)
+                is ApiResult.Failure -> {}
+            }
+        }
+    }
+
+    fun deleteSavedSearch(id: String) {
+        viewModelScope.launch {
+            savedSearchesRepo.delete(id)
+            when (val r = savedSearchesRepo.list()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(savedSearches = r.data)
+                is ApiResult.Failure -> {}
             }
         }
     }
@@ -166,14 +205,34 @@ fun SearchScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val focusRequester = remember { FocusRequester() }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     var showFilters by remember { mutableStateOf(false) }
     var minPrice by remember { mutableStateOf("") }
     var maxPrice by remember { mutableStateOf("") }
     var selectedCondition by remember { mutableStateOf("") }
+    var selectedBrand by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("") }
-    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank()).count { it }
+    var showShareSheet by remember { mutableStateOf(false) }
+    var sharePostId by remember { mutableStateOf("") }
+    var sharePostTitle by remember { mutableStateOf("") }
+    var showInterestModal by remember { mutableStateOf(false) }
+    var interestPostId by remember { mutableStateOf("") }
+    var interestPostTitle by remember { mutableStateOf("") }
+    var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank()).count { it }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    if (showShareSheet) {
+        ShareLinkBottomSheet(title = sharePostTitle, postId = sharePostId, onDismiss = { showShareSheet = false })
+    }
+    if (showInterestModal) {
+        BuyerInterestModal(postId = interestPostId, postTitle = interestPostTitle, onDismiss = { showInterestModal = false }, onSubmit = { _, _, _ -> showInterestModal = false })
+    }
+    if (zoomImages.isNotEmpty()) {
+        ImageZoomDialog(imageUrls = zoomImages, onDismiss = { zoomImages = emptyList() })
+    }
 
     Scaffold(
         topBar = {
@@ -183,9 +242,17 @@ fun SearchScreen(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
                         singleLine = true,
-                        placeholder = { Text("Search listings") },
+                        placeholder = { Text("Search listings, brands, categories...") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (state.query.isNotBlank()) {
+                                IconButton(onClick = { viewModel.onQueryChange("") }) {
+                                    Icon(Icons.Default.Close, "Clear")
+                                }
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { if (state.query.isNotBlank()) viewModel.search(state.query) }),
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -194,18 +261,22 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
                 actions = {
+                    // Save search button
+                    if (state.query.isNotBlank() && state.searched) {
+                        IconButton(onClick = { viewModel.saveSearch() }) {
+                            Icon(Icons.Default.BookmarkAdd, "Save search", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     IconButton(onClick = { showFilters = !showFilters }) {
                         Box {
                             Icon(Icons.Default.FilterList, null, tint = if (activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                             if (activeFilterCount > 0) {
-                                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.TopEnd).size(14.dp)) {
-                                    Text("$activeFilterCount", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.TopEnd).size(16.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Text("$activeFilterCount", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary, fontSize = 9.sp)
+                                    }
                                 }
                             }
                         }
@@ -214,35 +285,76 @@ fun SearchScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
+        floatingActionButton = { BackToTopButton(listState, scope) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // â”€â”€ Advanced Filter Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // Autocomplete suggestions dropdown
+            AnimatedVisibility(visible = state.suggestions.isNotEmpty() && !state.searched) {
+                Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 4.dp) {
+                    Column(Modifier.fillMaxWidth()) {
+                        state.suggestions.forEach { suggestion ->
+                            Row(
+                                Modifier.fillMaxWidth().clickable { viewModel.onQueryChange(suggestion); viewModel.search(suggestion) }.padding(horizontal = 16.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Icon(Icons.Default.TrendingUp, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text(suggestion, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Advanced Filter Panel
             AnimatedVisibility(visible = showFilters, enter = expandVertically(), exit = shrinkVertically()) {
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Filters", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-                        
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Filters", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                            if (activeFilterCount > 0) {
+                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = ""; selectedBrand = "" }) {
+                                    Icon(Icons.Default.ClearAll, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Clear All")
+                                }
+                            }
+                        }
+
                         // Price range
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = minPrice, onValueChange = { minPrice = it.filter(Char::isDigit) },
-                                label = { Text("Min â‚¹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                label = { Text("Min ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                                 modifier = Modifier.weight(1f),
                             )
                             OutlinedTextField(
                                 value = maxPrice, onValueChange = { maxPrice = it.filter(Char::isDigit) },
-                                label = { Text("Max â‚¹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                label = { Text("Max ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                                 modifier = Modifier.weight(1f),
                             )
                         }
 
+                        // Brand
+                        Text("Brand", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val brands = listOf("", "Apple", "Samsung", "Nike", "Sony", "Dell", "HP", "Xiaomi", "OnePlus")
+                            items(brands, key = { "brand_$it" }) { brand ->
+                                FilterChip(
+                                    selected = selectedBrand == brand,
+                                    onClick = { selectedBrand = brand },
+                                    label = { Text(if (brand.isBlank()) "Any" else brand, style = MaterialTheme.typography.labelSmall) },
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
+                                )
+                            }
+                        }
+
                         // Condition
                         Text("Condition", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(listOf("", "New", "Like New", "Used", "Refurbished"), key = { it }) { cond ->
+                            items(listOf("", "New", "Like New", "Used", "Refurbished"), key = { "cond_$it" }) { cond ->
                                 FilterChip(
                                     selected = selectedCondition == cond,
                                     onClick = { selectedCondition = cond },
@@ -255,7 +367,7 @@ fun SearchScreen(
                         // Sort
                         Text("Sort By", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(listOf("" to "Relevance", "price_asc" to "Price â†‘", "price_desc" to "Price â†“"), key = { it.first }) { (key, label) ->
+                            items(listOf("" to "Relevance", "price_asc" to "Price ↑", "price_desc" to "Price ↓", "newest" to "Newest"), key = { "sort_${it.first}" }) { (key, label) ->
                                 FilterChip(
                                     selected = sortBy == key,
                                     onClick = { sortBy = key },
@@ -265,29 +377,48 @@ fun SearchScreen(
                             }
                         }
 
-                        // Apply / Clear
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (activeFilterCount > 0) {
-                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = "" }) { Text("Clear All") }
-                            }
-                            androidx.compose.material3.Button(
-                                onClick = {
-                                    if (state.query.isNotBlank()) {
-                                        viewModel.search(state.query, minPrice = minPrice.toDoubleOrNull(), maxPrice = maxPrice.toDoubleOrNull(), condition = selectedCondition.ifBlank { null }, sortBy = sortBy.ifBlank { null })
-                                    }
-                                    showFilters = false
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp),
-                            ) { Text("Apply Filters") }
-                        }
+                        // Apply
+                        Button(
+                            onClick = {
+                                if (state.query.isNotBlank()) {
+                                    viewModel.search(state.query, minPrice = minPrice.toDoubleOrNull(), maxPrice = maxPrice.toDoubleOrNull(), condition = selectedCondition.ifBlank { null }, sortBy = sortBy.ifBlank { null }, brand = selectedBrand.ifBlank { null })
+                                }
+                                showFilters = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                        ) { Text("Apply Filters") }
                         HorizontalDivider()
                     }
                 }
             }
 
-            // â”€â”€ Category scope chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            val categories = listOf(null to "All", "electronics" to "Electronics", "fashion" to "Fashion", "vehicles" to "Vehicles", "others" to "Others")
+            // Active filter chips
+            if (activeFilterCount > 0 && !showFilters) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (minPrice.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { minPrice = "" }, label = { Text("Min ₹$minPrice") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (maxPrice.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { maxPrice = "" }, label = { Text("Max ₹$maxPrice") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (selectedCondition.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { selectedCondition = "" }, label = { Text(selectedCondition) }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (selectedBrand.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { selectedBrand = "" }, label = { Text(selectedBrand) }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (sortBy.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { sortBy = "" }, label = { Text("Sort: $sortBy") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                }
+            }
+
+            // Category scope chips
+            val categories = listOf(null to "All", "electronics" to "Electronics", "fashion" to "Fashion", "vehicles" to "Vehicles", "mobiles" to "Mobiles", "grocery" to "Grocery", "furniture" to "Furniture", "others" to "Others")
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -297,78 +428,106 @@ fun SearchScreen(
                         selected = state.selectedCategory == key,
                         onClick = { viewModel.setCategory(key) },
                         label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
                     )
                 }
             }
 
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                when {
-                    state.loading -> CircularProgressIndicator()
+            PullToRefreshBox(
+                isRefreshing = state.refreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    when {
+                        state.loading -> CircularProgressIndicator()
+                        state.error != null -> AppEmptyState(icon = Icons.Default.Search, title = "Search unavailable", subtitle = state.error ?: "Please try again.")
 
-                    state.error != null -> AppEmptyState(
-                        icon = Icons.Default.Search,
-                        title = "Search unavailable",
-                        subtitle = state.error ?: "Please try again.",
-                    )
-
-                    !state.searched && state.savedSearches.isNotEmpty() -> {
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            item {
-                                Text("Trending Searches", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 6.dp))
-                            }
-                            item {
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    val trending = listOf("iPhone", "MacBook", "Sneakers", "Car", "Laptop", "Watch", "Camera")
-                                    items(trending) { topic ->
-                                        Surface(onClick = { viewModel.onQueryChange(topic) }, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                                            Text(topic, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                        !state.searched && state.savedSearches.isNotEmpty() -> {
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                item {
+                                    Text("Trending Searches", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 6.dp))
+                                }
+                                item {
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        val trending = listOf("iPhone", "MacBook", "Sneakers", "Car", "Laptop", "Watch", "Camera", "Bike", "Fridge", "TV")
+                                        items(trending) { topic ->
+                                            Surface(onClick = { viewModel.onQueryChange(topic); viewModel.search(topic) }, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                                                Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.TrendingUp, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text(topic, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                item {
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Recent Searches", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                items(state.savedSearches.take(10), key = { it.stableId }) { s ->
+                                    Card(
+                                        onClick = { viewModel.onQueryChange(s.displayQuery); viewModel.search(s.displayQuery) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    ) {
+                                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Icon(Icons.Default.History, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(s.displayQuery, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                            s.category?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                            IconButton(onClick = { viewModel.deleteSavedSearch(s.stableId) }, modifier = Modifier.size(24.dp)) {
+                                                Icon(Icons.Default.Close, "Delete", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
                                         }
                                     }
                                 }
                             }
-                            item {
-                                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Recent Searches", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            items(state.savedSearches.take(8), key = { it.stableId }) { s ->
-                                Card(
-                                    onClick = { viewModel.onQueryChange(s.displayQuery) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                ) {
-                                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Icon(Icons.Default.Search, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(s.displayQuery, style = MaterialTheme.typography.bodyMedium)
-                                        s.category?.let { Spacer(Modifier.weight(1f)); Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    }
-                                }
+                        }
+
+                        !state.searched -> AppEmptyState(icon = Icons.Default.Search, title = "Start searching", subtitle = "Try item name, brand, category, or location.")
+                        state.items.isEmpty() -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                            Icon(Icons.Outlined.SearchOff, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(12.dp))
+                            Text("No results for \"${state.query}\"", fontWeight = FontWeight.SemiBold)
+                            Text("Try a broader query or adjust your filters", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(12.dp))
+                            Text("Suggestions:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                                val alts = listOf("Electronics", "Fashion", "Vehicles", "Mobiles")
+                                items(alts) { alt -> Surface(onClick = { viewModel.onQueryChange(alt); viewModel.search(alt) }, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) { Text(alt, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium) } }
                             }
                         }
-                    }
-
-                    !state.searched -> AppEmptyState(icon = Icons.Default.Search, title = "Start searching", subtitle = "Try item name, category, or location.")
-                    state.items.isEmpty() -> AppEmptyState(icon = Icons.Default.Search, title = "No results", subtitle = "Try a broader query or adjust filters.")
-                    else -> {
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            item {
-                                Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("${state.items.size} result${if (state.items.size != 1) "s" else ""} for \"${state.query}\"", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    if (activeFilterCount > 0) {
-                                        Text("$activeFilterCount filter${if (activeFilterCount != 1) "s" else ""} active", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        else -> {
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                item {
+                                    Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${state.items.size} result${if (state.items.size != 1) "s" else ""} for \"${state.query}\"", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (activeFilterCount > 0) {
+                                            Text("$activeFilterCount filter${if (activeFilterCount != 1) "s" else ""} active", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                        }
                                     }
                                 }
-                            }
-                            items(state.items, key = { it.stableId }) { post ->
-                                SearchResultCard(post = post, onClick = { onOpenPost(post.stableId) })
+                                items(state.items, key = { it.stableId }) { post ->
+                                    SearchResultCard(
+                                        post = post,
+                                        onClick = { onOpenPost(post.stableId) },
+                                        onZoom = { img -> zoomImages = listOf(img) },
+                                        onShare = { sharePostId = post.stableId; sharePostTitle = post.displayTitle; showShareSheet = true },
+                                        onInterested = { interestPostId = post.stableId; interestPostTitle = post.displayTitle; showInterestModal = true },
+                                    )
+                                }
                             }
                         }
                     }
@@ -379,43 +538,84 @@ fun SearchScreen(
 }
 
 @Composable
-private fun SearchResultCard(post: Post, onClick: () -> Unit) {
+private fun SearchResultCard(post: Post, onClick: () -> Unit, onZoom: (String) -> Unit, onShare: () -> Unit, onInterested: () -> Unit) {
+    var wishlisted by remember { mutableStateOf(false) }
+    var liked by remember { mutableStateOf(false) }
+
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier.size(72.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (post.primaryImage != null) {
-                    AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                } else {
-                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+        Column {
+            // Full image with overlays
+            Box(Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                post.primaryImage?.let { img ->
+                    AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clickable { onZoom(img) })
+                } ?: Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.ImageNotSupported, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)), startY = 100f)))
+                post.price?.let { p ->
+                    Text("₹${"%,.0f".format(p)}", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+                }
+                IconButton(
+                    onClick = { wishlisted = !wishlisted },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(32.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape),
+                ) {
+                    Icon(if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (wishlisted) Color(0xFFEF4444) else Color.White, modifier = Modifier.size(16.dp))
+                }
+                PromoBadgeRow(postId = post.stableId, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                post.price?.let {
-                    Text(text = "â‚¹${"%,.0f".format(it)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Seller header
+                val sellerName = post.sellerName ?: post.userName
+                if (sellerName != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                            Text(sellerName.take(1).uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        Text(sellerName, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        if (post.sellerName != null) Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp))
+                    }
                 }
+
+                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 14.sp)
+
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     post.condition?.let { cond ->
-                        Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                            Text(cond, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Surface(shape = RoundedCornerShape(4.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
+                            Text(cond.replaceFirstChar { c -> c.uppercase() }, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp))
+                        }
+                    }
+                    post.brand?.let { b ->
+                        Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Text(b, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     post.location?.let { loc ->
-                        Text(loc, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(11.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(loc, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
+
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                PostActionRow(
+                    postId = post.stableId,
+                    viewCount = post.viewCount ?: 0,
+                    isLiked = liked,
+                    isWishlisted = wishlisted,
+                    onLike = { liked = !liked },
+                    onWishlist = { wishlisted = !wishlisted },
+                    onInterested = onInterested,
+                    onShare = onShare,
+                )
             }
         }
     }

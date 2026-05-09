@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -160,6 +161,8 @@ data class AdminUiState(
 class AdminViewModel @Inject constructor(private val repo: AdminRepository) : ViewModel() {
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
     init { load() }
     fun load() { viewModelScope.launch {
         when (val r = repo.dashboard()) {
@@ -167,19 +170,37 @@ class AdminViewModel @Inject constructor(private val repo: AdminRepository) : Vi
             is ApiResult.Failure -> _state.value = AdminUiState(loading = false, error = r.error.message)
         }
     } }
+    fun refresh() { viewModelScope.launch { _refreshing.value = true; load(); _refreshing.value = false } }
     fun setTab(t: String) { _state.value = _state.value.copy(tab = t) }
     fun setSearch(v: String) { _state.value = _state.value.copy(search = v) }
+    fun approveUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it }) }
+    fun rejectUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "rejected") else it }) }
+    fun banUser(id: String) { _state.value = _state.value.copy(flaggedUsers = _state.value.flaggedUsers.map { if ((it.id ?: "") == id) it.copy(status = "banned") else it }) }
+    fun approvePost(id: String) { _state.value = _state.value.copy(flaggedPosts = _state.value.flaggedPosts.map { if ((it.id ?: "") == id) it.copy(status = "approved") else it }) }
+    fun removePost(id: String) { _state.value = _state.value.copy(flaggedPosts = _state.value.flaggedPosts.filter { (it.id ?: "") != id }) }
 }
 
 @Composable
 fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
     val tabs = listOf("users" to "Users", "posts" to "Posts", "activity" to "Activity")
+    // Confirmation dialog state
+    var confirmAction by remember { mutableStateOf<Triple<String, String, () -> Unit>?>(null) } // (title, message, action)
+    confirmAction?.let { (title, message, action) ->
+        AlertDialog(
+            onDismissRequest = { confirmAction = null },
+            title = { Text(title) },
+            text = { Text(message) },
+            confirmButton = { TextButton(onClick = { action(); confirmAction = null }) { Text("Confirm", color = Color(0xFFEF4444)) } },
+            dismissButton = { TextButton(onClick = { confirmAction = null }) { Text("Cancel") } },
+        )
+    }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             LegalTopBar("Admin Panel", onBack)
             if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-            else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            else PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Stats grid
                 item {
                     val s = state.stats
@@ -230,17 +251,33 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         if (filtered.isEmpty()) item { Text("No flagged users", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.name ?: "" }) { user ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFFEE2E2)), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Filled.Person, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                Column {
+                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFFEE2E2)), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Filled.Person, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                        }
+                                        Spacer(Modifier.width(10.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(user.name ?: "Unknown", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Text(user.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFEF4444))
+                                        }
+                                        val statusColor = when (user.status) {
+                                            "approved" -> Color(0xFF22C55E)
+                                            "rejected" -> Color(0xFFEF4444)
+                                            "banned" -> Color(0xFF7C3AED)
+                                            else -> Color(0xFFEF4444)
+                                        }
+                                        Surface(shape = RoundedCornerShape(8.dp), color = statusColor.copy(alpha = 0.1f)) {
+                                            Text(user.status ?: "flagged", fontSize = 10.sp, color = statusColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
                                     }
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(user.name ?: "Unknown", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
-                                        Text(user.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFEF4444))
-                                    }
-                                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEE2E2)) {
-                                        Text(user.status ?: "flagged", fontSize = 10.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    // Action buttons
+                                    if (user.status == null || user.status == "flagged") {
+                                        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Button(onClick = { viewModel.approveUser(user.id ?: "") }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Approve", fontSize = 11.sp) }
+                                            Button(onClick = { confirmAction = Triple("Reject User", "Are you sure you want to reject this user?") { viewModel.rejectUser(user.id ?: "") } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Reject", fontSize = 11.sp) }
+                                            Button(onClick = { confirmAction = Triple("Ban User", "Are you sure you want to ban this user? This action is serious.") { viewModel.banUser(user.id ?: "") } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Ban", fontSize = 11.sp) }
+                                        }
                                     }
                                 }
                             }
@@ -251,12 +288,25 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         if (filtered.isEmpty()) item { Text("No flagged posts", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.title ?: "" }) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Flag, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
-                                        Text(post.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFF59E0B))
+                                Column {
+                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Flag, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(10.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Text(post.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFF59E0B))
+                                        }
+                                        val statusColor = if (post.status == "approved") Color(0xFF22C55E) else Color(0xFFF59E0B)
+                                        Surface(shape = RoundedCornerShape(8.dp), color = statusColor.copy(alpha = 0.1f)) {
+                                            Text(post.status ?: "flagged", fontSize = 10.sp, color = statusColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    // Post action buttons
+                                    if (post.status == null || post.status == "flagged") {
+                                        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Button(onClick = { viewModel.approvePost(post.id ?: "") }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Approve", fontSize = 11.sp) }
+                                            Button(onClick = { confirmAction = Triple("Remove Post", "Are you sure you want to remove this flagged post?") { viewModel.removePost(post.id ?: "") } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Remove", fontSize = 11.sp) }
+                                        }
                                     }
                                 }
                             }
@@ -278,7 +328,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         }
                     }
                 }
-            }
+            } }
         }
     }
 }
