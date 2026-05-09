@@ -142,6 +142,14 @@ class PostsRepository @Inject constructor(
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deletePost(id); Unit }
 
     suspend fun markSold(id: String): ApiResult<Unit> = safeApiCall { api.markPostSold(id); Unit }
+
+    suspend fun batchView(postIds: List<String>): ApiResult<Unit> = safeApiCall {
+        api.batchViewPosts(mapOf("postIds" to postIds)); Unit
+    }
+
+    suspend fun toggleWishlist(postId: String): ApiResult<Unit> = safeApiCall {
+        api.toggleWishlist(postId); Unit
+    }
 }
 
 @Singleton

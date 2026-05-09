@@ -31,7 +31,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Favorite\nimport androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
@@ -257,6 +266,18 @@ fun CategoryDetailScreen(
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 24.dp),
             ) {
+                // Breadcrumbs
+                item {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Hub", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = gradients.first())
+                        if (state.selectedSubcategory != null) {
+                            Text("›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(state.subcategories.find { it.stableId == state.selectedSubcategory }?.displayName ?: "", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
                 // Subcategory filter chips
                 if (state.subcategories.isNotEmpty()) {
                     item {
@@ -284,6 +305,20 @@ fun CategoryDetailScreen(
                     }
                 }
 
+                // Brand filter (from post data)
+                if (state.posts.isNotEmpty()) {
+                    item {
+                        val brands = state.posts.mapNotNull { it.brand }.distinct().take(5)
+                        if (brands.isNotEmpty()) {
+                            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                item { Text("Brand:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically)) }
+                                items(brands) { brand ->
+                                    FilterChip(selected = false, onClick = {}, label = { Text(brand, fontSize = 11.sp) })
+                                }
+                            }
+                        }
+                    }
+                }
                 // Search bar
                 item {
                     OutlinedTextField(
@@ -523,6 +558,26 @@ fun PostGridCard(
                         null,
                         modifier = Modifier.align(Alignment.Center).size(32.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    )
+                }
+
+                // Wishlist heart
+                var wishlisted by remember { mutableStateOf(false) }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.3f))
+                        .clickable { wishlisted = !wishlisted },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Wishlist",
+                        tint = if (wishlisted) Color(0xFFEF4444) else Color.White,
+                        modifier = Modifier.size(14.dp),
                     )
                 }
 

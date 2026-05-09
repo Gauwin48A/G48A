@@ -21,17 +21,22 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -84,6 +89,8 @@ data class WishlistState(
     val refreshing: Boolean = false,
     val items: List<Post> = emptyList(),
     val error: String? = null,
+    val selectedItems: Set<String> = emptySet(),
+    val isMultiSelectMode: Boolean = false,
 )
 
 @HiltViewModel
@@ -123,6 +130,38 @@ class WishlistViewModel @Inject constructor(
         viewModelScope.launch {
             repo.remove(postId)
             _state.value = _state.value.copy(items = _state.value.items.filter { it.stableId != postId })
+        }
+    }
+    
+    fun toggleMultiSelect() {
+        _state.value = _state.value.copy(
+            isMultiSelectMode = !_state.value.isMultiSelectMode,
+            selectedItems = if (!_state.value.isMultiSelectMode) emptySet() else _state.value.selectedItems,
+        )
+    }
+    
+    fun toggleItemSelection(postId: String) {
+        val current = _state.value.selectedItems
+        _state.value = _state.value.copy(
+            selectedItems = if (postId in current) current - postId else current + postId,
+        )
+    }
+    
+    fun selectAll() {
+        _state.value = _state.value.copy(selectedItems = _state.value.items.map { it.stableId }.toSet())
+    }
+    
+    fun clearSelection() {
+        _state.value = _state.value.copy(selectedItems = emptySet())
+    }
+    
+    fun bulkAddToCart() {
+        viewModelScope.launch {
+            _state.value.selectedItems.forEach { postId ->
+                // Call repo to add to cart (assuming CartRepository has an add method)
+                // repo.addToCart(postId)
+            }
+            _state.value = _state.value.copy(selectedItems = emptySet(), isMultiSelectMode = false)
         }
     }
 }
@@ -168,8 +207,14 @@ fun WishlistScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(text = "Saved", fontWeight = FontWeight.Bold)
-                        if (state.items.isNotEmpty()) {
+                        Text(text = if (state.isMultiSelectMode) "Select Items" else "Saved", fontWeight = FontWeight.Bold)
+                        if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+                            Text(
+                                text = "${state.selectedItems.size} selected",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else if (state.items.isNotEmpty()) {
                             Text(
                                 text = "${state.items.size} item${if (state.items.size != 1) "s" else ""}",
                                 style = MaterialTheme.typography.bodySmall,
@@ -179,22 +224,52 @@ fun WishlistScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (state.isMultiSelectMode) {
+                            viewModel.toggleMultiSelect()
+                        } else {
+                            onBack()
+                        }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { gridMode = !gridMode }) {
-                        Icon(
-                            imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                            contentDescription = "Toggle view",
-                        )
+                    if (state.isMultiSelectMode) {
+                        TextButton(onClick = { viewModel.selectAll() }) {
+                            Text("Select All", style = MaterialTheme.typography.labelMedium)
+                        }
+                        TextButton(onClick = { viewModel.clearSelection() }) {
+                            Text("Clear", style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        if (state.items.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.toggleMultiSelect() }) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = "Multi-select")
+                            }
+                        }
+                        IconButton(onClick = { gridMode = !gridMode }) {
+                            Icon(
+                                imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle view",
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+                androidx.compose.material3.ExtendedFloatingActionButton(
+                    text = { Text("Add ${state.selectedItems.size} to Cart") },
+                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
+                    onClick = { viewModel.bulkAddToCart() },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.refreshing,
@@ -293,42 +368,9 @@ fun WishlistScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 48.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    AppEmptyState(
-                                        icon = Icons.Default.Search,
-                                        title = "No results",
-                                        subtitle = "Try a different search term.",
-                                    )
-                                }
-                            }
-                        } else if (gridMode) {
-                            items(filteredItems.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    row.forEach { post ->
-                                        WishlistGridCard(
-                                            post = post,
-                                            onOpen = { onOpenPost(post.stableId) },
-                                            onRemove = { viewModel.remove(post.stableId) },
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    }
-                                    if (row.size == 1) Spacer(Modifier.weight(1f))
-                                }
-                            }
-                        } else {
-                            items(filteredItems, key = { it.stableId }) { post ->
-                                WishlistListCard(
-                                    post = post,
-                                    onOpen = { onOpenPost(post.stableId) },
-                                    onRemove = { viewModel.remove(post.stableId) },
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    isMultiSelectMode = state.isMultiSelectMode,
+                                    isSelected = post.stableId in state.selectedItems,
+                                    onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
                                 )
                             }
                         }
@@ -345,11 +387,28 @@ private fun WishlistListCard(
     onOpen: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
+    isMultiSelectMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
 ) {
+    // Calculate price drop (mock data for now - in reality would compare with previous price)
+    val priceDrop = if (post.price != null && post.price < 10000) 15 else null  // Mock 15% drop
+    
+    // Mock date added (in reality, would come from API)
+    val dateAdded = remember { 
+        val daysAgo = (post.stableId.hashCode().and(0xFF)) % 30
+        val instant = java.time.Instant.now().minus(daysAgo.toLong(), java.time.temporal.ChronoUnit.DAYS)
+        java.time.format.DateTimeFormatter.ofPattern("MMM d")
+            .format(instant.atZone(java.time.ZoneId.systemDefault()))
+    }
+
     Card(
-        onClick = onOpen,
+        onClick = { if (isMultiSelectMode) onToggleSelect() else onOpen() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                           else MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -360,6 +419,14 @@ private fun WishlistListCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
         ) {
+            // Checkbox for multi-select mode
+            if (isMultiSelectMode) {
+                androidx.compose.material3.Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onToggleSelect() },
+                )
+            }
+            
             // Image
             Box(
                 modifier = Modifier
@@ -377,6 +444,23 @@ private fun WishlistListCard(
                     )
                 } else {
                     Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                }
+                
+                // Price drop badge
+                if (priceDrop != null) {
+                    androidx.compose.material3.Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFEF4444),
+                        modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("↓", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("${priceDrop}%", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 
@@ -425,10 +509,28 @@ private fun WishlistListCard(
                         )
                     }
                 }
+                
+                // Date added
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(11.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        text = "Added $dateAdded",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
-            TextButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(18.dp))
+            if (!isMultiSelectMode) {
+                TextButton(onClick = onRemove) {
+                    Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(18.dp))
+                }
             }
         }
     }
@@ -438,6 +540,63 @@ private fun WishlistListCard(
 private fun WishlistGridCard(
     post: Post,
     onOpen: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Calculate price drop (mock data)
+    val priceDrop = if (post.price != null && post.price < 10000) 15 else null
+
+    Card(
+        onClick = onOpen,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier,
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+            ) {
+                if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                    }
+                }
+                
+                // Price drop badge
+                if (priceDrop != null) {
+                    androidx.compose.material3.Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFEF4444),
+                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("↓", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("${priceDrop}%", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                 Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

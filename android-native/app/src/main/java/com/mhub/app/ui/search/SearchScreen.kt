@@ -129,12 +129,12 @@ class SearchViewModel @Inject constructor(
         _state.value = _state.value.copy(suggestions = matchedBrands)
 
         job = viewModelScope.launch {
-            delay(300)
+            delay(350)
             doSearch(query)
         }
     }
 
-    fun search(query: String, minPrice: Double? = null, maxPrice: Double? = null, condition: String? = null, sortBy: String? = null, brand: String? = null, rating: Int? = null) {
+    fun search(query: String, minPrice: Double? = null, maxPrice: Double? = null, condition: String? = null, sortBy: String? = null, brand: String? = null, model: String? = null, locationRadius: Int? = null, dateFrom: String? = null, dateTo: String? = null) {
         job?.cancel()
         _state.value = _state.value.copy(query = query, loading = true, error = null, suggestions = emptyList())
         job = viewModelScope.launch {
@@ -145,9 +145,17 @@ class SearchViewModel @Inject constructor(
                     if (maxPrice != null) list = list.filter { (it.price ?: Double.MAX_VALUE) <= maxPrice }
                     if (condition != null) list = list.filter { it.condition?.equals(condition, ignoreCase = true) == true }
                     if (brand != null) list = list.filter { it.brand?.contains(brand, ignoreCase = true) == true }
-                    if (sortBy == "price_asc") list = list.sortedBy { it.price ?: Double.MAX_VALUE }
-                    if (sortBy == "price_desc") list = list.sortedByDescending { it.price ?: 0.0 }
-                    if (sortBy == "newest") list = list.sortedByDescending { it.createdAt ?: "" }
+                    if (model != null) list = list.filter { it.model?.contains(model, ignoreCase = true) == true }
+                    if (dateFrom != null) list = list.filter { (it.createdAt ?: "") >= dateFrom }
+                    if (dateTo != null) list = list.filter { (it.createdAt ?: "") <= dateTo }
+                    // Apply sorting
+                    when (sortBy) {
+                        "price_asc" -> list = list.sortedBy { it.price ?: Double.MAX_VALUE }
+                        "price_desc" -> list = list.sortedByDescending { it.price ?: 0.0 }
+                        "newest" -> list = list.sortedByDescending { it.createdAt ?: "" }
+                        "popular" -> list = list.sortedByDescending { it.viewCount ?: 0 }
+                        "trending" -> list = list.sortedByDescending { (it.viewCount ?: 0) * 0.7 + (it.likeCount ?: 0) * 0.3 }
+                    }
                     _state.value = _state.value.copy(loading = false, items = list, searched = true)
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
@@ -212,7 +220,13 @@ fun SearchScreen(
     var maxPrice by remember { mutableStateOf("") }
     var selectedCondition by remember { mutableStateOf("") }
     var selectedBrand by remember { mutableStateOf("") }
+    var selectedModel by remember { mutableStateOf("") }
+    var locationRadius by remember { mutableStateOf("") }
+    var dateFrom by remember { mutableStateOf("") }
+    var dateTo by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("") }
+    var sortDirection by remember { mutableStateOf("desc") }
+    var selectedSubcategory by remember { mutableStateOf("") }
     var showShareSheet by remember { mutableStateOf(false) }
     var sharePostId by remember { mutableStateOf("") }
     var sharePostTitle by remember { mutableStateOf("") }
@@ -220,7 +234,7 @@ fun SearchScreen(
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
-    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank()).count { it }
+    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank(), selectedModel.isNotBlank(), locationRadius.isNotBlank(), dateFrom.isNotBlank(), dateTo.isNotBlank(), selectedSubcategory.isNotBlank()).count { it }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -311,9 +325,9 @@ fun SearchScreen(
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Filters", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                            Text("Advanced Filters", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                             if (activeFilterCount > 0) {
-                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = ""; selectedBrand = "" }) {
+                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = ""; selectedBrand = ""; selectedModel = ""; locationRadius = ""; dateFrom = ""; dateTo = ""; selectedSubcategory = "" }) {
                                     Icon(Icons.Default.ClearAll, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
                                     Text("Clear All")
@@ -337,6 +351,23 @@ fun SearchScreen(
                             )
                         }
 
+                        // Date Range
+                        Text("Date Range", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = dateFrom, onValueChange = { dateFrom = it },
+                                label = { Text("From (YYYY-MM-DD)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = dateTo, onValueChange = { dateTo = it },
+                                label = { Text("To (YYYY-MM-DD)") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+
                         // Brand
                         Text("Brand", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -346,6 +377,28 @@ fun SearchScreen(
                                     selected = selectedBrand == brand,
                                     onClick = { selectedBrand = brand },
                                     label = { Text(if (brand.isBlank()) "Any" else brand, style = MaterialTheme.typography.labelSmall) },
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
+                                )
+                            }
+                        }
+
+                        // Model
+                        OutlinedTextField(
+                            value = selectedModel, onValueChange = { selectedModel = it },
+                            label = { Text("Model / Description") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                            placeholder = { Text("e.g., iPhone 15 Pro, Galaxy S24") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                        // Location Radius
+                        Text("Location Radius (km)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val radii = listOf("", "5", "10", "25", "50", "100")
+                            items(radii, key = { "radius_$it" }) { radius ->
+                                FilterChip(
+                                    selected = locationRadius == radius,
+                                    onClick = { locationRadius = radius },
+                                    label = { Text(if (radius.isBlank()) "Any" else "${radius}km", style = MaterialTheme.typography.labelSmall) },
                                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
                                 )
                             }
@@ -364,10 +417,36 @@ fun SearchScreen(
                             }
                         }
 
-                        // Sort
-                        Text("Sort By", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        // Sort (6 options) + Direction Toggle
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Sort By", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Direction:", style = MaterialTheme.typography.labelSmall, fontSize = 11.sp)
+                                Spacer(Modifier.width(4.dp))
+                                FilterChip(
+                                    selected = sortDirection == "asc",
+                                    onClick = { sortDirection = "asc" },
+                                    label = { Text("ASC", fontSize = 10.sp) },
+                                    modifier = Modifier.height(28.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                FilterChip(
+                                    selected = sortDirection == "desc",
+                                    onClick = { sortDirection = "desc" },
+                                    label = { Text("DESC", fontSize = 10.sp) },
+                                    modifier = Modifier.height(28.dp),
+                                )
+                            }
+                        }
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(listOf("" to "Relevance", "price_asc" to "Price ↑", "price_desc" to "Price ↓", "newest" to "Newest"), key = { "sort_${it.first}" }) { (key, label) ->
+                            items(listOf(
+                                "" to "Relevance",
+                                "newest" to "Newest",
+                                "popular" to "Popular",
+                                "price_asc" to "Price Low→High",
+                                "price_desc" to "Price High→Low",
+                                "trending" to "Trending"
+                            ), key = { "sort_${it.first}" }) { (key, label) ->
                                 FilterChip(
                                     selected = sortBy == key,
                                     onClick = { sortBy = key },
@@ -381,13 +460,24 @@ fun SearchScreen(
                         Button(
                             onClick = {
                                 if (state.query.isNotBlank()) {
-                                    viewModel.search(state.query, minPrice = minPrice.toDoubleOrNull(), maxPrice = maxPrice.toDoubleOrNull(), condition = selectedCondition.ifBlank { null }, sortBy = sortBy.ifBlank { null }, brand = selectedBrand.ifBlank { null })
+                                    viewModel.search(
+                                        query = state.query,
+                                        minPrice = minPrice.toDoubleOrNull(),
+                                        maxPrice = maxPrice.toDoubleOrNull(),
+                                        condition = selectedCondition.ifBlank { null },
+                                        sortBy = sortBy.ifBlank { null },
+                                        brand = selectedBrand.ifBlank { null },
+                                        model = selectedModel.ifBlank { null },
+                                        locationRadius = locationRadius.toIntOrNull(),
+                                        dateFrom = dateFrom.ifBlank { null },
+                                        dateTo = dateTo.ifBlank { null }
+                                    )
                                 }
                                 showFilters = false
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
-                        ) { Text("Apply Filters") }
+                        ) { Text("Apply ${activeFilterCount} Filter${if (activeFilterCount != 1) "s" else ""}") }
                         HorizontalDivider()
                     }
                 }
@@ -411,25 +501,69 @@ fun SearchScreen(
                     if (selectedBrand.isNotBlank()) {
                         item { InputChip(selected = true, onClick = { selectedBrand = "" }, label = { Text(selectedBrand) }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
                     }
+                    if (selectedModel.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { selectedModel = "" }, label = { Text("Model: $selectedModel") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (locationRadius.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { locationRadius = "" }, label = { Text("${locationRadius}km") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (dateFrom.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { dateFrom = "" }, label = { Text("From: $dateFrom") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (dateTo.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { dateTo = "" }, label = { Text("To: $dateTo") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
                     if (sortBy.isNotBlank()) {
                         item { InputChip(selected = true, onClick = { sortBy = "" }, label = { Text("Sort: $sortBy") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    }
+                    if (selectedSubcategory.isNotBlank()) {
+                        item { InputChip(selected = true, onClick = { selectedSubcategory = "" }, label = { Text("Sub: $selectedSubcategory") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
                     }
                 }
             }
 
-            // Category scope chips
-            val categories = listOf(null to "All", "electronics" to "Electronics", "fashion" to "Fashion", "vehicles" to "Vehicles", "mobiles" to "Mobiles", "grocery" to "Grocery", "furniture" to "Furniture", "others" to "Others")
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(categories, key = { it.first ?: "all" }) { (key, label) ->
-                    FilterChip(
-                        selected = state.selectedCategory == key,
-                        onClick = { viewModel.setCategory(key) },
-                        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
-                    )
+            // Category + Subcategory scope chips
+            Column {
+                // Category chips
+                val categories = listOf(null to "All", "electronics" to "Electronics", "fashion" to "Fashion", "vehicles" to "Vehicles", "mobiles" to "Mobiles", "grocery" to "Grocery", "furniture" to "Furniture", "others" to "Others")
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(categories, key = { it.first ?: "all" }) { (key, label) ->
+                        FilterChip(
+                            selected = state.selectedCategory == key,
+                            onClick = { viewModel.setCategory(key) },
+                            label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
+                        )
+                    }
+                }
+                // Subcategory chips (appears when category is selected)
+                if (state.selectedCategory != null) {
+                    val subcategories = when (state.selectedCategory) {
+                        "electronics" -> listOf("", "Laptops", "Tablets", "TVs", "Cameras", "Headphones", "Speakers")
+                        "fashion" -> listOf("", "Men", "Women", "Kids", "Accessories", "Footwear")
+                        "vehicles" -> listOf("", "Cars", "Bikes", "Scooters", "Spare Parts")
+                        "mobiles" -> listOf("", "Smartphones", "Feature Phones", "Accessories")
+                        "furniture" -> listOf("", "Sofa", "Bed", "Table", "Chair", "Wardrobe")
+                        else -> emptyList()
+                    }
+                    if (subcategories.isNotEmpty()) {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(subcategories, key = { "sub_$it" }) { sub ->
+                                FilterChip(
+                                    selected = selectedSubcategory == sub,
+                                    onClick = { selectedSubcategory = sub },
+                                    label = { Text(if (sub.isBlank()) "All ${state.selectedCategory}" else sub, style = MaterialTheme.typography.labelSmall) },
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer, selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

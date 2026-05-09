@@ -649,6 +649,273 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// MyPostsScreen — with status filter, sort, menu, delete, promote, auto-refresh
+// ──────────────────────────────────────────────────────────────────────────────
+data class MyPostsUiState(
+    val loading: Boolean = true,
+    val posts: List<Post> = emptyList(),
+    val error: String? = null,
+    val statusFilter: String = "all",
+    val sortBy: String = "date",
+    val showDeleteDialog: String? = null,
+    val showPromoteDialog: String? = null,
+    val showMenu: String? = null,
+)
+
+@HiltViewModel
+class MyPostsViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
+    private val _state = MutableStateFlow(MyPostsUiState())
+    val state: StateFlow<MyPostsUiState> = _state.asStateFlow()
+    init { load() }
+    fun load() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(loading = true)
+            when (val r = repo.my()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, posts = r.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+            }
+        }
+    }
+    fun setStatusFilter(f: String) { _state.value = _state.value.copy(statusFilter = f) }
+    fun setSortBy(s: String) { _state.value = _state.value.copy(sortBy = s) }
+    fun showDeleteDialog(id: String?) { _state.value = _state.value.copy(showDeleteDialog = id) }
+    fun showPromoteDialog(id: String?) { _state.value = _state.value.copy(showPromoteDialog = id) }
+    fun showMenu(id: String?) { _state.value = _state.value.copy(showMenu = id) }
+    fun deletePost(id: String) {
+        viewModelScope.launch {
+            repo.delete(id)
+            _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id }, showDeleteDialog = null)
+        }
+    }
+    fun filteredPosts(): List<Post> {
+        val s = _state.value
+        var filtered = when (s.statusFilter) {
+            "active" -> s.posts.filter { it.status?.lowercase() == "active" }
+            "draft" -> s.posts.filter { it.status?.lowercase() == "draft" }
+            "sold" -> s.posts.filter { it.status?.lowercase() == "sold" }
+            "archived" -> s.posts.filter { it.status?.lowercase() == "archived" }
+            else -> s.posts
+        }
+        filtered = when (s.sortBy) {
+            "views" -> filtered.sortedByDescending { it.views ?: 0 }
+            "likes" -> filtered.sortedByDescending { it.likes ?: 0 }
+            "price" -> filtered.sortedByDescending { it.price ?: 0.0 }
+            "title" -> filtered.sortedBy { it.displayTitle }
+            else -> filtered.sortedByDescending { it.createdAt ?: "" }
+        }
+        return filtered
+    }
+}
+
+@Composable
+fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: MyPostsViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsState()
+    val filtered = remember(state) { viewModel.filteredPosts() }
+    var expanded by remember { mutableStateOf(false) }
+
+    // Auto-refresh every 45 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(45_000)
+            viewModel.load()
+        }
+    }
+
+    Box(Modifier.fillMaxSize().background(bgGradient)) {
+        Column(Modifier.fillMaxSize()) {
+            ScreenTopBar("My Posts", onBack)
+            // Status filter tabs
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("all" to "All", "active" to "Active", "draft" to "Draft", "sold" to "Sold", "archived" to "Archived").forEach { (key, label) ->
+                    FilterChip(
+                        selected = state.statusFilter == key,
+                        onClick = { viewModel.setStatusFilter(key) },
+                        label = { Text(label, fontSize = 11.sp) },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                    )
+                }
+            }
+            // Sort dropdown
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Sort by:", fontSize = 13.sp, color = Color(0xFF64748B))
+                Spacer(Modifier.width(8.dp))
+                Box {
+                    Surface(
+                        onClick = { expanded = true },
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.White,
+                        border = ButtonDefaults.outlinedButtonBorder,
+                    ) {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                when (state.sortBy) {
+                                    "views" -> "Views"
+                                    "likes" -> "Likes"
+                                    "price" -> "Price"
+                                    "title" -> "Title"
+                                    else -> "Date"
+                                },
+                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB),
+                            )
+                            Icon(Icons.Filled.ArrowDropDown, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        listOf("date" to "Date", "views" to "Views", "likes" to "Likes", "price" to "Price", "title" to "Title").forEach { (key, label) ->
+                            DropdownMenuItem(text = { Text(label) }, onClick = { viewModel.setSortBy(key); expanded = false })
+                        }
+                    }
+                }
+            }
+
+            when {
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                filtered.isEmpty() -> EmptyState(
+                    icon = { Icon(Icons.Filled.PostAdd, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                    title = "No posts found", subtitle = "Create your first listing to get started",
+                )
+                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    item { Text("${filtered.size} posts", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                    items(filtered, key = { it.stableId }) { post ->
+                        MyPostCard(
+                            post = post,
+                            onEdit = { onEdit(post.stableId) },
+                            onDelete = { viewModel.showDeleteDialog(post.stableId) },
+                            onPromote = { viewModel.showPromoteDialog(post.stableId) },
+                            onMenu = { viewModel.showMenu(post.stableId) },
+                            isMenuOpen = state.showMenu == post.stableId,
+                            onMenuDismiss = { viewModel.showMenu(null) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Delete confirmation dialog
+    if (state.showDeleteDialog != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showDeleteDialog(null) },
+            title = { Text("Delete Post?") },
+            text = { Text("This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.deletePost(state.showDeleteDialog!!) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                ) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.showDeleteDialog(null) }) { Text("Cancel") } },
+        )
+    }
+
+    // Promote dialog
+    if (state.showPromoteDialog != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showPromoteDialog(null) },
+            title = { Text("Boost Your Listing") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        Triple("Basic Boost", "₹49", "3 days featured • 2x visibility"),
+                        Triple("Pro Boost", "₹99", "7 days featured • 5x visibility • Priority badge"),
+                        Triple("Premium Boost", "₹199", "14 days featured • 10x visibility • Homepage placement"),
+                    ).forEach { (tier, price, desc) ->
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(tier, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                    Spacer(Modifier.weight(1f))
+                                    Text(price, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
+                                }
+                                Text(desc, fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.showPromoteDialog(null) }) { Text("Continue to Payment") }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.showPromoteDialog(null) }) { Text("Cancel") } },
+        )
+    }
+}
+
+@Composable
+private fun MyPostCard(
+    post: Post,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onPromote: () -> Unit,
+    onMenu: () -> Unit,
+    isMenuOpen: Boolean,
+    onMenuDismiss: () -> Unit,
+) {
+    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage, contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
+                    )
+                } else {
+                    Box(Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(28.dp))
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
+                    if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        post.status?.let { s -> StatusChip(s) }
+                    }
+                    // Metrics
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Visibility, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(3.dp))
+                            Text("${post.views ?: 0}", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Favorite, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(3.dp))
+                            Text("${post.likes ?: 0}", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                    }
+                }
+                // Menu button
+                Box {
+                    IconButton(onClick = onMenu, modifier = Modifier.size(30.dp)) {
+                        Icon(Icons.Filled.MoreVert, null, tint = Color(0xFF64748B))
+                    }
+                    DropdownMenu(expanded = isMenuOpen, onDismissRequest = onMenuDismiss) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                            onClick = { onEdit(); onMenuDismiss() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Promote") },
+                            leadingIcon = { Icon(Icons.Filled.TrendingUp, null) },
+                            onClick = { onPromote(); onMenuDismiss() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Color(0xFFEF4444)) },
+                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444)) },
+                            onClick = { onDelete(); onMenuDismiss() },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // BoughtPostsScreen / SoldPostsScreen
 // ──────────────────────────────────────────────────────────────────────────────
 data class PostListUiState(val loading: Boolean = true, val posts: List<Post> = emptyList(), val error: String? = null)
@@ -881,6 +1148,29 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
         "paid" -> Color(0xFF10B981)
         else -> Color(0xFF64748B)
     }
+    
+    // Expiry countdown
+    val expiryLabel = remember(offer.expiresAt) {
+        if (offer.expiresAt == null) null
+        else try {
+            val expiry = Instant.parse(if (offer.expiresAt.endsWith("Z")) offer.expiresAt else "${offer.expiresAt}Z")
+            val now = Instant.now()
+            val hoursLeft = ChronoUnit.HOURS.between(now, expiry)
+            val minutesLeft = ChronoUnit.MINUTES.between(now, expiry)
+            when {
+                minutesLeft <= 0 -> "Expired"
+                hoursLeft < 1 -> "${minutesLeft}m left"
+                hoursLeft < 24 -> "${hoursLeft}h left"
+                else -> "${hoursLeft / 24}d left"
+            }
+        } catch (_: Exception) { null }
+    }
+    
+    // Savings percentage
+    val savingsPercent = if (offer.originalPrice > 0 && offer.amount > 0) {
+        ((offer.originalPrice - offer.amount) / offer.originalPrice * 100).toInt()
+    } else 0
+
     Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -897,11 +1187,32 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                             Spacer(Modifier.width(6.dp))
                             Text("₹${offer.originalPrice.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8),
                                 style = androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough))
+                        }
+                        if (savingsPercent > 0) {
                             Spacer(Modifier.width(4.dp))
-                            Text("${offer.savings.toInt()}% off", fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold)
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFDCFCE7)) {
+                                Text("$savingsPercent% off", fontSize = 11.sp, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                            }
                         }
                     }
                     Text(if (isReceived) "From: ${offer.buyerName ?: "Buyer"}" else "To: ${offer.sellerName ?: "Seller"}", fontSize = 12.sp, color = Color(0xFF64748B))
+                    
+                    // Expiry countdown with urgency badge
+                    if (expiryLabel != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                            Icon(Icons.Filled.Schedule, null, tint = if (expiryLabel.contains("m left")) Color(0xFFEF4444) else Color(0xFF64748B), modifier = Modifier.size(12.dp))
+                            Spacer(Modifier.width(3.dp))
+                            Text(expiryLabel, fontSize = 11.sp, color = if (expiryLabel.contains("m left")) Color(0xFFEF4444) else Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                            if (expiryLabel.contains("m left") || (expiryLabel.contains("h left") && expiryLabel.startsWith("1") || expiryLabel.startsWith("2"))) {
+                                Spacer(Modifier.width(4.dp))
+                                Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFEF4444)) {
+                                    Text("URGENT", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                                }
+                            }
+                        }
+                    }
                 }
                 Surface(shape = RoundedCornerShape(12.dp), color = statusColor.copy(alpha = 0.15f)) {
                     Text(offer.status?.replaceFirstChar { it.uppercase() } ?: "Pending", fontSize = 11.sp,
@@ -2344,15 +2655,48 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                     } else when (state.step) {
                         0 -> {
                             Text("Choose Your Plan", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                            
+                            // Plan comparison
+                            val planFeatures = mapOf(
+                                "silver" to listOf("Up to 10 posts", "Basic support", "Standard delivery"),
+                                "gold" to listOf("Up to 50 posts", "Priority support", "Featured badge", "Fast delivery"),
+                                "platinum" to listOf("Unlimited posts", "24/7 VIP support", "Homepage placement", "Instant delivery", "Custom branding"),
+                            )
+                            
                             plans.forEach { (key, label) ->
-                                Surface(shape = RoundedCornerShape(14.dp), color = if (state.selectedPlan == key) Color(0xFFEFF6FF) else Color.White,
-                                    shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().clickable { viewModel.selectPlan(key) }) {
-                                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        RadioButton(selected = state.selectedPlan == key, onClick = { viewModel.selectPlan(key) },
-                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF2563EB)))
-                                        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (state.selectedPlan == key) Color(0xFFEFF6FF) else Color.White,
+                                    shadowElevation = if (state.selectedPlan == key) 4.dp else 2.dp,
+                                    border = if (state.selectedPlan == key) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp, brush = Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))) else ButtonDefaults.outlinedButtonBorder,
+                                    modifier = Modifier.fillMaxWidth().clickable { viewModel.selectPlan(key) }
+                                ) {
+                                    Column(Modifier.padding(16.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            RadioButton(
+                                                selected = state.selectedPlan == key,
+                                                onClick = { viewModel.selectPlan(key) },
+                                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF2563EB))
+                                            )
+                                            Text(label, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                            if (key == "gold") {
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF2563EB)) {
+                                                    Text("POPULAR", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
+                                            }
+                                        }
+                                        HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
+                                        planFeatures[key]?.forEach { feature ->
+                                            Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(14.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(feature, fontSize = 12.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
                                     }
                                 }
+                                Spacer(Modifier.height(10.dp))
                             }
                         }
                         1 -> {

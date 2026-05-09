@@ -56,7 +56,23 @@ private fun AccountTopBar(title: String, onBack: () -> Unit) {
 }
 
 // ─── DashboardScreen ────────────────────────────────────────────────────────
-data class DashboardUiState(val loading: Boolean = true, val error: String? = null, val stats: List<DashboardStat> = emptyList(), val activity: List<DashboardActivity> = emptyList(), val userName: String = "User", val selectedPeriod: Int = 2)
+data class DashboardUiState(
+    val loading: Boolean = true,
+    val error: String? = null,
+    val stats: List<DashboardStat> = emptyList(),
+    val activity: List<DashboardActivity> = emptyList(),
+    val userName: String = "User",
+    val selectedPeriod: Int = 2,
+    val viewMode: String = "seller",
+    val userRank: String? = null,
+    val coins: Int = 0,
+    val dailyCode: String? = null,
+    val topSellers: List<TopSeller> = emptyList(),
+    val buyerStats: BuyerStats? = null
+)
+
+data class TopSeller(val id: String, val name: String, val avatar: String?, val sales: Int, val rank: Int)
+data class BuyerStats(val itemsBought: Int = 0, val offersMade: Int = 0, val savedItems: Int = 0, val activeChats: Int = 0)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(private val repo: DashboardRepository) : ViewModel() {
@@ -66,11 +82,33 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
     fun load() { viewModelScope.launch {
         _state.value = _state.value.copy(loading = true, error = null)
         when (val r = repo.get()) {
-            is ApiResult.Success -> _state.value = _state.value.copy(loading = false, stats = r.data.quickStats, activity = r.data.recentActivity, userName = r.data.user?.displayName ?: "User")
+            is ApiResult.Success -> {
+                // Mock data - replace with actual API data
+                val mockTopSellers = listOf(
+                    TopSeller("1", "Rajesh Kumar", null, 45, 1),
+                    TopSeller("2", "Priya Sharma", null, 38, 2),
+                    TopSeller("3", "Amit Patel", null, 32, 3),
+                    TopSeller("4", "Sneha Gupta", null, 28, 4),
+                    TopSeller("5", "Vikram Singh", null, 24, 5)
+                )
+                val mockBuyerStats = BuyerStats(itemsBought = 12, offersMade = 8, savedItems = 15, activeChats = 5)
+                _state.value = _state.value.copy(
+                    loading = false,
+                    stats = r.data.quickStats,
+                    activity = r.data.recentActivity,
+                    userName = r.data.user?.displayName ?: "User",
+                    userRank = "Gold",
+                    coins = 2450,
+                    dailyCode = "MH${(1000..9999).random()}",
+                    topSellers = mockTopSellers,
+                    buyerStats = mockBuyerStats
+                )
+            }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
         }
     } }
     fun selectPeriod(index: Int) { _state.value = _state.value.copy(selectedPeriod = index); load() }
+    fun toggleView() { _state.value = _state.value.copy(viewMode = if (_state.value.viewMode == "seller") "buyer" else "seller") }
 }
 
 private val periodLabels = listOf("Today", "This Week", "This Month", "All Time")
@@ -84,6 +122,35 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
             AccountTopBar("Dashboard", onBack)
             if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
             else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // View toggle
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            onClick = { viewModel.toggleView() },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (state.viewMode == "seller") Color(0xFF2563EB) else Color.White,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Store, null, tint = if (state.viewMode == "seller") Color.White else Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Seller View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "seller") Color.White else Color(0xFF2563EB))
+                            }
+                        }
+                        Surface(
+                            onClick = { viewModel.toggleView() },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (state.viewMode == "buyer") Color(0xFF2563EB) else Color.White,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.ShoppingBag, null, tint = if (state.viewMode == "buyer") Color.White else Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Buyer View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "buyer") Color.White else Color(0xFF2563EB))
+                            }
+                        }
+                    }
+                }
                 item {
                     Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFF2563EB), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -91,9 +158,62 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                 Text(state.userName.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                             }
                             Spacer(Modifier.width(14.dp))
-                            Column {
+                            Column(Modifier.weight(1f)) {
                                 Text("Welcome back,", color = Color(0xFFBFDBFE), fontSize = 13.sp)
                                 Text(state.userName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            }
+                        }
+                    }
+                }
+                // User rank badge
+                if (state.userRank != null) {
+                    item {
+                        val rankColor = when (state.userRank) {
+                            "Gold" -> Color(0xFFFBBF24)
+                            "Silver" -> Color(0xFF94A3B8)
+                            "Bronze" -> Color(0xFFF97316)
+                            else -> Color(0xFF64748B)
+                        }
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(40.dp).clip(CircleShape).background(rankColor.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Filled.EmojiEvents, null, tint = rankColor, modifier = Modifier.size(22.dp))
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("Your Rank", fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text("${state.userRank} Member", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = rankColor)
+                                }
+                            }
+                        }
+                    }
+                }
+                // Coins display with animation
+                item {
+                    Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF7ED), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(18.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Stars, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(28.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Total Coins", fontSize = 12.sp, color = Color(0xFF92400E))
+                                    val animatedCoins by androidx.compose.animation.core.animateIntAsState(
+                                        targetValue = state.coins,
+                                        animationSpec = androidx.compose.animation.core.tween(durationMillis = 600),
+                                        label = "coins_anim"
+                                    )
+                                    Text("$animatedCoins", fontWeight = FontWeight.Bold, fontSize = 32.sp, color = Color(0xFFB45309))
+                                }
+                            }
+                            if (state.dailyCode != null) {
+                                Spacer(Modifier.height(10.dp))
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color.White) {
+                                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Daily Code:", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(state.dailyCode!!, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                                    }
+                                }
                             }
                         }
                     }
@@ -114,18 +234,72 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                         }
                     }
                 }
-                item {
-                    val statsToShow = if (state.stats.isNotEmpty()) state.stats.take(4) else listOf(DashboardStat(labelKey = "active_listings"), DashboardStat(labelKey = "total_sales"), DashboardStat(labelKey = "total_views"), DashboardStat(labelKey = "coins_earned"))
-                    Text("Quick Stats", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
-                    Spacer(Modifier.height(10.dp))
-                    for (i in statsToShow.indices step 2) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
-                            val m1 = statMeta.getOrElse(i) { Icons.Filled.Info to Color(0xFF64748B) }
-                            StatCard(Modifier.weight(1f), "${statsToShow[i].value}", statsToShow[i].label ?: statsToShow[i].labelKey ?: "Stat", m1.second, m1.first)
-                            if (i + 1 < statsToShow.size) {
-                                val m2 = statMeta.getOrElse(i + 1) { Icons.Filled.Info to Color(0xFF64748B) }
-                                StatCard(Modifier.weight(1f), "${statsToShow[i + 1].value}", statsToShow[i + 1].label ?: statsToShow[i + 1].labelKey ?: "Stat", m2.second, m2.first)
-                            } else Spacer(Modifier.weight(1f))
+                // Conditional content based on view mode
+                if (state.viewMode == "seller") {
+                    item {
+                        val statsToShow = if (state.stats.isNotEmpty()) state.stats.take(4) else listOf(DashboardStat(labelKey = "active_listings", value = 12), DashboardStat(labelKey = "total_sales", value = 45), DashboardStat(labelKey = "total_views", value = 1234), DashboardStat(labelKey = "coins_earned", value = 2450))
+                        Text("Quick Stats", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                        Spacer(Modifier.height(10.dp))
+                        for (i in statsToShow.indices step 2) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+                                val m1 = statMeta.getOrElse(i) { Icons.Filled.Info to Color(0xFF64748B) }
+                                val trend1 = listOf("+12%", "+8%", "+15%", "-3%").getOrNull(i)
+                                StatCardWithTrend(Modifier.weight(1f), "${statsToShow[i].value}", statsToShow[i].label ?: statsToShow[i].labelKey ?: "Stat", m1.second, m1.first, trend1)
+                                if (i + 1 < statsToShow.size) {
+                                    val m2 = statMeta.getOrElse(i + 1) { Icons.Filled.Info to Color(0xFF64748B) }
+                                    val trend2 = listOf("+12%", "+8%", "+15%", "-3%").getOrNull(i + 1)
+                                    StatCardWithTrend(Modifier.weight(1f), "${statsToShow[i + 1].value}", statsToShow[i + 1].label ?: statsToShow[i + 1].labelKey ?: "Stat", m2.second, m2.first, trend2)
+                                } else Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                    // Top Sellers Leaderboard
+                    if (state.topSellers.isNotEmpty()) {
+                        item { 
+                            Text("Top Sellers This Month", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        item {
+                            Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(14.dp)) {
+                                    state.topSellers.forEach { seller ->
+                                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            val medal = when (seller.rank) {
+                                                1 -> "🥇"
+                                                2 -> "🥈"
+                                                3 -> "🥉"
+                                                else -> "${seller.rank}"
+                                            }
+                                            Text(medal, fontSize = 20.sp, modifier = Modifier.width(36.dp))
+                                            Box(Modifier.size(32.dp).clip(CircleShape).background(Color(0xFFEFF6FF)), contentAlignment = Alignment.Center) {
+                                                Text(seller.name.take(1).uppercase(), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                                            }
+                                            Spacer(Modifier.width(10.dp))
+                                            Column(Modifier.weight(1f)) {
+                                                Text(seller.name, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                                Text("${seller.sales} sales", fontSize = 11.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                        if (seller.rank < 5) Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Buyer Activity Section
+                    state.buyerStats?.let { bs ->
+                        item {
+                            Text("Buyer Activity", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Spacer(Modifier.height(10.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+                                BuyerStatCard(Modifier.weight(1f), "${bs.itemsBought}", "Items Bought", Icons.Filled.ShoppingCart, Color(0xFF22C55E))
+                                BuyerStatCard(Modifier.weight(1f), "${bs.offersMade}", "Offers Made", Icons.Filled.LocalOffer, Color(0xFFF59E0B))
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                BuyerStatCard(Modifier.weight(1f), "${bs.savedItems}", "Saved Items", Icons.Filled.Bookmark, Color(0xFF8B5CF6))
+                                BuyerStatCard(Modifier.weight(1f), "${bs.activeChats}", "Active Chats", Icons.Filled.Chat, Color(0xFF2563EB))
+                            }
                         }
                     }
                 }
@@ -163,6 +337,45 @@ private fun StatCard(modifier: Modifier, value: String, label: String, color: Co
             Spacer(Modifier.height(10.dp))
             Text(if (targetValue > 0) "$animatedValue" else value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
             Text(label.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun StatCardWithTrend(modifier: Modifier, value: String, label: String, color: Color, icon: ImageVector, trend: String?) {
+    val targetValue = value.toIntOrNull() ?: 0
+    val animatedValue by animateIntAsState(targetValue = targetValue, animationSpec = tween(durationMillis = 800), label = "stat_anim")
+    Surface(modifier = modifier, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                trend?.let {
+                    val isPositive = it.startsWith("+")
+                    Surface(shape = RoundedCornerShape(6.dp), color = (if (isPositive) Color(0xFF22C55E) else Color(0xFFEF4444)).copy(alpha = 0.1f)) {
+                        Text(it, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (isPositive) Color(0xFF22C55E) else Color(0xFFEF4444), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(if (targetValue > 0) "$animatedValue" else value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+            Text(label.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun BuyerStatCard(modifier: Modifier, value: String, label: String, icon: ImageVector, color: Color) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+            Text(label, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1)
         }
     }
 }

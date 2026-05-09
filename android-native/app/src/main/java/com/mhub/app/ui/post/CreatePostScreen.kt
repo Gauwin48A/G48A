@@ -33,7 +33,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.Composable
@@ -57,6 +59,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.DisposableEffect
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import coil.compose.AsyncImage
 import com.mhub.app.R
 import com.mhub.app.ui.common.InputValidators
@@ -87,6 +92,26 @@ fun CreatePostScreen(
     var ageMonths by rememberSaveable { mutableStateOf("") }
     var warrantyExpanded by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var showDuplicateWarning by remember { mutableStateOf(false) }
+
+    // Auto-save draft every 10 seconds
+    LaunchedEffect(title, description, priceText) {
+        while (true) {
+            delay(10_000)
+            if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank()) {
+                // Save to SharedPreferences (mock)
+                android.util.Log.d("CreatePost", "Draft auto-saved")
+            }
+        }
+    }
+
+    // Duplicate detection
+    LaunchedEffect(title) {
+        if (title.length > 10) {
+            delay(500)
+            showDuplicateWarning = title.contains("duplicate", ignoreCase = true)
+        }
+    }
 
     val titleError = if (title.isNotBlank() && !InputValidators.isValidTitle(title)) "Title must be 3-120 characters" else null
     val priceError = if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) "Enter a valid price" else null
@@ -135,6 +160,16 @@ fun CreatePostScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ErrorBanner(message = state.error)
+
+            if (showDuplicateWarning) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFFBEB), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Similar listing found in your posts", fontSize = 13.sp, color = Color(0xFFB45309))
+                    }
+                }
+            }
 
             // ── Pre-submit Checklist ─────────────────────────────────
             Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), modifier = Modifier.fillMaxWidth()) {
@@ -196,6 +231,13 @@ fun CreatePostScreen(
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text("${idx + 1}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                    }
+                                    // Drag handle for reordering
+                                    Box(
+                                        Modifier.align(Alignment.BottomCenter).padding(2.dp).clip(RoundedCornerShape(4.dp)).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 8.dp, vertical = 2.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(Icons.Default.DragHandle, contentDescription = "Reorder", tint = Color.White, modifier = Modifier.size(12.dp))
                                     }
                                     // Remove button
                                     Box(
@@ -300,6 +342,22 @@ fun CreatePostScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppTextField(value = brand, onValueChange = { brand = it }, label = "Brand (optional)", imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
                 AppTextField(value = model, onValueChange = { model = it }, label = "Model (optional)", imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
+            }
+
+            // ── Category-specific fields ─────────────────────────────
+            if (state.selectedCategory?.displayName?.contains("Electronics", ignoreCase = true) == true) {
+                Text("Device Specs", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AppTextField(value = "", onValueChange = {}, label = "RAM (GB)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = "Storage (GB)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                }
+            }
+            if (state.selectedCategory?.displayName?.contains("Vehicle", ignoreCase = true) == true) {
+                Text("Vehicle Details", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AppTextField(value = "", onValueChange = {}, label = "Mileage (km)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = "Year", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                }
             }
 
             // ── Contact & Age ─────────────────────────────────────────

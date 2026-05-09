@@ -22,17 +22,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +53,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -90,6 +101,8 @@ data class NotificationsState(
     val loading: Boolean = true,
     val items: List<Notification> = emptyList(),
     val error: String? = null,
+    val expandedItems: Set<String> = emptySet(),
+    val showSettings: Boolean = false,
 )
 
 @HiltViewModel
@@ -138,6 +151,17 @@ class NotificationsViewModel @Inject constructor(
         _state.value = _state.value.copy(items = _state.value.items.filter { it.stableId != id })
         viewModelScope.launch { repo.delete(id) }
     }
+    
+    fun toggleExpanded(id: String) {
+        val current = _state.value.expandedItems
+        _state.value = _state.value.copy(
+            expandedItems = if (id in current) current - id else current + id,
+        )
+    }
+    
+    fun toggleSettings() {
+        _state.value = _state.value.copy(showSettings = !_state.value.showSettings)
+    }
 }
 
 private data class NotifIconStyle(val icon: ImageVector, val tint: Color, val bg: Color)
@@ -174,6 +198,7 @@ private fun notifStyle(type: String?): NotifIconStyle {
 @Composable
 fun NotificationsScreen(
     onOpenPost: (String) -> Unit,
+    onAcceptOffer: (String) -> Unit = {},
     viewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -221,6 +246,9 @@ fun NotificationsScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.toggleSettings() }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                     if (unreadCount > 0) {
                         TextButton(onClick = { viewModel.markAllRead() }) {
                             Icon(
@@ -400,10 +428,13 @@ fun NotificationsScreen(
                                     NotificationRow(
                                         notification = notif,
                                         isUnread = true,
+                                        isExpanded = notif.stableId in state.expandedItems,
+                                        onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
                                         onClick = {
                                             viewModel.markRead(notif.stableId)
                                             notif.postId?.let { onOpenPost(it) }
                                         },
+                                        onAcceptOffer = { onAcceptOffer(notif.stableId) },
                                     )
                                 }
                             }
@@ -420,7 +451,10 @@ fun NotificationsScreen(
                                     NotificationRow(
                                         notification = notif,
                                         isUnread = false,
+                                        isExpanded = notif.stableId in state.expandedItems,
+                                        onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
                                         onClick = { notif.postId?.let { onOpenPost(it) } },
+                                        onAcceptOffer = { onAcceptOffer(notif.stableId) },
                                     )
                                 }
                             }
@@ -430,61 +464,61 @@ fun NotificationsScreen(
             }
         }
     }
+    
+    // Settings dialog
+    if (state.showSettings) {
+        AlertDialog(
+            onDismissRequest = { viewModel.toggleSettings() },
+            title = { Text("Notification Preferences") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Choose which notifications you want to receive:", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    
+                    listOf(
+                        Triple("Offers & Deals", "Get notified about price drops and offers", true),
+                        Triple("Messages & Chat", "New messages from buyers and sellers", true),
+                        Triple("System Updates", "Account security and app updates", true),
+                        Triple("Marketing", "Promotional offers and campaigns", false),
+                    ).forEach { (title, desc, checked) ->
+                        var isChecked by remember { mutableStateOf(checked) }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(checked = isChecked, onCheckedChange = { isChecked = it })
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.toggleSettings() }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.toggleSettings() }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeToDismissNotification(
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDismiss()
-                true
-            } else false
-        },
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFEF4444))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.White)
-            }
-        },
-        enableDismissFromStartToEnd = false,
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
-
-@Composable
-private fun NotificationRow(
-    notification: Notification,
-    isUnread: Boolean,
+privisExpanded: Boolean = false,
+    onToggleExpand: () -> Unit = {},
     onClick: () -> Unit,
+    onAcceptOffer: () -> Unit = {},
 ) {
     val style = notifStyle(notification.type)
+    val isOfferNotification = notification.type?.lowercase()?.contains("offer") == true
+    val hasActions = isOfferNotification || notification.postId != null
+    
     Card(
-        onClick = onClick,
+        onClick = { if (!hasActions) onClick() },
         shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isUnread) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -492,16 +526,112 @@ private fun NotificationRow(
         ),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            // Icon circle
-            Box(
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                // Icon circle
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(style.bg),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = style.icon,
+                        contentDescription = null,
+                        tint = style.tint,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = notification.displayTitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isUnread) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 1,
+                            overflow = if (isExpanded) TextOverflow.Visible else TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (isUnread) {
+                            Spacer(Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                        }
+                    }
+                    Text(
+                        text = notification.displayMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                        overflow = if (isExpanded) TextOverflow.Visible else TextOverflow.Ellipsis,
+                    )
+                    notification.createdAt?.let { ts ->
+                        Text(
+                            text = formatRelativeTime(ts),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+                
+                // Expand/collapse icon
+                if (hasActions) {
+                    Icon(
+                        if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            
+            // Action buttons (shown when expanded)
+            if (isExpanded && hasActions) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (isOfferNotification) {
+                        Button(
+                            onClick = onAcceptOffer,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Accept Offer", fontSize = 13.sp)
+                        }
+                    }
+                    if (notification.postId != null) {
+                        OutlinedButton(
+                            onClick = onClick,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("View Post", fontSize = 13.sp)
+                        }
+                    }ier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
                     .background(style.bg),

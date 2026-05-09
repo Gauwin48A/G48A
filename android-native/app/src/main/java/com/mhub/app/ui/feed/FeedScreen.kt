@@ -23,6 +23,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.outlined.Chat
@@ -36,7 +40,9 @@ import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,10 +99,12 @@ data class FeedState(
     val loadingMore: Boolean = false,
     val posts: List<Post> = emptyList(),
     val error: String? = null,
-    val selectedTab: Int = 0,
+    val sortOption: String = "For You", // Changed from selectedTab
     val currentPage: Int = 1,
     val hasMore: Boolean = true,
     val likedIds: Set<String> = emptySet(),
+    val bookmarkedIds: Set<String> = emptySet(),
+    val density: String = "NORMAL", // COMPACT, NORMAL, SPACIOUS
 )
 
 @HiltViewModel
@@ -120,9 +128,13 @@ class FeedViewModel @Inject constructor(
             hasMore = true,
         )
         viewModelScope.launch {
-            val sort = when (_state.value.selectedTab) {
-                1 -> "popular"
-                2 -> "newest"
+            val sort = when (_state.value.sortOption) {
+                "Recent" -> "newest"
+                "Updated" -> "updated"
+                "Views" -> "popular"
+                "Likes" -> "likes"
+                "Title" -> "title"
+                "Shuffle" -> "shuffle"
                 else -> null
             }
             when (val result = postsRepository.feed(page = 1, limit = 20, sort = sort)) {
@@ -143,9 +155,22 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun selectTab(index: Int) {
-        _state.value = _state.value.copy(selectedTab = index)
+    fun setSortOption(option: String) {
+        _state.value = _state.value.copy(sortOption = option)
         load(refresh = true)
+    }
+
+    fun setDensity(density: String) {
+        _state.value = _state.value.copy(density = density)
+    }
+
+    fun selectTab(index: Int) {
+        val option = when (index) {
+            1 -> "Views"
+            2 -> "Recent"
+            else -> "For You"
+        }
+        setSortOption(option)
     }
 
     fun loadMore() {
@@ -154,7 +179,15 @@ class FeedViewModel @Inject constructor(
         val nextPage = current.currentPage + 1
         _state.value = current.copy(loadingMore = true)
         viewModelScope.launch {
-            val sort = when (current.selectedTab) { 1 -> "popular"; 2 -> "newest"; else -> null }
+            val sort = when (current.sortOption) {
+                "Recent" -> "newest"
+                "Updated" -> "updated"
+                "Views" -> "popular"
+                "Likes" -> "likes"
+                "Title" -> "title"
+                "Shuffle" -> "shuffle"
+                else -> null
+            }
             when (val result = postsRepository.feed(page = nextPage, limit = 20, sort = sort)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loadingMore = false,
@@ -173,14 +206,22 @@ class FeedViewModel @Inject constructor(
         _state.value = current.copy(likedIds = newLiked)
         viewModelScope.launch { runCatching { socialRepo.likePost(postId) } }
     }
+
+    fun toggleBookmark(postId: String) {
+        val current = _state.value
+        val newBookmarked = if (postId in current.bookmarkedIds) current.bookmarkedIds - postId else current.bookmarkedIds + postId
+        _state.value = current.copy(bookmarkedIds = newBookmarked)
+        viewModelScope.launch { runCatching { socialRepo.bookmarkPost(postId) } }
+    }
 }
 
-private val feedTabs = listOf("For You", "Trending", "Latest")
+private val feedSortOptions = listOf("For You", "Shuffle", "Recent", "Updated", "Views", "Likes", "Title")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     onOpenPost: (String) -> Unit,
+    onCreatePost: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -188,6 +229,8 @@ fun FeedScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showSortMenu by remember { mutableStateOf(false) }
+    var showDensityMenu by remember { mutableStateOf(false) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -223,6 +266,21 @@ fun FeedScreen(
                         }
                     },
                     actions = {
+                        // Density toggle
+                        Box {
+                            IconButton(onClick = { showDensityMenu = !showDensityMenu }) {
+                                Icon(Icons.Default.ArrowDropDown, "Density")
+                            }
+                            DropdownMenu(expanded = showDensityMenu, onDismissRequest = { showDensityMenu = false }) {
+                                listOf("COMPACT", "NORMAL", "SPACIOUS").forEach { density ->
+                                    DropdownMenuItem(
+                                        text = { Text(density) },
+                                        onClick = { viewModel.setDensity(density); showDensityMenu = false },
+                                        trailingIcon = if (state.density == density) {{ Icon(Icons.Default.Bookmark, null, modifier = Modifier.size(16.dp)) }} else null,
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = { showSearch = !showSearch }) {
                             Icon(
                                 if (showSearch) Icons.Default.Close else Icons.Default.Search,
@@ -251,19 +309,37 @@ fun FeedScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     )
                 }
-                TabRow(
-                    selectedTabIndex = state.selectedTab,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                ) {
-                    feedTabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = state.selectedTab == index,
-                            onClick = { viewModel.selectTab(index) },
-                            text = { Text(title, fontWeight = if (state.selectedTab == index) FontWeight.SemiBold else FontWeight.Normal) },
-                        )
+                // Sort dropdown (6 options) replacing tabs
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    Box {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { showSortMenu = !showSortMenu }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text("Sort: ${state.sortOption}", fontWeight = FontWeight.SemiBold)
+                            Icon(Icons.Default.ArrowDropDown, "Sort options")
+                        }
+                        DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }, modifier = Modifier.fillMaxWidth(0.5f)) {
+                            feedSortOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = { viewModel.setSortOption(option); showSortMenu = false },
+                                    trailingIcon = if (state.sortOption == option) {{ Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }} else null,
+                                )
+                            }
+                        }
                     }
                 }
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreatePost,
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 72.dp),
+            ) {
+                Icon(Icons.Default.Add, "Create post", tint = MaterialTheme.colorScheme.onPrimary)
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -299,8 +375,16 @@ fun FeedScreen(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(when (state.density) {
+                                "COMPACT" -> 6.dp
+                                "SPACIOUS" -> 16.dp
+                                else -> 10.dp
+                            }),
                         ) {
+                            // Composer Card at top
+                            item(key = "composer_card") {
+                                ComposerCard(onCreatePost = onCreatePost)
+                            }
                             items(filteredPosts, key = { it.stableId }) { post ->
                                 FeedCard(
                                     post = post,
@@ -309,6 +393,11 @@ fun FeedScreen(
                                         zoomImages = urls
                                         showImageZoom = true
                                     },
+                                    density = state.density,
+                                    isBookmarked = post.stableId in state.bookmarkedIds,
+                                    onBookmark = { viewModel.toggleBookmark(post.stableId) },
+                                    isLiked = post.stableId in state.likedIds,
+                                    onLike = { viewModel.toggleLike(post.stableId) },
                                 )
                             }
                             if (state.hasMore && filteredPosts.isNotEmpty()) {
@@ -337,22 +426,69 @@ fun FeedScreen(
 }
 
 @Composable
+private fun ComposerCard(onCreatePost: () -> Unit) {
+    Card(
+        onClick = onCreatePost,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+            }
+            Text(
+                "Share something...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.AutoMirrored.Outlined.Send, null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
 private fun FeedCard(
     post: Post,
     onOpenPost: () -> Unit,
     onImageZoom: (List<String>) -> Unit = {},
+    density: String = "NORMAL",
+    isBookmarked: Boolean = false,
+    onBookmark: () -> Unit = {},
+    isLiked: Boolean = false,
+    onLike: () -> Unit = {},
 ) {
-    var liked by remember { mutableStateOf(false) }
+    var localLiked by remember(isLiked) { mutableStateOf(isLiked) }
+    var showFullDescription by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
     var commentText by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     // Like animation
     val likeScale by animateFloatAsState(
-        targetValue = if (liked) 1.0f else 1.0f,
+        targetValue = if (localLiked) 1.0f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "like_scale",
     )
+
+    val cardPadding = when (density) {
+        "COMPACT" -> 10.dp
+        "SPACIOUS" -> 18.dp
+        else -> 14.dp
+    }
+    val verticalSpacing = when (density) {
+        "COMPACT" -> 6.dp
+        "SPACIOUS" -> 12.dp
+        else -> 10.dp
+    }
 
     Card(
         onClick = onOpenPost,
@@ -362,8 +498,8 @@ private fun FeedCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(cardPadding),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         ) {
             // Author row with avatar initial
             Row(
@@ -406,14 +542,51 @@ private fun FeedCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
+            // Category + Subcategory tags
+            if (!post.category.isNullOrBlank()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
+                        Text(
+                            post.category,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF3B82F6),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
+                    post.subcategory?.let { sub ->
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
+                            Text(
+                                sub,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF10B981),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
             if (!post.description.isNullOrBlank()) {
-                Text(
-                    text = post.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Column {
+                    Text(
+                        text = post.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
+                        overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
+                    )
+                    if (post.description.length > 120) {
+                        Text(
+                            text = if (showFullDescription) "Show less" else "Read more",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { showFullDescription = !showFullDescription }.padding(top = 4.dp),
+                        )
+                    }
+                }
             }
 
             // Price chip if available
@@ -449,19 +622,20 @@ private fun FeedCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable {
-                        liked = !liked
+                        localLiked = !localLiked
+                        onLike()
                     },
                 ) {
                     Icon(
-                        if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        if (localLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = null,
-                        tint = if (liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp).scale(if (liked) likeScale else 1f),
+                        tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp).scale(if (localLiked) likeScale else 1f),
                     )
                     Text(
-                        if (liked) "Liked" else "Like",
+                        if (localLiked) "Liked" else "Like",
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 // Comment button
@@ -472,6 +646,24 @@ private fun FeedCard(
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     Text("Comment", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                // Bookmark button
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onBookmark() },
+                ) {
+                    Icon(
+                        if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                        contentDescription = null,
+                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        if (isBookmarked) "Saved" else "Save",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 // Share + views
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {

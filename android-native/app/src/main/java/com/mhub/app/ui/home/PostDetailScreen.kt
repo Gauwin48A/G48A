@@ -45,6 +45,13 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -118,6 +125,17 @@ data class PostDetailState(
     val similarPosts: List<Post> = emptyList(),
     val priceAlertSubscribed: Boolean = false,
     val boostStatus: com.mhub.app.data.remote.dto.BoostStatusResponse? = null,
+    val activityLog: List<ActivityLogItem> = emptyList(),
+    val sellerResponseTimeMinutes: Int? = null,
+    val inCompareList: Boolean = false,
+    val inCart: Boolean = false,
+)
+
+data class ActivityLogItem(
+    val id: String,
+    val type: String, // "view", "interest", "offer"
+    val description: String,
+    val timestamp: String,
 )
 
 @HiltViewModel
@@ -350,6 +368,52 @@ fun PostDetailScreen(
                         .fillMaxSize()
                         .padding(padding),
                 ) {
+                    // Breadcrumbs navigation
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Home,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            post.categoryName?.let { category ->
+                                Text(
+                                    category,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.clickable { /* TODO: Navigate to category */ }
+                                )
+                                Icon(
+                                    Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                post.displayTitle.take(20) + if (post.displayTitle.length > 20) "..." else "",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
                     // Section navigation strip
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -383,20 +447,45 @@ fun PostDetailScreen(
                             ) {
                                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                                     val img = images[page]
-                                    if (img != null) {
-                                        AsyncImage(
-                                            model = img,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize().then(
-                                                Modifier.clickable(onClick = {
-                                                    zoomImageIndex = page
-                                                    showImageZoom = true
-                                                }),
-                                            ),
-                                        )
-                                    } else {
-                                        Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        if (img != null) {
+                                            AsyncImage(
+                                                model = img,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize().then(
+                                                    Modifier.clickable(onClick = {
+                                                        zoomImageIndex = page
+                                                        showImageZoom = true
+                                                    }),
+                                                ),
+                                            )
+                                        } else {
+                                            Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                                        }
+                                        // Video play button overlay
+                                        val isVideo = img?.contains(".mp4") == true || img?.contains(".mov") == true
+                                        if (isVideo) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .background(Color.Black.copy(alpha = 0.3f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.9f),
+                                                    modifier = Modifier.size(64.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.PlayArrow,
+                                                        contentDescription = "Play video",
+                                                        modifier = Modifier.size(40.dp).padding(8.dp),
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -456,6 +545,30 @@ fun PostDetailScreen(
                                                 Icon(Icons.Default.LocationOn, contentDescription = null)
                                             },
                                         )
+                                    }
+                                    // Condition badge with color coding
+                                    post.condition?.let { cond ->
+                                        val (condColor, condText) = when (cond.lowercase()) {
+                                            "new" -> Color(0xFF22C55E) to "New"
+                                            "like new" -> Color(0xFF14B8A6) to "Like New"
+                                            "used" -> Color(0xFFF59E0B) to "Used"
+                                            "fair" -> Color(0xFFF97316) to "Fair"
+                                            "poor" -> Color(0xFFEF4444) to "Poor"
+                                            else -> Color(0xFF6B7280) to cond.replaceFirstChar { it.uppercase() }
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = condColor.copy(alpha = 0.15f),
+                                            border = BorderStroke(1.dp, condColor.copy(alpha = 0.4f))
+                                        ) {
+                                            Text(
+                                                condText,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = condColor,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                            )
+                                        }
                                     }
                                 }
 
@@ -555,9 +668,104 @@ fun PostDetailScreen(
                                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Filled.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(22.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Column {
+                                            Column(modifier = Modifier.weight(1f)) {
                                                 Text("Trust Score: $score/100", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = trustColor)
                                                 Text(ts.trustLabel ?: when { score >= 80 -> "Highly Trusted"; score >= 50 -> "Trusted"; else -> "New Seller" }, fontSize = 12.sp, color = trustColor.copy(alpha = 0.8f))
+                                            }
+                                            // Seller response time
+                                            state.sellerResponseTimeMinutes?.let { mins ->
+                                                val (timeText, timeColor) = when {
+                                                    mins < 60 -> "<1hr" to Color(0xFF22C55E)
+                                                    mins < 1440 -> "<24hr" to Color(0xFFFBBF24)
+                                                    else -> ">1day" to Color(0xFFEF4444)
+                                                }
+                                                Surface(
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    color = timeColor.copy(alpha = 0.2f)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text("⚡", fontSize = 10.sp)
+                                                        Text(
+                                                            timeText,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = timeColor,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Delivery Estimate Card
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                                    border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.LocalShipping, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("🚚 Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                        }
+                                        Text("• Estimated delivery: 3-5 business days", fontSize = 12.sp, color = Color(0xFF1E3A8A))
+                                        Text("• Local meetup available in ${post.location ?: "your area"}", fontSize = 12.sp, color = Color(0xFF1E3A8A))
+                                        Text("• 7-day return policy on eligible items", fontSize = 12.sp, color = Color(0xFF1E3A8A))
+                                    }
+                                }
+
+                                // Activity Log
+                                if (state.activityLog.isNotEmpty()) {
+                                    var activityExpanded by remember { mutableStateOf(false) }
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().clickable { activityExpanded = !activityExpanded },
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.Timeline, null, modifier = Modifier.size(18.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text("Activity Timeline", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                                }
+                                                Text(if (activityExpanded) "▲" else "▼", fontSize = 12.sp)
+                                            }
+                                            if (activityExpanded) {
+                                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    state.activityLog.take(5).forEach { item ->
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                        ) {
+                                                            val emoji = when (item.type) {
+                                                                "view" -> "👁"
+                                                                "interest" -> "❤️"
+                                                                "offer" -> "💰"
+                                                                else -> "•"
+                                                            }
+                                                            Text(emoji, fontSize = 14.sp)
+                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                Text(item.description, style = MaterialTheme.typography.bodySmall)
+                                                                Text(item.timestamp, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                            }
+                                                        }
+                                                        if (item != state.activityLog.last()) {
+                                                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -751,15 +959,32 @@ fun PostDetailScreen(
                                     Spacer(Modifier.width(6.dp))
                                     Text("Interested")
                                 }
-                                OutlinedButton(onClick = { showBoostPanel = !showBoostPanel }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
-                                    Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                OutlinedButton(
+                                    onClick = { /* TODO: Toggle compare */ },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = if (state.inCompareList) Color(0xFF3B82F6) else MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Compare, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Boost")
+                                    Text(if (state.inCompareList) "Comparing" else "Compare")
                                 }
-                                Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
-                                    Icon(Icons.Default.ShoppingBag, contentDescription = null)
+                                Button(
+                                    onClick = { /* TODO: Add to cart */ },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (state.inCart) Color(0xFF22C55E) else Color(0xFF3B82F6)
+                                    )
+                                ) {
+                                    Icon(
+                                        if (state.inCart) Icons.Default.ShoppingBag else Icons.Default.AddShoppingCart,
+                                        contentDescription = null
+                                    )
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Buy")
+                                    Text(if (state.inCart) "In Cart" else "Add")
                                 }
                             }
                         }

@@ -551,4 +551,12 @@ interface MhubApi {
     // ---- Referral Tree ----
     @GET("api/referral/tree")
     suspend fun referralTree(): ReferralTreeResponse
+
+    // ---- Batch View ----
+    @POST("api/posts/batch-view")
+    suspend fun batchViewPosts(@Body body: Map<String, List<String>>): MessageResponse
+
+    // ---- Wishlist Toggle ----
+    @POST("api/wishlist/{id}/toggle")
+    suspend fun toggleWishlist(@Path("id") id: String): MessageResponse
 }
