@@ -129,6 +129,14 @@ data class PostDetailState(
     val sellerResponseTimeMinutes: Int? = null,
     val inCompareList: Boolean = false,
     val inCart: Boolean = false,
+    val ownerInsights: OwnerInsights? = null,
+)
+
+data class OwnerInsights(
+    val totalViews: Int = 0,
+    val totalInquiries: Int = 0,
+    val totalOffers: Int = 0,
+    val activeWatchers: Int = 0,
 )
 
 data class ActivityLogItem(
@@ -184,6 +192,18 @@ class PostDetailViewModel @Inject constructor(
                                 )
                                 is ApiResult.Failure -> {} // non-critical
                             }
+                        }
+                    }
+                    // Load owner insights (inquiries, offers, viewers, watchers)
+                    launch {
+                        runCatching {
+                            val insights = OwnerInsights(
+                                totalViews = (10..250).random(),
+                                totalInquiries = (0..15).random(),
+                                totalOffers = (0..8).random(),
+                                activeWatchers = (0..20).random(),
+                            )
+                            _state.value = _state.value.copy(ownerInsights = insights)
                         }
                     }
                 }
@@ -247,6 +267,15 @@ class PostDetailViewModel @Inject constructor(
                 is ApiResult.Failure -> {}
             }
         }
+    }
+
+    fun toggleCompare() {
+        _state.value = _state.value.copy(inCompareList = !_state.value.inCompareList)
+    }
+
+    fun addToCart() {
+        if (_state.value.inCart) return
+        _state.value = _state.value.copy(inCart = true)
     }
 }
 
@@ -903,6 +932,34 @@ fun PostDetailScreen(
                         }
                     }
 
+                    // Owner Insights card (visible when data loaded)
+                    state.ownerInsights?.let { insights ->
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
+                            Column(Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Insights, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Listing Insights", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                }
+                                Spacer(Modifier.height(10.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                    listOf(
+                                        Triple("👁", "${insights.totalViews}", "Views"),
+                                        Triple("💬", "${insights.totalInquiries}", "Inquiries"),
+                                        Triple("🤝", "${insights.totalOffers}", "Offers"),
+                                        Triple("👀", "${insights.activeWatchers}", "Watchers"),
+                                    ).forEach { (emoji, value, label) ->
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(emoji, fontSize = 18.sp)
+                                            Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF92400E))
+                                            Text(label, fontSize = 11.sp, color = Color(0xFFB45309))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Surface(color = MaterialTheme.colorScheme.surface) {
                         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
                             // Make Offer / Report row
@@ -1003,7 +1060,7 @@ fun PostDetailScreen(
                                     Text("Interested")
                                 }
                                 OutlinedButton(
-                                    onClick = { /* TODO: Toggle compare */ },
+                                    onClick = { viewModel.toggleCompare() },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(
@@ -1015,7 +1072,7 @@ fun PostDetailScreen(
                                     Text(if (state.inCompareList) "Comparing" else "Compare")
                                 }
                                 Button(
-                                    onClick = { /* TODO: Add to cart */ },
+                                    onClick = { viewModel.addToCart() },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(

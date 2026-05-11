@@ -96,6 +96,7 @@ data class SearchState(
 class SearchViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val savedSearchesRepo: SavedSearchesRepository,
+    private val prefs: com.mhub.app.data.local.AppPreferences,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
@@ -103,6 +104,11 @@ class SearchViewModel @Inject constructor(
     private var job: Job? = null
 
     init {
+        viewModelScope.launch {
+            // Restore recent searches from DataStore
+            val persisted = prefs.getRecentSearches()
+            if (persisted.isNotEmpty()) _state.value = _state.value.copy(recentQueries = persisted)
+        }
         viewModelScope.launch {
             when (val r = savedSearchesRepo.list()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(savedSearches = r.data)
@@ -224,13 +230,17 @@ class SearchViewModel @Inject constructor(
                 val trimmed = query.trim()
                 val updated = (_state.value.recentQueries.filter { it != trimmed } + trimmed).takeLast(10).reversed()
                 _state.value = _state.value.copy(loading = false, items = filtered, searched = true, recentQueries = updated)
+                // Persist to DataStore
+                viewModelScope.launch { prefs.saveRecentSearches(updated) }
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
         }
     }
 
     fun removeRecentQuery(q: String) {
-        _state.value = _state.value.copy(recentQueries = _state.value.recentQueries.filter { it != q })
+        val updated = _state.value.recentQueries.filter { it != q }
+        _state.value = _state.value.copy(recentQueries = updated)
+        viewModelScope.launch { prefs.saveRecentSearches(updated) }
     }
 }
 
