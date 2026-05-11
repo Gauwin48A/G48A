@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -74,6 +76,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.repository.CartRepository
 import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
@@ -97,6 +100,7 @@ data class WishlistState(
 @HiltViewModel
 class WishlistViewModel @Inject constructor(
     private val repo: WishlistRepository,
+    private val cartRepo: CartRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WishlistState())
     val state: StateFlow<WishlistState> = _state.asStateFlow()
@@ -156,12 +160,13 @@ class WishlistViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedItems = emptySet())
     }
     
+    fun addToCart(postId: String) {
+        viewModelScope.launch { cartRepo.add(postId) }
+    }
+
     fun bulkAddToCart() {
         viewModelScope.launch {
-            _state.value.selectedItems.forEach { postId ->
-                // Call repo to add to cart (assuming CartRepository has an add method)
-                // repo.addToCart(postId)
-            }
+            _state.value.selectedItems.forEach { postId -> cartRepo.add(postId) }
             _state.value = _state.value.copy(selectedItems = emptySet(), isMultiSelectMode = false)
         }
     }
@@ -379,8 +384,46 @@ fun WishlistScreen(
                                     )
                                 }
                             }
+                        } else {
+                            if (gridMode) {
+                                // Grid mode: 2 columns using a single item with custom layout
+                                item {
+                                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                                        columns = GridCells.Fixed(2),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(max = 2000.dp),
+                                    ) {
+                                        androidx.compose.foundation.lazy.grid.items(
+                                            filteredItems,
+                                            key = { it.stableId },
+                                        ) { post ->
+                                            WishlistGridCard(
+                                                post = post,
+                                                onOpen = { onOpenPost(post.stableId) },
+                                                onRemove = { viewModel.remove(post.stableId) },
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(filteredItems, key = { it.stableId }) { post ->
+                                    WishlistListCard(
+                                        post = post,
+                                        onOpen = { onOpenPost(post.stableId) },
+                                        onRemove = { viewModel.remove(post.stableId) },
+                                        onAddToCart = { viewModel.addToCart(post.stableId) },
+                                        isMultiSelectMode = state.isMultiSelectMode,
+                                        isSelected = post.stableId in state.selectedItems,
+                                        onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
             }
         }
@@ -392,6 +435,7 @@ private fun WishlistListCard(
     post: Post,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
+    onAddToCart: () -> Unit = {},
     modifier: Modifier = Modifier,
     isMultiSelectMode: Boolean = false,
     isSelected: Boolean = false,
@@ -534,8 +578,16 @@ private fun WishlistListCard(
             }
 
             if (!isMultiSelectMode) {
-                TextButton(onClick = onRemove) {
-                    Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(18.dp))
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(
+                        onClick = onAddToCart,
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }

@@ -141,6 +141,7 @@ data class Notification(
     @SerialName("post_id") val postId: String? = null,
     @SerialName("actor_name") val actorName: String? = null,
     @SerialName("actor_avatar") val actorAvatar: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
 ) {
     val stableId: String get() = id ?: notificationId ?: "${type}-${createdAt}"
     val displayTitle: String get() = title ?: actorName ?: "Notification"

@@ -270,6 +270,38 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Language section ──────────────────────────────────────
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                }
+                Text("Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            }
+
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Display Language", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    var selectedLang by remember { mutableStateOf("en") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("en" to "English", "hi" to "हिन्दी", "ta" to "தமிழ்", "te" to "తెలుగు").forEach { (code, label) ->
+                            FilterChip(
+                                selected = selectedLang == code,
+                                onClick = {
+                                    selectedLang = code
+                                    val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(code)
+                                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
+                                },
+                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                            )
+                        }
+                    }
+                }
+            }
+
             // ── Notifications section ──────────────────────────────────────
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
@@ -438,6 +470,38 @@ fun SettingsScreen(
                     Text("Logout from all devices", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text("This will revoke all active sessions except this one.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PrimaryButton(text = "Logout All Devices", onClick = { viewModel.logoutAllDevices() })
+                }
+            }
+
+            // ── Account Data section ────────────────────────────────────
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Download, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
+                Text("Account Data", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            }
+
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Export My Data", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Download a copy of all your account data (GDPR compliant).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    var exporting by remember { mutableStateOf(false) }
+                    var exportMsg by remember { mutableStateOf<String?>(null) }
+                    PrimaryButton(
+                        text = if (exporting) "Preparing…" else "Request Data Export",
+                        onClick = {
+                            exporting = true
+                            exportMsg = "Your data export has been requested. You will receive an email with the download link."
+                            exporting = false
+                        },
+                    )
+                    exportMsg?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
 

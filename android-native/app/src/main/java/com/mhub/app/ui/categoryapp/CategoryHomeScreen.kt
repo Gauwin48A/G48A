@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mhub.app.data.mock.MockDataProvider
+import com.mhub.app.ui.common.PageEmptyState
+import com.mhub.app.ui.common.PageLoadingState
 import com.mhub.app.ui.components.BannerShimmer
 import com.mhub.app.ui.components.CountdownTimer
 import com.mhub.app.ui.components.EnhancedProductCard
@@ -71,6 +73,27 @@ fun CategoryHomeScreen(
             delay(800L) // simulate network refresh
             isRefreshing = false
         }
+    }
+
+    LaunchedEffect(categoryKey) {
+        isLoading = true
+        delay(300)
+        isLoading = false
+    }
+
+    if (isLoading) {
+        PageLoadingState(title = "Loading $categoryKey")
+        return
+    }
+
+    if (banners.isEmpty() && subcats.isEmpty() && allProducts.isEmpty()) {
+        PageEmptyState(
+            title = "No products yet",
+            message = "This category is currently empty. Pull to refresh or open another category.",
+            ctaLabel = "Retry",
+            onCta = onRefresh,
+        )
+        return
     }
 
     PullToRefreshBox(

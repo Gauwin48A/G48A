@@ -1,11 +1,505 @@
-# MHub Android — 10/10 Parity Plan vs Web App
+# MHub Android — Full Parity Audit & Implementation Plan
 
 **Source of Truth:** Web app at `../client/src/pages/*.jsx` (live at `http://localhost:8081/`)
 **Architecture:** DTOs → `MhubApi.kt` → Repository → `@HiltViewModel` → `@Composable` Screen
 **Build:** `./gradlew :app:assembleDebug --no-configuration-cache -q` (requires Java 17+)
 **Install:** `adb install -r app/build/outputs/apk/debug/app-debug.apk`
-**Date:** May 9, 2026 — Re-verified ground-truth via parallel page-by-page analysis
+**Audit Date:** May 11, 2026 — Deep code-level line-by-line audit
 **Previous report:** archived to `claude.md.prev`
+
+---
+
+## ⚠️ HONEST PARITY RATING: ~65–70 / 100
+
+Previous claim of "10/10" was **incorrect**. This revision reflects a genuine
+code-level comparison against actual JSX and Kotlin source code, conducted
+May 11 2026 by reading every page in `client/src/pages/*.jsx` and every
+screen in `android-native/…/ui/**/*.kt`.
+
+| Metric | Value |
+|---|---|
+| Web routes/pages audited | 60+ |
+| Android screens audited | 79 composable routes |
+| **Full parity** | ~40 screens |
+| **Partial parity (features missing)** | ~18 screens |
+| **Critical workflows missing** | 4 |
+| Current honest rating | **~65–70 / 100** |
+| Target | **100 / 100** |
+
+---
+
+## 1. CRITICAL GAPS (P0 — Blocking or broken workflows)
+
+### P0-1 · Cart Page Missing
+**Web:** `Cart.jsx` — full cart management screen with item list, qty controls,
+bulk select, save-for-later, coupon code, price breakdown, currency handling,
+delivery ETA, empty-state CTA.
+**Android:** Goes directly from "Add to Cart" to `CheckoutAddressScreen` with no
+intermediate cart review page. `CartScreen.kt` in `commerce/CommerceScreens.kt`
+exists but is only accessible from the category app shell, not from the main app.
+**Fix needed:**
+- Wire `CartScreen` into the main `MainShell` navigation as a proper route
+- Add item list with qty adjust (+/−), remove, and save-for-later per item
+- Add coupon code input + validation
+- Add price breakdown (subtotal / tax / shipping / discount / total)
+- Add empty-cart state with "Browse" and "Wishlist" CTAs
+- Add bulk-select with "Remove selected" and "Save selected for later"
+
+### P0-2 · Bargain / Counter-Offer Workflow Missing
+**Web:** `PostDetailPage.jsx` has `<BargainActions />` — full negotiation component:
+buyer makes offer → seller counter-offers → buyer accepts/declines.
+`/offers/history/:postId` and `/inquiries/post/:postId` API endpoints used.
+**Android:** `PostDetailScreen.kt` has `makeOffer(amount)` sending a one-way offer
+but **no counter-offer UI**, no offer history, no accept/decline flow for seller.
+**Fix needed:**
+- Add `OfferHistorySheet` showing pending/accepted/declined offers
+- Wire counter-offer API (`/offers/counter`)
+- Add accept-offer and decline-offer buttons (visible to seller in their PostDetail)
+- Show `BargainActions` UI at bottom of PostDetail when buyer views listing
+
+### P0-3 · No Coupon Code Support in Checkout
+**Web:** Cart.jsx + checkout flow — coupon code input field that calls `POST /coupons/apply`.
+**Android:** Neither `CartScreen` nor any `CheckoutScreen` has a coupon input.
+**Fix needed:** Add coupon code `OutlinedTextField` + "Apply" button to
+`CheckoutReviewScreen` or `CartScreen`. Wire to `CartRepository.applyCoupon()`.
+
+### P0-4 · Profile Preferences Tab Missing
+**Web:** `Profile.jsx` — "Preferences" tab with location radius slider
+(stored at `PREFERENCE_RADIUS_STORAGE_KEY`), subcategory multi-select filtered
+by active app, and backend save via `saveUserPreferences()`.
+**Android:** `ProfileScreen.kt` has Overview/Personal/Settings tabs only.
+No location radius setting, no subcategory preference, no preferences API call.
+**Fix needed:**
+- Add Preferences tab in `ProfileScreen`
+- Location field + radius chips (5 / 10 / 25 / 50 / 100 km)
+- Subcategory multi-select (filtered by `categoryModeCategory`)
+- Save via `UserRepository.savePreferences()`
+
+---
+
+## 2. HIGH PRIORITY GAPS (P1 — Major feature missing)
+
+### P1-1 · PostDetail: Owner Insights Card Missing
+**Web:** PostDetail shows seller a card with `inquiries[]`, `offers[]`, `viewers[]`
+from endpoints `/inquiries/post/:id`, `/offers/history/:id`,
+`/recently-viewed/post/:id`. Includes boost CTA.
+**Android:** `PostDetailScreen.kt` has `boostPost()` function but **no owner-insights
+card**, no inquiries count, no viewer count shown.
+**Fix needed:**
+- Fetch owner insights when `isOwner == true`
+- Render a card: "X people viewed · Y inquiries · Z offers"
+- Show boost button inside this card
+
+### P1-2 · PostDetail: Post Boost Panel UI Missing
+**Web:** `<PromoteDialog />` with 3 tiers (Basic ₹49, Featured ₹99, Spotlight ₹199)
+and 4 durations (3 / 7 / 14 / 30 days) + "Confirm & Pay" button.
+`AllPostsPage.jsx` also has this same dialog accessible from post cards.
+**Android:** `boostPost(tier, duration)` function exists in PostDetailViewModel but
+there is **no UI dialog** to select tier/duration. The `PromoteDialog` composable in
+`commerce/CommerceScreens.kt` is not connected to PostDetailScreen.
+**Fix needed:**
+- Surface `PromoteDialog` from PostDetailScreen via `onBoostPost` callback
+- Surface same dialog from AllPostsPage long-press / action menu
+
+### P1-3 · AllPosts: Quick Filters Bar Missing
+**Web:** `<AllPostsQuickFilters />` — horizontal scrollable row of pre-built chips:
+New, Trending, Great Deals, Verified Sellers, Nearby, Free Delivery.
+`<AllPostsGreatDealsBanner />` promo banner section.
+`<AllPostsCategoryBar />` category pill selector at top.
+**Android:** `HomeScreen.kt` — no quick-filter chips, no great-deals banner, no
+category pill bar.
+**Fix needed:**
+- Add a `QuickFiltersRow` composable in `HomeScreen`
+- Chips: New, Trending, Great Deals, Verified Sellers, Near Me, Free Delivery
+- Each chip maps to a pre-applied filter in existing `FilterBottomSheet`
+- Add `AllPostsCategoryBar` row with category emoji + label pills
+
+### P1-4 · AllPosts / HomeScreen: Grid/List View Toggle Missing
+**Web:** `AllPostsPage.jsx` has `<GridView>` / `<ListView>` toggle button in toolbar.
+**Android:** Only single-layout grid. No toggle.
+**Fix needed:** Add `IconToggleButton` in `HomeScreen` toolbar switching between
+`LazyVerticalGrid(GridCells.Fixed(2))` and `LazyColumn` list mode.
+
+### P1-5 · AllPosts: Filter Count Badge & Promo Badge Row Missing
+**Web:** Filter button shows active-filter count badge (e.g., "3" overlay on filter icon).
+`<PostPromoBadges />` overlay on each post card (Sponsored / Boosted / Featured).
+**Android:** Filter button has no count badge. Post cards have no promo badges.
+**Fix needed:** 
+- Compute `activeFilterCount` and overlay `BadgedBox` on filter `IconButton`
+- Add `PromoBadgeRow` composable to `PostCard` when `post.isSponsored` or
+   `post.isBoosted` or `post.isFeatured` is true
+
+### P1-6 · Search: Recent Searches Not Persisted
+**Web:** Recent searches stored in `localStorage` key "recentSearches" (last 10,
+deduplicated, each chip has close button to remove).
+**Android:** Recent queries kept in Kotlin `mutableStateListOf()` — **lost on app restart**.
+**Fix needed:** Persist recent searches in `AppPreferences` DataStore (or Room).
+On launch, restore last 10 queries into state.
+
+### P1-7 · Search: Active Filter Chips Row Missing
+**Web:** After applying filters, each active filter appears as a removable chip row
+below the search bar (e.g., "Brand: Apple ×", "Price: ₹1k–₹10k ×").
+**Android:** Filters applied but no visible chip row showing active filters.
+**Fix needed:** Add `ActiveFilterChips` composable below search bar in `SearchScreen`.
+
+### P1-8 · Notifications: Real-time Socket Updates Missing
+**Web:** `NotificationsPage.jsx` — `socket.on("notification", ...)` listener for
+live push; `sseStatus` indicator; `formatExpiresAt()` for expiry countdown.
+**Android:** `NotificationsScreen.kt` polls on open only. No WebSocket listener,
+no expiry display.
+**Fix needed:**
+- Add FCM-based real-time handler (infrastructure exists) wired to update
+   `NotificationsViewModel` state
+- Add expiry countdown label for time-bound notifications
+- Save notification preferences to backend (currently local state only)
+
+### P1-9 · Rewards: Public Wall Leaderboard & Impact Dashboard Missing
+**Web:** `Rewards.jsx` has a public-wall leaderboard tab showing top sellers/buyers;
+XP bar in hero card; impact dashboard; SSE real-time coin updates.
+**Android:** `RewardsScreen.kt` has daily check-in, spin-wheel, scratch-card, redeem
+dialog — but **no public-wall leaderboard tab** and no impact dashboard.
+**Fix needed:**
+- Add "Leaderboard" tab body with top-users list (API: `/rewards/leaderboard`)
+- Add impact dashboard section (posts sold, saves, reviews helped)
+- Add XP progress bar in hero card (`xpCurrent / xpRequired`)
+
+### P1-10 · Language Selector Missing
+**Web:** Settings tab in Profile has language selector component (`LanguageSelector`)
+wired to `i18n` + backend preference.
+**Android:** `SettingsScreen.kt` exists but has **no language selector**. The app
+is English-only with no locale switching.
+**Fix needed:**
+- Add locale dropdown in `SettingsScreen` (English / Hindi / Tamil / Telugu)
+- Persist via `AppPreferences` and apply via `AppCompatDelegate.setApplicationLocales()`
+
+---
+
+## 3. MEDIUM PRIORITY GAPS (P2 — UX polish / feature completeness)
+
+### P2-1 · PostDetail: Price Alert Subscription UI Missing
+**Web:** PostDetail has "Set Price Alert" button (bell icon) that calls
+`togglePriceAlert()` with visual toggle state.
+**Android:** `togglePriceAlert()` exists in `PostDetailViewModel` but **no UI button**
+is rendered in `PostDetailScreen`.
+**Fix needed:** Add `IconButton` (bell icon) in `PostDetailScreen` action row;
+toggle `isPriceAlertActive` state with filled/outlined bell icon.
+
+### P2-2 · PostDetail: Trust Score Risk State Badge Missing
+**Web:** PostDetail shows `risk_state` badge ("Under Review") when
+`post.seller.trust_score.risk_state !== "low"`.
+**Android:** Trust score fetched but no visual risk badge shown.
+**Fix needed:** Add conditional `Surface` badge "⚠️ Under Review" below seller name
+when `trustScore.riskState != "low"`.
+
+### P2-3 · PostDetail: Sponsored/Premium Recommendations Section Missing
+**Web:** `<SponsoredListings />` and `<PremiumRecommendations />` components under
+post description.
+**Android:** No sponsored/promoted recommendations below post detail.
+**Fix needed:** After "You May Also Like" section, add a
+`SponsoredPostsRow` calling `/posts?sponsored=1&category={category}&limit=4`.
+
+### P2-4 · AllPosts: Page Density Toggle Missing
+**Web:** `<PageDensityToggle />` — compact / normal / spacious grid density.
+**Android:** `PageDensity` enum exists in code but no UI control renders it.
+**Fix needed:** Add `PageDensityToggle` icon button in `HomeScreen` toolbar; switch
+`GridCells.Fixed(n)` based on selected density (2 / 3 / 4 columns).
+
+### P2-5 · Profile/Settings: Account Data Export/Delete Actions Missing
+**Web:** Profile Settings tab has `<AccountDataActions />` — buttons to download
+account data (GDPR export) and delete account with confirmation.
+**Android:** `AccountDeleteScreen.kt` exists (accessible via profile action button)
+but no **data export** feature anywhere.
+**Fix needed:** Add "Export My Data" button in `SettingsScreen` or `AccountDeleteScreen`
+calling `GET /users/export`.
+
+### P2-6 · Profile: Response Time Indicator Missing
+**Web:** Profile shows seller response time (e.g., "Replies within 2 hours").
+**Android:** No response time display.
+**Fix needed:** Add a `Row` with `Icons.Filled.Timer` + "Responds in X" text
+below seller stats — fetched from `userProfile.responseTime` field.
+
+### P2-7 · Profile: Centre/Channel Display Missing
+**Web:** Profile page shows a user's channel or centres if they own one.
+**Android:** No channel / centre reference in `ProfileScreen`.
+**Fix needed:** Add a "My Channel" or "My Centre" card at bottom of Profile Overview
+if `userProfile.channelId != null`.
+
+### P2-8 · Notifications: Preference Save to Backend Missing
+**Web:** NotificationsPage preferences dialog saves to API on "Save".
+**Android:** `showPrefsDialog` AlertDialog has toggles but `onConfirm` only sets
+local state; no API call to save preferences.
+**Fix needed:** Call `/notifications/preferences` PATCH endpoint in `viewModel.savePrefs()`.
+
+### P2-9 · Search: Autocomplete from API Missing
+**Web:** Suggestions dropdown queries live `/brands` + subcategory endpoints,
+deduplicates, and shows top 8 results.
+**Android:** `SearchScreen.kt` has hardcoded brand list for suggestions; no API call.
+**Fix needed:** Wire `SearchViewModel.suggestions` to `GET /search/suggest?q={query}`
+with 300ms debounce.
+
+### P2-10 · Cart: Multi-Currency Price Breakdown Missing
+**Web:** Cart shows per-currency subtotals when items have different currencies.
+**Android:** Single-currency display only.
+**Fix needed:** Group cart items by currency in `CartViewModel.subtotalByCurrency`
+and render a `CurrencyBreakdownRow` per currency group.
+
+---
+
+## 4. LOW PRIORITY GAPS (P3 — Polish / edge cases)
+
+| # | Gap | Location | Web source |
+|---|---|---|---|
+| P3-1 | Recently viewed source tracking (session storage) | PostDetailScreen | PostDetailPage.jsx `recentlyViewedSource` |
+| P3-2 | PostDetail section-scroll analytics (observer) | PostDetailScreen | `useIntersectionObserver` per section |
+| P3-3 | AllPosts: "Sort direction" Asc/Desc button | HomeScreen filter sheet | AllPostsPage filter panel |
+| P3-4 | Profile: social links save properly verified | ProfileScreen | Profile.jsx social links dialog |
+| P3-5 | Search: locked category-mode visual display | SearchScreen | SearchPage.jsx locked category badge |
+| P3-6 | Chat: block user UI button | ChatScreen | ProtectedChatPage settings menu |
+| P3-7 | Chat: report conversation UI button | ChatScreen | ProtectedChatPage settings menu |
+| P3-8 | Rewards: SSE real-time coin delta animation | RewardsScreen | Rewards.jsx `coinDelta` + `sseStatus` |
+| P3-9 | Notifications: expiry countdown label | NotificationsScreen | NotificationsPage `formatExpiresAt()` |
+| P3-10 | Static pages: About Us web route | N/A — Android-only | Not in web |
+| P3-11 | Static pages: Contact Us web route | N/A — Android-only | Not in web |
+| P3-12 | Static pages: FAQ web route | N/A — Android-only | Not in web |
+| P3-13 | Comparison: rich visual diff table | CompareScreen | ComparePosts.jsx spec diff row |
+| P3-14 | Analytics: time-range selection + charts | AnalyticsScreen | AnalyticsPage.jsx date pickers |
+
+---
+
+## 5. ALREADY CONFIRMED FULL PARITY ✅
+
+The following were previously flagged as gaps but are **confirmed implemented**:
+
+| Screen | Verified in |
+|---|---|
+| PostDetail image zoom (`ImageZoomDialog`) | `home/PostDetailScreen.kt:506` |
+| PostDetail trust score fetch | `home/PostDetailScreen.kt:121` |
+| PostDetail BuyerInterestModal | `home/PostDetailScreen.kt` |
+| PostDetail ShareLinkBottomSheet | `home/PostDetailScreen.kt` |
+| Wishlist bulk-add-to-cart (was commented) | `wishlist/WishlistScreen.kt` — fixed May 11 |
+| Wishlist multi-select + select-all | `wishlist/WishlistScreen.kt:428` |
+| Wishlist items rendered in LazyColumn | `wishlist/WishlistScreen.kt` — **fixed May 11** |
+| Cart swipe-to-dismiss + undo snackbar | `commerce/CommerceScreens.kt` — **added May 11** |
+| PDP write-review modal bottom sheet | `categoryapp/MockProductDetailScreen.kt` — **added May 11** |
+| PDP recently-viewed Room persistence | `categoryapp/MockProductDetailScreen.kt` — **added May 11** |
+| Search autocomplete + saveSearch | `search/SearchScreen.kt:282,307` |
+| Search advanced filters (price, brand, model, radius, condition) | `search/SearchScreen.kt` |
+| Security 2FA setup/verify/disable | `account/AccountScreens.kt:431` |
+| Active sessions list + revoke | `account/AccountScreens.kt:412` |
+| BuyerView full implementation | `commerce/CommerceScreens.kt:2153` |
+| ComparePosts full implementation | `commerce/CommerceScreens.kt:2030` |
+| NotFoundScreen | `legal/LegalScreens.kt:695` |
+| Category app shell (mini-app per category) | `categoryapp/CategoryAppShell.kt` |
+| Checkout 4-screen flow (address→payment→review→confirm) | `checkout/CheckoutScreens.kt` |
+| RewardsScreen (daily check-in, spin, scratch, redeem) | `rewards/RewardsScreen.kt` |
+| KYC / Aadhaar verify | `kyc/KycScreens.kt` |
+| All legal/static pages (T&C, Privacy, Refund, Support) | `legal/LegalScreens.kt` |
+| Edit post (EditPostScreen) | `post/EditPostScreen.kt` |
+| Feed, FeedDetail, FeedPostAdd, MyFeed | `feed/FeedScreens.kt` |
+| Chat conversation list + message thread | `chat/ChatScreen.kt` |
+| Channels + Centres CRUD | `channels/ChannelScreens.kt` |
+| Dashboard, ActivityHub | `home/` screens |
+
+---
+
+## 6. IMPLEMENTATION SPRINTS
+
+### Sprint 1 — P0 Critical Fixes (Est. 2–3 days)
+
+**S1-A: Wire CartScreen into MainShell**
+- File: `ui/MhubApp.kt` — add `Routes.CART` composable entry pointing to `CartScreen`
+- File: `ui/MhubApp.kt` — add cart icon in `MainShell` top bar or bottom nav
+- File: `commerce/CommerceScreens.kt` — ensure `CartScreen` renders full cart:
+   - `SwipeToDismissBox` per item (already added May 11) ✅
+   - Qty +/− controls
+   - Save-for-later button (already wired) ✅
+   - Coupon code input + `applyCoupon()` (already wired) ✅
+   - Price breakdown surface at bottom
+   - Empty-cart state with Browse + Wishlist CTAs
+
+**S1-B: Counter-Offer / Bargain Workflow**
+- File: `home/PostDetailScreen.kt`
+   - Add `OfferHistorySheet(postId)` composable showing pending/accepted/declined offers
+   - Add "Counter Offer" bottom-sheet for seller (visible when `isOwner`)
+   - Add "Accept / Decline" buttons per offer row
+   - Wire to `OfferRepository.getHistory()`, `OfferRepository.counter()`,
+      `OfferRepository.accept()`, `OfferRepository.decline()`
+
+**S1-C: Profile Preferences Tab**
+- File: `profile/ProfileScreen.kt`
+   - Add "Preferences" tab in `ProfileScreen` tab row
+   - Location text field + `AutoDetect` button
+   - Radius chips: 5 / 10 / 25 / 50 / 100 / Any km
+   - Subcategory multi-select (filtered by `AppPreferences.lastCategoryKey`)
+   - Save button → `UserRepository.savePreferences()`
+   - Load → `UserRepository.getPreferences()`
+
+### Sprint 2 — P1 High Priority (Est. 3–4 days)
+
+**S2-A: PostDetail Owner Insights Card**
+- Fetch when `isOwner`: `GET /inquiries/post/{id}`, `GET /offers/history/{id}`,
+   `GET /recently-viewed/post/{id}`
+- Render `OwnerInsightsCard` (viewers count, inquiries count, offers count)
+- Add Boost CTA button opening `PromoteDialog()`
+
+**S2-B: Wire PromoteDialog to AllPosts + PostDetail**
+- `PromoteDialog` already exists in `CommerceScreens.kt`
+- Add "Promote" option in post card kebab-menu in `HomeScreen`
+- Add "Boost Listing" button in `PostDetailScreen` action row (visible to owner)
+
+**S2-C: HomeScreen Quick Filters + Category Bar**
+- Add `QuickFiltersRow` composable (chips: New / Trending / Great Deals /
+   Verified Sellers / Near Me / Free Delivery)
+- Add `CategoryPillBar` composable (Electronics / Fashion / Grocery / Furniture …)
+- Each chip pre-populates `FilterState` and re-fetches
+
+**S2-D: HomeScreen Grid/List Toggle + Filter Badge**
+- Add `IconToggleButton` (GridView / List) in HomeScreen top bar
+- Override `GridCells.Fixed(2)` → `GridCells.Fixed(1)` in list mode with wider card
+- Add `BadgedBox` overlay on filter icon showing `activeFilterCount`
+
+**S2-E: Persist Recent Searches to DataStore**
+- Add `recentSearches: List<String>` to `AppPreferences` DataStore
+- On `SearchViewModel.search(query)`, prepend to recent list (max 10, deduplicate)
+- On clear, remove individual item. Wire to `SearchScreen` chip row.
+
+**S2-F: Active Filter Chips Row in SearchScreen**
+- Below search bar, render `FlowRow` of removable chips for each active filter
+- Each chip has `×` to remove that specific filter
+- "Clear All" TextButton at end of row
+
+**S2-G: Language Selector in Settings**
+- File: `settings/SettingsScreen.kt`
+- Add language preference row with exposed dropdown (EN / HI / TA / TE)
+- Persist to `AppPreferences.language`
+- Apply with `AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang))`
+
+**S2-H: Notification Preferences Save to Backend**
+- `NotificationsScreen.kt` → `onConfirm` in prefs dialog calls
+   `viewModel.savePrefsToBackend(prefs)` → `PATCH /notifications/preferences`
+
+**S2-I: Rewards Leaderboard Tab + XP Bar**
+- Add "Leaderboard" tab in `RewardsScreen` calling `GET /rewards/leaderboard`
+- Add XP bar in hero card (`LinearProgressIndicator`, `xpCurrent / xpRequired`)
+- Add impact rows (posts sold, saves, reviews)
+
+### Sprint 3 — P2 Medium Priority (Est. 2–3 days)
+
+**S3-A: Price Alert UI in PostDetail**
+- Add `IconButton(bell icon)` in PostDetailScreen action row
+- Toggle `isPriceAlertActive` with filled/outlined bell
+- Wire to existing `togglePriceAlert()` in ViewModel
+
+**S3-B: Trust Score Risk Badge in PostDetail**
+- If `trustScore.riskState != "low"`, show `Surface` chip "⚠️ Under Review"
+   below seller name in PostDetailScreen
+
+**S3-C: Sponsored Listings Row in PostDetail**
+- Below "You May Also Like" row, add `SponsoredPostsRow`
+- Query `GET /posts?sponsored=1&category={category}&limit=4`
+
+**S3-D: Page Density Toggle in HomeScreen**
+- Add `SegmentedButton` or icon group for Compact (3-col) / Normal (2-col) / Spacious (1-col)
+- Persist in `AppPreferences.pageDensity`
+
+**S3-E: Account Data Export Button**
+- Add "Export My Data" button in `SettingsScreen` or `AccountDeleteScreen`
+- Calls `GET /users/export` and shows download link in Snackbar
+
+**S3-F: Seller Response Time in Profile**
+- Add `Row(Timer icon + "Responds in X")` in `ProfileScreen` stats area
+- Populated from `userProfile.responseTime`
+
+**S3-G: Channel/Centre Card in Profile**
+- If `userProfile.channelId != null`, render a `ChannelPreviewCard`
+   in `ProfileScreen` Overview tab
+
+**S3-H: Search API Autocomplete Suggestions**
+- `SearchViewModel` — add `suggestionsJob` with 300ms debounce
+- Call `GET /search/suggest?q={query}`
+- Show results in dropdown; fall back to hardcoded brands if API unavailable
+
+**S3-I: Cart Multi-Currency Breakdown**
+- In `CartViewModel`, group items by currency
+- Render per-currency subtotal row in cart footer surface
+
+### Sprint 4 — P3 Polish (Est. 1–2 days)
+
+- P3-1: Store `recentlyViewedSource` in `AppPreferences` when navigating to PostDetail
+- P3-3: Add sort-direction toggle (ASC/DESC) button in `HomeScreen` filter sheet
+- P3-6/7: Add block/report buttons in `ChatScreen` conversation options menu
+- P3-9: Add `expiresAt` countdown label in `NotificationsScreen` notification row
+- P3-13: Enhance `CompareScreen` with color-coded diff rows (green/red for better/worse specs)
+- P3-14: Add date-range selector + simple `LineChart` in `AnalyticsScreen`
+
+---
+
+## 7. FILE-BY-FILE CHANGE TRACKER
+
+| File | Sprint | Status |
+|---|---|---|
+| `ui/MhubApp.kt` | S1-A | ⬜ TODO |
+| `commerce/CommerceScreens.kt` — CartScreen | S1-A | ✅ May 11 (partial) |
+| `home/PostDetailScreen.kt` — OfferHistory | S1-B | ⬜ TODO |
+| `home/PostDetailScreen.kt` — OwnerInsights | S2-A | ⬜ TODO |
+| `home/PostDetailScreen.kt` — PriceAlert UI | S3-A | ⬜ TODO |
+| `home/PostDetailScreen.kt` — TrustRiskBadge | S3-B | ⬜ TODO |
+| `home/PostDetailScreen.kt` — SponsoredRow | S3-C | ⬜ TODO |
+| `home/HomeScreen.kt` — QuickFiltersRow | S2-C | ⬜ TODO |
+| `home/HomeScreen.kt` — CategoryPillBar | S2-C | ⬜ TODO |
+| `home/HomeScreen.kt` — Grid/List toggle | S2-D | ⬜ TODO |
+| `home/HomeScreen.kt` — FilterCountBadge | S2-D | ⬜ TODO |
+| `home/HomeScreen.kt` — PageDensityToggle | S3-D | ⬜ TODO |
+| `profile/ProfileScreen.kt` — PrefsTab | S1-C | ⬜ TODO |
+| `profile/ProfileScreen.kt` — ResponseTime | S3-F | ⬜ TODO |
+| `profile/ProfileScreen.kt` — ChannelCard | S3-G | ⬜ TODO |
+| `search/SearchScreen.kt` — ActiveFilterChips | S2-F | ⬜ TODO |
+| `search/SearchScreen.kt` — PersistRecent | S2-E | ⬜ TODO |
+| `search/SearchScreen.kt` — ApiAutocomplete | S3-H | ⬜ TODO |
+| `notifications/NotificationsScreen.kt` — SavePrefs | S2-H | ⬜ TODO |
+| `notifications/NotificationsScreen.kt` — ExpiryLabel | S4 | ⬜ TODO |
+| `rewards/RewardsScreen.kt` — LeaderboardTab | S2-I | ⬜ TODO |
+| `rewards/RewardsScreen.kt` — XpBar | S2-I | ⬜ TODO |
+| `settings/SettingsScreen.kt` — LanguageSelector | S2-G | ⬜ TODO |
+| `settings/SettingsScreen.kt` — DataExport | S3-E | ⬜ TODO |
+| `chat/ChatScreen.kt` — Block/Report UI | S4 | ⬜ TODO |
+| `wishlist/WishlistScreen.kt` — items rendered | ✅ May 11 | ✅ Done |
+| `wishlist/WishlistScreen.kt` — CartRepo inject | ✅ May 11 | ✅ Done |
+| `categoryapp/MockProductDetailScreen.kt` — ReviewSheet | ✅ May 11 | ✅ Done |
+| `categoryapp/MockProductDetailScreen.kt` — RecentlyViewed | ✅ May 11 | ✅ Done |
+| `categoryapp/CategoryAppShell.kt` | ✅ Prior | ✅ Done |
+
+---
+
+## 8. PARITY SCORE TRACKER
+
+| Sprint | Items | Points | Cumulative Rating |
+|---|---|---|---|
+| Baseline (May 11 audit) | — | — | **65 / 100** |
+| May 11 session fixes | +4 items | +5 | **70 / 100** |
+| Sprint 1 complete | +3 items | +10 | **80 / 100** |
+| Sprint 2 complete | +9 items | +12 | **92 / 100** |
+| Sprint 3 complete | +9 items | +5 | **97 / 100** |
+| Sprint 4 complete | +6 items | +3 | **100 / 100** |
+
+---
+
+## 9. BUILD & TEST COMMANDS
+
+```bash
+# Build debug APK
+cd android-native
+./gradlew :app:assembleDebug --no-configuration-cache -q
+
+# Install on device/emulator
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# Run unit tests
+./gradlew :app:testDebugUnitTest
+
+# Check for compile errors only
+./gradlew :app:compileDebugKotlin --no-configuration-cache
+```
 
 ---
 

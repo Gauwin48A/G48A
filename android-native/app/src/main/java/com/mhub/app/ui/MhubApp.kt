@@ -55,8 +55,10 @@ import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import com.mhub.app.R
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import com.mhub.app.ui.auth.AuthViewModel
 import com.mhub.app.ui.auth.ForgotPasswordScreen
 import com.mhub.app.ui.auth.LoginScreen
@@ -138,6 +140,8 @@ import com.mhub.app.ui.recentlyviewed.RecentlyViewedFullScreen
 import com.mhub.app.ui.staticpages.AboutUsScreen
 import com.mhub.app.ui.staticpages.ContactUsScreen
 import com.mhub.app.ui.staticpages.FAQScreen
+import com.google.firebase.analytics.FirebaseAnalytics
+import android.os.Bundle
 
 @HiltViewModel
 class AppThemeViewModel @Inject constructor(
@@ -161,6 +165,8 @@ fun MhubApp(
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
+        val context = LocalContext.current
+        val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
 
         LaunchedEffect(Unit) { onReady() }
 
@@ -258,18 +264,48 @@ fun MhubApp(
                 composable(Routes.HOME) {
                     // CategoryHub is the launcher — no MainShell, no bottom nav
                     CategoryHubScreen(
-                        onOpenCategory = {
-                            activeCategoryKey = null
-                            navController.navigate(Routes.ALL_POSTS)
+                        onOpenCategory = { category ->
+                            val mapped = when ((category.categoryGroup ?: category.name).lowercase()) {
+                                "electronics" -> "electronics"
+                                "fashion" -> "fashion"
+                                "grocery" -> "grocery"
+                                else -> "furniture"
+                            }
+                            analytics.logEvent(
+                                "launcher_enter_category",
+                                Bundle().apply {
+                                    putString("category_key", mapped)
+                                    putString("entry_type", "mapped_category")
+                                },
+                            )
+                            activeCategoryKey = mapped
+                            navController.navigate("cat/$mapped") { launchSingleTop = true }
                         },
                         onOpenAllPosts = {
-                            activeCategoryKey = null
-                            navController.navigate(Routes.ALL_POSTS)
+                            analytics.logEvent(
+                                "launcher_enter_category",
+                                Bundle().apply {
+                                    putString("category_key", "electronics")
+                                    putString("entry_type", "fallback_default")
+                                },
+                            )
+                            activeCategoryKey = "electronics"
+                            navController.navigate("cat/electronics") { launchSingleTop = true }
                         },
                         onOpenSearch = { navController.navigate(Routes.SEARCH) },
                         onSelectApp = { key ->
-                            activeCategoryKey = key
-                            navController.navigate("cat/$key") {
+                            val safeKey = key.lowercase().let {
+                                if (it in setOf("electronics", "fashion", "grocery", "furniture")) it else "electronics"
+                            }
+                            analytics.logEvent(
+                                "launcher_enter_category",
+                                Bundle().apply {
+                                    putString("category_key", safeKey)
+                                    putString("entry_type", "direct_card")
+                                },
+                            )
+                            activeCategoryKey = safeKey
+                            navController.navigate("cat/$safeKey") {
                                 launchSingleTop = true
                             }
                         },
@@ -746,13 +782,37 @@ fun MhubApp(
                 CategoryAppShell(
                     categoryKey = catKey,
                     onBackToLauncher = {
+                        analytics.logEvent(
+                            "category_exit_to_launcher",
+                            Bundle().apply {
+                                putString("category_key", catKey)
+                            },
+                        )
                         navController.navigate(Routes.HOME) {
                             popUpTo(Routes.HOME) { inclusive = false }
                             launchSingleTop = true
                         }
                     },
-                    onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                    onOpenSearch = { navController.navigate("${Routes.SEARCH}?query=${catKey}") },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenHelp = { navController.navigate(Routes.FAQ) },
+                    onSwitchCategory = { nextKey ->
+                        val safeKey = nextKey.lowercase().let {
+                            if (it in setOf("electronics", "fashion", "grocery", "furniture")) it else "electronics"
+                        }
+                        analytics.logEvent(
+                            "category_switch",
+                            Bundle().apply {
+                                putString("from_category", catKey)
+                                putString("to_category", safeKey)
+                            },
+                        )
+                        navController.navigate("cat/$safeKey") {
+                            launchSingleTop = true
+                        }
+                    },
                     onOpenPostDetail = { id ->
                         // route mock product IDs to MockProductDetailScreen
                         if (id.startsWith("ep") || id.startsWith("fp") || id.startsWith("gp") || id.startsWith("fup")) {

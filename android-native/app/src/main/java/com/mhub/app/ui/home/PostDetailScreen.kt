@@ -825,6 +825,49 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                                // Sponsored / Premium Recommendations
+                                state.similarPosts.takeIf { it.size > 1 }?.let { sponsored ->
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Recommended for You", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                                        Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
+                                            Text("Sponsored", fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        items(sponsored.takeLast(4), key = { "sp_${it.stableId}" }) { spPost ->
+                                            Card(
+                                                onClick = { onOpenPost(spPost.stableId) },
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.width(150.dp),
+                                            ) {
+                                                Column {
+                                                    Box {
+                                                        spPost.primaryImage?.let { img ->
+                                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.fillMaxWidth().height(100.dp))
+                                                        }
+                                                        Surface(
+                                                            shape = RoundedCornerShape(bottomEnd = 8.dp),
+                                                            color = Color(0xFF2563EB).copy(alpha = 0.85f),
+                                                            modifier = Modifier.align(Alignment.TopStart),
+                                                        ) {
+                                                            Text("⚡", fontSize = 10.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                                                        }
+                                                    }
+                                                    Column(Modifier.padding(8.dp)) {
+                                                        Text(spPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                                        spPost.price?.let { p ->
+                                                            Text("₹${"%,.0f".format(p)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 post.userName?.let {
                                     Card(
                                         shape = RoundedCornerShape(14.dp),

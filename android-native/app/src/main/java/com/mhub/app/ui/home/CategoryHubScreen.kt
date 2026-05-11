@@ -65,6 +65,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.stateDescription
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -155,9 +160,9 @@ class CategoryHubViewModel @Inject constructor(
 @Composable
 fun CategoryHubScreen(
     onOpenCategory: (Category) -> Unit = {},
-    onOpenAllPosts: () -> Unit,
+    onOpenAllPosts: () -> Unit = {},
     onOpenSearch: () -> Unit,
-    onSelectApp: (String) -> Unit = { _ -> onOpenAllPosts() },
+    onSelectApp: (String) -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     viewModel: CategoryHubViewModel = hiltViewModel(),
@@ -213,6 +218,7 @@ fun CategoryHubScreen(
                 fontWeight = FontWeight.Black,
                 color = Color(0xFF0F172A),
                 textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -375,6 +381,11 @@ private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, index: I
             .clip(RoundedCornerShape(24.dp))
             .background(Brush.linearGradient(app.gradient))
             .clickable { onClick() }
+            .semantics {
+                role = Role.Button
+                contentDescription = "Open ${app.label} app"
+                stateDescription = "$listingsCount listings${if (newToday > 0) ", plus $newToday today" else ""}"
+            }
             .padding(16.dp),
     ) {
         Column(
