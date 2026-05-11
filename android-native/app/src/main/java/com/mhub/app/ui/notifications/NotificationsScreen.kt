@@ -106,6 +106,9 @@ data class NotificationsState(
     val error: String? = null,
     val expandedItems: Set<String> = emptySet(),
     val showSettings: Boolean = false,
+    val selectedItems: Set<String> = emptySet(),
+    val selectMode: Boolean = false,
+    val snoozedItems: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -164,6 +167,57 @@ class NotificationsViewModel @Inject constructor(
     
     fun toggleSettings() {
         _state.value = _state.value.copy(showSettings = !_state.value.showSettings)
+    }
+
+    // ── Bulk selection ────────────────────────────────────────
+    fun toggleSelectMode() {
+        val newMode = !_state.value.selectMode
+        _state.value = _state.value.copy(
+            selectMode = newMode,
+            selectedItems = if (newMode) _state.value.selectedItems else emptySet(),
+        )
+    }
+
+    fun toggleSelected(id: String) {
+        val current = _state.value.selectedItems
+        _state.value = _state.value.copy(
+            selectedItems = if (id in current) current - id else current + id,
+        )
+    }
+
+    fun selectAll() {
+        _state.value = _state.value.copy(
+            selectedItems = _state.value.items.map { it.stableId }.toSet(),
+        )
+    }
+
+    fun deselectAll() {
+        _state.value = _state.value.copy(selectedItems = emptySet())
+    }
+
+    fun deleteSelected() {
+        val toDelete = _state.value.selectedItems
+        _state.value = _state.value.copy(
+            items = _state.value.items.filter { it.stableId !in toDelete },
+            selectedItems = emptySet(),
+            selectMode = false,
+        )
+        viewModelScope.launch {
+            toDelete.forEach { id -> repo.delete(id) }
+        }
+    }
+
+    fun snooze(id: String) {
+        // Hide from view (add to snoozed set), re-show after delay
+        _state.value = _state.value.copy(
+            snoozedItems = _state.value.snoozedItems + id,
+        )
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3_600_000L) // 1 hour
+            _state.value = _state.value.copy(
+                snoozedItems = _state.value.snoozedItems - id,
+            )
+        }
     }
 }
 
@@ -249,18 +303,42 @@ fun NotificationsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.toggleSettings() }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    if (unreadCount > 0) {
-                        TextButton(onClick = { viewModel.markAllRead() }) {
-                            Icon(
-                                Icons.Default.DoneAll,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                    if (state.selectMode) {
+                        TextButton(onClick = {
+                            if (state.selectedItems.size == displayItems.size) viewModel.deselectAll()
+                            else viewModel.selectAll()
+                        }) {
+                            Text(
+                                if (state.selectedItems.size == displayItems.size) "Deselect All" else "Select All",
+                                style = MaterialTheme.typography.labelMedium,
                             )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Mark all read", style = MaterialTheme.typography.labelMedium)
+                        }
+                        IconButton(
+                            onClick = { viewModel.deleteSelected() },
+                            enabled = state.selectedItems.isNotEmpty(),
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = if (state.selectedItems.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { viewModel.toggleSelectMode() }) {
+                            Text("Cancel", style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        IconButton(onClick = { viewModel.toggleSelectMode() }) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = "Select")
+                        }
+                        IconButton(onClick = { viewModel.toggleSettings() }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                        if (unreadCount > 0) {
+                            TextButton(onClick = { viewModel.markAllRead() }) {
+                                Icon(
+                                    Icons.Default.DoneAll,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Mark all read", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
                 },

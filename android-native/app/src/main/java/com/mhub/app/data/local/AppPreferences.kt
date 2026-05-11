@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mhub.app.BuildConfig
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,7 @@ class AppPreferences @Inject constructor(private val context: Context) {
     private val baseUrlKey = stringPreferencesKey("api_base_url")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val lastCategoryKey = stringPreferencesKey("last_category_key")
+    private val recentSearchesKey = stringPreferencesKey("recent_searches_json")
 
     private fun categoryTabKey(categoryKey: String) =
         stringPreferencesKey("last_category_tab_${categoryKey.lowercase()}")
@@ -75,5 +77,15 @@ class AppPreferences @Inject constructor(private val context: Context) {
             ?: BuildConfig.DEFAULT_API_BASE_URL
     } catch (_: Throwable) {
         BuildConfig.DEFAULT_API_BASE_URL
+    }
+
+    // Recent searches (persisted as pipe-delimited string, max 10)
+    suspend fun getRecentSearches(): List<String> = try {
+        val raw = context.dataStore.data.first()[recentSearchesKey] ?: ""
+        if (raw.isBlank()) emptyList() else raw.split("|").take(10)
+    } catch (_: Throwable) { emptyList() }
+
+    suspend fun saveRecentSearches(queries: List<String>) {
+        context.dataStore.edit { it[recentSearchesKey] = queries.take(10).joinToString("|") }
     }
 }

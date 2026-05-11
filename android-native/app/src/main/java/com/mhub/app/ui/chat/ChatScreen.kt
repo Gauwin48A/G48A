@@ -84,6 +84,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.remote.ChatEvent
+import com.mhub.app.data.remote.ChatWebSocket
 import com.mhub.app.data.repository.ChatRepository
 import com.mhub.app.domain.model.ChatConversation
 import com.mhub.app.domain.model.ChatMessage
@@ -108,18 +110,31 @@ data class ChatState(
     val sending: Boolean = false,
     val searchQuery: String = "",
     val isTyping: Boolean = false,
+    val wsConnected: Boolean = false,
+    val peerOnline: Boolean = false,
 )
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repo: ChatRepository,
+    private val chatWebSocket: ChatWebSocket,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
     private var pollingJob: kotlinx.coroutines.Job? = null
+    private var wsEventJob: kotlinx.coroutines.Job? = null
+    private var typingJob: kotlinx.coroutines.Job? = null
 
-    init { loadConversations() }
+    init {
+        loadConversations()
+        // Observe WebSocket connection state
+        viewModelScope.launch {
+            chatWebSocket.connected.collect { connected ->
+                _state.value = _state.value.copy(wsConnected = connected)
+            }
+        }
+    }
 
     fun loadConversations() {
         _state.value = _state.value.copy(loading = true, error = null)
@@ -139,12 +154,16 @@ class ChatViewModel @Inject constructor(
 
     fun openConversation(conv: ChatConversation) {
         pollingJob?.cancel()
+        wsEventJob?.cancel()
         _state.value = _state.value.copy(
             selectedConversation = conv,
             messagesLoading = true,
             messages = emptyList(),
             error = null,
+            isTyping = false,
+            peerOnline = false,
         )
+        // Load message history via REST
         viewModelScope.launch {
             when (val result = repo.messages(conv.stableId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
@@ -157,10 +176,63 @@ class ChatViewModel @Inject constructor(
                 )
             }
         }
-        // Start polling for new messages
+
+        // Connect WebSocket for real-time updates
+        chatWebSocket.connect()
+
+        // Collect real-time WebSocket events
+        wsEventJob = viewModelScope.launch {
+            chatWebSocket.events.collect { event ->
+                val currentConvId = _state.value.selectedConversation?.stableId
+                when (event) {
+                    is ChatEvent.NewMessage -> {
+                        if (event.conversationId == currentConvId) {
+                            val newMsg = ChatMessage(
+                                content = event.content,
+                                senderId = event.senderId,
+                            )
+                            // Avoid duplicates from optimistic updates
+                            val existing = _state.value.messages
+                            if (existing.none { it.content == event.content && it.senderId == event.senderId }) {
+                                _state.value = _state.value.copy(messages = existing + newMsg)
+                            }
+                        }
+                        // Update conversation list's last message
+                        _state.value = _state.value.copy(
+                            conversations = _state.value.conversations.map { c ->
+                                if (c.stableId == event.conversationId) c.copy(lastMessage = event.content)
+                                else c
+                            },
+                        )
+                    }
+                    is ChatEvent.TypingStarted -> {
+                        if (event.conversationId == currentConvId && event.userId != _state.value.currentUserId) {
+                            _state.value = _state.value.copy(isTyping = true)
+                        }
+                    }
+                    is ChatEvent.TypingStopped -> {
+                        if (event.conversationId == currentConvId) {
+                            _state.value = _state.value.copy(isTyping = false)
+                        }
+                    }
+                    is ChatEvent.MessageRead -> {
+                        // Could update message read receipts in future
+                    }
+                    is ChatEvent.UserOnline -> {
+                        _state.value = _state.value.copy(peerOnline = true)
+                    }
+                    is ChatEvent.UserOffline -> {
+                        _state.value = _state.value.copy(peerOnline = false)
+                    }
+                }
+            }
+        }
+
+        // Fallback polling: only when WebSocket is disconnected
         pollingJob = viewModelScope.launch {
             while (true) {
                 kotlinx.coroutines.delay(5000)
+                if (_state.value.wsConnected) continue // Skip polling when WS is active
                 val convId = _state.value.selectedConversation?.stableId ?: break
                 when (val result = repo.messages(convId)) {
                     is ApiResult.Success -> _state.value = _state.value.copy(messages = result.data)
@@ -175,6 +247,10 @@ class ChatViewModel @Inject constructor(
         val trimmed = content.trim()
         if (trimmed.isBlank()) return
         _state.value = _state.value.copy(sending = true, error = null)
+
+        // Stop typing indicator when sending
+        chatWebSocket.sendStopTyping(conv.stableId)
+
         viewModelScope.launch {
             when (val result = repo.send(conv.stableId, trimmed)) {
                 is ApiResult.Success -> {
@@ -192,9 +268,37 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /** Call when user is typing in the input field */
+    fun onTyping() {
+        val convId = _state.value.selectedConversation?.stableId ?: return
+        typingJob?.cancel()
+        chatWebSocket.sendTyping(convId)
+        // Auto-stop typing after 3 seconds of inactivity
+        typingJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(3000)
+            chatWebSocket.sendStopTyping(convId)
+        }
+    }
+
     fun closeConversation() {
         pollingJob?.cancel()
-        _state.value = _state.value.copy(selectedConversation = null, messages = emptyList())
+        wsEventJob?.cancel()
+        typingJob?.cancel()
+        val convId = _state.value.selectedConversation?.stableId
+        convId?.let { chatWebSocket.sendStopTyping(it) }
+        chatWebSocket.disconnect()
+        _state.value = _state.value.copy(
+            selectedConversation = null,
+            messages = emptyList(),
+            isTyping = false,
+            peerOnline = false,
+            wsConnected = false,
+        )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        chatWebSocket.disconnect()
     }
 
     fun setSearchQuery(query: String) {
@@ -590,9 +694,14 @@ private fun MessageThreadScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                text = "Online",
+                                text = if (state.isTyping) "typing…"
+                                       else if (state.peerOnline) "Online"
+                                       else if (state.wsConnected) "Offline"
+                                       else "Connecting…",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF22C55E),
+                                color = if (state.isTyping) MaterialTheme.colorScheme.primary
+                                        else if (state.peerOnline) Color(0xFF22C55E)
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -641,7 +750,10 @@ private fun MessageThreadScreen(
                 ) {
                     OutlinedTextField(
                         value = input,
-                        onValueChange = { input = it },
+                        onValueChange = {
+                            input = it
+                            viewModel.onTyping()
+                        },
                         placeholder = { Text("Type a message...") },
                         leadingIcon = {
                             IconButton(onClick = { /* TODO: attach file */ }) {

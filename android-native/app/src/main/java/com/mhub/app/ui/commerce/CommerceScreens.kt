@@ -1406,6 +1406,7 @@ data class CartUiState(
     val selectedPayment: String = "upi",
     val deliveryAddress: String = "",
     val pendingUndoItem: CartItem? = null,
+    val selectedIds: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -1477,6 +1478,24 @@ class CartViewModel @Inject constructor(private val repo: CartRepository) : View
     val subtotal: Double get() = _state.value.items.sumOf { (it.price ?: 0.0) * it.quantity }
     val shipping: Double get() = if (subtotal > 500) 0.0 else 49.0
     val grandTotal: Double get() = subtotal + shipping - _state.value.couponDiscount
+    fun toggleSelect(postId: String) {
+        val cur = _state.value.selectedIds
+        _state.value = _state.value.copy(selectedIds = if (postId in cur) cur - postId else cur + postId)
+    }
+    fun toggleSelectAll() {
+        val allIds = _state.value.items.mapNotNull { it.postId }.toSet()
+        _state.value = _state.value.copy(selectedIds = if (_state.value.selectedIds == allIds) emptySet() else allIds)
+    }
+    fun bulkRemove() {
+        val ids = _state.value.selectedIds
+        _state.value = _state.value.copy(items = _state.value.items.filter { (it.postId ?: "") !in ids }, selectedIds = emptySet())
+        viewModelScope.launch { ids.forEach { repo.remove(it) } }
+    }
+    fun bulkSaveForLater() {
+        val ids = _state.value.selectedIds
+        val (toSave, keep) = _state.value.items.partition { (it.postId ?: "") in ids }
+        _state.value = _state.value.copy(items = keep, savedForLater = _state.value.savedForLater + toSave, selectedIds = emptySet())
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1512,11 +1531,31 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                     title = "Your cart is empty", subtitle = "Add items to proceed to checkout",
                 )
                 else -> Column(Modifier.fillMaxSize()) {
+                    // Bulk selection toolbar
+                    if (state.items.isNotEmpty()) {
+                        Surface(color = Color.White, shadowElevation = 1.dp) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                val allIds = state.items.mapNotNull { it.postId }.toSet()
+                                Checkbox(checked = state.selectedIds == allIds && allIds.isNotEmpty(), onCheckedChange = { viewModel.toggleSelectAll() })
+                                Text(if (state.selectedIds.isEmpty()) "Select All" else "${state.selectedIds.size} selected",
+                                    fontSize = 13.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
+                                if (state.selectedIds.isNotEmpty()) {
+                                    TextButton(onClick = { viewModel.bulkSaveForLater() }) { Text("Save for Later", fontSize = 12.sp) }
+                                    TextButton(onClick = { viewModel.bulkRemove() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text("Remove", fontSize = 12.sp) }
+                                }
+                            }
+                        }
+                    }
                     LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         // Cart items
                         if (state.items.isNotEmpty()) {
                             item { Text("Cart (${state.items.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151)) }
                             items(state.items, key = { it.stableId }) { item ->
+                                val checked = (item.postId ?: "") in state.selectedIds
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = checked, onCheckedChange = { viewModel.toggleSelect(item.postId ?: "") }, modifier = Modifier.size(32.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Box(Modifier.weight(1f)) {
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = { value ->
                                         if (value == SwipeToDismissBoxValue.EndToStart || value == SwipeToDismissBoxValue.StartToEnd) {
@@ -1552,6 +1591,8 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                         onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
                                     )
                                 }
+                                    } // Box
+                                } // Row
                             }
                         }
 

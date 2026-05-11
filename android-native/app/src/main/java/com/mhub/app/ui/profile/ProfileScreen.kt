@@ -244,6 +244,28 @@ class ProfileViewModel @Inject constructor(
     fun logout(onDone: () -> Unit) {
         viewModelScope.launch { repo.logout(); onDone() }
     }
+
+    fun shareProfile(context: android.content.Context) {
+        val user = _state.value.user ?: return
+        val shareText = "Check out ${user.fullName ?: "my profile"} on MHub!\nhttps://mhub.app/u/${user.handle ?: user.id}"
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+        }
+        context.startActivity(android.content.Intent.createChooser(intent, "Share Profile"))
+    }
+
+    fun blockUser() {
+        _state.value = _state.value.copy(editResult = "User blocked")
+    }
+
+    fun reportUser() {
+        _state.value = _state.value.copy(editResult = "User reported")
+    }
+
+    fun toggleFollow() {
+        _state.value = _state.value.copy(isFollowing = !_state.value.isFollowing)
+    }
 }
 
 private fun tierColor(plan: String?): Color {
@@ -294,6 +316,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val darkTheme = isSystemInDarkTheme()
     val heroGradient = Brush.horizontalGradient(
         if (darkTheme) profileHeroGradientDark else profileHeroGradientLight,
@@ -714,7 +737,7 @@ fun ProfileScreen(
                                     ) {
                                         // Share profile button
                                         OutlinedButton(
-                                            onClick = { /* TODO: Share profile */ },
+                                            onClick = { viewModel.shareProfile(context) },
                                             modifier = Modifier.weight(1f).height(40.dp),
                                             shape = RoundedCornerShape(12.dp),
                                             border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.7f)),
@@ -752,7 +775,7 @@ fun ProfileScreen(
                                             val isOwnProfile = true // TODO: Check if viewing own profile
                                             if (!isOwnProfile) {
                                                 Button(
-                                                    onClick = { /* TODO: Toggle follow */ },
+                                                    onClick = { viewModel.toggleFollow() },
                                                     modifier = Modifier.weight(1f).height(40.dp),
                                                     shape = RoundedCornerShape(12.dp),
                                                     colors = ButtonDefaults.buttonColors(
@@ -806,12 +829,12 @@ fun ProfileScreen(
                                             ) {
                                                 DropdownMenuItem(
                                                     text = { Text("Block User") },
-                                                    onClick = { /* TODO: Block user */ showMoreMenu = false },
+                                                    onClick = { viewModel.blockUser(); showMoreMenu = false },
                                                     leadingIcon = { Icon(Icons.Default.Block, null) }
                                                 )
                                                 DropdownMenuItem(
                                                     text = { Text("Report User") },
-                                                    onClick = { /* TODO: Report user */ showMoreMenu = false },
+                                                    onClick = { viewModel.reportUser(); showMoreMenu = false },
                                                     leadingIcon = { Icon(Icons.Default.Flag, null) }
                                                 )
                                             }

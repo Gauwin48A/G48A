@@ -57,6 +57,8 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -800,6 +802,17 @@ fun HomeScreen(
         FilterBottomSheet(filters = filters, onApply = { filters = it }, onDismiss = { showFilterSheet = false })
     }
 
+    val filterCount = listOf(
+        filters.condition != "Any",
+        filters.location.isNotBlank(),
+        filters.verifiedOnly,
+        filters.minPrice > 0f,
+        filters.maxPrice < 100000f,
+        filters.startDate != null,
+        filters.endDate != null,
+        selectedCategory != null,
+    ).count { it }
+
     Scaffold(
         topBar = {
             if (categoryTheme != null) {
@@ -828,7 +841,15 @@ fun HomeScreen(
                                 Icon(if (showSearch) Icons.Default.Close else Icons.Default.Search, "Search", tint = Color.White)
                             }
                             IconButton(onClick = { showFilterSheet = true }) {
-                                Icon(Icons.Default.Tune, "Filters", tint = Color.White)
+                                BadgedBox(
+                                    badge = {
+                                        if (filterCount > 0) {
+                                            Badge { Text("$filterCount") }
+                                        }
+                                    },
+                                ) {
+                                    Icon(Icons.Default.Tune, "Filters", tint = Color.White)
+                                }
                             }
                             // Density toggle
                             IconButton(onClick = {
@@ -889,7 +910,15 @@ fun HomeScreen(
                         )
                     }
                     IconButton(onClick = { showFilterSheet = true }) {
-                        Icon(Icons.Default.Tune, contentDescription = "Filters")
+                        BadgedBox(
+                            badge = {
+                                if (filterCount > 0) {
+                                    Badge { Text("$filterCount") }
+                                }
+                            },
+                        ) {
+                            Icon(Icons.Default.Tune, contentDescription = "Filters")
+                        }
                     }
                     // Density toggle
                     IconButton(onClick = {
