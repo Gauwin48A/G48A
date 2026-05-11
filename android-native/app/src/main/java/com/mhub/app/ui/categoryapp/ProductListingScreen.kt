@@ -68,6 +68,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mhub.app.data.mock.MockDataProvider
+import com.mhub.app.ui.common.PageEmptyState
 import com.mhub.app.ui.components.EnhancedProductCard
 import com.mhub.app.ui.components.PostGridShimmer
 import com.mhub.app.ui.components.RatingStars
@@ -110,6 +111,16 @@ fun ProductListingScreen(
             MockDataProvider.productsForCategory(categoryKey)
     }
     val brands = remember(allProducts) { allProducts.map { it.brand }.distinct().sorted() }
+
+    if (allProducts.isEmpty()) {
+        PageEmptyState(
+            title = "No products found",
+            message = "This category has no products yet. Please try another category.",
+            ctaLabel = "Go Back",
+            onCta = onBack,
+        )
+        return
+    }
 
     // ── Filter state ─────────────────────────────────────────────────────────
     var maxPrice = remember { allProducts.maxOfOrNull { it.originalPrice }?.toFloat() ?: 100000f }
@@ -225,11 +236,11 @@ fun ProductListingScreen(
 
                 // Product count
                 Text(
-                    text = "${filteredProducts.size} items",
+                    text = "Showing ${filteredProducts.size} of ${allProducts.size}",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
-                    modifier = Modifier.semantics { contentDescription = "${filteredProducts.size} products found" },
+                    modifier = Modifier.semantics { contentDescription = "Showing ${filteredProducts.size} of ${allProducts.size} products" },
                 )
                 Spacer(Modifier.width(8.dp))
 

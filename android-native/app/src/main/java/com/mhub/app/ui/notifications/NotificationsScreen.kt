@@ -593,6 +593,29 @@ fun NotificationRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
                     }
+                    notification.expiresAt?.let { exp ->
+                        val expiryText = try {
+                            val expiresInstant = java.time.Instant.parse(exp)
+                            val now = java.time.Instant.now()
+                            if (expiresInstant.isAfter(now)) {
+                                val mins = java.time.Duration.between(now, expiresInstant).toMinutes()
+                                when {
+                                    mins < 60 -> "Expires in ${mins}m"
+                                    mins < 1440 -> "Expires in ${mins / 60}h"
+                                    else -> "Expires in ${mins / 1440}d"
+                                }
+                            } else "Expired"
+                        } catch (_: Exception) { null }
+                        expiryText?.let { txt ->
+                            Text(
+                                text = txt,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (txt == "Expired") MaterialTheme.colorScheme.error
+                                       else MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
                 }
                 
                 // Expand/collapse icon

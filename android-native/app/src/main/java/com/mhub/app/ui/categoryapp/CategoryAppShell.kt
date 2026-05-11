@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,15 +20,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -36,10 +42,15 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -47,10 +58,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +76,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -69,8 +85,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mhub.app.data.local.AppPreferences
+import com.mhub.app.data.local.db.CartItemDao
+import com.mhub.app.data.local.db.WishlistItemDao
+import com.mhub.app.data.mock.MockDataProvider
 import com.mhub.app.ui.navigation.Routes
 import com.mhub.app.ui.wishlist.WishlistScreen
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** Defines the 4 category mini-apps with metadata. */
 data class CategoryAppDef(
@@ -90,6 +116,36 @@ private enum class CategoryTab {
     HOME, CATEGORIES, CART, WISHLIST, PROFILE
 }
 
+@HiltViewModel
+class CategoryShellViewModel @Inject constructor(
+    private val cartItemDao: CartItemDao,
+    private val wishlistItemDao: WishlistItemDao,
+    private val appPreferences: AppPreferences,
+) : ViewModel() {
+    val cartCount: StateFlow<Int> = cartItemDao.observeCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    val wishlistCount: StateFlow<Int> = wishlistItemDao.observeCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    suspend fun loadLastTab(categoryKey: String): CategoryTab {
+        val saved = appPreferences.lastCategoryTabValue(categoryKey)
+        return CategoryTab.entries.firstOrNull { it.name == saved } ?: CategoryTab.HOME
+    }
+
+    fun persistTab(categoryKey: String, tab: CategoryTab) {
+        viewModelScope.launch {
+            appPreferences.setLastCategoryTab(categoryKey, tab.name)
+        }
+    }
+
+    fun persistCategory(categoryKey: String) {
+        viewModelScope.launch {
+            appPreferences.setLastOpenedCategory(categoryKey)
+        }
+    }
+}
+
 /**
  * The full category app shell wrapping all screens for a given category.
  * Provides:
@@ -107,60 +163,125 @@ fun CategoryAppShell(
     onBackToLauncher: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenOrders: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenHelp: () -> Unit,
+    onSwitchCategory: (String) -> Unit,
     onOpenPostDetail: (String) -> Unit,
     cartBadgeCount: Int = 0,
 ) {
+    val viewModel: CategoryShellViewModel = hiltViewModel()
     val appDef = CATEGORY_APPS.find { it.key == categoryKey }
         ?: CATEGORY_APPS.first()
 
     val innerNav = rememberNavController()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     var selectedTab by rememberSaveable { mutableStateOf(CategoryTab.HOME) }
+    val roomCartCount by viewModel.cartCount.collectAsState()
+    val roomWishlistCount by viewModel.wishlistCount.collectAsState()
+    val effectiveCartBadgeCount = maxOf(cartBadgeCount, roomCartCount)
 
-    Scaffold(
-        topBar = {
-            CategoryTopBar(
-                appDef = appDef,
-                cartBadgeCount = cartBadgeCount,
-                onBackToLauncher = onBackToLauncher,
-                onSearch = onOpenSearch,
-                onNotifications = onOpenNotifications,
-                onCartClick = {
-                    selectedTab = CategoryTab.CART
-                    innerNav.navigate(Routes.categoryCart(categoryKey)) {
+    fun routeForTab(tab: CategoryTab): String = when (tab) {
+        CategoryTab.HOME -> Routes.categoryHome(categoryKey)
+        CategoryTab.CATEGORIES -> Routes.categorySubcats(categoryKey)
+        CategoryTab.CART -> Routes.categoryCart(categoryKey)
+        CategoryTab.WISHLIST -> Routes.categoryWishlist(categoryKey)
+        CategoryTab.PROFILE -> Routes.categoryProfileTab(categoryKey)
+    }
+
+    LaunchedEffect(categoryKey) {
+        viewModel.persistCategory(categoryKey)
+        val restored = viewModel.loadLastTab(categoryKey)
+        selectedTab = restored
+        if (restored != CategoryTab.HOME) {
+            innerNav.navigate(routeForTab(restored)) {
+                popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            CategoryDrawerContent(
+                currentApp = appDef,
+                onBackToLauncher = {
+                    scope.launch { drawerState.close() }
+                    onBackToLauncher()
+                },
+                onOpenOrders = {
+                    scope.launch { drawerState.close() }
+                    onOpenOrders()
+                },
+                onOpenSettings = {
+                    scope.launch { drawerState.close() }
+                    onOpenSettings()
+                },
+                onBrowseSubcategories = {
+                    scope.launch { drawerState.close() }
+                    selectedTab = CategoryTab.CATEGORIES
+                    viewModel.persistTab(categoryKey, CategoryTab.CATEGORIES)
+                    innerNav.navigate(Routes.categorySubcats(categoryKey)) {
                         launchSingleTop = true
                     }
                 },
-            )
-        },
-        bottomBar = {
-            CategoryBottomNavBar(
-                selected = selectedTab,
-                onSelect = { tab ->
-                    selectedTab = tab
-                    val route = when (tab) {
-                        CategoryTab.HOME       -> Routes.categoryHome(categoryKey)
-                        CategoryTab.CATEGORIES -> Routes.categorySubcats(categoryKey)
-                        CategoryTab.CART       -> Routes.categoryCart(categoryKey)
-                        CategoryTab.WISHLIST   -> Routes.categoryWishlist(categoryKey)
-                        CategoryTab.PROFILE    -> Routes.categoryProfileTab(categoryKey)
-                    }
-                    innerNav.navigate(route) {
-                        popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                onOpenHelp = {
+                    scope.launch { drawerState.close() }
+                    onOpenHelp()
                 },
-                cartBadgeCount = cartBadgeCount,
+                onSwitchCategory = { nextKey ->
+                    scope.launch { drawerState.close() }
+                    onSwitchCategory(nextKey)
+                },
             )
         },
-    ) { innerPadding ->
-        NavHost(
-            navController = innerNav,
-            startDestination = Routes.categoryHome(categoryKey),
-            enterTransition = { fadeIn(tween(220)) },
-            exitTransition = { fadeOut(tween(180)) },
-            modifier = Modifier.padding(innerPadding),
-        ) {
+    ) {
+        Scaffold(
+            topBar = {
+                CategoryTopBar(
+                    appDef = appDef,
+                    cartBadgeCount = effectiveCartBadgeCount,
+                    onOpenDrawer = { scope.launch { drawerState.open() } },
+                    onBackToLauncher = onBackToLauncher,
+                    onSearch = onOpenSearch,
+                    onNotifications = onOpenNotifications,
+                    onCartClick = {
+                        selectedTab = CategoryTab.CART
+                        viewModel.persistTab(categoryKey, CategoryTab.CART)
+                        innerNav.navigate(Routes.categoryCart(categoryKey)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            },
+            bottomBar = {
+                CategoryBottomNavBar(
+                    selected = selectedTab,
+                    onSelect = { tab ->
+                        selectedTab = tab
+                        viewModel.persistTab(categoryKey, tab)
+                        val route = routeForTab(tab)
+                        innerNav.navigate(route) {
+                            popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    cartBadgeCount = effectiveCartBadgeCount,
+                    wishlistBadgeCount = roomWishlistCount,
+                )
+            },
+        ) { innerPadding ->
+            NavHost(
+                navController = innerNav,
+                startDestination = Routes.categoryHome(categoryKey),
+                enterTransition = { fadeIn(tween(220)) },
+                exitTransition = { fadeOut(tween(180)) },
+                modifier = Modifier.padding(innerPadding),
+            ) {
             composable(Routes.categoryHome(categoryKey)) {
                 CategoryHomeScreen(
                     categoryKey = categoryKey,
@@ -170,6 +291,7 @@ fun CategoryAppShell(
                     },
                     onOpenAllCategories = {
                         selectedTab = CategoryTab.CATEGORIES
+                        viewModel.persistTab(categoryKey, CategoryTab.CATEGORIES)
                         innerNav.navigate(Routes.categorySubcats(categoryKey)) {
                             launchSingleTop = true
                         }
@@ -245,6 +367,7 @@ fun CategoryAppShell(
                     onOpenAccountDelete = { },
                 )
             }
+            }
         }
     }
 }
@@ -254,6 +377,7 @@ fun CategoryAppShell(
 private fun CategoryTopBar(
     appDef: CategoryAppDef,
     cartBadgeCount: Int,
+    onOpenDrawer: () -> Unit,
     onBackToLauncher: () -> Unit,
     onSearch: () -> Unit,
     onNotifications: () -> Unit,
@@ -271,18 +395,24 @@ private fun CategoryTopBar(
         },
         navigationIcon = {
             IconButton(
-                onClick = onBackToLauncher,
+                onClick = onOpenDrawer,
                 modifier = Modifier.semantics {
-                    contentDescription = "Return to app launcher"
+                    contentDescription = "Open category menu"
                 },
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
+                    Icons.Filled.Menu,
                     contentDescription = null,
                 )
             }
         },
         actions = {
+            IconButton(
+                onClick = onBackToLauncher,
+                modifier = Modifier.semantics { contentDescription = "Return to app launcher" },
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
             IconButton(
                 onClick = onSearch,
                 modifier = Modifier.semantics { contentDescription = "Search in ${appDef.label}" },
@@ -324,10 +454,152 @@ private fun CategoryTopBar(
 }
 
 @Composable
+private fun CategoryDrawerContent(
+    currentApp: CategoryAppDef,
+    onBackToLauncher: () -> Unit,
+    onOpenOrders: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onBrowseSubcategories: () -> Unit,
+    onOpenHelp: () -> Unit,
+    onSwitchCategory: (String) -> Unit,
+) {
+    val shortcutSubcats = MockDataProvider.subcategoriesFor(currentApp.key).take(6)
+
+    ModalDrawerSheet {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(currentApp.emoji)
+                }
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "Guest User",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    )
+                    Text(
+                        text = "Browsing ${currentApp.label}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                text = "${currentApp.emoji} ${currentApp.label}",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.semantics { contentDescription = "Current category ${currentApp.label}" },
+            )
+            Text(
+                text = "Category app menu",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+            )
+
+            DrawerActionRow(label = "Back to Launcher", icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackToLauncher)
+            DrawerActionRow(label = "Browse Subcategories", icon = Icons.Filled.Category, onClick = onBrowseSubcategories)
+            DrawerActionRow(label = "Order History", icon = Icons.Filled.Dashboard, onClick = onOpenOrders)
+            DrawerActionRow(label = "Settings", icon = Icons.Filled.Settings, onClick = onOpenSettings)
+            DrawerActionRow(label = "Help & FAQ", icon = Icons.Filled.HelpOutline, onClick = onOpenHelp)
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            Text(
+                text = "Switch Category",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Spacer(Modifier.height(8.dp))
+
+            CATEGORY_APPS.forEach { app ->
+                DrawerCategoryRow(
+                    app = app,
+                    isCurrent = app.key == currentApp.key,
+                    onClick = { onSwitchCategory(app.key) },
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            Text(
+                text = "Quick Subcategories",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            ) {
+                shortcutSubcats.forEach { subcat ->
+                    AssistChip(
+                        onClick = onBrowseSubcategories,
+                        label = { Text(subcat.name) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerActionRow(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = label, onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null)
+        Spacer(Modifier.width(10.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun DrawerCategoryRow(
+    app: CategoryAppDef,
+    isCurrent: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = "Switch to ${app.label}", onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(app.emoji)
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = app.label,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+            ),
+            modifier = Modifier.weight(1f),
+        )
+        if (isCurrent) {
+            Badge { Text("Now") }
+        }
+    }
+}
+
+@Composable
 private fun CategoryBottomNavBar(
     selected: CategoryTab,
     onSelect: (CategoryTab) -> Unit,
     cartBadgeCount: Int,
+    wishlistBadgeCount: Int,
 ) {
     data class TabItem(
         val tab: CategoryTab,
@@ -355,6 +627,17 @@ private fun CategoryBottomNavBar(
                         BadgedBox(
                             badge = {
                                 Badge { Text(cartBadgeCount.toString()) }
+                            },
+                        ) {
+                            Icon(
+                                if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = null,
+                            )
+                        }
+                    } else if (item.tab == CategoryTab.WISHLIST && wishlistBadgeCount > 0) {
+                        BadgedBox(
+                            badge = {
+                                Badge { Text(wishlistBadgeCount.toString()) }
                             },
                         ) {
                             Icon(

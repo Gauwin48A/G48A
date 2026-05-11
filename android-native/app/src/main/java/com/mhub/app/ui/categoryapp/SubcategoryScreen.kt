@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.mhub.app.data.mock.MockDataProvider
+import com.mhub.app.ui.common.PageEmptyState
 
 /**
  * Subcategory grid screen shown when user taps "Categories" tab or
@@ -48,19 +52,70 @@ fun SubcategoryScreen(
     onOpenSubcategory: (String) -> Unit,
 ) {
     val subcats = remember(categoryKey) { MockDataProvider.subcategoriesFor(categoryKey) }
+    val categoryLabel = remember(categoryKey) {
+        categoryKey.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    }
+    val totalItems = remember(subcats) { subcats.sumOf { it.productCount } }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        items(subcats, key = { it.id }) { subcat ->
-            SubcategoryCard(
-                subcategory = subcat,
-                onClick = { onOpenSubcategory(subcat.id) },
-            )
+    if (subcats.isEmpty()) {
+        PageEmptyState(
+            title = "No subcategories found",
+            message = "We could not find subcategories for this category right now.",
+            ctaLabel = "Back",
+            onCta = { },
+        )
+        return
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+            tonalElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Home", style = MaterialTheme.typography.labelMedium)
+                    androidx.compose.material3.Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.padding(horizontal = 4.dp).height(14.dp),
+                    )
+                    Text(categoryLabel, style = MaterialTheme.typography.labelMedium)
+                    androidx.compose.material3.Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.padding(horizontal = 4.dp).height(14.dp),
+                    )
+                    Text("Subcategories", style = MaterialTheme.typography.labelMedium)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "$categoryLabel Collections",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                )
+                Text(
+                    text = "${subcats.size} subcategories • $totalItems items",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                )
+            }
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            items(subcats, key = { it.id }) { subcat ->
+                SubcategoryCard(
+                    subcategory = subcat,
+                    onClick = { onOpenSubcategory(subcat.id) },
+                )
+            }
         }
     }
 }

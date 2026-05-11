@@ -1,5 +1,6 @@
 package com.mhub.app.ui.commerce
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -1404,6 +1405,7 @@ data class CartUiState(
     val couponApplied: Boolean = false,
     val selectedPayment: String = "upi",
     val deliveryAddress: String = "",
+    val pendingUndoItem: CartItem? = null,
 )
 
 @HiltViewModel
@@ -1420,6 +1422,25 @@ class CartViewModel @Inject constructor(private val repo: CartRepository) : View
         }
     }
     fun remove(postId: String) { viewModelScope.launch { repo.remove(postId); load() } }
+    fun removeWithUndo(postId: String) {
+        val item = _state.value.items.find { it.postId == postId } ?: return
+        _state.value = _state.value.copy(
+            items = _state.value.items.filter { it.postId != postId },
+            pendingUndoItem = item,
+        )
+    }
+    fun undoRemove() {
+        val item = _state.value.pendingUndoItem ?: return
+        _state.value = _state.value.copy(
+            items = listOf(item) + _state.value.items,
+            pendingUndoItem = null,
+        )
+    }
+    fun commitRemove() {
+        val item = _state.value.pendingUndoItem ?: return
+        _state.value = _state.value.copy(pendingUndoItem = null)
+        viewModelScope.launch { repo.remove(item.postId ?: "") }
+    }
     fun saveForLater(postId: String) {
         val item = _state.value.items.find { it.postId == postId } ?: return
         _state.value = _state.value.copy(
@@ -1458,12 +1479,32 @@ class CartViewModel @Inject constructor(private val repo: CartRepository) : View
     val grandTotal: Double get() = subtotal + shipping - _state.value.couponDiscount
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Fire-and-forget snackbar when an item is pending undo
+    LaunchedEffect(state.pendingUndoItem) {
+        val item = state.pendingUndoItem ?: return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = "${item.title ?: "Item"} removed",
+            actionLabel = "UNDO",
+            duration = SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            viewModel.undoRemove()
+        } else {
+            viewModel.commitRemove()
+        }
+    }
+
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar("Cart (${state.items.size})", onBack)
+
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.items.isEmpty() && state.savedForLater.isEmpty() -> EmptyState(
@@ -1476,12 +1517,41 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                         if (state.items.isNotEmpty()) {
                             item { Text("Cart (${state.items.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151)) }
                             items(state.items, key = { it.stableId }) { item ->
-                                CartItemCard(
-                                    item = item,
-                                    onRemove = { viewModel.remove(item.postId ?: "") },
-                                    onQtyChange = { qty -> viewModel.updateQty(item.postId ?: "", qty) },
-                                    onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value == SwipeToDismissBoxValue.EndToStart || value == SwipeToDismissBoxValue.StartToEnd) {
+                                            viewModel.removeWithUndo(item.postId ?: "")
+                                            true
+                                        } else false
+                                    },
+                                    positionalThreshold = { it * 0.4f },
                                 )
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    backgroundContent = {
+                                        val color by animateColorAsState(
+                                            if (dismissState.dismissDirection == SwipeToDismissBoxValue.Settled) Color.Transparent
+                                            else Color(0xFFEF4444),
+                                            label = "swipe_bg",
+                                        )
+                                        Box(
+                                            Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(color),
+                                            contentAlignment = Alignment.CenterEnd,
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.Delete, contentDescription = "Remove",
+                                                tint = Color.White, modifier = Modifier.padding(end = 20.dp),
+                                            )
+                                        }
+                                    },
+                                ) {
+                                    CartItemCard(
+                                        item = item,
+                                        onRemove = { viewModel.removeWithUndo(item.postId ?: "") },
+                                        onQtyChange = { qty -> viewModel.updateQty(item.postId ?: "", qty) },
+                                        onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
+                                    )
+                                }
                             }
                         }
 
@@ -1650,6 +1720,10 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                 }
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

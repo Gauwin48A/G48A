@@ -22,6 +22,10 @@ class AppPreferences @Inject constructor(private val context: Context) {
 
     private val baseUrlKey = stringPreferencesKey("api_base_url")
     private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val lastCategoryKey = stringPreferencesKey("last_category_key")
+
+    private fun categoryTabKey(categoryKey: String) =
+        stringPreferencesKey("last_category_tab_${categoryKey.lowercase()}")
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
         when (prefs[themeModeKey]) {
@@ -33,6 +37,27 @@ class AppPreferences @Inject constructor(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[themeModeKey] = mode.name.lowercase() }
+    }
+
+    val lastOpenedCategory: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[lastCategoryKey]
+    }
+
+    suspend fun setLastOpenedCategory(categoryKey: String) {
+        context.dataStore.edit { it[lastCategoryKey] = categoryKey.lowercase() }
+    }
+
+    fun lastCategoryTab(categoryKey: String): Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[categoryTabKey(categoryKey)]
+    }
+
+    suspend fun lastCategoryTabValue(categoryKey: String): String? =
+        context.dataStore.data.first()[categoryTabKey(categoryKey)]
+
+    suspend fun setLastCategoryTab(categoryKey: String, tabName: String) {
+        context.dataStore.edit { prefs ->
+            prefs[categoryTabKey(categoryKey)] = tabName
+        }
     }
 
     val baseUrl: Flow<String> = context.dataStore.data.map { prefs ->

@@ -44,19 +44,24 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,11 +82,41 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import android.graphics.Color as AndroidColor
 import com.mhub.app.data.mock.MockDataProvider
+import com.mhub.app.data.local.db.RecentlyViewedDao
+import com.mhub.app.data.local.db.RecentlyViewedEntity
+import com.mhub.app.ui.common.PageErrorState
 import com.mhub.app.ui.components.EnhancedProductCard
 import com.mhub.app.ui.components.PriceDisplay
 import com.mhub.app.ui.components.QuantitySelector
 import com.mhub.app.ui.components.RatingStars
 import com.mhub.app.ui.components.SectionHeader
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.launch
+
+@HiltViewModel
+class RecentlyViewedViewModel @Inject constructor(
+    private val dao: RecentlyViewedDao,
+) : ViewModel() {
+    fun record(product: MockDataProvider.MockProduct) {
+        viewModelScope.launch {
+            dao.insert(
+                RecentlyViewedEntity(
+                    postId = product.id,
+                    title = product.title,
+                    price = product.price,
+                    imageUrl = product.images.firstOrNull() ?: "",
+                    category = product.category,
+                    brand = product.brand,
+                    rating = product.rating,
+                )
+            )
+        }
+    }
+}
 
 /**
  * Full product detail screen for category app products.
@@ -103,13 +138,16 @@ fun MockProductDetailScreen(
     productId: String,
     onBack: () -> Unit,
     onOpenProduct: (String) -> Unit = {},
+    recentlyViewedViewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val product = remember(productId) { MockDataProvider.findProduct(productId) }
 
     if (product == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Product not found", style = MaterialTheme.typography.bodyLarge)
-        }
+        PageErrorState(
+            message = "Product not found for ID: $productId",
+            actionLabel = "Go Back",
+            onAction = onBack,
+        )
         return
     }
 
@@ -121,6 +159,10 @@ fun MockProductDetailScreen(
     var isWishlisted by remember { mutableStateOf(false) }
     var descExpanded by remember { mutableStateOf(false) }
     var reviewExpanded by remember { mutableStateOf(false) }
+    var showReviewSheet by remember { mutableStateOf(false) }
+    val reviewSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val localReviews = remember { mutableStateListOf<MockDataProvider.MockReview>() }
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -130,6 +172,9 @@ fun MockProductDetailScreen(
             .take(6)
     }
     val reviews = remember { MockDataProvider.sampleReviews }
+
+    // Persist this product in recently viewed
+    LaunchedEffect(productId) { recentlyViewedViewModel.record(product) }
 
     Scaffold(
         topBar = {
@@ -468,21 +513,32 @@ fun MockProductDetailScreen(
 
             // ── Reviews ───────────────────────────────────────────────────
             item(key = "reviews_header") {
-                SectionHeader(title = "Customer Reviews (${reviews.size})")
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SectionHeader(
+                        title = "Customer Reviews (${reviews.size + localReviews.size})",
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { showReviewSheet = true }) {
+                        Text("Write a Review")
+                    }
+                }
             }
             items(
-                if (reviewExpanded) reviews else reviews.take(3),
+                if (reviewExpanded) localReviews + reviews else (localReviews + reviews).take(3),
                 key = { "review_${it.id}" },
             ) { review ->
                 ReviewCard(review = review, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
             }
             item(key = "reviews_toggle") {
-                if (reviews.size > 3) {
+                if ((reviews.size + localReviews.size) > 3) {
                     TextButton(
                         onClick = { reviewExpanded = !reviewExpanded },
                         modifier = Modifier.padding(horizontal = 12.dp),
                     ) {
-                        Text(if (reviewExpanded) "Show Less" else "View All ${reviews.size} Reviews")
+                        Text(if (reviewExpanded) "Show Less" else "View All ${reviews.size + localReviews.size} Reviews")
                     }
                 }
                 HorizontalDivider()
@@ -515,11 +571,88 @@ fun MockProductDetailScreen(
                 }
             }
         }
+
+    // ── Write Review Sheet ──────────────────────────────────────────────────
+    if (showReviewSheet) {
+        WriteReviewSheet(
+            sheetState = reviewSheetState,
+            onDismiss = { showReviewSheet = false },
+            onSubmit = { rating, comment ->
+                localReviews.add(0,
+                    MockDataProvider.MockReview(
+                        id = "local_${System.currentTimeMillis()}",
+                        reviewerName = "You",
+                        rating = rating.toFloat(),
+                        comment = comment,
+                        date = "Just now",
+                        helpfulCount = 0,
+                    )
+                )
+                showReviewSheet = false
+            },
+        )
+    }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReviewCard(
+private fun WriteReviewSheet(
+    sheetState: androidx.compose.material3.SheetState,
+    onDismiss: () -> Unit,
+    onSubmit: (rating: Int, comment: String) -> Unit,
+) {
+    var starRating by remember { mutableIntStateOf(0) }
+    var reviewBody by remember { mutableStateOf("") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text("Write a Review", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+
+            // Star picker
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (1..5).forEach { star ->
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "$star star",
+                        tint = if (star <= starRating) Color(0xFFF59E0B) else Color(0xFFD1D5DB),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable { starRating = star },
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = reviewBody,
+                onValueChange = { reviewBody = it.take(1000) },
+                label = { Text("Your review") },
+                minLines = 3,
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Button(
+                onClick = {
+                    if (starRating > 0 && reviewBody.isNotBlank()) {
+                        onSubmit(starRating, reviewBody)
+                    }
+                },
+                enabled = starRating > 0 && reviewBody.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Submit Review")
+            }
+        }
+    }
+}
+
     review: MockDataProvider.MockReview,
     modifier: Modifier = Modifier,
 ) {

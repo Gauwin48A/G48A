@@ -125,10 +125,15 @@ class SearchViewModel @Inject constructor(
             _state.value = _state.value.copy(items = emptyList(), searched = false, suggestions = emptyList())
             return
         }
-        // Generate autocomplete suggestions
+        // Generate autocomplete suggestions (brands + categories + subcategories)
         val brands = listOf("Apple", "Samsung", "Nike", "Adidas", "Sony", "Dell", "HP", "Lenovo", "OnePlus", "Xiaomi", "Asus", "LG", "Bose", "Canon", "Toyota", "Honda", "Hyundai", "Maruti")
-        val matchedBrands = brands.filter { it.contains(query, ignoreCase = true) }.take(5)
-        _state.value = _state.value.copy(suggestions = matchedBrands)
+        val categories = listOf("Electronics", "Fashion", "Grocery", "Furniture", "Vehicles", "Home & Living", "Sports", "Books", "Beauty", "Health")
+        val subcategories = listOf("Smartphones", "Laptops", "Headphones", "TVs", "Cameras", "Shoes", "Watches", "T-Shirts", "Jeans", "Dresses", "Kitchen", "Bedroom", "Office", "Cars", "Bikes")
+        val matchedBrands = brands.filter { it.contains(query, ignoreCase = true) }
+        val matchedCategories = categories.filter { it.contains(query, ignoreCase = true) }
+        val matchedSubcats = subcategories.filter { it.contains(query, ignoreCase = true) }
+        val allSuggestions = (matchedBrands + matchedCategories + matchedSubcats).distinct().take(8)
+        _state.value = _state.value.copy(suggestions = allSuggestions)
 
         job = viewModelScope.launch {
             delay(350)
