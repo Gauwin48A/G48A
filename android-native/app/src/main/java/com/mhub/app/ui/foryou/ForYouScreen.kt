@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.SponsoredRepository
 import com.mhub.app.data.repository.PostsRepository
+import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.BackToTopButton
 import com.mhub.app.ui.components.GreatDealsBanner
@@ -72,19 +73,22 @@ data class ForYouState(
     val sortAscending: Boolean = true,
     val currentPage: Int = 1,
     val hasMorePosts: Boolean = true,
+    /** Loaded from API: null key = "All" */
+    val categories: List<Pair<String?, String>> = listOf(null to "All"),
 )
 
 @HiltViewModel
 class ForYouViewModel @Inject constructor(
     private val sponsoredRepo: SponsoredRepository,
     private val postsRepo: PostsRepository,
+    private val categoriesRepo: CategoriesRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ForYouState())
     val state: StateFlow<ForYouState> = _state.asStateFlow()
     private val viewedPostIds = mutableSetOf<String>()
     private var batchViewJob: Job? = null
 
-    init { load() }
+    init { load(); loadCategories() }
 
     fun load() {
         _state.value = _state.value.copy(loading = true, error = null)
@@ -126,6 +130,19 @@ class ForYouViewModel @Inject constructor(
 
     fun setCategory(cat: String?) {
         _state.value = _state.value.copy(selectedCategory = cat)
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            when (val r = categoriesRepo.list()) {
+                is ApiResult.Success -> {
+                    val apiCats = r.data.map { cat -> cat.slug to (cat.name ?: cat.slug.orEmpty()) }
+                    val all = listOf<Pair<String?, String>>(null to "All") + apiCats.take(12)
+                    _state.value = _state.value.copy(categories = all)
+                }
+                is ApiResult.Failure -> {} // keep default
+            }
+        }
     }
 
     fun setSortBy(sort: SortBy) {
@@ -185,11 +202,7 @@ fun ForYouScreen(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val categories = listOf(
-        null to "All", "electronics" to "Electronics", "fashion" to "Fashion",
-        "vehicles" to "Vehicles", "mobiles" to "Mobiles", "grocery" to "Grocery",
-        "furniture" to "Furniture",
-    )
+    val categories = state.categories
 
     var quickFilter by remember { mutableStateOf<String?>(null) }
     var showShareSheet by remember { mutableStateOf(false) }

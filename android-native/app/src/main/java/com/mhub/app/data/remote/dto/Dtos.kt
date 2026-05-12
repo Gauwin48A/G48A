@@ -740,6 +740,25 @@ data class ProfileUpdateRequest(
     val address: String? = null,
     val bio: String? = null,
     @SerialName("social_links") val socialLinks: Map<String, String>? = null,
+    @SerialName("cover_image") val coverImage: String? = null,
+    @SerialName("avatar") val avatar: String? = null,
+)
+
+// -------- Chat extras --------
+@Serializable
+data class ChatReactionRequest(
+    val emoji: String,
+)
+
+@Serializable
+data class ChatUploadResponse(
+    val url: String? = null,
+    val key: String? = null,
+)
+
+@Serializable
+data class ChatReportRequest(
+    val reason: String = "spam",
 )
 
 // -------- Dashboard --------
@@ -1194,4 +1213,19 @@ data class ReferralNode(
 data class SaveSearchRequest(
     val query: String,
     val category: String? = null,
+)
+
+// -------- User social --------
+@Serializable
+data class ComplaintHistoryResponse(
+    val complaints: List<ComplaintRecord> = emptyList(),
+)
+
+@Serializable
+data class ComplaintRecord(
+    val id: String? = null,
+    val subject: String? = null,
+    val description: String? = null,
+    val status: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
 )

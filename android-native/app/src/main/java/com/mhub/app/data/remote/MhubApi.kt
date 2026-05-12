@@ -200,11 +200,47 @@ interface MhubApi {
         @Body body: SendMessageRequest,
     ): MessageResponse
 
+    @DELETE("api/chat/conversations/{convId}/messages/{msgId}")
+    suspend fun deleteChatMessage(
+        @Path("convId") conversationId: String,
+        @Path("msgId") messageId: String,
+    ): MessageResponse
+
+    @POST("api/chat/conversations/{id}/report")
+    suspend fun reportConversation(
+        @Path("id") conversationId: String,
+        @Body body: ChatReportRequest,
+    ): MessageResponse
+
+    @POST("api/chat/conversations/{id}/read")
+    suspend fun markConversationRead(
+        @Path("id") conversationId: String,
+    ): MessageResponse
+
+    @POST("api/chat/messages/{id}/reactions")
+    suspend fun addMessageReaction(
+        @Path("id") messageId: String,
+        @Body body: ChatReactionRequest,
+    ): MessageResponse
+
+    @POST("api/chat/upload")
+    suspend fun uploadChatFile(@Body body: RequestBody): ChatUploadResponse
+
     @POST("api/chat/conversations/{recipientId}/start")
     suspend fun startConversation(
         @Path("recipientId") recipientId: String,
         @Body body: SendMessageRequest,
     ): MessageResponse
+
+    // ---- User social ----
+    @POST("api/users/{userId}/follow")
+    suspend fun followUser(@Path("userId") userId: String): MessageResponse
+
+    @DELETE("api/users/{userId}/follow")
+    suspend fun unfollowUser(@Path("userId") userId: String): MessageResponse
+
+    @POST("api/users/{userId}/block")
+    suspend fun blockUser(@Path("userId") userId: String): MessageResponse
 
     // ---- Rewards ----
     @GET("api/rewards")
@@ -364,6 +400,15 @@ interface MhubApi {
     @GET("api/compare")
     suspend fun compareList(): PostsResponse
 
+    @POST("api/compare/{postId}")
+    suspend fun addToCompare(@Path("postId") postId: String): MessageResponse
+
+    @DELETE("api/compare/{postId}")
+    suspend fun removeFromCompare(@Path("postId") postId: String): MessageResponse
+
+    @DELETE("api/compare")
+    suspend fun clearCompare(): MessageResponse
+
     // ---- Channels ----
     @GET("api/channels")
     suspend fun channels(): ChannelsResponse
@@ -396,6 +441,9 @@ interface MhubApi {
     // ---- Complaints / Feedback ----
     @POST("api/complaints")
     suspend fun submitComplaint(@Body body: ComplaintRequest): MessageResponse
+
+    @GET("api/complaints/my")
+    suspend fun myComplaints(): ComplaintHistoryResponse
 
     @POST("api/feedback")
     suspend fun submitFeedback(@Body body: FeedbackRequest): MessageResponse
@@ -435,6 +483,9 @@ interface MhubApi {
     // ---- Account ----
     @DELETE("api/users/me")
     suspend fun deleteAccount(@Body body: DeleteAccountRequest): MessageResponse
+
+    @GET("api/users/data-export")
+    suspend fun dataExport(): MessageResponse
 
     @GET("api/verification/status")
     suspend fun verificationStatus(): VerificationStatusResponse

@@ -11,6 +11,8 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Notification
 import com.mhub.app.domain.model.Post
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -136,6 +138,8 @@ class PostsRepository @Inject constructor(
     suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().items }
 
     suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().items }
+    suspend fun removeFromCompare(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCompare(postId); Unit }
+    suspend fun clearCompare(): ApiResult<Unit> = safeApiCall { api.clearCompare(); Unit }
 
     suspend fun report(id: String): ApiResult<Unit> = safeApiCall { api.reportPost(id); Unit }
 
@@ -223,6 +227,25 @@ class ChatRepository @Inject constructor(private val api: MhubApi) {
     suspend fun send(conversationId: String, content: String): ApiResult<Unit> = safeApiCall {
         api.sendMessage(conversationId, SendMessageRequest(content = content)); Unit
     }
+    suspend fun deleteMessage(conversationId: String, messageId: String): ApiResult<Unit> = safeApiCall {
+        api.deleteChatMessage(conversationId, messageId); Unit
+    }
+    suspend fun blockUser(userId: String): ApiResult<Unit> = safeApiCall {
+        api.blockUser(userId); Unit
+    }
+    suspend fun reportConversation(conversationId: String): ApiResult<Unit> = safeApiCall {
+        api.reportConversation(conversationId, ChatReportRequest("spam")); Unit
+    }
+    suspend fun addReaction(messageId: String, emoji: String): ApiResult<Unit> = safeApiCall {
+        api.addMessageReaction(messageId, ChatReactionRequest(emoji)); Unit
+    }
+    suspend fun markConversationRead(conversationId: String): ApiResult<Unit> = safeApiCall {
+        api.markConversationRead(conversationId); Unit
+    }
+    suspend fun uploadChatFile(bytes: ByteArray, mimeType: String): ApiResult<String> = safeApiCall {
+        val body = bytes.toRequestBody(mimeType.toMediaType())
+        api.uploadChatFile(body).url ?: error("No URL returned from upload")
+    }
 }
 
 @Singleton
@@ -246,6 +269,18 @@ class RewardsRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class DashboardRepository @Inject constructor(private val api: MhubApi) {
     suspend fun get(): ApiResult<DashboardResponse> = safeApiCall { api.dashboard() }
+    suspend fun coinBalance(): ApiResult<CoinBalanceResponse> = safeApiCall { api.coinBalance() }
+    suspend fun dailyCode(): ApiResult<DailyCodeResponse> = safeApiCall { api.dailyCode() }
+    suspend fun trustScore(userId: String): ApiResult<TrustScoreResponse> = safeApiCall { api.trustScore(userId) }
+}
+
+@Singleton
+class UserSocialRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun follow(userId: String): ApiResult<Unit> = safeApiCall { api.followUser(userId); Unit }
+    suspend fun unfollow(userId: String): ApiResult<Unit> = safeApiCall { api.unfollowUser(userId); Unit }
+    suspend fun blockUser(userId: String): ApiResult<Unit> = safeApiCall { api.blockUser(userId); Unit }
+    suspend fun myComplaints(): ApiResult<ComplaintHistoryResponse> = safeApiCall { api.myComplaints() }
+    suspend fun dataExport(): ApiResult<Unit> = safeApiCall { api.dataExport(); Unit }
 }
 
 @Singleton

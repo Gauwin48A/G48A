@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import coil.compose.AsyncImage
@@ -115,7 +116,10 @@ import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.ProfileUpdateRequest
 import com.mhub.app.data.repository.AuthRepository
+import com.mhub.app.data.repository.DashboardRepository
 import com.mhub.app.data.repository.RewardsRepository
+import com.mhub.app.data.repository.UploadRepository
+import com.mhub.app.data.repository.UserSocialRepository
 import com.mhub.app.domain.model.User
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
@@ -146,6 +150,8 @@ data class ProfileState(
     val isOwnProfile: Boolean = true,
     val userPosts: List<com.mhub.app.domain.model.Post> = emptyList(),
     val reviews: List<UserReview> = emptyList(),
+    val trustScore: com.mhub.app.data.remote.dto.TrustScoreResponse? = null,
+    val dataExportDone: Boolean = false,
 )
 
 data class UserReview(
@@ -162,6 +168,8 @@ class ProfileViewModel @Inject constructor(
     private val repo: AuthRepository,
     private val dashboardRepo: com.mhub.app.data.repository.DashboardRepository,
     private val rewardsRepo: RewardsRepository,
+    private val socialRepo: UserSocialRepository,
+    private val uploadRepo: com.mhub.app.data.repository.UploadRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
     val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -177,6 +185,7 @@ class ProfileViewModel @Inject constructor(
             }
             loadStats()
             loadReferralCode()
+            loadTrustScore()
         }
     }
 
@@ -189,6 +198,7 @@ class ProfileViewModel @Inject constructor(
             }
             loadStats()
             loadReferralCode()
+            loadTrustScore()
         }
     }
 
@@ -256,13 +266,29 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun blockUser() {
-        _state.value = _state.value.copy(editResult = "User blocked")
+        val userId = _state.value.user?.stableId ?: return
+        _state.value = _state.value.copy(editResult = "Blocking user…")
+        viewModelScope.launch {
+            when (socialRepo.blockUser(userId)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(editResult = "User blocked")
+                is ApiResult.Failure -> _state.value = _state.value.copy(editResult = "Failed to block user")
+            }
+        }
     }
 
     fun uploadCoverImage(context: android.content.Context, uri: android.net.Uri) {
         viewModelScope.launch {
-            rewardsRepo.updateProfile(ProfileUpdateRequest(coverImage = uri.toString()))
-            load()
+            try {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                val bytes = resolver.openInputStream(uri)?.readBytes() ?: return@launch
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                val dataUri = "data:$mimeType;base64,$base64"
+                rewardsRepo.updateProfile(ProfileUpdateRequest(coverImage = dataUri))
+                load()
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(editResult = "Cover upload failed")
+            }
         }
     }
 
@@ -271,7 +297,55 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun toggleFollow() {
-        _state.value = _state.value.copy(isFollowing = !_state.value.isFollowing)
+        val userId = _state.value.user?.stableId ?: return
+        val isFollowing = _state.value.isFollowing
+        // Optimistic update
+        _state.value = _state.value.copy(isFollowing = !isFollowing)
+        viewModelScope.launch {
+            val result = if (isFollowing) socialRepo.unfollow(userId) else socialRepo.follow(userId)
+            if (result is ApiResult.Failure) {
+                // Revert on failure
+                _state.value = _state.value.copy(isFollowing = isFollowing)
+            }
+        }
+    }
+
+    fun loadTrustScore() {
+        val userId = _state.value.user?.stableId ?: return
+        viewModelScope.launch {
+            when (val r = dashboardRepo.trustScore(userId)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(trustScore = r.data)
+                is ApiResult.Failure -> {}
+            }
+        }
+    }
+
+    fun uploadAvatar(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                val bytes = resolver.openInputStream(uri)?.readBytes() ?: return@launch
+                when (val r = uploadRepo.uploadPostImage(bytes, mimeType)) {
+                    is ApiResult.Success -> {
+                        rewardsRepo.updateProfile(ProfileUpdateRequest(avatar = r.data))
+                        load()
+                    }
+                    is ApiResult.Failure -> _state.value = _state.value.copy(editResult = "Avatar upload failed")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(editResult = "Avatar upload failed")
+            }
+        }
+    }
+
+    fun exportData() {
+        viewModelScope.launch {
+            when (socialRepo.dataExport()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(dataExportDone = true, editResult = "Data export request sent. You'll receive an email.")
+                is ApiResult.Failure -> _state.value = _state.value.copy(editResult = "Export request failed. Please try again.")
+            }
+        }
     }
 }
 
@@ -479,11 +553,27 @@ fun ProfileScreen(
                                     ) {
                                     // Avatar with completion ring
                                     val completionPct = profileCompletion(user)
-                                    AvatarWithRing(
-                                        initial = user?.displayName?.firstOrNull()?.uppercaseChar() ?: '?',
-                                        completionPercent = completionPct,
-                                        size = 88.dp,
-                                    )
+                                    val avatarPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                                    ) { uri -> uri?.let { viewModel.uploadAvatar(context, it) } }
+                                    Box(contentAlignment = Alignment.BottomEnd) {
+                                        AvatarWithRing(
+                                            initial = user?.displayName?.firstOrNull()?.uppercaseChar() ?: '?',
+                                            completionPercent = completionPct,
+                                            size = 88.dp,
+                                        )
+                                        // Camera icon for avatar upload
+                                        Surface(
+                                            onClick = { avatarPickerLauncher.launch("image/*") },
+                                            shape = androidx.compose.foundation.shape.CircleShape,
+                                            color = Color.Black.copy(alpha = 0.6f),
+                                            modifier = Modifier.size(26.dp).offset(x = 2.dp, y = 2.dp),
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(Icons.Default.CameraAlt, "Upload avatar", tint = Color.White, modifier = Modifier.size(14.dp))
+                                            }
+                                        }
+                                    }
 
                                     Text(
                                         text = user?.displayName ?: "Guest",
@@ -988,6 +1078,38 @@ fun ProfileScreen(
                             }
                         }
 
+                        // ─── Trust Score ──────────────────────────────────────
+                        state.trustScore?.let { ts ->
+                            if (ts.trustScore > 0f || ts.trustLabel != null) {
+                                Card(
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.92f)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 4.dp),
+                                ) {
+                                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        val trustColor = when (ts.riskState?.lowercase()) {
+                                            "low_risk", "trusted" -> Color(0xFF22C55E)
+                                            "medium_risk" -> Color(0xFFF59E0B)
+                                            "high_risk" -> Color(0xFFEF4444)
+                                            else -> Color(0xFF6366F1)
+                                        }
+                                        Box(Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)).background(trustColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(28.dp))
+                                        }
+                                        Column(Modifier.weight(1f)) {
+                                            Text("Trust Score", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
+                                            Text("${ts.trustScore.toInt()}/100", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = trustColor)
+                                            if (ts.trustLabel != null) Text(ts.trustLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        if (ts.trustBadge != null) {
+                                            Text(ts.trustBadge, fontSize = 28.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // ─── Quick Actions ───────────────────────────────────
                         Column(
                             modifier = Modifier
@@ -1255,6 +1377,8 @@ fun ProfileScreen(
                                 onOpenSecurity = onOpenSecurity,
                                 onOpenNotifications = onOpenNotifications,
                                 onSignOut = { viewModel.logout(onSignedOut) },
+                                onExportData = { viewModel.exportData() },
+                                dataExportDone = state.dataExportDone,
                             )
                         }
 
@@ -1492,6 +1616,8 @@ private fun SettingsTab(
     onOpenSecurity: () -> Unit,
     onOpenNotifications: () -> Unit,
     onSignOut: () -> Unit,
+    onExportData: () -> Unit = {},
+    dataExportDone: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -1538,6 +1664,33 @@ private fun SettingsTab(
             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Sign Out", fontWeight = FontWeight.SemiBold)
+        }
+
+        // GDPR: Download My Data
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = if (dataExportDone) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF6366F1).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Download, null, tint = Color(0xFF6366F1), modifier = Modifier.size(20.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Download My Data", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                    Text(
+                        if (dataExportDone) "Export request sent — check your email" else "Request a GDPR export of your account data",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (dataExportDone) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (!dataExportDone) {
+                    androidx.compose.material3.TextButton(onClick = onExportData) { Text("Request") }
+                } else {
+                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))
