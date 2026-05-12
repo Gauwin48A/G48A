@@ -333,6 +333,11 @@ fun MhubApp(
                             onOpenCart = { navController.navigate(Routes.CART) },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) },
+                            onNavigateToLogin = {
+                                navController.navigate(Routes.LOGIN) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
                         )
                     }
                 }
@@ -386,6 +391,7 @@ fun MhubApp(
                             onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
                             onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
                             onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) },
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                         )
                     }
                 }
@@ -430,7 +436,11 @@ fun MhubApp(
                 route = Routes.POST_DETAIL,
                 arguments = listOf(navArgument("postId") { type = NavType.StringType }),
             ) {
-                PostDetailScreen(onBack = { navController.popBackStack() })
+                PostDetailScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    onOpenCategory = { key -> navController.navigate(Routes.categoryDetail(key)) },
+                )
             }
 
             composable(

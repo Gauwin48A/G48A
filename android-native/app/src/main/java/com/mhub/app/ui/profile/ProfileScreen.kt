@@ -259,6 +259,13 @@ class ProfileViewModel @Inject constructor(
         _state.value = _state.value.copy(editResult = "User blocked")
     }
 
+    fun uploadCoverImage(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            rewardsRepo.updateProfile(ProfileUpdateRequest(coverImage = uri.toString()))
+            load()
+        }
+    }
+
     fun reportUser() {
         _state.value = _state.value.copy(editResult = "User reported")
     }
@@ -313,6 +320,7 @@ fun ProfileScreen(
     onOpenDashboard: () -> Unit = {},
     onOpenAnalytics: () -> Unit = {},
     onOpenAccountDelete: () -> Unit = {},
+    onOpenPost: (String) -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -350,6 +358,9 @@ fun ProfileScreen(
                 else -> {
                     val user = state.user
                     var showEditDialog by remember { mutableStateOf(false) }
+                    val coverPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                    ) { uri -> uri?.let { viewModel.uploadCoverImage(context, it) } }
 
                     // Edit Profile Dialog
                     if (showEditDialog) {
@@ -406,7 +417,7 @@ fun ProfileScreen(
                             }
                             // Edit cover button
                             IconButton(
-                                onClick = { /* TODO: Upload cover */ },
+                                onClick = { coverPickerLauncher.launch("image/*") },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(12.dp)
@@ -772,7 +783,7 @@ fun ProfileScreen(
                                             }
                                         } else {
                                             // Follow/Unfollow button (for other users)
-                                            val isOwnProfile = true // TODO: Check if viewing own profile
+                                            val isOwnProfile = state.isOwnProfile
                                             if (!isOwnProfile) {
                                                 Button(
                                                     onClick = { viewModel.toggleFollow() },
@@ -1042,7 +1053,7 @@ fun ProfileScreen(
                                     ) {
                                         rowPosts.forEach { post ->
                                             Card(
-                                                onClick = { /* TODO: Open post */ },
+                                                onClick = { post.id?.let { onOpenPost(it) } },
                                                 modifier = Modifier.weight(1f),
                                                 shape = RoundedCornerShape(12.dp),
                                             ) {
@@ -1423,7 +1434,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                 }
 
                 Button(
-                    onClick = {},
+                    onClick = { viewModel.updateProfile(null, null, null) {} },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),

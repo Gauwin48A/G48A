@@ -170,15 +170,18 @@ data class UndoAction(
     val timestamp: Long = System.currentTimeMillis())
 
 @HiltViewModel
-class AdminViewModel @Inject constructor(private val repo: AdminRepository) : ViewModel() {
+class AdminViewModel @Inject constructor(private val repo: AdminRepository, private val authRepo: com.mhub.app.data.repository.AuthRepository) : ViewModel() {
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
     init { load() }
     fun load() { viewModelScope.launch {
-        // Check admin access (mock - replace with real role check)
-        val hasAccess = true // TODO: Check user role from AuthRepository
+        // Check admin access via user role from AuthRepository
+        val hasAccess = when (val me = authRepo.me()) {
+            is ApiResult.Success -> me.data.role == "admin" || me.data.role == "super_admin"
+            is ApiResult.Failure -> false
+        }
         if (!hasAccess) {
             _state.value = AdminUiState(loading = false, hasAdminAccess = false, error = "Access Denied")
             return@launch
@@ -289,8 +292,12 @@ class AdminViewModel @Inject constructor(private val repo: AdminRepository) : Vi
     fun hideWarningDialog() { _state.value = _state.value.copy(showWarningDialog = null, warningMessage = "") }
     fun setWarningMessage(msg: String) { _state.value = _state.value.copy(warningMessage = msg) }
     fun sendWarning() {
-        // TODO: Call API to send warning
-        _state.value = _state.value.copy(showWarningDialog = null, warningMessage = "")
+        val userId = _state.value.showWarningDialog ?: return
+        val message = _state.value.warningMessage
+        viewModelScope.launch {
+            repo.sendWarning(userId, message)
+            _state.value = _state.value.copy(showWarningDialog = null, warningMessage = "")
+        }
     }
 }
 

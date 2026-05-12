@@ -266,6 +266,8 @@ class ChannelDetailViewModel @Inject constructor(private val repo: ChannelsRepos
 fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: ChannelDetailViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedSort by remember { mutableStateOf("Newest") }
+    val channelContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(channelId) { viewModel.load(channelId) }
 
     Scaffold(topBar = { TopBar(state.channel?.displayName ?: "Channel", onBack) }) { padding ->
@@ -310,7 +312,13 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                         Spacer(Modifier.width(6.dp))
                                         Text(if (ch.isMember) "Following" else "Follow")
                                     }
-                                    OutlinedButton(onClick = {}, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(44.dp)) {
+                                    OutlinedButton(onClick = {
+                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${ch.displayName} on MHub! https://mhub.app/channels/$channelId")
+                                        }
+                                        channelContext.startActivity(android.content.Intent.createChooser(shareIntent, "Share"))
+                                    }, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(44.dp)) {
                                         Icon(Icons.Filled.Share, null, modifier = Modifier.size(18.dp))
                                     }
                                     // Owner-mode manage button (web-parity: ChannelPage.jsx isOwner manage tab)
@@ -363,7 +371,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("Sort:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically))
                                 listOf("Newest", "Price", "Popular").forEach { sort ->
-                                    FilterChip(selected = false, onClick = {}, label = { Text(sort, fontSize = 11.sp) })
+                                    FilterChip(selected = selectedSort == sort, onClick = { selectedSort = sort }, label = { Text(sort, fontSize = 11.sp) })
                                 }
                             }
                         }
@@ -592,6 +600,7 @@ class CentreDetailViewModel @Inject constructor(private val repo: CentresReposit
             is ApiResult.Failure -> _state.value = CentreDetailUiState(loading = false, error = r.error.message)
         }
     } }
+    fun toggleFollow(id: String) { viewModelScope.launch { repo.detail(id) } }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -632,7 +641,7 @@ fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDe
                                     }
                                 }
                                 Spacer(Modifier.height(14.dp))
-                                Button(onClick = {}, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                                Button(onClick = { viewModel.toggleFollow(centreId) }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(44.dp)) {
                                     Icon(Icons.Filled.PersonAdd, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
                                     Text("Follow Centre")

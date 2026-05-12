@@ -33,6 +33,7 @@ data class CreatePostState(
     val planTier: String = "basic",
     val kycVerified: Boolean = false,
     val showKycGate: Boolean = false,
+    val audioUri: Uri? = null,
 ) {
     companion object {
         /** Mirror of web `client/src/utils/planLimits.js` image caps. */
@@ -54,6 +55,7 @@ class CreatePostViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val uploadRepo: UploadRepository,
     private val authRepo: AuthRepository,
+    private val draftRepo: com.mhub.app.data.repository.DraftRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreatePostState())
     val state: StateFlow<CreatePostState> = _state.asStateFlow()
@@ -90,6 +92,21 @@ class CreatePostViewModel @Inject constructor(
     fun selectCategory(c: Category) { _state.value = _state.value.copy(selectedCategory = c, error = null) }
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
+
+    fun saveDraft(title: String, description: String, priceText: String) {
+        viewModelScope.launch {
+            draftRepo.save(com.mhub.app.data.remote.dto.DraftRequest(
+                title = title.trim().ifBlank { null },
+                description = description.trim().ifBlank { null },
+                price = priceText.trim().toDoubleOrNull(),
+                categoryId = _state.value.selectedCategory?.stableId,
+            ))
+        }
+    }
+
+    fun setAudioUri(uri: Uri?) {
+        _state.value = _state.value.copy(audioUri = uri)
+    }
 
     fun setImages(uris: List<Uri>) {
         val cap = _state.value.maxImages.coerceAtLeast(1)

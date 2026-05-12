@@ -387,6 +387,9 @@ class InviteRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class AdminRepository @Inject constructor(private val api: MhubApi) {
     suspend fun dashboard(): ApiResult<AdminDashboardResponse> = safeApiCall { api.adminDashboard() }
+    suspend fun sendWarning(userId: String, message: String): ApiResult<Unit> = safeApiCall {
+        api.adminSendWarning(mapOf("userId" to userId, "message" to message)); Unit
+    }
 }
 
 @Singleton

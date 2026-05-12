@@ -446,6 +446,9 @@ interface MhubApi {
     @GET("api/admin/dashboard")
     suspend fun adminDashboard(): AdminDashboardResponse
 
+    @POST("api/admin/warn")
+    suspend fun adminSendWarning(@Body body: Map<String, String>): MessageResponse
+
     // ---- Sale Transactions ----
     @POST("api/transactions/initiate")
     suspend fun initiateSale(@Body body: InitiateSaleRequest): SaleResponse

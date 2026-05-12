@@ -622,6 +622,9 @@ private fun MessageThreadScreen(
     var showSearchBar by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<String?>(null) }
     var reactionTargetId by remember { mutableStateOf<String?>(null) }
+    val attachLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let { onSend("[attachment:${it}]") } }
 
     // Confirmation dialogs
     if (showBlockDialog) {
@@ -756,7 +759,7 @@ private fun MessageThreadScreen(
                         },
                         placeholder = { Text("Type a message...") },
                         leadingIcon = {
-                            IconButton(onClick = { /* TODO: attach file */ }) {
+                            IconButton(onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf")) }) {
                                 Icon(Icons.Filled.AttachFile, "Attach", tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
                             }
                         },
@@ -912,6 +915,8 @@ private fun MessageThreadScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -> Unit = {}) {
+    @Suppress("UNUSED_VARIABLE")
+    var showTimestamp by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -946,7 +951,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                 else MaterialTheme.colorScheme.surface,
                 shadowElevation = 1.dp,
                 modifier = Modifier.combinedClickable(
-                    onClick = {},
+                    onClick = { showTimestamp = !showTimestamp },
                     onLongClick = onLongPress,
                 ),
             ) {
