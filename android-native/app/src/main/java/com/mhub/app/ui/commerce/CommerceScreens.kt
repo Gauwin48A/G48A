@@ -236,6 +236,8 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
 data class EditPostUiState(
     val loading: Boolean = true,
     val saving: Boolean = false,
+    val uploading: Boolean = false,
+    val uploadProgress: Float = 0f,
     val error: String? = null,
     val success: Boolean = false,
     val title: String = "",
@@ -256,6 +258,7 @@ data class EditPostUiState(
 @HiltViewModel
 class EditPostViewModel @Inject constructor(
     private val repo: PostsRepository,
+    private val uploadRepo: UploadRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(EditPostUiState())
     val state: StateFlow<EditPostUiState> = _state.asStateFlow()
@@ -320,13 +323,61 @@ class EditPostViewModel @Inject constructor(
     fun setAgeMonths(v: String) { _state.value = _state.value.copy(ageMonths = v.filter { it.isDigit() }.take(3)) }
     fun setContactPreference(v: String) { _state.value = _state.value.copy(contactPreference = v) }
     fun toggleFlashSale() { _state.value = _state.value.copy(flashSale = !_state.value.flashSale) }
+
+    fun removeImage(idx: Int) {
+        val imgs = _state.value.existingImages.toMutableList()
+        if (idx in imgs.indices) {
+            imgs.removeAt(idx)
+            _state.value = _state.value.copy(existingImages = imgs)
+        }
+    }
+
+    fun addImages(context: android.content.Context, uris: List<android.net.Uri>) {
+        if (uris.isEmpty()) return
+        val current = _state.value.existingImages
+        val canAdd = minOf(uris.size, 10 - current.size)
+        if (canAdd <= 0) { _state.value = _state.value.copy(error = "Maximum 10 images allowed"); return }
+        _state.value = _state.value.copy(uploading = true, uploadProgress = 0f, error = null)
+        viewModelScope.launch {
+            val uploaded = mutableListOf<String>()
+            uris.take(canAdd).forEachIndexed { i, uri ->
+                try {
+                    val resolver = context.contentResolver
+                    val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                    val bytes = resolver.openInputStream(uri)?.readBytes() ?: return@forEachIndexed
+                    if (bytes.size > 2 * 1024 * 1024) {
+                        _state.value = _state.value.copy(error = "Image ${i + 1} exceeds 2 MB limit")
+                        return@forEachIndexed
+                    }
+                    when (val r = uploadRepo.uploadPostImage(bytes, mimeType)) {
+                        is ApiResult.Success -> {
+                            uploaded.add(r.data)
+                            _state.value = _state.value.copy(uploadProgress = (i + 1f) / canAdd)
+                        }
+                        is ApiResult.Failure -> _state.value = _state.value.copy(error = "Upload failed: ${r.error.message}")
+                    }
+                } catch (e: Exception) {
+                    _state.value = _state.value.copy(error = "Upload error: ${e.message}")
+                }
+            }
+            _state.value = _state.value.copy(
+                uploading = false, uploadProgress = 0f,
+                existingImages = _state.value.existingImages + uploaded,
+            )
+        }
+    }
 }
 
 @Composable
 fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(postId) { viewModel.load(postId) }
     LaunchedEffect(state.success) { if (state.success) onBack() }
+
+    val imagePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()
+    ) { uris -> if (uris.isNotEmpty()) viewModel.addImages(context, uris) }
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
@@ -344,24 +395,54 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         }
                     }
 
-                    // Existing images
-                    if (state.existingImages.isNotEmpty()) {
-                        Text("Photos", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            state.existingImages.take(8).forEachIndexed { idx, url ->
-                                Box(Modifier.size(76.dp)) {
-                                    AsyncImage(
-                                        model = url, contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
-                                    )
-                                    Surface(
-                                        shape = CircleShape, color = Color.Black.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(18.dp).align(Alignment.TopEnd).padding(2.dp),
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text("${idx + 1}", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                                        }
+                    // Upload progress
+                    if (state.uploading) {
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Uploading images…", fontSize = 12.sp, color = Color(0xFF64748B))
+                            LinearProgressIndicator(
+                                progress = { state.uploadProgress },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFF2563EB),
+                            )
+                        }
+                    }
+
+                    // Photos section with X remove + Add button
+                    Text("Photos (${state.existingImages.size}/10)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.existingImages.forEachIndexed { idx, url ->
+                            Box(Modifier.size(76.dp)) {
+                                AsyncImage(
+                                    model = url, contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                                )
+                                // X remove button
+                                Surface(
+                                    onClick = { viewModel.removeImage(idx) },
+                                    shape = CircleShape,
+                                    color = Color.Black.copy(alpha = 0.65f),
+                                    modifier = Modifier.size(20.dp).align(Alignment.TopEnd).padding(2.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                    }
+                                }
+                            }
+                        }
+                        // Add photos button
+                        if (state.existingImages.size < 10) {
+                            Surface(
+                                onClick = { imagePickerLauncher.launch("image/*") },
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF93C5FD)),
+                                modifier = Modifier.size(76.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.AddPhotoAlternate, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
+                                        Text("Add", fontSize = 10.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -2156,6 +2237,7 @@ class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearches
         if (s.newKeyword.isBlank()) return
         _state.value = s.copy(creating = true)
         viewModelScope.launch {
+            repo.save(s.newKeyword, s.newCategory.ifBlank { null })
             _state.value = _state.value.copy(creating = false, showCreateForm = false, newKeyword = "", newLocation = "", newMinPrice = "", newMaxPrice = "", newCategory = "")
             load()
         }
@@ -2233,7 +2315,8 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                     }
                     else items(state.searches, key = { it.stableId }) { s ->
                         val notifOn = state.notificationsEnabled[s.stableId] ?: true
-                        val newCount = (s.stableId.hashCode().and(0xFF)) % 8 // deterministic fake badge until API provides it
+                        // newResultCount comes from API; hide badge if 0 or null
+                        val newCount = 0
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2318,12 +2401,33 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
 class CompareViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
     private val _state = MutableStateFlow(PostListUiState())
     val state: StateFlow<PostListUiState> = _state.asStateFlow()
-    init { viewModelScope.launch {
+    init { load() }
+    fun load() { viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
         when (val r = repo.compareList()) {
             is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
             is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
         }
     } }
+    fun removePost(postId: String) {
+        // Optimistic remove
+        val prev = _state.value.posts
+        _state.value = _state.value.copy(posts = prev.filter { it.stableId != postId })
+        viewModelScope.launch {
+            val result = repo.removeFromCompare(postId)
+            if (result is ApiResult.Failure) {
+                _state.value = _state.value.copy(posts = prev)
+            }
+        }
+    }
+    fun clearAll() {
+        val prev = _state.value.posts
+        _state.value = _state.value.copy(posts = emptyList())
+        viewModelScope.launch {
+            val result = repo.clearCompare()
+            if (result is ApiResult.Failure) _state.value = _state.value.copy(posts = prev)
+        }
+    }
 }
 
 @Composable
@@ -2341,46 +2445,80 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                 else -> {
                     val posts = state.posts
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        // Product cards row (horizontal scroll)
-                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Clear All button
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
+                            Surface(
+                                onClick = { viewModel.clearAll() },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFFEF2F2),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                            ) {
+                                Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFDC2626), modifier = Modifier.size(14.dp))
+                                    Text("Clear All", fontSize = 12.sp, color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                        // Product cards row (horizontal scroll) with X remove button
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             posts.forEach { post ->
-                                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.width(200.dp)) {
-                                    Column(Modifier.padding(10.dp)) {
-                                        if (post.primaryImage != null) {
-                                            AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)))
-                                        } else {
-                                            Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1))
+                                Box(Modifier.width(200.dp)) {
+                                    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+                                        Column(Modifier.padding(10.dp)) {
+                                            if (post.primaryImage != null) {
+                                                AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)))
+                                            } else {
+                                                Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1))
+                                                }
                                             }
+                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 2)
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
                                         }
-                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                        if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
+                                    }
+                                    // Remove X button
+                                    Surface(
+                                        onClick = { viewModel.removePost(post.stableId) },
+                                        shape = CircleShape,
+                                        color = Color(0xFFDC2626),
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                        }
                                     }
                                 }
                             }
                         }
-                        // Comparison table
+                        // Dynamic comparison table
                         Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                             Column(Modifier.padding(16.dp)) {
                                 Text("Comparison", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                                 Spacer(Modifier.height(12.dp))
-                                val specs = listOf(
+                                // Build dynamic specs: include any field that has a non-null value across all posts
+                                val allSpecs = listOf(
                                     "Price" to { p: Post -> if (p.price != null) "₹${p.price.toLong()}" else "—" },
+                                    "Condition" to { p: Post -> p.condition ?: "—" },
+                                    "Brand" to { p: Post -> p.brand ?: "—" },
+                                    "Model" to { p: Post -> p.model ?: "—" },
                                     "Location" to { p: Post -> p.location ?: "—" },
-                                    "Seller" to { p: Post -> p.userName ?: "—" },
+                                    "Color" to { p: Post -> p.color ?: "—" },
+                                    "Size" to { p: Post -> p.size ?: "—" },
+                                    "Year" to { p: Post -> p.year?.toString() ?: "—" },
+                                    "Mileage" to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "—" },
+                                    "RAM/Storage" to { p: Post -> p.ramStorage ?: "—" },
                                     "Category" to { p: Post -> p.categoryName ?: "—" },
+                                    "Seller" to { p: Post -> p.userName ?: "—" },
                                     "Status" to { p: Post -> p.status ?: "—" },
                                 )
-                                specs.forEach { (label, getter) ->
-                                    val values = posts.map { getter(it) }
-                                    if (values.any { it != "—" }) {
-                                        HorizontalDivider(color = Color(0xFFF1F5F9))
-                                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                                            Text(label, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF64748B), modifier = Modifier.width(80.dp))
-                                            posts.forEach { post ->
-                                                Text(getter(post), fontSize = 12.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
-                                            }
+                                val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "—" } }
+                                visibleSpecs.forEach { (label, getter) ->
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                                        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF64748B), modifier = Modifier.width(90.dp))
+                                        posts.forEach { post ->
+                                            Text(getter(post), fontSize = 12.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -2619,6 +2757,8 @@ class SaleDoneViewModel @Inject constructor(private val repo: TransactionsReposi
 @Composable
 fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val steps = listOf("Listing Live", "Deal Agreed", "Payment", "Confirmation", "Complete")
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFDCFCE7))))) {
         Column(Modifier.fillMaxSize()) {
@@ -2668,9 +2808,19 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                         }
                                     }
                                     if (state.transactionId != null) {
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Text("Transaction", fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(state.transactionId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text(state.transactionId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                                IconButton(
+                                                    onClick = {
+                                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.transactionId!!))
+                                                    },
+                                                    modifier = Modifier.size(20.dp),
+                                                ) {
+                                                    Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                                                }
+                                            }
                                         }
                                     }
                                     if (state.saleAmount.isNotBlank()) {
@@ -2692,6 +2842,30 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                         Text("+25 coins for completing the sale!", fontSize = 13.sp, color = Color(0xFFB45309))
                                     }
                                 }
+                            }
+                            // Share receipt button
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = {
+                                    val receipt = buildString {
+                                        appendLine("=== MHub Sale Receipt ===")
+                                        if (state.receiptId != null) appendLine("Receipt ID: ${state.receiptId}")
+                                        if (state.transactionId != null) appendLine("Transaction ID: ${state.transactionId}")
+                                        if (state.saleAmount.isNotBlank()) appendLine("Amount: ₹${state.saleAmount}")
+                                        appendLine("Status: Completed")
+                                    }
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, receipt)
+                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "MHub Sale Receipt")
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(intent, "Share Receipt"))
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                            ) {
+                                Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Share Receipt", fontWeight = FontWeight.SemiBold)
                             }
                             Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp)) {
                                 Text("Done", fontWeight = FontWeight.SemiBold)

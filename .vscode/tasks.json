@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MHub — Full Launch",
+      "type": "shell",
+      "command": "bash /workspaces/Mhub/scripts/launch-dev.sh",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "new" },
+      "problemMatcher": []
+    },
+    {
+      "label": "MHub — Build APK Only",
+      "type": "shell",
+      "command": "bash /workspaces/Mhub/scripts/build-apk.sh",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": [],
+      "isBackground": true
+    }
+  ]
+}
+

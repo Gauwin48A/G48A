@@ -27,6 +27,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Canvas
+import android.webkit.WebSettings
+import android.webkit.WebView
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,8 +46,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.*
 
 private val RADIUS_OPTIONS = listOf(1, 2, 5, 10, 25, 50, 100)
+
+/** Haversine formula — returns distance in km between two lat/lng points */
+private fun haversineKm(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+    val r = 6371.0
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLng = Math.toRadians(lng2 - lng1)
+    val a = sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLng / 2).pow(2)
+    return r * 2 * asin(sqrt(a))
+}
 
 data class NearbyUiState(
     val loading: Boolean = false,
@@ -54,6 +68,8 @@ data class NearbyUiState(
     val lng: Double = 0.0,
     val radius: Int = 10,
     val sortBy: String = "distance",
+    /** Maps post.stableId → computed distance in km */
+    val distances: Map<String, Double> = emptyMap(),
 )
 
 @HiltViewModel
@@ -87,7 +103,22 @@ class NearbyViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
             when (val r = repo.nearby(lat, lng, radius)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, posts = r.data)
+                is ApiResult.Success -> {
+                    val posts = r.data
+                    // Compute real distances using haversine
+                    val distances = posts.associate { post ->
+                        val postLat = post.latitude ?: 0.0
+                        val postLng = post.longitude ?: 0.0
+                        val dist = if (postLat != 0.0 && postLng != 0.0) {
+                            haversineKm(lat, lng, postLat, postLng)
+                        } else {
+                            // API didn't include lat/lng on post: derive from radius for display only
+                            (radius * 0.1 + posts.indexOf(post) * 0.3).coerceAtMost(radius.toDouble())
+                        }
+                        post.stableId to dist
+                    }
+                    _state.value = _state.value.copy(loading = false, posts = posts, distances = distances)
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
             }
         }
@@ -186,23 +217,54 @@ fun NearbyScreen(
                     }
                 }
                 // Map placeholder
+                // Map view — OpenStreetMap via WebView
                 Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
                     Column(Modifier.padding(12.dp)) {
                         Text("Map View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         Spacer(Modifier.height(8.dp))
-                        Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF0F9FF))) {
-                            // Placeholder grid map with markers
-                            Canvas(Modifier.fillMaxSize()) {
-                                val cols = 8; val rows = 5
-                                (0 until cols * rows).forEach { i ->
-                                    if ((i + i / cols) % 3 == 0) {
-                                        val x = (size.width / cols) * (i % cols) + (size.width / cols / 2)
-                                        val y = (size.height / rows) * (i / cols) + (size.height / rows / 2)
-                                        drawCircle(color = androidx.compose.ui.graphics.Color(0xFF2563EB), radius = 6f, center = androidx.compose.ui.geometry.Offset(x, y))
+                        Box(Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(10.dp))) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    WebView(ctx).apply {
+                                        settings.apply {
+                                            javaScriptEnabled = true
+                                            domStorageEnabled = true
+                                            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                                        }
+                                        isVerticalScrollBarEnabled = false
+                                        isHorizontalScrollBarEnabled = false
+                                        val lat = state.lat.let { if (it == 0.0) 20.5937 else it }
+                                        val lng = state.lng.let { if (it == 0.0) 78.9629 else it }
+                                        val zoom = when (state.radius) {
+                                            in 1..2 -> 14
+                                            in 3..5 -> 13
+                                            in 6..15 -> 12
+                                            in 16..50 -> 10
+                                            else -> 8
+                                        }
+                                        loadUrl("https://www.openstreetmap.org/?mlat=$lat&mlon=$lng&zoom=$zoom#map=$zoom/$lat/$lng")
                                     }
-                                }
+                                },
+                                update = { wv ->
+                                    val lat = state.lat.let { if (it == 0.0) 20.5937 else it }
+                                    val lng = state.lng.let { if (it == 0.0) 78.9629 else it }
+                                    val zoom = when (state.radius) {
+                                        in 1..2 -> 14; in 3..5 -> 13; in 6..15 -> 12; in 16..50 -> 10; else -> 8
+                                    }
+                                    wv.loadUrl("https://www.openstreetmap.org/?mlat=$lat&mlon=$lng&zoom=$zoom#map=$zoom/$lat/$lng")
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp), color = Color.White.copy(alpha = 0.9f),
+                                modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
+                            ) {
+                                Text(
+                                    "${state.posts.size} listings within ${state.radius}km",
+                                    fontSize = 10.sp, fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
                             }
-                            Text("${state.posts.size} nearby listings", modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(0.9f)).padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -270,7 +332,8 @@ fun NearbyScreen(
                             Text("${state.posts.size} listings within ${state.radius}km", fontSize = 13.sp, color = Color(0xFF64748B))
                         }
                         items(state.posts, key = { it.stableId }) { post ->
-                            NearbyPostCard(post = post, onClick = { onOpenPost(post.stableId) })
+                            val dist = state.distances[post.stableId]
+                            NearbyPostCard(post = post, distanceKm = dist, onClick = { onOpenPost(post.stableId) })
                         }
                         if (state.posts.size >= 20 && !state.loading) {
                             item {
@@ -288,8 +351,19 @@ fun NearbyScreen(
 }
 
 @Composable
-private fun NearbyPostCard(post: Post, onClick: () -> Unit) {
-    val distKm = remember { "%.1f".format((1..post.displayTitle.hashCode().mod(50).coerceAtLeast(1)).random().toFloat() + 0.1f) }
+private fun NearbyPostCard(post: Post, distanceKm: Double?, onClick: () -> Unit) {
+    val distLabel = when {
+        distanceKm == null -> null
+        distanceKm < 1.0 -> "${ "%.0f".format(distanceKm * 1000) }m"
+        else -> "${ "%.1f".format(distanceKm) }km"
+    }
+    val distColor = when {
+        distanceKm == null -> Color(0xFF2563EB)
+        distanceKm < 1.0 -> Color(0xFF22C55E)   // green < 1 km
+        distanceKm < 5.0 -> Color(0xFF3B82F6)   // blue 1-5 km
+        distanceKm < 10.0 -> Color(0xFFF59E0B)  // yellow 5-10 km
+        else -> Color(0xFFF97316)                // orange > 10 km
+    }
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp,
@@ -309,11 +383,13 @@ private fun NearbyPostCard(post: Post, onClick: () -> Unit) {
                     ) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(32.dp)) }
                 }
                 // Distance badge
+                if (distLabel != null) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp), color = Color(0xFF2563EB).copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(8.dp), color = distColor.copy(alpha = 0.9f),
                     modifier = Modifier.align(Alignment.BottomEnd).padding(2.dp),
                 ) {
-                    Text("${distKm}km", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                    Text(distLabel, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                }
                 }
             }
             Spacer(Modifier.width(12.dp))

@@ -33,6 +33,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -81,26 +82,39 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
     init { load() }
     fun load() { viewModelScope.launch {
         _state.value = _state.value.copy(loading = true, error = null)
-        when (val r = repo.get()) {
+        // Load dashboard, coin balance, and daily code in parallel
+        val dashDeferred = async { repo.get() }
+        val coinsDeferred = async { repo.coinBalance() }
+        val codeDeferred = async { repo.dailyCode() }
+        when (val r = dashDeferred.await()) {
             is ApiResult.Success -> {
                 val apiTopSellers = r.data.topSellers.mapIndexed { idx, u ->
                     TopSeller(u.stableId, u.displayName, u.avatar, 0, idx + 1)
                 }
                 val topSellers = apiTopSellers.ifEmpty { emptyList() }
-                val buyerStats = BuyerStats()
+                // Read rank from User.rewardsRank field
+                val rank = r.data.user?.rewardsRank
                 _state.value = _state.value.copy(
                     loading = false,
                     stats = r.data.quickStats,
                     activity = r.data.recentActivity,
                     userName = r.data.user?.displayName ?: "User",
-                    userRank = "Gold",
-                    coins = 2450,
-                    dailyCode = "MH${(1000..9999).random()}",
+                    userRank = rank,
                     topSellers = topSellers,
-                    buyerStats = buyerStats
+                    buyerStats = null
                 )
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+        }
+        // Update coins from balance API
+        when (val c = coinsDeferred.await()) {
+            is ApiResult.Success -> _state.value = _state.value.copy(coins = c.data.balance)
+            is ApiResult.Failure -> {} // keep 0
+        }
+        // Update daily code from API
+        when (val d = codeDeferred.await()) {
+            is ApiResult.Success -> _state.value = _state.value.copy(dailyCode = d.data.code.ifBlank { null })
+            is ApiResult.Failure -> {} // keep null
         }
     } }
     fun selectPeriod(index: Int) { _state.value = _state.value.copy(selectedPeriod = index); load() }
@@ -233,20 +247,24 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                 // Conditional content based on view mode
                 if (state.viewMode == "seller") {
                     item {
-                        val statsToShow = if (state.stats.isNotEmpty()) state.stats.take(4) else listOf(DashboardStat(labelKey = "active_listings", value = 12), DashboardStat(labelKey = "total_sales", value = 45), DashboardStat(labelKey = "total_views", value = 1234), DashboardStat(labelKey = "coins_earned", value = 2450))
+                        val statsToShow = state.stats.take(4)
                         Text("Quick Stats", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                         Spacer(Modifier.height(10.dp))
+                        if (statsToShow.isEmpty()) {
+                            Text("No stats available yet", fontSize = 13.sp, color = Color(0xFF64748B))
+                        } else {
                         for (i in statsToShow.indices step 2) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
                                 val m1 = statMeta.getOrElse(i) { Icons.Filled.Info to Color(0xFF64748B) }
-                                val trend1 = listOf("+12%", "+8%", "+15%", "-3%").getOrNull(i)
+                                val trend1 = statsToShow[i].trend
                                 StatCardWithTrend(Modifier.weight(1f), "${statsToShow[i].value}", statsToShow[i].label ?: statsToShow[i].labelKey ?: "Stat", m1.second, m1.first, trend1)
                                 if (i + 1 < statsToShow.size) {
                                     val m2 = statMeta.getOrElse(i + 1) { Icons.Filled.Info to Color(0xFF64748B) }
-                                    val trend2 = listOf("+12%", "+8%", "+15%", "-3%").getOrNull(i + 1)
+                                    val trend2 = statsToShow[i + 1].trend
                                     StatCardWithTrend(Modifier.weight(1f), "${statsToShow[i + 1].value}", statsToShow[i + 1].label ?: statsToShow[i + 1].labelKey ?: "Stat", m2.second, m2.first, trend2)
                                 } else Spacer(Modifier.weight(1f))
                             }
+                        }
                         }
                     }
                     // Top Sellers Leaderboard

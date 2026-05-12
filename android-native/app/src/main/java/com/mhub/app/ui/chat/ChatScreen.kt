@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -92,6 +93,9 @@ import com.mhub.app.domain.model.ChatMessage
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ErrorBanner
+import android.content.ContentResolver
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -179,6 +183,8 @@ class ChatViewModel @Inject constructor(
 
         // Connect WebSocket for real-time updates
         chatWebSocket.connect()
+        // Mark conversation as read
+        viewModelScope.launch { repo.markConversationRead(conv.stableId) }
 
         // Collect real-time WebSocket events
         wsEventJob = viewModelScope.launch {
@@ -306,18 +312,50 @@ class ChatViewModel @Inject constructor(
     }
 
     fun deleteMessage(msgId: String) {
-        _state.value = _state.value.copy(messages = _state.value.messages.filter { it.stableId != msgId })
-        viewModelScope.launch { /* repo.deleteMessage(msgId) */ }
+        // Optimistic removal from local list
+        val snapshot = _state.value.messages
+        _state.value = _state.value.copy(messages = snapshot.filter { it.stableId != msgId })
+        val conv = _state.value.selectedConversation ?: return
+        viewModelScope.launch {
+            when (repo.deleteMessage(conv.stableId, msgId)) {
+                is ApiResult.Success -> {} // optimistic removal already done
+                is ApiResult.Failure -> {
+                    // Revert on failure
+                    _state.value = _state.value.copy(messages = snapshot)
+                }
+            }
+        }
     }
 
     fun blockUser() {
         val conv = _state.value.selectedConversation ?: return
-        viewModelScope.launch { /* repo.blockUser(conv.otherUserId) */ }
+        viewModelScope.launch { repo.blockUser(conv.otherUserId ?: return@launch) }
     }
 
     fun reportConversation() {
         val conv = _state.value.selectedConversation ?: return
-        viewModelScope.launch { /* repo.reportConversation(conv.stableId) */ }
+        viewModelScope.launch { repo.reportConversation(conv.stableId) }
+    }
+
+    fun addReaction(messageId: String, emoji: String) {
+        viewModelScope.launch { repo.addReaction(messageId, emoji) }
+    }
+
+    fun sendAttachment(context: android.content.Context, uri: Uri) {
+        val conv = _state.value.selectedConversation ?: return
+        viewModelScope.launch {
+            try {
+                val resolver: ContentResolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "application/octet-stream"
+                val bytes = resolver.openInputStream(uri)?.readBytes() ?: return@launch
+                when (val upload = repo.uploadChatFile(bytes, mimeType)) {
+                    is ApiResult.Success -> repo.send(conv.stableId, upload.data)
+                    is ApiResult.Failure -> _state.value = _state.value.copy(error = "Upload failed: ${upload.error.message}")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(error = "Failed to read file")
+            }
+        }
     }
 }
 
@@ -622,9 +660,10 @@ private fun MessageThreadScreen(
     var showSearchBar by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<String?>(null) }
     var reactionTargetId by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val attachLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri -> uri?.let { onSend("[attachment:${it}]") } }
+    ) { uri -> uri?.let { viewModel.sendAttachment(context, it) } }
 
     // Confirmation dialogs
     if (showBlockDialog) {
@@ -661,11 +700,18 @@ private fun MessageThreadScreen(
             text = {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                     listOf("❤️", "👍", "😂", "😮", "😢", "🙏").forEach { emoji ->
-                        Text(emoji, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(8.dp))
+                        Text(
+                            emoji,
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(8.dp).clickable {
+                                viewModel.addReaction(id, emoji)
+                                reactionTargetId = null
+                            },
+                        )
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { reactionTargetId = null }) { Text("Done") } },
+            confirmButton = { TextButton(onClick = { reactionTargetId = null }) { Text("Close") } },
         )
     }
 

@@ -666,12 +666,25 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
 // ──────────────────────────────────────────────────────────────────────────────
 // ComplaintsScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class ComplaintsUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val subject: String = "", val description: String = "", val type: String = "transaction", val postId: String = "")
+data class ComplaintsUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val subject: String = "", val description: String = "", val type: String = "transaction", val postId: String = "", val history: List<com.mhub.app.data.remote.dto.ComplaintRecord> = emptyList(), val historyLoading: Boolean = false)
 
 @HiltViewModel
-class ComplaintsViewModel @Inject constructor(private val repo: ComplaintsRepository) : ViewModel() {
+class ComplaintsViewModel @Inject constructor(
+    private val repo: ComplaintsRepository,
+    private val socialRepo: com.mhub.app.data.repository.UserSocialRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(ComplaintsUiState())
     val state: StateFlow<ComplaintsUiState> = _state.asStateFlow()
+    init { loadHistory() }
+    fun loadHistory() {
+        _state.value = _state.value.copy(historyLoading = true)
+        viewModelScope.launch {
+            when (val r = socialRepo.myComplaints()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(historyLoading = false, history = r.data.complaints)
+                is ApiResult.Failure -> _state.value = _state.value.copy(historyLoading = false)
+            }
+        }
+    }
     fun setSubject(v: String) { _state.value = _state.value.copy(subject = v) }
     fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
     fun setType(v: String) { _state.value = _state.value.copy(type = v) }
@@ -682,7 +695,7 @@ class ComplaintsViewModel @Inject constructor(private val repo: ComplaintsReposi
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
             when (val r = repo.submit(ComplaintRequest(subject = s.subject, description = s.description))) {
-                is ApiResult.Success -> _state.value = ComplaintsUiState(success = true)
+                is ApiResult.Success -> { _state.value = ComplaintsUiState(success = true); loadHistory() }
                 is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
             }
         }
@@ -724,6 +737,39 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                     ) { Text(if (state.loading) "Submitting…" else "Submit Complaint", fontWeight = FontWeight.SemiBold) }
+                }
+                // Complaint history
+                if (state.historyLoading) {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                } else if (state.history.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("My Complaint History", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                    state.history.forEach { complaint ->
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text(complaint.subject, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                    val statusColor = when (complaint.status?.lowercase()) {
+                                        "resolved" -> Color(0xFF22C55E)
+                                        "rejected" -> Color(0xFFEF4444)
+                                        "pending" -> Color(0xFFF59E0B)
+                                        else -> Color(0xFF64748B)
+                                    }
+                                    Surface(shape = RoundedCornerShape(6.dp), color = statusColor.copy(alpha = 0.12f)) {
+                                        Text(complaint.status?.replaceFirstChar { it.uppercase() } ?: "Submitted", fontSize = 11.sp, color = statusColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                    }
+                                }
+                                if (!complaint.description.isNullOrBlank()) {
+                                    Text(complaint.description, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 2)
+                                }
+                                if (!complaint.createdAt.isNullOrBlank()) {
+                                    Text(complaint.createdAt, fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
