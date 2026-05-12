@@ -267,8 +267,9 @@ fun NotificationsScreen(
 
     val filterOptions = listOf("All", "Offers", "Chat", "System")
 
-    val displayItems = remember(state.items, searchQuery, showUnreadOnly, selectedFilter) {
+    val displayItems = remember(state.items, searchQuery, showUnreadOnly, selectedFilter, state.snoozedItems) {
         state.items.filter { n ->
+            n.stableId !in state.snoozedItems &&
             (!showUnreadOnly || !n.isRead) &&
                 (searchQuery.isBlank() ||
                     n.displayTitle.contains(searchQuery, ignoreCase = true) ||
@@ -286,6 +287,32 @@ fun NotificationsScreen(
     }
     val unread = displayItems.filter { !it.isRead }
     val read = displayItems.filter { it.isRead }
+
+    // Date grouping helper
+    val dateGrouped = remember(displayItems) {
+        val now = java.time.LocalDate.now()
+        val groups = mutableListOf<Pair<String, List<Notification>>>()
+        val grouped = displayItems.groupBy { notif ->
+            val ts = notif.createdAt
+            if (ts.isNullOrBlank()) "Older"
+            else try {
+                val date = java.time.Instant.parse(ts).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                val days = java.time.temporal.ChronoUnit.DAYS.between(date, now)
+                when {
+                    days == 0L -> "Today"
+                    days == 1L -> "Yesterday"
+                    days < 7L -> "This Week"
+                    days < 30L -> "This Month"
+                    else -> "Older"
+                }
+            } catch (_: Exception) { "Older" }
+        }
+        // Maintain order
+        listOf("Today", "Yesterday", "This Week", "This Month", "Older").forEach { label ->
+            grouped[label]?.let { items -> if (items.isNotEmpty()) groups.add(label to items) }
+        }
+        groups
+    }
 
     Scaffold(
         topBar = {
@@ -498,44 +525,31 @@ fun NotificationsScreen(
                             }
                         }
                     } else {
-                        if (unread.isNotEmpty()) {
+                        dateGrouped.forEach { (label, groupItems) ->
                             item {
-                                SectionLabel("New (${unread.size})")
+                                SectionLabel(label)
                             }
-                            items(unread, key = { it.stableId }) { notif ->
+                            items(groupItems, key = { it.stableId }) { notif ->
                                 SwipeToDismissNotification(
                                     onDismiss = { viewModel.dismiss(notif.stableId) },
                                 ) {
                                     NotificationRow(
                                         notification = notif,
-                                        isUnread = true,
+                                        isUnread = !notif.isRead,
                                         isExpanded = notif.stableId in state.expandedItems,
+                                        isSelected = state.selectMode && notif.stableId in state.selectedItems,
+                                        selectMode = state.selectMode,
                                         onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
                                         onClick = {
-                                            viewModel.markRead(notif.stableId)
-                                            notif.postId?.let { onOpenPost(it) }
+                                            if (state.selectMode) {
+                                                viewModel.toggleSelected(notif.stableId)
+                                            } else {
+                                                viewModel.markRead(notif.stableId)
+                                                notif.postId?.let { onOpenPost(it) }
+                                            }
                                         },
                                         onAcceptOffer = { onAcceptOffer(notif.stableId) },
-                                    )
-                                }
-                            }
-                        }
-
-                        if (read.isNotEmpty()) {
-                            item {
-                                SectionLabel("Earlier")
-                            }
-                            items(read, key = { it.stableId }) { notif ->
-                                SwipeToDismissNotification(
-                                    onDismiss = { viewModel.dismiss(notif.stableId) },
-                                ) {
-                                    NotificationRow(
-                                        notification = notif,
-                                        isUnread = false,
-                                        isExpanded = notif.stableId in state.expandedItems,
-                                        onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
-                                        onClick = { notif.postId?.let { onOpenPost(it) } },
-                                        onAcceptOffer = { onAcceptOffer(notif.stableId) },
+                                        onSnooze = { viewModel.snooze(notif.stableId) },
                                     )
                                 }
                             }
@@ -593,9 +607,12 @@ fun NotificationRow(
     notification: Notification,
     isUnread: Boolean = false,
     isExpanded: Boolean = false,
+    isSelected: Boolean = false,
+    selectMode: Boolean = false,
     onToggleExpand: () -> Unit = {},
     onClick: () -> Unit,
     onAcceptOffer: () -> Unit = {},
+    onSnooze: () -> Unit = {},
 ) {
     val style = notifStyle(notification.type)
     val isOfferNotification = notification.type?.lowercase()?.contains("offer") == true
@@ -605,7 +622,8 @@ fun NotificationRow(
         onClick = { if (!hasActions) onClick() },
         shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isUnread) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            else if (isUnread) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             else MaterialTheme.colorScheme.surface,
         ),
         modifier = Modifier.fillMaxWidth(),
@@ -738,6 +756,14 @@ fun NotificationRow(
                             Spacer(Modifier.width(4.dp))
                             Text("View Post", fontSize = 13.sp)
                         }
+                    }
+                    OutlinedButton(
+                        onClick = onSnooze,
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Icon(Icons.Default.NotificationsOff, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Snooze", fontSize = 13.sp)
                     }
                 }
             }

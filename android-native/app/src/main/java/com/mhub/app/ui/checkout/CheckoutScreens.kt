@@ -167,6 +167,7 @@ fun CheckoutPaymentScreen(
     onNext: (method: String) -> Unit,
 ) {
     var selectedMethod by remember { mutableStateOf(PaymentMethod.UPI) }
+    var selectedBank by remember { mutableStateOf("") }
     var upiId by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
     var cardExpiry by remember { mutableStateOf("") }
@@ -272,9 +273,11 @@ fun CheckoutPaymentScreen(
                         Text(
                             bank,
                             style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedBank == bank) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (selectedBank == bank) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { }
+                                .clickable { selectedBank = bank }
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -319,14 +322,15 @@ fun CheckoutReviewScreen(
     paymentMethod: String,
     onBack: () -> Unit,
     onPlaceOrder: () -> Unit,
+    cartSubtotal: Double = 0.0,
 ) {
     val scope = rememberCoroutineScope()
     var isPlacing by remember { mutableStateOf(false) }
 
-    // Mock order summary
-    val subtotal = 12999.0
+    // Use real cart subtotal if provided, else estimate
+    val subtotal = if (cartSubtotal > 0) cartSubtotal else 0.0
     val tax = subtotal * 0.18
-    val shipping = 0.0
+    val shipping = if (subtotal >= 1000.0) 0.0 else 99.0
     val total = subtotal + tax + shipping
 
     Scaffold(

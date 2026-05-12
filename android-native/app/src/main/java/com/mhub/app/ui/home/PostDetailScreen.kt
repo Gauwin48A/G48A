@@ -284,6 +284,7 @@ class PostDetailViewModel @Inject constructor(
 fun PostDetailScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit = {},
+    onOpenCategory: (String) -> Unit = {},
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -426,7 +427,7 @@ fun PostDetailScreen(
                                     category,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.clickable { /* TODO: Navigate to category */ }
+                                    modifier = Modifier.clickable { onOpenCategory(post.categoryId ?: category) }
                                 )
                                 Icon(
                                     Icons.Default.ChevronRight,
@@ -564,7 +565,7 @@ fun PostDetailScreen(
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     post.categoryName?.let { name ->
-                                        AssistChip(onClick = {}, label = { Text(name) })
+                                        AssistChip(onClick = { onOpenCategory(post.categoryId ?: name) }, label = { Text(name) })
                                     }
                                     post.location?.let { loc ->
                                         AssistChip(

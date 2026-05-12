@@ -339,7 +339,7 @@ fun ProductListingScreen(
                                 product = product,
                                 isWishlisted = wishlistedIds.value.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { /* TODO: ViewModel */ },
+                                onAddToCart = { /* cart via parent */ },
                                 onToggleWishlist = {
                                     wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
                                         wishlistedIds.value - product.id

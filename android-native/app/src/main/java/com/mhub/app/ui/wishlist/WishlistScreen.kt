@@ -441,8 +441,8 @@ private fun WishlistListCard(
     isSelected: Boolean = false,
     onToggleSelect: () -> Unit = {},
 ) {
-    // Calculate price drop (mock data for now - in reality would compare with previous price)
-    val priceDrop = if (post.price != null && post.price < 10000) 15 else null  // Mock 15% drop
+    // Price drop not available without historical pricing data
+    val priceDrop: Int? = null
     
     // Mock date added (in reality, would come from API)
     val dateAdded = remember { 

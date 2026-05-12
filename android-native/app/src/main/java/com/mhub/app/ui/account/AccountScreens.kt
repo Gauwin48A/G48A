@@ -83,15 +83,11 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
         _state.value = _state.value.copy(loading = true, error = null)
         when (val r = repo.get()) {
             is ApiResult.Success -> {
-                // Mock data - replace with actual API data
-                val mockTopSellers = listOf(
-                    TopSeller("1", "Rajesh Kumar", null, 45, 1),
-                    TopSeller("2", "Priya Sharma", null, 38, 2),
-                    TopSeller("3", "Amit Patel", null, 32, 3),
-                    TopSeller("4", "Sneha Gupta", null, 28, 4),
-                    TopSeller("5", "Vikram Singh", null, 24, 5)
-                )
-                val mockBuyerStats = BuyerStats(itemsBought = 12, offersMade = 8, savedItems = 15, activeChats = 5)
+                val apiTopSellers = r.data.topSellers.mapIndexed { idx, u ->
+                    TopSeller(u.stableId, u.displayName, u.avatar, 0, idx + 1)
+                }
+                val topSellers = apiTopSellers.ifEmpty { emptyList() }
+                val buyerStats = BuyerStats()
                 _state.value = _state.value.copy(
                     loading = false,
                     stats = r.data.quickStats,
@@ -100,8 +96,8 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
                     userRank = "Gold",
                     coins = 2450,
                     dailyCode = "MH${(1000..9999).random()}",
-                    topSellers = mockTopSellers,
-                    buyerStats = mockBuyerStats
+                    topSellers = topSellers,
+                    buyerStats = buyerStats
                 )
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)

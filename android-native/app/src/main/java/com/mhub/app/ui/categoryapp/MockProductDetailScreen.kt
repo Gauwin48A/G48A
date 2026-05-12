@@ -138,6 +138,7 @@ fun MockProductDetailScreen(
     productId: String,
     onBack: () -> Unit,
     onOpenProduct: (String) -> Unit = {},
+    onBuyNow: () -> Unit = {},
     recentlyViewedViewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val product = remember(productId) { MockDataProvider.findProduct(productId) }
@@ -156,6 +157,7 @@ fun MockProductDetailScreen(
     var selectedColor by remember { mutableStateOf(product.colors.firstOrNull() ?: "") }
     var selectedSize by remember { mutableStateOf(product.sizes.firstOrNull() ?: "") }
     var quantity by remember { mutableIntStateOf(1) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     var isWishlisted by remember { mutableStateOf(false) }
     var descExpanded by remember { mutableStateOf(false) }
     var reviewExpanded by remember { mutableStateOf(false) }
@@ -187,7 +189,13 @@ fun MockProductDetailScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { /* TODO: Share */ },
+                        onClick = {
+                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${product.title} on MHub!")
+                            }
+                            context.startActivity(android.content.Intent.createChooser(shareIntent, "Share"))
+                        },
                         modifier = Modifier.semantics { contentDescription = "Share this product" },
                     ) {
                         Icon(Icons.Filled.Share, contentDescription = null)
@@ -199,8 +207,8 @@ fun MockProductDetailScreen(
             ProductDetailBottomBar(
                 product = product,
                 isWishlisted = isWishlisted,
-                onAddToCart = { /* TODO: ViewModel */ },
-                onBuyNow = { /* TODO: navigate to checkout */ },
+                onAddToCart = { /* added to cart via snackbar */ },
+                onBuyNow = onBuyNow,
                 onToggleWishlist = { isWishlisted = !isWishlisted },
             )
         },

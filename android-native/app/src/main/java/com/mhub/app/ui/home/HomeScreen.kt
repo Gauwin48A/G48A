@@ -409,6 +409,7 @@ private fun PromoteDialog(
     postId: String,
     postTitle: String,
     onDismiss: () -> Unit,
+    onConfirm: (tier: String, duration: Int) -> Unit = { _, _ -> },
 ) {
     var selectedTier by remember { mutableStateOf("Basic") }
     var duration by remember { mutableStateOf(7) }
@@ -477,7 +478,7 @@ private fun PromoteDialog(
         },
         confirmButton = {
             androidx.compose.material3.Button(onClick = {
-                // TODO: Call promotion API with selectedTier and duration
+                onConfirm(selectedTier, duration)
                 onDismiss()
             }) {
                 Text("Confirm & Pay")
@@ -665,6 +666,7 @@ fun HomeScreen(
     onOpenWishlist: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     isGuest: Boolean = false,
+    onNavigateToLogin: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -742,6 +744,7 @@ fun HomeScreen(
             postId = promotePostId,
             postTitle = promotePostTitle,
             onDismiss = { showPromoteDialog = false },
+            onConfirm = { tier, duration -> viewModel.boostPost(promotePostId, tier, duration) },
         )
     }
 
@@ -1376,7 +1379,7 @@ fun HomeScreen(
                                     Text("Unlock more listings", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                                     Text("Sign in to view all available items and access exclusive features", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                     androidx.compose.material3.Button(
-                                        onClick = { /* TODO: Navigate to sign in */ },
+                                        onClick = onNavigateToLogin,
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
                                         Text("Sign In")

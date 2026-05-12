@@ -31,6 +31,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
+    private val boostRepo: com.mhub.app.data.repository.BoostRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -138,6 +139,12 @@ class HomeViewModel @Inject constructor(
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loadingMore = false)
             }
+        }
+    }
+
+    fun boostPost(postId: String, tier: String, duration: Int) {
+        viewModelScope.launch {
+            boostRepo.boost(postId, tier.lowercase(), duration * 24)
         }
     }
 

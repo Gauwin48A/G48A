@@ -51,6 +51,7 @@ fun CategoryHomeScreen(
     onOpenSubcategory: (String) -> Unit,
     onOpenAllCategories: () -> Unit,
     onOpenListing: () -> Unit,
+    onAddToCart: (String) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -151,7 +152,7 @@ fun CategoryHomeScreen(
                                 product = product,
                                 isWishlisted = wishlistedIds.value.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { /* TODO: ViewModel call */ },
+                                onAddToCart = { onAddToCart(product.id) },
                                 onToggleWishlist = {
                                     wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
                                         wishlistedIds.value - product.id
@@ -200,7 +201,7 @@ fun CategoryHomeScreen(
                                 product = product,
                                 isWishlisted = wishlistedIds.value.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { },
+                                onAddToCart = { onAddToCart(product.id) },
                                 onToggleWishlist = {
                                     wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
                                         wishlistedIds.value - product.id
@@ -230,7 +231,7 @@ fun CategoryHomeScreen(
                                 product = product,
                                 isWishlisted = wishlistedIds.value.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { },
+                                onAddToCart = { onAddToCart(product.id) },
                                 onToggleWishlist = {
                                     wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
                                         wishlistedIds.value - product.id
@@ -271,7 +272,7 @@ private fun ProductGrid2Col(
                         product = product,
                         isWishlisted = wishlistedIds.contains(product.id),
                         onTap = { onOpenProduct(product.id) },
-                        onAddToCart = { },
+                        onAddToCart = { onAddToCart(product.id) },
                         onToggleWishlist = { onToggleWishlist(product.id) },
                         modifier = Modifier.weight(1f),
                     )

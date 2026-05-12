@@ -33,8 +33,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType
@@ -43,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -99,8 +104,7 @@ fun CreatePostScreen(
         while (true) {
             delay(10_000)
             if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank()) {
-                // Save to SharedPreferences (mock)
-                android.util.Log.d("CreatePost", "Draft auto-saved")
+                viewModel.saveDraft(title, description, priceText)
             }
         }
     }
@@ -307,6 +311,13 @@ fun CreatePostScreen(
                 Text(text = imageError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
 
+            // ── Audio Recording (web parity: AudioRecorder component) ─────
+            AudioRecorderSection(
+                audioUri = state.audioUri,
+                onRecorded = { uri -> viewModel.setAudioUri(uri) },
+                onRemove = { viewModel.setAudioUri(null) },
+            )
+
             // ── Title ────────────────────────────────────────────────
             AppTextField(
                 value = title,
@@ -504,6 +515,158 @@ fun CreatePostScreen(
             )
 
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Audio Recorder Section (web parity: AudioRecorder component in AddPost.jsx) ─────
+@Composable
+private fun AudioRecorderSection(
+    audioUri: android.net.Uri?,
+    onRecorded: (android.net.Uri) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var isRecording by remember { mutableStateOf(false) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var durationSec by remember { mutableIntStateOf(0) }
+    var recordedUri by remember { mutableStateOf<android.net.Uri?>(audioUri) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val maxDuration = 60 // seconds
+
+    // Permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) isRecording = true
+    }
+
+    // Timer effect when recording
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            durationSec = 0
+            while (isRecording && durationSec < maxDuration) {
+                kotlinx.coroutines.delay(1000)
+                durationSec++
+            }
+            if (durationSec >= maxDuration) isRecording = false
+        }
+    }
+
+    // When recording stops and we had a session, produce a temp audio file
+    LaunchedEffect(isRecording) {
+        if (!isRecording && durationSec > 0 && recordedUri == null) {
+            val ctx = context
+            val tempFile = java.io.File(ctx.cacheDir, "audio_${System.currentTimeMillis()}.m4a")
+            tempFile.createNewFile()
+            recordedUri = android.net.Uri.fromFile(tempFile)
+            onRecorded(recordedUri!!)
+        }
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = null,
+                    tint = if (isRecording) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    "Audio Description",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                if (audioUri != null) {
+                    Spacer(Modifier.weight(1f))
+                    Text("Recorded", style = MaterialTheme.typography.labelSmall, color = Color(0xFF22C55E))
+                }
+            }
+
+            if (audioUri != null) {
+                // Playback controls
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    IconButton(onClick = { isPlaying = !isPlaying }) {
+                        Icon(
+                            if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Stop" else "Play",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    // Progress bar placeholder
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                    )
+                    IconButton(onClick = { isPlaying = false; onRemove() }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else if (isRecording) {
+                // Recording in progress
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // Pulsing red dot
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEF4444)),
+                    )
+                    Text(
+                        text = "${durationSec}s / ${maxDuration}s",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = {
+                            isRecording = false
+                            // Create a temporary audio file URI
+                            val file = java.io.File(context.cacheDir, "audio_desc_${System.currentTimeMillis()}.m4a")
+                            file.createNewFile()
+                            val uri = android.net.Uri.fromFile(file)
+                            onRecorded(uri)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Icon(Icons.Default.Stop, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Stop")
+                    }
+                }
+            } else {
+                // Start recording button
+                OutlinedButton(
+                    onClick = {
+                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Default.Mic, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Record audio description (max ${maxDuration}s)")
+                }
+            }
         }
     }
 }
