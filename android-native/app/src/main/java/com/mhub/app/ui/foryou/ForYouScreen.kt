@@ -134,7 +134,7 @@ class ForYouViewModel @Inject constructor(
 
     private fun loadCategories() {
         viewModelScope.launch {
-            when (val r = categoriesRepo.list()) {
+            when (val r = categoriesRepo.all()) {
                 is ApiResult.Success -> {
                     val apiCats = r.data.map { cat -> cat.slug to (cat.name ?: cat.slug.orEmpty()) }
                     val all = listOf<Pair<String?, String>>(null to "All") + apiCats.take(12)

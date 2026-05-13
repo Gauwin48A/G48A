@@ -35,6 +35,7 @@ import com.mhub.app.ui.components.HeroBannerCarousel
 import com.mhub.app.ui.components.SectionHeader
 import com.mhub.app.ui.components.SubcategoryChipRow
 import com.mhub.app.ui.components.SubcategoryChipShimmer
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -258,6 +259,7 @@ private fun ProductGrid2Col(
     wishlistedIds: Set<String>,
     onOpenProduct: (String) -> Unit,
     onToggleWishlist: (String) -> Unit,
+    onAddToCart: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),

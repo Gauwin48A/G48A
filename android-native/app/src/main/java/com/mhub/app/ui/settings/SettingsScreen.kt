@@ -16,6 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Info
@@ -292,8 +294,6 @@ fun SettingsScreen(
                                 selected = selectedLang == code,
                                 onClick = {
                                     selectedLang = code
-                                    val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(code)
-                                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
                                 },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                             )

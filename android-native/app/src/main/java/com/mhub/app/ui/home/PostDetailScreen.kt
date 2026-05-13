@@ -938,7 +938,7 @@ fun PostDetailScreen(
                         Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
                             Column(Modifier.padding(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Insights, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.Timeline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(6.dp))
                                     Text("Listing Insights", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
                                 }

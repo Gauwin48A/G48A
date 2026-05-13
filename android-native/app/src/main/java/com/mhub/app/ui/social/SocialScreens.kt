@@ -750,7 +750,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text(complaint.subject, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                    Text(complaint.subject.orEmpty(), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
                                     val statusColor = when (complaint.status?.lowercase()) {
                                         "resolved" -> Color(0xFF22C55E)
                                         "rejected" -> Color(0xFFEF4444)

@@ -61,11 +61,26 @@ echo "local.properties already written."
 API_URL="https://ideal-xylophone-77v6x7w9g6whpr6v-5001.app.github.dev/"
 
 echo ""
+echo "=== Step 6: Make ports public ==="
+if [ -n "$CODESPACE_NAME" ]; then
+  gh codespace ports visibility 5001:public -c "$CODESPACE_NAME" 2>/dev/null && echo "✅ Port 5001 → Public" || echo "⚠️  Set port 5001 to Public manually in PORTS tab"
+  gh codespace ports visibility 9000:public -c "$CODESPACE_NAME" 2>/dev/null && echo "✅ Port 9000 → Public" || echo "⚠️  Set port 9000 to Public manually in PORTS tab"
+else
+  echo "⚠️  CODESPACE_NAME not set. Set ports 5001 & 9000 to Public manually in PORTS tab"
+fi
+
+echo ""
 echo "=== Step 7: Build debug APK ==="
 cd /workspaces/Mhub/android-native
-./gradlew :app:assembleDebug --no-configuration-cache -q
-echo "✅ APK built:"
-ls -lh app/build/outputs/apk/debug/app-debug.apk
+APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+if [ -f "$APK_PATH" ]; then
+  echo "✅ APK already exists, skipping build. To rebuild: ./gradlew :app:assembleDebug"
+  ls -lh "$APK_PATH"
+else
+  ./gradlew :app:assembleDebug --no-configuration-cache -q
+  echo "✅ APK built:"
+  ls -lh "$APK_PATH"
+fi
 
 echo ""
 echo "=== Step 8: Serve APK for download ==="

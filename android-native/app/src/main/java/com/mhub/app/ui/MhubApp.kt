@@ -265,7 +265,7 @@ fun MhubApp(
                     // CategoryHub is the launcher — no MainShell, no bottom nav
                     CategoryHubScreen(
                         onOpenCategory = { category ->
-                            val mapped = when ((category.categoryGroup ?: category.name).lowercase()) {
+                            val mapped = when ((category.categoryGroup ?: category.name ?: "").lowercase()) {
                                 "electronics" -> "electronics"
                                 "fashion" -> "fashion"
                                 "grocery" -> "grocery"
@@ -311,6 +311,7 @@ fun MhubApp(
                         },
                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenScanner = { navController.navigate(Routes.SCANNER) },
                     )
                 }
 
@@ -412,6 +413,7 @@ fun MhubApp(
                             onOpenOffers = { navController.navigate(Routes.OFFERS) },
                             onOpenNearby = { navController.navigate(Routes.NEARBY) },
                             onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
+                            onOpenScanner = { navController.navigate(Routes.SCANNER) },
                         )
                     }
                 }
@@ -561,6 +563,16 @@ fun MhubApp(
                 NearbyScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                )
+            }
+
+            composable(Routes.SCANNER) {
+                com.mhub.app.ui.scanner.ScannerScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    onSearch = { query ->
+                        navController.navigate("search?query=$query")
+                    },
                 )
             }
 

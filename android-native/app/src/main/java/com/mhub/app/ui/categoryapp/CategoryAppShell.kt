@@ -112,7 +112,7 @@ val CATEGORY_APPS = listOf(
     CategoryAppDef("furniture",   "Furniture",   "🪑"),
 )
 
-private enum class CategoryTab {
+internal enum class CategoryTab {
     HOME, CATEGORIES, CART, WISHLIST, PROFILE
 }
 
@@ -128,12 +128,12 @@ class CategoryShellViewModel @Inject constructor(
     val wishlistCount: StateFlow<Int> = wishlistItemDao.observeCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    suspend fun loadLastTab(categoryKey: String): CategoryTab {
+    internal suspend fun loadLastTab(categoryKey: String): CategoryTab {
         val saved = appPreferences.lastCategoryTabValue(categoryKey)
         return CategoryTab.entries.firstOrNull { it.name == saved } ?: CategoryTab.HOME
     }
 
-    fun persistTab(categoryKey: String, tab: CategoryTab) {
+    internal fun persistTab(categoryKey: String, tab: CategoryTab) {
         viewModelScope.launch {
             appPreferences.setLastCategoryTab(categoryKey, tab.name)
         }
@@ -453,6 +453,7 @@ private fun CategoryTopBar(
     )
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun CategoryDrawerContent(
     currentApp: CategoryAppDef,

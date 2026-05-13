@@ -257,7 +257,7 @@ class ProfileViewModel @Inject constructor(
 
     fun shareProfile(context: android.content.Context) {
         val user = _state.value.user ?: return
-        val shareText = "Check out ${user.fullName ?: "my profile"} on MHub!\nhttps://mhub.app/u/${user.handle ?: user.id}"
+        val shareText = "Check out ${user.fullName ?: "my profile"} on MHub!\nhttps://mhub.app/u/${user.username ?: user.id}"
         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(android.content.Intent.EXTRA_TEXT, shareText)
@@ -1245,7 +1245,7 @@ fun ProfileScreen(
                                     Text("My Channel", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                     Text("Create or manage your marketplace channel", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             }
                         }
 
@@ -1558,7 +1558,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                 }
 
                 Button(
-                    onClick = { viewModel.updateProfile(null, null, null) {} },
+                    onClick = {},
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),

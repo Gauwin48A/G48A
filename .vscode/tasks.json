@@ -17,6 +17,31 @@
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": [],
       "isBackground": true
+    },
+    {
+      "label": "MHub — Init Database Schema",
+      "type": "shell",
+      "command": "echo '=== Applying MHUB_ULTIMATE.sql ===' && docker exec -i mhub-postgres-1 psql -U mhub -d mhub < /workspaces/Mhub/server/database/MHUB_ULTIMATE.sql 2>&1 | tail -20 && echo '=== Applying migrations ===' && for f in /workspaces/Mhub/server/database/migrations/*.sql; do echo \"Applying $f\"; docker exec -i mhub-postgres-1 psql -U mhub -d mhub < \"$f\" 2>&1 | grep -v 'already exists\\|NOTICE' | tail -3; done && echo '=== Restarting server ===' && docker restart mhub-server-1 && sleep 5 && docker logs mhub-server-1 --tail 20",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "MHub — Status Check",
+      "type": "shell",
+      "command": "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' 2>&1; echo '---SERVER LOGS---'; docker logs mhub-server-1 --tail 40 2>&1; echo '---HEALTH---'; curl -s -w '\\nHTTP %{http_code}' http://localhost:5001/api/health 2>&1 || echo 'curl failed'",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "MHub — Serve APK & Open Ports",
+      "type": "shell",
+      "command": "echo '=== Making ports public ===' && gh codespace ports visibility 5001:public -c \"$CODESPACE_NAME\" 2>&1 && echo '✅ Port 5001 public' || echo '⚠️ Port 5001: set manually in PORTS tab' && gh codespace ports visibility 9000:public -c \"$CODESPACE_NAME\" 2>&1 && echo '✅ Port 9000 public' || echo '⚠️ Port 9000: set manually in PORTS tab' && echo '' && echo '=== Setting up APK server ===' && mkdir -p /tmp/apk-serve && (cp /workspaces/Mhub/android-native/app/build/outputs/apk/debug/app-debug.apk /tmp/apk-serve/mhub.apk 2>/dev/null && echo '✅ APK copied' || echo '⚠️ No APK found at build path, checking /tmp...') && ls -lh /tmp/apk-serve/mhub.apk 2>/dev/null && (kill $(lsof -ti:9000) 2>/dev/null; true) && echo '' && echo '=== Starting HTTP server on port 9000 ===' && echo \"APK download: https://${CODESPACE_NAME}-9000.app.github.dev/mhub.apk\" && echo \"API URL: https://${CODESPACE_NAME}-5001.app.github.dev/\" && echo '' && cd /tmp/apk-serve && python3 -m http.server 9000",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": [],
+      "isBackground": true
     }
   ]
 }
