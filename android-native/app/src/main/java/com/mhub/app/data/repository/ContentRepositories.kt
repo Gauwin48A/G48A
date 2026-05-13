@@ -136,6 +136,8 @@ class PostsRepository @Inject constructor(
     }
 
     suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().items }
+    suspend fun deleteRecentlyViewed(postId: String): ApiResult<Unit> = safeApiCall { api.deleteRecentlyViewed(postId); Unit }
+    suspend fun clearRecentlyViewed(): ApiResult<Unit> = safeApiCall { api.clearRecentlyViewed(); Unit }
 
     suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().items }
     suspend fun removeFromCompare(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCompare(postId); Unit }
@@ -214,6 +216,9 @@ class NotificationsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun markRead(id: String): ApiResult<Unit> = safeApiCall { api.markRead(id); Unit }
     suspend fun markAllRead(): ApiResult<Unit> = safeApiCall { api.markAllRead(); Unit }
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteNotification(id); Unit }
+    suspend fun snooze(id: String, duration: Int = 60): ApiResult<Unit> = safeApiCall {
+        api.snoozeNotification(id, SnoozeRequest(duration)); Unit
+    }
 }
 
 @Singleton
@@ -324,6 +329,9 @@ class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
     suspend fun list(): ApiResult<List<SavedSearch>> = safeApiCall { api.savedSearches().searches }
     suspend fun save(query: String, category: String?): ApiResult<Unit> = safeApiCall { api.saveSearch(SaveSearchRequest(query, category)); Unit }
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteSavedSearch(id); Unit }
+    suspend fun toggleNotification(id: String, enabled: Boolean): ApiResult<Unit> = safeApiCall {
+        api.toggleSavedSearchNotification(id, SavedSearchNotificationRequest(enabled)); Unit
+    }
 }
 
 @Singleton
@@ -351,6 +359,11 @@ class CentresRepository @Inject constructor(private val api: MhubApi) {
 class ComplaintsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun submit(req: ComplaintRequest): ApiResult<Unit> = safeApiCall { api.submitComplaint(req); Unit }
     suspend fun submitFeedback(req: FeedbackRequest): ApiResult<Unit> = safeApiCall { api.submitFeedback(req); Unit }
+    suspend fun addEvidence(id: String, bytes: ByteArray, mimeType: String): ApiResult<Unit> = safeApiCall {
+        val body = bytes.toRequestBody(mimeType.toMediaType())
+        val part = okhttp3.MultipartBody.Part.createFormData("evidence", "evidence", body)
+        api.addComplaintEvidence(id, part); Unit
+    }
 }
 
 @Singleton
@@ -404,6 +417,12 @@ class TiersRepository @Inject constructor(private val api: MhubApi) {
     suspend fun subscribe(req: SubscribeRequest): ApiResult<Unit> = safeApiCall {
         api.subscribe(req); Unit
     }
+    suspend fun activateTrial(): ApiResult<Unit> = safeApiCall { api.activateTrial(); Unit }
+    suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall { api.cancelSubscription(id); Unit }
+    suspend fun subscriptionHistory(): ApiResult<List<SubscriptionRecord>> = safeApiCall {
+        api.subscriptionHistory().subscriptions
+    }
+    suspend fun mySubscription(): ApiResult<MySubscriptionResponse> = safeApiCall { api.mySubscription() }
 }
 
 @Singleton
@@ -441,6 +460,12 @@ class PaymentsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun upiDetails(): ApiResult<PaymentUpiDetailsResponse> = safeApiCall { api.paymentUpiDetails() }
     suspend fun history(): ApiResult<List<PaymentHistoryItem>> = safeApiCall { api.paymentHistory().payments }
     suspend fun submit(req: SubmitPaymentRequest): ApiResult<Unit> = safeApiCall { api.submitPayment(req); Unit }
+    suspend fun createRazorpayOrder(amount: Double, tierId: String? = null): ApiResult<RazorpayOrderResponse> = safeApiCall {
+        api.createRazorpayOrder(RazorpayOrderRequest(amount = amount, tierId = tierId))
+    }
+    suspend fun verifyRazorpayPayment(orderId: String, paymentId: String, signature: String): ApiResult<Unit> = safeApiCall {
+        api.verifyRazorpayPayment(RazorpayVerifyRequest(orderId, paymentId, signature)); Unit
+    }
 }
 
 @Singleton

@@ -101,7 +101,12 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
                     userName = r.data.user?.displayName ?: "User",
                     userRank = rank,
                     topSellers = topSellers,
-                    buyerStats = null
+                    buyerStats = BuyerStats(
+                        itemsBought = r.data.quickStats.firstOrNull { it.labelKey == "items_bought" || it.label?.contains("bought", true) == true }?.value ?: 0,
+                        offersMade = r.data.quickStats.firstOrNull { it.labelKey == "offers_made" || it.label?.contains("offer", true) == true }?.value ?: 0,
+                        savedItems = r.data.quickStats.firstOrNull { it.labelKey == "saved_items" || it.label?.contains("saved", true) == true || it.label?.contains("wishlist", true) == true }?.value ?: 0,
+                        activeChats = r.data.quickStats.firstOrNull { it.labelKey == "active_chats" || it.label?.contains("chat", true) == true }?.value ?: 0,
+                    ),
                 )
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)

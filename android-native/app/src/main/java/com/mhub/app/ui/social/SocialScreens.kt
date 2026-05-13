@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -747,6 +748,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                     Spacer(Modifier.height(8.dp))
                     Text("My Complaint History", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
                     state.history.forEach { complaint ->
+                        val clipboardManager = LocalClipboardManager.current
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -761,8 +763,22 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                         Text(complaint.status?.replaceFirstChar { it.uppercase() } ?: "Submitted", fontSize = 11.sp, color = statusColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                                     }
                                 }
+                                // Reference ID with copy
+                                complaint.referenceId?.let { refId ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Ref: $refId", fontSize = 11.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.Medium)
+                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(14.dp).clickable { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(refId)) }, tint = Color(0xFF6366F1))
+                                    }
+                                }
                                 if (!complaint.description.isNullOrBlank()) {
                                     Text(complaint.description, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 2)
+                                }
+                                // Evidence attachments
+                                if (complaint.evidence.isNotEmpty()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF64748B))
+                                        Text("${complaint.evidence.size} attachment(s)", fontSize = 11.sp, color = Color(0xFF64748B))
+                                    }
                                 }
                                 if (!complaint.createdAt.isNullOrBlank()) {
                                     Text(complaint.createdAt, fontSize = 11.sp, color = Color(0xFF94A3B8))

@@ -1224,8 +1224,67 @@ data class ComplaintHistoryResponse(
 @Serializable
 data class ComplaintRecord(
     val id: String? = null,
+    @SerialName("reference_id") val referenceId: String? = null,
     val subject: String? = null,
     val description: String? = null,
     val status: String? = null,
+    val evidence: List<String> = emptyList(),
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+// -------- Subscriptions --------
+@Serializable
+data class SubscriptionHistoryResponse(
+    val subscriptions: List<SubscriptionRecord> = emptyList(),
+)
+
+@Serializable
+data class SubscriptionRecord(
+    val id: String? = null,
+    val tier: String? = null,
+    val status: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("cancelled_at") val cancelledAt: String? = null,
+)
+
+@Serializable
+data class MySubscriptionResponse(
+    val subscription: SubscriptionRecord? = null,
+    val active: Boolean = false,
+)
+
+// -------- Razorpay --------
+@Serializable
+data class RazorpayOrderRequest(
+    val amount: Double,
+    val currency: String = "INR",
+    @SerialName("tier_id") val tierId: String? = null,
+)
+
+@Serializable
+data class RazorpayOrderResponse(
+    @SerialName("order_id") val orderId: String? = null,
+    val amount: Double = 0.0,
+    val currency: String = "INR",
+    val key: String? = null,
+)
+
+@Serializable
+data class RazorpayVerifyRequest(
+    @SerialName("razorpay_order_id") val orderId: String,
+    @SerialName("razorpay_payment_id") val paymentId: String,
+    @SerialName("razorpay_signature") val signature: String,
+)
+
+// -------- Notifications snooze --------
+@Serializable
+data class SnoozeRequest(
+    val duration: Int = 60,
+)
+
+// -------- Saved search notification toggle --------
+@Serializable
+data class SavedSearchNotificationRequest(
+    val enabled: Boolean,
 )
