@@ -206,6 +206,13 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
+    // CameraX + ML Kit Barcode Scanning
+    implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
     // Biometric authentication
     implementation("androidx.biometric:biometric:1.1.0")
 

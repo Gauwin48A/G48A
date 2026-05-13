@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -397,7 +398,7 @@ fun WishlistScreen(
                                             .fillMaxWidth()
                                             .heightIn(max = 2000.dp),
                                     ) {
-                                        androidx.compose.foundation.lazy.grid.items(
+                                        items(
                                             filteredItems,
                                             key = { it.stableId },
                                         ) { post ->
@@ -424,6 +425,7 @@ fun WishlistScreen(
                                 }
                             }
                         }
+                    }
                 }
             }
         }

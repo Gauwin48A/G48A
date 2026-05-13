@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
@@ -90,6 +91,7 @@ fun MoreScreen(
     onOpenOffers: () -> Unit = {},
     onOpenNearby: () -> Unit = {},
     onOpenDashboard: () -> Unit = {},
+    onOpenScanner: () -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isDarkMode by remember { mutableStateOf(false) }
@@ -121,6 +123,13 @@ fun MoreScreen(
             icon = Icons.Outlined.LocationOn,
             tint = Color(0xFF10B981),
             onClick = onOpenNearby,
+        ),
+        MoreEntry(
+            title = "Scanner",
+            subtitle = "Scan QR codes and product barcodes",
+            icon = Icons.Outlined.QrCodeScanner,
+            tint = Color(0xFF00BCD4),
+            onClick = onOpenScanner,
         ),
         MoreEntry(
             title = "Dashboard",

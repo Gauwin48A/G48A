@@ -13,8 +13,12 @@ const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_EMAIL = process.env.VAPID_EMAIL || "mailto:admin@mhub.com";
 
 if (webpush && VAPID_PUBLIC && VAPID_PRIVATE) {
-  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
-  logger.info("[Push] Web Push configured with VAPID keys");
+  try {
+    webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+    logger.info("[Push] Web Push configured with VAPID keys");
+  } catch (err) {
+    logger.warn(`[Push] Invalid VAPID keys — push notifications disabled: ${err.message}`);
+  }
 } else {
   logger.warn("[Push] web-push not configured — install web-push and set VAPID env vars to enable sending");
 }

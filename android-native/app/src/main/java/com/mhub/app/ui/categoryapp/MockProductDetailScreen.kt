@@ -661,6 +661,8 @@ private fun WriteReviewSheet(
     }
 }
 
+@Composable
+private fun ReviewCard(
     review: MockDataProvider.MockReview,
     modifier: Modifier = Modifier,
 ) {

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,10 +66,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -165,6 +168,7 @@ fun CategoryHubScreen(
     onSelectApp: (String) -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenScanner: () -> Unit = {},
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -198,6 +202,9 @@ fun CategoryHubScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.End,
             ) {
+                IconButton(onClick = onOpenScanner) {
+                    Icon(Icons.Default.QrCodeScanner, "Scanner", tint = Color(0xFF64748B))
+                }
                 IconButton(onClick = onOpenNotifications) {
                     Icon(Icons.Default.Notifications, "Notifications", tint = Color(0xFF64748B))
                 }

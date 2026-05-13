@@ -108,6 +108,7 @@ object Routes {
     const val DAILY_CODE = "daily-code"
     const val REFERRAL_TREE = "referral-tree"
     const val CHAT_LIST = "chat-list"
+    const val SCANNER = "scanner"
 
     // ── Category App Shell routes (prefixed with category key) ──────────────
     const val CATEGORY_HOME       = "cat/{catKey}/home"

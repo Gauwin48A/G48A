@@ -47,7 +47,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-mhub}:${POSTGRES_PASSWORD:?err}@postgres:5432/${POSTGRES_DB:-mhub}
       REDIS_URL: redis://redis:6379
-      NODE_ENV: production
+      NODE_ENV: development
+      CORS_ORIGINS: "https://ideal-xylophone-77v6x7w9g6whpr6v-5001.app.github.dev,https://ideal-xylophone-77v6x7w9g6whpr6v-4173.app.github.dev,https://ideal-xylophone-77v6x7w9g6whpr6v-8081.app.github.dev"
     ports:
       - "${SERVER_PORT:-5001}:5001"
     depends_on:
