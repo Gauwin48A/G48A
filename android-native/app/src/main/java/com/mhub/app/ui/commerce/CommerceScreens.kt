@@ -1942,8 +1942,14 @@ class RecentlyViewedViewModel @Inject constructor(private val repo: PostsReposit
             is ApiResult.Failure -> _state.value = RecentlyViewedUiState(loading = false, error = r.error.message)
         }
     } }
-    fun clearAll() { _state.value = _state.value.copy(posts = emptyList()) }
-    fun removePost(id: String) { _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id }) }
+    fun clearAll() {
+        _state.value = _state.value.copy(posts = emptyList())
+        viewModelScope.launch { repo.clearRecentlyViewed() }
+    }
+    fun removePost(id: String) {
+        _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id })
+        viewModelScope.launch { repo.deleteRecentlyViewed(id) }
+    }
 }
 
 private fun timeSinceLabel(isoDate: String?): String {
@@ -2230,7 +2236,9 @@ class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearches
     fun toggleCreateForm() { _state.value = _state.value.copy(showCreateForm = !_state.value.showCreateForm) }
     fun toggleNotification(id: String) {
         val current = _state.value.notificationsEnabled[id] ?: true
-        _state.value = _state.value.copy(notificationsEnabled = _state.value.notificationsEnabled + (id to !current))
+        val newEnabled = !current
+        _state.value = _state.value.copy(notificationsEnabled = _state.value.notificationsEnabled + (id to newEnabled))
+        viewModelScope.launch { repo.toggleNotification(id, newEnabled) }
     }
     fun createSearch() {
         val s = _state.value

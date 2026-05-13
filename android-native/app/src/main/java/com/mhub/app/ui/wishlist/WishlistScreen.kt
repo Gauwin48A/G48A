@@ -190,15 +190,17 @@ fun WishlistScreen(
     var searchQuery by remember { mutableStateOf("") }
     var gridMode by remember { mutableStateOf(false) }
     var sortBy by remember { mutableStateOf(WishlistSort.SAVED) }
+    var statusFilter by remember { mutableStateOf("all") } // all, active, sold, inactive
     val focusManager = LocalFocusManager.current
 
-    val filteredItems = remember(state.items, searchQuery, sortBy) {
+    val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter) {
         state.items
             .filter { post ->
-                searchQuery.isBlank() ||
+                (searchQuery.isBlank() ||
                     post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                     post.location?.contains(searchQuery, ignoreCase = true) == true ||
-                    post.categoryName?.contains(searchQuery, ignoreCase = true) == true
+                    post.categoryName?.contains(searchQuery, ignoreCase = true) == true) &&
+                (statusFilter == "all" || post.status?.equals(statusFilter, ignoreCase = true) == true)
             }
             .let { list ->
                 when (sortBy) {
@@ -349,6 +351,26 @@ fun WishlistScreen(
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+
+                        // Status filter chips
+                        item {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            ) {
+                                listOf("all" to "All", "active" to "Active", "sold" to "Sold", "inactive" to "Inactive").forEach { (key, label) ->
+                                    FilterChip(
+                                        selected = statusFilter == key,
+                                        onClick = { statusFilter = key },
+                                        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
                                         ),
                                     )
                                 }

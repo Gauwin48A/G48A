@@ -187,6 +187,12 @@ interface MhubApi {
     @POST("api/notifications/mark-all-read")
     suspend fun markAllRead(): MessageResponse
 
+    @PATCH("api/notifications/{id}/snooze")
+    suspend fun snoozeNotification(
+        @Path("id") id: String,
+        @Body body: SnoozeRequest,
+    ): MessageResponse
+
     // ---- Chat ----
     @GET("api/chat/conversations")
     suspend fun conversations(): ConversationsResponse
@@ -386,6 +392,15 @@ interface MhubApi {
     @GET("api/recently-viewed")
     suspend fun recentlyViewed(): PostsResponse
 
+    @DELETE("api/recently-viewed/{postId}")
+    suspend fun deleteRecentlyViewed(@Path("postId") postId: String): MessageResponse
+
+    @HTTP(method = "DELETE", path = "api/recently-viewed/bulk", hasBody = true)
+    suspend fun bulkDeleteRecentlyViewed(@Body body: Map<String, List<String>>): MessageResponse
+
+    @DELETE("api/recently-viewed/clear")
+    suspend fun clearRecentlyViewed(): MessageResponse
+
     // ---- Saved Searches ----
     @GET("api/saved-searches")
     suspend fun savedSearches(): SavedSearchesResponse
@@ -395,6 +410,12 @@ interface MhubApi {
 
     @POST("api/saved-searches")
     suspend fun saveSearch(@Body request: SaveSearchRequest): MessageResponse
+
+    @PATCH("api/saved-searches/{id}/notifications")
+    suspend fun toggleSavedSearchNotification(
+        @Path("id") id: String,
+        @Body body: SavedSearchNotificationRequest,
+    ): MessageResponse
 
     // ---- Compare ----
     @GET("api/compare")
@@ -444,6 +465,13 @@ interface MhubApi {
 
     @GET("api/complaints/my")
     suspend fun myComplaints(): ComplaintHistoryResponse
+
+    @Multipart
+    @PATCH("api/complaints/{id}/evidence")
+    suspend fun addComplaintEvidence(
+        @Path("id") id: String,
+        @Part evidence: okhttp3.MultipartBody.Part,
+    ): MessageResponse
 
     @POST("api/feedback")
     suspend fun submitFeedback(@Body body: FeedbackRequest): MessageResponse
@@ -526,6 +554,12 @@ interface MhubApi {
     @POST("api/payments/submit")
     suspend fun submitPayment(@Body body: SubmitPaymentRequest): MessageResponse
 
+    @POST("api/payments/razorpay/order")
+    suspend fun createRazorpayOrder(@Body body: RazorpayOrderRequest): RazorpayOrderResponse
+
+    @POST("api/payments/razorpay/verify")
+    suspend fun verifyRazorpayPayment(@Body body: RazorpayVerifyRequest): MessageResponse
+
     // ---- Reviews extended ----
     @GET("api/reviews/user/{userId}")
     suspend fun userReviews(@Path("userId") userId: String): ReviewsResponse
@@ -545,6 +579,18 @@ interface MhubApi {
 
     @POST("api/subscriptions")
     suspend fun subscribe(@Body body: SubscribeRequest): MessageResponse
+
+    @POST("api/subscriptions/trial")
+    suspend fun activateTrial(): MessageResponse
+
+    @POST("api/subscriptions/{id}/cancel")
+    suspend fun cancelSubscription(@Path("id") id: String): MessageResponse
+
+    @GET("api/subscriptions/history")
+    suspend fun subscriptionHistory(): SubscriptionHistoryResponse
+
+    @GET("api/subscriptions/my")
+    suspend fun mySubscription(): MySubscriptionResponse
 
     // ---- Legal / CMS ----
     @GET("api/cms/terms")

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.ExpandLess
@@ -208,12 +209,21 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
+    fun deleteAll() {
+        val allIds = _state.value.items.map { it.stableId }
+        _state.value = _state.value.copy(items = emptyList(), selectedItems = emptySet(), selectMode = false)
+        viewModelScope.launch {
+            allIds.forEach { id -> repo.delete(id) }
+        }
+    }
+
     fun snooze(id: String) {
         // Hide from view (add to snoozed set), re-show after delay
         _state.value = _state.value.copy(
             snoozedItems = _state.value.snoozedItems + id,
         )
         viewModelScope.launch {
+            repo.snooze(id)
             kotlinx.coroutines.delay(3_600_000L) // 1 hour
             _state.value = _state.value.copy(
                 snoozedItems = _state.value.snoozedItems - id,
@@ -366,6 +376,21 @@ fun NotificationsScreen(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text("Mark all read", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        if (state.items.isNotEmpty()) {
+                            var showDeleteAllDialog by remember { mutableStateOf(false) }
+                            IconButton(onClick = { showDeleteAllDialog = true }) {
+                                Icon(Icons.Default.DeleteSweep, contentDescription = "Delete all")
+                            }
+                            if (showDeleteAllDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showDeleteAllDialog = false },
+                                    title = { Text("Delete All Notifications") },
+                                    text = { Text("Are you sure you want to delete all ${state.items.size} notifications?") },
+                                    confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text("Delete All") } },
+                                    dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") } },
+                                )
                             }
                         }
                     }

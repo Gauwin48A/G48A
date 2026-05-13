@@ -228,10 +228,10 @@ class RewardsViewModel @Inject constructor(
         }
     }
 
-    fun redeemStore(type: String) {
+    fun redeemStore(type: String, postId: String? = null) {
         _state.value = _state.value.copy(actionLoading = "redeem")
         viewModelScope.launch {
-            when (val r = rewardsRepository.storeRedeem(type)) {
+            when (val r = rewardsRepository.storeRedeem(type, postId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         actionLoading = null,
@@ -347,17 +347,33 @@ fun RewardsScreen(
                     val xpRemaining = max(0, user.xpRequired - user.xpCurrent)
                     val inviteText = "Join MHub with my referral code ${user.referralCode ?: "MHUB"} and start earning rewards! https://mhub.app/invite/${user.referralCode ?: ""}"
 
-                    // Redeem confirmation dialog
+                    // Redeem confirmation dialog with optional post picker
                     var redeemDialogType by remember { mutableStateOf<String?>(null) }
+                    var redeemPostId by remember { mutableStateOf("") }
                     redeemDialogType?.let { type ->
-                        val itemName = when (type) { "boost" -> "Listing Boost (24h)"; "badge" -> "Featured Badge"; else -> "Top Placement (7d)" }
-                        val itemCost = when (type) { "boost" -> 100; "badge" -> 200; else -> 500 }
+                        val itemName = when (type) { "boost" -> "Listing Boost (24h)"; "badge" -> "Featured Badge"; "top_search" -> "Top Placement (7d)"; "gift_5" -> "$5 Gift Card"; "voucher_10" -> "$10 Voucher"; "theme" -> "Custom Theme"; "badges" -> "Badge Pack"; else -> type }
+                        val itemCost = when (type) { "boost" -> 100; "badge" -> 200; "top_search" -> 500; "gift_5" -> 250; "voucher_10" -> 450; "theme" -> 150; "badges" -> 80; else -> 100 }
+                        val needsPost = type in listOf("boost", "badge", "top_search")
                         AlertDialog(
-                            onDismissRequest = { redeemDialogType = null },
+                            onDismissRequest = { redeemDialogType = null; redeemPostId = "" },
                             title = { Text("Redeem $itemName") },
-                            text = { Text("Spend $itemCost coins on $itemName?\n\nYour balance: ${user.totalCoins} coins") },
-                            confirmButton = { TextButton(onClick = { viewModel.redeemStore(type); redeemDialogType = null }, enabled = state.actionLoading == null) { Text("Redeem") } },
-                            dismissButton = { TextButton(onClick = { redeemDialogType = null }) { Text("Cancel") } },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Spend $itemCost coins on $itemName?\n\nYour balance: ${user.totalCoins} coins")
+                                    if (needsPost) {
+                                        OutlinedTextField(
+                                            value = redeemPostId,
+                                            onValueChange = { redeemPostId = it },
+                                            label = { Text("Post ID (optional)") },
+                                            placeholder = { Text("Enter post ID to apply") },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                    }
+                                }
+                            },
+                            confirmButton = { TextButton(onClick = { viewModel.redeemStore(type, redeemPostId.ifBlank { null }); redeemDialogType = null; redeemPostId = "" }, enabled = state.actionLoading == null) { Text("Redeem") } },
+                            dismissButton = { TextButton(onClick = { redeemDialogType = null; redeemPostId = "" }) { Text("Cancel") } },
                         )
                     }
 
@@ -745,8 +761,31 @@ fun RewardsScreen(
                             item {
                                 Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                     Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Recent Activity", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                        state.coinHistory.take(5).forEach { tx ->
+                                        Text("Coin History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        // Filter chips
+                                        var historyFilter by remember { mutableStateOf("all") }
+                                        val filterChips = listOf("all" to "All", "earned" to "Earned", "redeemed" to "Redeemed", "bonus" to "Bonus")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            filterChips.forEach { (key, label) ->
+                                                val sel = historyFilter == key
+                                                Surface(
+                                                    shape = RoundedCornerShape(999.dp),
+                                                    color = if (sel) Color(0xFF6366F1) else Color(0xFF6366F1).copy(alpha = 0.1f),
+                                                    onClick = { historyFilter = key },
+                                                ) {
+                                                    Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = if (sel) Color.White else Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                                }
+                                            }
+                                        }
+                                        val filteredHistory = state.coinHistory.filter { tx ->
+                                            when (historyFilter) {
+                                                "earned" -> tx.amount > 0 && (tx.action?.contains("bonus", true) != true)
+                                                "redeemed" -> tx.amount < 0
+                                                "bonus" -> tx.action?.contains("bonus", true) == true || tx.action?.contains("referral", true) == true
+                                                else -> true
+                                            }
+                                        }
+                                        filteredHistory.take(20).forEach { tx ->
                                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(tx.description ?: tx.action ?: "Activity", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
