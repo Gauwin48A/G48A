@@ -22,8 +22,13 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
 
-# --- AndroidX ---
--keep class androidx.** { *; }
+# --- AndroidX (keep only used classes) ---
+-keep class androidx.core.** { *; }
+-keep class androidx.appcompat.** { *; }
+-keep class androidx.coordinatorlayout.** { *; }
+-keep class androidx.webkit.** { *; }
+-keep class androidx.activity.** { *; }
+-keep class androidx.fragment.** { *; }
 -dontwarn androidx.**
 
 # --- Keep line numbers for debugging stack traces ---

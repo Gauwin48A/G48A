@@ -60,11 +60,14 @@ export function getAccessToken() {
 
 /**
  * Persist user ID — uses secure storage on native, localStorage on web.
+ * Fire-and-forget: does not block the synchronous getUserId flow.
  * @param {string} userId
  */
 async function persistUserId(userId) {
   if (isNative()) {
-    await setUserIdSecure(userId).catch(() => {});
+    await setUserIdSecure(userId).catch((err) => {
+      if (import.meta.env.DEV) console.warn("[AuthStorage] secure persist failed:", err);
+    });
   }
   // Always keep localStorage in sync for synchronous reads
   try {
@@ -143,7 +146,9 @@ export function hasAuthSession() {
   }
   const has = window.localStorage.getItem("authSession") === "true";
   if (has && isNative()) {
-    setSecure("auth_session", "true").catch(() => {});
+    setSecure("auth_session", "true").catch((err) => {
+      if (import.meta.env.DEV) console.warn("[AuthStorage] secure session persist failed:", err);
+    });
   }
   return has;
 }
