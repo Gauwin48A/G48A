@@ -23,6 +23,8 @@ import { getUserId } from "@/utils/authStorage";
 import { MapPin } from "lucide-react";
 import { registerSoftReloadHandler, requestSoftReload } from "@/utils/softReload";
 import { registerSoftNavigationHandler } from "@/utils/softNavigate";
+import { initNativeApp } from "@/services/nativeInitService";
+import { initDeepLinkListener } from "@/utils/deepLinkHandler";
 
 const LAZY_CACHE_KEY_PREFIX = "mhub:lazy-retry:";
 const LAZY_RETRY_WINDOW_MS = 60 * 1000;
@@ -308,6 +310,53 @@ function AppShell() {
   const navigate = useNavigate();
   const isDev = import.meta.env.DEV;
 
+  // Native app initialization (push, status bar, keyboard, network, splash)
+  useEffect(() => {
+    const userId = getUserId(user);
+    const isDark = document.documentElement.classList.contains("dark");
+
+    const cleanupPromise = initNativeApp({
+      isDarkMode: isDark,
+      userId,
+      onNotification: (notification) => {
+        // Show in-app toast for foreground notifications
+        toast({
+          title: notification.title,
+          description: notification.body,
+          className: "bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-700/90 dark:to-pink-700/90 text-white border-none",
+          duration: 5000,
+        });
+        // If notification was tapped (action performed), route to relevant page
+        if (notification.actionPerformed && notification.data?.route) {
+          // Validate route starts with "/" and contains no external URLs
+          const route = notification.data.route;
+          if (typeof route === "string" && route.startsWith("/") && !route.includes("://")) {
+            navigate(route);
+          }
+        }
+      },
+      onNetworkChange: (status) => {
+        if (!status.connected) {
+          toast({
+            title: t("offline_title", { defaultValue: "You're offline" }),
+            description: t("offline_desc", { defaultValue: "Some features may be limited." }),
+            variant: "destructive",
+            duration: 4000,
+          });
+        }
+      },
+    });
+
+    return () => {
+      cleanupPromise.then((cleanup) => cleanup?.());
+    };
+  }, [user, toast, navigate, t]);
+
+  // Deep link handler (comprehensive for all 4 apps)
+  useEffect(() => {
+    return initDeepLinkListener(navigate);
+  }, [navigate]);
+
   useEffect(() => {
     const syncLocation = async () => {
       const userId = getUserId(user);
@@ -334,40 +383,10 @@ function AppShell() {
         }
       }))();
 
-    // F-10: Deep link handler for mhub:// URL scheme
-    const deepLinkPromise = CapacitorApp.addListener("appUrlOpen", ({ url }) => {
-      try {
-        // Strip scheme: mhub://post/123 → post/123
-        const path = url.replace(/^mhub:\/\//, "");
-        if (path.startsWith("post/")) {
-          const postId = path.slice(5).split("?")[0];
-          if (postId) navigate(`/post/${postId}`);
-        } else if (path.startsWith("profile/")) {
-          const userId = path.slice(8).split("?")[0];
-          if (userId) navigate(`/profile/${userId}`);
-        } else if (path.startsWith("feed")) {
-          navigate("/feed");
-        } else if (path.startsWith("chat")) {
-          navigate("/chat");
-        } else if (path.startsWith("orders") || path.startsWith("bought-posts")) {
-          navigate("/bought-posts");
-        } else if (path.startsWith("wishlist")) {
-          navigate("/wishlist");
-        } else if (path.startsWith("notifications")) {
-          navigate("/notifications");
-        } else if (path) {
-          navigate(`/${path}`);
-        }
-      } catch (err) {
-        if (isDev) console.warn("[DEEP_LINK] Failed to handle URL:", url, err);
-      }
-    });
-
     return () => {
       listenerPromise.then((listener) => listener.remove());
-      deepLinkPromise.then((listener) => listener.remove());
     };
-  }, [isDev, user, requestLocation, navigate]);
+  }, [isDev, user, requestLocation]);
 
   useEffect(() => {
     socket.on("notification", (notification) => {

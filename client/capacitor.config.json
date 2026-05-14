@@ -8,6 +8,29 @@
   "plugins": {
     "App": {
       "appUrlScheme": "mhub"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": false,
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT",
+      "backgroundColor": "#FFFFFF"
+    },
+    "Camera": {
+      "permissions": ["camera", "photos"]
     }
   }
 }
