@@ -328,7 +328,11 @@ function AppShell() {
         });
         // If notification was tapped (action performed), route to relevant page
         if (notification.actionPerformed && notification.data?.route) {
-          navigate(notification.data.route);
+          // Validate route starts with "/" and contains no external URLs
+          const route = notification.data.route;
+          if (typeof route === "string" && route.startsWith("/") && !route.includes("://")) {
+            navigate(route);
+          }
         }
       },
       onNetworkChange: (status) => {

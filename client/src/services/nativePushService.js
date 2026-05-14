@@ -55,15 +55,36 @@ export async function registerNativePush() {
     await plugin.register();
     log("Push registration initiated");
     return new Promise((resolve) => {
-      plugin.addListener("registration", (token) => {
+      let resolved = false;
+      const cleanup = () => { resolved = true; };
+
+      const regListener = plugin.addListener("registration", (token) => {
+        if (resolved) return;
+        cleanup();
         log("FCM Token received:", token.value);
+        regListener.then((l) => l.remove());
+        errListener.then((l) => l.remove());
         resolve(token.value);
       });
 
-      plugin.addListener("registrationError", (err) => {
+      const errListener = plugin.addListener("registrationError", (err) => {
+        if (resolved) return;
+        cleanup();
         logError("Registration failed:", err);
+        regListener.then((l) => l.remove());
+        errListener.then((l) => l.remove());
         resolve(null);
       });
+
+      // Timeout after 15 seconds to prevent indefinite hanging
+      setTimeout(() => {
+        if (resolved) return;
+        cleanup();
+        log("Push registration timed out");
+        regListener.then((l) => l.remove());
+        errListener.then((l) => l.remove());
+        resolve(null);
+      }, 15000);
     });
   } catch (err) {
     logError("registerNativePush error:", err);

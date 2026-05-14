@@ -113,8 +113,14 @@ export async function clearAll() {
 
   if (plugin) {
     try {
-      await plugin.clear();
-      log("Cleared all secure storage");
+      // Get all keys and only remove those with our prefix
+      const { keys } = await plugin.keys();
+      for (const key of keys) {
+        if (key.startsWith(STORAGE_PREFIX)) {
+          await plugin.remove({ key });
+        }
+      }
+      log("Cleared all MHub secure storage");
     } catch { /* silent */ }
   }
 
