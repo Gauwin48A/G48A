@@ -1,9 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import {
   setUserId as setUserIdSecure,
-  getUserIdSecure,
   setSecure,
-  getSecure,
 } from "@/services/secureStorageService";
 
 /**

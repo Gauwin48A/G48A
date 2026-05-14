@@ -36,10 +36,9 @@ async function loadPlugin() {
  *
  * @param {Blob} blob - The file content
  * @param {string} filename - Desired filename
- * @param {string} [mimeType] - MIME type (inferred from blob if omitted)
  * @returns {Promise<{success: boolean, path?: string}>}
  */
-export async function downloadBlob(blob, filename, mimeType) {
+export async function downloadBlob(blob, filename) {
   const { Filesystem: fs, Directory: dir } = await loadPlugin();
 
   if (fs && dir) {

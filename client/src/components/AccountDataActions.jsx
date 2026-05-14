@@ -58,7 +58,7 @@ export default function AccountDataActions({ className = "" }) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], {
         type: "application/json",
       });
-      await downloadBlob(blob, filename, "application/json");
+      await downloadBlob(blob, filename);
       toast({
         title: "Export ready",
         description: "Your data export has been downloaded.",
