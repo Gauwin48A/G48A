@@ -5,6 +5,11 @@ import {
   requestNotificationPermission,
   registerTokenWithBackend,
 } from '../lib/pushService';
+import {
+  isNativePushAvailable,
+  registerNativePush,
+  registerNativeTokenWithBackend,
+} from '../services/nativePushService';
 
 import { useTranslation } from 'react-i18next';
 
@@ -101,14 +106,23 @@ export default function NotificationPermission({ userId, onDismiss }) {
       return;
     }
 
-    // Check if Firebase is configured
-    if (!isFirebaseConfigured()) {
+    // Check if Firebase is configured (only relevant on web)
+    const isNative = isNativePushAvailable();
+    if (!isNative && !isFirebaseConfigured()) {
       setStatus('not-configured');
       setShowPrompt(false);
       return;
     }
 
-    // Check current permission status
+    // On native (Android/iOS), use Capacitor push plugin for permission
+    if (isNative) {
+      // Native push is always available if the plugin is loaded;
+      // show prompt to let user enable via native dialog
+      const timer = setTimeout(() => setShowPrompt(true), 3000);
+      return () => clearTimeout(timer);
+    }
+
+    // Check current permission status (web only)
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
         setStatus('granted');
@@ -128,15 +142,23 @@ export default function NotificationPermission({ userId, onDismiss }) {
         setStatus('requesting');
 
         try {
-            const token = await requestNotificationPermission();
+            let token = null;
+
+            // Use native push on Android/iOS, web push on browser
+            if (isNativePushAvailable()) {
+                token = await registerNativePush();
+                if (token && userId) {
+                    await registerNativeTokenWithBackend(token, userId);
+                }
+            } else {
+                token = await requestNotificationPermission();
+                if (token && userId) {
+                    await registerTokenWithBackend(token, userId);
+                }
+            }
 
             if (token) {
                 setStatus('granted');
-                // Register with backend if user is logged in
-                if (userId) {
-                    await registerTokenWithBackend(token, userId);
-                }
-                // Store token for later registration if not logged in
                 localStorage.setItem('fcm_token', token);
                 localStorage.setItem(dismissKey, "true");
                 setShowPrompt(false);

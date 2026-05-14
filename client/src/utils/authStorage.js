@@ -1,3 +1,11 @@
+import { Capacitor } from "@capacitor/core";
+import {
+  setUserId as setUserIdSecure,
+  getUserIdSecure,
+  setSecure,
+  getSecure,
+} from "@/services/secureStorageService";
+
 /**
  * Normalize a value to a trimmed non-empty string, or null.
  * @param {*} value
@@ -13,6 +21,17 @@ function normalizeId(value) {
 
 const LEGACY_TOKEN_KEYS = ["authToken", "refreshToken", "token"];
 let legacyCleared = false;
+
+/**
+ * Check if running on a native platform (Android/iOS).
+ */
+function isNative() {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Clear legacy JWT tokens from localStorage (no longer supported).
@@ -42,6 +61,21 @@ export function getAccessToken() {
 }
 
 /**
+ * Persist user ID — uses secure storage on native, localStorage on web.
+ * @param {string} userId
+ */
+async function persistUserId(userId) {
+  if (isNative()) {
+    await setUserIdSecure(userId).catch(() => {});
+  }
+  // Always keep localStorage in sync for synchronous reads
+  try {
+    window.localStorage.setItem("userId", userId);
+    window.localStorage.setItem("user_id", userId);
+  } catch { /* silent */ }
+}
+
+/**
  * Resolve the current user's ID from a fallback user object, localStorage,
  * the stored "user" JSON, or the JWT token payload.
  * @param {object|null} [fallbackUser=null] - Optional user object with id/user_id.
@@ -55,10 +89,7 @@ export function getUserId(fallbackUser = null) {
   const fromUser = normalizeId(fallbackUser?.id ?? fallbackUser?.user_id);
   if (fromUser) {
     if (!window.localStorage.getItem("userId")) {
-      window.localStorage.setItem("userId", fromUser);
-    }
-    if (!window.localStorage.getItem("user_id")) {
-      window.localStorage.setItem("user_id", fromUser);
+      persistUserId(fromUser);
     }
     return fromUser;
   }
@@ -73,7 +104,7 @@ export function getUserId(fallbackUser = null) {
   );
   if (stored) {
     if (!window.localStorage.getItem("userId")) {
-      window.localStorage.setItem("userId", stored);
+      persistUserId(stored);
     }
     return stored;
   }
@@ -86,8 +117,7 @@ export function getUserId(fallbackUser = null) {
         storedUser?.id ?? storedUser?.user_id
       );
       if (storedUserId) {
-        window.localStorage.setItem("userId", storedUserId);
-        window.localStorage.setItem("user_id", storedUserId);
+        persistUserId(storedUserId);
         return storedUserId;
       }
     } catch { /* ignore parse errors */ }
@@ -106,13 +136,18 @@ export function hasAccessToken() {
 
 /**
  * Check whether an auth session flag is set in localStorage.
+ * On native, also persists the flag to secure storage.
  * @returns {boolean}
  */
 export function hasAuthSession() {
   if (typeof window === "undefined") {
     return false;
   }
-  return window.localStorage.getItem("authSession") === "true";
+  const has = window.localStorage.getItem("authSession") === "true";
+  if (has && isNative()) {
+    setSecure("auth_session", "true").catch(() => {});
+  }
+  return has;
 }
 
 /**

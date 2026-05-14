@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import PwaEnhancements from "./components/PwaEnhancements.jsx";
 import VPNBlocker from "./components/VPNBlocker.jsx";
+import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { getUserId } from "@/utils/authStorage";
 import { MapPin } from "lucide-react";
@@ -355,6 +356,23 @@ function AppShell() {
   // Deep link handler (comprehensive for all 4 apps)
   useEffect(() => {
     return initDeepLinkListener(navigate);
+  }, [navigate]);
+
+  // Hardware back button handler (Android)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listenerPromise = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) {
+        navigate(-1);
+      } else {
+        CapacitorApp.exitApp();
+      }
+    });
+
+    return () => {
+      listenerPromise.then((l) => l.remove());
+    };
   }, [navigate]);
 
   useEffect(() => {

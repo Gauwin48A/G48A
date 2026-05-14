@@ -18,6 +18,7 @@ import { Download, Power, ShieldAlert } from "lucide-react";
 import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { downloadBlob } from "@/services/nativeFileService";
 
 const DELETE_CONFIRMATION_TEXT = "DELETE MY ACCOUNT";
 const DEACTIVATE_CONFIRMATION_TEXT = "DEACTIVATE MY ACCOUNT";
@@ -57,14 +58,7 @@ export default function AccountDataActions({ className = "" }) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], {
         type: "application/json",
       });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      await downloadBlob(blob, filename, "application/json");
       toast({
         title: "Export ready",
         description: "Your data export has been downloaded.",

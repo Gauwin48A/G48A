@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import { downloadBlob } from "@/services/nativeFileService";
 
 const API_BASE = (() => {
   const base = String(getApiOriginBase()).replace(/\/+$/, "");
@@ -212,14 +213,7 @@ export default function SellerDashboard() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "listings-30d.csv";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadBlob(blob, "listings-30d.csv", "text/csv");
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
