@@ -24,6 +24,7 @@ import { buildActiveAppMatcher, matchesCategoryModeItem } from "@/utils/category
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const formatCurrency = (value, currency = "INR") =>
   new Intl.NumberFormat("en-IN", {
@@ -805,7 +806,7 @@ const Cart = () => {
             <Button
               className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white rounded-xl h-12 text-base font-bold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 active:scale-[0.98] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg dark:bg-gradient-to-r dark:text-white"
               disabled={displayItems.length === 0 || displayItems.some(item => item.availability_status && item.availability_status !== "available")}
-              onClick={() => navigate("/payment?returnTo=/cart")}
+              onClick={() => { impactLight(); navigate("/payment?returnTo=/cart"); }}
             >
               {displayItems.some(item => item.availability_status && item.availability_status !== "available")
                 ? (t("remove_unavailable_first") || "Remove unavailable items first")

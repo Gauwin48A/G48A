@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { ImagePlus, X, Upload, ArrowLeft } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
 import { getDeviceId } from "@/utils/device";
-import { isNativeCameraAvailable, takePhoto, pickFromGallery, pickMultiplePhotos, dataUrlToFile } from "@/services/nativeCameraService";
+import { isNativeCameraAvailable, takePhoto, pickMultiplePhotos, dataUrlToFile } from "@/services/nativeCameraService";
 import { impactLight } from "@/services/nativeHapticsService";
 
 const MAX_IMAGES = 10;

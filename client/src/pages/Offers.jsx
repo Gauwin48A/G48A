@@ -46,7 +46,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { hideKeyboard } from "@/services/nativeKeyboardService";
-import { impactLight, notifySuccess, notifyError } from "@/services/nativeHapticsService";
+import { impactLight, notifySuccess } from "@/services/nativeHapticsService";
 
 const STATUS_CLASS = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",

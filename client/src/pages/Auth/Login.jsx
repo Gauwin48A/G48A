@@ -124,7 +124,7 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  }, [login, refreshAuth, navigate, toast, t]);
+  }, [login, refreshAuth, navigate, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Web OTP API auto-read ─────────────────────────────────
   const startWebOtpAutoRead = useCallback(() => {

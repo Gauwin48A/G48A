@@ -358,11 +358,25 @@ function AppShell() {
     return initDeepLinkListener(navigate);
   }, [navigate]);
 
-  // Hardware back button handler (Android)
+  // Hardware back button handler (Android) - with protection for critical flows
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
+    const PROTECTED_PATHS = ["/add-post", "/edit-post", "/sell", "/payment", "/kyc", "/aadhaar-verify"];
+
     const listenerPromise = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      const currentPath = window.location.pathname;
+      const isProtected = PROTECTED_PATHS.some((p) => currentPath.startsWith(p));
+
+      if (isProtected) {
+        // On protected pages, show confirmation before navigating back
+        if (window.confirm("You have unsaved changes. Are you sure you want to go back?")) {
+          if (canGoBack) navigate(-1);
+          else CapacitorApp.exitApp();
+        }
+        return;
+      }
+
       if (canGoBack) {
         navigate(-1);
       } else {
