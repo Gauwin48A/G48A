@@ -41,6 +41,13 @@ const PULL_ENABLED_ROUTES = new Set([
   '/my-posts',
   '/public-wall',
   '/recently-viewed',
+  '/category-hub',
+  '/cart',
+  '/bought-posts',
+  '/sold-posts',
+  '/offers',
+  '/profile',
+  '/rewards',
 ]);
 
 function isPullEnabled(pathname) {
@@ -51,6 +58,9 @@ function isPullEnabled(pathname) {
   if (pathname.startsWith('/centre')) return true;
   if (pathname.startsWith('/channels')) return true;
   if (pathname.startsWith('/search')) return true;
+  if (pathname.startsWith('/category-hub')) return true;
+  if (pathname.startsWith('/rewards')) return true;
+  if (pathname.startsWith('/profile')) return true;
   return false;
 }
 
