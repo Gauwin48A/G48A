@@ -570,13 +570,14 @@ const PaymentPage = () => {
     if (typeof window === "undefined") return;
     const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
     if (isMobile) {
-      // On Android Capacitor, use native App.openUrl() for UPI deep links
+      // On native Capacitor, ensure UPI deep links are opened via the system
       if (Capacitor.isNativePlatform()) {
         try {
-          const { App } = await import("@capacitor/app");
-          // Capacitor doesn't have canOpenUrl, so we open directly and catch errors
-          window.location.href = upiUri;
+          const mod = await import("@capacitor/app");
+          await mod.App.openUrl({ url: upiUri });
+          return;
         } catch {
+          // Fallback: direct assignment works in most Capacitor WebViews
           window.location.href = upiUri;
         }
       } else {
