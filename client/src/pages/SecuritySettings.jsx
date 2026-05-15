@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock3,
+  Fingerprint,
   KeyRound,
   Lock,
   Monitor,
@@ -20,6 +21,12 @@ import {
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
 import { useTranslation } from "react-i18next";
+import {
+  isBiometricAvailable,
+  verifyBiometric,
+  setCredentials,
+  deleteCredentials,
+} from "@/utils/biometricAuth";
 
 function formatDateTime(value) {
   if (!value) return "N/A";
@@ -123,6 +130,12 @@ export default function SecuritySettings() {
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState("");
 
+  // Biometric auth state (Android/iOS only)
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState("unknown");
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+
   useEffect(() => {
     if (loading) return;
     if (!isAuthenticated) {
@@ -161,6 +174,16 @@ export default function SecuritySettings() {
     if (!isAuthenticated || loading) return;
     void loadTwoFaStatus();
     void loadSessions();
+    // Check biometric availability
+    isBiometricAvailable().then((result) => {
+      setBiometricAvailable(result.available);
+      if (result.biometryType) setBiometricType(result.biometryType);
+      // Check if biometric is already enabled (stored credentials exist)
+      if (result.available) {
+        const stored = localStorage.getItem("mhub:biometric_enabled");
+        setBiometricEnabled(stored === "true");
+      }
+    });
   }, [isAuthenticated, loading, loadSessions, loadTwoFaStatus]);
 
   const beginSetup = async () => {
@@ -367,6 +390,69 @@ export default function SecuritySettings() {
             </button>
           </div>
         </div>
+
+        {/* Biometric Authentication Section (Android/iOS only) */}
+        {biometricAvailable && (
+          <section className="mhub-premium-surface rounded-2xl p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
+                  <Fingerprint className="h-5 w-5 text-purple-600 dark:text-purple-400 dark:text-purple-300" />
+                  {t("biometric_auth", { defaultValue: "Biometric Login" })}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+                  {t("biometric_auth_desc", {
+                    defaultValue: `Use ${biometricType} to quickly sign in to MHub`,
+                    biometricType,
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={biometricLoading}
+                onClick={async () => {
+                  setBiometricLoading(true);
+                  try {
+                    if (biometricEnabled) {
+                      // Disable biometric
+                      await deleteCredentials("mhub-auth");
+                      localStorage.removeItem("mhub:biometric_enabled");
+                      setBiometricEnabled(false);
+                      toast({ title: t("biometric_disabled", { defaultValue: "Biometric login disabled" }) });
+                    } else {
+                      // Verify biometric first
+                      const verified = await verifyBiometric({ reason: "Enable biometric login for MHub" });
+                      if (verified) {
+                        // Store a marker (actual credentials managed by auth flow)
+                        await setCredentials("mhub-auth", auth.user?.email || "user", "biometric-enabled");
+                        localStorage.setItem("mhub:biometric_enabled", "true");
+                        setBiometricEnabled(true);
+                        toast({ title: t("biometric_enabled", { defaultValue: "Biometric login enabled" }) });
+                      }
+                    }
+                  } catch (err) {
+                    toast({ title: t("biometric_error", { defaultValue: "Biometric setup failed" }), variant: "destructive" });
+                    if (import.meta.env.DEV) console.error("[Biometric]", err);
+                  } finally {
+                    setBiometricLoading(false);
+                  }
+                }}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  biometricEnabled
+                    ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                    : "bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-700/40 dark:text-white dark:hover:bg-purple-700/60"
+                }`}
+              >
+                <Fingerprint className="h-4 w-4" />
+                {biometricLoading
+                  ? t("loading", { defaultValue: "..." })
+                  : biometricEnabled
+                    ? t("disable", { defaultValue: "Disable" })
+                    : t("enable", { defaultValue: "Enable" })}
+              </button>
+            </div>
+          </section>
+        )}
 
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

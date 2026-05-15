@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { impactLight, notifySuccess } from "@/services/nativeHapticsService";
 
 const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
   const { toast } = useToast();
@@ -57,7 +58,7 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
         if (response) {
           setOfferSent(true);
           setSentAmount(amount);
-          navigator.vibrate && navigator.vibrate(50);
+          notifySuccess();
         }
       } catch (err) {
         if (import.meta.env.DEV) console.error("Offer error:", err);

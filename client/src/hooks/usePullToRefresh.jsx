@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import React from "react";
+import { impactMedium } from "@/services/nativeHapticsService";
 
 const PULL_THRESHOLD = 80;
 const MAX_PULL = 120;
@@ -48,6 +49,7 @@ export function usePullToRefresh({ onRefresh, disabled = false }) {
     pulling.current = false;
 
     if (pullDistance >= PULL_THRESHOLD && onRefresh) {
+      impactMedium();
       setRefreshing(true);
       try {
         await onRefresh();

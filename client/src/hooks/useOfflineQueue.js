@@ -1,9 +1,11 @@
 import { useCallback, useRef, useEffect } from "react";
+import { isConnected } from "@/services/nativeNetworkService";
 
 const STORAGE_KEY = "mhub_offline_msg_queue";
 
 /**
  * Hook for queuing messages when offline and replaying when online.
+ * Uses nativeNetworkService.isConnected() for reliable network state on Android.
  * @param {Function} sendFn - Async function to send a message: (msg) => Promise
  * @returns {{ enqueue: (msg) => void, pendingCount: number }}
  */
@@ -32,10 +34,10 @@ export function useOfflineQueue(sendFn) {
   }, []);
 
   const processQueue = useCallback(async () => {
-    if (processingRef.current || !navigator.onLine) return;
+    if (processingRef.current || !isConnected()) return;
     processingRef.current = true;
 
-    while (queueRef.current.length > 0 && navigator.onLine) {
+    while (queueRef.current.length > 0 && isConnected()) {
       const msg = queueRef.current[0];
       try {
         await sendFn(msg);
@@ -59,7 +61,7 @@ export function useOfflineQueue(sendFn) {
 
   const enqueue = useCallback(
     (msg) => {
-      if (navigator.onLine) {
+      if (isConnected()) {
         // Try sending immediately
         sendFn(msg).catch(() => {
           queueRef.current.push(msg);

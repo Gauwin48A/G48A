@@ -2,12 +2,15 @@
  * ShareButton Component
  * Architect Cleanup - Phase 4
  * 
- * Native share on mobile, copy link on desktop
+ * Uses Capacitor native share on Android, Web Share API on mobile web,
+ * copy link on desktop.
  */
 
 import React, { useState } from 'react';
 import { Share2, Check, Copy } from 'lucide-react';
 import { useTranslation } from "react-i18next";
+import { shareContent } from '@/services/nativeShareService';
+import { impactLight } from '@/services/nativeHapticsService';
 
 const ShareButton = ({
     url,
@@ -24,31 +27,24 @@ const ShareButton = ({
 
     const shareUrl = url || window.location.href;
 
-    // Check if native share is available
+    // Check if native share is available (web fallback)
     const canShare = typeof navigator !== 'undefined' && navigator.share;
 
     const handleShare = async () => {
         setIsSharing(true);
+        impactLight();
 
         try {
-            if (canShare) {
-                // Native share (mobile)
-                await navigator.share({
-                    title,
-                    text,
-                    url: shareUrl,
-                });
-                onShareSuccess?.('native');
+            // Try Capacitor native share first (works on Android/iOS + falls back to Web Share API)
+            const result = await shareContent({ title, text, url: shareUrl });
+            if (result) {
+                onShareSuccess?.(result.activityType || 'native');
             } else {
-                // Fallback: copy to clipboard
-                await navigator.clipboard.writeText(shareUrl);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-                onShareSuccess?.('clipboard');
+                // User cancelled — not an error
             }
         } catch (error) {
             // User cancelled or error
-            if (error.name !== 'AbortError') {
+            if (error?.name !== 'AbortError') {
                 console.error('Share failed:', error);
                 onShareError?.(error);
 
