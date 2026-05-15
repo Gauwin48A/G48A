@@ -21,6 +21,7 @@ import ImageZoomModal from "@/components/ImageZoomModal";
 import PostBoostPanel from "@/components/PostBoostPanel";
 import SponsoredListings from "@/components/SponsoredListings";
 import PremiumRecommendations from "@/components/PremiumRecommendations";
+import { sharePost as nativeSharePost } from "@/services/nativeShareService";
 
 import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
 import {
@@ -2208,12 +2209,23 @@ function PostDetail() {
                   {
                     variant: "outline",
                     type: "button",
-                    onClick: () => {
+                    onClick: async () => {
                       if (!J) return;
+                      re.post(`/posts/${J}/share`).catch(() => {});
+                      // Try native share with image first (Android/iOS)
+                      try {
+                        const imageUrl = activeImage ? resolveMediaUrl(activeImage) : undefined;
+                        const result = await nativeSharePost({
+                          postId: J,
+                          title: r?.title || "Listing",
+                          price: r?.price ? `₹${Number(r.price).toLocaleString("en-IN")}` : undefined,
+                          imageUrl,
+                        });
+                        if (result) return; // Native share succeeded
+                      } catch { /* fall through to dialog */ }
                       const t = buildShareUrl(J);
                       setShareUrl(t),
-                        setShareDialogOpen(!0),
-                        re.post(`/posts/${J}/share`).catch(() => {});
+                        setShareDialogOpen(!0);
                     },
                     className:
                       "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:border-gray-700 dark:text-gray-200",
@@ -2361,12 +2373,23 @@ function PostDetail() {
             {
               variant: "ghost",
               size: "icon",
-              onClick: () => {
+              onClick: async () => {
                 if (!J) return;
+                re.post(`/posts/${J}/share`).catch(() => {});
+                // Try native share with image first (Android/iOS)
+                try {
+                  const imageUrl = activeImage ? resolveMediaUrl(activeImage) : undefined;
+                  const result = await nativeSharePost({
+                    postId: J,
+                    title: r?.title || "Listing",
+                    price: r?.price ? `₹${Number(r.price).toLocaleString("en-IN")}` : undefined,
+                    imageUrl,
+                  });
+                  if (result) return; // Native share succeeded
+                } catch { /* fall through to dialog */ }
                 const t = buildShareUrl(J);
                 setShareUrl(t);
                 setShareDialogOpen(!0);
-                re.post(`/posts/${J}/share`).catch(() => {});
               },
               type: "button",
               "aria-label": tr("share", "Share"),

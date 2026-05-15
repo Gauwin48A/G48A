@@ -42,6 +42,12 @@ import { fetchSubcategories as fetchPostSubcategories } from "@/services/subcate
 import { buildApiPath as G } from "@/lib/networkConfig";
 import { getDeviceId as _getDeviceId } from "@/utils/device";
 import { buildActiveAppMatcher } from "@/utils/categoryModeFilters";
+import {
+  isNativeCameraAvailable,
+  takePhoto,
+  pickFromGallery,
+  dataUrlToFile,
+} from "@/services/nativeCameraService";
 const Xe = 2 * 1024 * 1024,
   M = [
     { key: "basic", name: "Basic", maxImages: 1, color: "bg-gray-500" },
@@ -563,6 +569,42 @@ const Xe = 2 * 1024 * 1024,
           return;
         }
         ee((s) => [...s, ...o]);
+      },
+      handleNativeCameraCapture = async () => {
+        if (b.length >= (g?.maxImages || 1)) {
+          y({ title: "Too many images", description: `Max ${g?.maxImages || 1} images allowed.`, variant: "destructive" });
+          return;
+        }
+        try {
+          const photo = await takePhoto({ quality: 85, width: 1200, height: 1200 });
+          if (!photo) return;
+          const file = dataUrlToFile(photo.dataUrl, `camera-${Date.now()}.jpg`);
+          if (file.size > Xe) {
+            y({ title: "File too large", description: "Image must be <2MB.", variant: "destructive" });
+            return;
+          }
+          ee((s) => [...s, file]);
+        } catch (err) {
+          if (import.meta.env.DEV) console.error("[AddPost] Camera capture failed:", err);
+        }
+      },
+      handleNativeGalleryPick = async () => {
+        if (b.length >= (g?.maxImages || 1)) {
+          y({ title: "Too many images", description: `Max ${g?.maxImages || 1} images allowed.`, variant: "destructive" });
+          return;
+        }
+        try {
+          const photo = await pickFromGallery({ quality: 85, width: 1200, height: 1200 });
+          if (!photo) return;
+          const file = dataUrlToFile(photo.dataUrl, `gallery-${Date.now()}.jpg`);
+          if (file.size > Xe) {
+            y({ title: "File too large", description: "Image must be <2MB.", variant: "destructive" });
+            return;
+          }
+          ee((s) => [...s, file]);
+        } catch (err) {
+          if (import.meta.env.DEV) console.error("[AddPost] Gallery pick failed:", err);
+        }
       },
       Ce = (r) => {
         if (!window.confirm("Remove this image?")) return;
@@ -1848,6 +1890,28 @@ const Xe = 2 * 1024 * 1024,
                                     onChange: we,
                                     className: "sr-only",
                                   }),
+                                ),
+                                isNativeCameraAvailable() && e.createElement(
+                                  "div",
+                                  { className: "flex gap-2 mt-3 justify-center" },
+                                  e.createElement(
+                                    v,
+                                    {
+                                      type: "button",
+                                      className: "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/25 text-white text-sm px-4 py-2",
+                                      onClick: handleNativeCameraCapture,
+                                    },
+                                    "\uD83D\uDCF7 Camera",
+                                  ),
+                                  e.createElement(
+                                    v,
+                                    {
+                                      type: "button",
+                                      className: "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 shadow-lg shadow-violet-500/25 text-white text-sm px-4 py-2",
+                                      onClick: handleNativeGalleryPick,
+                                    },
+                                    "\uD83D\uDDBC\uFE0F Gallery",
+                                  ),
                                 ),
                                 e.createElement(
                                   "p",

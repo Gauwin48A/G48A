@@ -53,6 +53,7 @@ import {
   RewardsRedeem,
   RewardsReferrals,
 } from "@/components/rewards/RewardsSections";
+import { shareInvite } from "@/services/nativeShareService";
 
 const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
@@ -811,15 +812,18 @@ const RewardsPage = () => {
           description: s || t,
         });
     },
-    shareReferral = () => {
+    shareReferral = async () => {
       const t = `${window.location.origin}/signup?ref=${r?.referralCode}`;
-      navigator.share
-        ? navigator.share({
-            title: tr("join_mhub", "Join MHub!"),
-            text: tr("use_my_referral_code", "Use my referral code"),
-            url: t,
-          })
-        : copyToClipboard(t, tr("referral_link", "Referral link"));
+      try {
+        // Use Capacitor native share (Android/iOS) with fallback to Web Share API
+        await shareInvite({
+          code: r?.referralCode || "",
+          message: tr("use_my_referral_code", "Use my referral code"),
+        });
+      } catch {
+        // Fallback to clipboard
+        copyToClipboard(t, tr("referral_link", "Referral link"));
+      }
     },
     getReferralShareLink = () => {
       if (typeof window === "undefined") return "";

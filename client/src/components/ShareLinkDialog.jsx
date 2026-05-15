@@ -20,6 +20,7 @@ import {
   Mail,
 } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
+import { shareContent } from '@/services/nativeShareService';
 
 function ShareLinkDialog({ open, onOpenChange, url = "", title = "" }) {
   const { t } = useTranslation();
@@ -95,9 +96,11 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "" }) {
   };
 
   const handleNativeShare = async () => {
-    if (!safeUrl || !canUseNativeShare) return;
+    if (!safeUrl) return;
     try {
-      await navigator.share({ title: resolvedTitle, url: safeUrl });
+      // Use Capacitor native share (supports image sharing on Android/iOS)
+      // Falls back to Web Share API on web
+      await shareContent({ title: resolvedTitle, url: safeUrl });
     } catch {
       // Ignore cancellation/errors from native share sheet.
     }
