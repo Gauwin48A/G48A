@@ -396,11 +396,11 @@ export default function SecuritySettings() {
           <section className="mhub-premium-surface rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
-                  <Fingerprint className="h-5 w-5 text-purple-600 dark:text-purple-400 dark:text-purple-300" />
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+                  <Fingerprint className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   {t("biometric_auth", { defaultValue: "Biometric Login" })}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                   {t("biometric_auth_desc", {
                     defaultValue: `Use ${biometricType} to quickly sign in to MHub`,
                     biometricType,
