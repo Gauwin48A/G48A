@@ -13,6 +13,7 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { impactLight } from "@/services/nativeHapticsService";
 const BoughtPosts = () => {
   const { t: translate } = useTranslation(),
     navigate = useNavigate(),
@@ -421,7 +422,7 @@ const BoughtPosts = () => {
                                 type: "button",
                                 variant: "link",
                                 className: "mt-2 p-0 h-auto text-blue-600 dark:text-blue-300",
-                                onClick: () => navigate(`/post/${post.post_id || post.id}`),
+                                onClick: () => { impactLight(); navigate(`/post/${post.post_id || post.id}`); },
                               },
                               translate("view_details") || "View details",
                             ),

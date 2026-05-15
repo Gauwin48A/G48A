@@ -12,6 +12,7 @@ import { Button as p } from "@/components/ui/button";
 import { Input as K } from "@/components/ui/input";
 import { Card as y, CardContent as h } from "@/components/ui/card";
 import { useTranslation as O } from "react-i18next";
+import { impactLight } from "@/services/nativeHapticsService";
 const $ = ({ variant = "channels" } = {}) => {
   const { t: r } = O(),
     _ = T(),
@@ -69,6 +70,7 @@ const $ = ({ variant = "channels" } = {}) => {
         : d;
     }, [d, s]),
     S = async (o) => {
+      impactLight();
       if (!c) {
         v(o), i(null);
         try {

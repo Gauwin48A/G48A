@@ -31,6 +31,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
+import { impactLight } from "@/services/nativeHapticsService";
 const safeNum = (val) => {
     const num = Number(val || 0);
     return Number.isFinite(num) ? num : 0;
@@ -275,7 +276,7 @@ const safeNum = (val) => {
                         Button,
                         {
                           variant: "outline",
-                          onClick: () => navigate("/all-posts"),
+                          onClick: () => { impactLight(); navigate("/all-posts"); },
                         },
                         "Browse Marketplace",
                       ),

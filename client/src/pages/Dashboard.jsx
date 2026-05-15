@@ -35,6 +35,7 @@ import api from "@/lib/api";
 import { getInitials as gi } from "@/lib/userDisplay";
 import SellerDashboard from "@/components/SellerDashboard";
 import { hasAuthSession } from "@/utils/authStorage";
+import { impactLight } from "@/services/nativeHapticsService";
 const W = {
     active_listings: {
       icon: de,
@@ -561,7 +562,7 @@ const W = {
                       {
                         size: "sm",
                         variant: viewMode === "seller" ? "default" : "outline",
-                        onClick: () => setViewMode("seller"),
+                        onClick: () => { impactLight(); setViewMode("seller"); },
                       },
                       r("seller_view", "Seller view"),
                     ),
@@ -570,7 +571,7 @@ const W = {
                       {
                         size: "sm",
                         variant: viewMode === "buyer" ? "default" : "outline",
-                        onClick: () => setViewMode("buyer"),
+                        onClick: () => { impactLight(); setViewMode("buyer"); },
                       },
                       r("buyer_view", "Buyer view"),
                     ),

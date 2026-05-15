@@ -55,6 +55,7 @@ import {
 } from "@/components/rewards/RewardsSections";
 import { shareInvite } from "@/services/nativeShareService";
 import { Capacitor } from "@capacitor/core";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
@@ -816,6 +817,7 @@ const RewardsPage = () => {
     shareReferral = async () => {
       const t = `${window.location.origin}/signup?ref=${r?.referralCode}`;
       try {
+        impactLight();
         // Use Capacitor native share (Android/iOS) with fallback to Web Share API
         await shareInvite({
           code: r?.referralCode || "",

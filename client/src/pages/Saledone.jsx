@@ -35,6 +35,8 @@ import TransactionStepper from "../components/TransactionStepper";
 import LanguageSelector from "@/components/LanguageSelector";
 import api from "@/services/api";
 import { shareContent } from "@/services/nativeShareService";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const SaleDone = () => {
   const { t } = useTranslation();
@@ -310,6 +312,8 @@ const SaleDone = () => {
 
   const handleInitiateSale = async (event) => {
     event.preventDefault();
+    hideKeyboard();
+    impactLight();
 
     const postId = String(sellerForm.postId || "").trim();
     const buyerId = String(sellerForm.buyerId || "").trim();
@@ -384,6 +388,8 @@ const SaleDone = () => {
 
   const handleConfirmSale = async (event) => {
     event.preventDefault();
+    hideKeyboard();
+    impactLight();
 
     const transactionId = String(buyerForm.transactionId || "").trim();
     const otp = String(buyerForm.otp || "").trim();

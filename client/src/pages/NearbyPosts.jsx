@@ -22,6 +22,7 @@ import {
 } from "@/utils/categoryModeFilters";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 25, 50, 100];
 
@@ -255,7 +256,7 @@ export default function NearbyPosts() {
               {RADIUS_OPTIONS.map((value) => (
                 <button
                   key={value}
-                  onClick={() => setRadius(value)}
+                  onClick={() => { impactLight(); setRadius(value); }}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     radius === value
                       ? "bg-white text-green-600 shadow-lg"
@@ -408,7 +409,7 @@ export default function NearbyPosts() {
                     return (
                       <Card
                         key={post.post_id}
-                        onClick={() => navigate(`/post/${post.post_id}`)}
+                        onClick={() => { impactLight(); navigate(`/post/${post.post_id}`); }}
                         className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden mhub-premium-surface rounded-2xl border border-gray-200 dark:border-gray-700 dark:border"
                       >
                         <div className="relative">

@@ -29,6 +29,9 @@ import {
   AlertTriangle as _,
   CheckCircle2 as Q,
 } from "lucide-react";
+import { isNativeCameraAvailable, pickFromGallery, dataUrlToFile } from "@/services/nativeCameraService";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight } from "@/services/nativeHapticsService";
 const W = ({ variant = "channel" } = {}) => {
   const { t: a } = Y(),
     n = V(),
@@ -93,7 +96,7 @@ const W = ({ variant = "channel" } = {}) => {
         : a("create_channel") || "Create Channel",
     backPath = isCentre ? "/centre" : "/channels",
     M = async (r) => {
-      if ((r.preventDefault(), !v)) {
+      if ((r.preventDefault(), hideKeyboard(), impactLight(), !v)) {
         c(d || "Please fix form errors before submitting.");
         return;
       }
@@ -453,12 +456,29 @@ const W = ({ variant = "channel" } = {}) => {
                       id: "centre-logo-file",
                       type: "file",
                       accept: "image/*",
+                      className: isNativeCameraAvailable() ? "hidden" : "",
                       onChange: (r) => {
                         const file = r.target.files?.[0] || null;
                         setLogoFile(file);
                         if (file) setLogoUrl("");
                       },
                     }),
+                    isNativeCameraAvailable() && e.createElement(m, {
+                      type: "button",
+                      variant: "outline",
+                      size: "sm",
+                      onClick: async () => {
+                        impactLight();
+                        try {
+                          const photo = await pickFromGallery();
+                          if (photo?.dataUrl) {
+                            const file = dataUrlToFile(photo.dataUrl, `logo.${photo.format || "jpg"}`);
+                            setLogoFile(file);
+                            setLogoUrl("");
+                          }
+                        } catch {}
+                      },
+                    }, a("pick_image", { defaultValue: "Pick from Gallery" })),
                     e.createElement(
                       "p",
                       { className: "text-xs text-gray-500 dark:text-gray-300" },
@@ -497,12 +517,29 @@ const W = ({ variant = "channel" } = {}) => {
                       id: "centre-cover-file",
                       type: "file",
                       accept: "image/*",
+                      className: isNativeCameraAvailable() ? "hidden" : "",
                       onChange: (r) => {
                         const file = r.target.files?.[0] || null;
                         setCoverFile(file);
                         if (file) setCoverUrl("");
                       },
                     }),
+                    isNativeCameraAvailable() && e.createElement(m, {
+                      type: "button",
+                      variant: "outline",
+                      size: "sm",
+                      onClick: async () => {
+                        impactLight();
+                        try {
+                          const photo = await pickFromGallery();
+                          if (photo?.dataUrl) {
+                            const file = dataUrlToFile(photo.dataUrl, `cover.${photo.format || "jpg"}`);
+                            setCoverFile(file);
+                            setCoverUrl("");
+                          }
+                        } catch {}
+                      },
+                    }, a("pick_image", { defaultValue: "Pick from Gallery" })),
                     e.createElement(
                       "p",
                       { className: "text-xs text-gray-500 dark:text-gray-300" },

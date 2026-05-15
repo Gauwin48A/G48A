@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { hasAuthSession } from "@/utils/authStorage";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight, notifySuccess } from "@/services/nativeHapticsService";
 
 const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
   const [offerPrice, setOfferPrice] = useState("");
@@ -20,6 +22,8 @@ const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    hideKeyboard();
+    impactLight();
     setError("");
     setLoading(true);
 
@@ -65,6 +69,7 @@ const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
       if (!response.ok) throw new Error(data.error || "Failed to submit offer");
 
       setSuccess(true);
+      notifySuccess();
       onSubmit && onSubmit(data);
 
       setTimeout(() => {
