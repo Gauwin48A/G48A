@@ -49,6 +49,8 @@ import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { socket } from "@/lib/socket";
 import { navigateBack } from "@/utils/navigation";
+import { removeAllDeliveredNotifications } from "@/services/nativePushService";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const KNOWN_ROUTES = [
   "/all-posts",
@@ -442,6 +444,7 @@ const NotificationsPage = () => {
 
   const markAsRead = useCallback(
     async (notificationId) => {
+      impactLight();
       const previousNotifications = notifications;
       const wasUnread = previousNotifications.find(
         (item) => (item.notification_id || item.id) === notificationId,
@@ -475,11 +478,14 @@ const NotificationsPage = () => {
   );
 
   const markAllAsRead = useCallback(async () => {
+    impactLight();
     const previousNotifications = notifications;
     setNotifications((prev) =>
       prev.map((item) => ({ ...item, read: true, is_read: true })),
     );
     setServerUnreadCount(0);
+    // Clear native notification tray on Android/iOS
+    removeAllDeliveredNotifications().catch(() => {});
     toast({
       title: t("all_caught_up") || "All caught up!",
       description:

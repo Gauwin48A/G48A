@@ -398,6 +398,18 @@ function AppShell() {
             console.log("[DEFENDER] App Resumed. updating...");
           }
           syncLocation();
+          // Reconnect socket on resume if disconnected
+          if (!socket.connected) {
+            socket.connect();
+          }
+        } else {
+          if (isDev) {
+            console.log("[DEFENDER] App paused. Cleaning up...");
+          }
+          // Disconnect socket to save battery when app is in background
+          if (socket.connected) {
+            socket.disconnect();
+          }
         }
       }))();
 

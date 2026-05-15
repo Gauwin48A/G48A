@@ -45,6 +45,8 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight, notifySuccess, notifyError } from "@/services/nativeHapticsService";
 
 const STATUS_CLASS = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
@@ -527,6 +529,8 @@ const OffersPage = () => {
 
   const executeOfferAction = async (offerId, action, counterPrice = null) => {
     setProcessingOfferId(offerId);
+    hideKeyboard();
+    impactLight();
     try {
       const body = {
         action,
@@ -552,6 +556,7 @@ const OffersPage = () => {
                   "Counter offer sent successfully.",
                 ),
       });
+      notifySuccess();
 
       setCounterByOfferId((prev) => ({ ...prev, [offerId]: "" }));
       await fetchOffers();

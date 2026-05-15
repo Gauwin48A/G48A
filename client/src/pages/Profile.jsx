@@ -80,6 +80,8 @@ import {
 import { getCurrentLocation as wt } from "@/services/locationService";
 import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
 import { normalizeTrustPayload, isComplaintRiskState } from "@/hooks/useTrustScore";
+import { isNativeCameraAvailable, takePhoto, pickFromGallery, dataUrlToFile } from "@/services/nativeCameraService";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const PREFERENCE_RADIUS_STORAGE_KEY = "profile_preferences_radius_km";
 const DEFAULT_PREFERENCE_RADIUS_KM = "25";
@@ -1020,6 +1022,49 @@ const ProfilePage = () => {
     Ae("personal");
     V(!0);
   };
+
+  // Native camera avatar upload helper
+  const handleNativeAvatarUpload = async (source = "gallery") => {
+    impactLight();
+    try {
+      const photo = source === "camera" ? await takePhoto() : await pickFromGallery();
+      if (!photo?.dataUrl) return;
+      const file = dataUrlToFile(photo.dataUrl, `avatar.${photo.format || "jpg"}`);
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const s = await h.post("/profile/upload-avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (s?.avatar_url) {
+        N((l) => {
+          const g = { ...l, avatar_url: s.avatar_url };
+          localStorage.setItem("userProfile", JSON.stringify(g));
+          localStorage.setItem("user", JSON.stringify(g));
+          typeof E === "function" && E(g);
+          return g;
+        });
+        u({ title: t("profile_picture_updated") || "Profile picture updated!" });
+      } else {
+        u({ title: t("upload_failed") || "Upload failed", variant: "destructive" });
+      }
+    } catch (err) {
+      if (err?.message?.includes("cancelled") || err?.message?.includes("User cancelled")) return;
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        u({ title: t("login_required") || "Please login to upload.", variant: "destructive" });
+        return;
+      }
+      u({ title: t("upload_error") || "Upload error", variant: "destructive" });
+    }
+  };
+
+  const triggerAvatarUpload = () => {
+    if (isNativeCameraAvailable()) {
+      handleNativeAvatarUpload("gallery");
+    } else {
+      document.getElementById("avatar-upload")?.click();
+    }
+  };
   const profileChecklistItems = [
     {
       key: "email",
@@ -1067,7 +1112,7 @@ const ProfilePage = () => {
         : tr("profile_photo_desc", "Add a profile photo so buyers recognize you faster."),
       done: Boolean(i?.avatar_url),
       actionLabel: tr("add_photo", "Add photo"),
-      onClick: () => document.getElementById("avatar-upload")?.click(),
+      onClick: triggerAvatarUpload,
     },
     {
       key: "bio",
@@ -1431,7 +1476,7 @@ const ProfilePage = () => {
                   {
                     type: "button",
                     onClick: () =>
-                      document.getElementById("avatar-upload")?.click(),
+                      triggerAvatarUpload(),
                     className:
                       "absolute -bottom-1 -right-1 w-7 h-7 bg-white/95 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition ring-2 ring-white/60 group-hover:bg-blue-50 dark:bg-slate-900/95 dark:group-hover:bg-blue-950/20",
                     "aria-label":
