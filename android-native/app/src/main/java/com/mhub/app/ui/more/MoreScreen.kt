@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
@@ -37,6 +38,15 @@ import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.MonetizationOn
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material3.Card
 import androidx.compose.runtime.mutableStateOf
@@ -75,9 +85,15 @@ private data class MoreEntry(
     val onClick: () -> Unit,
 )
 
+private data class MoreSection(
+    val header: String,
+    val entries: List<MoreEntry>,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
+    // Existing (keep as required where was required, optional for new)
     onOpenNotifications: () -> Unit,
     onOpenWishlist: () -> Unit,
     onOpenSearch: () -> Unit,
@@ -92,108 +108,91 @@ fun MoreScreen(
     onOpenNearby: () -> Unit = {},
     onOpenDashboard: () -> Unit = {},
     onOpenScanner: () -> Unit = {},
+    // Trade & Shopping
+    onOpenCart: () -> Unit = {},
+    onOpenTierSelection: () -> Unit = {},
+    onOpenCentre: () -> Unit = {},
+    onOpenCategoryMode: () -> Unit = {},
+    onOpenSavedSearches: () -> Unit = {},
+    onOpenRecentlyViewed: () -> Unit = {},
+    onOpenCompare: () -> Unit = {},
+    // Community
+    onOpenFeed: () -> Unit = {},
+    onOpenMyFeed: () -> Unit = {},
+    onOpenChannels: () -> Unit = {},
+    onOpenPublicWall: () -> Unit = {},
+    onOpenMyReviews: () -> Unit = {},
+    onOpenFeedback: () -> Unit = {},
+    onOpenComplaints: () -> Unit = {},
+    onOpenActivityHub: () -> Unit = {},
+    // My Account
+    onOpenProfile: () -> Unit = {},
+    onOpenMyPosts: () -> Unit = {},
+    onOpenBoughtPosts: () -> Unit = {},
+    onOpenSoldPosts: () -> Unit = {},
+    onOpenVerification: () -> Unit = {},
+    onOpenAnalytics: () -> Unit = {},
+    onOpenAccountDelete: () -> Unit = {},
+    onOpenAdminPanel: () -> Unit = {},
+    // Help & Support
+    onOpenAboutUs: () -> Unit = {},
+    onOpenContactUs: () -> Unit = {},
+    onOpenFaq: () -> Unit = {},
+    isAdmin: Boolean = false,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isDarkMode by remember { mutableStateOf(false) }
-    val entries = listOf(
-        MoreEntry(
-            title = "For You",
-            subtitle = "Personalized picks based on your activity",
-            icon = Icons.Outlined.Star,
-            tint = Color(0xFFF59E0B),
-            onClick = onOpenForYou,
-        ),
-        MoreEntry(
-            title = "Rewards",
-            subtitle = "Points, milestones and referral bonuses",
-            icon = Icons.Outlined.EmojiEvents,
-            tint = Color(0xFFD97706),
-            onClick = onOpenRewards,
-        ),
-        MoreEntry(
-            title = "Offers",
-            subtitle = "Manage price negotiations and bids",
-            icon = Icons.Outlined.LocalOffer,
-            tint = Color(0xFF7C3AED),
-            onClick = onOpenOffers,
-        ),
-        MoreEntry(
-            title = "Nearby",
-            subtitle = "Listings close to your location",
-            icon = Icons.Outlined.LocationOn,
-            tint = Color(0xFF10B981),
-            onClick = onOpenNearby,
-        ),
-        MoreEntry(
-            title = "Scanner",
-            subtitle = "Scan QR codes and product barcodes",
-            icon = Icons.Outlined.QrCodeScanner,
-            tint = Color(0xFF00BCD4),
-            onClick = onOpenScanner,
-        ),
-        MoreEntry(
-            title = "Dashboard",
-            subtitle = "Account metrics and quick actions",
-            icon = Icons.Outlined.Dashboard,
-            tint = Color(0xFF3B82F6),
-            onClick = onOpenDashboard,
-        ),
-        MoreEntry(
-            title = "Notifications",
-            subtitle = "Offers, alerts and order updates",
-            icon = Icons.Outlined.Notifications,
-            tint = Color(0xFFEF4444),
-            onClick = onOpenNotifications,
-        ),
-        MoreEntry(
-            title = "Wishlist",
-            subtitle = "Saved products and quick reopen",
-            icon = Icons.Outlined.VolunteerActivism,
-            tint = Color(0xFFEC4899),
-            onClick = onOpenWishlist,
-        ),
-        MoreEntry(
-            title = "Search",
-            subtitle = "Global listing and service search",
-            icon = Icons.Outlined.Search,
-            tint = Color(0xFF8B5CF6),
-            onClick = onOpenSearch,
-        ),
-        MoreEntry(
-            title = "Categories",
-            subtitle = "Open category hub and subcategories",
-            icon = Icons.Outlined.Category,
-            tint = Color(0xFF0EA5E9),
-            onClick = onOpenCategories,
-        ),
-        MoreEntry(
-            title = "Sell",
-            subtitle = "Create or manage a listing",
-            icon = Icons.Outlined.ShoppingCart,
-            tint = Color(0xFF22C55E),
-            onClick = onOpenCreatePost,
-        ),
-        MoreEntry(
-            title = "Chat",
-            subtitle = "Conversations with buyers and sellers",
-            icon = Icons.AutoMirrored.Outlined.Chat,
-            tint = Color(0xFF2563EB),
-            onClick = onOpenChat,
-        ),
-        MoreEntry(
-            title = "Verification",
-            subtitle = "KYC status and seller trust actions",
-            icon = Icons.Outlined.VerifiedUser,
-            tint = Color(0xFF059669),
-            onClick = onOpenKyc,
-        ),
-        MoreEntry(
-            title = "Security & Settings",
-            subtitle = "App security, account and API settings",
-            icon = Icons.Outlined.Security,
-            tint = Color(0xFF64748B),
-            onClick = onOpenSettings,
-        ),
+    val sections = listOf(
+        MoreSection("Trade & Shopping", listOf(
+            MoreEntry("Sell", "Create or manage a listing", Icons.Outlined.ShoppingCart, Color(0xFF22C55E), onOpenCreatePost),
+            MoreEntry("Plans & Tiers", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFF59E0B), onOpenTierSelection),
+            MoreEntry("Cart", "View items in your cart", Icons.Outlined.ShoppingCart, Color(0xFF3B82F6), onOpenCart),
+            MoreEntry("Wishlist", "Saved products and quick reopen", Icons.Outlined.VolunteerActivism, Color(0xFFEC4899), onOpenWishlist),
+            MoreEntry("Offers", "Manage price negotiations and bids", Icons.Outlined.LocalOffer, Color(0xFF7C3AED), onOpenOffers),
+            MoreEntry("Recently Viewed", "Listings you browsed recently", Icons.Outlined.History, Color(0xFF6B7280), onOpenRecentlyViewed),
+            MoreEntry("Saved Searches", "Your stored search filters", Icons.Outlined.Search, Color(0xFF8B5CF6), onOpenSavedSearches),
+            MoreEntry("Compare", "Side-by-side listing comparison", Icons.Outlined.BarChart, Color(0xFF0EA5E9), onOpenCompare),
+            MoreEntry("Centre", "Centre listings and services", Icons.Outlined.Category, Color(0xFF0284C7), onOpenCentre),
+        )),
+        MoreSection("Explore", listOf(
+            MoreEntry("For You", "Personalized picks based on your activity", Icons.Outlined.Star, Color(0xFFF59E0B), onOpenForYou),
+            MoreEntry("Nearby", "Listings close to your location", Icons.Outlined.LocationOn, Color(0xFF10B981), onOpenNearby),
+            MoreEntry("Categories", "Open category hub and subcategories", Icons.Outlined.Category, Color(0xFF0EA5E9), onOpenCategories),
+            MoreEntry("Category Mode", "Browse by category layout", Icons.Outlined.Apps, Color(0xFF6366F1), onOpenCategoryMode),
+            MoreEntry("Scanner", "Scan QR codes and product barcodes", Icons.Outlined.QrCodeScanner, Color(0xFF00BCD4), onOpenScanner),
+            MoreEntry("Search", "Global listing and service search", Icons.Outlined.Search, Color(0xFF8B5CF6), onOpenSearch),
+        )),
+        MoreSection("Community", listOf(
+            MoreEntry("Feed", "Community posts and updates", Icons.AutoMirrored.Outlined.Article, Color(0xFF3B82F6), onOpenFeed),
+            MoreEntry("My Feed", "Posts from people you follow", Icons.AutoMirrored.Outlined.Article, Color(0xFF6366F1), onOpenMyFeed),
+            MoreEntry("Chat", "Conversations with buyers and sellers", Icons.AutoMirrored.Outlined.Chat, Color(0xFF2563EB), onOpenChat),
+            MoreEntry("Channels", "Subscribe to seller channels", Icons.Outlined.Group, Color(0xFF7C3AED), onOpenChannels),
+            MoreEntry("Public Wall", "Public community activity wall", Icons.Outlined.Group, Color(0xFF059669), onOpenPublicWall),
+            MoreEntry("My Reviews", "Reviews you've given and received", Icons.Outlined.Star, Color(0xFFF59E0B), onOpenMyReviews),
+            MoreEntry("Activity Hub", "Your notifications and activity log", Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenActivityHub),
+            MoreEntry("Feedback", "Send us product feedback", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF22C55E), onOpenFeedback),
+            MoreEntry("Complaints", "Report issues or violations", Icons.Outlined.Report, Color(0xFFEF4444), onOpenComplaints),
+        )),
+        MoreSection("My Account", listOf(
+            MoreEntry("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFF2563EB), onOpenProfile),
+            MoreEntry("My Posts", "All your active listings", Icons.AutoMirrored.Outlined.Article, Color(0xFF22C55E), onOpenMyPosts),
+            MoreEntry("Dashboard", "Account metrics and quick actions", Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenDashboard),
+            MoreEntry("Bought Posts", "Items you have purchased", Icons.Outlined.ShoppingCart, Color(0xFF7C3AED), onOpenBoughtPosts),
+            MoreEntry("Sold Posts", "Items you have sold", Icons.Outlined.MonetizationOn, Color(0xFF059669), onOpenSoldPosts),
+            MoreEntry("Rewards", "Points, milestones and referral bonuses", Icons.Outlined.EmojiEvents, Color(0xFFD97706), onOpenRewards),
+            MoreEntry("Notifications", "Offers, alerts and order updates", Icons.Outlined.Notifications, Color(0xFFEF4444), onOpenNotifications),
+            MoreEntry("Analytics", "Your sales and listing analytics", Icons.Outlined.BarChart, Color(0xFF3B82F6), onOpenAnalytics),
+            MoreEntry("Verification", "KYC status and seller trust actions", Icons.Outlined.VerifiedUser, Color(0xFF059669), onOpenVerification),
+            MoreEntry("KYC", "Complete identity verification", Icons.Outlined.Security, Color(0xFF059669), onOpenKyc),
+            MoreEntry("Security & Settings", "App security, account and API settings", Icons.Outlined.Settings, Color(0xFF64748B), onOpenSettings),
+        )),
+        MoreSection("Help & Support", buildList {
+            add(MoreEntry("About Us", "Learn about MHub platform", Icons.Outlined.Info, Color(0xFF2563EB), onOpenAboutUs))
+            add(MoreEntry("Contact Us", "Reach our support team", Icons.Outlined.Email, Color(0xFF22C55E), onOpenContactUs))
+            add(MoreEntry("FAQ", "Frequently asked questions", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF6366F1), onOpenFaq))
+            if (isAdmin) add(MoreEntry("Admin Panel", "Platform administration tools", Icons.Outlined.Security, Color(0xFFDC2626), onOpenAdminPanel))
+            add(MoreEntry("Delete Account", "Permanently remove your account", Icons.Outlined.Delete, Color(0xFFEF4444), onOpenAccountDelete))
+        }),
     )
 
     Scaffold(
@@ -270,8 +269,25 @@ fun MoreScreen(
             //         }
             //     }
             // }
-            val filteredEntries = if (searchQuery.isBlank()) entries else entries.filter { it.title.contains(searchQuery, ignoreCase = true) || it.subtitle.contains(searchQuery, ignoreCase = true) }
-            items(filteredEntries, key = { it.title }) { entry ->
+            val filteredSections = if (searchQuery.isBlank()) sections
+            else sections.mapNotNull { section ->
+                val filtered = section.entries.filter {
+                    it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.subtitle.contains(searchQuery, ignoreCase = true)
+                }
+                if (filtered.isEmpty()) null else section.copy(entries = filtered)
+            }
+            filteredSections.forEach { section ->
+                item(key = "hdr_${section.header}") {
+                    Text(
+                        section.header.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2563EB),
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 2.dp),
+                    )
+                }
+                items(section.entries, key = { "${section.header}_${it.title}" }) { entry ->
                 Card(
                     onClick = entry.onClick,
                     shape = RoundedCornerShape(14.dp),
@@ -322,6 +338,7 @@ fun MoreScreen(
                         )
                     }
                 }
+            }
             }
             item {
                 Card(

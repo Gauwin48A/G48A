@@ -1,5 +1,6 @@
 package com.mhub.app.ui.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
@@ -34,6 +35,17 @@ data class AuthUiState(
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,
 ) : ViewModel() {
+
+    private companion object {
+        const val TAG = "AuthViewModel"
+    }
+
+    private data class DemoCredential(val identifier: String, val password: String)
+
+    private val demoCredentialCandidates = listOf(
+        DemoCredential(identifier = "rahul.sharma@mhub.com", password = "Password123!"),
+        DemoCredential(identifier = "user1", password = "Password123!"),
+    )
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
@@ -104,17 +116,56 @@ class AuthViewModel @Inject constructor(
         if (_state.value.loading) return
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
-            when (val res = repo.signInWithEmail("9876543210", "Testing123")) {
-                is ApiResult.Success -> {
-                    val authRes = res.data
-                    if (authRes.requireOtp) {
-                        _state.value = AuthUiState(loading = false, requireOtp = true, otpPhone = "9876543210", otpCountdown = 120)
-                        startOtpCountdown()
-                    } else {
-                        _state.value = AuthUiState(loading = false, success = true)
+            Log.d(TAG, "demoLogin invoked")
+            for (credential in demoCredentialCandidates) {
+                when (val res = repo.signInWithEmail(credential.identifier, credential.password)) {
+                    is ApiResult.Success -> {
+                        Log.d(TAG, "demoLogin credential success for ${credential.identifier}")
+                        val authRes = res.data
+                        if (authRes.requireOtp) {
+                            Log.d(TAG, "demoLogin requires OTP for ${credential.identifier}")
+                            _state.value = AuthUiState(
+                                loading = false,
+                                requireOtp = true,
+                                otpPhone = credential.identifier,
+                                otpCountdown = 120,
+                            )
+                            startOtpCountdown()
+                        } else {
+                            _state.value = AuthUiState(loading = false, success = true)
+                        }
+                        return@launch
+                    }
+                    is ApiResult.Failure -> {
+                        Log.w(TAG, "demoLogin credential failed for ${credential.identifier}: ${res.error.message}")
+                        // Try next fallback credential before provisioning a fresh demo account.
                     }
                 }
-                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = "Demo login failed: ${res.error.message}")
+            }
+
+            // Last-resort path: create a new demo user account and continue with authenticated session.
+            val seed = (System.currentTimeMillis() % 1_000_000_000L).toString().padStart(9, '0')
+            val demoPhone = "9$seed"
+            val demoEmail = "android.demo.$seed@mhub.local"
+            val demoPassword = "DemoPass123!"
+
+            when (val signUpRes = repo.signUp(
+                fullName = "Android Demo User",
+                email = demoEmail,
+                phone = demoPhone,
+                password = demoPassword,
+            )) {
+                is ApiResult.Success -> {
+                    Log.d(TAG, "demoLogin auto-signup success for $demoEmail")
+                    _state.value = AuthUiState(loading = false, success = true)
+                }
+                is ApiResult.Failure -> {
+                    Log.e(TAG, "demoLogin auto-signup failed: ${signUpRes.error.message}")
+                    _state.value = AuthUiState(
+                        loading = false,
+                        error = "Demo login failed: ${signUpRes.error.message}",
+                    )
+                }
             }
         }
     }

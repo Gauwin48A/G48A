@@ -91,6 +91,7 @@
     <string name="nav_wishlist">Wishlist</string>
     <string name="nav_search">Search</string>
     <string name="nav_sell">Sell</string>
+    <string name="nav_chat">Chat</string>
 
     <!-- Home -->
     <string name="home_title">For you</string>
