@@ -47,6 +47,8 @@ import {
 } from "@/components/page-state/PageStateBlocks";
 import Re from "@/components/ShareLinkDialog";
 import PromoteDialog from "@/components/PromoteDialog";
+import { shareFeedPost } from "@/services/nativeShareService";
+import { impactLight } from "@/services/nativeHapticsService";
 import {
   beginSavedPostMutation,
   buildSavedPostsMap,
@@ -622,7 +624,19 @@ const Ve = 5,
       ye = async (t) => {
         const r = de(t);
         if (r === null) return;
+        impactLight();
         const s = `${window.location.origin}/feed/${r}`;
+        // Try native share first, fall back to share dialog
+        try {
+          const postContent = typeof t === "object" ? (t.content || t.description || "") : "";
+          const result = await shareFeedPost({ feedId: String(r), content: postContent || "Check out this post on MHub!" });
+          if (result) {
+            R(o("shared_successfully") || "Shared successfully");
+            try { await api.post(`/posts/${r}/share`); } catch {}
+            return;
+          }
+        } catch {}
+        // Fallback to share dialog
         setShareDialogUrl(s), setShareDialogOpen(!0);
         R(o("share_ready") || "Share link ready");
         try {

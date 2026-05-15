@@ -18,6 +18,8 @@ import { useTranslation } from "react-i18next";
 import { ImagePlus, X, Upload, ArrowLeft } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
 import { getDeviceId } from "@/utils/device";
+import { isNativeCameraAvailable, takePhoto, pickMultiplePhotos, dataUrlToFile } from "@/services/nativeCameraService";
+import { impactLight } from "@/services/nativeHapticsService";
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -223,6 +225,62 @@ const EditPost = () => {
 
   const totalImages = keptImages.length + newFiles.length;
 
+  // Native camera support for Android
+  const handleNativeCamera = useCallback(async () => {
+    impactLight();
+    try {
+      const photo = await takePhoto();
+      if (!photo?.dataUrl) return;
+      const file = dataUrlToFile(photo.dataUrl, `camera-${Date.now()}.${photo.format || "jpg"}`);
+      if (file.size > MAX_FILE_SIZE) {
+        toast({ title: t("file_too_large", "File too large"), description: t("max_file_size", "Maximum file size is 2MB."), variant: "destructive" });
+        return;
+      }
+      if (totalImages + 1 > MAX_IMAGES) {
+        toast({ title: t("too_many_images", "Too many images"), description: t("max_images_desc", "Maximum {{max}} images allowed.", { max: MAX_IMAGES }), variant: "destructive" });
+        return;
+      }
+      setNewFiles((prev) => [...prev, file]);
+      setPreviewUrls((prev) => [...prev, URL.createObjectURL(file)]);
+    } catch (err) {
+      if (!err?.message?.includes("cancelled")) {
+        toast({ title: t("camera_error", "Camera error"), variant: "destructive" });
+      }
+    }
+  }, [totalImages, toast, t]);
+
+  const handleNativeGallery = useCallback(async () => {
+    impactLight();
+    try {
+      const remaining = MAX_IMAGES - totalImages;
+      if (remaining <= 0) {
+        toast({ title: t("too_many_images", "Too many images"), variant: "destructive" });
+        return;
+      }
+      const photos = await pickMultiplePhotos({ limit: remaining });
+      if (!photos.length) return;
+      const files = [];
+      const urls = [];
+      for (const p of photos) {
+        // webPath requires additional fetch conversion; dataUrl is the primary result type
+        if (!p.dataUrl) continue;
+        const file = dataUrlToFile(p.dataUrl, `gallery-${Date.now()}-${files.length}.${p.format || "jpg"}`);
+        if (file && file.size <= MAX_FILE_SIZE) {
+          files.push(file);
+          urls.push(URL.createObjectURL(file));
+        }
+      }
+      if (files.length) {
+        setNewFiles((prev) => [...prev, ...files]);
+        setPreviewUrls((prev) => [...prev, ...urls]);
+      }
+    } catch (err) {
+      if (!err?.message?.includes("cancelled")) {
+        toast({ title: t("gallery_error", "Gallery error"), variant: "destructive" });
+      }
+    }
+  }, [totalImages, toast, t]);
+
   const onSubmit = async (event) => {
     event.preventDefault();
 
@@ -423,6 +481,26 @@ const EditPost = () => {
                     </div>
                   ))}
                   {totalImages < MAX_IMAGES && (
+                    isNativeCameraAvailable() ? (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleNativeCamera}
+                          className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 transition-colors"
+                        >
+                          <ImagePlus className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] text-gray-400 mt-1">{t("camera", "Camera")}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleNativeGallery}
+                          className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 transition-colors"
+                        >
+                          <Upload className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] text-gray-400 mt-1">{t("gallery", "Gallery")}</span>
+                        </button>
+                      </div>
+                    ) : (
                     <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 transition-colors">
                       <ImagePlus className="w-6 h-6 text-gray-400" />
                       <span className="text-[10px] text-gray-400 mt-1">{t("add", "Add")}</span>
@@ -434,6 +512,7 @@ const EditPost = () => {
                         onChange={handleImageAdd}
                       />
                     </label>
+                    )
                   )}
                 </div>
               </div>

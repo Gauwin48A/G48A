@@ -13,6 +13,7 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { impactLight } from "@/services/nativeHapticsService";
 const U = () => {
   const { t: s } = _(),
     i = C(),
@@ -425,10 +426,12 @@ const U = () => {
                                 type: "button",
                                 variant: "link",
                                 className: "mt-2 p-0 h-auto text-blue-600 dark:text-blue-300",
-                                onClick: () =>
+                                onClick: () => {
+                                  impactLight();
                                   i(`/post/${t.post_id || t.id}`, {
                                     state: { fromMyPosts: true },
-                                  }),
+                                  });
+                                },
                               },
                               s("view_details") || "View details",
                             ),

@@ -47,6 +47,8 @@ import {
 import W$ from "../lib/api";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight } from "@/services/nativeHapticsService";
 const SaleUndonePage = () => {
   const { t } = ee(),
     tr = (r, o, a = {}) => t(r, { defaultValue: o, ...a }),
@@ -405,6 +407,8 @@ const SaleUndonePage = () => {
   }, [H, categoryModeCategoryId]);
   const M = (r) => {
       r.preventDefault();
+      hideKeyboard();
+      impactLight();
       const { errors: o, cleanedPostId: a } = validateForm(n);
       setValidationErrors(o);
       if (o.postId || o.description) {

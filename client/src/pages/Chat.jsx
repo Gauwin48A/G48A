@@ -31,6 +31,8 @@ import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { useTranslation } from "react-i18next";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight, notifySuccess } from "@/services/nativeHapticsService";
 const ChatPage = () => {
   const { t } = useTranslation();
   const tr = useCallback(
@@ -248,6 +250,8 @@ const ChatPage = () => {
       const trimmed = messageInput.trim();
       if (!(!trimmed || !selectedConversation || sending)) {
         setSending(!0), setSendError("");
+        hideKeyboard();
+        impactLight();
         try {
           const response = await api.post("/chat/send", {
               receiverId: selectedConversation.other_user_id,
@@ -283,6 +287,7 @@ const ChatPage = () => {
               ),
             ),
             setMessageInput("");
+          notifySuccess();
         } catch (err) {
           import.meta.env.DEV && console.error("Failed to send message:", err),
             setSendError(tr("chat_send_failed", "Message failed to send. Check your connection and retry."));
@@ -293,6 +298,7 @@ const ChatPage = () => {
     }, [currentUserId, messageInput, selectedConversation, sending, tr]),
     selectConversation = useCallback(
       (conv) => {
+        hideKeyboard();
         setSelectedConversation(conv),
           setIsTyping(!1),
           setTypingUser(null),

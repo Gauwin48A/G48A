@@ -48,6 +48,8 @@ import {
   pickFromGallery,
   dataUrlToFile,
 } from "@/services/nativeCameraService";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight } from "@/services/nativeHapticsService";
 const Xe = 2 * 1024 * 1024,
   M = [
     { key: "basic", name: "Basic", maxImages: 1, color: "bg-gray-500" },
@@ -756,6 +758,8 @@ const Xe = 2 * 1024 * 1024,
           return;
         }
         try {
+          hideKeyboard();
+          impactLight();
           const s = new FormData();
           Object.entries(t).forEach(([l, c]) => {
             c && s.append(l, c);

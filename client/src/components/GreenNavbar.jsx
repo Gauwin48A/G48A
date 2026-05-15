@@ -20,6 +20,7 @@ import MiniCartPopover from '@/components/MiniCartPopover';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { readSavedPostIds, subscribeSavedPosts } from '@/utils/savedPosts';
 import { readUserCity } from '@/utils/locationCache';
+import { impactLight } from '@/services/nativeHapticsService';
 
 const parseStoredBoolean = (rawValue, fallback = false) => {
   if (rawValue === null || rawValue === undefined) return fallback;
@@ -1584,7 +1585,7 @@ const GreenNavbar = () => {
               key={link.key}
               {...navButtonProps(t(link.key))}
               aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
+              onClick={link.key === 'more' ? (e) => { e.preventDefault(); impactLight(); setMoreOpen((open) => !open); } : () => { impactLight(); navigate(link.path); }}
               style={{ background: 'none', border: 'none', outline: 'none' }}
               className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[48px] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
@@ -1605,7 +1606,7 @@ const GreenNavbar = () => {
             <button
               aria-label={t('sell', { defaultValue: 'Sell' })}
               className="mhub-fab relative group inline-flex items-center justify-center rounded-full w-12 h-12 text-3xl font-extrabold transition-all duration-200 -translate-y-4"
-              onClick={() => navigate('/post-welcome')}
+              onClick={() => { impactLight(); navigate('/post-welcome'); }}
               style={{ zIndex: 100 }}
             >
               +
@@ -1625,7 +1626,7 @@ const GreenNavbar = () => {
               key={link.key}
               {...navButtonProps(t(link.key))}
               aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
+              onClick={link.key === 'more' ? (e) => { e.preventDefault(); impactLight(); setMoreOpen((open) => !open); } : () => { impactLight(); navigate(link.path); }}
               style={{ background: 'none', border: 'none', outline: 'none' }}
               className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[48px] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >

@@ -61,6 +61,8 @@ import { fetchCategoriesCached } from "@/services/categoriesService";
 import { fetchUserPreferencesCached } from "@/services/preferencesService";
 import ShareLinkDialog from "@/components/ShareLinkDialog";
 import PromoteDialog from "@/components/PromoteDialog";
+import { sharePost } from "@/services/nativeShareService";
+import { impactLight } from "@/services/nativeHapticsService";
 import {
   buildSavedPostsMap,
   fetchWishlistIds,
@@ -695,9 +697,19 @@ const te = 12,
       handleSharePost = A((t) => {
         const a = getPostId(t);
         if (!a) return;
+        impactLight();
         const s = `${window.location.origin}/post/${a}`;
-        setShareDialogUrl(s);
-        setShareDialogOpen(!0);
+        const title = typeof t === "object" ? (t.title || "") : "";
+        const price = typeof t === "object" ? (t.price ? `₹${t.price}` : "") : "";
+        sharePost({ postId: String(a), title: title || "Check out this listing", price }).then((result) => {
+          if (!result) {
+            setShareDialogUrl(s);
+            setShareDialogOpen(!0);
+          }
+        }).catch(() => {
+          setShareDialogUrl(s);
+          setShareDialogOpen(!0);
+        });
         R.post(`/posts/${a}/share`).catch(() => {});
       }, []),
       toggleSave = A(

@@ -53,6 +53,8 @@ import {
 import pt from "@/components/ShareLinkDialog";
 import PromoteDialog from "@/components/PromoteDialog";
 import BuyerInterestModal from "@/components/BuyerInterestModal";
+import { sharePost } from "@/services/nativeShareService";
+import { impactLight } from "@/services/nativeHapticsService";
 import AllPostsCategoryBar from "@/components/allposts/CategoryBar";
 import AllPostsQuickFilters from "@/components/allposts/QuickFilters";
 import AllPostsGreatDealsBanner from "@/components/allposts/GreatDealsBanner";
@@ -2448,8 +2450,19 @@ const ve = 5,
       handleSharePost = async (e) => {
         const a = I(e);
         if (!a) return;
-        const o = `${window.location.origin}/post/${a}`;
-        setShareDialogUrl(o), setShareDialogOpen(!0);
+        impactLight();
+        const title = typeof e === "object" ? (e.title || "") : "";
+        const price = typeof e === "object" ? (e.price ? `₹${e.price}` : "") : "";
+        try {
+          const result = await sharePost({ postId: String(a), title: title || "Check out this listing", price });
+          if (!result) {
+            const o = `${window.location.origin}/post/${a}`;
+            setShareDialogUrl(o), setShareDialogOpen(!0);
+          }
+        } catch {
+          const o = `${window.location.origin}/post/${a}`;
+          setShareDialogUrl(o), setShareDialogOpen(!0);
+        }
         try {
           await A.post(`/posts/${a}/share`);
         } catch {}

@@ -53,6 +53,7 @@ import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { shareContent } from "@/services/nativeShareService";
+import { impactLight } from "@/services/nativeHapticsService";
 
 /* ─── helpers ─── */
 
@@ -269,6 +270,7 @@ const Wishlist = () => {
   }, []);
 
   const removeItem = async (postId) => {
+    impactLight();
     const mutationId = beginSavedPostMutation(postId);
     if (!mutationId) return;
     const removedItem = items.find(

@@ -29,6 +29,8 @@ import {
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { hideKeyboard } from "@/services/nativeKeyboardService";
+import { impactLight } from "@/services/nativeHapticsService";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -737,6 +739,8 @@ const u = "recentSearches",
       },
       $ = (r) => {
         r?.preventDefault();
+        hideKeyboard();
+        impactLight();
         const t = b.trim();
         if (!t) {
           l((o) => ({ ...o, search: "" })), s(y);
@@ -745,6 +749,7 @@ const u = "recentSearches",
         P(t), l((o) => ({ ...o, search: t })), s(v(t, a.category, a.subcategory));
       },
       k = (r) => {
+        hideKeyboard();
         h(r), P(r), l((t) => ({ ...t, search: r })), s(v(r, a.category, a.subcategory));
       },
       j = (r, entry = null) => {

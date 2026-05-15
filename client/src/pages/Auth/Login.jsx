@@ -25,6 +25,8 @@ import { useLocation as useLocationContext } from "@/context/LocationContext";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
+import { isBiometricAvailable, verifyBiometric, getCredentials, setCredentials } from "@/utils/biometricAuth";
+import { impactLight, notifySuccess } from "@/services/nativeHapticsService";
 
 const INVALID_LOGIN_MESSAGE_FALLBACK =
   "Invalid mobile number or password. Please try again.";
@@ -55,6 +57,74 @@ export default function Login() {
   const [otpCountdown, setOtpCountdown] = useState(0);
   const otpTimerRef = useRef(null);
   const otpAbortRef = useRef(null);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState("");
+
+  // ── Check biometric availability on mount ─────────────────
+  useEffect(() => {
+    const checkBiometric = async () => {
+      try {
+        const { available, biometryType } = await isBiometricAvailable();
+        if (available && localStorage.getItem("mhub_biometric_enabled") === "true") {
+          setBiometricAvailable(true);
+          setBiometricType(biometryType || "fingerprint");
+        }
+      } catch {}
+    };
+    checkBiometric();
+  }, []);
+
+  // ── Biometric login handler ───────────────────────────────
+  const handleBiometricLogin = useCallback(async () => {
+    impactLight();
+    setErrorMessage("");
+    setLoading(true);
+    try {
+      const verified = await verifyBiometric({ reason: "Sign in to MHub" });
+      if (!verified) {
+        setLoading(false);
+        return;
+      }
+      const credentials = await getCredentials("mhub-auth");
+      if (!credentials?.username || !credentials?.password) {
+        setErrorMessage("Biometric credentials not found. Please sign in with password.");
+        setLoading(false);
+        return;
+      }
+      const loc = await captureLoginLocation();
+      const deviceId = getDeviceId();
+      const body = {
+        identifier: credentials.username,
+        password: credentials.password,
+        deviceId,
+      };
+      if (loc?.lat != null && loc?.lng != null) {
+        body.lat = loc.lat;
+        body.lng = loc.lng;
+        body.locationAccuracy = loc.accuracy;
+        body.locationProvider = loc.provider;
+      }
+      const result = await login(body);
+      if (result?.success) {
+        await refreshAuth();
+        notifySuccess();
+        toast({
+          title: t("login_successful") || "Login Successful",
+          description: t("welcome_back_msg") || "Welcome back!",
+          variant: "success",
+          duration: 2500,
+        });
+        navigate(getReturnPath(), { replace: true });
+        return;
+      }
+      const msg = result?.error || t("biometric_login_failed") || "Biometric login failed. Please use password.";
+      setErrorMessage(msg);
+    } catch (err) {
+      setErrorMessage("Biometric login failed. Please use your password.");
+    } finally {
+      setLoading(false);
+    }
+  }, [login, refreshAuth, navigate, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Web OTP API auto-read ─────────────────────────────────
   const startWebOtpAutoRead = useCallback(() => {
@@ -275,6 +345,16 @@ export default function Login() {
         setShowOtpChallenge(false);
         setOtpCode("");
         requestLocation({ silent: true }).catch(() => {});
+        // Store credentials for biometric login on future sessions
+        try {
+          const { available } = await isBiometricAvailable();
+          if (available) {
+            const mobileDigits = normalizeMobile(form.mobile);
+            await setCredentials("mhub-auth", mobileDigits, form.password);
+            localStorage.setItem("mhub_biometric_enabled", "true");
+          }
+        } catch {}
+        notifySuccess();
         toast({
           title: t("login_successful") || "Login Successful",
           description: t("welcome_back_msg") || "Welcome back!",
@@ -477,6 +557,31 @@ export default function Login() {
                   t("sign_in") || "Sign In"
                 )}
               </Button>
+
+              {biometricAvailable && !showOtpChallenge && (
+                <div className="pt-2">
+                  <div className="relative flex items-center justify-center py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+                    </div>
+                    <span className="relative bg-white dark:bg-gray-800 px-3 text-xs text-gray-500 dark:text-gray-400">
+                      {t("or") || "or"}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={loading}
+                    onClick={handleBiometricLogin}
+                    className="w-full h-11 sm:h-12 rounded-xl text-base font-semibold border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-all"
+                  >
+                    <Shield className="w-5 h-5 mr-2" />
+                    {biometricType === "face"
+                      ? (t("sign_in_face") || "Sign in with Face ID")
+                      : (t("sign_in_fingerprint") || "Sign in with Fingerprint")}
+                  </Button>
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>
