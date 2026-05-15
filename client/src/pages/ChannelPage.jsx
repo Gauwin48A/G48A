@@ -39,6 +39,7 @@ import CentrePageTabs, {
   CentreVerificationBadge,
 } from "@/components/centre/CentrePageTabs";
 import CentrePageAnalytics from "@/components/centre/CentrePageAnalytics";
+import { shareContent } from "@/services/nativeShareService";
 
 /* ------------------------------------------------------------------ */
 /*  Skeleton loader                                                   */
@@ -794,11 +795,10 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: channel.name, url: window.location.href });
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
+                onClick={async () => {
+                  try {
+                    await shareContent({ title: channel.name, url: window.location.href });
+                  } catch {
                     toast({ title: tr("copied", "Copied!"), description: tr("link_copied", "Link copied to clipboard") });
                   }
                 }}

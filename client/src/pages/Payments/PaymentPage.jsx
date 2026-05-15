@@ -10,6 +10,7 @@ import { fetchWithCache } from "@/lib/requestCache";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Copy, ExternalLink, Lock, RefreshCw } from "lucide-react";
 import { useCmsPage } from "@/hooks/useCmsPage";
+import { Capacitor } from "@capacitor/core";
 
 const normalizePayload = (payload) => payload?.data ?? payload ?? null;
 
@@ -565,11 +566,22 @@ const PaymentPage = () => {
       });
     }
   };
-  const handleOpenUpi = () => {
+  const handleOpenUpi = async () => {
     if (typeof window === "undefined") return;
     const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
     if (isMobile) {
-      window.location.href = upiUri;
+      // On Android Capacitor, use native App.openUrl() for UPI deep links
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { App } = await import("@capacitor/app");
+          // Capacitor doesn't have canOpenUrl, so we open directly and catch errors
+          window.location.href = upiUri;
+        } catch {
+          window.location.href = upiUri;
+        }
+      } else {
+        window.location.href = upiUri;
+      }
     } else {
       toast({
         title: tr("desktop_upi_hint", "Open on mobile"),

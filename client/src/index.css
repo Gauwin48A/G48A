@@ -88,6 +88,7 @@
       background-image var(--theme-transition-duration) var(--theme-transition-ease),
       color var(--theme-transition-duration) var(--theme-transition-ease);
     overflow-x: hidden;
+    overscroll-behavior: contain;
     line-height: 1.55;
   }
 
@@ -1425,6 +1426,11 @@ body.keyboard-open .app-main {
 
 body.keyboard-open .nav-clearance {
   padding-bottom: calc(var(--keyboard-height, 0px) + 0.5rem);
+}
+
+/* Hide fixed CTA bars when keyboard is open on Android */
+body.keyboard-open .mhub-post-cta-bar {
+  display: none;
 }
 
 /* Ensure viewport meta handles safe areas */

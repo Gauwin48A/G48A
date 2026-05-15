@@ -54,6 +54,7 @@ import {
   RewardsReferrals,
 } from "@/components/rewards/RewardsSections";
 import { shareInvite } from "@/services/nativeShareService";
+import { Capacitor } from "@capacitor/core";
 
 const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
@@ -851,12 +852,18 @@ const RewardsPage = () => {
       );
       openShare(`https://t.me/share/url?url=${encodeURIComponent(t)}&text=${s}`);
     },
-    shareSms = () => {
+    shareSms = async () => {
       const t = getReferralShareLink();
       if (!t || typeof window === "undefined") return;
-      const s = encodeURIComponent(
-        `${tr("referral_share_text", "Join MHub with my referral link and earn bonus coins!")} ${t}`,
-      );
+      const body = `${tr("referral_share_text", "Join MHub with my referral link and earn bonus coins!")} ${t}`;
+      // On Android native, use Capacitor share for SMS
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await shareInvite({ code: t, message: body });
+          return;
+        } catch { /* fall through to SMS scheme */ }
+      }
+      const s = encodeURIComponent(body);
       window.location.href = `sms:?&body=${s}`;
     },
     copyReferralLink = () => {

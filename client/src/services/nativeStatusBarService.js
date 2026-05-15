@@ -54,7 +54,7 @@ export async function setDarkStatusBar() {
 
   try {
     await plugins.StatusBar.setStyle({ style: plugins.Style.Dark });
-    await plugins.StatusBar.setBackgroundColor({ color: "#1a1a2e" });
+    await plugins.StatusBar.setBackgroundColor({ color: "#0f1115" });
     log("Set dark status bar");
   } catch { /* silent */ }
 }

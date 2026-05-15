@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { shareContent } from "@/services/nativeShareService";
 
 const LISTING_PAGE_SIZE = 12;
 
@@ -332,11 +333,11 @@ export default function CentreListings() {
         <button
           type="button"
           className="absolute top-4 right-4 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors"
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({ title: centreName, url: window.location.href }).catch(() => {});
-            } else if (navigator.clipboard) {
-              navigator.clipboard.writeText(window.location.href).catch(() => {});
+          onClick={async () => {
+            try {
+              await shareContent({ title: centreName, url: window.location.href });
+            } catch {
+              // ignore share failures
             }
           }}
           aria-label={tr("share", "Share")}
