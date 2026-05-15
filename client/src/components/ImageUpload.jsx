@@ -2,15 +2,22 @@
  * ImageUpload Component
  * Defender Prompt 3: Hyper-Efficient Frontend
  * 
- * Compresses images to max 200KB BEFORE upload
+ * Compresses images to max 200KB BEFORE upload.
+ * Uses native camera on Android/iOS via Capacitor.
  * This saves bandwidth and storage at scale
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { Progress } from '@/components/ui/progress';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Camera } from 'lucide-react';
 import { useTranslation } from "react-i18next";
+import {
+    isNativeCameraAvailable,
+    takePhoto,
+    pickFromGallery,
+    dataUrlToFile,
+} from '@/services/nativeCameraService';
 
 const MAX_FILE_SIZE_KB = 200;
 const MAX_WIDTH_PX = 1000;
@@ -137,6 +144,82 @@ const ImageUpload = ({
         onImagesChange?.(newImages.map(img => img.file));
     };
 
+    /**
+     * Handle native camera photo capture (Android/iOS).
+     */
+    const handleNativeCamera = async () => {
+        if (images.length >= maxFiles) {
+            setError(`Maximum ${maxFiles} images allowed`);
+            return;
+        }
+
+        setCompressing(true);
+        setError(null);
+
+        try {
+            const photo = await takePhoto({ quality: 80, width: MAX_WIDTH_PX, height: MAX_WIDTH_PX });
+            if (!photo) { setCompressing(false); return; } // User cancelled
+
+            const file = dataUrlToFile(photo.dataUrl, `camera-${Date.now()}.jpg`);
+            const compressed = await compressImage(file);
+            const preview = URL.createObjectURL(compressed);
+
+            const newImages = [...images, {
+                file: compressed,
+                preview,
+                originalSize: file.size,
+                compressedSize: compressed.size,
+                name: file.name,
+            }];
+            setImages(newImages);
+            onImagesChange?.(newImages.map(img => img.file));
+        } catch (err) {
+            setError('Failed to capture photo');
+            if (import.meta.env.DEV) console.error('[ImageUpload] Camera error:', err);
+        } finally {
+            setCompressing(false);
+        }
+    };
+
+    /**
+     * Handle native gallery pick (Android/iOS).
+     */
+    const handleNativeGallery = async () => {
+        if (images.length >= maxFiles) {
+            setError(`Maximum ${maxFiles} images allowed`);
+            return;
+        }
+
+        setCompressing(true);
+        setError(null);
+
+        try {
+            const photo = await pickFromGallery({ quality: 80, width: MAX_WIDTH_PX, height: MAX_WIDTH_PX });
+            if (!photo) { setCompressing(false); return; } // User cancelled
+
+            const file = dataUrlToFile(photo.dataUrl, `gallery-${Date.now()}.jpg`);
+            const compressed = await compressImage(file);
+            const preview = URL.createObjectURL(compressed);
+
+            const newImages = [...images, {
+                file: compressed,
+                preview,
+                originalSize: file.size,
+                compressedSize: compressed.size,
+                name: file.name,
+            }];
+            setImages(newImages);
+            onImagesChange?.(newImages.map(img => img.file));
+        } catch (err) {
+            setError('Failed to pick photo');
+            if (import.meta.env.DEV) console.error('[ImageUpload] Gallery error:', err);
+        } finally {
+            setCompressing(false);
+        }
+    };
+
+    const isNative = isNativeCameraAvailable();
+
     const formatSize = (bytes) => {
         if (bytes < 1024) return `${bytes}B`;
         return `${(bytes / 1024).toFixed(0)}KB`;
@@ -144,7 +227,41 @@ const ImageUpload = ({
 
     return (
         <div className={`space-y-4 ${className}`}>
-            {/* Upload Button */}
+            {/* Upload Buttons — native camera on Android, file input on web */}
+            {isNative ? (
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={handleNativeCamera}
+                        disabled={compressing || images.length >= maxFiles}
+                        className="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors disabled:opacity-50"
+                    >
+                        {compressing ? (
+                            <Loader2 className="w-6 h-6 mx-auto text-blue-500 animate-spin" />
+                        ) : (
+                            <>
+                                <Camera className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                                <p className="text-xs text-gray-600 dark:text-gray-400">{t("camera", { defaultValue: "Camera" })}</p>
+                            </>
+                        )}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleNativeGallery}
+                        disabled={compressing || images.length >= maxFiles}
+                        className="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors disabled:opacity-50"
+                    >
+                        {compressing ? (
+                            <Loader2 className="w-6 h-6 mx-auto text-blue-500 animate-spin" />
+                        ) : (
+                            <>
+                                <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                                <p className="text-xs text-gray-600 dark:text-gray-400">{t("gallery", { defaultValue: "Gallery" })}</p>
+                            </>
+                        )}
+                    </button>
+                </div>
+            ) : (
             <div
                 onClick={() => inputRef.current?.click()}
                 className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
@@ -176,6 +293,7 @@ const ImageUpload = ({
                     </>
                 )}
             </div>
+            )}
 
             {/* Error Message */}
             {error && (

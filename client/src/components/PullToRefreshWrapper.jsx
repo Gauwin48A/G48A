@@ -30,6 +30,24 @@ const PULL_ENABLED_ROUTES = new Set([
   '/my-feed',
   '/for-you',
   '/',
+  '/chat',
+  '/centre',
+  '/channels',
+  '/search',
+  '/notifications',
+  '/wishlist',
+  '/nearby',
+  '/dashboard',
+  '/my-posts',
+  '/public-wall',
+  '/recently-viewed',
+  '/category-hub',
+  '/cart',
+  '/bought-posts',
+  '/sold-posts',
+  '/offers',
+  '/profile',
+  '/rewards',
 ]);
 
 function isPullEnabled(pathname) {
@@ -37,6 +55,12 @@ function isPullEnabled(pathname) {
   if (PULL_ENABLED_ROUTES.has(pathname)) return true;
   if (pathname.startsWith('/all-posts')) return true;
   if (pathname.startsWith('/feed')) return true;
+  if (pathname.startsWith('/centre')) return true;
+  if (pathname.startsWith('/channels')) return true;
+  if (pathname.startsWith('/search')) return true;
+  if (pathname.startsWith('/category-hub')) return true;
+  if (pathname.startsWith('/rewards')) return true;
+  if (pathname.startsWith('/profile')) return true;
   return false;
 }
 

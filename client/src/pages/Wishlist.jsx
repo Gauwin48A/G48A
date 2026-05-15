@@ -52,6 +52,7 @@ import {
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { shareContent } from "@/services/nativeShareService";
 
 /* ─── helpers ─── */
 
@@ -387,20 +388,11 @@ const Wishlist = () => {
           ? `${window.location.origin}/post/${item.post_id}`
           : `/post/${item.post_id}`;
       try {
-        if (navigator?.share) {
-          await navigator.share({
-            title: item.title,
-            text: item.title,
-            url,
-          });
-        } else if (navigator?.clipboard?.writeText) {
-          await navigator.clipboard.writeText(url);
-          toast({
-            title: t("link_copied") || "Link copied",
-            description:
-              t("share_link_copied") || "Share link copied to clipboard.",
-          });
-        }
+        await shareContent({
+          title: item.title,
+          text: item.title,
+          url,
+        });
       } catch (err) {
         if (import.meta.env.DEV) console.error("Failed to share:", err);
       }

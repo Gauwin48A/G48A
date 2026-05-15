@@ -5,6 +5,7 @@
  * Falls back to Web Share API / clipboard on web.
  */
 import { Capacitor } from "@capacitor/core";
+import { downloadToTemp } from "./nativeFileService";
 
 let Share = null;
 
@@ -109,9 +110,17 @@ export async function sharePost({ postId, title, price, imageUrl }) {
     dialogTitle: "Share this listing",
   };
 
-  // If we have an image URL and native share, include the file
+  // If we have an image URL and native share, download to temp and include the file
   if (imageUrl && Capacitor.isNativePlatform()) {
-    shareOptions.files = [imageUrl];
+    try {
+      const ext = imageUrl.split(".").pop()?.split("?")[0] || "jpg";
+      const localPath = await downloadToTemp(imageUrl, `share-${postId}.${ext}`);
+      if (localPath) {
+        shareOptions.files = [localPath];
+      }
+    } catch {
+      // Fallback: share without image
+    }
   }
 
   return shareContent(shareOptions);

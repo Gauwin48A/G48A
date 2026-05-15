@@ -65,7 +65,7 @@ const LanguageSheet = ({ isOpen, onClose }) => {
 
             {/* Sheet */}
             <div className="fixed bottom-0 left-0 right-0 z-[1010] sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[420px] animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
-                <div className="mhub-premium-surface rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+                <div className="mhub-premium-surface rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col pb-[--safe-area-bottom]">
 
                     {/* Header */}
                     <div className="sticky top-0 mhub-premium-bar z-10 p-4 border-b border-gray-100 dark:border-gray-800">

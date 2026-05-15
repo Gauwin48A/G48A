@@ -2,6 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Share2, BookmarkPlus, Flag, CheckCircle } from "lucide-react";
+import { shareContent } from '@/services/nativeShareService';
+import { impactLight } from '@/services/nativeHapticsService';
 
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +19,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
   const { toast } = useToast();
 
   const handleLike = () => {
+    impactLight();
     toast({
       title: isLiked
         ? tr("removed_from_favorites", "Removed from favorites")
@@ -32,7 +35,14 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
     });
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    impactLight();
+    try {
+      const result = await shareContent({ title: 'Check this out!', url: window.location.href });
+      if (result) return; // Native share succeeded
+    } catch {
+      // Fall through to clipboard
+    }
     navigator.clipboard.writeText(window.location.href);
     toast({
       title: tr("link_copied", "Link copied!"),
@@ -49,6 +59,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
   };
 
   const handleSave = () => {
+    impactLight();
     toast({
       title: isSaved
         ? tr("removed_from_saved", "Removed from saved")

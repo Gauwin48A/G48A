@@ -1,21 +1,36 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- Capacitor WebView JS Bridge ---
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keepattributes JavascriptInterface
+-keep class com.getcapacitor.** { *; }
+-keep class com.getcapacitor.plugin.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# --- Capacitor Plugins ---
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep class com.getcapacitor.Bridge { *; }
+-keep class com.getcapacitor.JSObject { *; }
+-keep class com.getcapacitor.PluginCall { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# --- Firebase / FCM ---
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# --- AndroidX (keep only used classes) ---
+-keep class androidx.core.** { *; }
+-keep class androidx.appcompat.** { *; }
+-keep class androidx.coordinatorlayout.** { *; }
+-keep class androidx.webkit.** { *; }
+-keep class androidx.activity.** { *; }
+-keep class androidx.fragment.** { *; }
+-dontwarn androidx.**
+
+# --- Keep line numbers for debugging stack traces ---
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

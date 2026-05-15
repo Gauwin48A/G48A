@@ -1,9 +1,11 @@
 /**
  * Theme Context
  * Provides app-wide theme modes (light/dark/system) with persistence
+ * Syncs Android status bar color on theme change.
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { initStatusBar } from '@/services/nativeStatusBarService';
 
 const ThemeContext = createContext();
 const STORAGE_KEY = 'mhub-theme';
@@ -52,6 +54,9 @@ const applyTheme = (resolved, mode, animate = false) => {
     if (metaTheme) {
         metaTheme.setAttribute('content', resolved === 'dark' ? '#0f1115' : '#ffffff');
     }
+
+    // Sync Android/iOS status bar with theme
+    initStatusBar(resolved === 'dark');
 };
 
 export const ThemeProvider = ({ children }) => {

@@ -135,6 +135,8 @@
     align-items: center;
     justify-content: center;
     animation: fadeIn 0.2s ease;
+    /* Safe area insets for Android/iOS notches */
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 @keyframes fadeIn {
@@ -156,8 +158,8 @@
 
 .lightbox-close {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: calc(20px + env(safe-area-inset-top, 0px));
+    right: calc(20px + env(safe-area-inset-right, 0px));
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: white;
