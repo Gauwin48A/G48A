@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Menu
@@ -353,9 +357,10 @@ fun MhubApp(
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.FEED) {
+                    MainShell(navController = navController, selected = BottomTab.MORE) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                            onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) },
                         )
                     }
                 }
@@ -375,7 +380,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.PROFILE) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE) {
                         ProfileScreen(
                             onSignedOut = {
                                 authViewModel.logout()
@@ -400,11 +405,12 @@ fun MhubApp(
                 composable(Routes.MORE) {
                     MainShell(navController = navController, selected = BottomTab.MORE) {
                         MoreScreen(
+                            // Existing
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) },
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
-                            onOpenCreatePost = { navController.navigate(Routes.CREATE_POST) },
+                            onOpenCreatePost = { navController.navigate(Routes.POST_WELCOME) },
                             onOpenChat = { navController.navigate(Routes.CHAT) },
                             onOpenKyc = { navController.navigate(Routes.KYC) },
                             onOpenSettings = { navController.navigate(Routes.SETTINGS) },
@@ -414,6 +420,37 @@ fun MhubApp(
                             onOpenNearby = { navController.navigate(Routes.NEARBY) },
                             onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
                             onOpenScanner = { navController.navigate(Routes.SCANNER) },
+                            // New — Trade
+                            onOpenCart = { navController.navigate(Routes.CART) },
+                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) },
+                            onOpenCentre = { navController.navigate(Routes.CENTRE_LIST) },
+                            onOpenCategoryMode = { navController.navigate(Routes.CATEGORY_MODE) },
+                            onOpenSavedSearches = { navController.navigate(Routes.SAVED_SEARCHES) },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) },
+                            onOpenCompare = { navController.navigate(Routes.COMPARE) },
+                            // New — Community
+                            onOpenFeed = { navController.navigate(Routes.FEED) },
+                            onOpenMyFeed = { navController.navigate(Routes.MY_FEED) },
+                            onOpenChannels = { navController.navigate(Routes.CHANNELS) },
+                            onOpenPublicWall = { navController.navigate(Routes.PUBLIC_WALL) },
+                            onOpenMyReviews = { navController.navigate(Routes.PROFILE) },
+                            onOpenFeedback = { navController.navigate(Routes.FEEDBACK) },
+                            onOpenComplaints = { navController.navigate(Routes.COMPLAINTS) },
+                            onOpenActivityHub = { navController.navigate(Routes.ACTIVITY_HUB) },
+                            // New — My Account
+                            onOpenProfile = { navController.navigate(Routes.PROFILE) },
+                            onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) },
+                            onOpenBoughtPosts = { navController.navigate(Routes.BOUGHT_POSTS) },
+                            onOpenSoldPosts = { navController.navigate(Routes.SOLD_POSTS) },
+                            onOpenVerification = { navController.navigate(Routes.VERIFICATION) },
+                            onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
+                            onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) },
+                            onOpenAdminPanel = { navController.navigate(Routes.ADMIN_PANEL) },
+                            // New — Help & Support
+                            onOpenAboutUs = { navController.navigate(Routes.ABOUT_US) },
+                            onOpenContactUs = { navController.navigate(Routes.CONTACT_US) },
+                            onOpenFaq = { navController.navigate(Routes.FAQ) },
+                            isAdmin = false,
                         )
                     }
                 }
@@ -946,8 +983,8 @@ enum class BottomTab(
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
     ALL_POSTS(Routes.ALL_POSTS, R.string.nav_all_posts, Icons.Outlined.GridView, Icons.Filled.GridView),
-    FEED(Routes.FEED, R.string.nav_feed, Icons.AutoMirrored.Outlined.Article, Icons.AutoMirrored.Filled.Article),
-    PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
+    SELL(Routes.POST_WELCOME, R.string.nav_sell, Icons.Outlined.AddCircleOutline, Icons.Filled.AddCircle),
+    CHAT(Routes.CHAT, R.string.nav_chat, Icons.AutoMirrored.Outlined.Chat, Icons.AutoMirrored.Filled.Chat),
     MORE(Routes.MORE, R.string.nav_more, Icons.Outlined.Menu, Icons.Filled.Menu),
 }
 
