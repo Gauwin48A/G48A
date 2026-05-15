@@ -370,7 +370,7 @@ function AppShell() {
 
       if (isProtected) {
         // On protected pages, show confirmation before navigating back
-        if (window.confirm("You have unsaved changes. Are you sure you want to go back?")) {
+        if (window.confirm(t("confirm_unsaved_changes", "You have unsaved changes. Are you sure you want to go back?"))) {
           if (canGoBack) navigate(-1);
           else CapacitorApp.exitApp();
         }

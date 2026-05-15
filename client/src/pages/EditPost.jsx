@@ -262,10 +262,9 @@ const EditPost = () => {
       const files = [];
       const urls = [];
       for (const p of photos) {
-        if (!p.dataUrl && !p.webPath) continue;
-        const file = p.dataUrl
-          ? dataUrlToFile(p.dataUrl, `gallery-${Date.now()}-${files.length}.${p.format || "jpg"}`)
-          : null;
+        // webPath requires additional fetch conversion; dataUrl is the primary result type
+        if (!p.dataUrl) continue;
+        const file = dataUrlToFile(p.dataUrl, `gallery-${Date.now()}-${files.length}.${p.format || "jpg"}`);
         if (file && file.size <= MAX_FILE_SIZE) {
           files.push(file);
           urls.push(URL.createObjectURL(file));
