@@ -160,6 +160,7 @@ class CategoryShellViewModel @Inject constructor(
 @Composable
 fun CategoryAppShell(
     categoryKey: String,
+    useExternalBottomNav: Boolean = false,
     onBackToLauncher: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenNotifications: () -> Unit,
@@ -241,6 +242,7 @@ fun CategoryAppShell(
     ) {
         Scaffold(
             topBar = {
+                if (!useExternalBottomNav) {
                 CategoryTopBar(
                     appDef = appDef,
                     cartBadgeCount = effectiveCartBadgeCount,
@@ -256,8 +258,10 @@ fun CategoryAppShell(
                         }
                     },
                 )
+                }
             },
             bottomBar = {
+                if (!useExternalBottomNav) {
                 CategoryBottomNavBar(
                     selected = selectedTab,
                     onSelect = { tab ->
@@ -273,6 +277,7 @@ fun CategoryAppShell(
                     cartBadgeCount = effectiveCartBadgeCount,
                     wishlistBadgeCount = roomWishlistCount,
                 )
+                }
             },
         ) { innerPadding ->
             NavHost(

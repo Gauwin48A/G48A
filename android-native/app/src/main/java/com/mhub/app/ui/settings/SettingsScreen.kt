@@ -1,5 +1,7 @@
 package com.mhub.app.ui.settings
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -287,13 +290,17 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Display Language", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    var selectedLang by remember { mutableStateOf("en") }
+                    val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
+                    var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("en" to "English", "hi" to "हिन्दी", "ta" to "தமிழ்", "te" to "తెలుగు").forEach { (code, label) ->
                             FilterChip(
                                 selected = selectedLang == code,
                                 onClick = {
                                     selectedLang = code
+                                    AppCompatDelegate.setApplicationLocales(
+                                        LocaleListCompat.forLanguageTags(code),
+                                    )
                                 },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                             )

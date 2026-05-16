@@ -145,6 +145,44 @@ fun SupportPolicyScreen(onBack: () -> Unit, viewModel: SupportPolicyViewModel = 
     CmsScreen("Support Policy", Icons.Filled.SupportAgent, state, onBack)
 }
 
+@Composable
+fun ShippingPolicyScreen(onBack: () -> Unit) {
+    CmsScreen(
+        title = "Shipping Policy",
+        icon = Icons.Filled.LocalShipping,
+        state = CmsUiState(
+            loading = false,
+            content = """
+MHub Shipping Policy
+
+1. Shipping Responsibility
+Shipping is the responsibility of the seller. MHub acts as a marketplace facilitator and does not directly handle shipping or logistics.
+
+2. Delivery Timelines
+Estimated delivery timelines are provided by sellers. MHub is not responsible for delays caused by sellers or logistics partners.
+
+3. Shipping Costs
+Shipping costs, if any, are set by the seller and displayed on the listing page before purchase.
+
+4. Tracking
+Where available, sellers will provide tracking information after dispatch. Buyers can track their orders from the "Bought Posts" section.
+
+5. Damaged / Lost Shipments
+If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. MHub will mediate between buyer and seller.
+
+6. Local Pickup
+Many transactions on MHub support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
+
+7. Return Shipping
+Return shipping costs are borne by the buyer unless the item was misrepresented or defective. See our Refund Policy for details.
+
+For questions about shipping, please contact us through the app's Feedback section.
+            """.trimIndent(),
+        ),
+        onBack = onBack,
+    )
+}
+
 // ─── AdminPanelScreen ─────────────────────────────────────────────────────────
 data class AdminUiState(
     val loading: Boolean = true,

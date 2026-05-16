@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -76,6 +77,7 @@ fun MhubTopBar(
     onSearch: () -> Unit,
     onNotifications: () -> Unit,
     onCart: () -> Unit,
+    onWishlist: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TopBarViewModel = hiltViewModel(),
 ) {
@@ -165,6 +167,16 @@ fun MhubTopBar(
                             modifier = Modifier.size(22.dp),
                         )
                     }
+                }
+
+                // Wishlist (matches web's bookmark icon)
+                IconButton(onClick = onWishlist) {
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = "Wishlist",
+                        tint = Color.White.copy(alpha = 0.92f),
+                        modifier = Modifier.size(22.dp),
+                    )
                 }
 
                 // Cart

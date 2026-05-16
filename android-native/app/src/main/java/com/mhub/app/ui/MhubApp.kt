@@ -4,10 +4,14 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,8 +40,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -133,6 +139,7 @@ import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.ui.components.OfflineBanner
 import com.mhub.app.ui.components.MhubTopBar
 import com.mhub.app.data.local.ThemeMode
+import kotlinx.coroutines.launch
 import com.mhub.app.ui.categoryapp.CategoryAppShell
 import com.mhub.app.ui.categoryapp.MockProductDetailScreen
 import com.mhub.app.ui.checkout.CheckoutAddressScreen
@@ -153,6 +160,10 @@ class AppThemeViewModel @Inject constructor(
 ) : ViewModel() {
     val themeMode: StateFlow<ThemeMode> = prefs.themeMode
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, ThemeMode.SYSTEM)
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { prefs.setThemeMode(mode) }
+    }
 }
 
 @Composable
@@ -266,7 +277,7 @@ fun MhubApp(
             // ── Main Graph (Bottom Nav) ──
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
-                    // CategoryHub is the launcher — no MainShell, no bottom nav
+                    MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                     CategoryHubScreen(
                         onOpenCategory = { category ->
                             val mapped = when ((category.categoryGroup ?: category.name ?: "").lowercase()) {
@@ -317,10 +328,11 @@ fun MhubApp(
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenScanner = { navController.navigate(Routes.SCANNER) },
                     )
+                    }
                 }
 
                 composable(Routes.ALL_POSTS) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         HomeScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) },
@@ -348,7 +360,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FOR_YOU) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
@@ -357,7 +369,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) },
@@ -366,7 +378,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.REWARDS) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         RewardsScreen(
                             isAuthenticated = isAuthenticated,
                             onSignInRequired = {
@@ -380,7 +392,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.PROFILE) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         ProfileScreen(
                             onSignedOut = {
                                 authViewModel.logout()
@@ -398,65 +410,23 @@ fun MhubApp(
                             onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
                             onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                            onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) },
+                            onOpenAddresses = { navController.navigate(Routes.ADDRESS_BOOK) },
                         )
                     }
                 }
 
+                // MORE is now a drawer overlay (not a page), redirect to HOME
                 composable(Routes.MORE) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
-                        MoreScreen(
-                            // Existing
-                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) },
-                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
-                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
-                            onOpenCreatePost = { navController.navigate(Routes.POST_WELCOME) },
-                            onOpenChat = { navController.navigate(Routes.CHAT) },
-                            onOpenKyc = { navController.navigate(Routes.KYC) },
-                            onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) },
-                            onOpenRewards = { navController.navigate(Routes.REWARDS) },
-                            onOpenOffers = { navController.navigate(Routes.OFFERS) },
-                            onOpenNearby = { navController.navigate(Routes.NEARBY) },
-                            onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
-                            onOpenScanner = { navController.navigate(Routes.SCANNER) },
-                            // New — Trade
-                            onOpenCart = { navController.navigate(Routes.CART) },
-                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) },
-                            onOpenCentre = { navController.navigate(Routes.CENTRE_LIST) },
-                            onOpenCategoryMode = { navController.navigate(Routes.CATEGORY_MODE) },
-                            onOpenSavedSearches = { navController.navigate(Routes.SAVED_SEARCHES) },
-                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) },
-                            onOpenCompare = { navController.navigate(Routes.COMPARE) },
-                            // New — Community
-                            onOpenFeed = { navController.navigate(Routes.FEED) },
-                            onOpenMyFeed = { navController.navigate(Routes.MY_FEED) },
-                            onOpenChannels = { navController.navigate(Routes.CHANNELS) },
-                            onOpenPublicWall = { navController.navigate(Routes.PUBLIC_WALL) },
-                            onOpenMyReviews = { navController.navigate(Routes.PROFILE) },
-                            onOpenFeedback = { navController.navigate(Routes.FEEDBACK) },
-                            onOpenComplaints = { navController.navigate(Routes.COMPLAINTS) },
-                            onOpenActivityHub = { navController.navigate(Routes.ACTIVITY_HUB) },
-                            // New — My Account
-                            onOpenProfile = { navController.navigate(Routes.PROFILE) },
-                            onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) },
-                            onOpenBoughtPosts = { navController.navigate(Routes.BOUGHT_POSTS) },
-                            onOpenSoldPosts = { navController.navigate(Routes.SOLD_POSTS) },
-                            onOpenVerification = { navController.navigate(Routes.VERIFICATION) },
-                            onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
-                            onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) },
-                            onOpenAdminPanel = { navController.navigate(Routes.ADMIN_PANEL) },
-                            // New — Help & Support
-                            onOpenAboutUs = { navController.navigate(Routes.ABOUT_US) },
-                            onOpenContactUs = { navController.navigate(Routes.CONTACT_US) },
-                            onOpenFaq = { navController.navigate(Routes.FAQ) },
-                            isAdmin = false,
-                        )
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.MORE) { inclusive = true }
+                        }
                     }
                 }
 
                 composable(Routes.NOTIFICATIONS) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         NotificationsScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                         )
@@ -464,7 +434,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.WISHLIST) {
-                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
                     }
                 }
@@ -487,28 +457,41 @@ fun MhubApp(
                 arguments = listOf(androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true }),
             ) { backStack ->
                 val prefillQuery = backStack.arguments?.getString("query") ?: ""
-                SearchScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                    prefillQuery = prefillQuery,
-                )
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    SearchScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        prefillQuery = prefillQuery,
+                    )
+                }
             }
 
             composable(Routes.CATEGORIES) {
-                CategoriesScreen(
-                    onBack = { navController.popBackStack() },
-                    onCategoryClick = { _, name ->
-                        val key = name.lowercase().trim().let { n ->
-                            when {
-                                n.contains("electron") -> "electronics"
-                                n.contains("fashion") || n.contains("cloth") -> "fashion"
-                                n.contains("vehicle") || n.contains("car") || n.contains("bike") -> "vehicles"
-                                else -> "others"
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    CategoriesScreen(
+                        onBack = { navController.popBackStack() },
+                        onCategoryClick = { _, name ->
+                            val key = name.lowercase().trim().let { n ->
+                                when {
+                                    n.contains("electron") -> "electronics"
+                                    n.contains("fashion") || n.contains("cloth") -> "fashion"
+                                    n.contains("vehicle") || n.contains("car") || n.contains("bike") -> "vehicles"
+                                    else -> "others"
+                                }
                             }
-                        }
-                        navController.navigate(Routes.categoryDetail(key))
-                    },
-                )
+                            navController.navigate(Routes.categoryDetail(key))
+                        },
+                    )
+                }
+            }
+
+            composable(Routes.SUBCATEGORIES) {
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    com.mhub.app.ui.discovery.SubcategoriesScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenCategory = { catKey -> navController.navigate("cat/$catKey") },
+                    )
+                }
             }
 
             composable(Routes.CREATE_POST) {
@@ -519,11 +502,13 @@ fun MhubApp(
             }
 
             composable(Routes.MY_POSTS) {
-                MyPostsScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                    onCreatePost = { navController.navigate(Routes.CREATE_POST) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    MyPostsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onCreatePost = { navController.navigate(Routes.CREATE_POST) },
+                    )
+                }
             }
 
             composable(Routes.KYC) {
@@ -569,19 +554,25 @@ fun MhubApp(
             }
 
             composable(Routes.CHAT) {
-                ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { navController.navigate(Routes.LOGIN) })
+                MainShell(navController = navController, selected = BottomTab.CHAT, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { navController.navigate(Routes.LOGIN) })
+                }
             }
 
             composable(Routes.SETTINGS) {
-                SettingsScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    SettingsScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             // ── Commerce ──
             composable(Routes.POST_WELCOME) {
-                PostWelcomeScreen(
-                    onBack = { navController.popBackStack() },
-                    onStartPost = { navController.navigate(Routes.CREATE_POST) },
-                )
+                MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    PostWelcomeScreen(
+                        onBack = { navController.popBackStack() },
+                        onStartPost = { navController.navigate(Routes.CREATE_POST) },
+                    )
+                }
             }
 
             composable(
@@ -593,14 +584,18 @@ fun MhubApp(
             }
 
             composable(Routes.TIER_SELECTION) {
-                TierSelectionScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    TierSelectionScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.NEARBY) {
-                NearbyScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    NearbyScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    )
+                }
             }
 
             composable(Routes.SCANNER) {
@@ -625,17 +620,21 @@ fun MhubApp(
             }
 
             composable(Routes.BOUGHT_POSTS) {
-                BoughtPostsScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    BoughtPostsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    )
+                }
             }
 
             composable(Routes.SOLD_POSTS) {
-                SoldPostsScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    SoldPostsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    )
+                }
             }
 
             composable(Routes.BUYER_VIEW) {
@@ -651,7 +650,9 @@ fun MhubApp(
             }
 
             composable(Routes.OFFERS) {
-                OffersScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    OffersScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.PAYMENT) {
@@ -659,22 +660,30 @@ fun MhubApp(
             }
 
             composable(Routes.CART) {
-                CartScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    CartScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.RECENTLY_VIEWED) {
-                RecentlyViewedScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    RecentlyViewedScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    )
+                }
             }
 
             composable(Routes.SAVED_SEARCHES) {
-                SavedSearchesScreen(onBack = { navController.popBackStack() }, onRunSearch = { q -> navController.navigate("search?query=${q}") })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    SavedSearchesScreen(onBack = { navController.popBackStack() }, onRunSearch = { q -> navController.navigate("search?query=${q}") })
+                }
             }
 
             composable(Routes.COMPARE) {
-                CompareScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    CompareScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             // ── Social ──
@@ -687,7 +696,9 @@ fun MhubApp(
             }
 
             composable(Routes.MY_FEED) {
-                MyFeedScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    MyFeedScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.FEED_POST_ADD) {
@@ -695,15 +706,21 @@ fun MhubApp(
             }
 
             composable(Routes.PUBLIC_WALL) {
-                PublicWallScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    PublicWallScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.COMPLAINTS) {
-                ComplaintsScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    ComplaintsScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.FEEDBACK) {
-                FeedbackScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    FeedbackScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(
@@ -716,32 +733,44 @@ fun MhubApp(
 
             // ── Account ──
             composable(Routes.DASHBOARD) {
-                DashboardScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    DashboardScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.SECURITY) {
-                SecurityScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    SecurityScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.ACCOUNT_DELETE) {
-                AccountDeleteScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    AccountDeleteScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.VERIFICATION) {
-                VerificationScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    VerificationScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.ANALYTICS) {
-                AnalyticsScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    AnalyticsScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             // ── Channels ──
             composable(Routes.CHANNELS) {
-                ChannelsListScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) },
-                    onCreateChannel = { navController.navigate(Routes.CHANNEL_CREATE) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    ChannelsListScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) },
+                        onCreateChannel = { navController.navigate(Routes.CHANNEL_CREATE) },
+                    )
+                }
             }
 
             composable(Routes.CHANNEL_CREATE) {
@@ -757,11 +786,13 @@ fun MhubApp(
             }
 
             composable(Routes.CENTRE_LIST) {
-                CentreListScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) },
-                    onCreateCentre = { navController.navigate(Routes.CENTRE_CREATE) },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    CentreListScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) },
+                        onCreateCentre = { navController.navigate(Routes.CENTRE_CREATE) },
+                    )
+                }
             }
 
             composable(Routes.CENTRE_CREATE) {
@@ -815,21 +846,23 @@ fun MhubApp(
 
             // ── New screens ──
             composable(Routes.ACTIVITY_HUB) {
-                com.mhub.app.ui.discovery.ActivityHubScreen(
-                    onBack = { navController.popBackStack() },
-                    onNavigate = { key ->
-                        when (key) {
-                            "chat" -> navController.navigate(Routes.CHAT)
-                            "offers" -> navController.navigate(Routes.OFFERS)
-                            "reviews" -> navController.navigate(Routes.PROFILE)
-                            "nearby" -> navController.navigate(Routes.NEARBY)
-                            "wishlist" -> navController.navigate(Routes.WISHLIST)
-                            "cart" -> navController.navigate(Routes.CART)
-                            "my-posts" -> navController.navigate(Routes.MY_POSTS)
-                            "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
-                        }
-                    },
-                )
+                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    com.mhub.app.ui.discovery.ActivityHubScreen(
+                        onBack = { navController.popBackStack() },
+                        onNavigate = { key ->
+                            when (key) {
+                                "chat" -> navController.navigate(Routes.CHAT)
+                                "offers" -> navController.navigate(Routes.OFFERS)
+                                "reviews" -> navController.navigate(Routes.PROFILE)
+                                "nearby" -> navController.navigate(Routes.NEARBY)
+                                "wishlist" -> navController.navigate(Routes.WISHLIST)
+                                "cart" -> navController.navigate(Routes.CART)
+                                "my-posts" -> navController.navigate(Routes.MY_POSTS)
+                                "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
+                            }
+                        },
+                    )
+                }
             }
 
             // ── Category App Shell (per-category mini-app) ──────────────────
@@ -838,8 +871,10 @@ fun MhubApp(
                 arguments = listOf(navArgument("catKey") { type = NavType.StringType }),
             ) { entry ->
                 val catKey = entry.arguments?.getString("catKey").orEmpty()
+                MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                 CategoryAppShell(
                     categoryKey = catKey,
+                    useExternalBottomNav = true,
                     onBackToLauncher = {
                         analytics.logEvent(
                             "category_exit_to_launcher",
@@ -881,6 +916,7 @@ fun MhubApp(
                         }
                     },
                 )
+                }
             }
 
             // ── Mock Product Detail (category app products) ──────────────────
@@ -970,6 +1006,73 @@ fun MhubApp(
             composable(Routes.FAQ) {
                 FAQScreen(onBack = { navController.popBackStack() })
             }
+
+            composable(Routes.SHIPPING_POLICY) {
+                com.mhub.app.ui.legal.ShippingPolicyScreen(onBack = { navController.popBackStack() })
+            }
+
+            // ── Profile sub-screens ──────────────────────────────────────────
+            composable(Routes.ORDER_HISTORY) {
+                com.mhub.app.ui.profile.OrderHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenOrderDetail = { id -> navController.navigate(Routes.orderDetail(id)) },
+                )
+            }
+
+            composable(
+                route = Routes.ORDER_DETAIL,
+                arguments = listOf(navArgument("orderId") { type = NavType.StringType }),
+            ) { backStack ->
+                val orderId = backStack.arguments?.getString("orderId") ?: ""
+                com.mhub.app.ui.profile.OrderDetailScreen(
+                    orderId = orderId,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.ADDRESS_BOOK) {
+                com.mhub.app.ui.profile.AddressBookScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddAddress = { navController.navigate(Routes.ADDRESS_ADD) },
+                    onEditAddress = { id -> navController.navigate(Routes.addressEdit(id)) },
+                )
+            }
+
+            composable(Routes.ADDRESS_ADD) {
+                com.mhub.app.ui.profile.AddressFormScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = Routes.ADDRESS_EDIT,
+                arguments = listOf(navArgument("addressId") { type = NavType.StringType }),
+            ) { backStack ->
+                val addressId = backStack.arguments?.getString("addressId") ?: ""
+                com.mhub.app.ui.profile.AddressFormScreen(
+                    addressId = addressId,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            // EDIT_PROFILE is handled inline in ProfileScreen's edit dialog
+            composable(Routes.EDIT_PROFILE) {
+                // Redirect to Profile screen where edit is inline
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.PROFILE) {
+                        popUpTo(Routes.EDIT_PROFILE) { inclusive = true }
+                    }
+                }
+            }
+
+            // CHAT_LIST is an alias for CHAT
+            composable(Routes.CHAT_LIST) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.CHAT) {
+                        popUpTo(Routes.CHAT_LIST) { inclusive = true }
+                    }
+                }
+            }
         }
         }
     }
@@ -985,6 +1088,7 @@ enum class BottomTab(
     ALL_POSTS(Routes.ALL_POSTS, R.string.nav_all_posts, Icons.Outlined.GridView, Icons.Filled.GridView),
     SELL(Routes.POST_WELCOME, R.string.nav_sell, Icons.Outlined.AddCircleOutline, Icons.Filled.AddCircle),
     CHAT(Routes.CHAT, R.string.nav_chat, Icons.AutoMirrored.Outlined.Chat, Icons.AutoMirrored.Filled.Chat),
+    PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
     MORE(Routes.MORE, R.string.nav_more, Icons.Outlined.Menu, Icons.Filled.Menu),
 }
 
@@ -992,64 +1096,159 @@ enum class BottomTab(
 fun MainShell(
     navController: NavHostController,
     selected: BottomTab,
+    currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
+    onSetThemeMode: (ThemeMode) -> Unit = {},
+    showTopBar: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    Scaffold(
-        topBar = {
-            MhubTopBar(
-                onSearch = { navController.navigate(Routes.SEARCH) },
-                onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                onCart = { navController.navigate(Routes.CART) },
-            )
-        },
-        bottomBar = {
-            NavigationBar(
-                tonalElevation = 0.dp,
-                containerColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.shadow(
-                    elevation = 14.dp,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                ),
-            ) {
-                BottomTab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = tab == selected,
-                        onClick = {
-                            val currentRoute = navController.currentDestination?.route
-                            if (tab.route != currentRoute) {
-                                navController.navigate(tab.route) {
-                                    popUpTo(Routes.HOME) { saveState = true; inclusive = false }
-                                    launchSingleTop = true
-                                    restoreState = tab.route == currentRoute
+    var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                if (showTopBar) {
+                MhubTopBar(
+                    onSearch = { navController.navigate(Routes.SEARCH) },
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onCart = { navController.navigate(Routes.CART) },
+                    onWishlist = { navController.navigate(Routes.WISHLIST) },
+                )
+                }
+            },
+            bottomBar = {
+                NavigationBar(
+                    tonalElevation = 0.dp,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.shadow(
+                        elevation = 14.dp,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    ),
+                ) {
+                    BottomTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = if (tab == BottomTab.MORE) showMoreDrawer else tab == selected,
+                            onClick = {
+                                if (tab == BottomTab.MORE) {
+                                    showMoreDrawer = !showMoreDrawer
+                                } else {
+                                    showMoreDrawer = false
+                                    val currentRoute = navController.currentDestination?.route
+                                    if (tab.route != currentRoute) {
+                                        navController.navigate(tab.route) {
+                                            popUpTo(Routes.HOME) { saveState = true; inclusive = false }
+                                            launchSingleTop = true
+                                            restoreState = tab.route == currentRoute
+                                        }
+                                    }
                                 }
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (tab == selected) tab.iconFilled else tab.iconOutlined,
-                                contentDescription = null,
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(tab.labelRes),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (tab == selected) FontWeight.SemiBold else FontWeight.Normal,
-                            )
-                        },
-                        alwaysShowLabel = true,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if ((tab == BottomTab.MORE && showMoreDrawer) || (tab != BottomTab.MORE && tab == selected)) tab.iconFilled else tab.iconOutlined,
+                                    contentDescription = null,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(tab.labelRes),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (tab == selected || (tab == BottomTab.MORE && showMoreDrawer)) FontWeight.SemiBold else FontWeight.Normal,
+                                )
+                            },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                        )
+                    }
+                }
+            },
+        ) { padding ->
+            Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
+                content()
+            }
+        }
+
+        // ── More Drawer Overlay ──────────────────────────────────────────
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showMoreDrawer,
+            enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { it }),
+            exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { it }),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Backdrop scrim
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        ) { showMoreDrawer = false },
+                )
+                // Drawer panel from right
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.88f)
+                        .align(Alignment.CenterEnd)
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp),
+                        )
+                        .clickable(enabled = false) {}, // prevent click-through
+                ) {
+                    MoreScreen(
+                        onOpenNotifications = { showMoreDrawer = false; navController.navigate(Routes.NOTIFICATIONS) },
+                        onOpenWishlist = { showMoreDrawer = false; navController.navigate(Routes.WISHLIST) },
+                        onOpenSearch = { showMoreDrawer = false; navController.navigate(Routes.SEARCH) },
+                        onOpenCategories = { showMoreDrawer = false; navController.navigate(Routes.CATEGORIES) },
+                        onOpenCreatePost = { showMoreDrawer = false; navController.navigate(Routes.POST_WELCOME) },
+                        onOpenChat = { showMoreDrawer = false; navController.navigate(Routes.CHAT) },
+                        onOpenKyc = { showMoreDrawer = false; navController.navigate(Routes.KYC) },
+                        onOpenSettings = { showMoreDrawer = false; navController.navigate(Routes.SETTINGS) },
+                        onOpenForYou = { showMoreDrawer = false; navController.navigate(Routes.FOR_YOU) },
+                        onOpenRewards = { showMoreDrawer = false; navController.navigate(Routes.REWARDS) },
+                        onOpenOffers = { showMoreDrawer = false; navController.navigate(Routes.OFFERS) },
+                        onOpenNearby = { showMoreDrawer = false; navController.navigate(Routes.NEARBY) },
+                        onOpenDashboard = { showMoreDrawer = false; navController.navigate(Routes.DASHBOARD) },
+                        onOpenScanner = { showMoreDrawer = false; navController.navigate(Routes.SCANNER) },
+                        onOpenCart = { showMoreDrawer = false; navController.navigate(Routes.CART) },
+                        onOpenTierSelection = { showMoreDrawer = false; navController.navigate(Routes.TIER_SELECTION) },
+                        onOpenCentre = { showMoreDrawer = false; navController.navigate(Routes.CENTRE_LIST) },
+                        onOpenCategoryMode = { showMoreDrawer = false; navController.navigate(Routes.CATEGORY_MODE) },
+                        onOpenSavedSearches = { showMoreDrawer = false; navController.navigate(Routes.SAVED_SEARCHES) },
+                        onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) },
+                        onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) },
+                        onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) },
+                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) },
+                        onOpenChannels = { showMoreDrawer = false; navController.navigate(Routes.CHANNELS) },
+                        onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) },
+                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) },
+                        onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) },
+                        onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) },
+                        onOpenActivityHub = { showMoreDrawer = false; navController.navigate(Routes.ACTIVITY_HUB) },
+                        onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) },
+                        onOpenMyPosts = { showMoreDrawer = false; navController.navigate(Routes.MY_POSTS) },
+                        onOpenBoughtPosts = { showMoreDrawer = false; navController.navigate(Routes.BOUGHT_POSTS) },
+                        onOpenSoldPosts = { showMoreDrawer = false; navController.navigate(Routes.SOLD_POSTS) },
+                        onOpenVerification = { showMoreDrawer = false; navController.navigate(Routes.VERIFICATION) },
+                        onOpenAnalytics = { showMoreDrawer = false; navController.navigate(Routes.ANALYTICS) },
+                        onOpenAccountDelete = { showMoreDrawer = false; navController.navigate(Routes.ACCOUNT_DELETE) },
+                        onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) },
+                        onOpenAboutUs = { showMoreDrawer = false; navController.navigate(Routes.ABOUT_US) },
+                        onOpenContactUs = { showMoreDrawer = false; navController.navigate(Routes.CONTACT_US) },
+                        onOpenFaq = { showMoreDrawer = false; navController.navigate(Routes.FAQ) },
+                        onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) },
+                        onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) },
+                        isAdmin = false,
+                        currentThemeMode = currentThemeMode,
+                        onSetThemeMode = onSetThemeMode,
                     )
                 }
             }
-        },
-    ) { padding ->
-        Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
-            content()
         }
     }
 }
@@ -1070,7 +1269,7 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
         "chat", "messages" -> {
             val id = segments.getOrNull(1)
             if (id != null) navController.navigate("${Routes.CHAT}/$id")
-            else navController.navigate(Routes.CHAT_LIST)
+            else navController.navigate(Routes.CHAT)
         }
         "search" -> navController.navigate(Routes.SEARCH)
         "create-post", "sell" -> navController.navigate(Routes.CREATE_POST)
