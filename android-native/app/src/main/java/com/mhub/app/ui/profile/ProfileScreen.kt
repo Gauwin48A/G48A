@@ -55,6 +55,8 @@ import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import coil.compose.AsyncImage
@@ -395,6 +397,8 @@ fun ProfileScreen(
     onOpenAnalytics: () -> Unit = {},
     onOpenAccountDelete: () -> Unit = {},
     onOpenPost: (String) -> Unit = {},
+    onOpenOrders: () -> Unit = {},
+    onOpenAddresses: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -469,7 +473,7 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp),
+                                .height(120.dp),
                         ) {
                             // Cover image or gradient placeholder
                             Box(
@@ -1289,6 +1293,23 @@ fun ProfileScreen(
                                     label = "Messages",
                                     subtitle = "Chat with buyers and sellers",
                                     onClick = onOpenChat,
+                                )
+                            }
+
+                            SectionHeader(title = "Orders & Shipping")
+                            ProfileMenuCard {
+                                ProfileMenuItem(
+                                    icon = Icons.Default.Receipt,
+                                    label = "Order History",
+                                    subtitle = "Purchases and sales",
+                                    onClick = onOpenOrders,
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(start = 64.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                ProfileMenuItem(
+                                    icon = Icons.Default.Home,
+                                    label = "Address Book",
+                                    subtitle = "Manage delivery addresses",
+                                    onClick = onOpenAddresses,
                                 )
                             }
 

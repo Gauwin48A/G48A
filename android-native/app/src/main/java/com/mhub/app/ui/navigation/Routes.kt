@@ -30,6 +30,7 @@ object Routes {
     // Full screen routes
     const val SEARCH = "search"
     const val CATEGORIES = "categories"
+    const val SUBCATEGORIES = "subcategories"
     const val POST_DETAIL = "post/{postId}"
     fun postDetail(id: String): String = "post/$id"
 
