@@ -662,4 +662,15 @@ interface MhubApi {
     // ---- Wishlist Toggle ----
     @POST("api/wishlist/{id}/toggle")
     suspend fun toggleWishlist(@Path("id") id: String): MessageResponse
+
+    // ---- Orders ----
+    @POST("api/orders/create")
+    suspend fun createOrder(@Body body: CreateOrderRequest): CreateOrderResponse
+
+    @GET("api/orders/my")
+    suspend fun myOrders(): List<CreateOrderResponse>
+
+    // ---- Search Trending ----
+    @GET("api/search/trending")
+    suspend fun trendingSearches(): TrendingSearchResponse
 }

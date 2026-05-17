@@ -18,6 +18,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.Chat
@@ -156,6 +162,10 @@ fun MoreScreen(
     onSetThemeMode: (ThemeMode) -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    val expandedGroups = remember { mutableStateOf(setOf("Trade & Browse", "Social", "Account", "Help & Info")) }
+    fun toggleGroup(header: String) {
+        expandedGroups.value = if (header in expandedGroups.value) expandedGroups.value - header else expandedGroups.value + header
+    }
 
     // ── Web-matching 3 color-coded groups ──────────────────────────────
     val tradeGroup = MoreGroup(
@@ -417,21 +427,40 @@ fun MoreScreen(
         }
 
         filteredGroups.forEach { group ->
-            // Group header with accent color
+            // Group header with accent color — collapsible
             item(key = "hdr_${group.header}") {
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    group.header.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = group.accentColor,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { toggleGroup(group.header) }
+                        .padding(start = 4.dp, bottom = 2.dp, end = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        group.header.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = group.accentColor,
+                    )
+                    Icon(
+                        if (group.header in expandedGroups.value) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (group.header in expandedGroups.value) "Collapse" else "Expand",
+                        tint = group.accentColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
 
-            // Group card with colored background
+            // Group card with colored background — animated collapse
             item(key = "grp_${group.header}") {
+                AnimatedVisibility(
+                    visible = group.header in expandedGroups.value,
+                    enter = expandVertically(),
+                    exit = shrinkVertically(),
+                ) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = group.bgColor),
@@ -512,6 +541,7 @@ fun MoreScreen(
                             }
                         }
                     }
+                }
                 }
             }
         }

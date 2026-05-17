@@ -3,9 +3,11 @@ package com.mhub.app
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import coil.decode.DataSource
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
+import coil.util.DebugLogger
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
@@ -33,18 +35,20 @@ class MhubApplication : Application(), ImageLoaderFactory {
             .memoryCachePolicy(CachePolicy.ENABLED)
             .memoryCache {
                 MemoryCache.Builder(this)
-                    .maxSizePercent(0.25)
+                    .maxSizePercent(0.30)  // 30% of heap — aggressive cache for 10M users
+                    .strongReferencesEnabled(true)
                     .build()
             }
             .diskCachePolicy(CachePolicy.ENABLED)
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache"))
-                    .maxSizeBytes(100L * 1024 * 1024)
+                    .maxSizeBytes(150L * 1024 * 1024) // 150MB disk cache
                     .build()
             }
-            .crossfade(true)
-            .respectCacheHeaders(true)
+            .crossfade(150) // Fast crossfade (150ms)
+            .respectCacheHeaders(false) // Always use our cache policy — faster
+            .networkCachePolicy(CachePolicy.ENABLED)
             .build()
     }
 }

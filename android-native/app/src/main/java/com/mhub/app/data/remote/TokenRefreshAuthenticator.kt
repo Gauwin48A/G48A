@@ -50,7 +50,8 @@ class TokenRefreshAuthenticator(
 
         try {
             val refreshToken = runBlocking { tokenStore.refreshTokenBlocking() } ?: run {
-                runBlocking { tokenStore.clear() }
+                // No refresh token available — don't clear access token (let user stay logged in)
+                // Individual screens will handle unauthorized state gracefully
                 return null
             }
 
@@ -64,7 +65,8 @@ class TokenRefreshAuthenticator(
                     .header("X-Retry-After-Refresh", "1")
                     .build()
             } else {
-                runBlocking { tokenStore.clear() }
+                // Refresh failed — don't aggressively clear token (could be transient network issue)
+                // Token will be cleared on explicit logout
                 return null
             }
         } finally {

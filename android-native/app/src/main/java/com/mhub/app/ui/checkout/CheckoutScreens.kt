@@ -43,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mhub.app.ui.components.StepProgressIndicator
+import androidx.compose.runtime.collectAsState
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -321,11 +324,26 @@ fun CheckoutReviewScreen(
     address: String,
     paymentMethod: String,
     onBack: () -> Unit,
-    onPlaceOrder: () -> Unit,
+    onPlaceOrder: (orderId: String?) -> Unit,
+    onOrderFailed: () -> Unit = {},
     cartSubtotal: Double = 0.0,
+    viewModel: CheckoutViewModel = hiltViewModel(),
 ) {
-    val scope = rememberCoroutineScope()
-    var isPlacing by remember { mutableStateOf(false) }
+    val vmState by viewModel.state.collectAsState()
+
+    // Sync address/payment into VM on first composition
+    LaunchedEffect(address, paymentMethod) {
+        viewModel.setAddress(address)
+        viewModel.setPaymentMethod(paymentMethod)
+    }
+
+    // React to VM state changes
+    LaunchedEffect(vmState.placed, vmState.error) {
+        if (vmState.placed) onPlaceOrder(vmState.orderId)
+        if (vmState.error != null) onOrderFailed()
+    }
+
+    val isPlacing = vmState.placing
 
     // Use real cart subtotal if provided, else estimate
     val subtotal = if (cartSubtotal > 0) cartSubtotal else 0.0
@@ -349,6 +367,22 @@ fun CheckoutReviewScreen(
                 currentStep = 2,
                 modifier = Modifier.padding(16.dp),
             )
+
+            // Error banner
+            if (vmState.error != null) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.ErrorOutline, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(vmState.error ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -392,14 +426,7 @@ fun CheckoutReviewScreen(
                 item { Spacer(Modifier.height(8.dp)) }
             }
             Button(
-                onClick = {
-                    scope.launch {
-                        isPlacing = true
-                        delay(1500L)
-                        isPlacing = false
-                        onPlaceOrder()
-                    }
-                },
+                onClick = { viewModel.placeOrder(total) },
                 enabled = !isPlacing,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -425,8 +452,9 @@ fun CheckoutReviewScreen(
 fun OrderConfirmationScreen(
     onContinueShopping: () -> Unit,
     onViewOrder: () -> Unit,
+    orderId: String? = null,
 ) {
-    val orderId = remember { "MH${UUID.randomUUID().toString().take(8).uppercase()}" }
+    val displayOrderId = orderId ?: remember { "MH${UUID.randomUUID().toString().take(8).uppercase()}" }
 
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -450,7 +478,7 @@ fun OrderConfirmationScreen(
                 ),
             )
             Text(
-                "Order ID: $orderId",
+                "Order ID: $displayOrderId",
                 style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
             Text(

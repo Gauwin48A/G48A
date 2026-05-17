@@ -105,9 +105,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Stable
 import javax.inject.Inject
 import kotlin.math.max
 
+@Stable
 data class RewardsUiState(
     val loading: Boolean = false,
     val refreshing: Boolean = false,

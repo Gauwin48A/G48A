@@ -1,5 +1,6 @@
 package com.mhub.app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -8,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.mhub.app.core.ConnectivityObserver
+import com.mhub.app.core.LocaleManager
 import com.mhub.app.ui.MhubApp
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -16,8 +18,19 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var connectivityObserver: ConnectivityObserver
+    @Inject lateinit var localeManager: LocaleManager
 
     private val deepLinkUri = mutableStateOf<String?>(null)
+
+    override fun attachBaseContext(newBase: Context) {
+        // Apply locale to activity context for proper resource resolution
+        val localeCtx = if (::localeManager.isInitialized) {
+            localeManager.applyToContext(newBase)
+        } else {
+            newBase
+        }
+        super.attachBaseContext(localeCtx)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -36,6 +49,7 @@ class MainActivity : AppCompatActivity() {
                 connectivityObserver = connectivityObserver,
                 deepLinkUri = deepLinkUri.value,
                 onDeepLinkConsumed = { deepLinkUri.value = null },
+                localeManager = localeManager,
             )
         }
     }

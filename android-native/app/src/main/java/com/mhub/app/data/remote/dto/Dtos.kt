@@ -1288,3 +1288,28 @@ data class SnoozeRequest(
 data class SavedSearchNotificationRequest(
     val enabled: Boolean,
 )
+
+// -------- Order / Checkout --------
+@Serializable
+data class CreateOrderRequest(
+    @SerialName("post_id") val postId: String,
+    @SerialName("buyer_id") val buyerId: String,
+    @SerialName("address_id") val addressId: String = "",
+    @SerialName("payment_method") val paymentMethod: String = "UPI",
+    val amount: Double = 0.0,
+    val currency: String = "INR",
+)
+
+@Serializable
+data class CreateOrderResponse(
+    val success: Boolean = true,
+    @SerialName("order_id") val orderId: String? = null,
+    @SerialName("transaction_id") val transactionId: String? = null,
+    val message: String? = null,
+    @SerialName("payment_url") val paymentUrl: String? = null,
+)
+
+@Serializable
+data class TrendingSearchResponse(
+    val queries: List<String> = emptyList(),
+)
