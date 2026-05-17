@@ -103,7 +103,7 @@ private val SOCIAL_BG = Color(0xFFECFDF5)
 private val ACCOUNT_ACCENT = Color(0xFFF59E0B)
 private val ACCOUNT_BG = Color(0xFFFFFBEB)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun MoreScreen(
     onOpenNotifications: () -> Unit,
@@ -306,10 +306,23 @@ fun MoreScreen(
             }
         }
 
-        // Language selector — matches web's LanguageSelector in More drawer
+        // Language selector — matches web's 25 languages
         item {
             val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
             var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
+            var showAllLangs by rememberSaveable { mutableStateOf(false) }
+            val indianLangs = listOf(
+                "en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்",
+                "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી",
+                "ml" to "മലയാളം", "pa" to "ਪੰਜਾਬੀ", "ur" to "اردو",
+            )
+            val intlLangs = listOf(
+                "es" to "Español", "fr" to "Français", "de" to "Deutsch", "pt" to "Português",
+                "it" to "Italiano", "ru" to "Русский", "ar" to "العربية", "ja" to "日本語",
+                "ko" to "한국어", "zh" to "中文", "id" to "Indonesia", "tr" to "Türkçe",
+                "vi" to "Tiếng Việt", "th" to "ไทย", "sw" to "Kiswahili",
+            )
+            val displayLangs = if (showAllLangs) indianLangs + intlLangs else indianLangs.take(4)
             Card(
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -325,10 +338,26 @@ fun MoreScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("Language", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            if (showAllLangs) "Show less" else "All 25 →",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { showAllLangs = !showAllLangs },
+                        )
                     }
                     Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("en" to "English", "hi" to "हिन्दी", "ta" to "தமிழ்", "te" to "తెలుగు").forEach { (code, label) ->
+                    if (showAllLangs) {
+                        Text("Indian", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
+                            modifier = Modifier.padding(bottom = 4.dp))
+                    }
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        val currentList = if (showAllLangs) indianLangs else displayLangs
+                        currentList.forEach { (code, label) ->
                             FilterChip(
                                 selected = selectedLang == code,
                                 onClick = {
@@ -343,6 +372,32 @@ fun MoreScreen(
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                                 ),
                             )
+                        }
+                    }
+                    if (showAllLangs) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("International", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
+                            modifier = Modifier.padding(bottom = 4.dp))
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            intlLangs.forEach { (code, label) ->
+                                FilterChip(
+                                    selected = selectedLang == code,
+                                    onClick = {
+                                        selectedLang = code
+                                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                                            androidx.core.os.LocaleListCompat.forLanguageTags(code),
+                                        )
+                                    },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }

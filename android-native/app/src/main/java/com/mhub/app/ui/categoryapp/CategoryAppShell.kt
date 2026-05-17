@@ -107,9 +107,9 @@ data class CategoryAppDef(
 
 val CATEGORY_APPS = listOf(
     CategoryAppDef("electronics", "Electronics", "📱"),
-    CategoryAppDef("fashion",     "Fashion",     "👗"),
-    CategoryAppDef("grocery",     "Grocery",     "🛒"),
-    CategoryAppDef("furniture",   "Furniture",   "🪑"),
+    CategoryAppDef("fashion",     "Fashion",     "�"),
+    CategoryAppDef("vehicles",    "Vehicles",    "🚗"),
+    CategoryAppDef("others",      "Others",      "✨"),
 )
 
 internal enum class CategoryTab {
