@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -111,7 +112,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -411,7 +414,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold) },
                 actions = {
                     androidx.compose.material3.IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -473,7 +476,7 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
+                                .height(48.dp),
                         ) {
                             // Cover image or gradient placeholder
                             Box(
@@ -516,7 +519,7 @@ fun ProfileScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(heroGradient)
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                         ) {
                             val completionPct = profileCompletion(user)
                             val avatarPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -552,7 +555,7 @@ fun ProfileScreen(
                                     verticalArrangement = Arrangement.spacedBy(3.dp),
                                 ) {
                                     Text(
-                                        text = user?.displayName ?: "Guest",
+                                        text = user?.displayName ?: stringResource(R.string.profile_guest),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
@@ -566,13 +569,13 @@ fun ProfileScreen(
                                     // Followers / Following inline
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text(
-                                            "${state.followersCount} Followers",
+                                            stringResource(R.string.profile_followers_count, state.followersCount),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color.White.copy(alpha = 0.8f),
                                             fontWeight = FontWeight.SemiBold,
                                         )
                                         Text(
-                                            "${state.followingCount} Following",
+                                            stringResource(R.string.profile_following_count, state.followingCount),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color.White.copy(alpha = 0.8f),
                                             fontWeight = FontWeight.SemiBold,
@@ -629,17 +632,194 @@ fun ProfileScreen(
                                 }
                             }
                         }
+                        // ─── Badges Row ────────────────────────────────────────
+                        val kycStatus = user?.kycStatus
+                        val roleLabel = when (user?.role?.lowercase()) {
+                            "admin" -> "Admin"
+                            "seller" -> "Seller"
+                            "moderator" -> "Mod"
+                            else -> null
+                        }
+                        val tierCol = tierColor(user?.currentPlan)
+                        val tierLbl = tierLabel(user?.currentPlan)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            when (kycStatus) {
+                                "verified" -> Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF22C55E).copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.5f)),
+                                ) {
+                                    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(12.dp))
+                                        Text(stringResource(R.string.profile_verified), style = MaterialTheme.typography.labelSmall, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                                "pending" -> Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFF59E0B).copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f)),
+                                ) {
+                                    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Default.RadioButtonUnchecked, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp))
+                                        Text(stringResource(R.string.profile_pending), style = MaterialTheme.typography.labelSmall, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                                else -> Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                ) {
+                                    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Default.Shield, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                                        Text(stringResource(R.string.profile_unverified), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = tierCol.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, tierCol.copy(alpha = 0.5f)),
+                            ) {
+                                Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Default.Star, null, tint = tierCol, modifier = Modifier.size(12.dp))
+                                    Text(tierLbl, style = MaterialTheme.typography.labelSmall, color = tierCol, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                            if (roleLabel != null) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF6366F1).copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.5f)),
+                                ) {
+                                    Text(roleLabel, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                            state.responseTimeMinutes?.let { rt ->
+                                if (rt > 0) {
+                                    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                        Text("⚡ ${rt}m response", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                        // ─── Action Buttons ────────────────────────────────────
+                        var showMoreMenu by remember { mutableStateOf(false) }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedButton(
+                                onClick = { viewModel.shareProfile(context) },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.height(36.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                            ) {
+                                Icon(Icons.Default.Share, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.profile_share), style = MaterialTheme.typography.labelMedium)
+                            }
+                            if (state.isOwnProfile) {
+                                if (user?.isKycVerified != true) {
+                                    Button(
+                                        onClick = onOpenKyc,
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.height(36.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                                    ) {
+                                        Icon(Icons.Default.VerifiedUser, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(stringResource(R.string.profile_verify_kyc), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                                OutlinedButton(
+                                    onClick = { showEditDialog = true },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.height(36.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                ) {
+                                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(stringResource(R.string.profile_edit), style = MaterialTheme.typography.labelMedium)
+                                }
+                            } else {
+                                if (state.isFollowing) {
+                                    OutlinedButton(
+                                        onClick = { viewModel.toggleFollow() },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.height(36.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                    ) {
+                                        Icon(Icons.Default.PersonRemove, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(stringResource(R.string.profile_unfollow), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = { viewModel.toggleFollow() },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.height(36.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                    ) {
+                                        Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(stringResource(R.string.profile_follow), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Box {
+                                IconButton(
+                                    onClick = { showMoreMenu = !showMoreMenu },
+                                    modifier = Modifier.size(36.dp),
+                                ) {
+                                    Icon(Icons.Default.MoreVert, "More options")
+                                }
+                                DropdownMenu(
+                                    expanded = showMoreMenu,
+                                    onDismissRequest = { showMoreMenu = false },
+                                ) {
+                                    if (!state.isOwnProfile) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.profile_block_user)) },
+                                            onClick = { viewModel.blockUser(); showMoreMenu = false },
+                                            leadingIcon = { Icon(Icons.Default.Block, null) },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.profile_report_user)) },
+                                            onClick = { viewModel.reportUser(); showMoreMenu = false },
+                                            leadingIcon = { Icon(Icons.Default.Flag, null) },
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.profile_share_profile)) },
+                                        onClick = { viewModel.shareProfile(context); showMoreMenu = false },
+                                        leadingIcon = { Icon(Icons.Default.Share, null) },
+                                    )
+                                }
+                            }
+                        }
                         // ─── Profile Tabs ─────────────────────────────────────
                         ScrollableTabRow(
                             selectedTabIndex = selectedTab,
                             edgePadding = 16.dp,
                             containerColor = MaterialTheme.colorScheme.surface,
                         ) {
-                            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Overview") })
-                            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Personal Info") })
-                            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Preferences") })
-                            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Settings") })
-                            Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("Reviews") })
+                            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text(stringResource(R.string.profile_tab_overview)) })
+                            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text(stringResource(R.string.profile_tab_personal)) })
+                            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text(stringResource(R.string.profile_tab_preferences)) })
+                            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text(stringResource(R.string.profile_tab_settings)) })
+                            Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text(stringResource(R.string.profile_tab_reviews)) })
                         }
 
                         if (selectedTab == 0) {
@@ -662,7 +842,7 @@ fun ProfileScreen(
                         ) {
                             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text(
-                                    "MARKETPLACE PULSE",
+                                    stringResource(R.string.profile_marketplace_pulse),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -671,21 +851,21 @@ fun ProfileScreen(
                                 // 2x2 grid
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     PulseStatCard(
-                                        label = "Listings", value = state.listingsCount,
+                                        label = stringResource(R.string.profile_listings), value = state.listingsCount,
                                         accentColor = Color(0xFF6366F1), modifier = Modifier.weight(1f),
                                     )
                                     PulseStatCard(
-                                        label = "Rating", value = state.ratingValue,
+                                        label = stringResource(R.string.profile_rating), value = state.ratingValue,
                                         accentColor = Color(0xFFF59E0B), modifier = Modifier.weight(1f),
                                     )
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     PulseStatCard(
-                                        label = "Sales", value = state.salesCount,
+                                        label = stringResource(R.string.profile_sales), value = state.salesCount,
                                         accentColor = Color(0xFF10B981), modifier = Modifier.weight(1f),
                                     )
                                     PulseStatCard(
-                                        label = "Rank", value = tierLabel(user?.currentPlan),
+                                        label = stringResource(R.string.profile_rank), value = tierLabel(user?.currentPlan),
                                         accentColor = tierColor(user?.currentPlan), modifier = Modifier.weight(1f),
                                     )
                                 }
@@ -738,29 +918,29 @@ fun ProfileScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    "QUICK ACTIONS",
+                                    stringResource(R.string.profile_quick_actions),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.2.sp,
                                 )
                                 Text(
-                                    "Jump to actions",
+                                    stringResource(R.string.profile_jump_actions),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.Dashboard, label = "My Home", subtitle = "Dashboard", accentColor = Color(0xFF6366F1), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Feed", subtitle = "Personalized", accentColor = Color(0xFF0EA5E9), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Default.Dashboard, label = stringResource(R.string.profile_my_home), subtitle = stringResource(R.string.profile_dashboard), accentColor = Color(0xFF6366F1), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = stringResource(R.string.profile_my_feed), subtitle = stringResource(R.string.profile_personalized), accentColor = Color(0xFF0EA5E9), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.Star, label = "My Reviews", subtitle = "Ratings & feedback", accentColor = Color(0xFFF59E0B), onClick = onOpenAnalytics, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Listings", subtitle = "Active posts", accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Default.Star, label = stringResource(R.string.profile_my_reviews), subtitle = stringResource(R.string.profile_ratings_feedback), accentColor = Color(0xFFF59E0B), onClick = onOpenAnalytics, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = stringResource(R.string.profile_my_listings), subtitle = stringResource(R.string.profile_active_posts), accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.BarChart, label = "My Offers", subtitle = "Negotiations", accentColor = Color(0xFFF97316), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.Default.VerifiedUser, label = "Verification", subtitle = if (user?.isKycVerified == true) "Verified ✓" else "Get verified", accentColor = Color(0xFF8B5CF6), onClick = onOpenKyc, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Default.BarChart, label = stringResource(R.string.profile_my_offers), subtitle = stringResource(R.string.profile_negotiations), accentColor = Color(0xFFF97316), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Default.VerifiedUser, label = stringResource(R.string.profile_verification), subtitle = if (user?.isKycVerified == true) stringResource(R.string.profile_verified_check) else stringResource(R.string.profile_get_verified), accentColor = Color(0xFF8B5CF6), onClick = onOpenKyc, modifier = Modifier.weight(1f))
                             }
                         }
 
@@ -774,7 +954,7 @@ fun ProfileScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text(
-                                    "MY RECENT POSTS",
+                                    stringResource(R.string.profile_recent_posts),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,

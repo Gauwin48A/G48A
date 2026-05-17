@@ -66,6 +66,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
@@ -218,8 +220,7 @@ fun CategoryHubScreen(
             // Title
             Text(
                 text = buildAnnotatedString {
-                    append("Choose Your ")
-                    withStyle(SpanStyle(brush = titleGradient)) { append("World") }
+                    append(stringResource(R.string.hub_choose_world))
                 },
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
@@ -251,7 +252,7 @@ fun CategoryHubScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search apps…", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+                placeholder = { Text(stringResource(R.string.hub_search_placeholder), fontSize = 13.sp, color = Color(0xFF94A3B8)) },
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp)) },
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) IconButton(onClick = { searchQuery = "" }) {
@@ -351,11 +352,11 @@ private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int) {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            HubStat("🏪", if (totalListings > 0) formatCompact(totalListings) else "—", "Listings")
+            HubStat("🏪", if (totalListings > 0) formatCompact(totalListings) else "—", stringResource(R.string.hub_total_listings))
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("🔥", if (newToday > 0) "+$newToday" else "0", "New Today")
+            HubStat("🔥", if (newToday > 0) "+$newToday" else "0", stringResource(R.string.hub_new_today))
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("📦", "$categoryCount", "Categories")
+            HubStat("📦", "$categoryCount", stringResource(R.string.categories))
         }
     }
 }

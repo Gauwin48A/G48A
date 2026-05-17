@@ -1,5 +1,7 @@
 package com.mhub.app.ui.chat
 
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -380,16 +382,16 @@ fun ChatScreen(
                 modifier = androidx.compose.ui.Modifier.padding(32.dp),
             ) {
                 Text("🔒", fontSize = 48.sp)
-                Text("Sign in to Message", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
-                Text("Create an account or sign in to send and receive messages with sellers.", color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                Text(stringResource(R.string.chat_sign_in_title), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
+                Text(stringResource(R.string.chat_sign_in_subtitle), color = Color(0xFF64748B), textAlign = TextAlign.Center)
                 Button(
                     onClick = onNavigateToLogin,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                     modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                ) { Text("Sign In / Sign Up", fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(R.string.chat_sign_in_action), fontWeight = FontWeight.SemiBold) }
                 OutlinedButton(onClick = onBack, shape = RoundedCornerShape(12.dp), modifier = androidx.compose.ui.Modifier.fillMaxWidth()) {
-                    Text("Go Back")
+                    Text(stringResource(R.string.chat_go_back))
                 }
             }
         }
@@ -430,7 +432,7 @@ private fun ConversationListScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Messages", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.chat_messages), fontWeight = FontWeight.Bold)
                         if (state.conversations.isNotEmpty()) {
                             Text(
                                 "${state.conversations.size} conversation${if (state.conversations.size != 1) "s" else ""}",
@@ -455,7 +457,7 @@ private fun ConversationListScreen(
             // Search bar
             OutlinedTextField(
                 value = searchQuery, onValueChange = { searchQuery = it },
-                placeholder = { Text("Search messages\u2026") },
+                placeholder = { Text(stringResource(R.string.chat_search_hint)) },
                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.Chat, null) },
                 trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { searchQuery = "" }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Clear") } },
                 singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -669,34 +671,34 @@ private fun MessageThreadScreen(
     if (showBlockDialog) {
         AlertDialog(
             onDismissRequest = { showBlockDialog = false },
-            title = { Text("Block User") },
-            text = { Text("Are you sure you want to block ${conversation.displayName}? They won't be able to message you.") },
-            confirmButton = { TextButton(onClick = { viewModel.blockUser(); showBlockDialog = false; onBack() }) { Text("Block", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { showBlockDialog = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.chat_block_user)) },
+            text = { Text(stringResource(R.string.chat_block_confirm, conversation.displayName)) },
+            confirmButton = { TextButton(onClick = { viewModel.blockUser(); showBlockDialog = false; onBack() }) { Text(stringResource(R.string.chat_block), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { showBlockDialog = false }) { Text(stringResource(R.string.chat_cancel)) } },
         )
     }
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Report Conversation") },
-            text = { Text("Report this conversation for spam, harassment, or inappropriate content?") },
-            confirmButton = { TextButton(onClick = { viewModel.reportConversation(); showReportDialog = false; onBack() }) { Text("Report", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { showReportDialog = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.chat_report_title)) },
+            text = { Text(stringResource(R.string.chat_report_confirm)) },
+            confirmButton = { TextButton(onClick = { viewModel.reportConversation(); showReportDialog = false; onBack() }) { Text(stringResource(R.string.chat_report), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { showReportDialog = false }) { Text(stringResource(R.string.chat_cancel)) } },
         )
     }
     deleteTargetId?.let { id ->
         AlertDialog(
             onDismissRequest = { deleteTargetId = null },
-            title = { Text("Delete Message") },
-            text = { Text("Delete this message? This cannot be undone.") },
-            confirmButton = { TextButton(onClick = { viewModel.deleteMessage(id); deleteTargetId = null }) { Text("Delete", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.chat_delete_message)) },
+            text = { Text(stringResource(R.string.chat_delete_confirm)) },
+            confirmButton = { TextButton(onClick = { viewModel.deleteMessage(id); deleteTargetId = null }) { Text(stringResource(R.string.chat_delete), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text(stringResource(R.string.chat_cancel)) } },
         )
     }
     reactionTargetId?.let { id ->
         AlertDialog(
             onDismissRequest = { reactionTargetId = null },
-            title = { Text("React to message") },
+            title = { Text(stringResource(R.string.chat_react)) },
             text = {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                     listOf("❤️", "👍", "😂", "😮", "😢", "🙏").forEach { emoji ->
@@ -711,7 +713,7 @@ private fun MessageThreadScreen(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { reactionTargetId = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { reactionTargetId = null }) { Text(stringResource(R.string.chat_close)) } },
         )
     }
 
@@ -770,11 +772,11 @@ private fun MessageThreadScreen(
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Block, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Block User") } },
+                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Block, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.chat_block_user)) } },
                                 onClick = { showMenu = false; showBlockDialog = true },
                             )
                             DropdownMenuItem(
-                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Report, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Report Conversation") } },
+                                text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Report, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.chat_report_title)) } },
                                 onClick = { showMenu = false; showReportDialog = true },
                             )
                         }
@@ -803,7 +805,7 @@ private fun MessageThreadScreen(
                             input = it
                             viewModel.onTyping()
                         },
-                        placeholder = { Text("Type a message...") },
+                        placeholder = { Text(stringResource(R.string.chat_type_message)) },
                         leadingIcon = {
                             IconButton(onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf")) }) {
                                 Icon(Icons.Filled.AttachFile, "Attach", tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))

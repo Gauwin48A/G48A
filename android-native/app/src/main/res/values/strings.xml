@@ -76,6 +76,13 @@
     <string name="signup_sign_in_here">Sign in here</string>
     <string name="signup_terms">By signing up you agree to our Terms and Privacy Policy.</string>
 
+    <!-- Navigation Tabs (bottom bar) -->
+    <string name="tab_home">Home</string>
+    <string name="tab_explore">Explore</string>
+    <string name="tab_feed">Feed</string>
+    <string name="tab_more">More</string>
+    <string name="tab_profile">Profile</string>
+
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_all_posts">All Posts</string>
@@ -115,7 +122,7 @@
     <string name="wishlist_empty">Your wishlist is empty.</string>
     <string name="search_hint">Search posts</string>
     <string name="search_empty">Search for items, services, or jobs.</string>
-    <string name="search_no_results">No results.</string>
+    <string name="search_no_results_simple">No results.</string>
 
     <!-- Create Post -->
     <string name="post_create_title">Create listing</string>
@@ -242,4 +249,699 @@
     <string name="analytics">Analytics</string>
     <string name="my_posts_label">My Posts</string>
     <string name="trust_marketplace">Trust-First Marketplace</string>
+
+    <!-- Profile Actions -->
+    <string name="profile_share">Share</string>
+    <string name="profile_edit">Edit</string>
+    <string name="profile_follow">Follow</string>
+    <string name="profile_unfollow">Unfollow</string>
+    <string name="profile_verify_kyc">Verify KYC</string>
+    <string name="profile_block_user">Block User</string>
+    <string name="profile_report_user">Report User</string>
+    <string name="profile_share_profile">Share Profile</string>
+
+    <!-- Profile Badges -->
+    <string name="badge_verified">Verified</string>
+    <string name="badge_pending">Pending</string>
+    <string name="badge_unverified">Unverified</string>
+
+    <!-- Profile Tabs -->
+    <string name="profile_tab_overview">Overview</string>
+    <string name="profile_tab_personal">Personal Info</string>
+    <string name="profile_tab_preferences">Preferences</string>
+    <string name="profile_tab_settings">Settings</string>
+    <string name="profile_tab_reviews">Reviews</string>
+
+    <!-- Marketplace / Trust -->
+    <string name="marketplace_pulse">Marketplace Pulse</string>
+    <string name="trust_score">Trust Score</string>
+
+    <!-- Rewards Tabs -->
+    <string name="rewards_tab_dashboard">Dashboard</string>
+    <string name="rewards_tab_earn">Earn</string>
+    <string name="rewards_tab_referrals">Referrals</string>
+    <string name="rewards_tab_activity">Activity</string>
+
+    <!-- Time Filters -->
+    <string name="filter_today">Today</string>
+    <string name="filter_this_week">This Week</string>
+    <string name="filter_this_month">This Month</string>
+    <string name="filter_all_time">All Time</string>
+
+    <!-- Feed Tabs -->
+    <string name="feed_tab_for_you">For You</string>
+    <string name="feed_tab_following">Following</string>
+    <string name="feed_tab_recent">Recent</string>
+
+    <!-- Feed Screen -->
+    <string name="feed_title">Feed</string>
+    <string name="feed_subtitle">Community updates</string>
+    <string name="feed_search_placeholder">Search in feed…</string>
+    <string name="feed_unavailable">Feed unavailable</string>
+    <string name="feed_empty_title">No posts yet</string>
+    <string name="feed_empty_message">Be the first to share something with the community</string>
+    <string name="feed_create_post">Create Post</string>
+    <string name="feed_sort_prefix">Sort:</string>
+    <string name="feed_translated_to">Translated to %s · Tap language to switch</string>
+    <string name="feed_comment">Comment</string>
+    <string name="feed_comments">Comments</string>
+    <string name="feed_write_comment">Write a comment…</string>
+
+    <!-- For You Screen -->
+    <string name="foryou_title">For You</string>
+    <string name="foryou_subtitle">Personalized recommendations</string>
+    <string name="foryou_ai_curated">🤖 AI Curated</string>
+    <string name="foryou_error_title">Unable to load recommendations</string>
+    <string name="foryou_search_placeholder">Search posts…</string>
+    <string name="foryou_items_count">%d items</string>
+    <string name="foryou_sponsored">Sponsored</string>
+    <string name="foryou_ascending">Ascending</string>
+    <string name="foryou_descending">Descending</string>
+    <string name="foryou_compact">Compact</string>
+    <string name="foryou_normal">Normal</string>
+    <string name="foryou_spacious">Spacious</string>
+
+    <!-- Category / Products -->
+    <string name="cat_great_deals">🔥 Great Deals</string>
+    <string name="cat_deals_subtitle">Shop verified products at best prices</string>
+    <string name="cat_no_products">No products found</string>
+    <string name="cat_try_filters">Try adjusting your filters</string>
+    <string name="cat_showing_count">Showing %1$d of %2$d</string>
+    <string name="cat_sort_relevance">Relevance</string>
+    <string name="cat_sort_price_low">Price: Low to High</string>
+    <string name="cat_sort_price_high">Price: High to Low</string>
+    <string name="cat_sort_rating">Top Rated</string>
+    <string name="cat_sort_newest">Newest First</string>
+    <string name="cat_sort_popular">Popularity</string>
+
+    <!-- Guest / Auth Gate -->
+    <string name="guest_preview_limit">Sign in to see more listings</string>
+    <string name="guest_sign_in">Sign In</string>
+    <string name="guest_create_account">Create Account</string>
+    <string name="guest_preview_message">Showing preview results. Sign in for full access.</string>
+    <string name="guest_login_required">Login required</string>
+    <string name="guest_login_to_access">Sign in to access this feature</string>
+    <string name="guest_browse_limited">You\'re browsing in guest mode</string>
+
+    <!-- Sell / Post Welcome -->
+    <string name="sell_title">Sell Something</string>
+    <string name="sell_ready">Ready to Sell?</string>
+    <string name="sell_subtitle">Reach thousands of buyers in your area. Listing is quick and easy.</string>
+    <string name="sell_how_it_works">How it works</string>
+    <string name="sell_step_photos">Add Photos</string>
+    <string name="sell_step_photos_desc">Listings with photos get 3x more views</string>
+    <string name="sell_step_details">Write Details</string>
+    <string name="sell_step_details_desc">Clear title and description sell faster</string>
+    <string name="sell_step_price">Set Your Price</string>
+    <string name="sell_step_price_desc">Price competitively to attract buyers</string>
+    <string name="sell_free_plan">Free Plan — Up to 1 photo</string>
+    <string name="sell_upgrade_hint">Upgrade to Silver or Premium for more images &amp; features</string>
+    <string name="sell_start_listing">Start Listing Now</string>
+    <string name="sell_choose_plan">Choose a Plan</string>
+    <string name="sell_current_plan">Current Plan</string>
+    <string name="sell_credits_remaining">Credits remaining</string>
+    <string name="sell_quick_start">Quick Start</string>
+
+    <!-- Plans / Tier Selection -->
+    <string name="plans_title">Choose Your Plan</string>
+    <string name="plans_subtitle">Select the plan that fits your needs</string>
+    <string name="plans_trial_title">7-day free trial on all paid plans</string>
+    <string name="plans_trial_subtitle">No payment required to start. Cancel anytime.</string>
+    <string name="plans_popular">POPULAR</string>
+    <string name="plans_recommended">RECOMMENDED</string>
+    <string name="plans_get_started_free">Get Started Free</string>
+    <string name="plans_subscribe_now">Subscribe Now</string>
+    <string name="plans_per_listing">per listing</string>
+    <string name="plans_per_month">/mo</string>
+    <string name="plans_per_quarter">/3 months</string>
+    <string name="plans_per_half_year">/6 months</string>
+    <string name="plans_per_year">/12 months</string>
+    <string name="plans_free">Free</string>
+    <string name="plans_feature_comparison">Feature Comparison</string>
+    <string name="plans_feature">Feature</string>
+    <string name="plans_basic">Basic</string>
+    <string name="plans_bronze">Bronze</string>
+    <string name="plans_silver">Silver</string>
+    <string name="plans_gold">Gold</string>
+    <string name="plans_premium">Premium</string>
+    <string name="plans_post_listings">Post listings</string>
+    <string name="plans_photos_per_post">Photos per post</string>
+    <string name="plans_promoted_posts">Promoted posts</string>
+    <string name="plans_analytics_access">Analytics</string>
+    <string name="plans_priority_support">Priority support</string>
+    <string name="plans_profile_badge">Badge on profile</string>
+    <string name="plans_kyc_verified">KYC verified</string>
+    <string name="plans_chat_support">Chat support</string>
+    <string name="plans_bulk_manage">Bulk manage posts</string>
+    <string name="plans_export_analytics">Export analytics</string>
+    <string name="plans_custom_storefront">Custom storefront</string>
+    <string name="plans_dedicated_manager">Dedicated manager</string>
+    <string name="plans_unlimited">Unlimited</string>
+
+    <!-- Compare -->
+    <string name="compare_title">Compare Listings</string>
+    <string name="compare_nothing">Nothing to compare</string>
+    <string name="compare_add_hint">Add listings to compare prices and features</string>
+    <string name="compare_clear_all">Clear All</string>
+    <string name="compare_comparison">Comparison</string>
+    <string name="compare_price">Price</string>
+    <string name="compare_condition">Condition</string>
+    <string name="compare_brand">Brand</string>
+    <string name="compare_model">Model</string>
+    <string name="compare_location">Location</string>
+    <string name="compare_color">Color</string>
+    <string name="compare_size">Size</string>
+    <string name="compare_year">Year</string>
+    <string name="compare_mileage">Mileage</string>
+    <string name="compare_ram_storage">RAM/Storage</string>
+    <string name="compare_category">Category</string>
+    <string name="compare_seller">Seller</string>
+    <string name="compare_status">Status</string>
+
+    <!-- Category Hub -->
+    <string name="hub_choose_world">Choose Your World</string>
+    <string name="hub_search_placeholder">Search products, brands, categories…</string>
+    <string name="hub_total_listings">Total Listings</string>
+    <string name="hub_new_today">New Today</string>
+    <string name="hub_active_users">Active Users</string>
+    <string name="hub_active_listings">active listings</string>
+    <string name="hub_new_today_count">new today</string>
+    <string name="hub_grid_view">Grid view</string>
+    <string name="hub_list_view">List view</string>
+
+    <!-- Chat -->
+    <string name="chat_title">Messages</string>
+    <string name="chat_empty">No conversations yet</string>
+    <string name="chat_empty_subtitle">Start a conversation from a listing</string>
+    <string name="chat_search">Search conversations…</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_online">Online</string>
+    <string name="chat_offline">Offline</string>
+    <string name="chat_login_required">Sign in to access messages</string>
+
+    <!-- Search -->
+    <string name="search_title">Search</string>
+    <string name="search_placeholder">Search posts, categories, users…</string>
+    <string name="search_results_for">Results for \"%s\"</string>
+    <string name="search_filters">Filters</string>
+
+    <!-- More Menu items -->
+    <string name="more_sell">Sell</string>
+    <string name="more_sell_desc">List an item</string>
+    <string name="more_plans">Plans</string>
+    <string name="more_plans_desc">Upgrade your plan</string>
+    <string name="more_centre">Centre</string>
+    <string name="more_centre_desc">Manage your centre</string>
+    <string name="more_all_categories">All Categories</string>
+    <string name="more_all_categories_desc">Browse all categories</string>
+    <string name="more_category_mode">Category Mode</string>
+    <string name="more_category_mode_desc">Switch category view</string>
+    <string name="more_subcategories">Subcategories</string>
+    <string name="more_subcategories_desc">Browse subcategories</string>
+    <string name="more_nearby">Nearby</string>
+    <string name="more_nearby_desc">Items near you</string>
+    <string name="more_saved_searches">Saved Searches</string>
+    <string name="more_saved_searches_desc">Your saved searches</string>
+    <string name="more_wishlist">Wishlist</string>
+    <string name="more_wishlist_desc">Items you like</string>
+    <string name="more_recently_viewed">Recently Viewed</string>
+    <string name="more_recently_viewed_desc">Browsing history</string>
+    <string name="more_cart">Cart</string>
+    <string name="more_cart_desc">Items in cart</string>
+    <string name="more_compare">Compare</string>
+    <string name="more_compare_desc">Compare listings</string>
+    <string name="more_scanner">Scanner</string>
+    <string name="more_scanner_desc">Scan QR/barcode</string>
+    <string name="more_feed">Feed</string>
+    <string name="more_feed_desc">Community updates</string>
+    <string name="more_my_feed">My Feed</string>
+    <string name="more_my_feed_desc">Your posts</string>
+    <string name="more_public_wall">Public Wall</string>
+    <string name="more_public_wall_desc">Community wall</string>
+    <string name="more_chat">Chat</string>
+    <string name="more_chat_desc">Messages</string>
+    <string name="more_channels">Channels</string>
+    <string name="more_channels_desc">Browse channels</string>
+    <string name="more_my_reviews">My Reviews</string>
+    <string name="more_my_reviews_desc">Reviews you\'ve written</string>
+    <string name="more_my_offers">My Offers</string>
+    <string name="more_my_offers_desc">Your offers</string>
+    <string name="more_activity_hub">Activity Hub</string>
+    <string name="more_activity_hub_desc">Your activity</string>
+    <string name="more_feedback">Feedback</string>
+    <string name="more_feedback_desc">Share feedback</string>
+    <string name="more_complaints">Complaints</string>
+    <string name="more_complaints_desc">File a complaint</string>
+    <string name="more_profile">Profile</string>
+    <string name="more_profile_desc">Your profile</string>
+    <string name="more_my_posts">My Posts</string>
+    <string name="more_my_posts_desc">Your listings</string>
+    <string name="more_dashboard">Dashboard</string>
+    <string name="more_dashboard_desc">Overview</string>
+    <string name="more_bought_posts">Bought Posts</string>
+    <string name="more_bought_posts_desc">Purchase history</string>
+    <string name="more_sold_posts">Sold Posts</string>
+    <string name="more_sold_posts_desc">Sales history</string>
+    <string name="more_rewards">Rewards</string>
+    <string name="more_rewards_desc">Earn rewards</string>
+    <string name="more_notifications">Notifications</string>
+    <string name="more_notifications_desc">Alerts</string>
+    <string name="more_analytics">Analytics</string>
+    <string name="more_analytics_desc">Performance data</string>
+    <string name="more_verification">Verification</string>
+    <string name="more_verification_desc">Verify your identity</string>
+    <string name="more_security">Security</string>
+    <string name="more_security_desc">Account security</string>
+    <string name="more_delete_account">Delete Account</string>
+    <string name="more_delete_account_desc">Permanently delete</string>
+    <string name="more_admin_panel">Admin Panel</string>
+    <string name="more_admin_panel_desc">Admin tools</string>
+    <string name="more_about">About Us</string>
+    <string name="more_about_desc">About MHub</string>
+    <string name="more_contact">Contact Us</string>
+    <string name="more_contact_desc">Get in touch</string>
+    <string name="more_faq">FAQ</string>
+    <string name="more_faq_desc">Common questions</string>
+    <string name="more_logout">Sign Out</string>
+    <string name="more_login">Sign In</string>
+
+    <!-- Rewards Screen (tabs) -->
+    <string name="rewards_title">Rewards</string>
+    <string name="rewards_hero_level">Level progress</string>
+    <string name="rewards_total_points">Total Points</string>
+    <string name="rewards_chain_depth">Chain Depth</string>
+    <string name="rewards_active_referrals">Active Referrals</string>
+    <string name="rewards_success_rate">Success Rate</string>
+    <string name="rewards_coins">coins</string>
+    <string name="rewards_daily_checkin">Daily Check-In</string>
+    <string name="rewards_spin_wheel">Spin Wheel</string>
+    <string name="rewards_scratch_card">Scratch Card</string>
+    <string name="rewards_streak">Streak</string>
+    <string name="rewards_check_in">Check In</string>
+    <string name="rewards_spin">Spin</string>
+    <string name="rewards_scratch">Scratch</string>
+    <string name="rewards_browse_marketplace">Browse Marketplace</string>
+    <string name="rewards_sign_in_required">Sign in to access Rewards</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_empty">No notifications yet</string>
+    <string name="notifications_empty_subtitle">You\'re all caught up!</string>
+    <string name="notifications_mark_all_read">Mark all read</string>
+    <string name="notifications_settings">Notification settings</string>
+
+    <!-- Commerce: Bought/Sold/Offers -->
+    <string name="bought_title">Bought Posts</string>
+    <string name="bought_empty">No purchases yet</string>
+    <string name="sold_title">Sold Posts</string>
+    <string name="sold_empty">No sales yet</string>
+    <string name="offers_title">My Offers</string>
+    <string name="offers_empty">No offers yet</string>
+    <string name="cart_title">Cart</string>
+    <string name="cart_empty">Your cart is empty</string>
+    <string name="cart_checkout">Checkout</string>
+    <string name="recently_viewed_title">Recently Viewed</string>
+    <string name="recently_viewed_empty">Nothing viewed recently</string>
+    <string name="saved_searches_title">Saved Searches</string>
+    <string name="saved_searches_empty">No saved searches</string>
+
+    <!-- Account pages -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="security_title">Security</string>
+    <string name="verification_title">Verification</string>
+    <string name="analytics_title">Analytics</string>
+    <string name="account_delete_title">Delete Account</string>
+    <string name="account_delete_warning">This action cannot be undone. All your data will be permanently deleted.</string>
+
+    <!-- Social pages -->
+    <string name="public_wall_title">Public Wall</string>
+    <string name="my_feed_title">My Feed</string>
+    <string name="complaints_title">Complaints</string>
+    <string name="feedback_title">Feedback</string>
+    <string name="reviews_title">Reviews</string>
+
+    <!-- Channels / Centres -->
+    <string name="channels_title">Channels</string>
+    <string name="channels_empty">No channels yet</string>
+    <string name="channels_create">Create Channel</string>
+    <string name="centre_title">Centre</string>
+    <string name="centre_empty">No centres yet</string>
+    <string name="centre_create">Create Centre</string>
+
+    <!-- Legal -->
+    <string name="terms_title">Terms of Service</string>
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="refund_title">Refund Policy</string>
+    <string name="support_policy_title">Support Policy</string>
+    <string name="shipping_policy_title">Shipping Policy</string>
+    <string name="about_title">About Us</string>
+    <string name="contact_title">Contact Us</string>
+    <string name="faq_title">FAQ</string>
+
+    <!-- Activity Hub -->
+    <string name="activity_hub_title">Activity Hub</string>
+
+    <!-- Checkout -->
+    <string name="checkout_address_title">Delivery Address</string>
+    <string name="checkout_payment_title">Payment Method</string>
+    <string name="checkout_review_title">Review Order</string>
+    <string name="checkout_place_order">Place Order</string>
+    <string name="checkout_order_confirmed">Order Confirmed!</string>
+    <string name="checkout_order_failed">Order Failed</string>
+    <string name="checkout_continue_shopping">Continue Shopping</string>
+    <string name="checkout_view_order">View Order</string>
+    <string name="checkout_retry">Retry Payment</string>
+
+    <!-- Category App Shell -->
+    <string name="cat_menu_open">Open category menu</string>
+    <string name="cat_back_to_launcher">Return to app launcher</string>
+    <string name="cat_search_in">Search in %s</string>
+    <string name="cat_view_notifications">View notifications</string>
+    <string name="cat_shopping_cart">Shopping cart</string>
+    <string name="cat_items_in_cart">%d items in cart</string>
+
+    <!-- Tier names for rewards -->
+    <string name="tier_bronze">Bronze</string>
+    <string name="tier_silver">Silver</string>
+    <string name="tier_gold">Gold</string>
+    <string name="tier_basic_rewards">Basic rewards</string>
+    <string name="tier_premium_rewards">Premium rewards</string>
+    <string name="tier_elite_rewards">Elite rewards</string>
+
+    <!-- Explore -->
+    <string name="explore_title">Explore</string>
+    <string name="explore_subtitle">Discover amazing products</string>
+
+    <!-- Scanner -->
+    <string name="scanner_title">Scanner</string>
+    <string name="scanner_subtitle">Scan QR codes or barcodes</string>
+
+    <!-- KYC -->
+    <string name="kyc_get_verified">Get Verified</string>
+
+    <!-- Misc -->
+    <string name="no_data">No data available</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="app_version">Version %s</string>
+    <string name="offline_banner">You\'re offline. Some features may be unavailable.</string>
+    <string name="unlimited">Unlimited</string>
+
+    <!-- Rewards Screen (hero/impact/actions) -->
+    <string name="rewards_hero_title">Rewards &amp; Referrals</string>
+    <string name="rewards_hero_subtitle">Track coins, tiers and invite progress</string>
+    <string name="rewards_sign_in_title">Sign in to view Rewards</string>
+    <string name="rewards_sign_in_subtitle">Earn coins, unlock perks and track referral progress.</string>
+    <string name="rewards_redeem_item">Redeem %s</string>
+    <string name="rewards_redeem_confirm">Spend %1$d coins on %2$s?\n\nYour balance: %3$d coins</string>
+    <string name="rewards_post_id_optional">Post ID (optional)</string>
+    <string name="rewards_post_id_hint">Enter post ID to apply</string>
+    <string name="rewards_redeem">Redeem</string>
+    <string name="rewards_cancel">Cancel</string>
+    <string name="rewards_referral_code">Code: %s</string>
+    <string name="rewards_level_progress">Level progress</string>
+    <string name="rewards_tier_progression">TIER PROGRESSION</string>
+    <string name="rewards_impact_dashboard">IMPACT DASHBOARD</string>
+    <string name="rewards_coin_balance">COIN BALANCE</string>
+    <string name="rewards_coins_label">coins</string>
+    <string name="rewards_daily_actions">DAILY ACTIONS</string>
+    <string name="rewards_daily_code">DAILY CODE</string>
+    <string name="rewards_copy">Copy</string>
+    <string name="rewards_enter_code">Enter daily code</string>
+    <string name="rewards_claim">Claim</string>
+    <string name="rewards_referral_challenge">REFERRAL CHALLENGE</string>
+    <string name="rewards_invite_goal">Invite %1$d friends → Get %2$d coins</string>
+    <string name="rewards_quick_share">QUICK SHARE</string>
+    <string name="rewards_share_code">Share your referral code</string>
+    <string name="rewards_whatsapp">WhatsApp</string>
+    <string name="rewards_telegram">Telegram</string>
+    <string name="rewards_copy_link">Copy Link</string>
+    <string name="rewards_sms">SMS</string>
+    <string name="rewards_challenge_board">Challenge Board (7 Types)</string>
+    <string name="rewards_redeem_store">Redeem Store</string>
+    <string name="rewards_store_subtitle">Spend your coins on exclusive perks</string>
+    <string name="rewards_my_rewards">My rewards</string>
+    <string name="rewards_coin_history">Coin History</string>
+    <string name="rewards_leaderboard">Weekly Leaderboard</string>
+    <string name="rewards_milestone_badges">Milestone Badges</string>
+    <string name="rewards_badges_subtitle">Unlock badges as you earn and grow</string>
+    <string name="rewards_referral_network">Referral network</string>
+    <string name="rewards_no_referrals">No referrals yet. Share your code to start earning.</string>
+
+    <!-- HomeScreen / AllPosts -->
+    <string name="home_filters">Filters</string>
+    <string name="home_price_range">Price Range: ₹%1$s – ₹%2$s</string>
+    <string name="home_condition">Condition</string>
+    <string name="home_location">Location</string>
+    <string name="home_date_range">Date Range</string>
+    <string name="home_from">From</string>
+    <string name="home_to">To</string>
+    <string name="home_verified_sellers">Verified sellers only</string>
+    <string name="home_category_group">Category Group</string>
+    <string name="home_reset">Reset</string>
+    <string name="home_apply">Apply</string>
+    <string name="home_ok">OK</string>
+    <string name="home_cancel">Cancel</string>
+    <string name="home_compare_items">Compare %d Items</string>
+    <string name="home_spec">Spec</string>
+    <string name="home_item">Item</string>
+    <string name="home_compare_title_col">Title</string>
+    <string name="home_price">Price</string>
+    <string name="home_brand">Brand</string>
+    <string name="home_seller">Seller</string>
+    <string name="home_close">Close</string>
+    <string name="home_promote_title">Promote \"%s\"</string>
+    <string name="home_boost_subtitle">Boost your listing visibility</string>
+    <string name="home_duration">Duration</string>
+    <string name="home_confirm_pay">Confirm &amp; Pay</string>
+    <string name="home_all">All</string>
+    <string name="home_sell">Sell</string>
+    <string name="home_loading_slow">Loading is taking too long</string>
+    <string name="home_feed_unavailable">The feed might be temporarily unavailable</string>
+    <string name="home_reset_filters">Reset Filters</string>
+    <string name="home_retry">Retry</string>
+    <string name="home_promoted">Promoted</string>
+    <string name="home_search_hint">Search listings, categories…</string>
+    <string name="home_verified_only">Verified only</string>
+    <string name="home_in_category">in %s</string>
+    <string name="home_unlock_listings">Unlock more listings</string>
+    <string name="home_unlock_subtitle">Sign in to view all available items and access exclusive features</string>
+    <string name="home_sign_in">Sign In</string>
+    <string name="home_compare_now">Compare Now</string>
+
+    <!-- SearchScreen -->
+    <string name="search_listings_hint">Search listings, brands, categories…</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_advanced_filters">Advanced Filters</string>
+    <string name="search_clear_all">Clear All</string>
+    <string name="search_min_price">Min ₹</string>
+    <string name="search_max_price">Max ₹</string>
+    <string name="search_date_range">Date Range</string>
+    <string name="search_from">From (YYYY-MM-DD)</string>
+    <string name="search_to">To (YYYY-MM-DD)</string>
+    <string name="search_brand">Brand</string>
+    <string name="search_model">Model / Description</string>
+    <string name="search_model_hint">e.g., iPhone 15 Pro, Galaxy S24</string>
+    <string name="search_location_radius">Location Radius (km)</string>
+    <string name="search_condition">Condition</string>
+    <string name="search_sort_by">Sort By</string>
+    <string name="search_direction">Direction:</string>
+    <string name="search_asc">ASC</string>
+    <string name="search_desc">DESC</string>
+    <string name="search_apply_filters">Apply %d Filters</string>
+    <string name="search_trending">Trending Searches</string>
+    <string name="search_recent_searches">Recent Searches</string>
+    <string name="search_no_results">No results for \"%s\"</string>
+    <string name="search_try_broader">Try a broader query or adjust your filters</string>
+    <string name="search_suggestions">Suggestions:</string>
+
+    <!-- NotificationsScreen -->
+    <string name="notif_title">Notifications</string>
+    <string name="notif_mark_all_read">Mark all read</string>
+    <string name="notif_delete_all_title">Delete All Notifications</string>
+    <string name="notif_delete_all_confirm">Are you sure you want to delete all %d notifications?</string>
+    <string name="notif_delete_all">Delete All</string>
+    <string name="notif_cancel">Cancel</string>
+    <string name="notif_retry">Retry</string>
+    <string name="notif_search_hint">Search notifications…</string>
+    <string name="notif_total">Total</string>
+    <string name="notif_unread">Unread</string>
+    <string name="notif_read_rate">Read Rate</string>
+    <string name="notif_preferences">Notification Preferences</string>
+    <string name="notif_preferences_subtitle">Choose which notifications you want to receive:</string>
+    <string name="notif_save">Save</string>
+    <string name="notif_accept_offer">Accept Offer</string>
+    <string name="notif_view_post">View Post</string>
+    <string name="notif_snooze">Snooze</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_app_config">App configuration</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_display_language">Display Language</string>
+    <string name="settings_indian_languages">Indian Languages</string>
+    <string name="settings_intl_languages">International Languages</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_push">Push notifications</string>
+    <string name="settings_email">Email notifications</string>
+    <string name="settings_chat_alerts">Chat message alerts</string>
+    <string name="settings_offer_updates">Offer updates</string>
+    <string name="settings_network">Network</string>
+    <string name="settings_local">Local emulator</string>
+    <string name="settings_staging">Staging</string>
+    <string name="settings_storage">Storage</string>
+    <string name="settings_clear_cache">Clear image cache and temporary data to free up space.</string>
+    <string name="settings_danger_zone">Danger Zone</string>
+    <string name="settings_logout_all">Logout from all devices</string>
+    <string name="settings_logout_all_desc">This will revoke all active sessions except this one.</string>
+    <string name="settings_account_data">Account Data</string>
+    <string name="settings_export_data">Export My Data</string>
+    <string name="settings_export_desc">Download a copy of all your account data (GDPR compliant).</string>
+    <string name="settings_about">About</string>
+
+    <!-- ChatScreen -->
+    <string name="chat_sign_in_title">Sign in to Message</string>
+    <string name="chat_sign_in_subtitle">Create an account or sign in to send and receive messages with sellers.</string>
+    <string name="chat_sign_in_action">Sign In / Sign Up</string>
+    <string name="chat_go_back">Go Back</string>
+    <string name="chat_messages">Messages</string>
+    <string name="chat_search_hint">Search messages…</string>
+    <string name="chat_block_user">Block User</string>
+    <string name="chat_block_confirm">Are you sure you want to block %s? They won\'t be able to message you.</string>
+    <string name="chat_block">Block</string>
+    <string name="chat_report_title">Report Conversation</string>
+    <string name="chat_report_confirm">Report this conversation for spam, harassment, or inappropriate content?</string>
+    <string name="chat_report">Report</string>
+    <string name="chat_delete_message">Delete Message</string>
+    <string name="chat_delete_confirm">Delete this message? This cannot be undone.</string>
+    <string name="chat_delete">Delete</string>
+    <string name="chat_cancel">Cancel</string>
+    <string name="chat_react">React to message</string>
+    <string name="chat_close">Close</string>
+    <string name="chat_type_message">Type a message…</string>
+    <string name="chat_search_conversation">Search in conversation…</string>
+
+    <!-- CategoryAppShell -->
+    <string name="catshell_guest_user">Guest User</string>
+    <string name="catshell_browsing">Browsing %s</string>
+    <string name="catshell_menu">Category app menu</string>
+    <string name="catshell_back_to_launcher">Back to Launcher</string>
+    <string name="catshell_browse_subcategories">Browse Subcategories</string>
+    <string name="catshell_for_you">For You</string>
+    <string name="catshell_community_feed">Community Feed</string>
+    <string name="catshell_order_history">Order History</string>
+    <string name="catshell_settings">Settings</string>
+    <string name="catshell_help_faq">Help &amp; FAQ</string>
+    <string name="catshell_switch_category">Switch Category</string>
+    <string name="catshell_quick_subcategories">Quick Subcategories</string>
+    <string name="catshell_now">Now</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_search">Search</string>
+    <string name="cd_filters">Filters</string>
+    <string name="cd_toggle_view">Toggle view</string>
+    <string name="cd_clear">Clear</string>
+    <string name="cd_verified">Verified</string>
+    <string name="cd_wishlist">Wishlist</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_select">Select</string>
+    <string name="cd_open_menu">Open category menu</string>
+    <string name="cd_back_to_launcher">Return to app launcher</string>
+    <string name="cd_search_in">Search in %s</string>
+    <string name="cd_notifications">View notifications</string>
+    <string name="cd_cart_items">Shopping cart, %d items</string>
+    <string name="cd_delete_selected">Delete selected</string>
+
+    <!-- HomeScreen / AllPosts i18n -->
+    <string name="filter_title">Filters</string>
+    <string name="filter_price_range">Price Range: ₹%1$s — ₹%2$s</string>
+    <string name="filter_condition">Condition</string>
+    <string name="filter_condition_any">Any</string>
+    <string name="filter_condition_new">New</string>
+    <string name="filter_condition_used">Used</string>
+    <string name="filter_condition_like_new">Like New</string>
+    <string name="filter_location">Location</string>
+    <string name="filter_date_range">Date Range</string>
+    <string name="filter_from">From</string>
+    <string name="filter_to">To</string>
+    <string name="filter_verified_sellers">Verified sellers only</string>
+    <string name="filter_category_group">Category Group</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_ok">OK</string>
+    <string name="filter_cancel">Cancel</string>
+    <string name="allposts_hero_title">All Posts</string>
+    <string name="allposts_hero_subtitle">Explore trending listings, fresh drops, and daily deals.</string>
+    <string name="allposts_items_count">%d items</string>
+    <string name="allposts_live_marketplace">Live marketplace</string>
+    <string name="allposts_for_you">For You →</string>
+    <string name="allposts_browse_subcategories">Browse Subcategories</string>
+    <string name="allposts_available_count">%d available</string>
+    <string name="allposts_all">All</string>
+    <string name="allposts_sort_newest">Newest</string>
+    <string name="allposts_sort_popular">Popular</string>
+    <string name="allposts_sort_price_low">Price ↑</string>
+    <string name="allposts_sort_price_high">Price ↓</string>
+    <string name="allposts_quick_filters">Quick Filters</string>
+    <string name="allposts_page_density">Page Density</string>
+    <string name="allposts_compact">Compact</string>
+    <string name="allposts_normal">Normal</string>
+    <string name="allposts_spacious">Spacious</string>
+    <string name="allposts_no_listings">No listings yet</string>
+    <string name="allposts_pull_refresh">Pull to refresh or create the first listing.</string>
+    <string name="allposts_compare_items">Compare %d Items</string>
+    <string name="allposts_spec">Spec</string>
+    <string name="allposts_item">Item</string>
+    <string name="allposts_title">Title</string>
+    <string name="allposts_price">Price</string>
+    <string name="allposts_loading_more">Loading more…</string>
+    <string name="allposts_no_more">No more listings</string>
+    <string name="allposts_promoted">Promoted</string>
+    <string name="allposts_great_deals">Great Deals</string>
+    <string name="allposts_shop_now">Shop Now</string>
+    <string name="allposts_guest_title">Unlock more listings</string>
+    <string name="allposts_guest_subtitle">Sign in to view all available items</string>
+    <string name="allposts_sign_in">Sign In</string>
+    <string name="allposts_change_app">Change App</string>
+    <string name="compare_title_items">Compare %d Items</string>
+    <string name="compare_spec">Spec</string>
+    <string name="compare_item">Item</string>
+    <string name="compare_close">Close</string>
+
+    <!-- ProfileScreen additional i18n -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_guest">Guest</string>
+    <string name="profile_followers_count">%d Followers</string>
+    <string name="profile_following_count">%d Following</string>
+    <string name="profile_marketplace_pulse">MARKETPLACE PULSE</string>
+    <string name="profile_listings">Listings</string>
+    <string name="profile_rating">Rating</string>
+    <string name="profile_sales">Sales</string>
+    <string name="profile_rank">Rank</string>
+    <string name="profile_trust_score">Trust Score</string>
+    <string name="profile_quick_actions">QUICK ACTIONS</string>
+    <string name="profile_jump_actions">Jump to actions</string>
+    <string name="profile_my_home">My Home</string>
+    <string name="profile_dashboard">Dashboard</string>
+    <string name="profile_my_feed">My Feed</string>
+    <string name="profile_personalized">Personalized</string>
+    <string name="profile_my_reviews">My Reviews</string>
+    <string name="profile_ratings_feedback">Ratings &amp; feedback</string>
+    <string name="profile_my_listings">My Listings</string>
+    <string name="profile_active_posts">Active posts</string>
+    <string name="profile_my_offers">My Offers</string>
+    <string name="profile_negotiations">Negotiations</string>
+    <string name="profile_verification">Verification</string>
+    <string name="profile_get_verified">Get verified</string>
+    <string name="profile_verified_check">Verified ✓</string>
+    <string name="profile_recent_posts">MY RECENT POSTS</string>
+    <string name="profile_response_time">⚡ %dm response</string>
+    <string name="profile_verified">Verified</string>
+    <string name="profile_pending">Pending</string>
+    <string name="profile_unverified">Unverified</string>
+    <string name="profile_admin">Admin</string>
+    <string name="profile_seller">Seller</string>
+    <string name="profile_moderator">Mod</string>
 </resources>

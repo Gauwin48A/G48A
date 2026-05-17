@@ -199,6 +199,43 @@ fun ProductListingScreen(
     Scaffold { innerPad ->
         Column(modifier = Modifier.padding(innerPad).fillMaxSize()) {
 
+            // ── Great Deals Banner ───────────────────────────────────────
+            var showDealsBanner by remember { mutableStateOf(true) }
+            if (showDealsBanner) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "🔥 Great Deals",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                            Text(
+                                "Shop verified products at best prices",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            )
+                        }
+                        IconButton(
+                            onClick = { showDealsBanner = false },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(Icons.Filled.Close, "Dismiss", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+
             // ── Subcategory filter chips ─────────────────────────────────────
             if (subcategories.isNotEmpty()) {
                 Row(

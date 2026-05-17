@@ -227,7 +227,7 @@ fun SettingsScreen(
                 title = {
                     Column {
                         Text(stringResource(R.string.nav_settings), fontWeight = FontWeight.Bold)
-                        Text("App configuration", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_app_config), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
@@ -255,7 +255,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Settings, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                 }
-                Text("Appearance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -264,7 +264,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Theme", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(ThemeMode.SYSTEM to "System", ThemeMode.LIGHT to "Light", ThemeMode.DARK to "Dark").forEach { (mode, label) ->
                             FilterChip(
@@ -283,7 +283,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                 }
-                Text("Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -292,7 +292,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Display Language", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.settings_display_language), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
                     var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
                     var showAll by remember { mutableStateOf(false) }
@@ -307,7 +307,7 @@ fun SettingsScreen(
                         "ko" to "한국어", "zh" to "中文", "id" to "Indonesia", "tr" to "Türkçe",
                         "vi" to "Tiếng Việt", "th" to "ไทย", "sw" to "Kiswahili",
                     )
-                    Text("Indian Languages", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_indian_languages), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     androidx.compose.foundation.layout.FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -326,7 +326,7 @@ fun SettingsScreen(
                         }
                     }
                     if (showAll) {
-                        Text("International Languages", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_intl_languages), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         androidx.compose.foundation.layout.FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -365,7 +365,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Notifications, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
                 }
-                Text("Notifications", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_notifications), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -380,19 +380,19 @@ fun SettingsScreen(
                     var offerAlerts by remember { mutableStateOf(true) }
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Push notifications", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_push), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = pushEnabled, onCheckedChange = { pushEnabled = it })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Email notifications", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_email), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = emailEnabled, onCheckedChange = { emailEnabled = it })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Chat message alerts", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_chat_alerts), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = chatAlerts, onCheckedChange = { chatAlerts = it })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Offer updates", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_offer_updates), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = offerAlerts, onCheckedChange = { offerAlerts = it })
                     }
                 }
@@ -404,7 +404,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Cloud, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
-                Text("Network", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_network), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -447,13 +447,13 @@ fun SettingsScreen(
                         FilterChip(
                             selected = baseUrl == localPreset,
                             onClick = { viewModel.applyPreset(localPreset) },
-                            label = { Text("Local emulator") },
+                            label = { Text(stringResource(R.string.settings_local)) },
                         )
                         if (stagingPreset != null) {
                             FilterChip(
                                 selected = baseUrl == stagingPreset,
                                 onClick = { viewModel.applyPreset(stagingPreset) },
-                                label = { Text("Staging") },
+                                label = { Text(stringResource(R.string.settings_staging)) },
                             )
                         }
                     }
@@ -497,7 +497,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
-                Text("Storage", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_storage), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -506,7 +506,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Clear image cache and temporary data to free up space.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_clear_cache), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PrimaryButton(text = "Clear Cache", onClick = { viewModel.clearCache() })
                 }
             }
@@ -516,7 +516,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
-                Text("Danger Zone", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.settings_danger_zone), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
             }
 
             Card(
@@ -525,8 +525,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Logout from all devices", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("This will revoke all active sessions except this one.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_logout_all), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.settings_logout_all_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PrimaryButton(text = "Logout All Devices", onClick = { viewModel.logoutAllDevices() })
                 }
             }
@@ -536,7 +536,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Download, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
-                Text("Account Data", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_account_data), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(
@@ -545,8 +545,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Export My Data", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("Download a copy of all your account data (GDPR compliant).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_export_data), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.settings_export_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     var exporting by remember { mutableStateOf(false) }
                     var exportMsg by remember { mutableStateOf<String?>(null) }
                     PrimaryButton(
@@ -568,7 +568,7 @@ fun SettingsScreen(
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
                 }
-                Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_about), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
 
             Card(

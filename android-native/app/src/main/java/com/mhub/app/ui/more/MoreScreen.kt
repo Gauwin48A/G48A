@@ -38,7 +38,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Login
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.outlined.MonetizationOn
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
@@ -159,72 +159,72 @@ fun MoreScreen(
 
     // ── Web-matching 3 color-coded groups ──────────────────────────────
     val tradeGroup = MoreGroup(
-        header = "Trade",
+        header = stringResource(R.string.more_trade),
         accentColor = TRADE_ACCENT,
         bgColor = TRADE_BG,
         entries = listOf(
-            MoreEntry("Sell", "Create a listing", Icons.Outlined.ShoppingCart, Color(0xFF22C55E), onOpenCreatePost),
-            MoreEntry("Plans", "Seller plans & tiers", Icons.Outlined.Star, Color(0xFFF59E0B), onOpenTierSelection),
-            MoreEntry("Centre", "Centre listings", Icons.Outlined.Category, Color(0xFF0284C7), onOpenCentre),
-            MoreEntry("All Categories", "Browse categories", Icons.Outlined.Category, Color(0xFF0EA5E9), onOpenCategories),
-            MoreEntry("Category Mode", "Category layout", Icons.Outlined.Apps, Color(0xFF6366F1), onOpenCategoryMode),
-            MoreEntry("Subcategories", "Browse subcategories", Icons.Outlined.Category, Color(0xFF0284C7), onOpenSubcategories),
-            MoreEntry("Nearby", "Listings near you", Icons.Outlined.LocationOn, Color(0xFF10B981), onOpenNearby),
-            MoreEntry("Saved Searches", "Stored filters", Icons.Outlined.Search, Color(0xFF8B5CF6), onOpenSavedSearches),
-            MoreEntry("Wishlist", "Saved products", Icons.Outlined.VolunteerActivism, Color(0xFFEC4899), onOpenWishlist),
-            MoreEntry("Recently Viewed", "Browsed recently", Icons.Outlined.History, Color(0xFF6B7280), onOpenRecentlyViewed),
-            MoreEntry("Cart", "Items in your cart", Icons.Outlined.ShoppingCart, Color(0xFF3B82F6), onOpenCart),
-            MoreEntry("Compare", "Side-by-side comparison", Icons.Outlined.BarChart, Color(0xFF0EA5E9), onOpenCompare),
-            MoreEntry("Scanner", "Scan QR codes", Icons.Outlined.QrCodeScanner, Color(0xFF00BCD4), onOpenScanner),
+            MoreEntry(stringResource(R.string.more_sell), stringResource(R.string.more_sell_desc), Icons.Outlined.ShoppingCart, Color(0xFF22C55E), onOpenCreatePost),
+            MoreEntry(stringResource(R.string.more_plans), stringResource(R.string.more_plans_desc), Icons.Outlined.Star, Color(0xFFF59E0B), onOpenTierSelection),
+            MoreEntry(stringResource(R.string.more_centre), stringResource(R.string.more_centre_desc), Icons.Outlined.Category, Color(0xFF0284C7), onOpenCentre),
+            MoreEntry(stringResource(R.string.more_all_categories), stringResource(R.string.more_all_categories_desc), Icons.Outlined.Category, Color(0xFF0EA5E9), onOpenCategories),
+            MoreEntry(stringResource(R.string.more_category_mode), stringResource(R.string.more_category_mode_desc), Icons.Outlined.Apps, Color(0xFF6366F1), onOpenCategoryMode),
+            MoreEntry(stringResource(R.string.more_subcategories), stringResource(R.string.more_subcategories_desc), Icons.Outlined.Category, Color(0xFF0284C7), onOpenSubcategories),
+            MoreEntry(stringResource(R.string.more_nearby), stringResource(R.string.more_nearby_desc), Icons.Outlined.LocationOn, Color(0xFF10B981), onOpenNearby),
+            MoreEntry(stringResource(R.string.more_saved_searches), stringResource(R.string.more_saved_searches_desc), Icons.Outlined.Search, Color(0xFF8B5CF6), onOpenSavedSearches),
+            MoreEntry(stringResource(R.string.more_wishlist), stringResource(R.string.more_wishlist_desc), Icons.Outlined.VolunteerActivism, Color(0xFFEC4899), onOpenWishlist),
+            MoreEntry(stringResource(R.string.more_recently_viewed), stringResource(R.string.more_recently_viewed_desc), Icons.Outlined.History, Color(0xFF6B7280), onOpenRecentlyViewed),
+            MoreEntry(stringResource(R.string.more_cart), stringResource(R.string.more_cart_desc), Icons.Outlined.ShoppingCart, Color(0xFF3B82F6), onOpenCart),
+            MoreEntry(stringResource(R.string.more_compare), stringResource(R.string.more_compare_desc), Icons.Outlined.BarChart, Color(0xFF0EA5E9), onOpenCompare),
+            MoreEntry(stringResource(R.string.more_scanner), stringResource(R.string.more_scanner_desc), Icons.Outlined.QrCodeScanner, Color(0xFF00BCD4), onOpenScanner),
         ),
     )
 
     val socialGroup = MoreGroup(
-        header = "Social",
+        header = stringResource(R.string.more_social),
         accentColor = SOCIAL_ACCENT,
         bgColor = SOCIAL_BG,
         entries = listOf(
-            MoreEntry("Feed", "Community posts", Icons.AutoMirrored.Outlined.Article, Color(0xFF3B82F6), onOpenFeed),
-            MoreEntry("My Feed", "People you follow", Icons.AutoMirrored.Outlined.Article, Color(0xFF6366F1), onOpenMyFeed),
-            MoreEntry("Public Wall", "Community wall", Icons.Outlined.Group, Color(0xFF059669), onOpenPublicWall),
-            MoreEntry("Chat", "Conversations", Icons.AutoMirrored.Outlined.Chat, Color(0xFF2563EB), onOpenChat),
-            MoreEntry("Channels", "Seller channels", Icons.Outlined.Group, Color(0xFF7C3AED), onOpenChannels),
-            MoreEntry("My Reviews", "Reviews given/received", Icons.Outlined.Star, Color(0xFFF59E0B), onOpenMyReviews),
-            MoreEntry("My Offers", "Price negotiations", Icons.Outlined.LocalOffer, Color(0xFF7C3AED), onOpenOffers),
-            MoreEntry("Activity Hub", "Notifications & activity", Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenActivityHub),
-            MoreEntry("Feedback", "Send feedback", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF22C55E), onOpenFeedback),
-            MoreEntry("Complaints", "Report issues", Icons.Outlined.Report, Color(0xFFEF4444), onOpenComplaints),
+            MoreEntry(stringResource(R.string.more_feed), stringResource(R.string.more_feed_desc), Icons.AutoMirrored.Outlined.Article, Color(0xFF3B82F6), onOpenFeed),
+            MoreEntry(stringResource(R.string.more_my_feed), stringResource(R.string.more_my_feed_desc), Icons.AutoMirrored.Outlined.Article, Color(0xFF6366F1), onOpenMyFeed),
+            MoreEntry(stringResource(R.string.more_public_wall), stringResource(R.string.more_public_wall_desc), Icons.Outlined.Group, Color(0xFF059669), onOpenPublicWall),
+            MoreEntry(stringResource(R.string.more_chat), stringResource(R.string.more_chat_desc), Icons.AutoMirrored.Outlined.Chat, Color(0xFF2563EB), onOpenChat),
+            MoreEntry(stringResource(R.string.more_channels), stringResource(R.string.more_channels_desc), Icons.Outlined.Group, Color(0xFF7C3AED), onOpenChannels),
+            MoreEntry(stringResource(R.string.more_my_reviews), stringResource(R.string.more_my_reviews_desc), Icons.Outlined.Star, Color(0xFFF59E0B), onOpenMyReviews),
+            MoreEntry(stringResource(R.string.more_my_offers), stringResource(R.string.more_my_offers_desc), Icons.Outlined.LocalOffer, Color(0xFF7C3AED), onOpenOffers),
+            MoreEntry(stringResource(R.string.more_activity_hub), stringResource(R.string.more_activity_hub_desc), Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenActivityHub),
+            MoreEntry(stringResource(R.string.more_feedback), stringResource(R.string.more_feedback_desc), Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF22C55E), onOpenFeedback),
+            MoreEntry(stringResource(R.string.more_complaints), stringResource(R.string.more_complaints_desc), Icons.Outlined.Report, Color(0xFFEF4444), onOpenComplaints),
         ),
     )
 
     val accountGroup = MoreGroup(
-        header = "Account",
+        header = stringResource(R.string.more_account),
         accentColor = ACCOUNT_ACCENT,
         bgColor = ACCOUNT_BG,
         entries = buildList {
-            add(MoreEntry("Profile", "View & edit profile", Icons.Outlined.Person, Color(0xFF2563EB), onOpenProfile))
-            add(MoreEntry("My Posts", "Active listings", Icons.AutoMirrored.Outlined.Article, Color(0xFF22C55E), onOpenMyPosts))
-            add(MoreEntry("Dashboard", "Account metrics", Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenDashboard))
-            add(MoreEntry("Bought Posts", "Purchases", Icons.Outlined.ShoppingCart, Color(0xFF7C3AED), onOpenBoughtPosts))
-            add(MoreEntry("Sold Posts", "Sales history", Icons.Outlined.MonetizationOn, Color(0xFF059669), onOpenSoldPosts))
-            add(MoreEntry("Rewards", "Points & bonuses", Icons.Outlined.EmojiEvents, Color(0xFFD97706), onOpenRewards))
-            add(MoreEntry("Notifications", "Alerts & updates", Icons.Outlined.Notifications, Color(0xFFEF4444), onOpenNotifications))
-            add(MoreEntry("Analytics", "Sales analytics", Icons.Outlined.BarChart, Color(0xFF3B82F6), onOpenAnalytics))
-            add(MoreEntry("Verification", "KYC & trust", Icons.Outlined.VerifiedUser, Color(0xFF059669), onOpenVerification))
-            add(MoreEntry("Security", "Security settings", Icons.Outlined.Security, Color(0xFF64748B), onOpenSettings))
-            add(MoreEntry("Delete Account", "Remove account", Icons.Outlined.Delete, Color(0xFFEF4444), onOpenAccountDelete))
-            if (isAdmin) add(MoreEntry("Admin Panel", "Admin tools", Icons.Outlined.Security, Color(0xFFDC2626), onOpenAdminPanel))
+            add(MoreEntry(stringResource(R.string.more_profile), stringResource(R.string.more_profile_desc), Icons.Outlined.Person, Color(0xFF2563EB), onOpenProfile))
+            add(MoreEntry(stringResource(R.string.more_my_posts), stringResource(R.string.more_my_posts_desc), Icons.AutoMirrored.Outlined.Article, Color(0xFF22C55E), onOpenMyPosts))
+            add(MoreEntry(stringResource(R.string.more_dashboard), stringResource(R.string.more_dashboard_desc), Icons.Outlined.Dashboard, Color(0xFF3B82F6), onOpenDashboard))
+            add(MoreEntry(stringResource(R.string.more_bought_posts), stringResource(R.string.more_bought_posts_desc), Icons.Outlined.ShoppingCart, Color(0xFF7C3AED), onOpenBoughtPosts))
+            add(MoreEntry(stringResource(R.string.more_sold_posts), stringResource(R.string.more_sold_posts_desc), Icons.Outlined.MonetizationOn, Color(0xFF059669), onOpenSoldPosts))
+            add(MoreEntry(stringResource(R.string.more_rewards), stringResource(R.string.more_rewards_desc), Icons.Outlined.EmojiEvents, Color(0xFFD97706), onOpenRewards))
+            add(MoreEntry(stringResource(R.string.more_notifications), stringResource(R.string.more_notifications_desc), Icons.Outlined.Notifications, Color(0xFFEF4444), onOpenNotifications))
+            add(MoreEntry(stringResource(R.string.more_analytics), stringResource(R.string.more_analytics_desc), Icons.Outlined.BarChart, Color(0xFF3B82F6), onOpenAnalytics))
+            add(MoreEntry(stringResource(R.string.more_verification), stringResource(R.string.more_verification_desc), Icons.Outlined.VerifiedUser, Color(0xFF059669), onOpenVerification))
+            add(MoreEntry(stringResource(R.string.more_security), stringResource(R.string.more_security_desc), Icons.Outlined.Security, Color(0xFF64748B), onOpenSettings))
+            add(MoreEntry(stringResource(R.string.more_delete_account), stringResource(R.string.more_delete_account_desc), Icons.Outlined.Delete, Color(0xFFEF4444), onOpenAccountDelete))
+            if (isAdmin) add(MoreEntry(stringResource(R.string.more_admin_panel), stringResource(R.string.more_admin_panel_desc), Icons.Outlined.Security, Color(0xFFDC2626), onOpenAdminPanel))
         },
     )
 
     val helpGroup = MoreGroup(
-        header = "Help & Support",
+        header = stringResource(R.string.more_help),
         accentColor = Color(0xFF64748B),
         bgColor = Color(0xFFF8FAFC),
         entries = listOf(
-            MoreEntry("About Us", "About MHub", Icons.Outlined.Info, Color(0xFF2563EB), onOpenAboutUs),
-            MoreEntry("Contact Us", "Support team", Icons.Outlined.Email, Color(0xFF22C55E), onOpenContactUs),
-            MoreEntry("FAQ", "Common questions", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF6366F1), onOpenFaq),
+            MoreEntry(stringResource(R.string.more_about), stringResource(R.string.more_about_desc), Icons.Outlined.Info, Color(0xFF2563EB), onOpenAboutUs),
+            MoreEntry(stringResource(R.string.more_contact), stringResource(R.string.more_contact_desc), Icons.Outlined.Email, Color(0xFF22C55E), onOpenContactUs),
+            MoreEntry(stringResource(R.string.more_faq), stringResource(R.string.more_faq_desc), Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFF6366F1), onOpenFaq),
         ),
     )
 
@@ -342,7 +342,7 @@ fun MoreScreen(
                         Text(stringResource(R.string.more_language), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.weight(1f))
                         Text(
-                            if (showAllLangs) "Show less" else "All 25 →",
+                            if (showAllLangs) stringResource(R.string.more_show_less) else stringResource(R.string.more_show_all),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
@@ -528,7 +528,7 @@ fun MoreScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Accessibility, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Accessibility", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.more_accessibility), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(
@@ -536,7 +536,7 @@ fun MoreScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Large Font", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.more_large_font), style = MaterialTheme.typography.bodySmall)
                         Switch(checked = largeFont, onCheckedChange = { largeFont = it })
                     }
                 }
@@ -552,9 +552,9 @@ fun MoreScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Icon(Icons.Outlined.Login, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Outlined.Login, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Login")
+                    Text(stringResource(R.string.more_login))
                 }
             }
         }

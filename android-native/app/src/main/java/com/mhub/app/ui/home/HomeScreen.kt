@@ -1,5 +1,6 @@
 package com.mhub.app.ui.home
 
+import com.mhub.app.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -47,8 +48,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -190,31 +191,36 @@ private fun FilterBottomSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-            Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.filter_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
-            Text("Price Range: ₹${"%,.0f".format(priceRange.start)} — ₹${"%,.0f".format(priceRange.endInclusive)}", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.filter_price_range, "%,.0f".format(priceRange.start), "%,.0f".format(priceRange.endInclusive)), style = MaterialTheme.typography.labelMedium)
             RangeSlider(value = priceRange, onValueChange = { priceRange = it }, valueRange = 0f..500000f, steps = 9)
             Spacer(Modifier.height(12.dp))
 
-            Text("Condition", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.filter_condition), style = MaterialTheme.typography.labelMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 4.dp)) {
-                listOf("Any", "New", "Used", "Like New").forEach { opt ->
+                listOf(
+                    stringResource(R.string.filter_condition_any),
+                    stringResource(R.string.filter_condition_new),
+                    stringResource(R.string.filter_condition_used),
+                    stringResource(R.string.filter_condition_like_new),
+                ).forEach { opt ->
                     FilterChip(selected = condition == opt, onClick = { condition = opt }, label = { Text(opt) })
                 }
             }
             Spacer(Modifier.height(12.dp))
 
-            OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Location") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text(stringResource(R.string.filter_location)) }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
 
-            Text("Date Range", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.filter_date_range), style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = startDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
                     onValueChange = {},
-                    label = { Text("From") },
+                    label = { Text(stringResource(R.string.filter_from)) },
                     readOnly = true,
                     trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
                     modifier = Modifier.weight(1f).clickable { showStartDatePicker = true },
@@ -223,7 +229,7 @@ private fun FilterBottomSheet(
                 OutlinedTextField(
                     value = endDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
                     onValueChange = {},
-                    label = { Text("To") },
+                    label = { Text(stringResource(R.string.filter_to)) },
                     readOnly = true,
                     trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
                     modifier = Modifier.weight(1f).clickable { showEndDatePicker = true },
@@ -233,14 +239,14 @@ private fun FilterBottomSheet(
             Spacer(Modifier.height(12.dp))
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Verified sellers only")
+                Text(stringResource(R.string.filter_verified_sellers))
                 Spacer(Modifier.weight(1f))
                 Switch(checked = verifiedOnly, onCheckedChange = { verifiedOnly = it })
             }
             Spacer(Modifier.height(12.dp))
 
             // Multi-group category filter (web-parity: AllPosts.jsx groupedCategoryFilter)
-            Text("Category Group", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.filter_category_group), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             val categoryGroups = listOf("All", "Electronics", "Fashion", "Vehicles", "Home & Living", "Others")
             var selectedGroup by remember { mutableStateOf("All") }
@@ -270,10 +276,10 @@ private fun FilterBottomSheet(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 androidx.compose.material3.OutlinedButton(onClick = {
                     onApply(PostFilters()); onDismiss()
-                }, modifier = Modifier.weight(1f)) { Text("Reset") }
+                }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.filter_reset)) }
                 androidx.compose.material3.Button(onClick = {
                     onApply(PostFilters(priceRange.start, priceRange.endInclusive, condition, location, verifiedOnly, startDate, endDate)); onDismiss()
-                }, modifier = Modifier.weight(1f)) { Text("Apply") }
+                }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.filter_apply)) }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -325,21 +331,21 @@ private fun CompareDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Compare ${posts.size} Items", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.allposts_compare_items, posts.size), fontWeight = FontWeight.Bold) },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Spec", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.allposts_spec), Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
                         posts.forEach { _ ->
-                            Text("Item", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text(stringResource(R.string.allposts_item), Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
                     HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Title", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.allposts_title), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Text(post.displayTitle, Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                         }
@@ -348,7 +354,7 @@ private fun CompareDialog(
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Price", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.allposts_price), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Text(post.price?.let { "₹${"%,.0f".format(it)}" } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
@@ -357,7 +363,7 @@ private fun CompareDialog(
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Condition", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.filter_condition), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Text(post.condition ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                         }
@@ -624,31 +630,162 @@ private fun SubcategoryStrip(
     accentColor: Color,
     onSelect: (String?) -> Unit,
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-    ) {
-        item {
-            FilterChip(
-                selected = selected == null,
-                onClick = { onSelect(null) },
-                label = { Text("All", style = MaterialTheme.typography.labelMedium) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = accentColor,
-                    selectedLabelColor = Color.White,
-                ),
+    Column {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.allposts_browse_subcategories),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                stringResource(R.string.allposts_available_count, subcategories.size),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
             )
         }
-        items(subcategories, key = { it.stableId }) { sub ->
-            FilterChip(
-                selected = selected == sub.stableId,
-                onClick = { onSelect(sub.stableId) },
-                label = { Text(sub.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = accentColor,
-                    selectedLabelColor = Color.White,
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+            item {
+                AssistChip(
+                    onClick = { onSelect(null) },
+                    label = {
+                        Text(
+                            stringResource(R.string.allposts_all),
+                            fontWeight = if (selected == null) FontWeight.Bold else FontWeight.Normal,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    },
+                    border = if (selected == null) {
+                        androidx.compose.foundation.BorderStroke(2.dp, accentColor)
+                    } else {
+                        androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                    },
+                    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
+                        containerColor = if (selected == null) accentColor.copy(alpha = 0.12f) else Color.Transparent,
+                        labelColor = if (selected == null) accentColor else MaterialTheme.colorScheme.onSurface,
+                    ),
+                )
+            }
+            items(subcategories, key = { it.stableId }) { sub ->
+                val isSelected = selected == sub.stableId
+                AssistChip(
+                    onClick = { onSelect(sub.stableId) },
+                    label = {
+                        Text(
+                            sub.displayName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    },
+                    border = if (isSelected) {
+                        androidx.compose.foundation.BorderStroke(2.dp, accentColor)
+                    } else {
+                        androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                    },
+                    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
+                        containerColor = if (isSelected) accentColor.copy(alpha = 0.12f) else Color.Transparent,
+                        labelColor = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/* ── Heroic banner for AllPosts (web parity: AllPosts.jsx hero section) ── */
+
+@Composable
+private fun AllPostsHeroBanner(
+    listingsCount: Int,
+    onExplore: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFF1E40AF), Color(0xFF6366F1), Color(0xFF7C3AED)),
                 ),
             )
+            .padding(20.dp),
+    ) {
+        Column {
+            Text(stringResource(R.string.allposts_hero_title), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.allposts_hero_subtitle),
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
+            )
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Stats badges
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White.copy(alpha = 0.18f),
+                ) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("📦", fontSize = 14.sp)
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            stringResource(R.string.allposts_items_count, listingsCount),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White.copy(alpha = 0.18f),
+                ) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4ADE80)),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.allposts_live_marketplace),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Surface(
+                    onClick = onExplore,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.2f),
+                ) {
+                    Text(
+                        stringResource(R.string.allposts_for_you),
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -701,6 +838,13 @@ fun HomeScreen(
     // Sync category key with ViewModel
     LaunchedEffect(activeCategoryKey) {
         viewModel.setCategoryKey(activeCategoryKey)
+    }
+
+    // Resilient state restoration: reload if posts are empty when screen becomes visible
+    LaunchedEffect(Unit) {
+        if (state.posts.isEmpty() && !state.loading) {
+            viewModel.load(initial = true)
+        }
     }
 
     // Track loading time for stalled state
@@ -784,8 +928,18 @@ fun HomeScreen(
             }
             .let { list ->
                 when (quickFilter) {
-                    "Under ₹500" -> list.filter { (it.price ?: Double.MAX_VALUE) < 500.0 }
-                    "New Arrivals" -> list // already sorted by newest
+                    "Under ₹1K" -> list.filter { (it.price ?: Double.MAX_VALUE) < 1000.0 }
+                    "₹500–₹2K" -> list.filter { val p = it.price ?: return@filter false; p in 500.0..2000.0 }
+                    "₹2K–₹10K" -> list.filter { val p = it.price ?: return@filter false; p in 2000.0..10000.0 }
+                    "Above ₹10K" -> list.filter { (it.price ?: 0.0) > 10000.0 }
+                    "Latest 5" -> list.take(5)
+                    "Latest 10" -> list.take(10)
+                    "Posted Today" -> list.filter {
+                        try {
+                            val postDate = Instant.parse(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                            postDate == LocalDate.now()
+                        } catch (_: Exception) { false }
+                    }
                     "Near Me" -> list.filter { it.location != null }
                     else -> list
                 }
@@ -1057,7 +1211,15 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        // Great Deals promotional banner (no category active)
+                        // ── Heroic banner (web parity: AllPosts.jsx hero section) ──
+                        item {
+                            AllPostsHeroBanner(
+                                listingsCount = state.posts.size,
+                                onExplore = onOpenExplore,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
+                        // Great Deals promotional banner
                         item {
                             com.mhub.app.ui.components.GreatDealsBanner(
                                 onShopNow = { quickFilter = "Under ₹500" },
@@ -1244,7 +1406,7 @@ fun HomeScreen(
                     } else if (state.categories.isNotEmpty()) {
                         item {
                             CategoriesStrip(categories = state.categories, selected = selectedCategory, onSelect = { tapped ->
-                                selectedCategory = if (selectedCategory == tapped) null else tapped
+                                selectedCategory = if (tapped.isBlank() || selectedCategory == tapped) null else tapped
                             })
                         }
                     }
@@ -1274,25 +1436,58 @@ fun HomeScreen(
                         }
                     }
 
-                    // Quick filter chips
+                    // Quick filter chips (web parity: price tiers + time + location)
                     item {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
-                        ) {
-                            val quickFilters = listOf("Under ₹500" to Icons.Default.LocalOffer, "Near Me" to Icons.Default.LocationOn, "New Arrivals" to Icons.Default.NewReleases)
-                            items(quickFilters, key = { it.first }) { (label, icon) ->
-                                FilterChip(
-                                    selected = quickFilter == label,
-                                    onClick = { quickFilter = if (quickFilter == label) null else label },
-                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                    leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
-                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onTertiary,
-                                    ),
+                        Column {
+                            // Price filter row
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                            ) {
+                                val priceFilters = listOf(
+                                    "Under ₹1K" to Icons.Default.LocalOffer,
+                                    "₹500–₹2K" to Icons.Default.LocalOffer,
+                                    "₹2K–₹10K" to Icons.Default.LocalOffer,
+                                    "Above ₹10K" to Icons.Default.LocalOffer,
                                 )
+                                items(priceFilters, key = { it.first }) { (label, icon) ->
+                                    FilterChip(
+                                        selected = quickFilter == label,
+                                        onClick = { quickFilter = if (quickFilter == label) null else label },
+                                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp)) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onTertiary,
+                                        ),
+                                    )
+                                }
+                            }
+                            // Time + location filter row
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                            ) {
+                                val moreFilters = listOf(
+                                    "Latest 5" to Icons.AutoMirrored.Filled.Sort,
+                                    "Latest 10" to Icons.AutoMirrored.Filled.Sort,
+                                    "Posted Today" to Icons.Default.NewReleases,
+                                    "Near Me" to Icons.Default.LocationOn,
+                                )
+                                items(moreFilters, key = { it.first }) { (label, icon) ->
+                                    FilterChip(
+                                        selected = quickFilter == label,
+                                        onClick = { quickFilter = if (quickFilter == label) null else label },
+                                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp)) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFF8B5CF6),
+                                            selectedLabelColor = Color.White,
+                                            selectedLeadingIconColor = Color.White,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -1445,18 +1640,45 @@ fun HomeScreen(
 
 @Composable
 private fun CategoriesStrip(categories: List<Category>, selected: String?, onSelect: (String) -> Unit) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
-        items(categories, key = { it.stableId }) { category ->
-            val active = selected == category.displayName
-            FilterChip(
-                selected = active,
-                onClick = { onSelect(category.displayName) },
-                label = { Text(category.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ),
+    Column {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Filter by Category",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+            item {
+                FilterChip(
+                    selected = selected == null,
+                    onClick = { onSelect("") }, // empty resets
+                    label = { Text("All", fontWeight = if (selected == null) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelMedium) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                )
+            }
+            items(categories, key = { it.stableId }) { category ->
+                val active = selected == category.displayName
+                FilterChip(
+                    selected = active,
+                    onClick = { onSelect(category.displayName) },
+                    label = { Text(category.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelMedium) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                )
+            }
         }
     }
 }
@@ -1555,7 +1777,7 @@ fun ListPostCard(
                             },
                             modifier = Modifier.align(Alignment.CenterStart).padding(8.dp).size(32.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
                         ) {
-                            Icon(Icons.Default.KeyboardArrowLeft, "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     if (pagerState.currentPage < allImages.size - 1) {
@@ -1567,7 +1789,7 @@ fun ListPostCard(
                             },
                             modifier = Modifier.align(Alignment.CenterEnd).padding(8.dp).size(32.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
                         ) {
-                            Icon(Icons.Default.KeyboardArrowRight, "Next", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     
