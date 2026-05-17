@@ -869,7 +869,7 @@ fun MhubApp(
                 arguments = listOf(navArgument("catKey") { type = NavType.StringType }),
             ) { entry ->
                 val catKey = entry.arguments?.getString("catKey").orEmpty()
-                MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                 CategoryAppShell(
                     categoryKey = catKey,
                     useExternalBottomNav = true,
@@ -913,6 +913,8 @@ fun MhubApp(
                             navController.navigate(Routes.postDetail(id))
                         }
                     },
+                    onOpenFeed = { navController.navigate(Routes.FEED) },
+                    onOpenForYou = { navController.navigate(Routes.FOR_YOU) },
                 )
                 }
             }

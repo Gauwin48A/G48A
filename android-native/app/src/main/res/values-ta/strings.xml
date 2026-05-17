@@ -34,4 +34,55 @@
     <string name="shortcut_search_long">பட்டியல்களைத் தேடு</string>
     <string name="shortcut_chat">அரட்டை</string>
     <string name="shortcut_chat_long">செய்திகளைத் திற</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">முகப்பு</string>
+    <string name="nav_all_posts">அனைத்து இடுகைகள்</string>
+    <string name="nav_for_you">உங்களுக்காக</string>
+    <string name="nav_feed">ஊட்டம்</string>
+    <string name="nav_rewards">வெகுமதிகள்</string>
+    <string name="nav_profile">சுயவிவரம்</string>
+    <string name="nav_more">மேலும்</string>
+    <string name="nav_sell">விற்பனை</string>
+    <string name="nav_chat">அரட்டை</string>
+    <string name="nav_search">தேடல்</string>
+    <string name="nav_wishlist">விருப்பப்பட்டியல்</string>
+    <string name="nav_categories">வகைகள்</string>
+    <string name="nav_notifications">அறிவிப்புகள்</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+
+    <!-- Common UI -->
+    <string name="all_posts">அனைத்து இடுகைகள்</string>
+    <string name="for_you">உங்களுக்காக</string>
+    <string name="rewards">வெகுமதிகள்</string>
+    <string name="profile">சுயவிவரம்</string>
+    <string name="sell">விற்பனை</string>
+    <string name="cart">கூடை</string>
+    <string name="wishlist">விருப்பப்பட்டியல்</string>
+    <string name="search">தேடல்</string>
+    <string name="filter">வடிகட்டி</string>
+    <string name="sort">வரிசைப்படுத்து</string>
+    <string name="share">பகிர்</string>
+    <string name="edit">திருத்து</string>
+    <string name="cancel">ரத்து</string>
+    <string name="save">சேமி</string>
+    <string name="back">பின்</string>
+    <string name="retry">மீண்டும் முயற்சி</string>
+    <string name="loading">ஏற்றுகிறது…</string>
+    <string name="no_results">முடிவுகள் இல்லை</string>
+    <string name="newest">புதியவை</string>
+    <string name="popular">பிரபலமான</string>
+    <string name="verified">சரிபார்க்கப்பட்டது</string>
+    <string name="condition_new">புதிய</string>
+    <string name="condition_used">பயன்படுத்தப்பட்ட</string>
+    <string name="nearby">அருகில்</string>
+    <string name="categories">வகைகள்</string>
+    <string name="electronics">மின்னணுவியல்</string>
+    <string name="fashion">ஃபேஷன்</string>
+    <string name="vehicles">வாகனங்கள்</string>
+    <string name="others">மற்றவை</string>
+    <string name="deals">சலுகைகள்</string>
+    <string name="followers">பின்தொடர்பவர்கள்</string>
+    <string name="following">பின்தொடர்கிறது</string>
+    <string name="trust_marketplace">நம்பிக்கை-முதல் சந்தை</string>
 </resources>

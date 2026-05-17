@@ -34,4 +34,55 @@
     <string name="shortcut_search_long">ಪಟ್ಟಿಗಳನ್ನು ಹುಡುಕಿ</string>
     <string name="shortcut_chat">ಚಾಟ್</string>
     <string name="shortcut_chat_long">ಸಂದೇಶಗಳನ್ನು ತೆರೆಯಿರಿ</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">ಮುಖಪುಟ</string>
+    <string name="nav_all_posts">ಎಲ್ಲಾ ಪೋಸ್ಟ್‌ಗಳು</string>
+    <string name="nav_for_you">ನಿಮಗಾಗಿ</string>
+    <string name="nav_feed">ಫೀಡ್</string>
+    <string name="nav_rewards">ಬಹುಮಾನಗಳು</string>
+    <string name="nav_profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="nav_more">ಇನ್ನಷ್ಟು</string>
+    <string name="nav_sell">ಮಾರಾಟ</string>
+    <string name="nav_chat">ಚಾಟ್</string>
+    <string name="nav_search">ಹುಡುಕಿ</string>
+    <string name="nav_wishlist">ಆಸೆ ಪಟ್ಟಿ</string>
+    <string name="nav_categories">ವರ್ಗಗಳು</string>
+    <string name="nav_notifications">ಅಧಿಸೂಚನೆಗಳು</string>
+    <string name="nav_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+
+    <!-- Common UI -->
+    <string name="all_posts">ಎಲ್ಲಾ ಪೋಸ್ಟ್‌ಗಳು</string>
+    <string name="for_you">ನಿಮಗಾಗಿ</string>
+    <string name="rewards">ಬಹುಮಾನಗಳು</string>
+    <string name="profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="sell">ಮಾರಾಟ</string>
+    <string name="cart">ಕಾರ್ಟ್</string>
+    <string name="wishlist">ಆಸೆ ಪಟ್ಟಿ</string>
+    <string name="search">ಹುಡುಕಿ</string>
+    <string name="filter">ಫಿಲ್ಟರ್</string>
+    <string name="sort">ವಿಂಗಡಿಸಿ</string>
+    <string name="share">ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="edit">ಸಂಪಾದಿಸಿ</string>
+    <string name="cancel">ರದ್ದು</string>
+    <string name="save">ಉಳಿಸಿ</string>
+    <string name="back">ಹಿಂದೆ</string>
+    <string name="retry">ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ</string>
+    <string name="loading">ಲೋಡ್ ಆಗುತ್ತಿದೆ…</string>
+    <string name="no_results">ಫಲಿತಾಂಶಗಳಿಲ್ಲ</string>
+    <string name="newest">ಹೊಸದು</string>
+    <string name="popular">ಜನಪ್ರಿಯ</string>
+    <string name="verified">ಪರಿಶೀಲಿಸಲಾಗಿದೆ</string>
+    <string name="condition_new">ಹೊಸ</string>
+    <string name="condition_used">ಬಳಸಿದ</string>
+    <string name="nearby">ಹತ್ತಿರ</string>
+    <string name="categories">ವರ್ಗಗಳು</string>
+    <string name="electronics">ಎಲೆಕ್ಟ್ರಾನಿಕ್ಸ್</string>
+    <string name="fashion">ಫ್ಯಾಷನ್</string>
+    <string name="vehicles">ವಾಹನಗಳು</string>
+    <string name="others">ಇತರೆ</string>
+    <string name="deals">ಡೀಲ್‌ಗಳು</string>
+    <string name="followers">ಅನುಯಾಯಿಗಳು</string>
+    <string name="following">ಅನುಸರಿಸುತ್ತಿದ್ದಾರೆ</string>
+    <string name="trust_marketplace">ನಂಬಿಕೆ-ಮೊದಲ ಮಾರುಕಟ್ಟೆ</string>
 </resources>

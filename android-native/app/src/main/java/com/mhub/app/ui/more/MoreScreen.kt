@@ -75,9 +75,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mhub.app.R
 import com.mhub.app.data.local.ThemeMode
 
 private data class MoreEntry(
@@ -242,7 +244,7 @@ fun MoreScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Menu",
+                    stringResource(R.string.more_menu),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
@@ -254,7 +256,7 @@ fun MoreScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search menu…") },
+                placeholder = { Text(stringResource(R.string.more_search_menu)) },
                 leadingIcon = { Icon(Icons.Outlined.Search, null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -289,9 +291,9 @@ fun MoreScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
-                    Text("Theme", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.more_theme), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.weight(1f))
-                    listOf("Light" to ThemeMode.LIGHT, "System" to ThemeMode.SYSTEM, "Dark" to ThemeMode.DARK).forEach { (label, mode) ->
+                    listOf(stringResource(R.string.more_theme_light) to ThemeMode.LIGHT, stringResource(R.string.more_theme_system) to ThemeMode.SYSTEM, stringResource(R.string.more_theme_dark) to ThemeMode.DARK).forEach { (label, mode) ->
                         FilterChip(
                             selected = currentThemeMode == mode,
                             onClick = { onSetThemeMode(mode) },
@@ -337,7 +339,7 @@ fun MoreScreen(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Language", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.more_language), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.weight(1f))
                         Text(
                             if (showAllLangs) "Show less" else "All 25 →",

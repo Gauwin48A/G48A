@@ -109,6 +109,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -895,7 +896,7 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
-                            text = "Trust-First Marketplace",
+                            text = stringResource(com.mhub.app.R.string.trust_marketplace),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = androidx.compose.ui.unit.TextUnit(

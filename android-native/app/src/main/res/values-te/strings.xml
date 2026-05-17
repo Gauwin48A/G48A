@@ -34,4 +34,55 @@
     <string name="shortcut_search_long">లిస్టింగ్‌లు శోధించండి</string>
     <string name="shortcut_chat">చాట్</string>
     <string name="shortcut_chat_long">సందేశాలు తెరవండి</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">హోమ్</string>
+    <string name="nav_all_posts">అన్ని పోస్ట్‌లు</string>
+    <string name="nav_for_you">మీ కోసం</string>
+    <string name="nav_feed">ఫీడ్</string>
+    <string name="nav_rewards">రివార్డ్స్</string>
+    <string name="nav_profile">ప్రొఫైల్</string>
+    <string name="nav_more">మరింత</string>
+    <string name="nav_sell">అమ్మండి</string>
+    <string name="nav_chat">చాట్</string>
+    <string name="nav_search">శోధన</string>
+    <string name="nav_wishlist">కోరికల జాబితా</string>
+    <string name="nav_categories">వర్గాలు</string>
+    <string name="nav_notifications">నోటిఫికేషన్లు</string>
+    <string name="nav_settings">సెట్టింగ్‌లు</string>
+
+    <!-- Common UI -->
+    <string name="all_posts">అన్ని పోస్ట్‌లు</string>
+    <string name="for_you">మీ కోసం</string>
+    <string name="rewards">రివార్డ్స్</string>
+    <string name="profile">ప్రొఫైల్</string>
+    <string name="sell">అమ్మండి</string>
+    <string name="cart">కార్ట్</string>
+    <string name="wishlist">కోరికల జాబితా</string>
+    <string name="search">శోధన</string>
+    <string name="filter">ఫిల్టర్</string>
+    <string name="sort">క్రమం</string>
+    <string name="share">షేర్</string>
+    <string name="edit">మార్చు</string>
+    <string name="cancel">రద్దు</string>
+    <string name="save">సేవ్</string>
+    <string name="back">వెనుకకు</string>
+    <string name="retry">మళ్లీ ప్రయత్నించు</string>
+    <string name="loading">లోడ్ అవుతోంది…</string>
+    <string name="no_results">ఫలితాలు లేవు</string>
+    <string name="newest">కొత్తవి</string>
+    <string name="popular">ప్రాచుర్యం</string>
+    <string name="verified">ధృవీకరించబడింది</string>
+    <string name="condition_new">కొత్త</string>
+    <string name="condition_used">వాడిన</string>
+    <string name="nearby">సమీపంలో</string>
+    <string name="categories">వర్గాలు</string>
+    <string name="electronics">ఎలక్ట్రానిక్స్</string>
+    <string name="fashion">ఫ్యాషన్</string>
+    <string name="vehicles">వాహనాలు</string>
+    <string name="others">ఇతరాలు</string>
+    <string name="deals">డీల్స్</string>
+    <string name="followers">ఫాలోయర్లు</string>
+    <string name="following">ఫాలో చేస్తున్నారు</string>
+    <string name="trust_marketplace">నమ్మకం-ప్రథమ మార్కెట్‌ప్లేస్</string>
 </resources>

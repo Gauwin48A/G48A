@@ -473,7 +473,7 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp),
+                                .height(56.dp),
                         ) {
                             // Cover image or gradient placeholder
                             Box(
@@ -498,527 +498,137 @@ fun ProfileScreen(
                                 onClick = { coverPickerLauncher.launch("image/*") },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
-                                    .padding(12.dp)
+                                    .padding(8.dp)
                                     .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                    .size(28.dp)
                             ) {
                                 Icon(
                                     Icons.Default.CameraAlt,
                                     contentDescription = "Edit cover",
                                     tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }
 
-                        // ─── Hero Section ───────────────────────────────────────
+                        // ─── Hero Section — Compact Horizontal Layout ───────────
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(heroGradient)
-                                .padding(horizontal = 16.dp)
-                                .padding(top = 12.dp, bottom = 28.dp),
-                            contentAlignment = Alignment.Center,
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                // "Your profile" label
-                                Column(modifier = Modifier.padding(start = 4.dp)) {
-                                    Text(
-                                        text = "YOUR PROFILE",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        letterSpacing = 2.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                            val completionPct = profileCompletion(user)
+                            val avatarPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                            ) { uri -> uri?.let { viewModel.uploadAvatar(context, it) } }
+
+                            Row(
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                // Avatar
+                                Box(contentAlignment = Alignment.BottomEnd) {
+                                    AvatarWithRing(
+                                        initial = user?.displayName?.firstOrNull()?.uppercaseChar() ?: '?',
+                                        completionPercent = completionPct,
+                                        size = 56.dp,
                                     )
+                                    Surface(
+                                        onClick = { avatarPickerLauncher.launch("image/*") },
+                                        shape = CircleShape,
+                                        color = Color.Black.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(22.dp).offset(x = 2.dp, y = 2.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.CameraAlt, "Upload avatar", tint = Color.White, modifier = Modifier.size(12.dp))
+                                        }
+                                    }
+                                }
+
+                                // Info column
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
                                     Text(
-                                        text = "Your profile dashboard",
-                                        style = MaterialTheme.typography.titleLarge,
+                                        text = user?.displayName ?: "Guest",
+                                        style = MaterialTheme.typography.titleMedium,
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
-                                        text = "Manage your account, preferences, and settings",
+                                        text = user?.phone ?: user?.email ?: "",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color.White.copy(alpha = 0.8f),
                                     )
-                                }
 
-                                // Glassmorphism card
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(24.dp))
-                                        .background(Color.White.copy(alpha = if (darkTheme) 0.07f else 0.12f))
-                                        .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                                        .padding(20.dp),
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                    // Avatar with completion ring
-                                    val completionPct = profileCompletion(user)
-                                    val avatarPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                                        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
-                                    ) { uri -> uri?.let { viewModel.uploadAvatar(context, it) } }
-                                    Box(contentAlignment = Alignment.BottomEnd) {
-                                        AvatarWithRing(
-                                            initial = user?.displayName?.firstOrNull()?.uppercaseChar() ?: '?',
-                                            completionPercent = completionPct,
-                                            size = 88.dp,
+                                    // Followers / Following inline
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Text(
+                                            "${state.followersCount} Followers",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.SemiBold,
                                         )
-                                        // Camera icon for avatar upload
-                                        Surface(
-                                            onClick = { avatarPickerLauncher.launch("image/*") },
-                                            shape = androidx.compose.foundation.shape.CircleShape,
-                                            color = Color.Black.copy(alpha = 0.6f),
-                                            modifier = Modifier.size(26.dp).offset(x = 2.dp, y = 2.dp),
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Default.CameraAlt, "Upload avatar", tint = Color.White, modifier = Modifier.size(14.dp))
-                                            }
-                                        }
+                                        Text(
+                                            "${state.followingCount} Following",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
                                     }
 
-                                    Text(
-                                        text = user?.displayName ?: "Guest",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-
-                                    Text(
-                                        text = user?.phone ?: user?.email ?: "",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.White.copy(alpha = 0.8f),
-                                    )
-
-                                    // Copy-handle pill (web-parity: EditProfile.jsx copy address)
-                                    val handle = user?.username ?: user?.email ?: ""
-                                    if (handle.isNotBlank()) {
-                                        val clipboardManager = LocalClipboardManager.current
-                                        Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = Color.White.copy(alpha = 0.15f),
-                                            modifier = Modifier.clickable {
-                                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(handle))
-                                            },
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            ) {
-                                                Icon(Icons.Default.ContentCopy, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(12.dp))
-                                                Text(handle, fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium)
-                                            }
-                                        }
-                                    }
-
-                                    // Social links row (with edit pencil when own profile)
-                                    if (state.socialLinks.isNotEmpty() || state.isOwnProfile) {
-                                        var showSocialDialog by remember { mutableStateOf(false) }
-                                        if (showSocialDialog) {
-                                            SocialLinksEditDialog(
-                                                initial = state.socialLinks,
-                                                onDismiss = { showSocialDialog = false },
-                                                onSave = { links -> viewModel.updateSocialLinks(links); showSocialDialog = false },
-                                            )
-                                        }
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            state.socialLinks.forEach { (platform, _) ->
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(32.dp),
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                        Text(
-                                                            when (platform.lowercase()) {
-                                                                "twitter" -> "𝕏"
-                                                                "instagram" -> "📷"
-                                                                "linkedin" -> "in"
-                                                                else -> "🔗"
-                                                            },
-                                                            color = Color.White,
-                                                            fontSize = 14.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                            if (state.isOwnProfile) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.15f),
-                                                    modifier = Modifier.size(28.dp).clickable { showSocialDialog = true },
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                        Icon(Icons.Default.Edit, "Edit social links", tint = Color.White, modifier = Modifier.size(14.dp))
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Followers/Following + Response time
+                                    // Social icons + copy handle inline
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                "${state.followersCount}",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                "Followers",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                "${state.followingCount}",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                "Following",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                        state.responseTimeMinutes?.let { mins ->
-                                            val (timeText, timeColor) = when {
-                                                mins < 60 -> "<1hr" to Color(0xFF22C55E)
-                                                mins < 1440 -> "<24hr" to Color(0xFFFBBF24)
-                                                else -> ">1day" to Color(0xFFEF4444)
-                                            }
+                                        state.socialLinks.forEach { (platform, _) ->
                                             Surface(
-                                                shape = RoundedCornerShape(20.dp),
-                                                color = timeColor.copy(alpha = 0.2f)
+                                                shape = CircleShape,
+                                                color = Color.White.copy(alpha = 0.2f),
+                                                modifier = Modifier.size(24.dp),
                                             ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text("⚡", fontSize = 10.sp)
+                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                                     Text(
-                                                        timeText,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = timeColor,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Badges row
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        // Verified badge
-                                        Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = if (user?.isKycVerified == true) Color(0xFF059669) else Color(0xFFD97706).copy(alpha = 0.85f),
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            ) {
-                                                Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                Text(
-                                                    text = when {
-                                                        user?.isKycVerified == true -> "Verified"
-                                                        user?.kycStatus == "pending" -> "Pending"
-                                                        else -> "Unverified"
-                                                    },
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = Color.White,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                )
-                                            }
-                                        }
-
-                                        // Tier badge with gradient
-                                        val tier = user?.currentPlan
-                                        if (tier != null) {
-                                            val tierGradient = when (tier.lowercase()) {
-                                                "gold" -> listOf(Color(0xFFB45309), Color(0xFFD97706))
-                                                "silver" -> listOf(Color(0xFF6B7280), Color(0xFF9CA3AF))
-                                                "platinum" -> listOf(Color(0xFF0891B2), Color(0xFF06B6D4))
-                                                "diamond" -> listOf(Color(0xFF7C3AED), Color(0xFFEC4899))
-                                                else -> listOf(Color(0xFF92400E), Color(0xFFB45309))
-                                            }
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(20.dp))
-                                                    .background(Brush.horizontalGradient(tierGradient)),
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                ) {
-                                                    Icon(Icons.Default.Star, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                    Text(
-                                                        text = tierLabel(tier),
-                                                        style = MaterialTheme.typography.labelSmall,
+                                                        when (platform.lowercase()) {
+                                                            "twitter" -> "𝕏"
+                                                            "instagram" -> "📷"
+                                                            "linkedin" -> "in"
+                                                            else -> "🔗"
+                                                        },
                                                         color = Color.White,
+                                                        fontSize = 11.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
                                                 }
                                             }
                                         }
-
-                                        // Role badge
-                                        val role = user?.role
-                                        if (!role.isNullOrBlank() && role != "user") {
+                                        val handle = user?.username ?: user?.email ?: ""
+                                        if (handle.isNotBlank()) {
+                                            val clipboardManager = LocalClipboardManager.current
                                             Surface(
-                                                shape = RoundedCornerShape(20.dp),
-                                                color = Color.White.copy(alpha = 0.18f),
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                ) {
-                                                    Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                    Text(
-                                                        text = role.replaceFirstChar { it.uppercase() },
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = Color.White,
-                                                        fontWeight = FontWeight.Medium,
-                                                    )
-                                                }
-                                            }
-                                        }
-
-                                        // Trust score badge
-                                        val rewardsRank = user?.rewardsRank
-                                        if (!rewardsRank.isNullOrBlank()) {
-                                            val (trustColor, trustLabel) = when (rewardsRank.lowercase()) {
-                                                "gold", "platinum" -> Pair(Color(0xFFF59E0B), rewardsRank.replaceFirstChar { it.uppercase() })
-                                                "silver" -> Pair(Color(0xFF6B7280), "Silver")
-                                                "bronze" -> Pair(Color(0xFFB45309), "Bronze")
-                                                else -> Pair(Color(0xFF3B82F6), rewardsRank.replaceFirstChar { it.uppercase() })
-                                            }
-                                            Surface(
-                                                shape = RoundedCornerShape(20.dp),
-                                                color = trustColor.copy(alpha = 0.85f),
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                ) {
-                                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                    Text(
-                                                        text = trustLabel,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = Color.White,
-                                                        fontWeight = FontWeight.Bold,
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Action buttons
-                                    var showMoreMenu by remember { mutableStateOf(false) }
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        // Share profile button
-                                        OutlinedButton(
-                                            onClick = { viewModel.shareProfile(context) },
-                                            modifier = Modifier.weight(1f).height(40.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.7f)),
-                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                                        ) {
-                                            Icon(Icons.Default.Share, null, modifier = Modifier.size(14.dp), tint = Color.White)
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Share", style = MaterialTheme.typography.labelMedium, color = Color.White)
-                                        }
-
-                                        if (user?.isKycVerified != true) {
-                                            Button(
-                                                onClick = onOpenKyc,
-                                                modifier = Modifier.weight(1f).height(40.dp),
                                                 shape = RoundedCornerShape(12.dp),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color.Transparent,
-                                                ),
-                                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                                color = Color.White.copy(alpha = 0.15f),
+                                                modifier = Modifier.clickable {
+                                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(handle))
+                                                },
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .background(
-                                                            Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFF3B82F6))),
-                                                            RoundedCornerShape(12.dp),
-                                                        ),
-                                                    contentAlignment = Alignment.Center,
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
                                                 ) {
-                                                    Text("Verify now", style = MaterialTheme.typography.labelMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                                    Icon(Icons.Default.ContentCopy, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(10.dp))
+                                                    Text(handle, fontSize = 10.sp, color = Color.White.copy(alpha = 0.9f))
                                                 }
                                             }
-                                        } else {
-                                            // Follow/Unfollow button (for other users)
-                                            val isOwnProfile = state.isOwnProfile
-                                            if (!isOwnProfile) {
-                                                Button(
-                                                    onClick = { viewModel.toggleFollow() },
-                                                    modifier = Modifier.weight(1f).height(40.dp),
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = if (state.isFollowing) Color.Transparent else Color(0xFF3B82F6),
-                                                    ),
-                                                    border = if (state.isFollowing) BorderStroke(1.dp, Color.White.copy(alpha = 0.7f)) else null
-                                                ) {
-                                                    Icon(
-                                                        if (state.isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
-                                                        null,
-                                                        modifier = Modifier.size(14.dp),
-                                                        tint = Color.White
-                                                    )
-                                                    Spacer(Modifier.width(4.dp))
-                                                    Text(
-                                                        if (state.isFollowing) "Unfollow" else "Follow",
-                                                        style = MaterialTheme.typography.labelMedium,
-                                                        color = Color.White
-                                                    )
-                                                }
-                                            }
-                                        }
-
-                                        OutlinedButton(
-                                            onClick = { showEditDialog = true },
-                                            modifier = Modifier.weight(1f).height(40.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.7f)),
-                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                                        ) {
-                                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(14.dp), tint = Color.White)
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Edit", style = MaterialTheme.typography.labelMedium, color = Color.White)
-                                        }
-
-                                        // More menu (Block/Report for other users)
-                                        Box {
-                                            IconButton(
-                                                onClick = { showMoreMenu = true },
-                                                modifier = Modifier.size(40.dp)
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.MoreVert,
-                                                    null,
-                                                    tint = Color.White
-                                                )
-                                            }
-                                            DropdownMenu(
-                                                expanded = showMoreMenu,
-                                                onDismissRequest = { showMoreMenu = false }
-                                            ) {
-                                                DropdownMenuItem(
-                                                    text = { Text("Block User") },
-                                                    onClick = { viewModel.blockUser(); showMoreMenu = false },
-                                                    leadingIcon = { Icon(Icons.Default.Block, null) }
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text("Report User") },
-                                                    onClick = { viewModel.reportUser(); showMoreMenu = false },
-                                                    leadingIcon = { Icon(Icons.Default.Flag, null) }
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // Profile completion bar with shimmer
-                                    val shimmerTransition = rememberInfiniteTransition(label = "shimmer")
-                                    val shimmerX by shimmerTransition.animateFloat(
-                                        initialValue = -1f,
-                                        targetValue = 2f,
-                                        animationSpec = infiniteRepeatable(
-                                            animation = tween(2500, easing = LinearEasing),
-                                            repeatMode = RepeatMode.Restart,
-                                        ),
-                                        label = "shimmerX",
-                                    )
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                        ) {
-                                            Text(
-                                                "Profile completion",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White.copy(alpha = 0.8f),
-                                            )
-                                            Text(
-                                                "$completionPct%",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White.copy(alpha = 0.9f),
-                                                fontWeight = FontWeight.SemiBold,
-                                            )
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(6.dp)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(Color.White.copy(alpha = 0.2f)),
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth(completionPct / 100f)
-                                                    .height(6.dp)
-                                                    .drawBehind {
-                                                        drawRect(
-                                                            Brush.horizontalGradient(
-                                                                colors = listOf(
-                                                                    Color(0xFF10B981),
-                                                                    Color(0xFF34D399),
-                                                                    Color.White.copy(alpha = 0.5f),
-                                                                    Color(0xFF34D399),
-                                                                    Color(0xFF10B981),
-                                                                ),
-                                                                startX = size.width * shimmerX,
-                                                                endX = size.width * (shimmerX + 1f),
-                                                            ),
-                                                        )
-                                                    }
-                                                    .clip(RoundedCornerShape(3.dp)),
-                                            )
-                                        }
-                                        if (completionPct < 100) {
-                                            Text(
-                                                profileCompletionHint(user),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White.copy(alpha = 0.7f),
-                                            )
                                         }
                                     }
                                 }
                             }
                         }
-                        }
-
                         // ─── Profile Tabs ─────────────────────────────────────
                         ScrollableTabRow(
                             selectedTabIndex = selectedTab,
