@@ -438,4 +438,295 @@
     <string name="profile_pending">Pendiente</string>
     <string name="profile_unverified">No verificado</string>
     <string name="profile_recent_posts">MIS PUBLICACIONES RECIENTES</string>
+
+    <!-- Settings / KYC -->
+    <string name="settings_api_base_url">URL base de la API</string>
+    <string name="settings_api_base_url_helper">Apunta la app a tu servidor. Debe comenzar con https://</string>
+    <string name="kyc_title">Verificación de vendedor</string>
+    <string name="kyc_intro">Complete KYC una vez para empezar a vender. Los documentos se cifran en tránsito.</string>
+    <string name="kyc_doc_type">Tipo de documento</string>
+    <string name="kyc_doc_aadhaar">Aadhaar</string>
+    <string name="kyc_doc_pan">PAN</string>
+    <string name="kyc_doc_passport">Pasaporte</string>
+    <string name="kyc_doc_dl">Licencia de conducir</string>
+    <string name="kyc_doc_number">Número de documento</string>
+    <string name="kyc_upload_front">Subir imagen frontal</string>
+    <string name="kyc_upload_back">Subir imagen trasera (opcional)</string>
+    <string name="kyc_upload_selfie">Subir selfie (opcional)</string>
+    <string name="kyc_submit">Enviar para revisión</string>
+    <string name="kyc_status_none">No enviado</string>
+    <string name="kyc_status_pending">En revisión</string>
+    <string name="kyc_status_verified">Verificado. Ya puedes vender.</string>
+    <string name="kyc_status_rejected">Rechazado</string>
+    <string name="google_signin_not_configured">El inicio de sesión con Google no está configurado.</string>
+
+    <!-- More / Marketplace -->
+    <string name="more_indian">India</string>
+    <string name="more_international">Internacional</string>
+    <string name="marketplace_pulse">Pulso del mercado</string>
+    <string name="trust_score">Puntuación de confianza</string>
+
+    <!-- Rewards -->
+    <string name="rewards_tab_dashboard">Panel</string>
+    <string name="rewards_tab_earn">Ganar</string>
+    <string name="rewards_tab_referrals">Referidos</string>
+    <string name="rewards_tab_activity">Actividad</string>
+
+    <!-- Feed -->
+    <string name="feed_sort_prefix">Ordenar:</string>
+    <string name="feed_translated_to">Traducido a %s · Toca idioma para cambiar</string>
+    <string name="foryou_ascending">Ascendente</string>
+    <string name="foryou_descending">Descendente</string>
+    <string name="foryou_compact">Compacto</string>
+    <string name="foryou_normal">Normal</string>
+    <string name="foryou_spacious">Espacioso</string>
+
+    <!-- Category -->
+    <string name="cat_great_deals">🔥 Grandes ofertas</string>
+    <string name="cat_deals_subtitle">Productos verificados a los mejores precios</string>
+    <string name="cat_showing_count">Mostrando %1$d de %2$d</string>
+    <string name="cat_sort_relevance">Relevancia</string>
+    <string name="cat_sort_rating">Mejor valorados</string>
+    <string name="cat_sort_popular">Popularidad</string>
+    <string name="guest_preview_message">Mostrando resultados de vista previa. Inicie sesión para acceso completo.</string>
+    <string name="guest_browse_limited">Estás navegando en modo invitado</string>
+
+    <!-- Sell / Plans -->
+    <string name="sell_choose_plan">Elige un plan</string>
+    <string name="sell_current_plan">Plan actual</string>
+    <string name="sell_credits_remaining">Créditos restantes</string>
+    <string name="sell_quick_start">Inicio rápido</string>
+    <string name="plans_popular">POPULAR</string>
+    <string name="plans_recommended">RECOMENDADO</string>
+    <string name="plans_per_listing">por anuncio</string>
+    <string name="plans_per_month">/mes</string>
+    <string name="plans_per_quarter">/3 meses</string>
+    <string name="plans_per_half_year">/6 meses</string>
+    <string name="plans_per_year">/12 meses</string>
+    <string name="plans_feature">Característica</string>
+    <string name="plans_basic">Básico</string>
+    <string name="plans_bronze">Bronce</string>
+    <string name="plans_silver">Plata</string>
+    <string name="plans_gold">Oro</string>
+    <string name="plans_premium">Premium</string>
+    <string name="plans_post_listings">Publicar anuncios</string>
+    <string name="plans_photos_per_post">Fotos por publicación</string>
+    <string name="plans_promoted_posts">Publicaciones promocionadas</string>
+    <string name="plans_analytics_access">Analíticas</string>
+    <string name="plans_priority_support">Soporte prioritario</string>
+    <string name="plans_profile_badge">Insignia en perfil</string>
+    <string name="plans_kyc_verified">KYC verificado</string>
+    <string name="plans_chat_support">Soporte por chat</string>
+    <string name="plans_bulk_manage">Gestión masiva</string>
+    <string name="plans_export_analytics">Exportar analíticas</string>
+    <string name="plans_custom_storefront">Tienda personalizada</string>
+    <string name="plans_dedicated_manager">Gerente dedicado</string>
+
+    <!-- Compare -->
+    <string name="compare_add_hint">Añade anuncios para comparar precios y características</string>
+    <string name="compare_comparison">Comparación</string>
+    <string name="compare_price">Precio</string>
+    <string name="compare_condition">Estado</string>
+    <string name="compare_brand">Marca</string>
+    <string name="compare_model">Modelo</string>
+    <string name="compare_location">Ubicación</string>
+    <string name="compare_color">Color</string>
+    <string name="compare_size">Tamaño</string>
+    <string name="compare_seller">Vendedor</string>
+    <string name="compare_warranty">Garantía</string>
+    <string name="compare_age">Antigüedad</string>
+    <string name="compare_remove">Quitar</string>
+
+    <!-- Search -->
+    <string name="search_recent">Búsquedas recientes</string>
+    <string name="search_clear_all">Borrar todo</string>
+    <string name="search_try_different">Intenta con otros términos</string>
+
+    <!-- Notifications -->
+    <string name="notif_title">Notificaciones</string>
+    <string name="notif_empty">Sin notificaciones</string>
+    <string name="notif_mark_read">Marcar como leída</string>
+    <string name="notif_mark_all_read">Marcar todas como leídas</string>
+    <string name="notif_delete">Eliminar</string>
+
+    <!-- Chat -->
+    <string name="chat_delete_message">Eliminar mensaje</string>
+    <string name="chat_delete_confirm">¿Eliminar este mensaje? No se puede deshacer.</string>
+    <string name="chat_delete">Eliminar</string>
+    <string name="chat_cancel">Cancelar</string>
+    <string name="chat_react">Reaccionar al mensaje</string>
+    <string name="chat_close">Cerrar</string>
+    <string name="chat_type_message">Escribe un mensaje…</string>
+    <string name="chat_search_conversation">Buscar en conversación…</string>
+
+    <!-- CategoryAppShell -->
+    <string name="catshell_guest_user">Usuario invitado</string>
+    <string name="catshell_browsing">Navegando %s</string>
+    <string name="catshell_menu">Menú de categoría</string>
+    <string name="catshell_back_to_launcher">Volver al inicio</string>
+    <string name="catshell_browse_subcategories">Explorar subcategorías</string>
+    <string name="catshell_for_you">Para ti</string>
+    <string name="catshell_community_feed">Feed comunitario</string>
+    <string name="catshell_order_history">Historial de pedidos</string>
+    <string name="catshell_settings">Ajustes</string>
+    <string name="catshell_help_faq">Ayuda y FAQ</string>
+    <string name="catshell_switch_category">Cambiar categoría</string>
+    <string name="catshell_quick_subcategories">Subcategorías rápidas</string>
+    <string name="catshell_now">Ahora</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_search">Buscar</string>
+    <string name="cd_filters">Filtros</string>
+    <string name="cd_toggle_view">Cambiar vista</string>
+    <string name="cd_clear">Borrar</string>
+    <string name="cd_verified">Verificado</string>
+    <string name="cd_wishlist">Lista de deseos</string>
+    <string name="cd_delete">Eliminar</string>
+    <string name="cd_settings">Ajustes</string>
+    <string name="cd_select">Seleccionar</string>
+    <string name="cd_open_menu">Abrir menú de categoría</string>
+    <string name="cd_back_to_launcher">Volver al lanzador</string>
+    <string name="cd_search_in">Buscar en %s</string>
+    <string name="cd_notifications">Ver notificaciones</string>
+    <string name="cd_cart_items">Carrito, %d artículos</string>
+    <string name="cd_delete_selected">Eliminar seleccionados</string>
+
+    <!-- Promote -->
+    <string name="promote_title">Promocionar \"%s\"</string>
+    <string name="promote_boost_subtitle">Aumenta la visibilidad de tu anuncio</string>
+    <string name="promote_basic">Básico</string>
+    <string name="promote_featured">Destacado</string>
+    <string name="promote_spotlight">Spotlight</string>
+    <string name="promote_2x">2x visibilidad</string>
+    <string name="promote_5x">5x + página principal</string>
+    <string name="promote_10x">10x + posición top</string>
+    <string name="promote_duration">Duración</string>
+    <string name="promote_days">%d días</string>
+    <string name="promote_confirm">Confirmar y pagar</string>
+
+    <!-- Home extras -->
+    <string name="home_sell">Vender</string>
+    <string name="home_loading_slow">La carga está tardando demasiado</string>
+    <string name="home_feed_unavailable">El feed podría no estar disponible temporalmente</string>
+    <string name="home_search_placeholder">Buscar anuncios, categorías…</string>
+    <string name="home_verified_only_label">Solo verificados</string>
+    <string name="home_in_category">en %s</string>
+    <string name="home_guest_title">Desbloquea más anuncios</string>
+    <string name="home_guest_subtitle">Inicia sesión para ver todos los artículos disponibles</string>
+    <string name="home_guest_sign_in">Iniciar sesión</string>
+    <string name="home_compare_now">Comparar ahora</string>
+    <string name="home_sort_newest">Más recientes</string>
+    <string name="home_sort_popular">Popular</string>
+    <string name="home_sort_price_low">Precio ↑</string>
+    <string name="home_sort_price_high">Precio ↓</string>
+    <string name="home_quick_filter_label">Filtros rápidos</string>
+    <string name="home_page_density_label">Densidad de página</string>
+    <string name="home_density_compact">Compacto</string>
+    <string name="home_density_normal">Normal</string>
+    <string name="home_density_spacious">Espacioso</string>
+    <string name="home_loading_more">Cargando más…</string>
+    <string name="home_no_more_listings">No hay más anuncios</string>
+    <string name="home_close">Cerrar</string>
+    <string name="home_reset_filters">Restablecer filtros</string>
+
+    <!-- Post / Create -->
+    <string name="post_kyc_title">Verifica tu identidad para publicar</string>
+    <string name="post_kyc_message">Los vendedores deben completar KYC antes de publicar.</string>
+    <string name="post_kyc_go">Ir a KYC</string>
+    <string name="post_kyc_continue">Continuar de todos modos</string>
+    <string name="post_duplicate_warning">Se encontró un anuncio similar en tus publicaciones</string>
+    <string name="post_listing_checklist">Lista de verificación</string>
+    <string name="post_add_label">Añadir</string>
+    <string name="post_image_required">Añade al menos una foto</string>
+    <string name="post_audio_description">Descripción de audio</string>
+    <string name="post_audio_recorded">Grabado</string>
+    <string name="post_audio_stop">Detener</string>
+    <string name="post_description_label">Descripción</string>
+    <string name="post_description_hint">Describe el artículo…</string>
+    <string name="post_title_error">El título debe tener 3–120 caracteres</string>
+    <string name="post_price_error">Introduce un precio válido</string>
+    <string name="post_desc_error">La descripción debe tener al menos 20 caracteres</string>
+    <string name="post_contact_error">Introduce un número de 10 dígitos válido</string>
+    <string name="post_category_error">Selecciona una categoría</string>
+    <string name="post_condition_label">Estado</string>
+    <string name="post_brand_label">Marca (opcional)</string>
+    <string name="post_model_label">Modelo (opcional)</string>
+    <string name="post_device_specs">Especificaciones</string>
+    <string name="post_ram_label">RAM (GB)</string>
+    <string name="post_storage_label">Almacenamiento (GB)</string>
+    <string name="post_vehicle_details">Detalles del vehículo</string>
+    <string name="post_mileage_label">Kilometraje (km)</string>
+    <string name="post_year_label">Año</string>
+    <string name="post_contact_label">Contacto (opcional)</string>
+    <string name="post_age_label">Antigüedad (meses)</string>
+    <string name="post_warranty_label">Garantía</string>
+    <string name="post_warranty_status">Estado de garantía</string>
+    <string name="post_warranty_under">En garantía</string>
+    <string name="post_warranty_expired">Expirada</string>
+    <string name="post_warranty_none">Sin garantía</string>
+    <string name="post_flash_sale_title">Venta flash 24 horas</string>
+    <string name="post_flash_sale_subtitle">Aumenta la visibilidad por 24 horas</string>
+    <string name="post_submitting">Enviando tu anuncio</string>
+    <string name="post_plan_badge">Plan %1$s • hasta %2$d foto(s) por anuncio</string>
+    <string name="post_photos_label">Fotos</string>
+    <string name="post_image_info">Hasta %1$d foto(s) en tu plan %3$s · JPG/PNG/WEBP</string>
+    <string name="post_images_selected">%1$d/%2$d seleccionadas · Toca para reordenar</string>
+    <string name="post_audio_record_prompt">Grabar descripción de audio (máx %ds)</string>
+    <string name="post_condition_new">Nuevo</string>
+    <string name="post_condition_like_new">Como nuevo</string>
+    <string name="post_condition_used">Usado</string>
+    <string name="post_condition_refurbished">Reacondicionado</string>
+
+    <!-- PostDetail -->
+    <string name="detail_listing">Anuncio</string>
+    <string name="detail_unable_open">No se puede abrir el anuncio</string>
+    <string name="detail_unable_load">No se puede cargar el anuncio</string>
+    <string name="detail_reload">Recargar anuncio</string>
+    <string name="detail_not_available">Anuncio no disponible</string>
+    <string name="detail_removed">Este anuncio puede haber sido eliminado.</string>
+    <string name="detail_overview">Resumen</string>
+    <string name="detail_details">Detalles</string>
+    <string name="detail_specs">Especificaciones</string>
+    <string name="detail_trust">Confianza</string>
+    <string name="detail_description_tab">Descripción</string>
+    <string name="detail_seller_tab">Vendedor</string>
+    <string name="detail_description">Descripción</string>
+    <string name="detail_show_less">Mostrar menos</string>
+    <string name="detail_read_more">Leer más</string>
+    <string name="detail_condition">Estado</string>
+    <string name="detail_brand">Marca</string>
+    <string name="detail_location">Ubicación</string>
+    <string name="detail_price">Precio</string>
+    <string name="detail_category">Categoría</string>
+    <string name="detail_specifications">Especificaciones</string>
+    <string name="detail_views">Vistas</string>
+    <string name="detail_likes">Me gusta</string>
+    <string name="detail_shares">Compartidos</string>
+    <string name="detail_trust_score">Puntuación: %d/100</string>
+    <string name="detail_highly_trusted">Muy confiable</string>
+    <string name="detail_trusted">Confiable</string>
+    <string name="detail_new_seller">Vendedor nuevo</string>
+    <string name="detail_activity_timeline">Cronología de actividad</string>
+    <string name="detail_similar">Anuncios similares</string>
+    <string name="detail_recommended">Recomendados para ti</string>
+    <string name="detail_sponsored">Patrocinado</string>
+    <string name="detail_seller">Vendedor</string>
+    <string name="detail_call">Llamar</string>
+    <string name="detail_listing_insights">Estadísticas del anuncio</string>
+    <string name="detail_inquiries">Consultas</string>
+    <string name="detail_offers">Ofertas</string>
+    <string name="detail_watchers">Observadores</string>
+    <string name="detail_offer_success">¡Oferta enviada con éxito!</string>
+    <string name="detail_offer_placeholder">Tu oferta ₹</string>
+    <string name="detail_send">Enviar</string>
+    <string name="detail_make_offer">Hacer oferta</string>
+    <string name="detail_boost">Impulsar tu anuncio</string>
+    <string name="detail_price_alert">Alerta de precio</string>
+    <string name="detail_alert_on">Alerta activa</string>
+    <string name="detail_interested">Interesado</string>
+    <string name="detail_comparing">Comparando</string>
+    <string name="detail_compare">Comparar</string>
+    <string name="detail_play_video">Reproducir video</string>
+    <string name="detail_posted_ago">Publicado %s</string>
+    <string name="detail_offer_failed">Error al enviar oferta</string>
 </resources>
