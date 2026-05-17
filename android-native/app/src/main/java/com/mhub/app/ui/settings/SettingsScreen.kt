@@ -1,8 +1,11 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.mhub.app.ui.settings
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -292,8 +295,24 @@ fun SettingsScreen(
                     Text("Display Language", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
                     var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("en" to "English", "hi" to "हिन्दी", "ta" to "தமிழ்", "te" to "తెలుగు").forEach { (code, label) ->
+                    var showAll by remember { mutableStateOf(false) }
+                    val indianLangs = listOf(
+                        "en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்",
+                        "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી",
+                        "ml" to "മലയാളം", "pa" to "ਪੰਜਾਬੀ", "ur" to "اردو",
+                    )
+                    val intlLangs = listOf(
+                        "es" to "Español", "fr" to "Français", "de" to "Deutsch", "pt" to "Português",
+                        "it" to "Italiano", "ru" to "Русский", "ar" to "العربية", "ja" to "日本語",
+                        "ko" to "한국어", "zh" to "中文", "id" to "Indonesia", "tr" to "Türkçe",
+                        "vi" to "Tiếng Việt", "th" to "ไทย", "sw" to "Kiswahili",
+                    )
+                    Text("Indian Languages", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        indianLangs.forEach { (code, label) ->
                             FilterChip(
                                 selected = selectedLang == code,
                                 onClick = {
@@ -306,6 +325,38 @@ fun SettingsScreen(
                             )
                         }
                     }
+                    if (showAll) {
+                        Text("International Languages", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            intlLangs.forEach { (code, label) ->
+                                FilterChip(
+                                    selected = selectedLang == code,
+                                    onClick = {
+                                        selectedLang = code
+                                        AppCompatDelegate.setApplicationLocales(
+                                            LocaleListCompat.forLanguageTags(code),
+                                        )
+                                    },
+                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        if (showAll) "Show less" else "Show all 25 languages →",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 4.dp).then(
+                            Modifier.background(
+                                color = androidx.compose.ui.graphics.Color.Transparent,
+                                shape = RoundedCornerShape(4.dp),
+                            )
+                        ).clickable { showAll = !showAll },
+                    )
                 }
             }
 

@@ -565,13 +565,19 @@ object MockDataProvider {
     val allProducts: List<MockProduct> get() =
         electronicsProducts + fashionProducts + groceryProducts + furnitureProducts
 
+    private fun resolveCategory(categoryKey: String): String = when (categoryKey) {
+        "vehicles" -> "grocery"   // vehicles uses grocery mock data
+        "others"   -> "furniture" // others uses furniture mock data
+        else -> categoryKey
+    }
+
     fun productsForCategory(categoryKey: String): List<MockProduct> =
-        allProducts.filter { it.category == categoryKey }
+        allProducts.filter { it.category == resolveCategory(categoryKey) }
 
     fun productsForSubcategory(subcategoryId: String): List<MockProduct> =
         allProducts.filter { it.subcategory == subcategoryId }
 
-    fun subcategoriesFor(categoryKey: String): List<MockSubcategory> = when (categoryKey) {
+    fun subcategoriesFor(categoryKey: String): List<MockSubcategory> = when (resolveCategory(categoryKey)) {
         "electronics" -> electronicsSubcategories
         "fashion"     -> fashionSubcategories
         "grocery"     -> grocerySubcategories
@@ -579,7 +585,7 @@ object MockDataProvider {
         else          -> emptyList()
     }
 
-    fun bannersFor(categoryKey: String): List<HeroBanner> = when (categoryKey) {
+    fun bannersFor(categoryKey: String): List<HeroBanner> = when (resolveCategory(categoryKey)) {
         "electronics" -> electronicsBanners
         "fashion"     -> fashionBanners
         "grocery"     -> groceryBanners
@@ -587,7 +593,7 @@ object MockDataProvider {
         else          -> emptyList()
     }
 
-    fun brandsFor(categoryKey: String): List<MockBrand> = when (categoryKey) {
+    fun brandsFor(categoryKey: String): List<MockBrand> = when (resolveCategory(categoryKey)) {
         "electronics" -> electronicsBrands
         "fashion"     -> fashionBrands
         else          -> emptyList()

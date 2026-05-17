@@ -277,14 +277,13 @@ fun MhubApp(
             // ── Main Graph (Bottom Nav) ──
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
-                    MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                     CategoryHubScreen(
                         onOpenCategory = { category ->
                             val mapped = when ((category.categoryGroup ?: category.name ?: "").lowercase()) {
                                 "electronics" -> "electronics"
                                 "fashion" -> "fashion"
-                                "grocery" -> "grocery"
-                                else -> "furniture"
+                                "vehicles" -> "vehicles"
+                                else -> "others"
                             }
                             analytics.logEvent(
                                 "launcher_enter_category",
@@ -310,7 +309,7 @@ fun MhubApp(
                         onOpenSearch = { navController.navigate(Routes.SEARCH) },
                         onSelectApp = { key ->
                             val safeKey = key.lowercase().let {
-                                if (it in setOf("electronics", "fashion", "grocery", "furniture")) it else "electronics"
+                                if (it in setOf("electronics", "fashion", "vehicles", "others")) it else "electronics"
                             }
                             analytics.logEvent(
                                 "launcher_enter_category",
@@ -328,7 +327,6 @@ fun MhubApp(
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenScanner = { navController.navigate(Routes.SCANNER) },
                     )
-                    }
                 }
 
                 composable(Routes.ALL_POSTS) {
@@ -894,7 +892,7 @@ fun MhubApp(
                     onOpenHelp = { navController.navigate(Routes.FAQ) },
                     onSwitchCategory = { nextKey ->
                         val safeKey = nextKey.lowercase().let {
-                            if (it in setOf("electronics", "fashion", "grocery", "furniture")) it else "electronics"
+                            if (it in setOf("electronics", "fashion", "vehicles", "others")) it else "electronics"
                         }
                         analytics.logEvent(
                             "category_switch",
