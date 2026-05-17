@@ -135,18 +135,43 @@ fun ProductListingScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
 
-    // ── Derived filtered + sorted list ───────────────────────────────────────
+    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // ── Subcategory data ─────────────────────────────────────────────────────
+    val subcategories = remember(categoryKey) { MockDataProvider.subcategoriesFor(categoryKey) }
+    var selectedSubcatId by remember { mutableStateOf(subcategoryId) }
+
+    // ── Quick condition filter ────────────────────────────────────────────────
+    var conditionFilter by remember { mutableStateOf<String?>(null) } // null = All, "new", "used"
+    var verifiedOnly by remember { mutableStateOf(false) }
+
+    // Re-derive products when subcategory changes
+    val subcatProducts = remember(categoryKey, selectedSubcatId) {
+        if (selectedSubcatId != null)
+            MockDataProvider.productsForSubcategory(selectedSubcatId!!)
+        else
+            MockDataProvider.productsForCategory(categoryKey)
+    }
+
+    // ── Derived filtered + sorted list (using subcatProducts) ────────────────
     val filteredProducts by remember(
-        priceRange, selectedBrands.toList(), minRating, inStockOnly, sortOption, allProducts,
+        priceRange, selectedBrands.toList(), minRating, inStockOnly, sortOption, subcatProducts, conditionFilter, verifiedOnly,
     ) {
         derivedStateOf {
-            allProducts
+            subcatProducts
                 .filter { p ->
                     p.price >= priceRange.start && p.price <= priceRange.endInclusive
                 }
                 .filter { p -> selectedBrands.isEmpty() || selectedBrands.contains(p.brand) }
                 .filter { p -> p.rating >= minRating }
                 .filter { p -> if (inStockOnly) p.inStock else true }
+                .filter { p ->
+                    when (conditionFilter) {
+                        "new" -> p.isNewArrival
+                        "used" -> !p.isNewArrival
+                        else -> true
+                    }
+                }
                 .let { list ->
                     when (sortOption) {
                         SortOption.PRICE_LOW   -> list.sortedBy { it.price }
@@ -167,12 +192,66 @@ fun ProductListingScreen(
         selectedBrands.forEach { add(it) }
         if (minRating > 0) add("${minRating.toInt()}★ & above")
         if (inStockOnly) add("In Stock")
+        if (conditionFilter != null) add(if (conditionFilter == "new") "New" else "Used")
+        if (verifiedOnly) add("Verified")
     }
-
-    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold { innerPad ->
         Column(modifier = Modifier.padding(innerPad).fillMaxSize()) {
+
+            // ── Subcategory filter chips ─────────────────────────────────────
+            if (subcategories.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    FilterChip(
+                        selected = selectedSubcatId == null,
+                        onClick = { selectedSubcatId = null },
+                        label = { Text("All", style = MaterialTheme.typography.labelSmall) },
+                    )
+                    subcategories.forEach { subcat ->
+                        FilterChip(
+                            selected = selectedSubcatId == subcat.id,
+                            onClick = {
+                                selectedSubcatId = if (selectedSubcatId == subcat.id) null else subcat.id
+                            },
+                            label = { Text(subcat.name, style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+            }
+
+            // ── Quick filters row (Condition, Verified) ──────────────────────
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                FilterChip(
+                    selected = conditionFilter == null,
+                    onClick = { conditionFilter = null },
+                    label = { Text("All", style = MaterialTheme.typography.labelSmall) },
+                )
+                FilterChip(
+                    selected = conditionFilter == "new",
+                    onClick = { conditionFilter = if (conditionFilter == "new") null else "new" },
+                    label = { Text("New", style = MaterialTheme.typography.labelSmall) },
+                )
+                FilterChip(
+                    selected = conditionFilter == "used",
+                    onClick = { conditionFilter = if (conditionFilter == "used") null else "used" },
+                    label = { Text("Used", style = MaterialTheme.typography.labelSmall) },
+                )
+                FilterChip(
+                    selected = verifiedOnly,
+                    onClick = { verifiedOnly = !verifiedOnly },
+                    label = { Text("✓ Verified", style = MaterialTheme.typography.labelSmall) },
+                )
+            }
 
             // ── Toolbar strip ────────────────────────────────────────────────
             Row(
@@ -236,11 +315,11 @@ fun ProductListingScreen(
 
                 // Product count
                 Text(
-                    text = "Showing ${filteredProducts.size} of ${allProducts.size}",
+                    text = "Showing ${filteredProducts.size} of ${subcatProducts.size}",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
-                    modifier = Modifier.semantics { contentDescription = "Showing ${filteredProducts.size} of ${allProducts.size} products" },
+                    modifier = Modifier.semantics { contentDescription = "Showing ${filteredProducts.size} of ${subcatProducts.size} products" },
                 )
                 Spacer(Modifier.width(8.dp))
 
@@ -275,6 +354,8 @@ fun ProductListingScreen(
                                     chip.startsWith("₹") -> priceRange = 0f..maxPrice
                                     chip.contains("★")   -> minRating = 0f
                                     chip == "In Stock"   -> inStockOnly = false
+                                    chip == "New" || chip == "Used" -> conditionFilter = null
+                                    chip == "Verified"   -> verifiedOnly = false
                                     else                 -> selectedBrands.remove(chip)
                                 }
                             },

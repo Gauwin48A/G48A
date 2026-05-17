@@ -34,4 +34,55 @@
     <string name="shortcut_search_long">यादी शोधा</string>
     <string name="shortcut_chat">चॅट</string>
     <string name="shortcut_chat_long">संदेश उघडा</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">मुख्यपृष्ठ</string>
+    <string name="nav_all_posts">सर्व पोस्ट</string>
+    <string name="nav_for_you">तुमच्यासाठी</string>
+    <string name="nav_feed">फीड</string>
+    <string name="nav_rewards">बक्षिसे</string>
+    <string name="nav_profile">प्रोफाइल</string>
+    <string name="nav_more">अधिक</string>
+    <string name="nav_sell">विक्री</string>
+    <string name="nav_chat">चॅट</string>
+    <string name="nav_search">शोध</string>
+    <string name="nav_wishlist">इच्छासूची</string>
+    <string name="nav_categories">वर्ग</string>
+    <string name="nav_notifications">सूचना</string>
+    <string name="nav_settings">सेटिंग्ज</string>
+
+    <!-- Common UI -->
+    <string name="all_posts">सर्व पोस्ट</string>
+    <string name="for_you">तुमच्यासाठी</string>
+    <string name="rewards">बक्षिसे</string>
+    <string name="profile">प्रोफाइल</string>
+    <string name="sell">विक्री</string>
+    <string name="cart">कार्ट</string>
+    <string name="wishlist">इच्छासूची</string>
+    <string name="search">शोध</string>
+    <string name="filter">फिल्टर</string>
+    <string name="sort">क्रमवारी</string>
+    <string name="share">शेअर</string>
+    <string name="edit">संपादन</string>
+    <string name="cancel">रद्द</string>
+    <string name="save">जतन</string>
+    <string name="back">मागे</string>
+    <string name="retry">पुन्हा प्रयत्न</string>
+    <string name="loading">लोड होत आहे…</string>
+    <string name="no_results">निकाल सापडले नाहीत</string>
+    <string name="newest">नवीन</string>
+    <string name="popular">लोकप्रिय</string>
+    <string name="verified">सत्यापित</string>
+    <string name="condition_new">नवीन</string>
+    <string name="condition_used">वापरलेले</string>
+    <string name="nearby">जवळपास</string>
+    <string name="categories">वर्ग</string>
+    <string name="electronics">इलेक्ट्रॉनिक्स</string>
+    <string name="fashion">फॅशन</string>
+    <string name="vehicles">वाहने</string>
+    <string name="others">इतर</string>
+    <string name="deals">सौदे</string>
+    <string name="followers">अनुयायी</string>
+    <string name="following">अनुसरण</string>
+    <string name="trust_marketplace">विश्वास-प्रथम बाजार</string>
 </resources>

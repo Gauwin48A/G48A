@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -169,6 +170,8 @@ fun CategoryAppShell(
     onOpenHelp: () -> Unit,
     onSwitchCategory: (String) -> Unit,
     onOpenPostDetail: (String) -> Unit,
+    onOpenFeed: () -> Unit = {},
+    onOpenForYou: () -> Unit = {},
     cartBadgeCount: Int = 0,
 ) {
     val viewModel: CategoryShellViewModel = hiltViewModel()
@@ -184,7 +187,7 @@ fun CategoryAppShell(
     val effectiveCartBadgeCount = maxOf(cartBadgeCount, roomCartCount)
 
     fun routeForTab(tab: CategoryTab): String = when (tab) {
-        CategoryTab.HOME -> Routes.categoryHome(categoryKey)
+        CategoryTab.HOME -> Routes.categoryListing(categoryKey)
         CategoryTab.CATEGORIES -> Routes.categorySubcats(categoryKey)
         CategoryTab.CART -> Routes.categoryCart(categoryKey)
         CategoryTab.WISHLIST -> Routes.categoryWishlist(categoryKey)
@@ -193,15 +196,8 @@ fun CategoryAppShell(
 
     LaunchedEffect(categoryKey) {
         viewModel.persistCategory(categoryKey)
-        val restored = viewModel.loadLastTab(categoryKey)
-        selectedTab = restored
-        if (restored != CategoryTab.HOME) {
-            innerNav.navigate(routeForTab(restored)) {
-                popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
-            }
-        }
+        // Always start on HOME tab when entering a category (don't restore old tab)
+        selectedTab = CategoryTab.HOME
     }
 
     ModalNavigationDrawer(
@@ -233,6 +229,14 @@ fun CategoryAppShell(
                     scope.launch { drawerState.close() }
                     onOpenHelp()
                 },
+                onOpenFeed = {
+                    scope.launch { drawerState.close() }
+                    onOpenFeed()
+                },
+                onOpenForYou = {
+                    scope.launch { drawerState.close() }
+                    onOpenForYou()
+                },
                 onSwitchCategory = { nextKey ->
                     scope.launch { drawerState.close() }
                     onSwitchCategory(nextKey)
@@ -242,7 +246,6 @@ fun CategoryAppShell(
     ) {
         Scaffold(
             topBar = {
-                if (!useExternalBottomNav) {
                 CategoryTopBar(
                     appDef = appDef,
                     cartBadgeCount = effectiveCartBadgeCount,
@@ -258,7 +261,6 @@ fun CategoryAppShell(
                         }
                     },
                 )
-                }
             },
             bottomBar = {
                 if (!useExternalBottomNav) {
@@ -269,7 +271,7 @@ fun CategoryAppShell(
                         viewModel.persistTab(categoryKey, tab)
                         val route = routeForTab(tab)
                         innerNav.navigate(route) {
-                            popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
+                            popUpTo(Routes.categoryListing(categoryKey)) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -280,12 +282,21 @@ fun CategoryAppShell(
                 }
             },
         ) { innerPadding ->
+            // When external bottom nav is used, don't apply bottom padding from inner scaffold
+            val effectivePadding = if (useExternalBottomNav) {
+                androidx.compose.foundation.layout.PaddingValues(
+                    start = innerPadding.calculateLeftPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateRightPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                    bottom = 0.dp,
+                )
+            } else innerPadding
             NavHost(
                 navController = innerNav,
-                startDestination = Routes.categoryHome(categoryKey),
+                startDestination = Routes.categoryListing(categoryKey),
                 enterTransition = { fadeIn(tween(220)) },
                 exitTransition = { fadeOut(tween(180)) },
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier.padding(effectivePadding),
             ) {
             composable(Routes.categoryHome(categoryKey)) {
                 CategoryHomeScreen(
@@ -467,6 +478,8 @@ private fun CategoryDrawerContent(
     onOpenSettings: () -> Unit,
     onBrowseSubcategories: () -> Unit,
     onOpenHelp: () -> Unit,
+    onOpenFeed: () -> Unit,
+    onOpenForYou: () -> Unit,
     onSwitchCategory: (String) -> Unit,
 ) {
     val shortcutSubcats = MockDataProvider.subcategoriesFor(currentApp.key).take(6)
@@ -513,6 +526,8 @@ private fun CategoryDrawerContent(
 
             DrawerActionRow(label = "Back to Launcher", icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackToLauncher)
             DrawerActionRow(label = "Browse Subcategories", icon = Icons.Filled.Category, onClick = onBrowseSubcategories)
+            DrawerActionRow(label = "For You", icon = Icons.Filled.FavoriteBorder, onClick = onOpenForYou)
+            DrawerActionRow(label = "Community Feed", icon = Icons.Filled.Notifications, onClick = onOpenFeed)
             DrawerActionRow(label = "Order History", icon = Icons.Filled.Dashboard, onClick = onOpenOrders)
             DrawerActionRow(label = "Settings", icon = Icons.Filled.Settings, onClick = onOpenSettings)
             DrawerActionRow(label = "Help & FAQ", icon = Icons.Filled.HelpOutline, onClick = onOpenHelp)

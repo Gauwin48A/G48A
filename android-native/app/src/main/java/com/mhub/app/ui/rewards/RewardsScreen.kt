@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Toll
 import androidx.compose.material.icons.outlined.Upgrade
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -409,90 +410,35 @@ fun RewardsScreen(
 
                         // ─── Hero Banner ────────────────────────────
                         if (selectedTab == 0) item {
-                            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Brush.horizontalGradient(if (darkTheme) listOf(Color(0xFF0B1220), Color(0xFF1B2542), Color(0xFF2A1F45)) else listOf(Color(0xFF0EA5E9), Color(0xFF3B82F6), Color(0xFF8B5CF6)))).padding(16.dp)) {
-                                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text("REWARDS PROGRAM", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f), letterSpacing = 2.sp, fontWeight = FontWeight.SemiBold)
-                                        Text("Rewards & Referrals", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                                    }
-                                    // Glassmorphism user card
-                                    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = if (darkTheme) 0.07f else 0.14f)).border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(16.dp)).padding(14.dp)) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                Box(contentAlignment = Alignment.TopEnd) {
-                                                    Box(modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                                                        Text((user.name?.firstOrNull()?.uppercaseChar() ?: '?').toString(), style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                                                    }
-                                                    Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(Color(0xFFF59E0B)).border(1.5.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) {
-                                                        Icon(Icons.Filled.EmojiEvents, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                    }
-                                                }
-                                                Column {
-                                                    Text(user.name ?: "User", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                                                    Text("Code: ${user.referralCode ?: "\u2014"}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
-                                                }
+                            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Brush.horizontalGradient(if (darkTheme) listOf(Color(0xFF0B1220), Color(0xFF1B2542), Color(0xFF2A1F45)) else listOf(Color(0xFF0EA5E9), Color(0xFF3B82F6), Color(0xFF8B5CF6)))).padding(12.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    // Compact header row with user info
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Box(contentAlignment = Alignment.TopEnd) {
+                                            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                                                Text((user.name?.firstOrNull()?.uppercaseChar() ?: '?').toString(), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
                                             }
-                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                HeroChip("\uD83C\uDFC6 ${user.rank ?: "Bronze"}")
-                                                HeroChip("Lv.${max(user.level, 1)}")
-                                                HeroChip((user.currentPlan ?: user.membershipPlan ?: "Basic").replaceFirstChar { it.uppercase() })
-                                            }
-                                            // Daily Secret Code Display + Input
-                                            user.dailySecretCode?.let { code ->
-                                                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                    Text("\uD83D\uDD11 Secret: $code", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
-                                                    Text("Copy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6EE7B7), fontWeight = FontWeight.Bold, modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(code)) })
-                                                }
-                                            }
-                                            // Daily Code Claim Input
-                                            var codeInput by remember { mutableStateOf("") }
-                                            var codeResult by remember { mutableStateOf<String?>(null) }
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 6.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                            ) {
-                                                OutlinedTextField(
-                                                    value = codeInput,
-                                                    onValueChange = { codeInput = it.uppercase().take(10) },
-                                                    placeholder = { Text("Enter daily code", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp) },
-                                                    singleLine = true,
-                                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                                                    modifier = Modifier.weight(1f).height(44.dp),
-                                                    colors = OutlinedTextFieldDefaults.colors(
-                                                        focusedBorderColor = Color(0xFF6EE7B7),
-                                                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                                                        cursorColor = Color.White,
-                                                    ),
-                                                    shape = RoundedCornerShape(8.dp),
-                                                )
-                                                Surface(
-                                                    onClick = {
-                                                        if (codeInput.isNotBlank()) {
-                                                            codeResult = if (codeInput == (user.dailySecretCode ?: "")) "\u2705 Code claimed!" else "\u274C Invalid code"
-                                                            if (codeResult?.startsWith("\u2705") == true) codeInput = ""
-                                                        }
-                                                    },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = Color(0xFF6EE7B7),
-                                                    modifier = Modifier.height(44.dp),
-                                                ) {
-                                                    Text("Claim", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF064E3B), modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
-                                                }
-                                            }
-                                            codeResult?.let { result ->
-                                                Text(result, style = MaterialTheme.typography.labelSmall, color = if (result.startsWith("\u2705")) Color(0xFF6EE7B7) else Color(0xFFFCA5A5))
-                                            }
-                                            // XP progress
-                                            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                    Text("Level progress", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
-                                                    Text("${user.xpCurrent} / ${user.xpRequired} XP", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.SemiBold)
-                                                }
-                                                GoldProgressBar(progress = xpProgress)
-                                                Text("$xpRemaining XP to next level", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(0xFFF59E0B)).border(1.5.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) {
+                                                Icon(Icons.Filled.EmojiEvents, null, tint = Color.White, modifier = Modifier.size(10.dp))
                                             }
                                         }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(user.name ?: "User", style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                                            Text("Code: ${user.referralCode ?: "\u2014"}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
+                                        }
+                                        // Quick chips inline
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            HeroChip("\uD83C\uDFC6 ${user.rank ?: "Bronze"}")
+                                            HeroChip("Lv.${max(user.level, 1)}")
+                                        }
+                                    }
+                                    // XP progress - compact
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Level progress", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                                            Text("${user.xpCurrent}/${user.xpRequired} XP", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.SemiBold)
+                                        }
+                                        GoldProgressBar(progress = xpProgress)
                                     }
                                 }
                             }
@@ -606,6 +552,48 @@ fun RewardsScreen(
                                         OutlinedButton(onClick = { viewModel.scratchCard() }, modifier = Modifier.weight(1f).height(40.dp), enabled = canScratch && state.actionLoading == null, shape = RoundedCornerShape(12.dp)) {
                                             Text(if (state.actionLoading == "scratch") "..." else if (canScratch) "\uD83C\uDF9F Scratch ($scratchCount)" else "\uD83C\uDF9F None", style = MaterialTheme.typography.labelMedium)
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ─── Daily Secret Code ───────────────────────────
+                        if (selectedTab == 1) item {
+                            AccentTopCard(listOf(Color(0xFF10B981), Color(0xFF059669)), if (darkTheme) Color(0xFF0A1F15) else Color(0xFFF0FDF4)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("DAILY CODE", style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
+                                    user.dailySecretCode?.let { code ->
+                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Text("\uD83D\uDD11 Secret: $code", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                            Text("Copy", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(code)) })
+                                        }
+                                    }
+                                    var codeInput by remember { mutableStateOf("") }
+                                    var codeResult by remember { mutableStateOf<String?>(null) }
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        OutlinedTextField(
+                                            value = codeInput,
+                                            onValueChange = { codeInput = it.uppercase().take(10) },
+                                            placeholder = { Text("Enter daily code", fontSize = 12.sp) },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f).height(48.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                        )
+                                        Button(
+                                            onClick = {
+                                                if (codeInput.isNotBlank()) {
+                                                    codeResult = if (codeInput == (user.dailySecretCode ?: "")) "\u2705 Code claimed!" else "\u274C Invalid code"
+                                                    if (codeResult?.startsWith("\u2705") == true) codeInput = ""
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.height(48.dp),
+                                        ) {
+                                            Text("Claim", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    codeResult?.let { result ->
+                                        Text(result, style = MaterialTheme.typography.labelSmall, color = if (result.startsWith("\u2705")) Color(0xFF059669) else Color(0xFFDC2626))
                                     }
                                 }
                             }

@@ -34,4 +34,58 @@
     <string name="shortcut_search_long">তালিকা খুঁজুন</string>
     <string name="shortcut_chat">চ্যাট</string>
     <string name="shortcut_chat_long">বার্তা খুলুন</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">হোম</string>
+    <string name="nav_all_posts">সব পোস্ট</string>
+    <string name="nav_for_you">আপনার জন্য</string>
+    <string name="nav_feed">ফিড</string>
+    <string name="nav_rewards">পুরস্কার</string>
+    <string name="nav_profile">প্রোফাইল</string>
+    <string name="nav_more">আরও</string>
+    <string name="nav_sell">বিক্রি</string>
+    <string name="nav_chat">চ্যাট</string>
+    <string name="nav_search">খুঁজুন</string>
+    <string name="nav_wishlist">ইচ্ছেতালিকা</string>
+    <string name="nav_categories">বিভাগ</string>
+    <string name="nav_notifications">বিজ্ঞপ্তি</string>
+    <string name="nav_settings">সেটিংস</string>
+
+    <!-- Common UI -->
+    <string name="all_posts">সব পোস্ট</string>
+    <string name="for_you">আপনার জন্য</string>
+    <string name="feed">ফিড</string>
+    <string name="rewards">পুরস্কার</string>
+    <string name="profile">প্রোফাইল</string>
+    <string name="sell">বিক্রি</string>
+    <string name="chat">চ্যাট</string>
+    <string name="cart">কার্ট</string>
+    <string name="wishlist">ইচ্ছেতালিকা</string>
+    <string name="notifications">বিজ্ঞপ্তি</string>
+    <string name="search">খুঁজুন</string>
+    <string name="filter">ফিল্টার</string>
+    <string name="sort">সাজান</string>
+    <string name="share">শেয়ার</string>
+    <string name="edit">সম্পাদনা</string>
+    <string name="cancel">বাতিল</string>
+    <string name="save">সংরক্ষণ</string>
+    <string name="back">পিছনে</string>
+    <string name="retry">পুনরায় চেষ্টা</string>
+    <string name="loading">লোড হচ্ছে…</string>
+    <string name="no_results">কোনো ফলাফল নেই</string>
+    <string name="newest">নতুন</string>
+    <string name="popular">জনপ্রিয়</string>
+    <string name="verified">যাচাইকৃত</string>
+    <string name="condition_new">নতুন</string>
+    <string name="condition_used">ব্যবহৃত</string>
+    <string name="nearby">কাছাকাছি</string>
+    <string name="categories">বিভাগ</string>
+    <string name="electronics">ইলেকট্রনিক্স</string>
+    <string name="fashion">ফ্যাশন</string>
+    <string name="vehicles">যানবাহন</string>
+    <string name="others">অন্যান্য</string>
+    <string name="deals">ডিল</string>
+    <string name="followers">অনুসরণকারী</string>
+    <string name="following">অনুসরণ</string>
+    <string name="trust_marketplace">বিশ্বাস-প্রথম মার্কেটপ্লেস</string>
 </resources>
