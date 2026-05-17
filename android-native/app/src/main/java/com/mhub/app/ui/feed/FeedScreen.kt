@@ -97,8 +97,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Stable
 import javax.inject.Inject
 
+@Stable
 data class FeedState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,

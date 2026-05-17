@@ -1,5 +1,7 @@
 package com.mhub.app.ui.home
 
+import androidx.compose.runtime.Stable
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
@@ -8,12 +10,14 @@ import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Stable
 data class HomeUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
@@ -25,6 +29,7 @@ data class HomeUiState(
     val error: String? = null,
     val currentPage: Int = 1,
     val hasMore: Boolean = true,
+    val lastLoadTimeMs: Long = 0L,
 )
 
 @HiltViewModel
@@ -32,12 +37,15 @@ class HomeViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
     private val boostRepo: com.mhub.app.data.repository.BoostRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
-    private var _categoryKey: String? = null
+    private var _categoryKey: String? = savedStateHandle.get<String>("categoryKey")
+    private var loadJob: Job? = null
+    private var loadMoreJob: Job? = null
 
     init { load(initial = true) }
 
@@ -45,6 +53,7 @@ class HomeViewModel @Inject constructor(
     fun setCategoryKey(key: String?) {
         if (key != _categoryKey) {
             _categoryKey = key
+            savedStateHandle["categoryKey"] = key
             _state.value = _state.value.copy(selectedSubcategory = null, subcategories = emptyList())
             load(initial = true)
         }
@@ -58,7 +67,8 @@ class HomeViewModel @Inject constructor(
             posts = emptyList(),
             loading = true,
         )
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val categoryId = id ?: _categoryKey
             when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
@@ -67,6 +77,7 @@ class HomeViewModel @Inject constructor(
                     currentPage = 1,
                     hasMore = res.data.size >= PAGE_SIZE,
                     error = null,
+                    lastLoadTimeMs = System.currentTimeMillis(),
                 )
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
@@ -77,15 +88,25 @@ class HomeViewModel @Inject constructor(
     }
 
     fun load(initial: Boolean = false) {
+        // Prevent redundant loads: if data exists and was loaded recently, skip
+        val current = _state.value
+        if (!initial && current.posts.isNotEmpty() &&
+            System.currentTimeMillis() - current.lastLoadTimeMs < STALE_THRESHOLD_MS
+        ) {
+            return
+        }
+
         _state.value = _state.value.copy(
-            loading = initial || _state.value.posts.isEmpty(),
-            refreshing = !initial,
+            // Only show full loading indicator if initial or empty
+            loading = initial || current.posts.isEmpty(),
+            refreshing = !initial && current.posts.isNotEmpty(),
             error = null,
             currentPage = 1,
             hasMore = true,
         )
         val categoryId = _state.value.selectedSubcategory ?: _categoryKey
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
@@ -94,6 +115,7 @@ class HomeViewModel @Inject constructor(
                     currentPage = 1,
                     hasMore = res.data.size >= PAGE_SIZE,
                     error = null,
+                    lastLoadTimeMs = System.currentTimeMillis(),
                 )
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
@@ -127,7 +149,8 @@ class HomeViewModel @Inject constructor(
         _state.value = current.copy(loadingMore = true)
 
         val categoryId = current.selectedSubcategory ?: _categoryKey
-        viewModelScope.launch {
+        loadMoreJob?.cancel()
+        loadMoreJob = viewModelScope.launch {
             when (val res = repo.feed(page = nextPage, limit = PAGE_SIZE, categoryId = categoryId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
@@ -150,6 +173,7 @@ class HomeViewModel @Inject constructor(
 
     private companion object {
         const val PAGE_SIZE = 20
+        const val STALE_THRESHOLD_MS = 30_000L // 30 seconds
     }
 }
 

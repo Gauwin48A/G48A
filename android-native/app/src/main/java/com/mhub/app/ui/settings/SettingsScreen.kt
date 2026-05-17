@@ -79,6 +79,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val prefs: AppPreferences,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
+    private val tokenStore: com.mhub.app.data.local.TokenStore,
 ) : ViewModel() {
     private val _baseUrl = MutableStateFlow("")
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
@@ -104,13 +106,27 @@ class SettingsViewModel @Inject constructor(
 
     fun clearCache() {
         viewModelScope.launch {
-            _validationMessage.value = "Cache cleared successfully."
+            try {
+                // Clear Coil image cache
+                val imageLoader = coil.ImageLoader.Builder(appContext).build()
+                appContext.cacheDir.resolve("image_cache").deleteRecursively()
+                // Clear app cache directory
+                appContext.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+                _validationMessage.value = "Cache cleared successfully — images & data purged."
+            } catch (e: Exception) {
+                _validationMessage.value = "Failed to clear cache: ${e.message}"
+            }
         }
     }
 
     fun logoutAllDevices() {
         viewModelScope.launch {
-            _validationMessage.value = "All devices logged out."
+            try {
+                tokenStore.clear()
+                _validationMessage.value = "All sessions cleared. Restart the app to log in again."
+            } catch (e: Exception) {
+                _validationMessage.value = "Failed to logout: ${e.message}"
+            }
         }
     }
 

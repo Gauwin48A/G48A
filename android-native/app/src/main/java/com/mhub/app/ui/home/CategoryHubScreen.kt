@@ -36,6 +36,9 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -171,6 +174,9 @@ fun CategoryHubScreen(
     onOpenNotifications: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenScanner: () -> Unit = {},
+    onOpenCart: () -> Unit = {},
+    unreadNotifications: Int = 0,
+    cartItemCount: Int = 0,
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -207,8 +213,19 @@ fun CategoryHubScreen(
                 IconButton(onClick = onOpenScanner) {
                     Icon(Icons.Default.QrCodeScanner, "Scanner", tint = Color(0xFF64748B))
                 }
+                IconButton(onClick = onOpenCart) {
+                    BadgedBox(badge = {
+                        if (cartItemCount > 0) Badge { Text("$cartItemCount") }
+                    }) {
+                        Icon(Icons.Default.ShoppingCart, "Cart", tint = Color(0xFF64748B))
+                    }
+                }
                 IconButton(onClick = onOpenNotifications) {
-                    Icon(Icons.Default.Notifications, "Notifications", tint = Color(0xFF64748B))
+                    BadgedBox(badge = {
+                        if (unreadNotifications > 0) Badge { Text("$unreadNotifications") }
+                    }) {
+                        Icon(Icons.Default.Notifications, "Notifications", tint = Color(0xFF64748B))
+                    }
                 }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Default.Settings, "Settings", tint = Color(0xFF64748B))

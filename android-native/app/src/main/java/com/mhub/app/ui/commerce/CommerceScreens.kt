@@ -163,7 +163,7 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.sell_title), onBack)
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
@@ -215,13 +215,15 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                         }
                     }
                 }
-                Spacer(Modifier.height(24.dp))
+            }
+            // ── Sticky bottom CTA ──
+            Surface(shadowElevation = 8.dp, color = Color.White) {
                 Button(
                     onClick = onStartPost,
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).height(54.dp),
                 ) {
                     Box(
                         Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(brandGrad),

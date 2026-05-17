@@ -1074,4 +1074,70 @@
     <string name="detail_comparing">Comparing</string>
     <string name="detail_compare">Compare</string>
     <string name="detail_offer_failed">Failed to send offer</string>
+
+    <!-- Auth Gate -->
+    <string name="auth_gate_title">Sign in to continue</string>
+    <string name="auth_gate_subtitle">Create a free account to access all features, save favorites, chat with sellers, and more.</string>
+    <string name="sign_in">Sign In</string>
+    <string name="create_account">Create Account</string>
+
+    <!-- Bottom Nav (modernized) -->
+    <string name="nav_feed_tab">Feed</string>
+    <string name="nav_rewards_tab">Rewards</string>
+
+    <!-- Feed page (new) -->
+    <string name="feed_for_you">For You</string>
+    <string name="feed_following">Following</string>
+    <string name="feed_trending">Trending</string>
+    <string name="feed_empty">No posts yet. Follow sellers to see their updates here.</string>
+    <string name="feed_recommended">Recommended for you</string>
+    <string name="feed_based_on">Based on your activity</string>
+
+    <!-- Compare feature (new) -->
+    <string name="compare_add">Add to Compare</string>
+    <string name="compare_remove">Remove</string>
+    <string name="compare_clear">Clear All</string>
+    <string name="compare_empty">Add items to compare side by side</string>
+    <string name="compare_max">Maximum %d items can be compared</string>
+    <string name="compare_price_label">Price</string>
+    <string name="compare_condition_label">Condition</string>
+    <string name="compare_brand_label">Brand</string>
+    <string name="compare_location_label">Location</string>
+    <string name="compare_seller_label">Seller</string>
+    <string name="compare_view">View Comparison</string>
+    <string name="compare_items_selected">%d items selected</string>
+
+    <!-- Plans page (new) -->
+    <string name="plans_pro">Pro</string>
+    <string name="plans_enterprise">Enterprise</string>
+    <string name="plans_current">Current Plan</string>
+    <string name="plans_upgrade">Upgrade</string>
+    <string name="plans_features">Features</string>
+    <string name="plans_month">/ month</string>
+
+    <!-- Sell page (new) -->
+    <string name="sell_step_pricing">Set Price</string>
+    <string name="sell_step_publish">Publish</string>
+    <string name="sell_guided">Guided Listing</string>
+
+    <!-- Profile redesign (new) -->
+    <string name="profile_member_since">Member since</string>
+
+    <!-- Rewards redesign (new) -->
+    <string name="rewards_daily_streak">Daily Streak</string>
+    <string name="rewards_next_milestone">Next Milestone</string>
+    <string name="rewards_total_earned">Total Earned</string>
+
+    <!-- Hamburger / More menu sections -->
+    <string name="more_section_trade">Trade</string>
+    <string name="more_section_social">Social</string>
+    <string name="more_section_account">Account</string>
+    <string name="more_section_help">Help &amp; Support</string>
+
+    <!-- Language -->
+    <string name="language_changed">Language changed</string>
+    <string name="language_select">Select Language</string>
+
+    <!-- Performance / Loading (new) -->
+    <string name="skeleton_loading">Loading content…</string>
 </resources>

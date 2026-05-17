@@ -242,6 +242,11 @@ class SearchViewModel @Inject constructor(
         _state.value = _state.value.copy(recentQueries = updated)
         viewModelScope.launch { prefs.saveRecentSearches(updated) }
     }
+
+    fun clearAllRecentSearches() {
+        _state.value = _state.value.copy(recentQueries = emptyList())
+        viewModelScope.launch { prefs.saveRecentSearches(emptyList()) }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -675,6 +680,15 @@ fun SearchScreen(
                                 item {
                                     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Text("Recent Searches", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (state.savedSearches.isNotEmpty() || state.recentQueries.isNotEmpty()) {
+                                            Text(
+                                                "Clear All",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.clickable { viewModel.clearAllRecentSearches() },
+                                            )
+                                        }
                                     }
                                 }
                                 items(state.savedSearches.take(10), key = { it.stableId }) { s ->
@@ -697,7 +711,36 @@ fun SearchScreen(
                             }
                         }
 
-                        !state.searched -> AppEmptyState(icon = Icons.Default.Search, title = "Start searching", subtitle = "Try item name, brand, category, or location.")
+                        !state.searched -> Column {
+                            // Trending section
+                            val trendingQueries = remember {
+                                listOf("iPhone 15", "Samsung Galaxy S24", "MacBook Air", "Nike Air Max", "PS5", "Honda Activa", "Samsung TV", "Laptop under 50K")
+                            }
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.TrendingUp, null, modifier = Modifier.size(16.dp), tint = Color(0xFFEF4444))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Trending Now", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(trendingQueries, key = { "trend_$it" }) { q ->
+                                        Surface(
+                                            onClick = { viewModel.onQueryChange(q); viewModel.search(q) },
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                        ) {
+                                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.TrendingUp, null, modifier = Modifier.size(12.dp), tint = Color(0xFFEF4444))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(q, style = MaterialTheme.typography.labelMedium)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            AppEmptyState(icon = Icons.Default.Search, title = "Start searching", subtitle = "Try item name, brand, category, or location.")
+                        }
                         state.items.isEmpty() -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                             Icon(Icons.Outlined.SearchOff, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(12.dp))

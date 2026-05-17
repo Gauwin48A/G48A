@@ -1,8 +1,10 @@
 package com.mhub.app.domain.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 data class User(
     @SerialName("user_id") val userId: String? = null,
@@ -35,6 +37,7 @@ data class User(
     val canCreatePosts: Boolean get() = isSeller && isKycVerified
 }
 
+@Immutable
 @Serializable
 data class Post(
     val id: String? = null,
@@ -86,6 +89,7 @@ data class Post(
     val likes: Int? get() = likeCount
 }
 
+@Immutable
 @Serializable
 data class Category(
     val id: String? = null,
@@ -100,6 +104,7 @@ data class Category(
     val displayName: String get() = name ?: slug ?: "Unnamed"
 }
 
+@Immutable
 @Serializable
 data class ChatConversation(
     @SerialName("conversation_id") val conversationId: String? = null,
@@ -118,6 +123,7 @@ data class ChatConversation(
     val initials: String get() = displayName.take(1).uppercase()
 }
 
+@Immutable
 @Serializable
 data class ChatMessage(
     val id: String? = null,
@@ -131,6 +137,7 @@ data class ChatMessage(
     val displayContent: String get() = content ?: ""
 }
 
+@Immutable
 @Serializable
 data class Notification(
     val id: String? = null,
@@ -151,6 +158,7 @@ data class Notification(
     val displayMessage: String get() = message ?: body ?: ""
 }
 
+@Immutable
 @Serializable
 data class KycSubmission(
     val id: String? = null,

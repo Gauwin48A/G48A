@@ -59,11 +59,13 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.Stable
 import javax.inject.Inject
 
 enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, POPULAR, TRENDING }
 enum class PageDensity { COMPACT, NORMAL, SPACIOUS }
 
+@Stable
 data class ForYouState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,

@@ -134,8 +134,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Stable
 import javax.inject.Inject
 
+@Stable
 data class ProfileState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
@@ -157,6 +159,7 @@ data class ProfileState(
     val reviews: List<UserReview> = emptyList(),
     val trustScore: com.mhub.app.data.remote.dto.TrustScoreResponse? = null,
     val dataExportDone: Boolean = false,
+    val lastLoadTimeMs: Long = 0L,
 )
 
 data class UserReview(
@@ -182,10 +185,16 @@ class ProfileViewModel @Inject constructor(
     init { load() }
 
     fun load() {
+        // Prevent redundant loads if data is fresh
+        val current = _state.value
+        if (current.user != null && System.currentTimeMillis() - current.lastLoadTimeMs < 30_000L) return
+
         _state.value = ProfileState(loading = true)
         viewModelScope.launch {
             when (val result = repo.me()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, user = result.data)
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    loading = false, user = result.data, lastLoadTimeMs = System.currentTimeMillis(),
+                )
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = result.error.message)
             }
             loadStats()
@@ -476,7 +485,7 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(72.dp),
                         ) {
                             // Cover image or gradient placeholder
                             Box(
@@ -519,7 +528,7 @@ fun ProfileScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(heroGradient)
-                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                         ) {
                             val completionPct = profileCompletion(user)
                             val avatarPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -645,7 +654,7 @@ fun ProfileScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -713,7 +722,7 @@ fun ProfileScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

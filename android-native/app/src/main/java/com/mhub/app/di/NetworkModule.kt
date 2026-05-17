@@ -7,6 +7,7 @@ import com.mhub.app.data.local.AppPreferences
 import com.mhub.app.data.local.TokenStore
 import com.mhub.app.data.remote.AppCookieJar
 import com.mhub.app.data.remote.AuthInterceptor
+import com.mhub.app.data.remote.LocaleInterceptor
 import com.mhub.app.data.remote.MhubApi
 import com.mhub.app.data.remote.RetryInterceptor
 import com.mhub.app.data.remote.SecurityHeadersInterceptor
@@ -18,10 +19,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
+import okhttp3.CacheControl
+import okhttp3.ConnectionPool
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -45,10 +52,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttp(
+        @ApplicationContext context: Context,
         tokenStore: TokenStore,
         cookieJar: AppCookieJar,
         json: Json,
         appPreferences: AppPreferences,
+        localeInterceptor: LocaleInterceptor,
     ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
@@ -59,18 +68,37 @@ object NetworkModule {
             json = json,
             baseUrlProvider = { runBlocking { appPreferences.baseUrlOrDefault() } },
         )
+        // 25MB HTTP response cache — reduces network calls by serving stale-while-revalidate
+        val httpCache = Cache(File(context.cacheDir, "http_cache"), 25L * 1024 * 1024)
+        // Network interceptor: add Cache-Control to GET responses that lack it
+        val cacheInterceptor = Interceptor { chain ->
+            val response = chain.proceed(chain.request())
+            if (chain.request().method == "GET" && response.header("Cache-Control") == null) {
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=60, stale-while-revalidate=300")
+                    .removeHeader("Pragma")
+                    .build()
+            } else response
+        }
         return OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .callTimeout(45, TimeUnit.SECONDS)
+            .cache(httpCache)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            // Connection pool tuned for 10M+ user scale: keep 8 idle connections alive for 3 min
+            .connectionPool(ConnectionPool(8, 3, TimeUnit.MINUTES))
+            // Force HTTP/2 + HTTP/1.1 for multiplexed requests
+            .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
             .cookieJar(cookieJar)
             .authenticator(authenticator)
             .addInterceptor(AuthInterceptor(tokenStore))
+            .addInterceptor(localeInterceptor)
             .addInterceptor(SecurityHeadersInterceptor(cookieJar))
             .addInterceptor(RetryInterceptor())
             .addInterceptor(logging)
+            .addNetworkInterceptor(cacheInterceptor)
             .build()
     }
 

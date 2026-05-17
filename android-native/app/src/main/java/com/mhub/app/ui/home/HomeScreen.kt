@@ -94,6 +94,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,6 +102,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -254,7 +256,7 @@ private fun FilterBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 4.dp),
             ) {
-                items(categoryGroups) { group ->
+                items(categoryGroups, key = { it }) { group ->
                     val groupColors = mapOf(
                         "Electronics" to Color(0xFF3B82F6), "Fashion" to Color(0xFFEC4899),
                         "Vehicles" to Color(0xFF10B981), "Home & Living" to Color(0xFF8B5CF6),
@@ -830,7 +832,17 @@ fun HomeScreen(
     var promotePostTitle by remember { mutableStateOf("") }
     var pageDensity by remember { mutableStateOf(PageDensity.NORMAL) }
     var loadingStartTime by remember { mutableStateOf(0L) }
-    val listState = rememberLazyListState()
+    // Persist scroll position across navigation (saves first visible item index + offset)
+    val firstVisibleIndex = rememberSaveable { mutableStateOf(0) }
+    val firstVisibleOffset = rememberSaveable { mutableStateOf(0) }
+    val listState = rememberLazyListState(firstVisibleIndex.value, firstVisibleOffset.value)
+    // Save scroll position when leaving
+    DisposableEffect(Unit) {
+        onDispose {
+            firstVisibleIndex.value = listState.firstVisibleItemIndex
+            firstVisibleOffset.value = listState.firstVisibleItemScrollOffset
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val categoryTheme = activeCategoryKey?.let { CATEGORY_THEMES[it] }
@@ -1416,7 +1428,7 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         ) {
-                            items(SortOption.entries) { option ->
+                            items(SortOption.entries, key = { it.name }) { option ->
                                 FilterChip(
                                     selected = sortBy == option,
                                     onClick = { sortBy = option },

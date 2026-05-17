@@ -1,0 +1,50 @@
+package com.mhub.app.data.repository
+
+import com.mhub.app.core.ApiResult
+import com.mhub.app.core.safeApiCall
+import com.mhub.app.data.remote.MhubApi
+import com.mhub.app.data.remote.dto.CreateOrderRequest
+import com.mhub.app.data.remote.dto.CreateOrderResponse
+import com.mhub.app.data.remote.dto.InitiateSaleRequest
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class OrderRepository @Inject constructor(private val api: MhubApi) {
+
+    /** Last placed order — kept in memory for confirmation screen. */
+    var lastOrder: CreateOrderResponse? = null
+        private set
+
+    suspend fun placeOrder(request: CreateOrderRequest): ApiResult<CreateOrderResponse> {
+        // Try the orders endpoint first; fall back to transactions/initiate
+        val result = safeApiCall { api.createOrder(request) }
+        if (result is ApiResult.Success) {
+            lastOrder = result.data
+            return result
+        }
+        // Fallback: use existing initiateSale endpoint
+        val fallback = safeApiCall {
+            api.initiateSale(
+                InitiateSaleRequest(
+                    postId = request.postId,
+                    buyerId = request.buyerId,
+                    saleAmount = request.amount,
+                ),
+            )
+        }
+        return when (fallback) {
+            is ApiResult.Success -> {
+                val mapped = CreateOrderResponse(
+                    success = fallback.data.success,
+                    orderId = fallback.data.transactionId ?: "MH-${System.currentTimeMillis()}",
+                    transactionId = fallback.data.transactionId,
+                    message = fallback.data.message,
+                )
+                lastOrder = mapped
+                ApiResult.Success(mapped)
+            }
+            is ApiResult.Failure -> ApiResult.Failure(fallback.error)
+        }
+    }
+}
