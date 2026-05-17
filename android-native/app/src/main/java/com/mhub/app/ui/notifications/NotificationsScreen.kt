@@ -1,5 +1,7 @@
 package com.mhub.app.ui.notifications
 
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -330,7 +332,7 @@ fun NotificationsScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(text = "Notifications", fontWeight = FontWeight.Bold)
+                        Text(text = stringResource(R.string.notif_title), fontWeight = FontWeight.Bold)
                         if (unreadCount > 0) {
                             Text(
                                 text = "$unreadCount unread",
@@ -375,7 +377,7 @@ fun NotificationsScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text("Mark all read", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.notif_mark_all_read), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         if (state.items.isNotEmpty()) {
@@ -386,10 +388,10 @@ fun NotificationsScreen(
                             if (showDeleteAllDialog) {
                                 AlertDialog(
                                     onDismissRequest = { showDeleteAllDialog = false },
-                                    title = { Text("Delete All Notifications") },
-                                    text = { Text("Are you sure you want to delete all ${state.items.size} notifications?") },
-                                    confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text("Delete All") } },
-                                    dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") } },
+                                    title = { Text(stringResource(R.string.notif_delete_all_title)) },
+                                    text = { Text(stringResource(R.string.notif_delete_all_confirm, state.items.size)) },
+                                    confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_delete_all)) } },
+                                    dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_cancel)) } },
                                 )
                             }
                         }
@@ -436,7 +438,7 @@ fun NotificationsScreen(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search notifications...") },
+                            placeholder = { Text(stringResource(R.string.notif_search_hint)) },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                             trailingIcon = {
                                 if (searchQuery.isNotBlank()) {
@@ -590,10 +592,10 @@ fun NotificationsScreen(
     if (state.showSettings) {
         AlertDialog(
             onDismissRequest = { viewModel.toggleSettings() },
-            title = { Text("Notification Preferences") },
+            title = { Text(stringResource(R.string.notif_preferences)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Choose which notifications you want to receive:", 
+                    Text(stringResource(R.string.notif_preferences_subtitle), 
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
@@ -618,10 +620,10 @@ fun NotificationsScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.toggleSettings() }) { Text("Save") }
+                Button(onClick = { viewModel.toggleSettings() }) { Text(stringResource(R.string.notif_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.toggleSettings() }) { Text("Cancel") }
+                TextButton(onClick = { viewModel.toggleSettings() }) { Text(stringResource(R.string.notif_cancel)) }
             },
         )
     }
@@ -769,7 +771,7 @@ fun NotificationRow(
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Accept Offer", fontSize = 13.sp)
+                            Text(stringResource(R.string.notif_accept_offer), fontSize = 13.sp)
                         }
                     }
                     if (notification.postId != null) {
@@ -780,7 +782,7 @@ fun NotificationRow(
                         ) {
                             Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("View Post", fontSize = 13.sp)
+                            Text(stringResource(R.string.notif_view_post), fontSize = 13.sp)
                         }
                     }
                     OutlinedButton(
@@ -789,7 +791,7 @@ fun NotificationRow(
                     ) {
                         Icon(Icons.Default.NotificationsOff, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Snooze", fontSize = 13.sp)
+                        Text(stringResource(R.string.notif_snooze), fontSize = 13.sp)
                     }
                 }
             }

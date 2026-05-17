@@ -30,6 +30,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -197,6 +199,7 @@ fun ForYouScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     isGuest: Boolean = false,
+    onNavigateToLogin: () -> Unit = {},
     viewModel: ForYouViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -205,6 +208,7 @@ fun ForYouScreen(
     val categories = state.categories
 
     var quickFilter by remember { mutableStateOf<String?>(null) }
+    var timeFilter by remember { mutableStateOf<String?>(null) }
     var showShareSheet by remember { mutableStateOf(false) }
     var sharePostId by remember { mutableStateOf("") }
     var sharePostTitle by remember { mutableStateOf("") }
@@ -240,7 +244,7 @@ fun ForYouScreen(
             }
     }
 
-    val displayed = remember(state.posts, state.selectedCategory, quickFilter, searchQuery, state.sortBy, state.sortAscending) {
+    val displayed = remember(state.posts, state.selectedCategory, quickFilter, timeFilter, searchQuery, state.sortBy, state.sortAscending) {
         state.posts
             .filter { post ->
                 state.selectedCategory == null || post.categoryName?.contains(state.selectedCategory!!, ignoreCase = true) == true
@@ -266,6 +270,26 @@ fun ForYouScreen(
                 }
                 if (state.sortAscending) sorted else sorted.reversed()
             }
+            .let { list ->
+                if (timeFilter == null) list
+                else {
+                    val nowMs = System.currentTimeMillis()
+                    val cutoffMs = when (timeFilter) {
+                        "Today" -> nowMs - 24L * 60 * 60 * 1000
+                        "Week" -> nowMs - 7L * 24 * 60 * 60 * 1000
+                        "Month" -> nowMs - 30L * 24 * 60 * 60 * 1000
+                        else -> 0L
+                    }
+                    list.filter { post ->
+                        if (post.createdAt.isNullOrBlank()) true
+                        else try {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                java.time.Instant.parse(post.createdAt).toEpochMilli() >= cutoffMs
+                            } else true
+                        } catch (_: Exception) { true }
+                    }
+                }
+            }
             .let { list -> if (isGuest) list.take(3) else list }
     }
 
@@ -275,7 +299,7 @@ fun ForYouScreen(
                 title = {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("For You", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.Bold)
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
@@ -289,7 +313,7 @@ fun ForYouScreen(
                                 )
                             }
                         }
-                        Text("Personalized recommendations", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.foryou_subtitle), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
@@ -309,7 +333,7 @@ fun ForYouScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Outlined.ErrorOutline, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(12.dp))
-                        Text("Unable to load recommendations", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.foryou_error_title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(4.dp))
                         Text(state.error ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(16.dp))
@@ -435,6 +459,32 @@ fun ForYouScreen(
                         }
                     }
 
+                    // ─── Time Window Filter ─────────────────────────────
+                    item {
+                        val timeOptions = listOf<Pair<String?, String>>(
+                            null to "All Time",
+                            "Today" to "Today",
+                            "Week" to "This Week",
+                            "Month" to "This Month",
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(timeOptions, key = { it.first ?: "all_time" }) { (key, label) ->
+                                FilterChip(
+                                    selected = timeFilter == key,
+                                    onClick = { timeFilter = if (timeFilter == key && key != null) null else key },
+                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
                     item {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -464,7 +514,7 @@ fun ForYouScreen(
                     if (state.sponsored.isNotEmpty()) {
                         item {
                             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                Text("Sponsored", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.foryou_sponsored), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(8.dp))
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     items(state.sponsored, key = { "sp_${it.stableId}" }) { post ->
@@ -665,7 +715,7 @@ fun ForYouScreen(
                                         modifier = Modifier.padding(horizontal = 16.dp)
                                     )
                                     Spacer(Modifier.height(16.dp))
-                                    Button(onClick = onBack) {
+                                    Button(onClick = onNavigateToLogin) {
                                         Text("Sign In")
                                     }
                                 }

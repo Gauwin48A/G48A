@@ -29,12 +29,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
+import com.mhub.app.R
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
@@ -159,7 +161,7 @@ private fun EmptyState(icon: @Composable () -> Unit, title: String, subtitle: St
 fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Sell Something", onBack)
+            ScreenTopBar(stringResource(R.string.sell_title), onBack)
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -170,20 +172,21 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Sell, null, tint = Color.White, modifier = Modifier.size(48.dp)) }
                 Spacer(Modifier.height(24.dp))
-                Text("Ready to Sell?", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF1E293B))
+                Text(stringResource(R.string.sell_ready), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF1E293B))
                 Spacer(Modifier.height(8.dp))
-                Text("Reach thousands of buyers in your area. Listing is quick and easy.", fontSize = 15.sp, color = Color(0xFF64748B))
+                Text(stringResource(R.string.sell_subtitle), fontSize = 15.sp, color = Color(0xFF64748B))
                 Spacer(Modifier.height(28.dp))
                 // FlowStep visual progress
                 Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("How it works", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(R.string.sell_how_it_works), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                         Spacer(Modifier.height(12.dp))
-                        listOf(
-                            Triple(Icons.Filled.PhotoCamera, "Add Photos", "Listings with photos get 3x more views"),
-                            Triple(Icons.Filled.Description, "Write Details", "Clear title and description sell faster"),
-                            Triple(Icons.Filled.PriceChange, "Set Your Price", "Price competitively to attract buyers"),
-                        ).forEachIndexed { idx, (icon, title, desc) ->
+                        val steps = listOf(
+                            Triple(Icons.Filled.PhotoCamera, stringResource(R.string.sell_step_photos), stringResource(R.string.sell_step_photos_desc)),
+                            Triple(Icons.Filled.Description, stringResource(R.string.sell_step_details), stringResource(R.string.sell_step_details_desc)),
+                            Triple(Icons.Filled.PriceChange, stringResource(R.string.sell_step_price), stringResource(R.string.sell_step_price_desc)),
+                        )
+                        steps.forEachIndexed { idx, (icon, title, desc) ->
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF2563EB)), contentAlignment = Alignment.Center) {
@@ -207,8 +210,8 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                         Icon(Icons.Filled.Stars, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(10.dp))
                         Column {
-                            Text("Free Plan — Up to 1 photo", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF92400E))
-                            Text("Upgrade to Silver or Premium for more images & features", fontSize = 11.sp, color = Color(0xFFB45309))
+                            Text(stringResource(R.string.sell_free_plan), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF92400E))
+                            Text(stringResource(R.string.sell_upgrade_hint), fontSize = 11.sp, color = Color(0xFFB45309))
                         }
                     }
                 }
@@ -223,7 +226,7 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                     Box(
                         Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(brandGrad),
                         contentAlignment = Alignment.Center,
-                    ) { Text("Start Listing Now", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+                    ) { Text(stringResource(R.string.sell_start_listing), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
                 }
             }
         }
@@ -381,7 +384,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Edit Listing", onBack)
+            ScreenTopBar(stringResource(R.string.edit), onBack)
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
             } else {
@@ -652,9 +655,10 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
     }
 
     private val defaultTiers = listOf(
-        Tier("free", "Free", 0.0, "INR", 30, listOf("Up to 5 listings", "Standard visibility", "Basic analytics"), false),
-        Tier("premium", "Premium", 299.0, "INR", 30, listOf("Unlimited listings", "Featured placement", "Priority support", "Advanced analytics"), true),
-        Tier("business", "Business", 999.0, "INR", 30, listOf("Everything in Premium", "Dedicated account manager", "API access", "Custom branding"), false),
+        Tier("basic", "Basic", 500.0, "INR", 15, listOf("1 listing credit", "Standard reach", "15 days visibility", "1 photo per post"), false),
+        Tier("bronze", "Bronze", 850.0, "INR", 90, listOf("100 listings", "30 days visibility", "Seller badge", "3 photos per post", "Basic analytics"), false),
+        Tier("silver", "Silver", 1200.0, "INR", 180, listOf("200 listings", "Boosts & featured", "Verified badge", "5 photos per post", "7-day free trial", "Chat support"), true),
+        Tier("premium", "Premium", 1500.0, "INR", 365, listOf("Unlimited listings", "45 days visibility", "Crown badge", "10 photos per post", "Priority support", "14-day free trial", "Custom storefront"), false),
     )
 }
 
@@ -663,13 +667,13 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Choose Your Plan", onBack)
+            ScreenTopBar(stringResource(R.string.plans_title), onBack)
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
             } else {
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     item {
-                        Text("Select the plan that fits your needs", fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(bottom = 8.dp))
+                        Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(bottom = 8.dp))
                     }
                     // Trial-period banner (web-parity: TierSelection.jsx trial banner)
                     item {
@@ -677,8 +681,8 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Icon(Icons.Filled.Bolt, null, tint = Color(0xFFCA8A04), modifier = Modifier.size(20.dp))
                                 Column {
-                                    Text("7-day free trial on all paid plans", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
-                                    Text("No payment required to start. Cancel anytime.", fontSize = 11.sp, color = Color(0xFFB45309))
+                                    Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
+                                    Text(stringResource(R.string.plans_trial_subtitle), fontSize = 11.sp, color = Color(0xFFB45309))
                                 }
                             }
                         }
@@ -689,21 +693,21 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                     // Feature-matrix comparison table (web-parity: TierSelection.jsx featureMatrix)
                     item {
                         Spacer(Modifier.height(8.dp))
-                        Text("Feature Comparison", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(bottom = 8.dp))
-                        val tierNames = listOf("Basic", "Bronze", "Silver", "Gold", "Premium")
+                        Text(stringResource(R.string.plans_feature_comparison), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(bottom = 8.dp))
+                        val tierNames = listOf(stringResource(R.string.plans_basic), stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium))
                         val featureMatrixRows = listOf(
-                            "Post listings" to listOf("1", "3", "5", "10", "Unlimited"),
-                            "Photos per post" to listOf("1", "3", "5", "8", "10"),
-                            "Promoted posts" to listOf("✗", "1", "2", "5", "Unlimited"),
-                            "Analytics" to listOf("✗", "Basic", "Basic", "Advanced", "Full"),
-                            "Priority support" to listOf("✗", "✗", "✓", "✓", "✓"),
-                            "Badge on profile" to listOf("✗", "Bronze", "Silver", "Gold", "Premium"),
-                            "KYC verified" to listOf("✓", "✓", "✓", "✓", "✓"),
-                            "Chat support" to listOf("✗", "✗", "✓", "✓", "✓"),
-                            "Bulk manage posts" to listOf("✗", "✗", "✗", "✓", "✓"),
-                            "Export analytics" to listOf("✗", "✗", "✗", "✓", "✓"),
-                            "Custom storefront" to listOf("✗", "✗", "✗", "✗", "✓"),
-                            "Dedicated manager" to listOf("✗", "✗", "✗", "✗", "✓"),
+                            stringResource(R.string.plans_post_listings) to listOf("1", "3", "5", "10", stringResource(R.string.plans_unlimited)),
+                            stringResource(R.string.plans_photos_per_post) to listOf("1", "3", "5", "8", "10"),
+                            stringResource(R.string.plans_promoted_posts) to listOf("✗", "1", "2", "5", stringResource(R.string.plans_unlimited)),
+                            stringResource(R.string.plans_analytics_access) to listOf("✗", stringResource(R.string.plans_basic), stringResource(R.string.plans_basic), "Advanced", "Full"),
+                            stringResource(R.string.plans_priority_support) to listOf("✗", "✗", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_profile_badge) to listOf("✗", stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium)),
+                            stringResource(R.string.plans_kyc_verified) to listOf("✓", "✓", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_chat_support) to listOf("✗", "✗", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_bulk_manage) to listOf("✗", "✗", "✗", "✓", "✓"),
+                            stringResource(R.string.plans_export_analytics) to listOf("✗", "✗", "✗", "✓", "✓"),
+                            stringResource(R.string.plans_custom_storefront) to listOf("✗", "✗", "✗", "✗", "✓"),
+                            stringResource(R.string.plans_dedicated_manager) to listOf("✗", "✗", "✗", "✗", "✓"),
                         )
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
@@ -752,17 +756,23 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
         Column(Modifier.padding(20.dp)) {
             if (isPopular) {
                 Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF2563EB), modifier = Modifier.padding(bottom = 12.dp)) {
-                    Text("POPULAR", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                    Text(stringResource(R.string.plans_recommended), fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(tier.name ?: "", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
                 Spacer(Modifier.weight(1f))
                 if (tier.price == 0.0) {
-                    Text("Free", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF22C55E))
+                    Text(stringResource(R.string.plans_free), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF22C55E))
                 } else {
                     Text("₹${tier.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
-                    Text("/mo", fontSize = 12.sp, color = Color(0xFF64748B))
+                    val period = when {
+                        tier.duration >= 365 -> stringResource(R.string.plans_per_year)
+                        tier.duration >= 180 -> stringResource(R.string.plans_per_half_year)
+                        tier.duration >= 90 -> stringResource(R.string.plans_per_quarter)
+                        else -> stringResource(R.string.plans_per_listing)
+                    }
+                    Text(period, fontSize = 12.sp, color = Color(0xFF64748B))
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -780,7 +790,7 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(44.dp),
             ) {
                 Text(
-                    if (tier.price == 0.0) "Get Started Free" else "Subscribe Now",
+                    if (tier.price == 0.0) stringResource(R.string.plans_get_started_free) else stringResource(R.string.plans_subscribe_now),
                     color = if (isPopular) Color.White else Color(0xFF374151),
                     fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                 )
@@ -864,7 +874,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("My Posts", onBack)
+            ScreenTopBar(stringResource(R.string.my_posts_label), onBack)
             // Status filter tabs
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf("all" to "All", "active" to "Active", "draft" to "Draft", "sold" to "Sold", "archived" to "Archived").forEach { (key, label) ->
@@ -1117,7 +1127,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
     }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Sales History", onBack)
+            ScreenTopBar(stringResource(R.string.sold_title), onBack)
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(state.error, color = Color(0xFF64748B), fontSize = 14.sp) }
@@ -1189,7 +1199,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
 @Composable
 fun BoughtPostsScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: BoughtPostsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    PostsListScreen("Purchase History", Icons.Filled.ShoppingBag, "Items you've bought", "No purchases yet", state, onBack, onOpenPost)
+    PostsListScreen(stringResource(R.string.bought_title), Icons.Filled.ShoppingBag, stringResource(R.string.bought_title), stringResource(R.string.bought_empty), state, onBack, onOpenPost)
 }
 
 @Composable
@@ -1314,7 +1324,7 @@ fun OffersScreen(onBack: () -> Unit, viewModel: OffersViewModel = hiltViewModel(
     val steps = listOf("Submitted", "Review", "Payment", "Verification", "Closed")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Offers", onBack)
+            ScreenTopBar(stringResource(R.string.offers_title), onBack)
             // Stepper
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 steps.forEachIndexed { i, label ->
@@ -1603,7 +1613,7 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Cart (${state.items.size})", onBack)
+            ScreenTopBar("${stringResource(R.string.cart_title)} (${state.items.size})", onBack)
 
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
@@ -2018,7 +2028,7 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Recently Viewed", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.recently_viewed_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                     if (state.posts.isNotEmpty()) Text("${state.posts.size} items browsed", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
                 if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
@@ -2262,7 +2272,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Saved Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.saved_searches_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                     if (state.searches.isNotEmpty()) Text("${state.searches.size} searches · get notified on new matches", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
                 IconButton(onClick = { viewModel.toggleCreateForm() }, modifier = Modifier.size(36.dp)) {
@@ -2443,12 +2453,12 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Compare Listings", onBack)
+            ScreenTopBar(stringResource(R.string.compare_title), onBack)
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 state.posts.isEmpty() -> EmptyState(
                     icon = { Icon(Icons.Filled.Compare, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                    title = "Nothing to compare", subtitle = "Add listings to compare prices and features",
+                    title = stringResource(R.string.compare_nothing), subtitle = stringResource(R.string.compare_add_hint),
                 )
                 else -> {
                     val posts = state.posts
@@ -2463,7 +2473,7 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                             ) {
                                 Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFDC2626), modifier = Modifier.size(14.dp))
-                                    Text("Clear All", fontSize = 12.sp, color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.compare_clear_all), fontSize = 12.sp, color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -2502,23 +2512,23 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                         // Dynamic comparison table
                         Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                             Column(Modifier.padding(16.dp)) {
-                                Text("Comparison", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                                Text(stringResource(R.string.compare_comparison), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                                 Spacer(Modifier.height(12.dp))
                                 // Build dynamic specs: include any field that has a non-null value across all posts
                                 val allSpecs = listOf(
-                                    "Price" to { p: Post -> if (p.price != null) "₹${p.price.toLong()}" else "—" },
-                                    "Condition" to { p: Post -> p.condition ?: "—" },
-                                    "Brand" to { p: Post -> p.brand ?: "—" },
-                                    "Model" to { p: Post -> p.model ?: "—" },
-                                    "Location" to { p: Post -> p.location ?: "—" },
-                                    "Color" to { p: Post -> p.color ?: "—" },
-                                    "Size" to { p: Post -> p.size ?: "—" },
-                                    "Year" to { p: Post -> p.year?.toString() ?: "—" },
-                                    "Mileage" to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "—" },
-                                    "RAM/Storage" to { p: Post -> p.ramStorage ?: "—" },
-                                    "Category" to { p: Post -> p.categoryName ?: "—" },
-                                    "Seller" to { p: Post -> p.userName ?: "—" },
-                                    "Status" to { p: Post -> p.status ?: "—" },
+                                    stringResource(R.string.compare_price) to { p: Post -> if (p.price != null) "₹${p.price.toLong()}" else "—" },
+                                    stringResource(R.string.compare_condition) to { p: Post -> p.condition ?: "—" },
+                                    stringResource(R.string.compare_brand) to { p: Post -> p.brand ?: "—" },
+                                    stringResource(R.string.compare_model) to { p: Post -> p.model ?: "—" },
+                                    stringResource(R.string.compare_location) to { p: Post -> p.location ?: "—" },
+                                    stringResource(R.string.compare_color) to { p: Post -> p.color ?: "—" },
+                                    stringResource(R.string.compare_size) to { p: Post -> p.size ?: "—" },
+                                    stringResource(R.string.compare_year) to { p: Post -> p.year?.toString() ?: "—" },
+                                    stringResource(R.string.compare_mileage) to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "—" },
+                                    stringResource(R.string.compare_ram_storage) to { p: Post -> p.ramStorage ?: "—" },
+                                    stringResource(R.string.compare_category) to { p: Post -> p.categoryName ?: "—" },
+                                    stringResource(R.string.compare_seller) to { p: Post -> p.userName ?: "—" },
+                                    stringResource(R.string.compare_status) to { p: Post -> p.status ?: "—" },
                                 )
                                 val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "—" } }
                                 visibleSpecs.forEach { (label, getter) ->
@@ -3106,7 +3116,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
     val plans = listOf("silver" to "Silver ₹149/mo", "gold" to "Gold ₹299/mo", "platinum" to "Platinum ₹999/mo")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Payment", onBack)
+            ScreenTopBar(stringResource(R.string.checkout_payment_title), onBack)
             // Stepper
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 steps.forEachIndexed { i, label ->

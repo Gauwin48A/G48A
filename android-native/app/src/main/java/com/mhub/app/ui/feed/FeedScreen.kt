@@ -80,6 +80,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -235,6 +237,7 @@ fun FeedScreen(
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showDensityMenu by remember { mutableStateOf(false) }
+    var feedModeTab by remember { mutableIntStateOf(0) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -261,9 +264,9 @@ fun FeedScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("Feed", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.feed_title), fontWeight = FontWeight.Bold)
                             Text(
-                                "Community updates",
+                                stringResource(R.string.feed_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -301,7 +304,7 @@ fun FeedScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search in feed...") },
+                        placeholder = { Text(stringResource(R.string.feed_search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         trailingIcon = {
                             if (searchQuery.isNotBlank()) {
@@ -312,6 +315,28 @@ fun FeedScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     )
+                }
+                // Feed mode tabs: For You | Following | Recent
+                TabRow(
+                    selectedTabIndex = feedModeTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ) {
+                    listOf("For You", "Following", "Recent").forEachIndexed { index, label ->
+                        Tab(
+                            selected = feedModeTab == index,
+                            onClick = {
+                                feedModeTab = index
+                                viewModel.setSortOption(
+                                    when (index) {
+                                        1 -> "Likes"
+                                        2 -> "Recent"
+                                        else -> "For You"
+                                    }
+                                )
+                            },
+                            text = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                        )
+                    }
                 }
                 // Sort dropdown (6 options) replacing tabs
                 Surface(color = MaterialTheme.colorScheme.surface) {
@@ -388,8 +413,8 @@ fun FeedScreen(
 
                 state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
-                        title = "Feed unavailable",
-                        message = state.error ?: "Failed to load feed",
+                        title = stringResource(R.string.feed_unavailable),
+                        message = state.error ?: stringResource(R.string.feed_unavailable),
                         onRetry = { viewModel.load() },
                         retryLabel = "Retry",
                     )

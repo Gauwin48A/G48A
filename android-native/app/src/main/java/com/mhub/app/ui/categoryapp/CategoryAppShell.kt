@@ -1,5 +1,7 @@
 package com.mhub.app.ui.categoryapp
 
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -502,11 +504,11 @@ private fun CategoryDrawerContent(
                 Spacer(Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Guest User",
+                        text = stringResource(R.string.catshell_guest_user),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     )
                     Text(
-                        text = "Browsing ${currentApp.label}",
+                        text = stringResource(R.string.catshell_browsing, currentApp.label),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -519,22 +521,22 @@ private fun CategoryDrawerContent(
                 modifier = Modifier.semantics { contentDescription = "Current category ${currentApp.label}" },
             )
             Text(
-                text = "Category app menu",
+                text = stringResource(R.string.catshell_menu),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
             )
 
-            DrawerActionRow(label = "Back to Launcher", icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackToLauncher)
-            DrawerActionRow(label = "Browse Subcategories", icon = Icons.Filled.Category, onClick = onBrowseSubcategories)
-            DrawerActionRow(label = "For You", icon = Icons.Filled.FavoriteBorder, onClick = onOpenForYou)
-            DrawerActionRow(label = "Community Feed", icon = Icons.Filled.Notifications, onClick = onOpenFeed)
-            DrawerActionRow(label = "Order History", icon = Icons.Filled.Dashboard, onClick = onOpenOrders)
-            DrawerActionRow(label = "Settings", icon = Icons.Filled.Settings, onClick = onOpenSettings)
-            DrawerActionRow(label = "Help & FAQ", icon = Icons.Filled.HelpOutline, onClick = onOpenHelp)
+            DrawerActionRow(label = stringResource(R.string.catshell_back_to_launcher), icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBackToLauncher)
+            DrawerActionRow(label = stringResource(R.string.catshell_browse_subcategories), icon = Icons.Filled.Category, onClick = onBrowseSubcategories)
+            DrawerActionRow(label = stringResource(R.string.catshell_for_you), icon = Icons.Filled.FavoriteBorder, onClick = onOpenForYou)
+            DrawerActionRow(label = stringResource(R.string.catshell_community_feed), icon = Icons.Filled.Notifications, onClick = onOpenFeed)
+            DrawerActionRow(label = stringResource(R.string.catshell_order_history), icon = Icons.Filled.Dashboard, onClick = onOpenOrders)
+            DrawerActionRow(label = stringResource(R.string.catshell_settings), icon = Icons.Filled.Settings, onClick = onOpenSettings)
+            DrawerActionRow(label = stringResource(R.string.catshell_help_faq), icon = Icons.Filled.HelpOutline, onClick = onOpenHelp)
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Text(
-                text = "Switch Category",
+                text = stringResource(R.string.catshell_switch_category),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(8.dp))
@@ -549,7 +551,7 @@ private fun CategoryDrawerContent(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Text(
-                text = "Quick Subcategories",
+                text = stringResource(R.string.catshell_quick_subcategories),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(8.dp))
@@ -610,7 +612,7 @@ private fun DrawerCategoryRow(
             modifier = Modifier.weight(1f),
         )
         if (isCurrent) {
-            Badge { Text("Now") }
+            Badge { Text(stringResource(R.string.catshell_now)) }
         }
     }
 }
