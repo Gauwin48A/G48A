@@ -117,12 +117,12 @@ fun CreatePostScreen(
         }
     }
 
-    val titleError = if (title.isNotBlank() && !InputValidators.isValidTitle(title)) "Title must be 3-120 characters" else null
-    val priceError = if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) "Enter a valid price" else null
-    val descError = if (description.isNotBlank() && description.length < 20) "Description must be at least 20 characters" else null
-    val contactError = if (contactNumber.isNotBlank() && (contactNumber.length != 10 || !contactNumber.first().isDigit())) "Enter a valid 10-digit number" else null
-    val categoryError = if (state.selectedCategory == null) "Select a category" else null
-    val imageError = if (!InputValidators.hasSufficientImages(state.imageUris.size)) "Add at least one photo" else null
+    val titleError = if (title.isNotBlank() && !InputValidators.isValidTitle(title)) stringResource(R.string.post_title_error) else null
+    val priceError = if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) stringResource(R.string.post_price_error) else null
+    val descError = if (description.isNotBlank() && description.length < 20) stringResource(R.string.post_desc_error) else null
+    val contactError = if (contactNumber.isNotBlank() && (contactNumber.length != 10 || !contactNumber.first().isDigit())) stringResource(R.string.post_contact_error) else null
+    val categoryError = if (state.selectedCategory == null) stringResource(R.string.post_category_error) else null
+    val imageError = if (!InputValidators.hasSufficientImages(state.imageUris.size)) stringResource(R.string.post_image_required) else null
     val canSubmit = title.isNotBlank() && titleError == null && priceError == null && categoryError == null && imageError == null && descError == null && contactError == null
 
     // Pre-submit checklist items
@@ -163,16 +163,16 @@ fun CreatePostScreen(
         if (state.showKycGate) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissKycGate() },
-                title = { Text("Verify your identity to list") },
-                text = { Text("Sellers must complete KYC before publishing a listing. This keeps the marketplace safe and unlocks higher trust scores.") },
+                title = { Text(stringResource(R.string.post_kyc_title)) },
+                text = { Text(stringResource(R.string.post_kyc_message)) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.dismissKycGate()
                         onBack()
-                    }) { Text("Go to KYC") }
+                    }) { Text(stringResource(R.string.post_kyc_go)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.dismissKycGate() }) { Text("Continue anyway") }
+                    TextButton(onClick = { viewModel.dismissKycGate() }) { Text(stringResource(R.string.post_kyc_continue)) }
                 },
             )
         }
@@ -201,7 +201,7 @@ fun CreatePostScreen(
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Similar listing found in your posts", fontSize = 13.sp, color = Color(0xFFB45309))
+                        Text(stringResource(R.string.post_duplicate_warning), fontSize = 13.sp, color = Color(0xFFB45309))
                     }
                 }
             }
@@ -209,7 +209,7 @@ fun CreatePostScreen(
             // ── Pre-submit Checklist ─────────────────────────────────
             Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("Listing Checklist", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.post_listing_checklist), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(8.dp))
                     val perRow = checklistItems.chunked(3)
                     perRow.forEach { row ->
@@ -297,7 +297,7 @@ fun CreatePostScreen(
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                                            Text("Add", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(stringResource(R.string.post_add_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }
@@ -330,14 +330,14 @@ fun CreatePostScreen(
             // ── Description with character counter ───────────────────
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Description", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.post_description_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("${description.length}/1000", style = MaterialTheme.typography.labelSmall,
                         color = when { description.length < 20 && description.isNotBlank() -> MaterialTheme.colorScheme.error; description.length > 900 -> Color(0xFFF59E0B); else -> MaterialTheme.colorScheme.onSurfaceVariant })
                 }
                 AppTextField(
                     value = description,
                     onValueChange = { if (it.length <= 1000) description = it },
-                    label = "Describe the item…",
+                    label = stringResource(R.string.post_description_hint),
                     singleLine = false,
                     imeAction = ImeAction.Next,
                     error = descError,
@@ -365,7 +365,7 @@ fun CreatePostScreen(
             }
 
             // ── Condition selector ───────────────────────────────────
-            Text("Condition", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.post_condition_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("New", "Like New", "Used", "Refurbished").forEach { opt ->
                     FilterChip(
@@ -382,23 +382,23 @@ fun CreatePostScreen(
 
             // ── Brand & Model ─────────────────────────────────────────
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AppTextField(value = brand, onValueChange = { brand = it }, label = "Brand (optional)", imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
-                AppTextField(value = model, onValueChange = { model = it }, label = "Model (optional)", imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
+                AppTextField(value = brand, onValueChange = { brand = it }, label = stringResource(R.string.post_brand_label), imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
+                AppTextField(value = model, onValueChange = { model = it }, label = stringResource(R.string.post_model_label), imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
             }
 
             // ── Category-specific fields ─────────────────────────────
             if (state.selectedCategory?.displayName?.contains("Electronics", ignoreCase = true) == true) {
-                Text("Device Specs", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.post_device_specs), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AppTextField(value = "", onValueChange = {}, label = "RAM (GB)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                    AppTextField(value = "", onValueChange = {}, label = "Storage (GB)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_ram_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_storage_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
                 }
             }
             if (state.selectedCategory?.displayName?.contains("Vehicle", ignoreCase = true) == true) {
-                Text("Vehicle Details", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.post_vehicle_details), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AppTextField(value = "", onValueChange = {}, label = "Mileage (km)", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                    AppTextField(value = "", onValueChange = {}, label = "Year", keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_mileage_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_year_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
                 }
             }
 
@@ -407,7 +407,7 @@ fun CreatePostScreen(
                 AppTextField(
                     value = contactNumber,
                     onValueChange = { contactNumber = it.filter(Char::isDigit).take(10) },
-                    label = "Contact (optional)",
+                    label = stringResource(R.string.post_contact_label),
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next,
                     modifier = Modifier.weight(1f),
@@ -416,7 +416,7 @@ fun CreatePostScreen(
                 AppTextField(
                     value = ageMonths,
                     onValueChange = { ageMonths = it.filter(Char::isDigit).take(3) },
-                    label = "Age (months)",
+                    label = stringResource(R.string.post_age_label),
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next,
                     modifier = Modifier.weight(1f),
@@ -426,16 +426,16 @@ fun CreatePostScreen(
             // ── Warranty Status ──────────────────────────────────────
             ExposedDropdownMenuBox(expanded = warrantyExpanded, onExpandedChange = { warrantyExpanded = !warrantyExpanded }) {
                 OutlinedTextField(
-                    value = warrantyStatus.ifBlank { "Warranty status" },
+                    value = warrantyStatus.ifBlank { stringResource(R.string.post_warranty_status) },
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Warranty") },
+                    label = { Text(stringResource(R.string.post_warranty_label)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = warrantyExpanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true),
                     shape = RoundedCornerShape(16.dp),
                 )
                 ExposedDropdownMenu(expanded = warrantyExpanded, onDismissRequest = { warrantyExpanded = false }) {
-                    listOf("Under Warranty", "Expired", "No Warranty").forEach { w ->
+                    listOf(stringResource(R.string.post_warranty_under), stringResource(R.string.post_warranty_expired), stringResource(R.string.post_warranty_none)).forEach { w ->
                         DropdownMenuItem(text = { Text(w) }, onClick = { warrantyStatus = w; warrantyExpanded = false })
                     }
                 }
@@ -466,8 +466,8 @@ fun CreatePostScreen(
             Surface(shape = RoundedCornerShape(12.dp), color = if (flashSale) Color(0xFFFFF7ED) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("24-Hour Flash Sale", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (flashSale) Color(0xFFB45309) else MaterialTheme.colorScheme.onSurface)
-                        Text("Boost visibility for 24 hours", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.post_flash_sale_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (flashSale) Color(0xFFB45309) else MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.post_flash_sale_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = flashSale, onCheckedChange = { flashSale = it }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFD97706), checkedTrackColor = Color(0xFFFED7AA)))
                 }
@@ -479,7 +479,7 @@ fun CreatePostScreen(
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(10.dp))
-                        Text(text = if (state.uploading) stringResource(R.string.post_uploading_images) else "Submitting your listing")
+                        Text(text = if (state.uploading) stringResource(R.string.post_uploading_images) else stringResource(R.string.post_submitting))
                     }
                 }
             }
@@ -580,13 +580,13 @@ private fun AudioRecorderSection(
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
-                    "Audio Description",
+                    stringResource(R.string.post_audio_description),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 if (audioUri != null) {
                     Spacer(Modifier.weight(1f))
-                    Text("Recorded", style = MaterialTheme.typography.labelSmall, color = Color(0xFF22C55E))
+                    Text(stringResource(R.string.post_audio_recorded), style = MaterialTheme.typography.labelSmall, color = Color(0xFF22C55E))
                 }
             }
 
@@ -650,7 +650,7 @@ private fun AudioRecorderSection(
                     ) {
                         Icon(Icons.Default.Stop, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Stop")
+                        Text(stringResource(R.string.post_audio_stop))
                     }
                 }
             } else {

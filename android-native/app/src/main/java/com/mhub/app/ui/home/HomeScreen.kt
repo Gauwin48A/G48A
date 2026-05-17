@@ -295,9 +295,9 @@ private fun FilterBottomSheet(
                         startDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
                     }
                     showStartDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.filter_ok)) }
             },
-            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text(stringResource(R.string.filter_cancel)) } }
         ) {
             DatePicker(state = datePickerState)
         }
@@ -313,9 +313,9 @@ private fun FilterBottomSheet(
                         endDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
                     }
                     showEndDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.filter_ok)) }
             },
-            dismissButton = { TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showEndDatePicker = false }) { Text(stringResource(R.string.filter_cancel)) } }
         ) {
             DatePicker(state = datePickerState)
         }
@@ -372,7 +372,7 @@ private fun CompareDialog(
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Brand", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.compare_brand), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Text(post.brand ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                         }
@@ -381,7 +381,7 @@ private fun CompareDialog(
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Location", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.compare_location), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Text(post.location ?: "N/A", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                         }
@@ -390,7 +390,7 @@ private fun CompareDialog(
                 }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Seller", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.compare_seller), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
                             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(post.sellerName ?: post.userName ?: "N/A", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -404,7 +404,7 @@ private fun CompareDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.home_close)) }
         },
     )
 }
@@ -424,10 +424,10 @@ private fun PromoteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Campaign, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text("Promote \"$postTitle\"", fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        title = { Text(stringResource(R.string.promote_title, postTitle), fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Boost your listing visibility", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.promote_boost_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(4.dp))
 
                 listOf("Basic" to "₹49", "Featured" to "₹99", "Spotlight" to "₹199").forEach { (tier, price) ->
@@ -467,7 +467,7 @@ private fun PromoteDialog(
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Text("Duration", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.promote_duration), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(3, 7, 14, 30).forEach { days ->
                         FilterChip(
@@ -488,11 +488,11 @@ private fun PromoteDialog(
                 onConfirm(selectedTier, duration)
                 onDismiss()
             }) {
-                Text("Confirm & Pay")
+                Text(stringResource(R.string.promote_confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.filter_cancel)) }
         },
     )
 }
@@ -1113,7 +1113,7 @@ fun HomeScreen(
                 ExtendedFloatingActionButton(
                     onClick = onCreatePost,
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Sell", fontWeight = FontWeight.SemiBold) },
+                    text = { Text(stringResource(R.string.home_sell), fontWeight = FontWeight.SemiBold) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
@@ -1149,8 +1149,8 @@ fun HomeScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
                                     Icon(Icons.Outlined.Inventory2, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                                    Text("Loading is taking too long", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                    Text("The feed might be temporarily unavailable", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.home_loading_slow), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(R.string.home_feed_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         androidx.compose.material3.OutlinedButton(onClick = {
                                             filters = PostFilters()
@@ -1158,10 +1158,10 @@ fun HomeScreen(
                                             selectedCategory = null
                                             searchQuery = ""
                                         }) {
-                                            Text("Reset Filters")
+                                            Text(stringResource(R.string.home_reset_filters))
                                         }
                                         androidx.compose.material3.Button(onClick = { viewModel.load(initial = true) }) {
-                                            Text("Retry")
+                                            Text(stringResource(R.string.home_retry))
                                         }
                                     }
                                 }
@@ -1237,7 +1237,7 @@ fun HomeScreen(
                                     ) {
                                         Icon(androidx.compose.material.icons.Icons.Default.Campaign, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(14.dp))
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Promoted", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
+                                        Text(stringResource(R.string.allposts_promoted), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
                                     }
                                     LazyRow(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1294,7 +1294,7 @@ fun HomeScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search listings, categories...") },
+                                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                                 trailingIcon = {
                                     if (searchQuery.isNotBlank()) {
@@ -1359,7 +1359,7 @@ fun HomeScreen(
                                         InputChip(
                                             selected = true,
                                             onClick = { filters = filters.copy(verifiedOnly = false) },
-                                            label = { Text("Verified only", style = MaterialTheme.typography.labelSmall) },
+                                            label = { Text(stringResource(R.string.home_verified_only_label), style = MaterialTheme.typography.labelSmall) },
                                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
                                         )
                                     }
@@ -1497,7 +1497,7 @@ fun HomeScreen(
                             Text("${filteredPosts.size} listing${if (filteredPosts.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (selectedCategory != null) {
                                 Spacer(Modifier.width(6.dp))
-                                Text("in $selectedCategory", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                                Text(stringResource(R.string.home_in_category, selectedCategory!!), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -1572,13 +1572,13 @@ fun HomeScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
                                     Icon(Icons.Default.Visibility, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text("Unlock more listings", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                    Text("Sign in to view all available items and access exclusive features", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    Text(stringResource(R.string.home_guest_title), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(R.string.home_guest_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                     androidx.compose.material3.Button(
                                         onClick = onNavigateToLogin,
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
-                                        Text("Sign In")
+                                        Text(stringResource(R.string.home_guest_sign_in))
                                     }
                                 }
                             }
@@ -1626,7 +1626,7 @@ fun HomeScreen(
                             onClick = { showCompareDialog = true },
                             enabled = compareItems.size >= 2,
                         ) {
-                            Text("Compare Now")
+                            Text(stringResource(R.string.home_compare_now))
                         }
                         IconButton(onClick = { compareItems = emptyList() }, modifier = Modifier.size(24.dp)) {
                             Icon(Icons.Default.Close, "Clear", Modifier.size(16.dp))

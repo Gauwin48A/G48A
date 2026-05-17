@@ -794,4 +794,184 @@
     <string name="profile_admin">एडमिन</string>
     <string name="profile_seller">विक्रेता</string>
     <string name="profile_moderator">मॉड</string>
+
+    <!-- HomeScreen -->
+    <string name="promote_title">"%s" प्रमोट करें</string>
+    <string name="promote_boost_subtitle">अपनी लिस्टिंग की दृश्यता बढ़ाएं</string>
+    <string name="promote_duration">अवधि</string>
+    <string name="promote_confirm">पुष्टि करें और भुगतान करें</string>
+    <string name="home_search_placeholder">लिस्टिंग, श्रेणियाँ खोजें…</string>
+    <string name="home_verified_only_label">केवल सत्यापित</string>
+    <string name="home_guest_title">और लिस्टिंग अनलॉक करें</string>
+    <string name="home_guest_subtitle">सभी उपलब्ध आइटम देखने के लिए साइन इन करें</string>
+    <string name="home_guest_sign_in">साइन इन</string>
+
+    <!-- CreatePostScreen -->
+    <string name="post_kyc_title">लिस्ट करने के लिए पहचान सत्यापित करें</string>
+    <string name="post_kyc_message">विक्रेताओं को लिस्टिंग प्रकाशित करने से पहले KYC पूरा करना होगा।</string>
+    <string name="post_kyc_go">KYC पर जाएं</string>
+    <string name="post_kyc_continue">फिर भी जारी रखें</string>
+    <string name="post_duplicate_warning">आपकी पोस्ट में समान लिस्टिंग मिली</string>
+    <string name="post_listing_checklist">लिस्टिंग चेकलिस्ट</string>
+    <string name="post_add_label">जोड़ें</string>
+    <string name="post_image_required">कम से कम एक फोटो जोड़ें</string>
+    <string name="post_audio_description">ऑडियो विवरण</string>
+    <string name="post_audio_recorded">रिकॉर्ड किया गया</string>
+    <string name="post_audio_stop">रोकें</string>
+    <string name="post_description_label">विवरण</string>
+    <string name="post_description_hint">आइटम का वर्णन करें…</string>
+    <string name="post_title_error">शीर्षक 3–120 अक्षर का होना चाहिए</string>
+    <string name="post_price_error">मान्य मूल्य दर्ज करें</string>
+    <string name="post_desc_error">विवरण कम से कम 20 अक्षर का होना चाहिए</string>
+    <string name="post_contact_error">मान्य 10-अंकीय नंबर दर्ज करें</string>
+    <string name="post_category_error">एक श्रेणी चुनें</string>
+    <string name="post_condition_label">स्थिति</string>
+    <string name="post_brand_label">ब्रांड (वैकल्पिक)</string>
+    <string name="post_model_label">मॉडल (वैकल्पिक)</string>
+    <string name="post_device_specs">डिवाइस विनिर्देश</string>
+    <string name="post_ram_label">RAM (GB)</string>
+    <string name="post_storage_label">स्टोरेज (GB)</string>
+    <string name="post_vehicle_details">वाहन विवरण</string>
+    <string name="post_mileage_label">माइलेज (km)</string>
+    <string name="post_year_label">वर्ष</string>
+    <string name="post_contact_label">संपर्क (वैकल्पिक)</string>
+    <string name="post_age_label">उम्र (महीने)</string>
+    <string name="post_warranty_label">वारंटी</string>
+    <string name="post_warranty_status">वारंटी स्थिति</string>
+    <string name="post_warranty_under">वारंटी के तहत</string>
+    <string name="post_warranty_expired">समाप्त</string>
+    <string name="post_warranty_none">कोई वारंटी नहीं</string>
+    <string name="post_flash_sale_title">24-घंटे फ्लैश सेल</string>
+    <string name="post_flash_sale_subtitle">24 घंटे के लिए दृश्यता बढ़ाएं</string>
+    <string name="post_submitting">आपकी लिस्टिंग सबमिट हो रही है</string>
+
+    <!-- PostDetailScreen -->
+    <string name="detail_listing">लिस्टिंग</string>
+    <string name="detail_unable_open">लिस्टिंग खोलने में असमर्थ</string>
+    <string name="detail_unable_load">लिस्टिंग लोड करने में असमर्थ</string>
+    <string name="detail_reload">लिस्टिंग रीलोड करें</string>
+    <string name="detail_not_available">लिस्टिंग उपलब्ध नहीं</string>
+    <string name="detail_removed">यह लिस्टिंग हटा दी गई हो सकती है।</string>
+    <string name="detail_overview">अवलोकन</string>
+    <string name="detail_details">विवरण</string>
+    <string name="detail_specs">विनिर्देश</string>
+    <string name="detail_trust">विश्वास</string>
+    <string name="detail_description_tab">विवरण</string>
+    <string name="detail_seller_tab">विक्रेता</string>
+    <string name="detail_description">विवरण</string>
+    <string name="detail_show_less">कम दिखाएं</string>
+    <string name="detail_read_more">और पढ़ें</string>
+    <string name="detail_condition">स्थिति</string>
+    <string name="detail_brand">ब्रांड</string>
+    <string name="detail_location">स्थान</string>
+    <string name="detail_price">मूल्य</string>
+    <string name="detail_category">श्रेणी</string>
+    <string name="detail_specifications">विनिर्देश</string>
+    <string name="detail_views">दृश्य</string>
+    <string name="detail_likes">पसंद</string>
+    <string name="detail_shares">शेयर</string>
+    <string name="detail_trust_score">विश्वास स्कोर: %d/100</string>
+    <string name="detail_highly_trusted">अत्यधिक विश्वसनीय</string>
+    <string name="detail_trusted">विश्वसनीय</string>
+    <string name="detail_new_seller">नया विक्रेता</string>
+    <string name="detail_activity_timeline">गतिविधि समयरेखा</string>
+    <string name="detail_similar">समान लिस्टिंग</string>
+    <string name="detail_recommended">आपके लिए अनुशंसित</string>
+    <string name="detail_sponsored">प्रायोजित</string>
+    <string name="detail_seller">विक्रेता</string>
+    <string name="detail_call">कॉल</string>
+    <string name="detail_listing_insights">लिस्टिंग अंतर्दृष्टि</string>
+    <string name="detail_inquiries">पूछताछ</string>
+    <string name="detail_offers">प्रस्ताव</string>
+    <string name="detail_watchers">देखने वाले</string>
+    <string name="detail_offer_success">प्रस्ताव सफलतापूर्वक भेजा!</string>
+    <string name="detail_offer_placeholder">आपका प्रस्ताव ₹</string>
+    <string name="detail_send">भेजें</string>
+    <string name="detail_make_offer">प्रस्ताव दें</string>
+    <string name="detail_boost">अपनी लिस्टिंग बूस्ट करें</string>
+    <string name="detail_price_alert">मूल्य अलर्ट</string>
+    <string name="detail_alert_on">अलर्ट चालू</string>
+    <string name="detail_interested">रुचि है</string>
+    <string name="detail_comparing">तुलना हो रही है</string>
+    <string name="detail_compare">तुलना करें</string>
+
+    <!-- Chat -->
+    <string name="chat_delete_message">संदेश हटाएं</string>
+    <string name="chat_delete_confirm">यह संदेश हटाएं? यह पूर्ववत नहीं किया जा सकता।</string>
+    <string name="chat_delete">हटाएं</string>
+    <string name="chat_cancel">रद्द करें</string>
+    <string name="chat_react">संदेश पर प्रतिक्रिया</string>
+    <string name="chat_close">बंद करें</string>
+    <string name="chat_type_message">संदेश लिखें…</string>
+    <string name="chat_search_conversation">बातचीत में खोजें…</string>
+
+    <!-- CategoryAppShell -->
+    <string name="catshell_guest_user">अतिथि उपयोगकर्ता</string>
+    <string name="catshell_browsing">%s ब्राउज़ कर रहे हैं</string>
+    <string name="catshell_menu">श्रेणी ऐप मेनू</string>
+    <string name="catshell_back_to_launcher">लॉन्चर पर वापस</string>
+    <string name="catshell_browse_subcategories">उपश्रेणियाँ ब्राउज़ करें</string>
+    <string name="catshell_for_you">आपके लिए</string>
+    <string name="catshell_community_feed">सामुदायिक फ़ीड</string>
+    <string name="catshell_order_history">ऑर्डर इतिहास</string>
+    <string name="catshell_settings">सेटिंग्स</string>
+    <string name="catshell_help_faq">सहायता और FAQ</string>
+    <string name="catshell_switch_category">श्रेणी बदलें</string>
+    <string name="catshell_quick_subcategories">त्वरित उपश्रेणियाँ</string>
+    <string name="catshell_now">अभी</string>
+
+    <!-- Content descriptions / Accessibility -->
+    <string name="cd_search">खोजें</string>
+    <string name="cd_filters">फ़िल्टर</string>
+    <string name="cd_toggle_view">दृश्य बदलें</string>
+    <string name="cd_clear">साफ़ करें</string>
+    <string name="cd_verified">सत्यापित</string>
+    <string name="cd_wishlist">विशलिस्ट</string>
+    <string name="cd_delete">हटाएं</string>
+    <string name="cd_settings">सेटिंग्स</string>
+    <string name="cd_select">चुनें</string>
+    <string name="cd_open_menu">श्रेणी मेनू खोलें</string>
+    <string name="cd_back_to_launcher">ऐप लॉन्चर पर लौटें</string>
+    <string name="cd_search_in">%s में खोजें</string>
+    <string name="cd_notifications">सूचनाएं देखें</string>
+    <string name="cd_cart_items">शॉपिंग कार्ट, %d आइटम</string>
+    <string name="cd_delete_selected">चयनित हटाएं</string>
+
+    <!-- Promote extras -->
+    <string name="promote_basic">बेसिक</string>
+    <string name="promote_featured">फ़ीचर्ड</string>
+    <string name="promote_spotlight">स्पॉटलाइट</string>
+    <string name="promote_2x">2x दृश्यता</string>
+    <string name="promote_5x">5x + होमपेज</string>
+    <string name="promote_10x">10x + टॉप स्लॉट</string>
+    <string name="promote_days">%d दिन</string>
+
+    <!-- Home extras -->
+    <string name="home_sort_newest">नवीनतम</string>
+    <string name="home_sort_popular">लोकप्रिय</string>
+    <string name="home_sort_price_low">मूल्य ↑</string>
+    <string name="home_sort_price_high">मूल्य ↓</string>
+    <string name="home_quick_filter_label">त्वरित फ़िल्टर</string>
+    <string name="home_page_density_label">पेज घनत्व</string>
+    <string name="home_density_compact">कॉम्पैक्ट</string>
+    <string name="home_density_normal">सामान्य</string>
+    <string name="home_density_spacious">विस्तृत</string>
+    <string name="home_loading_more">और लोड हो रहा है…</string>
+    <string name="home_no_more_listings">और लिस्टिंग नहीं</string>
+
+    <!-- Post extras -->
+    <string name="post_plan_badge">%1$s प्लान • %2$d फोटो तक प्रति लिस्टिंग</string>
+    <string name="post_photos_label">फोटो</string>
+    <string name="post_image_info">आपके %3$s प्लान पर %1$d फोटो तक · JPG/PNG/WEBP</string>
+    <string name="post_images_selected">%1$d/%2$d चयनित · क्रम बदलने के लिए टैप करें</string>
+    <string name="post_audio_record_prompt">ऑडियो विवरण रिकॉर्ड करें (अधिकतम %dसे.)</string>
+    <string name="post_condition_new">नया</string>
+    <string name="post_condition_like_new">लगभग नया</string>
+    <string name="post_condition_used">पुराना</string>
+    <string name="post_condition_refurbished">रिफर्बिश्ड</string>
+
+    <!-- Detail extras -->
+    <string name="detail_play_video">वीडियो चलाएं</string>
+    <string name="detail_posted_ago">%s पहले पोस्ट किया</string>
+    <string name="detail_offer_failed">प्रस्ताव भेजने में विफल</string>
 </resources>

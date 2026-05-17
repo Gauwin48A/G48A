@@ -89,7 +89,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mhub.app.R
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -313,7 +315,7 @@ fun PostDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Listing", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.detail_listing), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -363,10 +365,10 @@ fun PostDetailScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 AppErrorState(
-                    title = "Unable to open listing",
-                    message = state.error ?: "Unable to load listing",
+                    title = stringResource(R.string.detail_unable_open),
+                    message = state.error ?: stringResource(R.string.detail_unable_load),
                     onRetry = { viewModel.reload() },
-                    retryLabel = "Reload listing",
+                    retryLabel = stringResource(R.string.detail_reload),
                 )
             }
 
@@ -378,8 +380,8 @@ fun PostDetailScreen(
             ) {
                 AppEmptyState(
                     icon = Icons.Outlined.ErrorOutline,
-                    title = "Listing not available",
-                    subtitle = "This listing may have been removed.",
+                    title = stringResource(R.string.detail_not_available),
+                    subtitle = stringResource(R.string.detail_removed),
                 )
             }
 
@@ -391,7 +393,7 @@ fun PostDetailScreen(
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
                 val lazyState = rememberLazyListState()
-                val sectionLabels = listOf("Overview", "Details", "Specs", "Trust", "Description", "Seller")
+                val sectionLabels = listOf(stringResource(R.string.detail_overview), stringResource(R.string.detail_details), stringResource(R.string.detail_specs), stringResource(R.string.detail_trust), stringResource(R.string.detail_description_tab), stringResource(R.string.detail_seller_tab))
 
                 Column(
                     modifier = Modifier
@@ -606,7 +608,7 @@ fun PostDetailScreen(
                                     var expanded by remember { mutableStateOf(false) }
                                     Column {
                                         Text(
-                                            text = "Description",
+                                            text = stringResource(R.string.detail_description),
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.SemiBold,
                                         )
@@ -620,20 +622,25 @@ fun PostDetailScreen(
                                         )
                                         if (it.length > 200) {
                                             TextButton(onClick = { expanded = !expanded }) {
-                                                Text(if (expanded) "Show less" else "Read more")
+                                                Text(if (expanded) stringResource(R.string.detail_show_less) else stringResource(R.string.detail_read_more))
                                             }
                                         }
                                     }
                                 }
 
                                 // Specifications table
+                                val conditionLabel = stringResource(R.string.detail_condition)
+                                val brandLabel = stringResource(R.string.detail_brand)
+                                val locationLabel = stringResource(R.string.detail_location)
+                                val priceLabel = stringResource(R.string.detail_price)
+                                val categoryLabel = stringResource(R.string.detail_category)
                                 val specs = remember(post) {
                                     buildList {
-                                        post.condition?.let { add("Condition" to it.replaceFirstChar(Char::uppercase)) }
-                                        post.brand?.let { add("Brand" to it) }
-                                        post.location?.let { add("Location" to it) }
-                                        post.price?.let { add("Price" to "₹${"%,.0f".format(it)}") }
-                                        post.categoryName?.let { add("Category" to it) }
+                                        post.condition?.let { add(conditionLabel to it.replaceFirstChar(Char::uppercase)) }
+                                        post.brand?.let { add(brandLabel to it) }
+                                        post.location?.let { add(locationLabel to it) }
+                                        post.price?.let { add(priceLabel to "₹${"%,.0f".format(it)}") }
+                                        post.categoryName?.let { add(categoryLabel to it) }
                                     }
                                 }
                                 if (specs.isNotEmpty()) {
@@ -643,7 +650,7 @@ fun PostDetailScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
                                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("Specifications", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                            Text(stringResource(R.string.detail_specifications), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                                             specs.forEach { (key, value) ->
                                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                                     Text(key, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -685,9 +692,9 @@ fun PostDetailScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
-                                    EngagementChip("👁", "${post.viewCount ?: 0}", "Views")
-                                    EngagementChip("❤️", "${post.likeCount ?: 0}", "Likes")
-                                    EngagementChip("🔗", "0", "Shares")
+                                    EngagementChip("👁", "${post.viewCount ?: 0}", stringResource(R.string.detail_views))
+                                    EngagementChip("❤️", "${post.likeCount ?: 0}", stringResource(R.string.detail_likes))
+                                    EngagementChip("🔗", "0", stringResource(R.string.detail_shares))
                                 }
 
                                 // Trust Score Badge
@@ -699,8 +706,8 @@ fun PostDetailScreen(
                                             Icon(Icons.Filled.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(22.dp))
                                             Spacer(Modifier.width(8.dp))
                                             Column(modifier = Modifier.weight(1f)) {
-                                                Text("Trust Score: $score/100", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = trustColor)
-                                                Text(ts.trustLabel ?: when { score >= 80 -> "Highly Trusted"; score >= 50 -> "Trusted"; else -> "New Seller" }, fontSize = 12.sp, color = trustColor.copy(alpha = 0.8f))
+                                                Text(stringResource(R.string.detail_trust_score, score), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = trustColor)
+                                                Text(ts.trustLabel ?: when { score >= 80 -> stringResource(R.string.detail_highly_trusted); score >= 50 -> stringResource(R.string.detail_trusted); else -> stringResource(R.string.detail_new_seller) }, fontSize = 12.sp, color = trustColor.copy(alpha = 0.8f))
                                             }
                                             // Seller response time
                                             state.sellerResponseTimeMinutes?.let { mins ->
@@ -768,7 +775,7 @@ fun PostDetailScreen(
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Icon(Icons.Default.Timeline, null, modifier = Modifier.size(18.dp))
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text("Activity Timeline", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                                    Text(stringResource(R.string.detail_activity_timeline), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                                 }
                                                 Text(if (activityExpanded) "▲" else "▼", fontSize = 12.sp)
                                             }
@@ -824,7 +831,7 @@ fun PostDetailScreen(
 
                                 // Similar Posts section
                                 state.similarPosts.takeIf { it.isNotEmpty() }?.let { similar ->
-                                    Text("Similar Listings", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                                    Text(stringResource(R.string.detail_similar), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                                     LazyRow(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     ) {
@@ -859,9 +866,9 @@ fun PostDetailScreen(
                                 state.similarPosts.takeIf { it.size > 1 }?.let { sponsored ->
                                     Spacer(Modifier.height(8.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Recommended for You", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                                        Text(stringResource(R.string.detail_recommended), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
                                         Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
-                                            Text("Sponsored", fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            Text(stringResource(R.string.detail_sponsored), fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
                                     }
@@ -915,7 +922,7 @@ fun PostDetailScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
                                             Column {
-                                                Text("Seller", style = MaterialTheme.typography.labelMedium)
+                                                Text(stringResource(R.string.detail_seller), style = MaterialTheme.typography.labelMedium)
                                                 Text(it, fontWeight = FontWeight.SemiBold)
                                             }
                                             OutlinedButton(onClick = {
@@ -924,7 +931,7 @@ fun PostDetailScreen(
                                             }) {
                                                 Icon(Icons.Default.Call, contentDescription = null)
                                                 Spacer(Modifier.width(6.dp))
-                                                Text("Call")
+                                                Text(stringResource(R.string.detail_call))
                                             }
                                         }
                                     }
@@ -940,15 +947,19 @@ fun PostDetailScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Timeline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Listing Insights", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                    Text(stringResource(R.string.detail_listing_insights), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
                                 }
                                 Spacer(Modifier.height(10.dp))
+                                val viewsLabel = stringResource(R.string.detail_views)
+                                val inquiriesLabel = stringResource(R.string.detail_inquiries)
+                                val offersLabel = stringResource(R.string.detail_offers)
+                                val watchersLabel = stringResource(R.string.detail_watchers)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                     listOf(
-                                        Triple("👁", "${insights.totalViews}", "Views"),
-                                        Triple("💬", "${insights.totalInquiries}", "Inquiries"),
-                                        Triple("🤝", "${insights.totalOffers}", "Offers"),
-                                        Triple("👀", "${insights.activeWatchers}", "Watchers"),
+                                        Triple("👁", "${insights.totalViews}", viewsLabel),
+                                        Triple("💬", "${insights.totalInquiries}", inquiriesLabel),
+                                        Triple("🤝", "${insights.totalOffers}", offersLabel),
+                                        Triple("👀", "${insights.activeWatchers}", watchersLabel),
                                     ).forEach { (emoji, value, label) ->
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(emoji, fontSize = 18.sp)
@@ -970,7 +981,7 @@ fun PostDetailScreen(
 
                             if (state.offerSent) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                                    Text("Offer sent successfully!", color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
+                                    Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
                                 }
                             }
 
@@ -1007,9 +1018,9 @@ fun PostDetailScreen(
                                         showOfferDialog = false
                                     }, enabled = offerAmount.isNotBlank(), shape = RoundedCornerShape(10.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
-                                        Text("Send", fontWeight = FontWeight.SemiBold)
+                                        Text(stringResource(R.string.detail_send), fontWeight = FontWeight.SemiBold)
                                     }
-                                    TextButton(onClick = { showOfferDialog = false }) { Text("Cancel") }
+                                    TextButton(onClick = { showOfferDialog = false }) { Text(stringResource(R.string.filter_cancel)) }
                                 }
                             }
 
@@ -1017,7 +1028,7 @@ fun PostDetailScreen(
                             if (showBoostPanel) {
                                 Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Boost Your Listing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text(stringResource(R.string.detail_boost), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             listOf("basic" to "⚡ Basic\n10 coins", "featured" to "⭐ Featured\n25 coins", "spotlight" to "🔥 Spotlight\n50 coins").forEach { (tier, label) ->
                                                 OutlinedButton(onClick = { viewModel.boostPost(tier); showBoostPanel = false }, shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f)) {
@@ -1036,7 +1047,7 @@ fun PostDetailScreen(
                                 OutlinedButton(onClick = { showOfferDialog = !showOfferDialog }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Filled.LocalOffer, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Make Offer")
+                                    Text(stringResource(R.string.detail_make_offer))
                                 }
                                 // Price Alert toggle
                                 OutlinedButton(
@@ -1046,7 +1057,7 @@ fun PostDetailScreen(
                                 ) {
                                     Icon(if (state.priceAlertSubscribed) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text(if (state.priceAlertSubscribed) "Alert On" else "Price Alert", fontSize = 12.sp)
+                                    Text(if (state.priceAlertSubscribed) stringResource(R.string.detail_alert_on) else stringResource(R.string.detail_price_alert), fontSize = 12.sp)
                                 }
                                 OutlinedButton(onClick = { if (!state.reported) viewModel.reportPost() }, shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.reported) Color(0xFF94A3B8) else Color(0xFFEF4444))) {
@@ -1058,7 +1069,7 @@ fun PostDetailScreen(
                                 OutlinedButton(onClick = { showInterestModal = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Interested")
+                                    Text(stringResource(R.string.detail_interested))
                                 }
                                 OutlinedButton(
                                     onClick = { viewModel.toggleCompare() },
@@ -1070,7 +1081,7 @@ fun PostDetailScreen(
                                 ) {
                                     Icon(Icons.Default.Compare, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text(if (state.inCompareList) "Comparing" else "Compare")
+                                    Text(if (state.inCompareList) stringResource(R.string.detail_comparing) else stringResource(R.string.detail_compare))
                                 }
                                 Button(
                                     onClick = { viewModel.addToCart() },
