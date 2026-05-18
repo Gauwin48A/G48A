@@ -361,7 +361,7 @@ fun FeedScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Text("Sort: ${state.sortOption}", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.feed_sort_label, state.sortOption), fontWeight = FontWeight.SemiBold)
                                 Icon(Icons.Default.ArrowDropDown, "Sort options")
                             }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }, modifier = Modifier.fillMaxWidth(0.5f)) {
@@ -718,7 +718,7 @@ private fun FeedCard(
                     modifier = Modifier.clickable { showComments = !showComments },
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                    Text("Comment", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.feed_comment), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 // Bookmark button
                 Row(
@@ -768,7 +768,7 @@ private fun FeedCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Comments", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.feed_comments), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                         Text(
                             "No comments yet. Be the first!",
                             style = MaterialTheme.typography.bodySmall,
@@ -778,7 +778,7 @@ private fun FeedCard(
                             OutlinedTextField(
                                 value = commentText,
                                 onValueChange = { commentText = it },
-                                placeholder = { Text("Write a comment...", fontSize = 13.sp) },
+                                placeholder = { Text(stringResource(R.string.feed_write_comment), fontSize = 13.sp) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(20.dp),
                                 colors = OutlinedTextFieldDefaults.colors(

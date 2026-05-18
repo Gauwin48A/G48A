@@ -1,6 +1,7 @@
 package com.mhub.app.data.repository
 
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.JwtHelper
 import com.mhub.app.core.safeApiCall
 import com.mhub.app.data.local.TokenStore
 import com.mhub.app.data.remote.MhubApi
@@ -29,8 +30,8 @@ class AuthRepository @Inject constructor(
     private val api: MhubApi,
     private val tokenStore: TokenStore,
 ) {
-    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() }
-    val isCurrentlyAuthenticated: Boolean get() = !tokenStore.accessToken.value.isNullOrBlank()
+    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() && !JwtHelper.isExpired(it) }
+    val isCurrentlyAuthenticated: Boolean get() = tokenStore.isAuthenticated
     val accessTokenFlow: StateFlow<String?> = tokenStore.accessToken
 
     /** Exchanges a Google ID token for an app JWT. */

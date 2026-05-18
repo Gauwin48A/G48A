@@ -934,7 +934,7 @@ fun ProfileScreen(
                                             Icon(Icons.Default.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(28.dp))
                                         }
                                         Column(Modifier.weight(1f)) {
-                                            Text("Trust Score", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
+                                            Text(stringResource(R.string.profile_trust_score), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
                                             Text("${ts.trustScore.toInt()}/100", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = trustColor)
                                             if (ts.trustLabel != null) Text(ts.trustLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
@@ -1078,8 +1078,8 @@ fun ProfileScreen(
                                     }
                                 }
                                 Column(Modifier.weight(1f)) {
-                                    Text("My Channel", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                    Text("Create or manage your marketplace channel", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.profile_my_channel), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.profile_my_channel_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             }
@@ -1201,7 +1201,7 @@ fun ProfileScreen(
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Sign Out", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.SemiBold)
                             }
 
                             Spacer(Modifier.height(24.dp))
@@ -1266,26 +1266,26 @@ private fun PersonalInfoTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Personal Information", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.profile_personal_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 OutlinedTextField(
                     value = fullName,
                     onValueChange = { fullName = it },
-                    label = { Text("Full Name") },
-                    placeholder = { Text("At least 2 characters") },
+                    label = { Text(stringResource(R.string.profile_full_name)) },
+                    placeholder = { Text(stringResource(R.string.profile_name_hint)) },
                     singleLine = true,
                     isError = fullName.isNotBlank() && fullName.length < 2,
-                    supportingText = if (fullName.isNotBlank() && fullName.length < 2) {{ Text("Minimum 2 characters") }} else null,
+                    supportingText = if (fullName.isNotBlank() && fullName.length < 2) {{ Text(stringResource(R.string.profile_name_min)) }} else null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                 )
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { if (it.length <= 10) phone = it.filter { c -> c.isDigit() } },
-                    label = { Text("Phone Number") },
-                    placeholder = { Text("10-digit mobile number") },
+                    label = { Text(stringResource(R.string.profile_phone)) },
+                    placeholder = { Text(stringResource(R.string.profile_phone_hint)) },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
                     isError = phone.isNotBlank() && phone.length != 10,
@@ -1311,7 +1311,7 @@ private fun PersonalInfoTab(
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                 ) {
-                    Text(if (saving) "Saving…" else "Save Changes", fontWeight = FontWeight.SemiBold)
+                    Text(if (saving) stringResource(R.string.commerce_saving) else stringResource(R.string.commerce_save_changes), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1322,12 +1322,12 @@ private fun PersonalInfoTab(
                 Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
                     Column {
-                        Text("Email Address", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.profile_email), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(user!!.email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                     }
                     Spacer(Modifier.weight(1f))
                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
-                        Text("Verified", style = MaterialTheme.typography.labelSmall, color = Color(0xFF10B981), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.profile_verified), style = MaterialTheme.typography.labelSmall, color = Color(0xFF10B981), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -1352,22 +1352,22 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Search Preferences", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.profile_search_prefs), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location") },
-                    placeholder = { Text("Enter your city or area") },
+                    label = { Text(stringResource(R.string.profile_location)) },
+                    placeholder = { Text(stringResource(R.string.profile_location_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Search Radius", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.profile_search_radius), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         radii.forEach { r ->
                             val isSelected = selectedRadius == r
@@ -1393,7 +1393,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                     OutlinedTextField(
                         value = minPrice,
                         onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
-                        label = { Text("Min Price (₹)") },
+                        label = { Text(stringResource(R.string.profile_min_price)) },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f),
@@ -1402,7 +1402,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                     OutlinedTextField(
                         value = maxPrice,
                         onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
-                        label = { Text("Max Price (₹)") },
+                        label = { Text(stringResource(R.string.profile_max_price)) },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f),
@@ -1416,7 +1416,7 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                 ) {
-                    Text("Save Preferences", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.profile_save_prefs), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1431,8 +1431,8 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
             Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("🎯", fontSize = 22.sp)
                 Column(Modifier.weight(1f)) {
-                    Text("Category Mode", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
-                    Text("Select your active app experience (Electronics, Fashion, Vehicles…)", style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
+                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
+                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
                 }
                 Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
             }
@@ -1441,8 +1441,8 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
         // Page-density selector (web-parity: Profile.jsx densityPreference C8)
         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Page Density", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                Text("Controls spacing between list items.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                Text(stringResource(R.string.profile_page_density), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.profile_page_density_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("compact" to "Compact", "comfortable" to "Comfortable", "spacious" to "Spacious").forEach { (mode, label) ->
                         val sel = pageDensity == mode
@@ -1478,7 +1478,7 @@ private fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Account Settings", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.profile_account_settings), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
         // Subscription card
         val plan = user?.currentPlan?.replaceFirstChar { it.uppercase() } ?: "Basic"
@@ -1489,11 +1489,11 @@ private fun SettingsTab(
                     Icon(Icons.Default.Star, null, tint = planColor, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Current Plan", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.profile_current_plan), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(plan, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = planColor)
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = planColor.copy(alpha = 0.1f)) {
-                    Text("Upgrade", style = MaterialTheme.typography.labelSmall, color = planColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.profile_upgrade), style = MaterialTheme.typography.labelSmall, color = planColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1516,7 +1516,7 @@ private fun SettingsTab(
         ) {
             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Sign Out", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.SemiBold)
         }
 
         // GDPR: Download My Data
@@ -1531,7 +1531,7 @@ private fun SettingsTab(
                     Icon(Icons.Default.Download, null, tint = Color(0xFF6366F1), modifier = Modifier.size(20.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Download My Data", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.profile_download_data), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
                     Text(
                         if (dataExportDone) "Export request sent — check your email" else "Request a GDPR export of your account data",
                         style = MaterialTheme.typography.bodySmall,
@@ -1539,7 +1539,7 @@ private fun SettingsTab(
                     )
                 }
                 if (!dataExportDone) {
-                    androidx.compose.material3.TextButton(onClick = onExportData) { Text("Request") }
+                    androidx.compose.material3.TextButton(onClick = onExportData) { Text(stringResource(R.string.profile_request)) }
                 } else {
                     Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
                 }
@@ -2157,7 +2157,7 @@ private fun UserIdSection(userId: String) {
             .border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("USER ID", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.2.sp)
+            Text(stringResource(R.string.profile_user_id), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.2.sp)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -2174,7 +2174,7 @@ private fun UserIdSection(userId: String) {
                     Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
             }
-            Text("Use this ID for support requests and account forms", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.profile_user_id_hint), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -2192,27 +2192,27 @@ private fun EditProfileDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.profile_edit_profile), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Full Name") },
+                    label = { Text(stringResource(R.string.profile_full_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Phone") },
+                    label = { Text(stringResource(R.string.profile_phone_short)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { bio = it },
-                    label = { Text("Bio (optional)") },
+                    label = { Text(stringResource(R.string.profile_bio_optional)) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -2222,9 +2222,9 @@ private fun EditProfileDialog(
             TextButton(
                 onClick = { onSave(name.ifBlank { null }, phone.ifBlank { null }, bio.ifBlank { null }) },
                 enabled = !saving,
-            ) { Text(if (saving) "Saving..." else "Save") }
+            ) { Text(if (saving) stringResource(R.string.commerce_saving) else stringResource(R.string.btn_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
 }
 
@@ -2241,30 +2241,30 @@ private fun SocialLinksEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Social Links", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.profile_social_links), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = twitter,
                     onValueChange = { twitter = it },
-                    label = { Text("𝕏 / Twitter handle") },
-                    placeholder = { Text("@yourhandle") },
+                    label = { Text(stringResource(R.string.profile_twitter)) },
+                    placeholder = { Text(stringResource(R.string.profile_handle_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = instagram,
                     onValueChange = { instagram = it },
-                    label = { Text("📷 Instagram handle") },
-                    placeholder = { Text("@yourhandle") },
+                    label = { Text(stringResource(R.string.profile_instagram)) },
+                    placeholder = { Text(stringResource(R.string.profile_handle_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = linkedin,
                     onValueChange = { linkedin = it },
-                    label = { Text("LinkedIn URL") },
-                    placeholder = { Text("linkedin.com/in/…") },
+                    label = { Text(stringResource(R.string.profile_linkedin)) },
+                    placeholder = { Text(stringResource(R.string.profile_linkedin_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -2278,8 +2278,8 @@ private fun SocialLinksEditDialog(
                     if (linkedin.isNotBlank()) put("linkedin", linkedin.trim())
                 }
                 onSave(links)
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.btn_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
 }

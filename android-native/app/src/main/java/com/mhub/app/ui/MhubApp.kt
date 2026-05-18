@@ -441,7 +441,7 @@ fun MhubApp(
                 composable(Routes.REWARDS) {
                     MainShell(navController = navController, selected = BottomTab.REWARDS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         RewardsScreen(
-                            isAuthenticated = !needsLogin,
+                            isAuthenticated = isAuthenticated,
                             onSignInRequired = {
                                 guestBrowsing = false
                                 navController.navigate(Routes.AUTH_GRAPH) {
@@ -454,7 +454,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.PROFILE) {
-                    if (needsLogin) {
+                    if (!isAuthenticated) {
                         MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                             com.mhub.app.ui.components.LoginPromptCard(
                                 onSignIn = {
