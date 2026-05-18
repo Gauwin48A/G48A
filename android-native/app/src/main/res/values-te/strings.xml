@@ -348,4 +348,28 @@
     <string name="detail_make_offer">ఆఫర్ ఇవ్వండి</string>
     <string name="detail_interested">ఆసక్తి</string>
     <string name="detail_compare">పోల్చు</string>
+
+    <!-- MoreScreen / Drawer -->
+    <string name="more_footer">MHub — అన్నీ ఒకే చోట</string>
+    <string name="more_close_menu">మెనూ మూసివేయండి</string>
+    <string name="more_collapse">కుదించు</string>
+    <string name="more_expand">విస్తరించు</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">శోధించు</string>
+    <string name="topbar_notifications">నోటిఫికేషన్లు</string>
+    <string name="topbar_wishlist">విష్‌లిస్ట్</string>
+    <string name="topbar_cart">కార్ట్</string>
+    <string name="explore_browse_categories">వర్గాలు బ్రౌజ్ చేయండి</string>
+    <string name="explore_browse_categories_desc">మీరు వెతుకుతున్నది కనుగొనండి</string>
+    <string name="explore_no_categories">వర్గాలు లేవు</string>
+    <string name="explore_no_categories_desc">వర్గాలు ఇక్కడ కనిపిస్తాయి.</string>
+    <string name="explore_trending_now">ఇప్పుడు ట్రెండింగ్</string>
+    <string name="explore_trending_desc">అత్యధికంగా చూసిన జాబితాలు</string>
+    <string name="explore_for_you">మీ కోసం</string>
+    <string name="explore_for_you_desc">వ్యక్తిగత సిఫార్సులు</string>
+    <string name="explore_no_results">ఫలితాలు కనుగొనబడలేదు</string>
+    <string name="explore_no_results_desc">చిన్న లేదా భిన్నమైన శోధన పదం ప్రయత్నించండి.</string>
+    <string name="explore_search_hint">ఉత్పత్తులు, సేవలు, ఉద్యోగాలు శోధించండి…</string>
+    <string name="msg_press_back_exit">నిష్క్రమించడానికి మళ్ళీ వెనుకకు నొక్కండి</string>
 </resources>
+

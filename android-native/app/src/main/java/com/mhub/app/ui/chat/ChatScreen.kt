@@ -124,6 +124,7 @@ data class ChatState(
 class ChatViewModel @Inject constructor(
     private val repo: ChatRepository,
     private val chatWebSocket: ChatWebSocket,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
@@ -131,6 +132,7 @@ class ChatViewModel @Inject constructor(
     private var pollingJob: kotlinx.coroutines.Job? = null
     private var wsEventJob: kotlinx.coroutines.Job? = null
     private var typingJob: kotlinx.coroutines.Job? = null
+    private var lastLocaleVersion = 0L
 
     init {
         loadConversations()
@@ -138,6 +140,13 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             chatWebSocket.connected.collect { connected ->
                 _state.value = _state.value.copy(wsConnected = connected)
+            }
+        }
+        // Observe locale changes → reload conversations
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) { loadConversations() }
+                lastLocaleVersion = version
             }
         }
     }

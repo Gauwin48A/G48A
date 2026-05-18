@@ -277,4 +277,27 @@
     <string name="detail_make_offer">ઓફર આપો</string>
     <string name="detail_interested">રસ</string>
     <string name="detail_compare">સરખામણી</string>
+
+    <string name="more_footer">MHub — બધું એક જ જગ્યાએ</string>
+    <string name="more_close_menu">મેનુ બંધ કરો</string>
+    <string name="more_collapse">સંક્ષિપ્ત કરો</string>
+    <string name="more_expand">વિસ્તૃત કરો</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">શોધો</string>
+    <string name="topbar_notifications">સૂચનાઓ</string>
+    <string name="topbar_wishlist">ઈચ્છા સૂચિ</string>
+    <string name="topbar_cart">કાર્ટ</string>
+    <string name="explore_browse_categories">શ્રેણીઓ બ્રાઉઝ કરો</string>
+    <string name="explore_browse_categories_desc">તમે જે શોધી રહ્યા છો તે શોધો</string>
+    <string name="explore_no_categories">કોઈ શ્રેણી નથી</string>
+    <string name="explore_no_categories_desc">શ્રેણીઓ અહીં દેખાશે.</string>
+    <string name="explore_trending_now">હવે ટ્રેન્ડિંગ</string>
+    <string name="explore_trending_desc">સૌથી વધુ જોવાયેલી યાદીઓ</string>
+    <string name="explore_for_you">તમારા માટે</string>
+    <string name="explore_for_you_desc">વ્યક્તિગત ભલામણો</string>
+    <string name="explore_no_results">કોઈ પરિણામ મળ્યાં નથી</string>
+    <string name="explore_no_results_desc">ટૂંકા અથવા અલગ શોધ શબ્દ અજમાવો.</string>
+    <string name="explore_search_hint">ઉત્પાદનો, સેવાઓ, નોકરીઓ શોધો…</string>
+    <string name="msg_press_back_exit">બહાર નીકળવા ફરીથી પાછળ દબાવો</string>
 </resources>
+

@@ -246,33 +246,6 @@ fun EnhancedProductCard(
                         )
                     }
                 }
-                Spacer(Modifier.height(8.dp))
-                // Quick Add to Cart
-                if (product.inStock) {
-                    FilledIconButton(
-                        onClick = onAddToCart,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(36.dp)
-                            .semantics { contentDescription = "Add ${product.title} to cart" },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Add", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                }
             }
         }
     }

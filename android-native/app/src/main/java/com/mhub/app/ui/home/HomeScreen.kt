@@ -1747,28 +1747,7 @@ fun ListPostCard(
                             Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (onCompare != null) {
-                            IconButton(onClick = onCompare, modifier = Modifier.size(32.dp)) {
-                                Icon(
-                                    Icons.Default.Compare,
-                                    "Compare",
-                                    Modifier.size(18.dp),
-                                    tint = if (isInCompare) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        if (isOwner && onPromote != null) {
-                            IconButton(onClick = onPromote, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Campaign, "Promote", Modifier.size(18.dp))
-                            }
-                        }
-                        com.mhub.app.ui.components.PostMoreMenuButton(
-                            postId = post.stableId, isOwner = isOwner,
-                            onShare = { onShare?.invoke() }, onReport = {},
-                            onAddToCart = {}, onSave = { wishlisted = !wishlisted },
-                        )
-                    }
+                    Spacer(Modifier.weight(1f))
                 }
             }
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {

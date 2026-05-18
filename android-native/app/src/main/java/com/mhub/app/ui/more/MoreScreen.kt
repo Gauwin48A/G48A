@@ -94,6 +94,7 @@ private data class MoreEntry(
     val icon: ImageVector,
     val tint: Color = Color(0xFF2563EB),
     val onClick: () -> Unit,
+    val key: String = "",
 )
 
 private data class MoreGroup(
@@ -114,6 +115,7 @@ private val ACCOUNT_BG = Color(0xFFFFFBEB)
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun MoreScreen(
+    onDismiss: () -> Unit = {},
     onOpenNotifications: () -> Unit,
     onOpenWishlist: () -> Unit,
     onOpenSearch: () -> Unit,
@@ -156,13 +158,14 @@ fun MoreScreen(
     onOpenFaq: () -> Unit = {},
     onOpenSubcategories: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onLanguageChange: (String) -> Unit = {},
     isAdmin: Boolean = false,
     isLoggedIn: Boolean = true,
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onSetThemeMode: (ThemeMode) -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val expandedGroups = remember { mutableStateOf(setOf("Trade & Browse", "Social", "Account", "Help & Info")) }
+    val expandedGroups = remember { mutableStateOf(setOf("Trade & Browse", "Social")) }
     fun toggleGroup(header: String) {
         expandedGroups.value = if (header in expandedGroups.value) expandedGroups.value - header else expandedGroups.value + header
     }
@@ -181,7 +184,7 @@ fun MoreScreen(
             MoreEntry(stringResource(R.string.more_subcategories), stringResource(R.string.more_subcategories_desc), Icons.Outlined.Category, Color(0xFF0284C7), onOpenSubcategories),
             MoreEntry(stringResource(R.string.more_nearby), stringResource(R.string.more_nearby_desc), Icons.Outlined.LocationOn, Color(0xFF10B981), onOpenNearby),
             MoreEntry(stringResource(R.string.more_saved_searches), stringResource(R.string.more_saved_searches_desc), Icons.Outlined.Search, Color(0xFF8B5CF6), onOpenSavedSearches),
-            MoreEntry(stringResource(R.string.more_wishlist), stringResource(R.string.more_wishlist_desc), Icons.Outlined.VolunteerActivism, Color(0xFFEC4899), onOpenWishlist),
+            MoreEntry(key = "wishlist", title = stringResource(R.string.more_wishlist), subtitle = stringResource(R.string.more_wishlist_desc), icon = Icons.Outlined.VolunteerActivism, tint = Color(0xFFEC4899), onClick = onOpenWishlist),
             MoreEntry(stringResource(R.string.more_recently_viewed), stringResource(R.string.more_recently_viewed_desc), Icons.Outlined.History, Color(0xFF6B7280), onOpenRecentlyViewed),
             MoreEntry(stringResource(R.string.more_cart), stringResource(R.string.more_cart_desc), Icons.Outlined.ShoppingCart, Color(0xFF3B82F6), onOpenCart),
             MoreEntry(stringResource(R.string.more_compare), stringResource(R.string.more_compare_desc), Icons.Outlined.BarChart, Color(0xFF0EA5E9), onOpenCompare),
@@ -218,7 +221,7 @@ fun MoreScreen(
             add(MoreEntry(stringResource(R.string.more_bought_posts), stringResource(R.string.more_bought_posts_desc), Icons.Outlined.ShoppingCart, Color(0xFF7C3AED), onOpenBoughtPosts))
             add(MoreEntry(stringResource(R.string.more_sold_posts), stringResource(R.string.more_sold_posts_desc), Icons.Outlined.MonetizationOn, Color(0xFF059669), onOpenSoldPosts))
             add(MoreEntry(stringResource(R.string.more_rewards), stringResource(R.string.more_rewards_desc), Icons.Outlined.EmojiEvents, Color(0xFFD97706), onOpenRewards))
-            add(MoreEntry(stringResource(R.string.more_notifications), stringResource(R.string.more_notifications_desc), Icons.Outlined.Notifications, Color(0xFFEF4444), onOpenNotifications))
+            add(MoreEntry(key = "notifications", title = stringResource(R.string.more_notifications), subtitle = stringResource(R.string.more_notifications_desc), icon = Icons.Outlined.Notifications, tint = Color(0xFFEF4444), onClick = onOpenNotifications))
             add(MoreEntry(stringResource(R.string.more_analytics), stringResource(R.string.more_analytics_desc), Icons.Outlined.BarChart, Color(0xFF3B82F6), onOpenAnalytics))
             add(MoreEntry(stringResource(R.string.more_verification), stringResource(R.string.more_verification_desc), Icons.Outlined.VerifiedUser, Color(0xFF059669), onOpenVerification))
             add(MoreEntry(stringResource(R.string.more_security), stringResource(R.string.more_security_desc), Icons.Outlined.Security, Color(0xFF64748B), onOpenSettings))
@@ -243,21 +246,24 @@ fun MoreScreen(
     // ── Drawer Content ─────────────────────────────────────────────────
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Header
+        // Header with close button
         item {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     stringResource(R.string.more_menu),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.more_close_menu), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
 
@@ -361,7 +367,7 @@ fun MoreScreen(
                     }
                     Spacer(Modifier.height(6.dp))
                     if (showAllLangs) {
-                        Text("Indian", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
+                        Text(stringResource(R.string.more_indian), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
                             modifier = Modifier.padding(bottom = 4.dp))
                     }
                     androidx.compose.foundation.layout.FlowRow(
@@ -374,9 +380,7 @@ fun MoreScreen(
                                 selected = selectedLang == code,
                                 onClick = {
                                     selectedLang = code
-                                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                                        androidx.core.os.LocaleListCompat.forLanguageTags(code),
-                                    )
+                                    onLanguageChange(code)
                                 },
                                 label = { Text(label, fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
@@ -388,7 +392,7 @@ fun MoreScreen(
                     }
                     if (showAllLangs) {
                         Spacer(Modifier.height(8.dp))
-                        Text("International", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
+                        Text(stringResource(R.string.more_international), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B),
                             modifier = Modifier.padding(bottom = 4.dp))
                         androidx.compose.foundation.layout.FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -399,9 +403,7 @@ fun MoreScreen(
                                     selected = selectedLang == code,
                                     onClick = {
                                         selectedLang = code
-                                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                                            androidx.core.os.LocaleListCompat.forLanguageTags(code),
-                                        )
+                                        onLanguageChange(code)
                                     },
                                     label = { Text(label, fontSize = 11.sp) },
                                     colors = FilterChipDefaults.filterChipColors(
@@ -447,7 +449,7 @@ fun MoreScreen(
                     )
                     Icon(
                         if (group.header in expandedGroups.value) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (group.header in expandedGroups.value) "Collapse" else "Expand",
+                        contentDescription = if (group.header in expandedGroups.value) stringResource(R.string.more_collapse) else stringResource(R.string.more_expand),
                         tint = group.accentColor,
                         modifier = Modifier.size(20.dp),
                     )
@@ -490,7 +492,7 @@ fun MoreScreen(
                                         tint = entry.tint,
                                         modifier = Modifier.size(20.dp),
                                     )
-                                    if (entry.title == "Notifications") {
+                                    if (entry.key == "notifications") {
                                         Box(
                                             Modifier
                                                 .align(Alignment.TopEnd)
@@ -503,7 +505,7 @@ fun MoreScreen(
                                             Text("3", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
-                                    if (entry.title == "Wishlist") {
+                                    if (entry.key == "wishlist") {
                                         Box(
                                             Modifier
                                                 .align(Alignment.TopEnd)
@@ -593,7 +595,7 @@ fun MoreScreen(
         item {
             Spacer(Modifier.height(8.dp))
             Text(
-                "MHub — All your tools in one place",
+                stringResource(R.string.more_footer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),

@@ -158,13 +158,21 @@ class PostDetailViewModel @Inject constructor(
     private val socialRepo: SocialRepository,
     private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
     private val boostRepo: com.mhub.app.data.repository.BoostRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
     private val _state = MutableStateFlow(PostDetailState())
     val state: StateFlow<PostDetailState> = _state.asStateFlow()
+    private var lastLocaleVersion = 0L
 
     init {
         reload()
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) { reload() }
+                lastLocaleVersion = version
+            }
+        }
     }
 
     fun reload() {

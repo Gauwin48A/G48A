@@ -729,4 +729,27 @@
     <string name="detail_play_video">Reproducir video</string>
     <string name="detail_posted_ago">Publicado %s</string>
     <string name="detail_offer_failed">Error al enviar oferta</string>
+
+    <string name="more_footer">MHub — Todo en un solo lugar</string>
+    <string name="more_close_menu">Cerrar menú</string>
+    <string name="more_collapse">Contraer</string>
+    <string name="more_expand">Expandir</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">Buscar</string>
+    <string name="topbar_notifications">Notificaciones</string>
+    <string name="topbar_wishlist">Lista de deseos</string>
+    <string name="topbar_cart">Carrito</string>
+    <string name="explore_browse_categories">Explorar categorías</string>
+    <string name="explore_browse_categories_desc">Encuentra lo que buscas</string>
+    <string name="explore_no_categories">Sin categorías</string>
+    <string name="explore_no_categories_desc">Las categorías aparecerán aquí.</string>
+    <string name="explore_trending_now">Tendencias</string>
+    <string name="explore_trending_desc">Listados más vistos</string>
+    <string name="explore_for_you">Para ti</string>
+    <string name="explore_for_you_desc">Recomendaciones personalizadas</string>
+    <string name="explore_no_results">Sin resultados</string>
+    <string name="explore_no_results_desc">Intenta un término de búsqueda más corto o diferente.</string>
+    <string name="explore_search_hint">Buscar productos, servicios, empleos…</string>
+    <string name="msg_press_back_exit">Presiona atrás de nuevo para salir</string>
 </resources>
+

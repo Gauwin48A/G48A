@@ -97,6 +97,7 @@ class SearchViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val savedSearchesRepo: SavedSearchesRepository,
     private val prefs: com.mhub.app.data.local.AppPreferences,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
@@ -114,6 +115,9 @@ class SearchViewModel @Inject constructor(
                 is ApiResult.Success -> _state.value = _state.value.copy(savedSearches = r.data)
                 is ApiResult.Failure -> {}
             }
+        }
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { /* recompose on locale change */ }
         }
     }
 

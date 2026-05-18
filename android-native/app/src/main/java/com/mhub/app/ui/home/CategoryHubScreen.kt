@@ -180,12 +180,6 @@ fun CategoryHubScreen(
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
-    var layoutMode by remember { mutableStateOf("mobile") } // mobile=2col, tablet=3col, desktop=4col
-    val filteredApps = remember(searchQuery) {
-        if (searchQuery.isBlank()) APPS
-        else APPS.filter { it.label.contains(searchQuery, true) || it.tagline.contains(searchQuery, true) }
-    }
     val totalListings = state.stats.sumOf { it.activeCount ?: 0 }.takeIf { it > 0 }
         ?: (state.categories.size * 5)
     val newToday = state.stats.sumOf { it.newToday ?: 0 }
@@ -205,34 +199,7 @@ fun CategoryHubScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Top action row (notifications + settings)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                IconButton(onClick = onOpenScanner) {
-                    Icon(Icons.Default.QrCodeScanner, "Scanner", tint = Color(0xFF64748B))
-                }
-                IconButton(onClick = onOpenCart) {
-                    BadgedBox(badge = {
-                        if (cartItemCount > 0) Badge { Text("$cartItemCount") }
-                    }) {
-                        Icon(Icons.Default.ShoppingCart, "Cart", tint = Color(0xFF64748B))
-                    }
-                }
-                IconButton(onClick = onOpenNotifications) {
-                    BadgedBox(badge = {
-                        if (unreadNotifications > 0) Badge { Text("$unreadNotifications") }
-                    }) {
-                        Icon(Icons.Default.Notifications, "Notifications", tint = Color(0xFF64748B))
-                    }
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Default.Settings, "Settings", tint = Color(0xFF64748B))
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Title
             Text(
@@ -265,71 +232,22 @@ fun CategoryHubScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text(stringResource(R.string.hub_search_placeholder), fontSize = 13.sp, color = Color(0xFF94A3B8)) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp)) },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF6366F1),
-                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
             Spacer(Modifier.height(12.dp))
 
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color(0xFF6366F1))
                 }
-            } else if (filteredApps.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔍", fontSize = 48.sp)
-                        Spacer(Modifier.height(8.dp))
-                        Text("No apps match \"$searchQuery\"", fontSize = 14.sp, color = Color(0xFF64748B))
-                    }
-                }
             } else {
-                // Layout-preview toggle (web-parity: CategoryHub.jsx previewMode selector)
-                Row(
-                    Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Layout:", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
-                    listOf("mobile" to "📱", "tablet" to "📲", "desktop" to "🖥").forEach { (mode, emoji) ->
-                        val sel = layoutMode == mode
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (sel) Color(0xFF6366F1) else Color.White.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(2.dp).clickable { layoutMode = mode },
-                        ) {
-                            Text(emoji, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                        }
-                    }
-                }
-                // App grid — columns vary by layoutMode
-                val gridCols = when (layoutMode) { "tablet" -> 3; "desktop" -> 4; else -> 2 }
+                // App grid — 2 columns on mobile
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(gridCols),
+                    columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(bottom = 100.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    itemsIndexed(filteredApps, key = { _, app -> app.key }) { index, app ->
+                    itemsIndexed(APPS, key = { _, app -> app.key }) { index, app ->
                         val catCount = state.categories.count { cat ->
                             val group = (cat.categoryGroup ?: "others").lowercase()
                             group == app.key || (app.key == "others" && group !in listOf("electronics", "fashion", "vehicles"))

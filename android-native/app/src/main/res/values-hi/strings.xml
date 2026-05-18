@@ -974,4 +974,34 @@
     <string name="detail_play_video">वीडियो चलाएं</string>
     <string name="detail_posted_ago">%s पहले पोस्ट किया</string>
     <string name="detail_offer_failed">प्रस्ताव भेजने में विफल</string>
+
+    <!-- MoreScreen / Drawer -->
+    <string name="more_footer">MHub — सब कुछ एक जगह</string>
+    <string name="more_close_menu">मेनू बंद करें</string>
+    <string name="more_collapse">संक्षिप्त करें</string>
+    <string name="more_expand">विस्तार करें</string>
+
+    <!-- TopBar -->
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">खोजें</string>
+    <string name="topbar_notifications">सूचनाएं</string>
+    <string name="topbar_wishlist">इच्छा सूची</string>
+    <string name="topbar_cart">कार्ट</string>
+
+    <!-- ExploreScreen -->
+    <string name="explore_browse_categories">श्रेणियां ब्राउज़ करें</string>
+    <string name="explore_browse_categories_desc">आप जो खोज रहे हैं वह खोजें</string>
+    <string name="explore_no_categories">कोई श्रेणी नहीं</string>
+    <string name="explore_no_categories_desc">श्रेणियां यहां दिखाई देंगी।</string>
+    <string name="explore_trending_now">अभी ट्रेंडिंग</string>
+    <string name="explore_trending_desc">सबसे ज़्यादा देखी गई लिस्टिंग</string>
+    <string name="explore_for_you">आपके लिए</string>
+    <string name="explore_for_you_desc">व्यक्तिगत अनुशंसाएं</string>
+    <string name="explore_no_results">कोई परिणाम नहीं मिला</string>
+    <string name="explore_no_results_desc">छोटा या अलग खोज शब्द आज़माएं।</string>
+    <string name="explore_search_hint">उत्पाद, सेवाएं, नौकरियां खोजें…</string>
+
+    <!-- General -->
+    <string name="msg_press_back_exit">बाहर निकलने के लिए फिर से वापस दबाएं</string>
 </resources>
+

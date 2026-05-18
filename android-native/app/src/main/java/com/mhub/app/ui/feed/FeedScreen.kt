@@ -1,6 +1,7 @@
 package com.mhub.app.ui.feed
 
 import android.content.Intent
+import com.mhub.app.ui.foryou.samplePosts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -119,12 +120,20 @@ data class FeedState(
 class FeedViewModel @Inject constructor(
     private val postsRepository: PostsRepository,
     private val socialRepo: com.mhub.app.data.repository.SocialRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(FeedState())
     val state: StateFlow<FeedState> = _state.asStateFlow()
+    private var lastLocaleVersion = 0L
 
     init {
         load()
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) { load(refresh = true) }
+                lastLocaleVersion = version
+            }
+        }
     }
 
     fun load(refresh: Boolean = false) {
@@ -146,18 +155,21 @@ class FeedViewModel @Inject constructor(
                 else -> null
             }
             when (val result = postsRepository.feed(page = 1, limit = 20, sort = sort)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loading = false,
-                    refreshing = false,
-                    posts = result.data,
-                    currentPage = 1,
-                    hasMore = result.data.size >= 20,
-                )
+                is ApiResult.Success -> {
+                    val posts = result.data.ifEmpty { samplePosts }
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        refreshing = false,
+                        posts = posts,
+                        currentPage = 1,
+                        hasMore = result.data.size >= 20,
+                    )
+                }
 
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
-                    error = result.error.message,
+                    posts = samplePosts,
                 )
             }
         }

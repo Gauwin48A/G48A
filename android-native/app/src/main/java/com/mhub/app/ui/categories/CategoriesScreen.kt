@@ -80,12 +80,20 @@ data class CategoriesState(
 @HiltViewModel
 class CategoriesViewModel @Inject constructor(
     private val repo: CategoriesRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CategoriesState())
     val state: StateFlow<CategoriesState> = _state.asStateFlow()
+    private var lastLocaleVersion = 0L
 
     init {
         load()
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) { load() }
+                lastLocaleVersion = version
+            }
+        }
     }
 
     fun load() {

@@ -51,7 +51,7 @@ class AuthViewModel @Inject constructor(
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
     val isAuthenticated: StateFlow<Boolean> =
-        repo.isAuthenticated.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        repo.isAuthenticated.stateIn(viewModelScope, SharingStarted.Eagerly, repo.isCurrentlyAuthenticated)
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
 

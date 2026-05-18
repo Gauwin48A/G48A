@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -65,7 +67,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mhub.app.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
@@ -105,16 +109,29 @@ class ExploreViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val postsRepo: PostsRepository,
     private val recsRepo: RecommendationsRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
     val state: StateFlow<ExploreState> = _state.asStateFlow()
 
     private var searchJob: Job? = null
+    private var lastLocaleVersion = 0L
 
     init {
         loadCategories()
         loadTrending()
         loadRecommendations()
+        // Observe locale changes → reload data with new language
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) {
+                    loadCategories()
+                    loadTrending()
+                    loadRecommendations()
+                }
+                lastLocaleVersion = version
+            }
+        }
     }
 
     private fun loadCategories() {
@@ -134,9 +151,12 @@ class ExploreViewModel @Inject constructor(
             when (val result = postsRepo.feed(limit = 12)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loadingTrending = false,
-                    trending = result.data,
+                    trending = result.data.ifEmpty { com.mhub.app.ui.foryou.samplePosts.take(6) },
                 )
-                is ApiResult.Failure -> _state.value = _state.value.copy(loadingTrending = false)
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    loadingTrending = false,
+                    trending = com.mhub.app.ui.foryou.samplePosts.take(6),
+                )
             }
         }
     }
@@ -144,8 +164,14 @@ class ExploreViewModel @Inject constructor(
     private fun loadRecommendations() {
         viewModelScope.launch {
             when (val result = recsRepo.forYou()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loadingRecs = false, recommendations = result.data)
-                is ApiResult.Failure -> _state.value = _state.value.copy(loadingRecs = false)
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    loadingRecs = false,
+                    recommendations = result.data.ifEmpty { com.mhub.app.ui.foryou.samplePosts.drop(3).take(6) },
+                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    loadingRecs = false,
+                    recommendations = com.mhub.app.ui.foryou.samplePosts.drop(3).take(6),
+                )
             }
         }
     }
@@ -208,26 +234,18 @@ private fun categoryEmoji(name: String): String {
     }
 }
 
-private data class QuickFilter(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-private val quickFilters = listOf(
-    QuickFilter("New", Icons.Outlined.NewReleases),
-    QuickFilter("Trending", Icons.AutoMirrored.Filled.TrendingUp),
-    QuickFilter("Top Rated", Icons.Outlined.Star),
-    QuickFilter("Offers", Icons.Outlined.LocalOffer),
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
-    title: String = "For You",
-    subtitle: String = "Personalized picks based on your activity",
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
+    val title = stringResource(R.string.explore_title)
+    val subtitle = stringResource(R.string.explore_subtitle)
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         PullToRefreshBox(
@@ -236,40 +254,37 @@ fun ExploreScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // AI Hero banner
+            // ── Hero Section (web-parity: AllPosts.jsx hero) ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF4F46E5), Color(0xFF7C3AED))),
+                        Brush.linearGradient(listOf(Color(0xFF1E40AF), Color(0xFF4338CA), Color(0xFF6D28D9))),
                     )
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // AI badge
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(Color.White.copy(alpha = 0.25f))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(Icons.Default.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                        Text("AI Powered", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "Marketplace",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp,
+                    )
                     Text(
                         title,
                         color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 26.sp,
                     )
-                    Text(subtitle, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
-                    // Stats chips
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(subtitle, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                    Spacer(Modifier.height(4.dp))
+                    // Stats pills
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         val recCount = state.recommendations.size + state.trending.size
-                        StatChip("$recCount items curated")
-                        StatChip("${state.categories.size} categories")
+                        HeroPill("\uD83D\uDCE6 ${if (recCount > 0) "$recCount items" else "Browse"}")
+                        HeroPill("⚡ Live market")
+                        HeroPill("${state.categories.size} categories")
                     }
                 }
             }
@@ -312,14 +327,65 @@ fun ExploreScreen(
 }
 
 @Composable
-private fun StatChip(text: String) {
+private fun HeroPill(text: String) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(Color.White.copy(alpha = 0.15f))
+            .background(Color.White.copy(alpha = 0.18f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(text, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+private data class QuickFilterDef(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+
+private val quickFilters = listOf(
+    QuickFilterDef("New", Icons.Outlined.NewReleases),
+    QuickFilterDef("Trending", Icons.AutoMirrored.Filled.TrendingUp),
+    QuickFilterDef("Top Rated", Icons.Outlined.Star),
+    QuickFilterDef("Offers", Icons.Outlined.LocalOffer),
+)
+
+@Composable
+private fun GreatDealsBanner(onShopNow: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.size(6.dp).background(Color(0xFFF59E0B), CircleShape))
+                    Text("SPONSORED", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B), letterSpacing = 1.sp)
+                }
+                Spacer(Modifier.height(6.dp))
+                Text("Great Deals", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E3A5F))
+                Text("Up to 50% off on select items", fontSize = 12.sp, color = Color(0xFF64748B))
+                Spacer(Modifier.height(10.dp))
+                Surface(
+                    onClick = onShopNow,
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF2563EB),
+                ) {
+                    Text(
+                        "⚡ Shop now",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+            }
+            Text("🛍️", fontSize = 48.sp, modifier = Modifier.padding(start = 12.dp))
+        }
     }
 }
 
@@ -329,15 +395,13 @@ private fun DiscoveryFeed(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
 ) {
-    val priceFilters = listOf("Under ₹1K", "₹1K-5K", "₹5K-20K", "Above ₹20K")
-
     LazyColumn(contentPadding = PaddingValues(bottom = 90.dp)) {
-        // Quick filter chips
+        // ── Quick Filter Chips (sticky-feel, scrollable) ──
         item {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
             ) {
                 items(quickFilters) { filter ->
                     FilterChip(
@@ -350,30 +414,36 @@ private fun DiscoveryFeed(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                         ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                            enabled = true,
+                            selected = false,
+                        ),
+                    )
+                }
+                // Price range chips
+                items(listOf("Under ₹1K", "₹1K-5K", "₹5K-20K", "Above ₹20K")) { label ->
+                    FilterChip(
+                        selected = false,
+                        onClick = onOpenSearch,
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            enabled = true,
+                            selected = false,
+                        ),
                     )
                 }
             }
         }
 
-        // Price range quick filters
+        // ── Great Deals Banner ──
         item {
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 4.dp),
-            ) {
-                items(priceFilters) { label ->
-                    FilterChip(
-                        selected = false,
-                        onClick = onOpenSearch,
-                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                        ),
-                    )
-                }
-            }
+            GreatDealsBanner(onShopNow = onOpenSearch)
         }
 
         // Categories header
@@ -534,19 +604,19 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier.width(160.dp)) {
+private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier.width(170.dp)) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
         modifier = modifier,
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp)
+                    .height(120.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
@@ -559,12 +629,28 @@ private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = M
                         modifier = Modifier.fillMaxSize(),
                     )
                 } else {
-                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                // Category badge overlay
+                post.categoryName?.let { cat ->
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Black.copy(alpha = 0.6f),
+                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    ) {
+                        Text(
+                            cat,
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
             Column(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = post.displayTitle,
@@ -572,6 +658,7 @@ private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = M
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 post.price?.let {
                     Text(
@@ -581,22 +668,16 @@ private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = M
                         fontWeight = FontWeight.Bold,
                     )
                 }
-                post.location?.let { loc ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(11.dp),
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(
-                            text = loc,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                // Location + views
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    post.location?.let { loc ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                            Text(loc, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 80.dp))
+                        }
+                    }
+                    post.viewCount?.let { views ->
+                        if (views > 0) Text("$views views", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

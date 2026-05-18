@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.LocaleManager
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Category
@@ -38,6 +39,7 @@ class HomeViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val boostRepo: com.mhub.app.data.repository.BoostRepository,
     private val savedStateHandle: SavedStateHandle,
+    private val localeManager: LocaleManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -46,8 +48,20 @@ class HomeViewModel @Inject constructor(
     private var _categoryKey: String? = savedStateHandle.get<String>("categoryKey")
     private var loadJob: Job? = null
     private var loadMoreJob: Job? = null
+    private var lastLocaleVersion = 0L
 
-    init { load(initial = true) }
+    init {
+        load(initial = true)
+        // Observe locale changes → reload data with new language
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) {
+                    load(initial = true)
+                }
+                lastLocaleVersion = version
+            }
+        }
+    }
 
     /** Set the active category group key. Reloads if changed. */
     fun setCategoryKey(key: String?) {

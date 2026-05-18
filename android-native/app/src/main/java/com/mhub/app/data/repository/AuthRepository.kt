@@ -30,6 +30,7 @@ class AuthRepository @Inject constructor(
     private val tokenStore: TokenStore,
 ) {
     val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() }
+    val isCurrentlyAuthenticated: Boolean get() = !tokenStore.accessToken.value.isNullOrBlank()
     val accessTokenFlow: StateFlow<String?> = tokenStore.accessToken
 
     /** Exchanges a Google ID token for an app JWT. */
