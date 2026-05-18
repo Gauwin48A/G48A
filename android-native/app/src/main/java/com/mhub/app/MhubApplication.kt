@@ -17,7 +17,8 @@ class MhubApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
-        initFirebaseSafely()
+        // Init Firebase on a background thread to avoid blocking main thread at startup
+        Thread { initFirebaseSafely() }.also { it.isDaemon = true; it.start() }
     }
 
     private fun initFirebaseSafely() {
