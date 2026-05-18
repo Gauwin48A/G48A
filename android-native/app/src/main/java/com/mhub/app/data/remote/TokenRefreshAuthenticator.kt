@@ -1,5 +1,6 @@
 package com.mhub.app.data.remote
 
+import com.mhub.app.core.AppLogger
 import com.mhub.app.data.local.TokenStore
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -57,6 +58,7 @@ class TokenRefreshAuthenticator(
 
             val refreshResult = attemptRefresh(refreshToken)
             if (refreshResult != null) {
+                AppLogger.authTokenRefresh(true)
                 runBlocking {
                     tokenStore.save(refreshResult.accessToken, refreshResult.refreshToken)
                 }
@@ -67,6 +69,7 @@ class TokenRefreshAuthenticator(
             } else {
                 // Refresh failed — don't aggressively clear token (could be transient network issue)
                 // Token will be cleared on explicit logout
+                AppLogger.authTokenRefresh(false)
                 return null
             }
         } finally {

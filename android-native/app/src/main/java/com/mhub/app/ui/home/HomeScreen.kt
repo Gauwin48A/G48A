@@ -127,6 +127,7 @@ import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.PostGridShimmer
 import com.mhub.app.ui.components.PromoBadgeRow
 import com.mhub.app.ui.components.ImageZoomDialog
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -868,7 +869,7 @@ fun HomeScreen(
 
     // Auto-refresh every 30 seconds
     LaunchedEffect(Unit) {
-        while (true) {
+        while (isActive) {
             kotlinx.coroutines.delay(30_000L)
             viewModel.load()
         }

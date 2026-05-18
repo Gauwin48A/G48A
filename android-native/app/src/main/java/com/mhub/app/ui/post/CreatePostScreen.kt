@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.DisposableEffect
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import coil.compose.AsyncImage
@@ -101,7 +102,7 @@ fun CreatePostScreen(
 
     // Auto-save draft every 10 seconds
     LaunchedEffect(title, description, priceText) {
-        while (true) {
+        while (isActive) {
             delay(10_000)
             if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank()) {
                 viewModel.saveDraft(title, description, priceText)

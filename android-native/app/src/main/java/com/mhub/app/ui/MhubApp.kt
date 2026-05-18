@@ -58,6 +58,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -66,6 +67,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import com.mhub.app.R
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -121,6 +123,7 @@ import com.mhub.app.ui.legal.SupportPolicyScreen
 import com.mhub.app.ui.legal.TermsScreen
 import com.mhub.app.ui.more.MoreScreen
 import com.mhub.app.ui.navigation.Routes
+import com.mhub.app.core.AppLogger
 import com.mhub.app.core.LocalLocaleManager
 import com.mhub.app.core.LocaleManager
 import com.mhub.app.ui.notifications.NotificationsScreen
@@ -192,6 +195,16 @@ fun MhubApp(
     val themeMode by themeVm.themeMode.collectAsState()
     MhubTheme(themeMode = themeMode) {
         val navController = rememberNavController()
+
+        // Navigation diagnostics
+        DisposableEffect(navController) {
+            val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                AppLogger.navPush(destination.route ?: "null")
+            }
+            navController.addOnDestinationChangedListener(listener)
+            onDispose { navController.removeOnDestinationChangedListener(listener) }
+        }
+
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }

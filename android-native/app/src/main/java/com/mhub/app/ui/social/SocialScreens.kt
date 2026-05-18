@@ -39,6 +39,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -254,7 +255,7 @@ class MyFeedViewModel @Inject constructor(private val repo: SocialRepository) : 
     
     private fun startAutoRefresh() {
         viewModelScope.launch {
-            while (true) {
+            while (isActive) {
                 kotlinx.coroutines.delay(45000) // 45 seconds
                 load()
             }

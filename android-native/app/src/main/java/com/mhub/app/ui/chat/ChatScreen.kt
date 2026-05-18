@@ -102,6 +102,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -247,7 +248,7 @@ class ChatViewModel @Inject constructor(
 
         // Fallback polling: only when WebSocket is disconnected
         pollingJob = viewModelScope.launch {
-            while (true) {
+            while (isActive) {
                 kotlinx.coroutines.delay(5000)
                 if (_state.value.wsConnected) continue // Skip polling when WS is active
                 val convId = _state.value.selectedConversation?.stableId ?: break

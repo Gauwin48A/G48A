@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mhub.app.data.mock.MockDataProvider
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 
 /**
@@ -57,7 +58,7 @@ fun HeroBannerCarousel(
 
     // Auto-scroll
     LaunchedEffect(pagerState) {
-        while (true) {
+        while (isActive) {
             delay(autoScrollDelayMs)
             val next = (pagerState.currentPage + 1) % banners.size
             pagerState.animateScrollToPage(next)

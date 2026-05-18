@@ -50,6 +50,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
@@ -118,6 +119,7 @@ import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mhub.app.core.ApiError
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.ProfileUpdateRequest
 import com.mhub.app.data.repository.AuthRepository
@@ -146,6 +148,7 @@ data class ProfileState(
     val salesCount: String = "\u2014",
     val ratingValue: String = "\u2014",
     val error: String? = null,
+    val isSessionExpired: Boolean = false,
     val referralCode: String? = null,
     val editSaving: Boolean = false,
     val editResult: String? = null,
@@ -195,7 +198,14 @@ class ProfileViewModel @Inject constructor(
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false, user = result.data, lastLoadTimeMs = System.currentTimeMillis(),
                 )
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = result.error.message)
+                is ApiResult.Failure -> {
+                    val isAuth = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        isSessionExpired = isAuth,
+                        error = result.error.message,
+                    )
+                }
             }
             loadStats()
             loadReferralCode()
@@ -444,6 +454,29 @@ fun ProfileScreen(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
+
+                state.isSessionExpired -> Box(
+                    Modifier.fillMaxSize().padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    ) {
+                        Column(
+                            Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.session_expired_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.session_expired_message), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer, textAlign = TextAlign.Center)
+                            Button(onClick = onSignedOut) {
+                                Text(stringResource(R.string.action_sign_in))
+                            }
+                        }
+                    }
+                }
 
                 else -> {
                     val user = state.user
