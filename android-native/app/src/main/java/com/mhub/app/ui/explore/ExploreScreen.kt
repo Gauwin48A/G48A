@@ -265,7 +265,7 @@ fun ExploreScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        "Marketplace",
+                        stringResource(R.string.explore_marketplace),
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -282,9 +282,9 @@ fun ExploreScreen(
                     // Stats pills
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         val recCount = state.recommendations.size + state.trending.size
-                        HeroPill("\uD83D\uDCE6 ${if (recCount > 0) "$recCount items" else "Browse"}")
-                        HeroPill("⚡ Live market")
-                        HeroPill("${state.categories.size} categories")
+                        HeroPill(if (recCount > 0) stringResource(R.string.explore_items_count, recCount) else stringResource(R.string.explore_browse_label))
+                        HeroPill(stringResource(R.string.explore_live_market))
+                        HeroPill(stringResource(R.string.explore_categories_count, state.categories.size))
                     }
                 }
             }
@@ -294,12 +294,12 @@ fun ExploreScreen(
                 value = state.searchQuery,
                 onValueChange = viewModel::onQueryChange,
                 singleLine = true,
-                placeholder = { Text("Search products, services, jobs...") },
+                placeholder = { Text(stringResource(R.string.explore_search_hint)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (state.searchQuery.isNotBlank()) {
                         IconButton(onClick = { viewModel.clearSearch() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.explore_clear))
                         }
                     }
                 },
@@ -338,13 +338,13 @@ private fun HeroPill(text: String) {
     }
 }
 
-private data class QuickFilterDef(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+private data class QuickFilterDef(val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val quickFilters = listOf(
-    QuickFilterDef("New", Icons.Outlined.NewReleases),
-    QuickFilterDef("Trending", Icons.AutoMirrored.Filled.TrendingUp),
-    QuickFilterDef("Top Rated", Icons.Outlined.Star),
-    QuickFilterDef("Offers", Icons.Outlined.LocalOffer),
+    QuickFilterDef(R.string.explore_filter_new, Icons.Outlined.NewReleases),
+    QuickFilterDef(R.string.explore_filter_trending, Icons.AutoMirrored.Filled.TrendingUp),
+    QuickFilterDef(R.string.explore_filter_top_rated, Icons.Outlined.Star),
+    QuickFilterDef(R.string.explore_filter_offers, Icons.Outlined.LocalOffer),
 )
 
 @Composable
@@ -364,11 +364,11 @@ private fun GreatDealsBanner(onShopNow: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(Modifier.size(6.dp).background(Color(0xFFF59E0B), CircleShape))
-                    Text("SPONSORED", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B), letterSpacing = 1.sp)
+                    Text(stringResource(R.string.explore_sponsored), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B), letterSpacing = 1.sp)
                 }
                 Spacer(Modifier.height(6.dp))
-                Text("Great Deals", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E3A5F))
-                Text("Up to 50% off on select items", fontSize = 12.sp, color = Color(0xFF64748B))
+                Text(stringResource(R.string.explore_great_deals), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E3A5F))
+                Text(stringResource(R.string.explore_great_deals_desc), fontSize = 12.sp, color = Color(0xFF64748B))
                 Spacer(Modifier.height(10.dp))
                 Surface(
                     onClick = onShopNow,
@@ -376,7 +376,7 @@ private fun GreatDealsBanner(onShopNow: () -> Unit) {
                     color = Color(0xFF2563EB),
                 ) {
                     Text(
-                        "⚡ Shop now",
+                        stringResource(R.string.explore_shop_now),
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
@@ -407,7 +407,7 @@ private fun DiscoveryFeed(
                     FilterChip(
                         selected = false,
                         onClick = onOpenSearch,
-                        label = { Text(filter.label, style = MaterialTheme.typography.labelMedium) },
+                        label = { Text(stringResource(filter.labelRes), style = MaterialTheme.typography.labelMedium) },
                         leadingIcon = {
                             Icon(filter.icon, contentDescription = null, modifier = Modifier.size(16.dp))
                         },
@@ -422,11 +422,16 @@ private fun DiscoveryFeed(
                     )
                 }
                 // Price range chips
-                items(listOf("Under ₹1K", "₹1K-5K", "₹5K-20K", "Above ₹20K")) { label ->
+                items(listOf(
+                    R.string.explore_price_under_1k,
+                    R.string.explore_price_1k_5k,
+                    R.string.explore_price_5k_20k,
+                    R.string.explore_price_above_20k,
+                )) { labelRes ->
                     FilterChip(
                         selected = false,
                         onClick = onOpenSearch,
-                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall) },
                         leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary) },
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
@@ -449,8 +454,8 @@ private fun DiscoveryFeed(
         // Categories header
         item {
             SectionHeader(
-                title = "Browse Categories",
-                subtitle = "Find what you're looking for",
+                title = stringResource(R.string.explore_browse_categories),
+                subtitle = stringResource(R.string.explore_browse_categories_desc),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
@@ -467,8 +472,8 @@ private fun DiscoveryFeed(
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     AppEmptyState(
                         icon = Icons.Outlined.Category,
-                        title = "No categories",
-                        subtitle = "Categories will appear here.",
+                        title = stringResource(R.string.explore_no_categories),
+                        subtitle = stringResource(R.string.explore_no_categories_desc),
                     )
                 }
             }
@@ -501,9 +506,9 @@ private fun DiscoveryFeed(
         // Trending header
         item {
             SectionHeader(
-                title = "Trending Now",
-                subtitle = "Most viewed listings",
-                actionLabel = "See All",
+                title = stringResource(R.string.explore_trending_now),
+                subtitle = stringResource(R.string.explore_trending_desc),
+                actionLabel = stringResource(R.string.explore_see_all),
                 onAction = onOpenSearch,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -533,9 +538,9 @@ private fun DiscoveryFeed(
         // For You header
         item {
             SectionHeader(
-                title = "For You",
-                subtitle = "Personalized recommendations",
-                actionLabel = "See All",
+                title = stringResource(R.string.explore_for_you),
+                subtitle = stringResource(R.string.explore_for_you_desc),
+                actionLabel = stringResource(R.string.explore_see_all),
                 onAction = onOpenSearch,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )

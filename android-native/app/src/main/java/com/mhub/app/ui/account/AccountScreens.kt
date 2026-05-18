@@ -26,9 +26,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mhub.app.R
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
@@ -149,7 +151,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Store, null, tint = if (state.viewMode == "seller") Color.White else Color(0xFF2563EB), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Seller View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "seller") Color.White else Color(0xFF2563EB))
+                                Text(stringResource(R.string.account_seller_view), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "seller") Color.White else Color(0xFF2563EB))
                             }
                         }
                         Surface(
@@ -161,7 +163,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.ShoppingBag, null, tint = if (state.viewMode == "buyer") Color.White else Color(0xFF2563EB), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Buyer View", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "buyer") Color.White else Color(0xFF2563EB))
+                                Text(stringResource(R.string.account_buyer_view), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (state.viewMode == "buyer") Color.White else Color(0xFF2563EB))
                             }
                         }
                     }
@@ -174,7 +176,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                             }
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Welcome back,", color = Color(0xFFBFDBFE), fontSize = 13.sp)
+                                Text(stringResource(R.string.account_welcome_back), color = Color(0xFFBFDBFE), fontSize = 13.sp)
                                 Text(state.userName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             }
                         }
@@ -211,7 +213,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                 Icon(Icons.Filled.Stars, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text("Total Coins", fontSize = 12.sp, color = Color(0xFF92400E))
+                                    Text(stringResource(R.string.account_total_coins), fontSize = 12.sp, color = Color(0xFF92400E))
                                     val animatedCoins by androidx.compose.animation.core.animateIntAsState(
                                         targetValue = state.coins,
                                         animationSpec = androidx.compose.animation.core.tween(durationMillis = 600),
@@ -484,7 +486,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                 item {
                     Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("Change Password", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                            Text(stringResource(R.string.account_change_password), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                             Spacer(Modifier.height(12.dp))
                             if (state.passwordChanged) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
@@ -531,7 +533,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Security, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
                                 Spacer(Modifier.width(10.dp))
-                                Text("Two-Factor Authentication", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                Text(stringResource(R.string.account_2fa_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
                                 Surface(shape = RoundedCornerShape(12.dp), color = if (state.twoFaEnabled) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)) {
                                     Text(if (state.twoFaEnabled) "Enabled" else "Disabled", fontSize = 11.sp,
                                         color = if (state.twoFaEnabled) Color(0xFF22C55E) else Color(0xFFEF4444),

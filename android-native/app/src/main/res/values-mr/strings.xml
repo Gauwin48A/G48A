@@ -354,5 +354,55 @@
     <string name="explore_no_results_desc">लहान किंवा वेगळा शोध शब्द वापरा.</string>
     <string name="explore_search_hint">उत्पादने, सेवा, नोकर्‍या शोधा…</string>
     <string name="msg_press_back_exit">बाहेर पडण्यासाठी पुन्हा मागे दाबा</string>
+
+    <string name="hub_subtitle">तुम्हाला उघडायचे ऐप निवडा. तुमची निवड सक्रिय अनुभव बनते.</string>
+    <string name="explore_marketplace">मार्केटप्लेस</string>
+    <string name="explore_items_count">📦 %d आयटम</string>
+    <string name="explore_browse_label">📦 ब्राउझ करा</string>
+    <string name="explore_live_market">⚡ लाइव्ह मार्केट</string>
+    <string name="explore_categories_count">%d श्रेणी</string>
+    <string name="explore_sponsored">प्रायोजित</string>
+    <string name="explore_great_deals">उत्तम डील्स</string>
+    <string name="explore_great_deals_desc">निवडक आयटमवर ५०% पर्यंत सूट</string>
+    <string name="explore_shop_now">⚡ आता खरेदी करा</string>
+    <string name="explore_see_all">सगळे पहा</string>
+    <string name="explore_filter_new">नवीन</string>
+    <string name="explore_filter_trending">ट्रेंडिंग</string>
+    <string name="explore_filter_top_rated">टॉप रेटेड</string>
+    <string name="explore_filter_offers">ऑफर</string>
+    <string name="explore_price_under_1k">₹1K पेक्षा कमी</string>
+    <string name="explore_price_1k_5k">₹1K-5K</string>
+    <string name="explore_price_5k_20k">₹5K-20K</string>
+    <string name="explore_price_above_20k">₹20K पेक्षा जास्त</string>
+    <string name="explore_clear">साफ करा</string>
+    <string name="about_vision_title">आमची दृष्टी</string>
+    <string name="account_seller_view">विक्रेता दृश्य</string>
+    <string name="social_new_post">नवीन पोस्ट</string>
+    <string name="social_retry">पुन्हा प्रयत्न</string>
+    <string name="contact_send">पाठवा</string>
+    <string name="contact_message">संदेश</string>
+    <string name="account_change_password">पासवर्ड बदला</string>
+    <string name="account_welcome_back">पुन्हा स्वागत,</string>
+    <string name="about_why_title">MHub का?</string>
+    <string name="contact_your_name">तुमचे नाव</string>
+    <string name="account_total_coins">एकूण नाणी</string>
+    <string name="social_share">शेअर</string>
+    <string name="social_write_review">पुनरावलोकन लिहा</string>
+    <string name="social_delete">हटवा</string>
+    <string name="about_mission_title">आमचे ध्येय</string>
+    <string name="social_close">बंद</string>
+    <string name="contact_email">ईमेल</string>
+    <string name="contact_get_in_touch">संपर्क साधा</string>
+    <string name="about_version_title">आवृत्ती</string>
+    <string name="account_buyer_view">खरेदीदार दृश्य</string>
+    <string name="account_2fa_title">द्वि-घटक प्रमाणीकरण</string>
+    <string name="social_no_posts_title">अजून पोस्ट नाहीत</string>
+    <string name="faq_search_hint">प्रश्न शोधा…</string>
+    <string name="social_category">वर्ग</string>
+    <string name="about_headline">MHub — तुमचा स्थानिक बाजार</string>
+    <string name="social_rating">रेटिंग</string>
+    <string name="contact_send_message">संदेश पाठवा</string>
+    <string name="social_cancel">रद्द</string>
 </resources>
+
 

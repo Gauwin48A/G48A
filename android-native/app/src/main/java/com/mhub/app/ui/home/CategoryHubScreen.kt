@@ -214,7 +214,7 @@ fun CategoryHubScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Select the app you want to open. Your choice becomes the active experience.",
+                stringResource(R.string.hub_subtitle),
                 fontSize = 13.sp, color = Color(0xFF64748B),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp),

@@ -48,6 +48,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
 
 // ─────────────────────────────────────────────────────────────────────────────
 // About Us
@@ -59,7 +61,7 @@ fun AboutUsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About Us") },
+                title = { Text(stringResource(R.string.about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Go back" }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -139,7 +141,7 @@ fun ContactUsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Contact Us") },
+                title = { Text(stringResource(R.string.contact_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Go back" }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -154,9 +156,9 @@ fun ContactUsScreen(onBack: () -> Unit) {
         ) {
             item {
                 Spacer(Modifier.height(8.dp))
-                Text("Get in Touch", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.contact_get_in_touch), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 Spacer(Modifier.height(4.dp))
-                Text("We're here to help. Fill in the form or reach us directly.", style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                Text(stringResource(R.string.contact_subtitle), style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
             }
             // Direct contact info
             item {
@@ -167,12 +169,12 @@ fun ContactUsScreen(onBack: () -> Unit) {
                 item {
                     HorizontalDivider()
                     Spacer(Modifier.height(4.dp))
-                    Text("Send a Message", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text(stringResource(R.string.contact_send_message), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                 }
                 item {
                     OutlinedTextField(
                         value = name, onValueChange = { name = it },
-                        label = { Text("Your Name") },
+                        label = { Text(stringResource(R.string.contact_your_name)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -180,7 +182,7 @@ fun ContactUsScreen(onBack: () -> Unit) {
                 item {
                     OutlinedTextField(
                         value = email, onValueChange = { email = it },
-                        label = { Text("Email Address") },
+                        label = { Text(stringResource(R.string.contact_email)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -188,7 +190,7 @@ fun ContactUsScreen(onBack: () -> Unit) {
                 item {
                     OutlinedTextField(
                         value = message, onValueChange = { message = it },
-                        label = { Text("Message") },
+                        label = { Text(stringResource(R.string.contact_message)) },
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         maxLines = 5,
                     )
@@ -197,7 +199,7 @@ fun ContactUsScreen(onBack: () -> Unit) {
                     Button(
                         onClick = { if (name.isNotBlank() && email.isNotBlank() && message.isNotBlank()) submitted = true },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
-                    ) { Text("Send Message") }
+                    ) { Text(stringResource(R.string.contact_send)) }
                     Spacer(Modifier.height(24.dp))
                 }
             } else {
@@ -208,7 +210,7 @@ fun ContactUsScreen(onBack: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            "✓ Message sent! We'll reply to $email within 24 hours.",
+                            stringResource(R.string.contact_success, email),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(16.dp),
                         )
@@ -263,7 +265,7 @@ fun FAQScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FAQ") },
+                title = { Text(stringResource(R.string.faq_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Go back" }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -277,7 +279,7 @@ fun FAQScreen(onBack: () -> Unit) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Search FAQ") },
+                label = { Text(stringResource(R.string.faq_search_hint)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = if (query.isNotBlank()) {
                     {
@@ -296,7 +298,7 @@ fun FAQScreen(onBack: () -> Unit) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("🔍", style = MaterialTheme.typography.displayMedium)
                         Spacer(Modifier.height(12.dp))
-                        Text("No results for \"$query\"", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.faq_no_results), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             } else {
