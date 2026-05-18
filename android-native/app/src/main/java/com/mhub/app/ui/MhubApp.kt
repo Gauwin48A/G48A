@@ -559,7 +559,7 @@ fun MhubApp(
             }
 
             composable(Routes.CATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     CategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onCategoryClick = { _, name ->
@@ -578,7 +578,7 @@ fun MhubApp(
             }
 
             composable(Routes.SUBCATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     com.mhub.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onOpenCategory = { catKey -> navController.navigate("cat/$catKey") { launchSingleTop = true } },
@@ -721,7 +721,7 @@ fun MhubApp(
             }
 
             composable(Routes.NEARBY) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     NearbyScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -818,7 +818,7 @@ fun MhubApp(
             }
 
             composable(Routes.RECENTLY_VIEWED) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     RecentlyViewedScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -827,13 +827,13 @@ fun MhubApp(
             }
 
             composable(Routes.SAVED_SEARCHES) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     SavedSearchesScreen(onBack = { navController.popBackStack() }, onRunSearch = { q -> navController.navigate("search?query=${q}") })
                 }
             }
 
             composable(Routes.COMPARE) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     CompareScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -848,7 +848,7 @@ fun MhubApp(
             }
 
             composable(Routes.MY_FEED) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     MyFeedScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -858,7 +858,7 @@ fun MhubApp(
             }
 
             composable(Routes.PUBLIC_WALL) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     PublicWallScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -951,7 +951,7 @@ fun MhubApp(
 
             // ── Channels ──
             composable(Routes.CHANNELS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     ChannelsListScreen(
                         onBack = { navController.popBackStack() },
                         onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) { launchSingleTop = true } },
