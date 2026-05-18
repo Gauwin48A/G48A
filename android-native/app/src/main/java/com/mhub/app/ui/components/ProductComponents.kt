@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.mhub.app.data.mock.MockDataProvider
+import com.mhub.app.domain.model.Category
 
 /**
  * Horizontal scrollable subcategory chip row with icons.
@@ -55,9 +56,9 @@ import com.mhub.app.data.mock.MockDataProvider
  */
 @Composable
 fun SubcategoryChipRow(
-    subcategories: List<MockDataProvider.MockSubcategory>,
+    subcategories: List<Category>,
     selectedId: String? = null,
-    onSelect: (MockDataProvider.MockSubcategory) -> Unit = {},
+    onSelect: (Category) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
@@ -65,15 +66,15 @@ fun SubcategoryChipRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        items(subcategories, key = { it.id }) { sub ->
-            val isSelected = sub.id == selectedId
+        items(subcategories, key = { it.stableId }) { sub ->
+            val isSelected = sub.stableId == selectedId
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clickable(
-                        onClickLabel = "Open ${sub.name}, ${sub.productCount} products",
+                        onClickLabel = "Open ${sub.displayName}, ${sub.productCount} products",
                     ) { onSelect(sub) }
-                    .semantics { contentDescription = "${sub.name}, ${sub.productCount} products" }
+                    .semantics { contentDescription = "${sub.displayName}, ${sub.productCount} products" }
                     .padding(4.dp),
             ) {
                 Box(
@@ -91,7 +92,7 @@ fun SubcategoryChipRow(
                     contentAlignment = Alignment.Center,
                 ) {
                     AsyncImage(
-                        model = sub.imageUrl,
+                        model = sub.iconUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -101,7 +102,7 @@ fun SubcategoryChipRow(
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = sub.name,
+                    text = sub.displayName,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) MaterialTheme.colorScheme.primary

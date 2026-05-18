@@ -30,6 +30,23 @@ object JwtHelper {
     }
 
     /**
+     * Extracts a string claim from the JWT payload.
+     * Returns null for missing/malformed tokens.
+     */
+    fun extractClaim(token: String?, claim: String): String? {
+        if (token.isNullOrBlank()) return null
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return null
+            val payload = String(Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP))
+            val json = JSONObject(payload)
+            json.optString(claim, null)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Returns seconds until expiry (negative if already expired).
      * Returns -1 for null/blank/malformed tokens.
      */

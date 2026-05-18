@@ -2,7 +2,6 @@ package com.mhub.app.data.remote
 
 import com.mhub.app.core.AppLogger
 import com.mhub.app.data.local.TokenStore
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.Authenticator
 import okhttp3.MediaType.Companion.toMediaType
@@ -11,11 +10,17 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * OkHttp Authenticator that handles 401 responses by attempting token refresh.
  * On success, retries the original request with the new access token.
  * On failure, clears tokens (forces re-login).
+ *
+ * Thread-safety: Uses a latch-based pattern so concurrent 401 responses wait
+ * for the single in-flight refresh to complete, then all retry with the new token.
  */
 class TokenRefreshAuthenticator(
     private val tokenStore: TokenStore,
@@ -23,8 +28,15 @@ class TokenRefreshAuthenticator(
     private val baseUrlProvider: () -> String,
 ) : Authenticator {
 
+    /**
+     * Holds the active refresh latch. When non-null, a refresh is in progress.
+     * Other threads wait on this latch instead of dropping the request.
+     */
+    private val activeLatch = AtomicReference<CountDownLatch?>(null)
+
+    /** Holds the result of the most recent refresh attempt (null = failed). */
     @Volatile
-    private var isRefreshing = false
+    private var lastRefreshResult: RefreshResult? = null
 
     override fun authenticate(route: Route?, response: Response): Request? {
         // Don't retry if we already tried refreshing
@@ -32,51 +44,63 @@ class TokenRefreshAuthenticator(
         // Don't retry refresh endpoint itself
         if (response.request.url.encodedPath.contains("refresh-token")) return null
 
-        synchronized(this) {
-            // Double-check: maybe another thread already refreshed
-            val currentToken = runBlocking { tokenStore.accessTokenBlocking() }
-            val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
+        // Check if token was already refreshed by another thread
+        val currentToken = tokenStore.accessTokenImmediate()
+        val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
 
-            // If token changed since this request was made, just retry with new token
-            if (currentToken != null && currentToken != requestToken) {
-                return response.request.newBuilder()
-                    .header("Authorization", "Bearer $currentToken")
-                    .header("X-Retry-After-Refresh", "1")
-                    .build()
-            }
-
-            if (isRefreshing) return null
-            isRefreshing = true
+        if (currentToken != null && currentToken != requestToken) {
+            // Another thread already refreshed — just retry with the new token
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer $currentToken")
+                .header("X-Retry-After-Refresh", "1")
+                .build()
         }
 
+        // Try to become the refresh leader
+        val latch = CountDownLatch(1)
+        val existingLatch = activeLatch.compareAndExchange(null, latch)
+
+        if (existingLatch != null) {
+            // Another thread is refreshing — wait for it
+            val completed = existingLatch.await(20, TimeUnit.SECONDS)
+            if (!completed) return null // Timed out waiting
+
+            // Check if refresh succeeded
+            val result = lastRefreshResult ?: return null
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer ${result.accessToken}")
+                .header("X-Retry-After-Refresh", "1")
+                .build()
+        }
+
+        // We are the refresh leader
         try {
-            val refreshToken = runBlocking { tokenStore.refreshTokenBlocking() } ?: run {
-                // No refresh token available — clear access token to force re-login
+            val refreshToken = tokenStore.refreshTokenImmediate()
+            if (refreshToken.isNullOrBlank()) {
                 AppLogger.authTokenRefresh(false)
-                runBlocking { tokenStore.clear() }
+                tokenStore.clearImmediate()
+                lastRefreshResult = null
                 return null
             }
 
             val refreshResult = attemptRefresh(refreshToken)
             if (refreshResult != null) {
                 AppLogger.authTokenRefresh(true)
-                runBlocking {
-                    tokenStore.save(refreshResult.accessToken, refreshResult.refreshToken)
-                }
+                tokenStore.saveImmediate(refreshResult.accessToken, refreshResult.refreshToken)
+                lastRefreshResult = refreshResult
                 return response.request.newBuilder()
                     .header("Authorization", "Bearer ${refreshResult.accessToken}")
                     .header("X-Retry-After-Refresh", "1")
                     .build()
             } else {
-                // Refresh definitively failed — clear tokens only if server rejected (not transient network)
                 AppLogger.authTokenRefresh(false)
-                if (lastRefreshWasServerRejection) {
-                    runBlocking { tokenStore.clear() }
-                }
+                lastRefreshResult = null
                 return null
             }
         } finally {
-            synchronized(this) { isRefreshing = false }
+            // Release all waiting threads
+            latch.countDown()
+            activeLatch.set(null)
         }
     }
 
@@ -104,20 +128,17 @@ class TokenRefreshAuthenticator(
                 val responseBody = response.body?.string() ?: return null
                 json.decodeFromString<RefreshResult>(responseBody)
             } else {
-                // Server explicitly rejected refresh — mark as definitive failure
-                lastRefreshWasServerRejection = true
+                // Server explicitly rejected refresh — clear tokens to force re-login
+                AppLogger.apiError(REFRESH_PATH, "Refresh rejected: HTTP ${response.code}")
+                tokenStore.clearImmediate()
                 null
             }
-        } catch (_: Exception) {
-            // Network error — transient, don't clear tokens
-            lastRefreshWasServerRejection = false
+        } catch (e: Exception) {
+            // Network error — transient, don't clear tokens (user can retry)
+            AppLogger.apiError(REFRESH_PATH, "Network error: ${e.message}")
             null
         }
     }
-
-    /** True if last refresh failure was a definitive server rejection (4xx/5xx), not a network error */
-    @Volatile
-    private var lastRefreshWasServerRejection = false
 
     private companion object {
         const val REFRESH_PATH = "api/auth/refresh-token"

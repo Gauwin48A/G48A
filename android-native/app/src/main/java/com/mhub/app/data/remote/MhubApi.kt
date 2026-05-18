@@ -628,7 +628,10 @@ interface MhubApi {
     suspend fun sponsoredPosts(@Query("limit") limit: Int = 10): PostsResponse
 
     @GET("api/posts/for-you")
-    suspend fun forYouPosts(@Query("limit") limit: Int = 20): PostsResponse
+    suspend fun forYouPosts(
+        @Query("limit") limit: Int = 20,
+        @Query("page") page: Int = 1,
+    ): PostsResponse
 
     // ---- Post Draft ----
     @GET("api/posts/draft")

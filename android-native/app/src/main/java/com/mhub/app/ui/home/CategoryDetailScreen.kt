@@ -154,7 +154,7 @@ class CategoryDetailViewModel @Inject constructor(
                     }
                     _state.value = _state.value.copy(subcategories = subs)
                 }
-                is ApiResult.Failure -> {}
+                is ApiResult.Failure -> { /* subcategories are optional filter chips - continue without them */ }
             }
             fetchPosts(reset = true)
         }

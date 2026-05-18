@@ -47,22 +47,52 @@ class TokenStore @Inject constructor(context: Context) {
         return !token.isNullOrBlank() && !JwtHelper.isExpired(token, bufferSeconds = 60)
     }
 
-    suspend fun accessTokenBlocking(): String? = withContext(Dispatchers.IO) { _accessToken.value }
-    suspend fun refreshTokenBlocking(): String? = withContext(Dispatchers.IO) { _refreshToken.value }
+    /** Non-blocking read of cached access token (safe to call from any thread). */
+    fun accessTokenImmediate(): String? = _accessToken.value
 
-    suspend fun save(accessToken: String?, refreshToken: String?) = withContext(Dispatchers.IO) {
+    /** Non-blocking read of cached refresh token (safe to call from any thread). */
+    fun refreshTokenImmediate(): String? = _refreshToken.value
+
+    /** Synchronous save for use from OkHttp authenticator threads (updates memory first, then persists). */
+    fun saveImmediate(accessToken: String?, refreshToken: String?) {
+        // Update in-memory first so subsequent reads see the new value immediately
+        _accessToken.value = accessToken
+        if (refreshToken != null) _refreshToken.value = refreshToken
+        // Persist to disk (SharedPreferences.apply() is async and thread-safe)
         prefs.edit().apply {
             if (accessToken != null) putString(KEY_ACCESS, accessToken) else remove(KEY_ACCESS)
             if (refreshToken != null) putString(KEY_REFRESH, refreshToken) else remove(KEY_REFRESH)
         }.apply()
+    }
+
+    /** Synchronous clear for use from OkHttp authenticator threads. */
+    fun clearImmediate() {
+        _accessToken.value = null
+        _refreshToken.value = null
+        prefs.edit().clear().apply()
+    }
+
+    @Deprecated("Use accessTokenImmediate() — no coroutine needed for in-memory read")
+    suspend fun accessTokenBlocking(): String? = _accessToken.value
+
+    @Deprecated("Use refreshTokenImmediate() — no coroutine needed for in-memory read")
+    suspend fun refreshTokenBlocking(): String? = _refreshToken.value
+
+    suspend fun save(accessToken: String?, refreshToken: String?) = withContext(Dispatchers.IO) {
+        // Update in-memory first for immediate visibility
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken
+        // Then persist to disk
+        prefs.edit().apply {
+            if (accessToken != null) putString(KEY_ACCESS, accessToken) else remove(KEY_ACCESS)
+            if (refreshToken != null) putString(KEY_REFRESH, refreshToken) else remove(KEY_REFRESH)
+        }.apply()
     }
 
     suspend fun clear() = withContext(Dispatchers.IO) {
-        prefs.edit().clear().apply()
         _accessToken.value = null
         _refreshToken.value = null
+        prefs.edit().clear().apply()
     }
 
     private companion object {

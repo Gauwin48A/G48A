@@ -234,6 +234,22 @@ fun CategoryHubScreen(
 
             Spacer(Modifier.height(12.dp))
 
+            // Error banner (dismissed on successful refresh)
+            if (state.error != null && !state.loading) {
+                Surface(
+                    color = Color(0xFFFEF2F2),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                ) {
+                    Text(
+                        text = "⚠️ Offline — showing cached data",
+                        color = Color(0xFFDC2626),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
+            }
+
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color(0xFF6366F1))

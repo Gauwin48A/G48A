@@ -56,6 +56,7 @@ fun CategoryHomeScreen(
     onOpenListing: () -> Unit,
     onAddToCart: (String) -> Unit = {},
     viewModel: CategoryAppViewModel = hiltViewModel(),
+    subcatViewModel: SubcategoryListViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -64,7 +65,8 @@ fun CategoryHomeScreen(
     val isLoading = vmState.isLoading
 
     val banners     = remember(categoryKey) { MockDataProvider.bannersFor(categoryKey) }
-    val subcats     = remember(categoryKey) { MockDataProvider.subcategoriesFor(categoryKey) }
+    val subcatState by subcatViewModel.state.collectAsState()
+    val subcats     = subcatState.subcats
     val allProducts = vmState.products
     val deals       = remember(allProducts) { allProducts.filter { it.isDeal || it.price < it.originalPrice * 0.85 }.take(8).ifEmpty { MockDataProvider.dealsFor(categoryKey) } }
     val trending    = remember(allProducts) { allProducts.filter { it.isTrending || it.reviewCount > 5 }.take(10).ifEmpty { MockDataProvider.trendingFor(categoryKey) } }
@@ -84,6 +86,7 @@ fun CategoryHomeScreen(
 
     LaunchedEffect(categoryKey) {
         viewModel.load(categoryKey)
+        subcatViewModel.loadFor(categoryKey)
     }
 
     if (isLoading) {
@@ -128,7 +131,7 @@ fun CategoryHomeScreen(
             item(key = "subcat_chips") {
                 SubcategoryChipRow(
                     subcategories = subcats,
-                    onSelect = { sub -> onOpenSubcategory(sub.id) },
+                    onSelect = { sub -> onOpenSubcategory(sub.stableId) },
                 )
                 Spacer(Modifier.height(20.dp))
             }

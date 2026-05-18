@@ -212,12 +212,13 @@ class ForYouViewModel @Inject constructor(
         if (!_state.value.hasMorePosts || _state.value.loading) return
         viewModelScope.launch {
             val nextPage = _state.value.currentPage + 1
-            when (val r = sponsoredRepo.forYou(30 * nextPage)) {
+            when (val r = sponsoredRepo.forYou(limit = 30, page = nextPage)) {
                 is ApiResult.Success -> {
+                    val newPosts = _state.value.posts + r.data
                     _state.value = _state.value.copy(
-                        posts = r.data,
+                        posts = newPosts,
                         currentPage = nextPage,
-                        hasMorePosts = r.data.size >= 30 * nextPage
+                        hasMorePosts = r.data.size >= 30
                     )
                 }
                 is ApiResult.Failure -> {}

@@ -408,6 +408,8 @@
     <string name="plans_custom_storefront">Custom storefront</string>
     <string name="plans_dedicated_manager">Dedicated manager</string>
     <string name="plans_unlimited">Unlimited</string>
+    <string name="plans_advanced">Advanced</string>
+    <string name="plans_full">Full</string>
 
     <!-- Compare -->
     <string name="compare_title">Compare Listings</string>

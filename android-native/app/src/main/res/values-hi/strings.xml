@@ -1431,4 +1431,6 @@
     <string name="social_no_posts">No posts yet</string>
     <string name="social_share_post">📤 Share Post</string>
     <string name="sold_empty_subtitle">Items you\'ve sold will appear here</string>
+    <string name="plans_advanced">उन्नत</string>
+    <string name="plans_full">पूर्ण</string>
 </resources>

@@ -8,7 +8,7 @@ import android.util.Log
  * Filter in Logcat: tag:MHub-*
  */
 object AppLogger {
-    private const val ENABLED = true // Flip to false for release builds
+    private val ENABLED = com.mhub.app.BuildConfig.DEBUG
 
     // ─── Navigation ──────────────────────────────────────────────────────────
     fun navPush(route: String) {

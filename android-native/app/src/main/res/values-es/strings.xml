@@ -1436,4 +1436,6 @@
     <string name="tier_premium_rewards">Premium rewards</string>
     <string name="tier_silver">Silver</string>
     <string name="verification_title">Verification</string>
+    <string name="plans_advanced">Avanzado</string>
+    <string name="plans_full">Completo</string>
 </resources>

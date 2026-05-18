@@ -1413,4 +1413,6 @@
     <string name="validation_phone">Enter a valid 10-digit phone number</string>
     <string name="validation_required">This field is required</string>
     <string name="verification_title">Verification</string>
+    <string name="plans_advanced">ಮುಂದುವರಿದ</string>
+    <string name="plans_full">ಪೂರ್ಣ</string>
 </resources>
