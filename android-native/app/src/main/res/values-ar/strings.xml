@@ -594,5 +594,7 @@
     <string name="about_vision">عالم يزدهر فيه كل حي بسوق رقمي.</string>
     <string name="contact_email">البريد الإلكتروني</string>
     <string name="about_vision_title">رؤيتنا</string>
+    <string name="session_expired_message">انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.</string>
+    <string name="session_expired_title">انتهت الجلسة</string>
 </resources>
 

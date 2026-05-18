@@ -483,8 +483,8 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     // Flash sale toggle
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Flash Sale", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                            Text("Show as limited-time offer", fontSize = 11.sp, color = Color(0xFF64748B))
+                            Text(stringResource(R.string.commerce_flash_sale), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                            Text(stringResource(R.string.commerce_flash_sale_show), fontSize = 11.sp, color = Color(0xFF64748B))
                         }
                         Switch(checked = state.flashSale, onCheckedChange = { viewModel.toggleFlashSale() })
                     }
@@ -951,8 +951,8 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
     if (state.showDeleteDialog != null) {
         AlertDialog(
             onDismissRequest = { viewModel.showDeleteDialog(null) },
-            title = { Text("Delete Post?") },
-            text = { Text("This action cannot be undone.") },
+            title = { Text(stringResource(R.string.commerce_delete_post_title)) },
+            text = { Text(stringResource(R.string.commerce_delete_confirm)) },
             confirmButton = {
                 Button(
                     onClick = { viewModel.deletePost(state.showDeleteDialog!!) },
@@ -967,7 +967,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
     if (state.showPromoteDialog != null) {
         AlertDialog(
             onDismissRequest = { viewModel.showPromoteDialog(null) },
-            title = { Text("Boost Your Listing") },
+            title = { Text(stringResource(R.string.commerce_boost_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
@@ -1804,12 +1804,12 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                         Surface(color = Color.White, shadowElevation = 8.dp) {
                             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text("Subtotal", fontSize = 14.sp, color = Color(0xFF64748B))
+                                    Text(stringResource(R.string.commerce_subtotal), fontSize = 14.sp, color = Color(0xFF64748B))
                                     Spacer(Modifier.weight(1f))
                                     Text("₹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = Color(0xFF1E293B))
                                 }
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text("Shipping", fontSize = 14.sp, color = Color(0xFF64748B))
+                                    Text(stringResource(R.string.commerce_shipping), fontSize = 14.sp, color = Color(0xFF64748B))
                                     Spacer(Modifier.weight(1f))
                                     Text(if (viewModel.shipping == 0.0) "Free" else "₹${viewModel.shipping.toLong()}", fontSize = 14.sp, color = if (viewModel.shipping == 0.0) Color(0xFF22C55E) else Color(0xFF1E293B))
                                 }
@@ -1822,7 +1822,7 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                 }
                                 HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text("Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                                    Text(stringResource(R.string.commerce_total), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                                     Spacer(Modifier.weight(1f))
                                     Text("₹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
                                 }
@@ -1903,7 +1903,7 @@ private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int
             ) {
                 Icon(Icons.Filled.Bookmark, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Save for later", fontSize = 12.sp, color = Color(0xFF2563EB))
+                Text(stringResource(R.string.commerce_save_for_later), fontSize = 12.sp, color = Color(0xFF2563EB))
             }
         }
     }
@@ -1927,7 +1927,7 @@ private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove
                 if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onMoveToCart, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-                Text("Move to Cart", fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.commerce_move_to_cart), fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
             }
             IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
                 Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))

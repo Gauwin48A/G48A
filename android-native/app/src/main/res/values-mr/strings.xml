@@ -403,6 +403,8 @@
     <string name="social_rating">रेटिंग</string>
     <string name="contact_send_message">संदेश पाठवा</string>
     <string name="social_cancel">रद्द</string>
+    <string name="session_expired_message">तुमचे सत्र संपले आहे.</string>
+    <string name="session_expired_title">सत्र संपले</string>
 </resources>
 
 
