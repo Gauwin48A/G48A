@@ -1413,4 +1413,6 @@
     <string name="validation_required">This field is required</string>
     <string name="verification_title">Verification</string>
     <string name="wishlist_empty">Your wishlist is empty.</string>
+    <string name="plans_advanced">വിപുലമായ</string>
+    <string name="plans_full">പൂർണ്ണ</string>
 </resources>

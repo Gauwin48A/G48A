@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -80,6 +81,7 @@ fun MhubTopBar(
     onNotifications: () -> Unit,
     onCart: () -> Unit,
     onWishlist: () -> Unit = {},
+    onRecentlyViewed: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TopBarViewModel = hiltViewModel(),
 ) {
@@ -176,6 +178,16 @@ fun MhubTopBar(
                     Icon(
                         Icons.Default.FavoriteBorder,
                         contentDescription = stringResource(R.string.topbar_wishlist),
+                        tint = Color.White.copy(alpha = 0.92f),
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+
+                // Recently Viewed (matches web's clock icon)
+                IconButton(onClick = onRecentlyViewed) {
+                    Icon(
+                        Icons.Default.History,
+                        contentDescription = "Recently Viewed",
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )

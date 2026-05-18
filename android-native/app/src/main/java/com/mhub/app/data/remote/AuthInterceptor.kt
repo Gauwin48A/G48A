@@ -1,19 +1,18 @@
 package com.mhub.app.data.remote
 
 import com.mhub.app.data.local.TokenStore
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 /**
  * Adds `Authorization: Bearer <token>` when available.
- * Uses runBlocking only to read a small cached value; TokenStore reads from disk-cached in-memory.
+ * Reads the in-memory cached token directly (non-blocking).
  */
 class AuthInterceptor(
     private val tokenStore: TokenStore,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = runBlocking { tokenStore.accessTokenBlocking() }
+        val token = tokenStore.accessTokenImmediate()
         val original = chain.request()
         val builder = original.newBuilder()
             .header("Accept", "application/json")

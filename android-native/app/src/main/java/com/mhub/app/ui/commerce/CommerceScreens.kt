@@ -702,7 +702,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             stringResource(R.string.plans_post_listings) to listOf("1", "3", "5", "10", stringResource(R.string.plans_unlimited)),
                             stringResource(R.string.plans_photos_per_post) to listOf("1", "3", "5", "8", "10"),
                             stringResource(R.string.plans_promoted_posts) to listOf("✗", "1", "2", "5", stringResource(R.string.plans_unlimited)),
-                            stringResource(R.string.plans_analytics_access) to listOf("✗", stringResource(R.string.plans_basic), stringResource(R.string.plans_basic), "Advanced", "Full"),
+                            stringResource(R.string.plans_analytics_access) to listOf("✗", stringResource(R.string.plans_basic), stringResource(R.string.plans_basic), stringResource(R.string.plans_advanced), stringResource(R.string.plans_full)),
                             stringResource(R.string.plans_priority_support) to listOf("✗", "✗", "✓", "✓", "✓"),
                             stringResource(R.string.plans_profile_badge) to listOf("✗", stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium)),
                             stringResource(R.string.plans_kyc_verified) to listOf("✓", "✓", "✓", "✓", "✓"),
@@ -712,6 +712,8 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             stringResource(R.string.plans_custom_storefront) to listOf("✗", "✗", "✗", "✗", "✓"),
                             stringResource(R.string.plans_dedicated_manager) to listOf("✗", "✗", "✗", "✗", "✓"),
                         )
+                        val unlimitedLabel = stringResource(R.string.plans_unlimited)
+                        val fullLabel = stringResource(R.string.plans_full)
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
                                 // Header row
@@ -728,7 +730,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                         values.forEach { v ->
                                             Text(
                                                 v, fontSize = 10.sp,
-                                                color = when { v == "✓" || v == "Unlimited" || v == "Full" -> Color(0xFF22C55E); v == "✗" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
+                                                color = when { v == "✓" || v == unlimitedLabel || v == fullLabel -> Color(0xFF22C55E); v == "✗" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
                                                 fontWeight = if (v == "✓" || v == "✗") FontWeight.Bold else FontWeight.Normal,
                                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                                 modifier = Modifier.weight(1f),

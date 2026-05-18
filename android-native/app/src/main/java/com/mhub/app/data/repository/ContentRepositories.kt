@@ -175,6 +175,8 @@ class CategoriesRepository @Inject constructor(
         return result
     }
     suspend fun stats(): ApiResult<List<CategoryStat>> = safeApiCall { api.categoryStats().stats }
+    suspend fun subcategories(categoryId: String): ApiResult<List<Category>> =
+        safeApiCall { api.subcategories(categoryId).items }
 }
 
 @Singleton
@@ -523,7 +525,7 @@ class BoostRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class SponsoredRepository @Inject constructor(private val api: MhubApi) {
     suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).items }
-    suspend fun forYou(limit: Int = 20): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit).items }
+    suspend fun forYou(limit: Int = 20, page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit, page).items }
 }
 
 @Singleton

@@ -1414,4 +1414,6 @@
     <string name="validation_password_length">Password must be at least 8 characters</string>
     <string name="validation_phone">Enter a valid 10-digit phone number</string>
     <string name="verification_title">Verification</string>
+    <string name="plans_advanced">प्रगत</string>
+    <string name="plans_full">पूर्ण</string>
 </resources>

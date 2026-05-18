@@ -104,6 +104,7 @@ fun ProductListingScreen(
     onOpenProduct: (String) -> Unit,
     onBack: () -> Unit,
     viewModel: CategoryAppViewModel = hiltViewModel(),
+    subcatViewModel: SubcategoryListViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
     val vmState by viewModel.state.collectAsState()
@@ -111,6 +112,7 @@ fun ProductListingScreen(
     // Trigger load if needed
     LaunchedEffect(categoryKey) {
         if (vmState.products.isEmpty()) viewModel.load(categoryKey)
+        subcatViewModel.loadFor(categoryKey)
     }
 
     // ── Source data — real API with mock fallback ─────────────────────────────────────────────────────────
@@ -154,7 +156,8 @@ fun ProductListingScreen(
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // ── Subcategory data ─────────────────────────────────────────────────────
-    val subcategories = remember(categoryKey) { MockDataProvider.subcategoriesFor(categoryKey) }
+    val subcatState by subcatViewModel.state.collectAsState()
+    val subcategories = subcatState.subcats
     var selectedSubcatId by remember { mutableStateOf(subcategoryId) }
 
     // ── Quick condition filter ────────────────────────────────────────────────
@@ -268,11 +271,11 @@ fun ProductListingScreen(
                     )
                     subcategories.forEach { subcat ->
                         FilterChip(
-                            selected = selectedSubcatId == subcat.id,
+                            selected = selectedSubcatId == subcat.stableId,
                             onClick = {
-                                selectedSubcatId = if (selectedSubcatId == subcat.id) null else subcat.id
+                                selectedSubcatId = if (selectedSubcatId == subcat.stableId) null else subcat.stableId
                             },
-                            label = { Text(subcat.name, style = MaterialTheme.typography.labelSmall) },
+                            label = { Text(subcat.displayName, style = MaterialTheme.typography.labelSmall) },
                         )
                     }
                 }

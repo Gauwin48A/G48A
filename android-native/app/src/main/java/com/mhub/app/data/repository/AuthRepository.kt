@@ -22,6 +22,7 @@ import com.mhub.app.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -96,6 +97,16 @@ class AuthRepository @Inject constructor(
 
     suspend fun me(): ApiResult<User> = safeApiCall { api.me() }
 
+    /** Quick health check with short timeout to determine if server is reachable. */
+    suspend fun isServerReachable(): Boolean = try {
+        kotlinx.coroutines.withTimeout(4000L) {
+            api.health()
+            true
+        }
+    } catch (_: Exception) {
+        false
+    }
+
     // ── Aadhaar 4-step signup flow ──
     suspend fun aadhaarSendOtp(aadhaar: String, mobile: String): ApiResult<AadhaarOtpResponse> = safeApiCall {
         api.aadhaarSendOtp(AadhaarSendOtpRequest(aadhaarNumber = aadhaar, mobileNumber = mobile))
@@ -116,5 +127,23 @@ class AuthRepository @Inject constructor(
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
         res.user
+    }
+
+    /**
+     * Creates a local offline demo session with a self-generated JWT.
+     * Used when server is unreachable but the user needs to browse the app.
+     */
+    suspend fun createOfflineDemoSession() {
+        val nowSec = System.currentTimeMillis() / 1000
+        val expSec = nowSec + 86400 * 7 // 7 days
+        val header = android.util.Base64.encodeToString(
+            """{"alg":"HS256","typ":"JWT"}""".toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING,
+        )
+        val payload = android.util.Base64.encodeToString(
+            """{"userId":"demo-user-001","id":"demo-user-001","email":"demo@mhub.app","name":"Demo User","role":"user","iat":$nowSec,"exp":$expSec}""".toByteArray(),
+            android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING,
+        )
+        val fakeToken = "$header.$payload.offline-demo-signature"
+        tokenStore.save(fakeToken, null)
     }
 }

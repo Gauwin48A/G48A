@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.JwtHelper
 import com.mhub.app.data.repository.AuthRepository
 import com.mhub.app.ui.common.InputValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -42,16 +44,31 @@ class AuthViewModel @Inject constructor(
 
     private data class DemoCredential(val identifier: String, val password: String)
 
-    private val demoCredentialCandidates = listOf(
-        DemoCredential(identifier = "rahul.sharma@mhub.com", password = "Password123!"),
-        DemoCredential(identifier = "user1", password = "Password123!"),
-    )
+    private val demoCredentialCandidates = if (com.mhub.app.BuildConfig.DEBUG) {
+        listOf(
+            DemoCredential(identifier = "rahul.sharma@mhub.com", password = "Password123!"),
+            DemoCredential(identifier = "user1", password = "Password123!"),
+        )
+    } else {
+        emptyList()
+    }
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
     val isAuthenticated: StateFlow<Boolean> =
         repo.isAuthenticated.stateIn(viewModelScope, SharingStarted.Eagerly, repo.isCurrentlyAuthenticated)
+
+    val isAdmin: StateFlow<Boolean> =
+        repo.accessTokenFlow.map { token ->
+            val role = JwtHelper.extractClaim(token, "role")
+            role == "admin" || role == "super_admin"
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val currentUserId: StateFlow<String?> =
+        repo.accessTokenFlow.map { token ->
+            JwtHelper.extractClaim(token, "userId") ?: JwtHelper.extractClaim(token, "id")
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
 
@@ -111,19 +128,30 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState()
     }
 
-    /** Quick demo login — bypasses validation, uses hardcoded test credentials. */
+    /** Quick demo login — bypasses validation, uses hardcoded test credentials.
+     *  Falls back to offline JWT if server is unreachable. */
     fun demoLogin() {
         if (_state.value.loading) return
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             Log.d(TAG, "demoLogin invoked")
+
+            // Quick server reachability check (3s timeout) to avoid long waits
+            val serverReachable = repo.isServerReachable()
+            if (!serverReachable) {
+                Log.d(TAG, "demoLogin: server unreachable, using offline session")
+                repo.createOfflineDemoSession()
+                _state.value = AuthUiState(loading = false, success = true)
+                return@launch
+            }
+
+            // Try real server credentials first
             for (credential in demoCredentialCandidates) {
                 when (val res = repo.signInWithEmail(credential.identifier, credential.password)) {
                     is ApiResult.Success -> {
                         Log.d(TAG, "demoLogin credential success for ${credential.identifier}")
                         val authRes = res.data
                         if (authRes.requireOtp) {
-                            Log.d(TAG, "demoLogin requires OTP for ${credential.identifier}")
                             _state.value = AuthUiState(
                                 loading = false,
                                 requireOtp = true,
@@ -138,12 +166,11 @@ class AuthViewModel @Inject constructor(
                     }
                     is ApiResult.Failure -> {
                         Log.w(TAG, "demoLogin credential failed for ${credential.identifier}: ${res.error.message}")
-                        // Try next fallback credential before provisioning a fresh demo account.
                     }
                 }
             }
 
-            // Last-resort path: create a new demo user account and continue with authenticated session.
+            // Try signup as fallback
             val seed = (System.currentTimeMillis() % 1_000_000_000L).toString().padStart(9, '0')
             val demoPhone = "9$seed"
             val demoEmail = "android.demo.$seed@mhub.local"
@@ -158,15 +185,17 @@ class AuthViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     Log.d(TAG, "demoLogin auto-signup success for $demoEmail")
                     _state.value = AuthUiState(loading = false, success = true)
+                    return@launch
                 }
                 is ApiResult.Failure -> {
-                    Log.e(TAG, "demoLogin auto-signup failed: ${signUpRes.error.message}")
-                    _state.value = AuthUiState(
-                        loading = false,
-                        error = "Demo login failed: ${signUpRes.error.message}",
-                    )
+                    Log.w(TAG, "demoLogin signup also failed, using offline session: ${signUpRes.error.message}")
                 }
             }
+
+            // Offline fallback: generate a local JWT so the user can browse the app
+            Log.d(TAG, "demoLogin creating offline demo session")
+            repo.createOfflineDemoSession()
+            _state.value = AuthUiState(loading = false, success = true)
         }
     }
 

@@ -28,7 +28,9 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Explore
@@ -214,6 +216,7 @@ fun MhubApp(
 
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+        val isAdmin by authViewModel.isAdmin.collectAsState()
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
         var guestBrowsing by rememberSaveable { mutableStateOf(false) }
         var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
@@ -426,7 +429,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FOR_YOU) {
-                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -437,7 +440,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
@@ -446,7 +449,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.REWARDS) {
-                    MainShell(navController = navController, selected = BottomTab.REWARDS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         RewardsScreen(
                             isAuthenticated = isAuthenticated,
                             onSignInRequired = {
@@ -662,7 +665,7 @@ fun MhubApp(
             }
 
             composable(Routes.CHAT) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.CHAT, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
@@ -848,7 +851,7 @@ fun MhubApp(
             }
 
             composable(Routes.MY_FEED) {
-                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     MyFeedScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -858,7 +861,7 @@ fun MhubApp(
             }
 
             composable(Routes.PUBLIC_WALL) {
-                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     PublicWallScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -951,7 +954,7 @@ fun MhubApp(
 
             // ── Channels ──
             composable(Routes.CHANNELS) {
-                MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     ChannelsListScreen(
                         onBack = { navController.popBackStack() },
                         onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) { launchSingleTop = true } },
@@ -1360,8 +1363,10 @@ fun MhubApp(
                         onOpenFaq = { showMoreDrawer = false; navController.navigate(Routes.FAQ) { launchSingleTop = true } },
                         onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) { launchSingleTop = true } },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                        onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         onLanguageChange = { code -> localeManager?.setLocale(code) },
-                        isAdmin = false,
+                        isAdmin = isAdmin,
+                        isLoggedIn = isAuthenticated,
                         currentThemeMode = themeMode,
                         onSetThemeMode = { themeVm.setThemeMode(it) },
                     )
@@ -1391,9 +1396,7 @@ enum class BottomTab(
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
     ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.GridView, Icons.Filled.GridView),
-    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.Explore, Icons.Filled.Explore),
-    FEED(Routes.FEED, R.string.nav_feed, Icons.AutoMirrored.Outlined.Article, Icons.AutoMirrored.Filled.Article),
-    REWARDS(Routes.REWARDS, R.string.nav_rewards_tab, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
+    CHAT(Routes.CHAT, R.string.nav_chat, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
 }
 
@@ -1418,6 +1421,7 @@ fun MainShell(
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                    onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                 )
                 }
             },
@@ -1459,8 +1463,8 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // LEFT: Home | All Posts | For You
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
+                        // LEFT: Home | All Posts
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1490,8 +1494,8 @@ fun MainShell(
                                 )
                             }
                         }
-                        // RIGHT: Feed | Rewards | Profile
-                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                        // RIGHT: Chat | Profile
+                        listOf(BottomTab.CHAT, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,

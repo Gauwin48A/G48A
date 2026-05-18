@@ -27,7 +27,13 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var api: MhubApi
     @Inject lateinit var tokenStore: TokenStore
 
-    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceJob.cancel()
+    }
 
     companion object {
         private const val CHANNEL_ID = "mhub_general"
