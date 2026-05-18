@@ -183,6 +183,7 @@
     <string name="more_theme_light">Light</string>
     <string name="more_theme_system">System</string>
     <string name="more_theme_dark">Dark</string>
+    <string name="more_appearance_language">Appearance &amp; Language</string>
     <string name="more_language">Language</string>
     <string name="more_show_all">All 25 →</string>
     <string name="more_show_less">Show less</string>
