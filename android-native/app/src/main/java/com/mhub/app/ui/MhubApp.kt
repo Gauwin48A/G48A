@@ -15,26 +15,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -419,7 +426,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FOR_YOU) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -430,7 +437,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
@@ -581,7 +588,7 @@ fun MhubApp(
 
             composable(Routes.CREATE_POST) {
                 if (needsLogin) {
-                    MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                             onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
@@ -676,7 +683,7 @@ fun MhubApp(
 
             // ── Commerce ──
             composable(Routes.POST_WELCOME) {
-                MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
@@ -1384,7 +1391,8 @@ enum class BottomTab(
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
     ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.GridView, Icons.Filled.GridView),
-    SELL(Routes.POST_WELCOME, R.string.nav_sell, Icons.Outlined.AddCircleOutline, Icons.Filled.AddCircle),
+    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.Explore, Icons.Filled.Explore),
+    FEED(Routes.FEED, R.string.nav_feed, Icons.AutoMirrored.Outlined.Article, Icons.AutoMirrored.Filled.Article),
     REWARDS(Routes.REWARDS, R.string.nav_rewards_tab, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
 }
@@ -1416,72 +1424,108 @@ fun MainShell(
             bottomBar = {
                 if (showBottomBar) {
                 val liveActiveCategoryKey = LocalActiveCategoryKey.current ?: activeCategoryKey
-                NavigationBar(
-                    tonalElevation = 0.dp,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.shadow(
-                        elevation = MhubElevation.bottomBar,
-                        shape = MhubShapes.bottomBar,
-                    ),
-                ) {
-                    BottomTab.entries.forEach { tab ->
-                        val isSelected = tab == selected
-                        NavigationBarItem(
-                            selected = isSelected,
-                            onClick = {
-                                val currentRoute = navController.currentDestination?.route
-                                val targetRoute = if (tab == BottomTab.ALL_POSTS && liveActiveCategoryKey != null) {
-                                    "cat/$liveActiveCategoryKey"
-                                } else {
-                                    tab.route
-                                }
-                                // For HOME tab, always reset to home (clear category context)
-                                if (tab == BottomTab.HOME) {
-                                    navController.navigate(Routes.HOME) {
-                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                                        launchSingleTop = true
-                                    }
-                                } else if (targetRoute != currentRoute) {
-                                    navController.navigate(targetRoute) {
-                                        // Pop up to the main graph root (not HOME) so category
-                                        // routes in the back stack survive tab switches.
-                                        popUpTo(Routes.MAIN_GRAPH) { saveState = true; inclusive = false }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = if (isSelected) tab.iconFilled else tab.iconOutlined,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(if (tab == BottomTab.SELL) 28.dp else 24.dp),
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = stringResource(tab.labelRes),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                )
-                            },
-                            alwaysShowLabel = true,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = if (tab == BottomTab.SELL) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                                selectedTextColor = if (tab == BottomTab.SELL) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                                indicatorColor = if (tab == BottomTab.SELL) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                            ),
-                        )
+                val openMore = LocalOnOpenMore.current
+                val navigateToTab: (BottomTab) -> Unit = { tab ->
+                    val currentRoute = navController.currentDestination?.route
+                    val targetRoute = if (tab == BottomTab.ALL_POSTS && liveActiveCategoryKey != null) {
+                        "cat/$liveActiveCategoryKey"
+                    } else {
+                        tab.route
                     }
-                    // "More" hamburger menu item
-                    val openMore = LocalOnOpenMore.current
-                    NavigationBarItem(
-                        selected = false,
-                        onClick = openMore,
-                        icon = { Icon(Icons.Outlined.Menu, contentDescription = null, modifier = Modifier.size(24.dp)) },
-                        label = { Text(stringResource(R.string.nav_more), style = MaterialTheme.typography.labelSmall) },
-                        alwaysShowLabel = true,
-                    )
+                    if (tab == BottomTab.HOME) {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    } else if (targetRoute != currentRoute) {
+                        navController.navigate(targetRoute) {
+                            popUpTo(Routes.MAIN_GRAPH) { saveState = true; inclusive = false }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = MhubElevation.bottomBar, shape = MhubShapes.bottomBar),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .navigationBarsPadding(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // LEFT: Home | All Posts | For You
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
+                            BottomNavTabItem(
+                                tab = tab,
+                                isSelected = tab == selected,
+                                modifier = Modifier.weight(1f),
+                                onClick = { navigateToTab(tab) },
+                            )
+                        }
+                        // CENTER: Sell FAB
+                        Box(
+                            modifier = Modifier.size(52.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            FloatingActionButton(
+                                onClick = { navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White,
+                                modifier = Modifier.size(44.dp),
+                                elevation = FloatingActionButtonDefaults.elevation(
+                                    defaultElevation = 4.dp,
+                                    pressedElevation = 8.dp,
+                                ),
+                            ) {
+                                Icon(
+                                    Icons.Filled.AddCircle,
+                                    contentDescription = stringResource(R.string.nav_sell),
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+                        }
+                        // RIGHT: Feed | Rewards | Profile
+                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                            BottomNavTabItem(
+                                tab = tab,
+                                isSelected = tab == selected,
+                                modifier = Modifier.weight(1f),
+                                onClick = { navigateToTab(tab) },
+                            )
+                        }
+                        // MORE
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    onClick = openMore,
+                                ),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Menu,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = stringResource(R.string.nav_more),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Normal,
+                            )
+                        }
+                    }
                 }
                 }
             },
@@ -1490,6 +1534,40 @@ fun MainShell(
                 content()
             }
         }
+    }
+}
+
+@Composable
+private fun BottomNavTabItem(
+    tab: BottomTab,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = if (isSelected) tab.iconFilled else tab.iconOutlined,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = contentColor,
+        )
+        Text(
+            text = stringResource(tab.labelRes),
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+        )
     }
 }
 

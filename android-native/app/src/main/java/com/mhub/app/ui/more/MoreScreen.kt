@@ -165,6 +165,7 @@ fun MoreScreen(
     onSetThemeMode: (ThemeMode) -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var prefsExpanded by rememberSaveable { mutableStateOf(false) }
     val expandedGroups = remember { mutableStateOf(setOf("Trade & Browse", "Social")) }
     fun toggleGroup(header: String) {
         expandedGroups.value = if (header in expandedGroups.value) expandedGroups.value - header else expandedGroups.value + header
@@ -289,8 +290,33 @@ fun MoreScreen(
             )
         }
 
+        // Preferences section header (collapsed by default — menu items visible first)
+        item(key = "prefs_header") {
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth().clickable { prefsExpanded = !prefsExpanded },
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.more_appearance_language), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+
         // Theme mode toggle (Light / System / Dark) — matches web
-        item {
+        if (prefsExpanded) item {
             Card(
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -325,7 +351,7 @@ fun MoreScreen(
         }
 
         // Language selector — matches web's 25 languages
-        item {
+        if (prefsExpanded) item {
             val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
             var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
             var showAllLangs by rememberSaveable { mutableStateOf(false) }
