@@ -1152,7 +1152,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                         }
                     }
-                    if (displayed.isEmpty()) EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) }, title = "No sales yet", subtitle = "Items you've sold will appear here")
+                    if (displayed.isEmpty()) EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) }, title = stringResource(R.string.sold_empty), subtitle = stringResource(R.string.sold_empty_subtitle))
                     else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { Text("${displayed.size} sales", fontSize = 13.sp, color = Color(0xFF64748B)) }
                         items(displayed, key = { it.stableId }) { post ->
