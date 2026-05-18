@@ -609,6 +609,8 @@
     <string name="about_vision">Un monde où chaque quartier a un marché numérique prospère.</string>
     <string name="contact_email">Adresse e-mail</string>
     <string name="about_vision_title">Notre vision</string>
+    <string name="session_expired_message">Votre session est terminée. Veuillez vous reconnecter.</string>
+    <string name="session_expired_title">Session expirée</string>
 </resources>
 
 

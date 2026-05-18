@@ -370,6 +370,8 @@
     <string name="social_rating">ರೇಟಿಂಗ್</string>
     <string name="contact_send_message">ಸಂದೇಶ ಕಳುಹಿಸಿ</string>
     <string name="social_cancel">ರದ್ದು</string>
+    <string name="session_expired_message">ನಿಮ್ಮ ಅವಧಿ ಮುಗಿದಿದೆ.</string>
+    <string name="session_expired_title">ಅವಧಿ ಮುಗಿದಿದೆ</string>
 </resources>
 
 

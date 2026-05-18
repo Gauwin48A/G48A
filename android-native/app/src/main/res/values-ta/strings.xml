@@ -415,6 +415,8 @@
     <string name="social_rating">மதிப்பீடு</string>
     <string name="contact_send_message">செய்தி அனுப்புங்கள்</string>
     <string name="social_cancel">ரத்து</string>
+    <string name="session_expired_message">உங்கள் அமர்வு முடிந்தது.</string>
+    <string name="session_expired_title">அமர்வு காலாவதியானது</string>
 </resources>
 
 

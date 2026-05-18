@@ -420,6 +420,8 @@
     <string name="social_rating">రేటింగ్</string>
     <string name="contact_send_message">సందేశం పంపండి</string>
     <string name="social_cancel">రద్దు</string>
+    <string name="session_expired_message">మీ సెషన్ ముగిసింది.</string>
+    <string name="session_expired_title">సెషన్ ముగిసింది</string>
 </resources>
 
 

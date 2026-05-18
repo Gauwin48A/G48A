@@ -350,6 +350,8 @@
     <string name="social_rating">درجہ بندی</string>
     <string name="contact_send_message">پیغام بھیجیں</string>
     <string name="social_cancel">منسوخ</string>
+    <string name="session_expired_message">آپ کا سیشن ختم ہو گیا ہے۔</string>
+    <string name="session_expired_title">سیشن ختم</string>
 </resources>
 
 

@@ -336,6 +336,8 @@
     <string name="social_rating">റേറ്റിംഗ്</string>
     <string name="contact_send_message">സന്ദേശം അയയ്ക്കുക</string>
     <string name="social_cancel">റദ്ദാക്കുക</string>
+    <string name="session_expired_message">നിങ്ങളുടെ സെഷൻ അവസാനിച്ചു.</string>
+    <string name="session_expired_title">സെഷൻ അവസാനിച്ചു</string>
 </resources>
 
 

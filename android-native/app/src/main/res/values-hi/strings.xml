@@ -1095,6 +1095,8 @@
     <string name="about_vision">एक ऐसी दुनिया जहाँ हर पड़ोस में एक समृद्ध डिजिटल मार्केटप्लेस हो।</string>
     <string name="contact_email">ईमेल पता</string>
     <string name="about_vision_title">हमारी दृष्टि</string>
+    <string name="session_expired_message">आपका सत्र समाप्त हो गया है। कृपया जारी रखने के लिए फिर से साइन इन करें।</string>
+    <string name="session_expired_title">सत्र समाप्त</string>
 </resources>
 
 

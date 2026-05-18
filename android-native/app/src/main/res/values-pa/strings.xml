@@ -336,6 +336,8 @@
     <string name="social_rating">ਰੇਟਿੰਗ</string>
     <string name="contact_send_message">ਸੁਨੇਹਾ ਭੇਜੋ</string>
     <string name="social_cancel">ਰੱਦ</string>
+    <string name="session_expired_message">ਤੁਹਾਡਾ ਸੈਸ਼ਨ ਖਤਮ ਹੋ ਗਿਆ ਹੈ।</string>
+    <string name="session_expired_title">ਸੈਸ਼ਨ ਖਤਮ</string>
 </resources>
 
 

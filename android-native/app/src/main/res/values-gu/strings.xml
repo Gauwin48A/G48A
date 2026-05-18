@@ -348,6 +348,8 @@
     <string name="social_rating">રેટિંગ</string>
     <string name="contact_send_message">સંદેશ મોકલો</string>
     <string name="social_cancel">રદ</string>
+    <string name="session_expired_message">તમારું સત્ર સમાપ્ત થયું છે.</string>
+    <string name="session_expired_title">સત્ર સમાપ્ત</string>
 </resources>
 
 

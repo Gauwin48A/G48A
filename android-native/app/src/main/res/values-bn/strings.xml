@@ -535,6 +535,8 @@
     <string name="contact_send_message">বার্তা পাঠান</string>
     <string name="social_cancel">বাতিল</string>
     <string name="faq_no_results">কোনো প্রশ্ন পাওয়া যায়নি</string>
+    <string name="session_expired_message">আপনার সেশন শেষ হয়েছে।</string>
+    <string name="session_expired_title">সেশন শেষ</string>
 </resources>
 
 
