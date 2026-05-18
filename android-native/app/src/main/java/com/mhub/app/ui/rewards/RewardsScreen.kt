@@ -149,7 +149,7 @@ class RewardsViewModel @Inject constructor(
                     loading = false, refreshing = false, rewards = result.data,
                 )
                 is ApiResult.Failure -> {
-                    if (result.error is ApiError.Unauthorized) {
+                    if (result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden) {
                         _state.value = RewardsUiState(requiresAuth = true)
                     } else {
                         _state.value = _state.value.copy(

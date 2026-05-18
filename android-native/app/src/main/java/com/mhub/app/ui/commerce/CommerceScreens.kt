@@ -44,6 +44,7 @@ import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -868,7 +869,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
 
     // Auto-refresh every 45 seconds
     LaunchedEffect(Unit) {
-        while (true) {
+        while (isActive) {
             kotlinx.coroutines.delay(45_000)
             viewModel.load()
         }
