@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
@@ -82,6 +83,8 @@ fun MhubTopBar(
     onCart: () -> Unit,
     onWishlist: () -> Unit = {},
     onRecentlyViewed: () -> Unit = {},
+    onFilter: () -> Unit = {},
+    activeFilterCount: Int = 0,
     modifier: Modifier = Modifier,
     viewModel: TopBarViewModel = hiltViewModel(),
 ) {
@@ -142,6 +145,32 @@ fun MhubTopBar(
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )
+                }
+
+                // Filter with active count badge
+                IconButton(onClick = onFilter) {
+                    BadgedBox(
+                        badge = {
+                            if (activeFilterCount > 0) {
+                                Badge(
+                                    containerColor = Color(0xFFF59E0B),
+                                    contentColor = Color.White,
+                                ) {
+                                    Text(
+                                        activeFilterCount.toString(),
+                                        fontSize = 9.sp,
+                                    )
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = "Filter",
+                            tint = Color.White.copy(alpha = 0.92f),
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
 
                 // Notifications with badge

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Menu
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
@@ -1334,7 +1336,6 @@ fun MhubApp(
                         onOpenOffers = { showMoreDrawer = false; navController.navigate(Routes.OFFERS) { launchSingleTop = true } },
                         onOpenNearby = { showMoreDrawer = false; navController.navigate(Routes.NEARBY) { launchSingleTop = true } },
                         onOpenDashboard = { showMoreDrawer = false; navController.navigate(Routes.DASHBOARD) { launchSingleTop = true } },
-                        onOpenScanner = { showMoreDrawer = false; navController.navigate(Routes.SCANNER) { launchSingleTop = true } },
                         onOpenCart = { showMoreDrawer = false; navController.navigate(Routes.CART) { launchSingleTop = true } },
                         onOpenTierSelection = { showMoreDrawer = false; navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
                         onOpenCentre = { showMoreDrawer = false; navController.navigate(Routes.CENTRE_LIST) { launchSingleTop = true } },
@@ -1343,24 +1344,14 @@ fun MhubApp(
                         onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                         onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
                         onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) { launchSingleTop = true } },
-                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
-                        onOpenChannels = { showMoreDrawer = false; navController.navigate(Routes.CHANNELS) { launchSingleTop = true } },
                         onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) { launchSingleTop = true } },
                         onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                         onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) { launchSingleTop = true } },
                         onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
-                        onOpenActivityHub = { showMoreDrawer = false; navController.navigate(Routes.ACTIVITY_HUB) { launchSingleTop = true } },
                         onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                        onOpenMyPosts = { showMoreDrawer = false; navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
-                        onOpenBoughtPosts = { showMoreDrawer = false; navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
-                        onOpenSoldPosts = { showMoreDrawer = false; navController.navigate(Routes.SOLD_POSTS) { launchSingleTop = true } },
                         onOpenVerification = { showMoreDrawer = false; navController.navigate(Routes.VERIFICATION) { launchSingleTop = true } },
-                        onOpenAnalytics = { showMoreDrawer = false; navController.navigate(Routes.ANALYTICS) { launchSingleTop = true } },
                         onOpenAccountDelete = { showMoreDrawer = false; navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
                         onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) { launchSingleTop = true } },
-                        onOpenAboutUs = { showMoreDrawer = false; navController.navigate(Routes.ABOUT_US) { launchSingleTop = true } },
-                        onOpenContactUs = { showMoreDrawer = false; navController.navigate(Routes.CONTACT_US) { launchSingleTop = true } },
-                        onOpenFaq = { showMoreDrawer = false; navController.navigate(Routes.FAQ) { launchSingleTop = true } },
                         onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) { launchSingleTop = true } },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
                         onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
@@ -1395,7 +1386,7 @@ enum class BottomTab(
     val iconFilled: ImageVector,
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
-    ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.GridView, Icons.Filled.GridView),
+    ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.Search, Icons.Filled.Search),
     CHAT(Routes.CHAT, R.string.nav_chat, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
 }
