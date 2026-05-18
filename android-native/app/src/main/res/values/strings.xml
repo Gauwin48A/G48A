@@ -555,8 +555,10 @@
     <!-- Commerce: Bought/Sold/Offers -->
     <string name="bought_title">Bought Posts</string>
     <string name="bought_empty">No purchases yet</string>
+    <string name="bought_empty_subtitle">Items you\'ve bought will appear here</string>
     <string name="sold_title">Sold Posts</string>
     <string name="sold_empty">No sales yet</string>
+    <string name="sold_empty_subtitle">Items you\'ve sold will appear here</string>
     <string name="offers_title">My Offers</string>
     <string name="offers_empty">No offers yet</string>
     <string name="cart_title">Cart</string>
