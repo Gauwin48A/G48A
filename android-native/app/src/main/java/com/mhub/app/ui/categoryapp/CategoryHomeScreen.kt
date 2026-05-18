@@ -36,6 +36,8 @@ import com.mhub.app.ui.components.SectionHeader
 import com.mhub.app.ui.components.SubcategoryChipRow
 import com.mhub.app.ui.components.SubcategoryChipShimmer
 import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -53,34 +55,35 @@ fun CategoryHomeScreen(
     onOpenAllCategories: () -> Unit,
     onOpenListing: () -> Unit,
     onAddToCart: (String) -> Unit = {},
+    viewModel: CategoryAppViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
-    var isLoading by rememberSaveable { mutableStateOf(false) }
+
+    val vmState by viewModel.state.collectAsState()
+    val isLoading = vmState.isLoading
 
     val banners     = remember(categoryKey) { MockDataProvider.bannersFor(categoryKey) }
     val subcats     = remember(categoryKey) { MockDataProvider.subcategoriesFor(categoryKey) }
-    val allProducts = remember(categoryKey) { MockDataProvider.productsForCategory(categoryKey) }
-    val deals       = remember(categoryKey) { MockDataProvider.dealsFor(categoryKey) }
-    val trending    = remember(categoryKey) { MockDataProvider.trendingFor(categoryKey) }
-    val newArrivals = remember(categoryKey) { MockDataProvider.newArrivalsFor(categoryKey) }
-    val featured    = remember(categoryKey) { allProducts.take(6) }
+    val allProducts = vmState.products
+    val deals       = remember(allProducts) { allProducts.filter { it.isDeal || it.price < it.originalPrice * 0.85 }.take(8).ifEmpty { MockDataProvider.dealsFor(categoryKey) } }
+    val trending    = remember(allProducts) { allProducts.filter { it.isTrending || it.reviewCount > 5 }.take(10).ifEmpty { MockDataProvider.trendingFor(categoryKey) } }
+    val newArrivals = remember(allProducts) { allProducts.filter { it.isNewArrival }.take(8).ifEmpty { MockDataProvider.newArrivalsFor(categoryKey) } }
+    val featured    = remember(allProducts) { allProducts.take(6) }
 
-    // Wishlist state (in real app this flows from ViewModel)
+    // Wishlist state (flows from ViewModel in future)
     val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
 
     val onRefresh: () -> Unit = {
         scope.launch {
             isRefreshing = true
-            delay(800L) // simulate network refresh
+            viewModel.load(categoryKey)
             isRefreshing = false
         }
     }
 
     LaunchedEffect(categoryKey) {
-        isLoading = true
-        delay(300)
-        isLoading = false
+        viewModel.load(categoryKey)
     }
 
     if (isLoading) {

@@ -198,7 +198,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text("Your Rank", fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text(stringResource(R.string.account_your_rank), fontSize = 11.sp, color = Color(0xFF64748B))
                                     Text("${state.userRank} Member", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = rankColor)
                                 }
                             }
@@ -255,10 +255,10 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                 if (state.viewMode == "seller") {
                     item {
                         val statsToShow = state.stats.take(4)
-                        Text("Quick Stats", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(R.string.account_quick_stats), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                         Spacer(Modifier.height(10.dp))
                         if (statsToShow.isEmpty()) {
-                            Text("No stats available yet", fontSize = 13.sp, color = Color(0xFF64748B))
+                            Text(stringResource(R.string.account_no_stats), fontSize = 13.sp, color = Color(0xFF64748B))
                         } else {
                         for (i in statsToShow.indices step 2) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
@@ -277,7 +277,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                     // Top Sellers Leaderboard
                     if (state.topSellers.isNotEmpty()) {
                         item { 
-                            Text("Top Sellers This Month", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Text(stringResource(R.string.account_top_sellers), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                             Spacer(Modifier.height(4.dp))
                         }
                         item {
@@ -311,7 +311,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                     // Buyer Activity Section
                     state.buyerStats?.let { bs ->
                         item {
-                            Text("Buyer Activity", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Text(stringResource(R.string.account_buyer_activity), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
                                 BuyerStatCard(Modifier.weight(1f), "${bs.itemsBought}", "Items Bought", Icons.Filled.ShoppingCart, Color(0xFF22C55E))
@@ -325,7 +325,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                     }
                 }
                 if (state.activity.isNotEmpty()) {
-                    item { Text("Recent Activity", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                    item { Text(stringResource(R.string.account_recent_activity), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
                     items(state.activity.take(10), key = { it.id ?: it.createdAt ?: "" }) { a ->
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -490,7 +490,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                             Spacer(Modifier.height(12.dp))
                             if (state.passwordChanged) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
-                                    Text("Password changed successfully!", color = Color(0xFF22C55E), fontSize = 13.sp, modifier = Modifier.padding(12.dp))
+                                    Text(stringResource(R.string.account_password_changed), color = Color(0xFF22C55E), fontSize = 13.sp, modifier = Modifier.padding(12.dp))
                                 }
                             } else {
                                 state.passwordError?.let { Text(it, color = Color(0xFFDC2626), fontSize = 12.sp) }
@@ -542,13 +542,13 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                             }
                             Spacer(Modifier.height(8.dp))
                             if (state.twoFaQr != null) {
-                                Text("Scan this QR code with your authenticator app:", fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text(stringResource(R.string.account_2fa_qr_hint), fontSize = 12.sp, color = Color(0xFF64748B))
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                                     Text(state.twoFaQr ?: "", fontSize = 11.sp, color = Color(0xFF374151), modifier = Modifier.padding(12.dp))
                                 }
                             }
                             if (state.twoFaBackupCodes.isNotEmpty()) {
-                                Text("Backup Codes (save these!):", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFFEF4444))
+                                Text(stringResource(R.string.account_backup_codes), fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFFEF4444))
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFF7ED), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Text(state.twoFaBackupCodes.joinToString("\n"), fontSize = 12.sp, color = Color(0xFF374151), modifier = Modifier.padding(12.dp))
                                 }
@@ -562,23 +562,23 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                                     }
                                 } else {
                                     OutlinedTextField(value = state.twoFaCode, onValueChange = viewModel::setTwoFaCode,
-                                        placeholder = { Text("Enter 6-digit code") }, singleLine = true,
+                                        placeholder = { Text(stringResource(R.string.account_enter_6digit)) }, singleLine = true,
                                         shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth(),
                                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
                                     Spacer(Modifier.height(8.dp))
                                     Button(onClick = { viewModel.verify2fa() }, shape = RoundedCornerShape(10.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                                        modifier = Modifier.fillMaxWidth().height(40.dp)) { Text("Verify & Enable", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                                        modifier = Modifier.fillMaxWidth().height(40.dp)) { Text(stringResource(R.string.account_verify_enable), fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                                 }
                             } else {
                                 OutlinedTextField(value = state.twoFaCode, onValueChange = viewModel::setTwoFaCode,
-                                    placeholder = { Text("Enter code to disable") }, singleLine = true,
+                                    placeholder = { Text(stringResource(R.string.account_enter_6digit)) }, singleLine = true,
                                     shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth(),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
                                 Spacer(Modifier.height(8.dp))
                                 OutlinedButton(onClick = { viewModel.disable2fa() }, shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
-                                    modifier = Modifier.fillMaxWidth().height(40.dp)) { Text("Disable 2FA", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                                    modifier = Modifier.fillMaxWidth().height(40.dp)) { Text(stringResource(R.string.account_disable_2fa), fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                             }
                         }
                     }
@@ -588,10 +588,10 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("Active Sessions (${state.sessions.size})", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                         Spacer(Modifier.weight(1f))
-                        if (state.sessions.size > 1) TextButton(onClick = { viewModel.revokeAll() }) { Text("Revoke All", color = Color(0xFFDC2626), fontSize = 12.sp) }
+                        if (state.sessions.size > 1) TextButton(onClick = { viewModel.revokeAll() }) { Text(stringResource(R.string.account_revoke_all), color = Color(0xFFDC2626), fontSize = 12.sp) }
                     }
                 }
-                if (state.sessions.isEmpty()) item { Text("No active sessions.", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                if (state.sessions.isEmpty()) item { Text(stringResource(R.string.account_no_sessions), fontSize = 13.sp, color = Color(0xFF64748B)) }
                 items(state.sessions, key = { it.stableId }) { session ->
                     Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
@@ -603,7 +603,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                                     Text("IP: ${session.maskedIp}", fontSize = 11.sp, color = Color(0xFF94A3B8))
                                     if (session.userAgent != null) Text(session.userAgent.take(50), fontSize = 10.sp, color = Color(0xFFBFDBFE), maxLines = 1)
                                 }
-                                OutlinedButton(onClick = { session.sessionId?.let { viewModel.revokeSession(it) } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), modifier = Modifier.height(30.dp)) { Text("Revoke", fontSize = 11.sp) }
+                                OutlinedButton(onClick = { session.sessionId?.let { viewModel.revokeSession(it) } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), modifier = Modifier.height(30.dp)) { Text(stringResource(R.string.account_revoke), fontSize = 11.sp) }
                             }
                             if (session.lastActivity != null) { Spacer(Modifier.height(4.dp)); Text("Last active: ${session.lastActivity.take(16).replace("T", " ")}", fontSize = 11.sp, color = Color(0xFF94A3B8)) }
                             if (session.createdAt != null) Text("Created: ${session.createdAt.take(10)}", fontSize = 10.sp, color = Color(0xFFBFDBFE))
@@ -660,26 +660,26 @@ fun AccountDeleteScreen(onBack: () -> Unit, viewModel: DeleteAccountViewModel = 
                         Icon(Icons.Filled.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(10.dp))
                         Column {
-                            Text("This action is permanent", fontWeight = FontWeight.SemiBold, color = Color(0xFF92400E))
+                            Text(stringResource(R.string.account_permanent_action), fontWeight = FontWeight.SemiBold, color = Color(0xFF92400E))
                             Spacer(Modifier.height(4.dp))
-                            Text("Deleting your account will remove all your data, listings, messages, and history. This cannot be undone.", fontSize = 13.sp, color = Color(0xFFB45309))
+                            Text(stringResource(R.string.account_delete_warning), fontSize = 13.sp, color = Color(0xFFB45309))
                         }
                     }
                 }
                 Column {
-                    Text("Reason (optional)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.account_delete_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text("Why are you deleting?", color = Color(0xFF94A3B8)) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text(stringResource(R.string.account_delete_reason_hint), color = Color(0xFF94A3B8)) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), modifier = Modifier.fillMaxWidth())
                 }
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                 if (!state.confirmed) {
                     Button(onClick = { viewModel.confirm() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)), modifier = Modifier.fillMaxWidth().height(50.dp)) {
                         Icon(Icons.Filled.Delete, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Delete My Account", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.account_delete_btn), fontWeight = FontWeight.SemiBold)
                     }
                 } else {
-                    Text("Are you absolutely sure? This cannot be undone.", fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626))
+                    Text(stringResource(R.string.account_delete_sure), fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626))
                     Spacer(Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         OutlinedButton(onClick = { viewModel.cancel() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Cancel") }
@@ -732,22 +732,22 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF22C55E)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Verified, null, tint = Color.White, modifier = Modifier.size(44.dp)) }
                         Spacer(Modifier.height(20.dp))
-                        Text("Account Verified!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF166534))
+                        Text(stringResource(R.string.account_verified_title), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF166534))
                         Spacer(Modifier.height(8.dp))
-                        Text("Your account has been verified. You can now access all features.", fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.account_verified_msg), fontSize = 14.sp, color = Color(0xFF64748B))
                     }
                 }
                 "pending" -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.HourglassTop, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("Verification Pending", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(R.string.account_pending_title), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
                         Spacer(Modifier.height(8.dp))
-                        Text("We're reviewing your documents. This usually takes 1-2 business days.", fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.account_pending_msg), fontSize = 14.sp, color = Color(0xFF64748B))
                     }
                 }
                 else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Submit documents to verify your identity and unlock seller features.", fontSize = 14.sp, color = Color(0xFF64748B))
+                    Text(stringResource(R.string.account_verify_submit_hint), fontSize = 14.sp, color = Color(0xFF64748B))
                     state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                     Text("Document Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -844,7 +844,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                     item {
                         Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp)) {
-                                Text("Revenue", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                Text(stringResource(R.string.account_revenue), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                                 Spacer(Modifier.height(8.dp))
                                 Text("₹${(ss?.totalRevenue ?: d?.totalRevenue ?: 0.0).toLong()}", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color(0xFF22C55E))
                                 Spacer(Modifier.height(8.dp))
@@ -864,7 +864,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                 }
                                 // Simple bar chart
                                 Spacer(Modifier.height(12.dp))
-                                Text("Performance Overview", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF64748B))
+                                Text(stringResource(R.string.account_performance), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF64748B))
                                 Spacer(Modifier.height(8.dp))
                                 val maxVal = maxOf(ss?.totalViews ?: 1, ss?.totalInquiries ?: 1, ss?.soldPosts ?: 1, 1).toFloat()
                                 listOf("Views" to (ss?.totalViews ?: d?.postViews ?: 0) to Color(0xFF8B5CF6),
@@ -884,7 +884,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                     }
                     // Post analytics
                     if (state.postAnalytics.isNotEmpty()) {
-                        item { Text("Post Performance", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                        item { Text(stringResource(R.string.account_post_performance), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
                         items(state.postAnalytics.take(10), key = { it.postId ?: it.title ?: "" }) { pa ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -900,7 +900,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                     }
                     // Category analytics
                     if (state.categoryAnalytics.isNotEmpty()) {
-                        item { Text("Category Breakdown", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                        item { Text(stringResource(R.string.account_category_breakdown), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
                         items(state.categoryAnalytics, key = { it.category ?: "" }) { ca ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -913,7 +913,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                         }
                     }
                     if (d != null && d.topPerforming.isNotEmpty()) {
-                        item { Text("Top Performing Listings", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                        item { Text(stringResource(R.string.account_top_listings), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
                         items(d.topPerforming.take(5)) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {

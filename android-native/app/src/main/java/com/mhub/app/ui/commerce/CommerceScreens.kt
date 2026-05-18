@@ -404,7 +404,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     // Upload progress
                     if (state.uploading) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Uploading images…", fontSize = 12.sp, color = Color(0xFF64748B))
+                            Text(stringResource(R.string.commerce_uploading), fontSize = 12.sp, color = Color(0xFF64748B))
                             LinearProgressIndicator(
                                 progress = { state.uploadProgress },
                                 modifier = Modifier.fillMaxWidth(),
@@ -494,7 +494,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     MhubTextField("Model", state.model, viewModel::setModel)
 
                     // Warranty select
-                    Text("Warranty", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.commerce_warranty), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("No warranty", "3 months", "6 months", "1 year", "2+ years").forEach { w ->
                             val sel = state.warranty == w
@@ -515,7 +515,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     MhubTextFieldWithCounter("Age (months)", state.ageMonths, viewModel::setAgeMonths, maxLength = 3)
 
                     // Condition selector
-                    Text("Condition", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.commerce_condition), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("New", "Like New", "Good", "Fair").forEach { cond ->
                             val selected = state.condition.equals(cond, ignoreCase = true)
@@ -535,7 +535,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     }
 
                     // Contact preference
-                    Text("Contact Preference", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.commerce_contact_pref), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("call" to "📞 Call", "chat" to "💬 Chat", "both" to "✅ Both").forEach { (key, label) ->
                             val sel = state.contactPreference == key
@@ -570,10 +570,10 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                             if (state.saving) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                    Text("Saving…", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.commerce_saving), color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                             } else {
-                                Text("Save Changes", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.commerce_save_changes), color = Color.White, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -716,7 +716,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Column(Modifier.padding(12.dp)) {
                                 // Header row
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text("Feature", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(120.dp))
+                                    Text(stringResource(R.string.commerce_feature_col), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(120.dp))
                                     tierNames.forEach { name ->
                                         Text(name, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF1E293B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
                                     }
@@ -892,7 +892,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
             }
             // Sort dropdown
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Sort by:", fontSize = 13.sp, color = Color(0xFF64748B))
+                Text(stringResource(R.string.commerce_sort_by), fontSize = 13.sp, color = Color(0xFF64748B))
                 Spacer(Modifier.width(8.dp))
                 Box {
                     Surface(
@@ -1048,17 +1048,17 @@ private fun MyPostCard(
                     }
                     DropdownMenu(expanded = isMenuOpen, onDismissRequest = onMenuDismiss) {
                         DropdownMenuItem(
-                            text = { Text("Edit") },
+                            text = { Text(stringResource(R.string.btn_edit)) },
                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
                             onClick = { onEdit(); onMenuDismiss() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Promote") },
+                            text = { Text(stringResource(R.string.btn_promote)) },
                             leadingIcon = { Icon(Icons.Filled.TrendingUp, null) },
                             onClick = { onPromote(); onMenuDismiss() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete", color = Color(0xFFEF4444)) },
+                            text = { Text(stringResource(R.string.btn_delete), color = Color(0xFFEF4444)) },
                             leadingIcon = { Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444)) },
                             onClick = { onDelete(); onMenuDismiss() },
                         )
@@ -1137,7 +1137,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                 else -> {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
-                        placeholder = { Text("Search sales…") },
+                        placeholder = { Text(stringResource(R.string.commerce_search_sales)) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
                         trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
                         singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -1168,7 +1168,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                                             if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
                                         }
                                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
-                                            Text("SOLD", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                            Text(stringResource(R.string.commerce_badge_sold), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                                         }
                                     }
                                     // Per-item analytics row (web-parity: SoldPosts.jsx inline stats)
@@ -1239,7 +1239,7 @@ private fun PostsListScreen(
                     // Search bar
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
-                        placeholder = { Text("Search by title or location…") },
+                        placeholder = { Text(stringResource(R.string.commerce_search_location)) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
                         trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
                         singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -1348,7 +1348,7 @@ fun OffersScreen(onBack: () -> Unit, viewModel: OffersViewModel = hiltViewModel(
             }
             // Search + status filters
             OutlinedTextField(value = state.search, onValueChange = { viewModel.setSearch(it) },
-                placeholder = { Text("Search by name or title…") },
+                placeholder = { Text(stringResource(R.string.commerce_search_name)) },
                 leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
                 singleLine = true, shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
@@ -1448,7 +1448,7 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                             if (expiryLabel.contains("m left") || (expiryLabel.contains("h left") && expiryLabel.startsWith("1") || expiryLabel.startsWith("2"))) {
                                 Spacer(Modifier.width(4.dp))
                                 Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFEF4444)) {
-                                    Text("URGENT", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
+                                    Text(stringResource(R.string.commerce_badge_urgent), fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
                                 }
                             }
@@ -1465,18 +1465,18 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                 if (showCounter) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = counterPrice, onValueChange = { counterPrice = it }, singleLine = true,
-                            placeholder = { Text("Counter ₹") }, shape = RoundedCornerShape(10.dp),
+                            placeholder = { Text(stringResource(R.string.commerce_counter_price)) }, shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
                         Button(onClick = { counterPrice.toDoubleOrNull()?.let { onCounter(it); showCounter = false } },
                             shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
-                            contentPadding = PaddingValues(horizontal = 12.dp)) { Text("Send") }
+                            contentPadding = PaddingValues(horizontal = 12.dp)) { Text(stringResource(R.string.btn_send)) }
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onDecline, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("Decline", color = Color(0xFFDC2626)) }
-                        OutlinedButton(onClick = { showCounter = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("Counter", color = Color(0xFF3B82F6)) }
-                        Button(onClick = onAccept, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text("Accept") }
+                        OutlinedButton(onClick = onDecline, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text(stringResource(R.string.btn_decline), color = Color(0xFFDC2626)) }
+                        OutlinedButton(onClick = { showCounter = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text(stringResource(R.string.btn_counter), color = Color(0xFF3B82F6)) }
+                        Button(onClick = onAccept, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text(stringResource(R.string.btn_accept)) }
                     }
                 }
             }
@@ -1634,8 +1634,8 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                 Text(if (state.selectedIds.isEmpty()) "Select All" else "${state.selectedIds.size} selected",
                                     fontSize = 13.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
                                 if (state.selectedIds.isNotEmpty()) {
-                                    TextButton(onClick = { viewModel.bulkSaveForLater() }) { Text("Save for Later", fontSize = 12.sp) }
-                                    TextButton(onClick = { viewModel.bulkRemove() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text("Remove", fontSize = 12.sp) }
+                                    TextButton(onClick = { viewModel.bulkSaveForLater() }) { Text(stringResource(R.string.commerce_save_for_later), fontSize = 12.sp) }
+                                    TextButton(onClick = { viewModel.bulkRemove() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text(stringResource(R.string.btn_remove), fontSize = 12.sp) }
                                 }
                             }
                         }
@@ -1711,12 +1711,12 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(6.dp))
-                                            Text("Delivery Address", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            Text(stringResource(R.string.commerce_delivery_address), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                         }
                                         Spacer(Modifier.height(8.dp))
                                         OutlinedTextField(
                                             value = state.deliveryAddress, onValueChange = { viewModel.setDeliveryAddress(it) },
-                                            placeholder = { Text("Enter delivery address…") },
+                                            placeholder = { Text(stringResource(R.string.commerce_delivery_address_hint)) },
                                             maxLines = 2, minLines = 2, shape = RoundedCornerShape(10.dp),
                                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                             modifier = Modifier.fillMaxWidth(),
@@ -1732,7 +1732,7 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Filled.Payment, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(6.dp))
-                                            Text("Payment Method", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            Text(stringResource(R.string.commerce_payment_method), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                         }
                                         Spacer(Modifier.height(10.dp))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1768,16 +1768,16 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                             item {
                                 Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(14.dp)) {
-                                        Text("Have a coupon?", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                        Text(stringResource(R.string.commerce_have_coupon), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                         Spacer(Modifier.height(8.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             OutlinedTextField(value = state.couponCode, onValueChange = { viewModel.setCouponCode(it) },
-                                                placeholder = { Text("Enter code") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                                placeholder = { Text(stringResource(R.string.commerce_enter_code)) }, singleLine = true, shape = RoundedCornerShape(10.dp),
                                                 modifier = Modifier.weight(1f),
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
                                             Button(onClick = { viewModel.applyCoupon() }, shape = RoundedCornerShape(10.dp),
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) { Text("Apply") }
+                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) { Text(stringResource(R.string.commerce_apply)) }
                                         }
                                         state.couponMessage?.let { msg ->
                                             Spacer(Modifier.height(4.dp))
@@ -1793,7 +1793,7 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Filled.LocalShipping, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Estimated delivery: 2-7 business days", fontSize = 13.sp, color = Color(0xFF166534))
+                                        Text(stringResource(R.string.commerce_est_delivery), fontSize = 13.sp, color = Color(0xFF166534))
                                     }
                                 }
                             }
@@ -1815,7 +1815,7 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                 }
                                 if (state.couponDiscount > 0) {
                                     Row(Modifier.fillMaxWidth()) {
-                                        Text("Discount", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                        Text(stringResource(R.string.commerce_discount), fontSize = 14.sp, color = Color(0xFF22C55E))
                                         Spacer(Modifier.weight(1f))
                                         Text("-₹${state.couponDiscount.toLong()}", fontSize = 14.sp, color = Color(0xFF22C55E))
                                     }
@@ -2034,7 +2034,7 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                     Text(stringResource(R.string.recently_viewed_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                     if (state.posts.isNotEmpty()) Text("${state.posts.size} items browsed", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
-                if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text("Clear All", color = Color(0xFFEF4444), fontSize = 13.sp) }
+                if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text(stringResource(R.string.btn_clear_all), color = Color(0xFFEF4444), fontSize = 13.sp) }
                 IconButton(onClick = { bulkSelect = !bulkSelect; if (!bulkSelect) selectedIds = emptySet() }, modifier = Modifier.size(36.dp)) {
                     Icon(if (bulkSelect) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank, null, tint = if (bulkSelect) Color(0xFF2563EB) else Color(0xFF64748B))
                 }
@@ -2048,7 +2048,7 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                 else -> {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
-                        placeholder = { Text("Search recently viewed…") },
+                        placeholder = { Text(stringResource(R.string.commerce_search_recently)) },
                         leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
                         trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
                         singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -2074,9 +2074,9 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("${selectedIds.size} selected", fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
                                 TextButton(onClick = { selectedIds.forEach { viewModel.removePost(it) }; selectedIds = emptySet(); bulkSelect = false }) {
-                                    Text("Delete Selected", color = Color(0xFFDC2626))
+                                    Text(stringResource(R.string.btn_delete_selected), color = Color(0xFFDC2626))
                                 }
-                                TextButton(onClick = { selectedIds = emptySet(); bulkSelect = false }) { Text("Cancel") }
+                                TextButton(onClick = { selectedIds = emptySet(); bulkSelect = false }) { Text(stringResource(R.string.btn_cancel)) }
                             }
                         }
                     }
@@ -2289,16 +2289,16 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                     if (state.showCreateForm) item {
                         Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("New Saved Search", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                Text(stringResource(R.string.commerce_new_saved_search), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                                 HorizontalDivider(color = Color(0xFFE2E8F0))
                                 OutlinedTextField(value = state.newKeyword, onValueChange = { viewModel.setNewKeyword(it) },
-                                    placeholder = { Text("Keywords (e.g. iPhone 13)") },
+                                    placeholder = { Text(stringResource(R.string.commerce_keywords_hint)) },
                                     leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
                                     singleLine = true, shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                     modifier = Modifier.fillMaxWidth())
                                 OutlinedTextField(value = state.newLocation, onValueChange = { viewModel.setNewLocation(it) },
-                                    placeholder = { Text("Location (optional)") },
+                                    placeholder = { Text(stringResource(R.string.commerce_location_optional)) },
                                     leadingIcon = { Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
                                     singleLine = true, shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
@@ -2306,16 +2306,16 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                 // Price range
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     OutlinedTextField(value = state.newMinPrice, onValueChange = { viewModel.setNewMinPrice(it) },
-                                        placeholder = { Text("Min ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                        placeholder = { Text(stringResource(R.string.commerce_min_price)) }, singleLine = true, shape = RoundedCornerShape(10.dp),
                                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                         modifier = Modifier.weight(1f))
                                     OutlinedTextField(value = state.newMaxPrice, onValueChange = { viewModel.setNewMaxPrice(it) },
-                                        placeholder = { Text("Max ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                        placeholder = { Text(stringResource(R.string.commerce_max_price)) }, singleLine = true, shape = RoundedCornerShape(10.dp),
                                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                         modifier = Modifier.weight(1f))
                                 }
                                 // Category chips
-                                Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF374151))
+                                Text(stringResource(R.string.commerce_category), fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF374151))
                                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     categoryOptions.forEach { cat ->
                                         val sel = state.newCategory == cat
@@ -2390,7 +2390,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                     ) {
                                         Icon(Icons.Filled.PlayArrow, null, modifier = Modifier.size(14.dp))
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Run", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(stringResource(R.string.btn_run), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                     // Delete
                                     OutlinedButton(
@@ -2403,7 +2403,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                     ) {
                                         Icon(Icons.Filled.Delete, null, modifier = Modifier.size(14.dp))
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Delete", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(stringResource(R.string.btn_delete), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -2619,7 +2619,7 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
             // Search bar
             OutlinedTextField(
                 value = state.search, onValueChange = { viewModel.setSearch(it) },
-                placeholder = { Text("Search by title, seller, location…") },
+                placeholder = { Text(stringResource(R.string.commerce_search_bought)) },
                 leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
                 singleLine = true, shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
@@ -2641,7 +2641,7 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
             if (state.brands.isNotEmpty()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = state.selectedBrand == null, onClick = { viewModel.setBrand(null) },
-                        label = { Text("All Brands", fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
+                        label = { Text(stringResource(R.string.commerce_all_brands), fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                     state.brands.take(5).forEach { brand ->
                         FilterChip(selected = state.selectedBrand == brand.name, onClick = { viewModel.setBrand(brand.name) },
@@ -2799,8 +2799,8 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
             }
             // Seller / Buyer tabs
             TabRow(selectedTabIndex = if (state.tab == "seller") 0 else 1, containerColor = Color.Transparent) {
-                Tab(selected = state.tab == "seller", onClick = { viewModel.setTab("seller") }, text = { Text("Seller") })
-                Tab(selected = state.tab == "buyer", onClick = { viewModel.setTab("buyer") }, text = { Text("Buyer Confirm") })
+                Tab(selected = state.tab == "seller", onClick = { viewModel.setTab("seller") }, text = { Text(stringResource(R.string.commerce_tab_seller)) })
+                Tab(selected = state.tab == "buyer", onClick = { viewModel.setTab("buyer") }, text = { Text(stringResource(R.string.commerce_tab_buyer_confirm)) })
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
@@ -2813,24 +2813,24 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF22C55E)), contentAlignment = Alignment.Center) {
                                         Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(48.dp))
                                     }
-                                    Text("Sale Completed!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF14532D))
-                                    Text("Your sale has been confirmed successfully.", fontSize = 13.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF14532D))
+                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 13.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
                                 }
                             }
                             // Receipt card
                             Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("TRANSACTION RECEIPT", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF166534), letterSpacing = 1.5.sp)
+                                    Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF166534), letterSpacing = 1.5.sp)
                                     androidx.compose.material3.HorizontalDivider(color = Color(0xFF86EFAC))
                                     if (state.receiptId != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Receipt ID", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = Color(0xFF64748B))
                                             Text(state.receiptId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
                                         }
                                     }
                                     if (state.transactionId != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                            Text("Transaction", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(stringResource(R.string.commerce_transaction), fontSize = 13.sp, color = Color(0xFF64748B))
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                 Text(state.transactionId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
                                                 IconButton(
@@ -2846,7 +2846,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     }
                                     if (state.saleAmount.isNotBlank()) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Amount", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = Color(0xFF64748B))
                                             Text("₹${state.saleAmount}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
                                         }
                                     }
