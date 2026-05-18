@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.mhub.app.core.JwtHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +40,12 @@ class TokenStore @Inject constructor(context: Context) {
     private val _refreshToken = MutableStateFlow(prefs.getString(KEY_REFRESH, null))
 
     val accessToken: StateFlow<String?> = _accessToken.asStateFlow()
-    val isAuthenticated: Boolean get() = !_accessToken.value.isNullOrBlank()
+
+    /** True only if token is present AND not expired (with 60s buffer) */
+    val isAuthenticated: Boolean get() {
+        val token = _accessToken.value
+        return !token.isNullOrBlank() && !JwtHelper.isExpired(token, bufferSeconds = 60)
+    }
 
     suspend fun accessTokenBlocking(): String? = withContext(Dispatchers.IO) { _accessToken.value }
     suspend fun refreshTokenBlocking(): String? = withContext(Dispatchers.IO) { _refreshToken.value }

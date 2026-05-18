@@ -51,8 +51,9 @@ class TokenRefreshAuthenticator(
 
         try {
             val refreshToken = runBlocking { tokenStore.refreshTokenBlocking() } ?: run {
-                // No refresh token available — don't clear access token (let user stay logged in)
-                // Individual screens will handle unauthorized state gracefully
+                // No refresh token available — clear access token to force re-login
+                AppLogger.authTokenRefresh(false)
+                runBlocking { tokenStore.clear() }
                 return null
             }
 
@@ -67,9 +68,11 @@ class TokenRefreshAuthenticator(
                     .header("X-Retry-After-Refresh", "1")
                     .build()
             } else {
-                // Refresh failed — don't aggressively clear token (could be transient network issue)
-                // Token will be cleared on explicit logout
+                // Refresh definitively failed — clear tokens only if server rejected (not transient network)
                 AppLogger.authTokenRefresh(false)
+                if (lastRefreshWasServerRejection) {
+                    runBlocking { tokenStore.clear() }
+                }
                 return null
             }
         } finally {
@@ -101,12 +104,20 @@ class TokenRefreshAuthenticator(
                 val responseBody = response.body?.string() ?: return null
                 json.decodeFromString<RefreshResult>(responseBody)
             } else {
+                // Server explicitly rejected refresh — mark as definitive failure
+                lastRefreshWasServerRejection = true
                 null
             }
         } catch (_: Exception) {
+            // Network error — transient, don't clear tokens
+            lastRefreshWasServerRejection = false
             null
         }
     }
+
+    /** True if last refresh failure was a definitive server rejection (4xx/5xx), not a network error */
+    @Volatile
+    private var lastRefreshWasServerRejection = false
 
     private companion object {
         const val REFRESH_PATH = "api/auth/refresh-token"
