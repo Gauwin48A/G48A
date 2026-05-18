@@ -367,12 +367,18 @@ fun CreatePostScreen(
 
             // ── Condition selector ───────────────────────────────────
             Text(stringResource(R.string.post_condition_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val conditionOptions = listOf(
+                "New" to stringResource(R.string.post_condition_new),
+                "Like New" to stringResource(R.string.post_condition_like_new),
+                "Used" to stringResource(R.string.post_condition_used),
+                "Refurbished" to stringResource(R.string.post_condition_refurbished),
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("New", "Like New", "Used", "Refurbished").forEach { opt ->
+                conditionOptions.forEach { (apiValue, displayLabel) ->
                     FilterChip(
-                        selected = condition == opt,
-                        onClick = { condition = opt },
-                        label = { Text(opt) },
+                        selected = condition == apiValue,
+                        onClick = { condition = apiValue },
+                        label = { Text(displayLabel) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
