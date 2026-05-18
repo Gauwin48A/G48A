@@ -26,12 +26,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mhub.app.R
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
@@ -217,7 +219,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
                                 }) {
                                     Icon(Icons.Filled.Share, null, tint = Color(0xFF64748B), modifier = Modifier.size(22.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Share", fontSize = 14.sp, color = Color(0xFF64748B))
+                                    Text(stringResource(R.string.social_share), fontSize = 14.sp, color = Color(0xFF64748B))
                                 }
                             }
                         }
@@ -289,17 +291,17 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
     deleteTarget?.let { id ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete Post") },
-            text = { Text("Are you sure you want to delete this post? This cannot be undone.") },
-            confirmButton = { TextButton(onClick = { viewModel.deletePost(id); deleteTarget = null }) { Text("Delete", color = Color(0xFFEF4444)) } },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.social_delete_post)) },
+            text = { Text(stringResource(R.string.social_delete_confirm)) },
+            confirmButton = { TextButton(onClick = { viewModel.deletePost(id); deleteTarget = null }) { Text(stringResource(R.string.social_delete), color = Color(0xFFEF4444)) } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.social_cancel)) } },
         )
     }
     // Promote dialog
     promoteTarget?.let { post ->
         AlertDialog(
             onDismissRequest = { promoteTarget = null },
-            title = { Text("Promote Post 🚀") },
+            title = { Text(stringResource(R.string.social_promote_post)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Boost visibility for \"${post.title ?: post.displayContent.take(40)}...\"", fontSize = 14.sp)
@@ -319,8 +321,8 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { promoteTarget = null }) { Text("Promote", color = Color(0xFF2563EB)) } },
-            dismissButton = { TextButton(onClick = { promoteTarget = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { promoteTarget = null }) { Text(stringResource(R.string.social_promote), color = Color(0xFF2563EB)) } },
+            dismissButton = { TextButton(onClick = { promoteTarget = null }) { Text(stringResource(R.string.social_cancel)) } },
         )
     }
     // Share dialog
@@ -344,7 +346,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
                 }
             },
-            confirmButton = { TextButton(onClick = { shareTarget = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { shareTarget = null }) { Text(stringResource(R.string.social_close)) } },
         )
     }
     
@@ -374,7 +376,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
             }
             // Page-density toggle (web-parity: MyFeed.jsx densitySelector C8)
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Text("Density:", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
+                Text(stringResource(R.string.social_density), fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
                 listOf("compact" to "▤", "comfortable" to "≡", "spacious" to "☰").forEach { (mode, icon) ->
                     val sel = density == mode
                     Surface(modifier = Modifier.padding(2.dp).clickable { density = mode }, shape = RoundedCornerShape(6.dp), color = if (sel) Color(0xFF2563EB) else Color.Transparent) {
@@ -388,9 +390,9 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.DynamicFeed, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("No posts yet", fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
+                        Text(stringResource(R.string.social_no_posts_title), fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
                         Spacer(Modifier.height(8.dp))
-                        Text("Share something with your community", fontSize = 13.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.social_no_posts_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
                     }
                 }
                 else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
@@ -430,7 +432,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                             TextButton(onClick = { deleteTarget = item.stableId }) {
                                 Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Delete", color = Color(0xFFEF4444), fontSize = 12.sp)
+                                Text(stringResource(R.string.social_delete), color = Color(0xFFEF4444), fontSize = 12.sp)
                             }
                         }
                     }
@@ -481,7 +483,7 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB))
                 }
                 Spacer(Modifier.width(8.dp))
-                Text("New Post", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Text(stringResource(R.string.social_new_post), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                 Spacer(Modifier.weight(1f))
                 Button(
                     onClick = { viewModel.submit() }, enabled = !state.loading && state.content.length >= 5,
@@ -495,18 +497,18 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Info, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Feed posts are text-only. Share your thoughts!", fontSize = 12.sp, color = Color(0xFF2563EB))
+                        Text(stringResource(R.string.social_feed_text_only), fontSize = 12.sp, color = Color(0xFF2563EB))
                     }
                 }
                 // Title
                 Column {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Title (optional)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text(stringResource(R.string.social_title_optional), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                         Text("${state.title.length}/200", fontSize = 11.sp, color = Color(0xFF94A3B8))
                     }
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(value = state.title, onValueChange = viewModel::setTitle,
-                        placeholder = { Text("Give your post a title…") }, singleLine = true,
+                        placeholder = { Text(stringResource(R.string.social_title_hint)) }, singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                         modifier = Modifier.fillMaxWidth())
@@ -514,12 +516,12 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
                 // Content
                 Column {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Content *", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text(stringResource(R.string.social_content_required), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                         Text("${state.content.length}/500", fontSize = 11.sp, color = if (state.content.length < 5) Color(0xFFEF4444) else Color(0xFF94A3B8))
                     }
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(value = state.content, onValueChange = viewModel::setContent,
-                        placeholder = { Text("Share something with the community…") },
+                        placeholder = { Text(stringResource(R.string.social_content_hint)) },
                         shape = RoundedCornerShape(12.dp), maxLines = 10, minLines = 5,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                         modifier = Modifier.fillMaxWidth())
@@ -579,7 +581,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
             OutlinedTextField(
                 value = userSearchQuery,
                 onValueChange = { userSearchQuery = it },
-                placeholder = { Text("Search leaderboard by name…") },
+                placeholder = { Text(stringResource(R.string.social_search_leaderboard)) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 trailingIcon = { if (userSearchQuery.isNotEmpty()) IconButton(onClick = { userSearchQuery = "" }) { Icon(Icons.Filled.Clear, null) } },
                 singleLine = true,
@@ -600,16 +602,16 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                         Spacer(Modifier.height(12.dp))
                         Text(state.error ?: "Failed to load", color = Color(0xFF64748B), fontSize = 14.sp)
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.retry() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text("Retry") }
+                        Button(onClick = { viewModel.retry() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text(stringResource(R.string.social_retry)) }
                     }
                 }
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.Person, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("No posts on this wall yet", fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
+                        Text(stringResource(R.string.social_no_wall_posts), fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
                         Spacer(Modifier.height(4.dp))
-                        Text("Posts shared by this user will appear here", fontSize = 13.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.social_wall_posts_appear), fontSize = 13.sp, color = Color(0xFF64748B))
                     }
                 }
                 else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -634,7 +636,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                     item {
                         Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(14.dp)) {
-                                Text("Community Ranking", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                Text(stringResource(R.string.social_community_ranking), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                 Spacer(Modifier.height(10.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     val totalPosts = state.items.size
@@ -722,7 +724,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                 } else {
                     state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                     // Complaint type selector
-                    Text("Complaint Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.social_complaint_type), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                         complaintTypes.forEach { (key, label) ->
                             FilterChip(selected = state.type == key, onClick = { viewModel.setType(key) },
@@ -746,7 +748,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                     }
                 } else if (state.history.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("My Complaint History", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.social_complaint_history), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
                     state.history.forEach { complaint ->
                         val clipboardManager = LocalClipboardManager.current
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
@@ -831,7 +833,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
-                            Text("Thank you for your feedback!", fontSize = 14.sp, color = Color(0xFF166534))
+                            Text(stringResource(R.string.social_feedback_thanks), fontSize = 14.sp, color = Color(0xFF166534))
                         }
                     }
                 } else {
@@ -845,7 +847,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                         }
                     }
                     // Category buttons
-                    Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.social_category), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                         feedbackTypes.forEach { (key, label) ->
                             FilterChip(
@@ -854,7 +856,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                         }
                     }
-                    Text("Rating", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text(stringResource(R.string.social_rating), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         (1..5).forEach { i ->
                             IconButton(onClick = { viewModel.setRating(i) }, modifier = Modifier.size(36.dp)) {
@@ -984,7 +986,7 @@ fun ReviewsScreen(userId: String, onBack: () -> Unit, viewModel: ReviewsViewMode
                         if (state.showWriteForm) {
                             Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(16.dp)) {
-                                    Text("Write a Review", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                                    Text(stringResource(R.string.social_write_review), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                                     Spacer(Modifier.height(8.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         (1..5).forEach { i ->
@@ -1033,7 +1035,7 @@ fun ReviewsScreen(userId: String, onBack: () -> Unit, viewModel: ReviewsViewMode
                     // Reviews
                     if (filtered.isEmpty()) item {
                         Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("No reviews match your filter", color = Color(0xFF64748B))
+                            Text(stringResource(R.string.social_no_reviews_match), color = Color(0xFF64748B))
                         }
                     }
                     items(filtered, key = { it.stableId }) { review ->

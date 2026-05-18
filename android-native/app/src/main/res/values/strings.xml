@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MHub</string>
 
@@ -420,6 +420,7 @@
 
     <!-- Category Hub -->
     <string name="hub_choose_world">Choose Your World</string>
+    <string name="hub_subtitle">Select the app you want to open. Your choice becomes the active experience.</string>
     <string name="hub_search_placeholder">Search products, brands, categories…</string>
     <string name="hub_total_listings">Total Listings</string>
     <string name="hub_new_today">New Today</string>
@@ -595,8 +596,58 @@
     <string name="support_policy_title">Support Policy</string>
     <string name="shipping_policy_title">Shipping Policy</string>
     <string name="about_title">About Us</string>
+    <string name="about_headline">MHub — Your Local Marketplace</string>
+    <string name="about_description">MHub is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
+    <string name="about_mission_title">Our Mission</string>
+    <string name="about_mission">To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.</string>
+    <string name="about_vision_title">Our Vision</string>
+    <string name="about_vision">A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.</string>
+    <string name="about_why_title">Why Choose MHub?</string>
+    <string name="about_why">✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns &amp; refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards &amp; loyalty programme</string>
+    <string name="about_version_title">Version</string>
+    <string name="about_version">MHub App v1.1.0 · Made with ❤️ in India</string>
     <string name="contact_title">Contact Us</string>
+    <string name="contact_get_in_touch">Get in Touch</string>
+    <string name="contact_subtitle">We\'re here to help. Fill in the form or reach us directly.</string>
+    <string name="contact_send_message">Send a Message</string>
+    <string name="contact_your_name">Your Name</string>
+    <string name="contact_email">Email Address</string>
+    <string name="contact_message">Message</string>
+    <string name="contact_send">Send Message</string>
+    <string name="contact_success">✓ Message sent! We\'ll reply to %s within 24 hours.</string>
     <string name="faq_title">FAQ</string>
+    <string name="faq_search_hint">Search questions…</string>
+    <string name="faq_no_results">No matching questions found</string>
+
+    <!-- Commerce common -->
+    <string name="commerce_delete_post_title">Delete Post?</string>
+    <string name="commerce_delete_confirm">Are you sure? This cannot be undone.</string>
+    <string name="commerce_boost_title">Boost Your Listing</string>
+    <string name="commerce_no_posts">No posts found</string>
+    <string name="commerce_no_posts_desc">Create your first listing to get started</string>
+    <string name="commerce_cart">Cart</string>
+    <string name="commerce_saved_later">Saved for Later</string>
+    <string name="commerce_subtotal">Subtotal</string>
+    <string name="commerce_shipping">Shipping</string>
+    <string name="commerce_total">Total</string>
+    <string name="commerce_flash_sale">Flash Sale</string>
+    <string name="commerce_flash_sale_desc">Show as limited-time offer</string>
+
+    <!-- Social common -->
+    <string name="social_delete_post">Delete Post</string>
+    <string name="social_delete_confirm">Are you sure you want to delete this post? This cannot be undone.</string>
+    <string name="social_promote_post">Promote Post 🚀</string>
+    <string name="social_share_post">📤 Share Post</string>
+    <string name="social_no_posts">No posts yet</string>
+    <string name="social_submit_feedback">Submit Feedback</string>
+    <string name="social_submitting">Submitting…</string>
+
+    <!-- Account common -->
+    <string name="account_seller_view">Seller View</string>
+    <string name="account_buyer_view">Buyer View</string>
+    <string name="account_welcome_back">Welcome back,</string>
+    <string name="account_total_coins">Total Coins</string>
+    <string name="account_2fa_title">Two-Factor Authentication</string>
 
     <!-- Activity Hub -->
     <string name="activity_hub_title">Activity Hub</string>
@@ -1166,7 +1217,133 @@
     <string name="explore_no_results">No results found</string>
     <string name="explore_no_results_desc">Try a shorter or different search term.</string>
     <string name="explore_search_hint">Search products, services, jobs…</string>
+    <string name="explore_marketplace">Marketplace</string>
+    <string name="explore_items_count">📦 %d items</string>
+    <string name="explore_browse_label">📦 Browse</string>
+    <string name="explore_live_market">⚡ Live market</string>
+    <string name="explore_categories_count">%d categories</string>
+    <string name="explore_sponsored">SPONSORED</string>
+    <string name="explore_great_deals">Great Deals</string>
+    <string name="explore_great_deals_desc">Up to 50% off on select items</string>
+    <string name="explore_shop_now">⚡ Shop now</string>
+    <string name="explore_see_all">See All</string>
+    <string name="explore_filter_new">New</string>
+    <string name="explore_filter_trending">Trending</string>
+    <string name="explore_filter_top_rated">Top Rated</string>
+    <string name="explore_filter_offers">Offers</string>
+    <string name="explore_price_under_1k">Under ₹1K</string>
+    <string name="explore_price_1k_5k">₹1K-5K</string>
+    <string name="explore_price_5k_20k">₹5K-20K</string>
+    <string name="explore_price_above_20k">Above ₹20K</string>
+    <string name="explore_clear">Clear</string>
 
     <!-- General -->
     <string name="msg_press_back_exit">Press back again to exit</string>
+
+    <!-- Social Screens -->
+    <string name="social_share">Share</string>
+    <string name="social_delete">Delete</string>
+    <string name="social_cancel">Cancel</string>
+    <string name="social_close">Close</string>
+    <string name="social_retry">Retry</string>
+    <string name="social_search_posts_hint">Search your posts…</string>
+    <string name="social_density">Density:</string>
+    <string name="social_no_posts_title">No posts yet</string>
+    <string name="social_no_posts_subtitle">Share something with your community</string>
+    <string name="social_new_post">New Post</string>
+    <string name="social_feed_text_only">Feed posts are text-only. Share your thoughts!</string>
+    <string name="social_title_optional">Title (optional)</string>
+    <string name="social_title_hint">Give your post a title…</string>
+    <string name="social_content_required">Content *</string>
+    <string name="social_content_hint">Share something with the community…</string>
+    <string name="social_search_leaderboard">Search leaderboard by name…</string>
+    <string name="social_no_wall_posts">No posts on this wall yet</string>
+    <string name="social_wall_posts_appear">Posts shared by this user will appear here</string>
+    <string name="social_community_ranking">Community Ranking</string>
+    <string name="social_complaint_success">Complaint submitted successfully. We\'ll review it soon.</string>
+    <string name="social_complaint_type">Complaint Type</string>
+    <string name="social_complaint_history">My Complaint History</string>
+    <string name="social_ref">Ref: %s</string>
+    <string name="social_feedback_thanks">Thank you for your feedback!</string>
+    <string name="social_feedback_ref">Reference: %s</string>
+    <string name="social_category">Category</string>
+    <string name="social_rating">Rating</string>
+    <string name="social_write_review">Write a Review</string>
+    <string name="social_review_hint">Share your experience…</string>
+    <string name="social_all">All</string>
+    <string name="social_no_reviews_match">No reviews match your filter</string>
+    <string name="social_verified">Verified</string>
+    <string name="social_seller_response">Seller Response</string>
+    <string name="social_helpful">Helpful (%d)</string>
+    <string name="social_boost_visibility">Boost visibility for \"%s\"…</string>
+    <string name="social_promote">Promote</string>
+    <string name="social_share_post_title">📤 Share Post</string>
+
+    <!-- Commerce Screens -->
+    <string name="commerce_create_listing">Create your first listing to get started</string>
+    <string name="commerce_flash_sale_show">Show as limited-time offer</string>
+    <string name="commerce_inventory">Inventory</string>
+    <string name="commerce_order_history">Order History</string>
+    <string name="commerce_no_orders">No orders yet</string>
+    <string name="commerce_order_placed">Order placed</string>
+    <string name="commerce_order_id">Order ID: %s</string>
+    <string name="commerce_view_details">View Details</string>
+    <string name="commerce_free_shipping">Free Shipping</string>
+    <string name="commerce_cod_available">Cash on Delivery Available</string>
+    <string name="commerce_add_to_cart">Add to Cart</string>
+    <string name="commerce_buy_now">Buy Now</string>
+    <string name="commerce_in_stock">In Stock</string>
+    <string name="commerce_out_of_stock">Out of Stock</string>
+    <string name="commerce_seller_info">Seller Information</string>
+    <string name="commerce_product_details">Product Details</string>
+    <string name="commerce_reviews_title">Reviews</string>
+    <string name="commerce_empty_cart">Your cart is empty</string>
+    <string name="commerce_empty_cart_desc">Add items to start shopping</string>
+    <string name="commerce_checkout">Checkout</string>
+    <string name="commerce_continue_shopping">Continue Shopping</string>
+    <string name="commerce_remove">Remove</string>
+    <string name="commerce_save_for_later">Save for Later</string>
+    <string name="commerce_move_to_cart">Move to Cart</string>
+    <string name="commerce_qty">Qty: %d</string>
+    <string name="commerce_price_format">₹%s</string>
+    <string name="commerce_original_price">₹%s</string>
+    <string name="commerce_discount_percent">%d%% off</string>
+    <string name="commerce_items_count">%d items</string>
+    <string name="commerce_delivery_by">Delivery by %s</string>
+    <string name="commerce_apply_coupon">Apply Coupon</string>
+    <string name="commerce_coupon_hint">Enter coupon code</string>
+    <string name="commerce_apply">Apply</string>
+
+    <!-- Account Screens -->
+    <string name="account_dashboard">Dashboard</string>
+    <string name="account_my_listings">My Listings</string>
+    <string name="account_active_listings">Active Listings</string>
+    <string name="account_pending">Pending</string>
+    <string name="account_sold">Sold</string>
+    <string name="account_earnings">Earnings</string>
+    <string name="account_total_earnings">Total Earnings</string>
+    <string name="account_this_month">This Month</string>
+    <string name="account_security">Security</string>
+    <string name="account_change_password">Change Password</string>
+    <string name="account_current_password">Current Password</string>
+    <string name="account_new_password">New Password</string>
+    <string name="account_confirm_password">Confirm Password</string>
+    <string name="account_update_password">Update Password</string>
+    <string name="account_kyc_title">KYC Verification</string>
+    <string name="account_kyc_pending">Verification Pending</string>
+    <string name="account_kyc_verified">Verified</string>
+    <string name="account_kyc_not_started">Not Started</string>
+    <string name="account_kyc_start">Start Verification</string>
+    <string name="account_2fa_enable">Enable</string>
+    <string name="account_2fa_disable">Disable</string>
+    <string name="account_addresses">Saved Addresses</string>
+    <string name="account_add_address">Add Address</string>
+    <string name="account_payment_methods">Payment Methods</string>
+    <string name="account_add_payment">Add Payment Method</string>
+    <string name="account_notifications_title">Notification Settings</string>
+    <string name="account_email_notif">Email Notifications</string>
+    <string name="account_push_notif">Push Notifications</string>
+    <string name="account_sms_notif">SMS Notifications</string>
+    <string name="account_delete_account">Delete Account</string>
+    <string name="account_delete_confirm">Are you sure you want to delete your account? This action cannot be undone.</string>
 </resources>

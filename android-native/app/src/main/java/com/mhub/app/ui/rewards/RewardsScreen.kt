@@ -326,8 +326,8 @@ fun RewardsScreen(
                         Text(stringResource(R.string.rewards_sign_in_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(stringResource(R.string.rewards_sign_in_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(4.dp))
-                        PrimaryButton(text = "Sign in", onClick = onSignInRequired)
-                        SecondaryButton(text = "Browse marketplace", onClick = onBrowseMarketplace)
+                        PrimaryButton(text = stringResource(R.string.action_sign_in), onClick = onSignInRequired)
+                        SecondaryButton(text = stringResource(R.string.rewards_browse_marketplace), onClick = onBrowseMarketplace)
                     }
                 }
             }

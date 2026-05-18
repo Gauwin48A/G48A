@@ -371,5 +371,55 @@
     <string name="explore_no_results_desc">చిన్న లేదా భిన్నమైన శోధన పదం ప్రయత్నించండి.</string>
     <string name="explore_search_hint">ఉత్పత్తులు, సేవలు, ఉద్యోగాలు శోధించండి…</string>
     <string name="msg_press_back_exit">నిష్క్రమించడానికి మళ్ళీ వెనుకకు నొక్కండి</string>
+
+    <string name="hub_subtitle">మీరు తెరవాలనుకుంటున్న యాప్ ఎంచుకోండి. మీ ఎంపిక యాక్టివ్ అనుభవంగా మారుతుంది.</string>
+    <string name="explore_marketplace">మార్కెట్‌ప్లేస్</string>
+    <string name="explore_items_count">📦 %d ఐటమ్‌లు</string>
+    <string name="explore_browse_label">📦 బ్రౌజ్ చేయండి</string>
+    <string name="explore_live_market">⚡ లైవ్ మార్కెట్</string>
+    <string name="explore_categories_count">%d వర్గాలు</string>
+    <string name="explore_sponsored">ప్రాయోజిత</string>
+    <string name="explore_great_deals">గొప్ప డీల్స్</string>
+    <string name="explore_great_deals_desc">ఎంచుకున్న ఐటమ్‌లపై 50% వరకు తగ్గింపు</string>
+    <string name="explore_shop_now">⚡ ఇప్పుడే కొనుగోలు చేయండి</string>
+    <string name="explore_see_all">అన్నీ చూడండి</string>
+    <string name="explore_filter_new">కొత్తది</string>
+    <string name="explore_filter_trending">ట్రెండింగ్</string>
+    <string name="explore_filter_top_rated">టాప్ రేటెడ్</string>
+    <string name="explore_filter_offers">ఆఫర్లు</string>
+    <string name="explore_price_under_1k">₹1K లోపు</string>
+    <string name="explore_price_1k_5k">₹1K-5K</string>
+    <string name="explore_price_5k_20k">₹5K-20K</string>
+    <string name="explore_price_above_20k">₹20K పైన</string>
+    <string name="explore_clear">క్లియర్</string>
+    <string name="about_vision_title">మా దృష్టి</string>
+    <string name="account_seller_view">విక్రేత వీక్షణ</string>
+    <string name="social_new_post">కొత్త పోస్ట్</string>
+    <string name="social_retry">మళ్ళీ ప్రయత్నించు</string>
+    <string name="contact_send">పంపు</string>
+    <string name="contact_message">సందేశం</string>
+    <string name="account_change_password">పాస్‌వర్డ్ మార్చు</string>
+    <string name="account_welcome_back">తిరిగి స్వాగతం,</string>
+    <string name="about_why_title">MHub ఎందుకు?</string>
+    <string name="contact_your_name">మీ పేరు</string>
+    <string name="account_total_coins">మొత్తం నాణేలు</string>
+    <string name="social_share">షేర్</string>
+    <string name="social_write_review">రివ్యూ రాయండి</string>
+    <string name="social_delete">తొలగించు</string>
+    <string name="about_mission_title">మా లక్ష్యం</string>
+    <string name="social_close">మూసివేయు</string>
+    <string name="contact_email">ఇమెయిల్</string>
+    <string name="contact_get_in_touch">సంప్రదించండి</string>
+    <string name="about_version_title">వెర్షన్</string>
+    <string name="account_buyer_view">కొనుగోలుదారు వీక్షణ</string>
+    <string name="account_2fa_title">ద్వి-కారక ప్రమాణీకరణ</string>
+    <string name="social_no_posts_title">ఇంకా పోస్ట్‌లు లేవు</string>
+    <string name="faq_search_hint">ప్రశ్నలు వెతకండి…</string>
+    <string name="social_category">వర్గం</string>
+    <string name="about_headline">MHub — మీ స్థానిక మార్కెట్</string>
+    <string name="social_rating">రేటింగ్</string>
+    <string name="contact_send_message">సందేశం పంపండి</string>
+    <string name="social_cancel">రద్దు</string>
 </resources>
+
 

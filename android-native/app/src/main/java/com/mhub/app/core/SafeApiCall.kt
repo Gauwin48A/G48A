@@ -26,7 +26,8 @@ suspend inline fun <T> safeApiCall(crossinline block: suspend () -> T): ApiResul
         val code = e.code()
         val body = runCatching { e.response()?.errorBody()?.string().orEmpty() }.getOrDefault("")
         val msg = parseErrorMessage(body) ?: "Request failed ($code)"
-        if (code == 401 || code == 403) ApiResult.Failure(ApiError.Unauthorized)
+        if (code == 401) ApiResult.Failure(ApiError.Unauthorized)
+        else if (code == 403) ApiResult.Failure(ApiError.Forbidden)
         else ApiResult.Failure(ApiError.Http(code, msg))
     } catch (e: Throwable) {
         ApiResult.Failure(ApiError.Unknown(e.message ?: "Unexpected error"))
