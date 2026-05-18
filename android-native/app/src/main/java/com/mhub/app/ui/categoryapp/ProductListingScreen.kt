@@ -53,6 +53,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -67,6 +68,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
 import com.mhub.app.data.mock.MockDataProvider
 import com.mhub.app.ui.common.PageEmptyState
 import com.mhub.app.ui.components.EnhancedProductCard
@@ -100,17 +103,30 @@ fun ProductListingScreen(
     subcategoryId: String?,
     onOpenProduct: (String) -> Unit,
     onBack: () -> Unit,
+    viewModel: CategoryAppViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
+    val vmState by viewModel.state.collectAsState()
 
-    // ── Source data ─────────────────────────────────────────────────────────
-    val allProducts = remember(categoryKey, subcategoryId) {
+    // Trigger load if needed
+    LaunchedEffect(categoryKey) {
+        if (vmState.products.isEmpty()) viewModel.load(categoryKey)
+    }
+
+    // ── Source data — real API with mock fallback ─────────────────────────────────────────────────────────
+    val allProducts = remember(vmState.products, subcategoryId) {
         if (subcategoryId != null)
-            MockDataProvider.productsForSubcategory(subcategoryId)
+            vmState.products.filter { it.subcategory == subcategoryId }
+                .ifEmpty { MockDataProvider.productsForSubcategory(subcategoryId) }
         else
-            MockDataProvider.productsForCategory(categoryKey)
+            vmState.products.ifEmpty { MockDataProvider.productsForCategory(categoryKey) }
     }
     val brands = remember(allProducts) { allProducts.map { it.brand }.distinct().sorted() }
+
+    if (vmState.isLoading && allProducts.isEmpty()) {
+        PostGridShimmer()
+        return
+    }
 
     if (allProducts.isEmpty()) {
         PageEmptyState(
@@ -145,12 +161,13 @@ fun ProductListingScreen(
     var conditionFilter by remember { mutableStateOf<String?>(null) } // null = All, "new", "used"
     var verifiedOnly by remember { mutableStateOf(false) }
 
-    // Re-derive products when subcategory changes
-    val subcatProducts = remember(categoryKey, selectedSubcatId) {
+    // Re-derive products when subcategory changes — uses real API products with mock fallback
+    val subcatProducts = remember(allProducts, selectedSubcatId) {
         if (selectedSubcatId != null)
-            MockDataProvider.productsForSubcategory(selectedSubcatId!!)
+            allProducts.filter { it.subcategory == selectedSubcatId }
+                .ifEmpty { MockDataProvider.productsForSubcategory(selectedSubcatId!!) }
         else
-            MockDataProvider.productsForCategory(categoryKey)
+            allProducts
     }
 
     // ── Derived filtered + sorted list (using subcatProducts) ────────────────
