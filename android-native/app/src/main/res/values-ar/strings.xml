@@ -483,4 +483,26 @@
     <string name="detail_interested">مهتم</string>
     <string name="detail_comparing">قيد المقارنة</string>
     <string name="detail_compare">مقارنة</string>
+
+    <string name="more_footer">MHub — كل شيء في مكان واحد</string>
+    <string name="more_close_menu">إغلاق القائمة</string>
+    <string name="more_collapse">طي</string>
+    <string name="more_expand">توسيع</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">بحث</string>
+    <string name="topbar_notifications">الإشعارات</string>
+    <string name="topbar_wishlist">قائمة الأمنيات</string>
+    <string name="topbar_cart">السلة</string>
+    <string name="explore_browse_categories">تصفح الفئات</string>
+    <string name="explore_browse_categories_desc">ابحث عما تريد</string>
+    <string name="explore_no_categories">لا توجد فئات</string>
+    <string name="explore_no_categories_desc">ستظهر الفئات هنا.</string>
+    <string name="explore_trending_now">الرائج الآن</string>
+    <string name="explore_trending_desc">القوائم الأكثر مشاهدة</string>
+    <string name="explore_for_you">لك</string>
+    <string name="explore_for_you_desc">توصيات مخصصة</string>
+    <string name="explore_no_results">لم يتم العثور على نتائج</string>
+    <string name="explore_no_results_desc">جرّب مصطلح بحث أقصر أو مختلف.</string>
+    <string name="explore_search_hint">ابحث عن منتجات، خدمات، وظائف…</string>
+    <string name="msg_press_back_exit">اضغط للخلف مرة أخرى للخروج</string>
 </resources>

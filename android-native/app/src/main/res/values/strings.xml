@@ -1140,4 +1140,33 @@
 
     <!-- Performance / Loading (new) -->
     <string name="skeleton_loading">Loading content…</string>
+
+    <!-- MoreScreen / Drawer -->
+    <string name="more_footer">MHub — All your tools in one place</string>
+    <string name="more_close_menu">Close menu</string>
+    <string name="more_collapse">Collapse</string>
+    <string name="more_expand">Expand</string>
+
+    <!-- TopBar -->
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">Search</string>
+    <string name="topbar_notifications">Notifications</string>
+    <string name="topbar_wishlist">Wishlist</string>
+    <string name="topbar_cart">Cart</string>
+
+    <!-- ExploreScreen -->
+    <string name="explore_browse_categories">Browse Categories</string>
+    <string name="explore_browse_categories_desc">Find what you\'re looking for</string>
+    <string name="explore_no_categories">No categories</string>
+    <string name="explore_no_categories_desc">Categories will appear here.</string>
+    <string name="explore_trending_now">Trending Now</string>
+    <string name="explore_trending_desc">Most viewed listings</string>
+    <string name="explore_for_you">For You</string>
+    <string name="explore_for_you_desc">Personalized recommendations</string>
+    <string name="explore_no_results">No results found</string>
+    <string name="explore_no_results_desc">Try a shorter or different search term.</string>
+    <string name="explore_search_hint">Search products, services, jobs…</string>
+
+    <!-- General -->
+    <string name="msg_press_back_exit">Press back again to exit</string>
 </resources>

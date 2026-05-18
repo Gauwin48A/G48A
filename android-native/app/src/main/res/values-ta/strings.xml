@@ -344,4 +344,27 @@
     <string name="detail_make_offer">சலுகை அளி</string>
     <string name="detail_interested">ஆர்வம்</string>
     <string name="detail_compare">ஒப்பிடு</string>
+
+    <string name="more_footer">MHub — அனைத்தும் ஒரே இடத்தில்</string>
+    <string name="more_close_menu">மெனுவை மூடு</string>
+    <string name="more_collapse">சுருக்கு</string>
+    <string name="more_expand">விரிவாக்கு</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">தேடு</string>
+    <string name="topbar_notifications">அறிவிப்புகள்</string>
+    <string name="topbar_wishlist">விருப்பப் பட்டியல்</string>
+    <string name="topbar_cart">கார்ட்</string>
+    <string name="explore_browse_categories">வகைகளை உலாவு</string>
+    <string name="explore_browse_categories_desc">நீங்கள் தேடுவதைக் கண்டறியுங்கள்</string>
+    <string name="explore_no_categories">வகைகள் இல்லை</string>
+    <string name="explore_no_categories_desc">வகைகள் இங்கே தோன்றும்.</string>
+    <string name="explore_trending_now">இப்போது நடப்பு</string>
+    <string name="explore_trending_desc">அதிகம் பார்க்கப்பட்ட பட்டியல்கள்</string>
+    <string name="explore_for_you">உங்களுக்காக</string>
+    <string name="explore_for_you_desc">தனிப்பயனாக்கப்பட்ட பரிந்துரைகள்</string>
+    <string name="explore_no_results">முடிவுகள் இல்லை</string>
+    <string name="explore_no_results_desc">குறுகிய அல்லது வேறு தேடல் சொல்லை முயற்சிக்கவும்.</string>
+    <string name="explore_search_hint">பொருட்கள், சேவைகள், வேலைகள் தேடு…</string>
+    <string name="msg_press_back_exit">வெளியேற மீண்டும் பின்னால் அழுத்தவும்</string>
 </resources>
+

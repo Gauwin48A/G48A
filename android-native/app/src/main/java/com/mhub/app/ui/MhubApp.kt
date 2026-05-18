@@ -68,6 +68,7 @@ import androidx.navigation.navArgument
 import com.mhub.app.R
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -197,9 +198,12 @@ fun MhubApp(
         var guestBrowsing by rememberSaveable { mutableStateOf(false) }
         var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
         var showAuthGate by rememberSaveable { mutableStateOf(false) }
+        // Show login gate only when truly unauthenticated AND in guest mode
+        // Prevents login prompts for demo-login users whose token might transiently be null
+        val needsLogin = !isAuthenticated && guestBrowsing
         val context = LocalContext.current
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
-        val exitScope = kotlinx.coroutines.MainScope()
+        val exitScope = rememberCoroutineScope()
 
         // Double-back to exit on Home
         var backPressedOnce by remember { mutableStateOf(false) }
@@ -210,7 +214,7 @@ fun MhubApp(
                     (context as? Activity)?.finish()
                 } else {
                     backPressedOnce = true
-                    Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.msg_press_back_exit), Toast.LENGTH_SHORT).show()
                     exitScope.launch { kotlinx.coroutines.delay(2000); backPressedOnce = false }
                 }
             }
@@ -223,7 +227,7 @@ fun MhubApp(
         CompositionLocalProvider(
             LocalActiveCategoryKey provides activeCategoryKey,
             LocalOnOpenMore provides { showMoreDrawer = true },
-            LocalAuthGate provides { if (!isAuthenticated) showAuthGate = true },
+            LocalAuthGate provides { if (needsLogin) showAuthGate = true },
             *listOfNotNull(
                 localeManager?.let { LocalLocaleManager provides it },
             ).toTypedArray(),
@@ -287,9 +291,9 @@ fun MhubApp(
                                 popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
                             }
                         },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) },
-                        onSignUp = { navController.navigate(Routes.SIGNUP) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                        onForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) { launchSingleTop = true } },
+                        onSignUp = { navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                     )
                 }
 
@@ -300,6 +304,7 @@ fun MhubApp(
                 composable(Routes.SIGNUP) {
                     SignUpScreen(
                         onSignedUp = {
+                            guestBrowsing = false
                             navController.navigate(Routes.MAIN_GRAPH) {
                                 popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
                             }
@@ -359,7 +364,7 @@ fun MhubApp(
                             activeCategoryKey = "electronics"
                             navController.navigate("cat/electronics") { launchSingleTop = true }
                         },
-                        onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                        onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                         onSelectApp = { key ->
                             val safeKey = key.lowercase().let {
                                 if (it in setOf("electronics", "fashion", "vehicles", "others")) it else "electronics"
@@ -376,10 +381,10 @@ fun MhubApp(
                                 launchSingleTop = true
                             }
                         },
-                        onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onOpenScanner = { navController.navigate(Routes.SCANNER) },
-                        onOpenCart = { navController.navigate(Routes.CART) },
+                        onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                        onOpenScanner = { navController.navigate(Routes.SCANNER) { launchSingleTop = true } },
+                        onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -389,15 +394,13 @@ fun MhubApp(
                         ExploreScreen(
                             onOpenPost = { id ->
                                 if (id.startsWith("ep") || id.startsWith("fp") || id.startsWith("gp") || id.startsWith("fup")) {
-                                    navController.navigate("cat-product/$id")
+                                    navController.navigate("cat-product/$id") { launchSingleTop = true }
                                 } else {
-                                    navController.navigate(Routes.postDetail(id))
+                                    navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
                                 }
                             },
-                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
-                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
-                            title = "Explore",
-                            subtitle = "Discover trending & curated picks",
+                            onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -406,7 +409,7 @@ fun MhubApp(
                     MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
-                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             isGuest = !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )
@@ -416,8 +419,8 @@ fun MhubApp(
                 composable(Routes.FEED) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         FeedScreen(
-                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                            onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) },
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                            onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -425,19 +428,20 @@ fun MhubApp(
                 composable(Routes.REWARDS) {
                     MainShell(navController = navController, selected = BottomTab.REWARDS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         RewardsScreen(
-                            isAuthenticated = isAuthenticated,
+                            isAuthenticated = !needsLogin,
                             onSignInRequired = {
+                                guestBrowsing = false
                                 navController.navigate(Routes.AUTH_GRAPH) {
                                     popUpTo(Routes.MAIN_GRAPH) { inclusive = true }
                                 }
                             },
-                            onBrowseMarketplace = { navController.navigate(Routes.ALL_POSTS) },
+                            onBrowseMarketplace = { navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true } },
                         )
                     }
                 }
 
                 composable(Routes.PROFILE) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                             com.mhub.app.ui.components.LoginPromptCard(
                                 onSignIn = {
@@ -446,7 +450,7 @@ fun MhubApp(
                                 },
                                 onCreateAccount = {
                                     guestBrowsing = false
-                                    navController.navigate(Routes.SIGNUP)
+                                    navController.navigate(Routes.SIGNUP) { launchSingleTop = true }
                                 },
                                 modifier = androidx.compose.ui.Modifier.padding(top = 64.dp),
                             )
@@ -460,18 +464,18 @@ fun MhubApp(
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
-                            onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                            onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) },
-                            onOpenKyc = { navController.navigate(Routes.KYC) },
-                            onOpenChat = { navController.navigate(Routes.CHAT) },
-                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                            onOpenSecurity = { navController.navigate(Routes.SECURITY) },
-                            onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
-                            onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
-                            onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) },
-                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                            onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) },
-                            onOpenAddresses = { navController.navigate(Routes.ADDRESS_BOOK) },
+                            onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                            onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
+                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
+                            onOpenChat = { navController.navigate(Routes.CHAT) { launchSingleTop = true } },
+                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                            onOpenSecurity = { navController.navigate(Routes.SECURITY) { launchSingleTop = true } },
+                            onOpenDashboard = { navController.navigate(Routes.DASHBOARD) { launchSingleTop = true } },
+                            onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) { launchSingleTop = true } },
+                            onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                            onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) { launchSingleTop = true } },
+                            onOpenAddresses = { navController.navigate(Routes.ADDRESS_BOOK) { launchSingleTop = true } },
                         )
                     }
                     }
@@ -488,14 +492,14 @@ fun MhubApp(
 
                 composable(Routes.NOTIFICATIONS) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
-                        if (!isAuthenticated) {
+                        if (needsLogin) {
                             com.mhub.app.ui.components.LoginPromptCard(
                                 onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                                onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                                onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                             )
                         } else {
                         NotificationsScreen(
-                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         )
                         }
                     }
@@ -503,7 +507,7 @@ fun MhubApp(
 
                 composable(Routes.WISHLIST) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
-                        WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
+                        WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } })
                     }
                 }
             }
@@ -515,8 +519,8 @@ fun MhubApp(
             ) {
                 PostDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                    onOpenCategory = { key -> navController.navigate(Routes.categoryDetail(key)) },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                    onOpenCategory = { key -> navController.navigate(Routes.categoryDetail(key)) { launchSingleTop = true } },
                 )
             }
 
@@ -528,7 +532,7 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     SearchScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         prefillQuery = prefillQuery,
                     )
                 }
@@ -547,7 +551,7 @@ fun MhubApp(
                                     else -> "others"
                                 }
                             }
-                            navController.navigate(Routes.categoryDetail(key))
+                            navController.navigate(Routes.categoryDetail(key)) { launchSingleTop = true }
                         },
                     )
                 }
@@ -557,17 +561,17 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     com.mhub.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenCategory = { catKey -> navController.navigate("cat/$catKey") },
+                        onOpenCategory = { catKey -> navController.navigate("cat/$catKey") { launchSingleTop = true } },
                     )
                 }
             }
 
             composable(Routes.CREATE_POST) {
-                if (!isAuthenticated) {
+                if (needsLogin) {
                     MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     }
                 } else {
@@ -580,16 +584,16 @@ fun MhubApp(
 
             composable(Routes.MY_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     MyPostsScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
-                        onCreatePost = { navController.navigate(Routes.CREATE_POST) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                        onCreatePost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -639,14 +643,14 @@ fun MhubApp(
 
             composable(Routes.CHAT) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                             modifier = Modifier.padding(top = 64.dp),
                         )
                     } else {
-                        ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { navController.navigate(Routes.LOGIN) })
+                        ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } })
                     }
                 }
             }
@@ -660,16 +664,16 @@ fun MhubApp(
             // ── Commerce ──
             composable(Routes.POST_WELCOME) {
                 MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                             modifier = Modifier.padding(top = 64.dp),
                         )
                     } else {
                     PostWelcomeScreen(
                         onBack = { navController.popBackStack() },
-                        onStartPost = { navController.navigate(Routes.CREATE_POST) },
+                        onStartPost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -685,10 +689,10 @@ fun MhubApp(
 
             composable(Routes.TIER_SELECTION) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     TierSelectionScreen(onBack = { navController.popBackStack() })
@@ -700,7 +704,7 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     NearbyScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
                 }
             }
@@ -708,9 +712,9 @@ fun MhubApp(
             composable(Routes.SCANNER) {
                 com.mhub.app.ui.scanner.ScannerScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     onSearch = { query ->
-                        navController.navigate("search?query=$query")
+                        navController.navigate("search?query=$query") { launchSingleTop = true }
                     },
                 )
             }
@@ -722,21 +726,21 @@ fun MhubApp(
                 val key = entry.arguments?.getString("categoryKey").orEmpty()
                 CategoryDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                 )
             }
 
             composable(Routes.BOUGHT_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     BoughtPostsScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -744,15 +748,15 @@ fun MhubApp(
 
             composable(Routes.SOLD_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     SoldPostsScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -772,10 +776,10 @@ fun MhubApp(
 
             composable(Routes.OFFERS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     OffersScreen(onBack = { navController.popBackStack() })
@@ -797,7 +801,7 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     RecentlyViewedScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
                 }
             }
@@ -862,10 +866,10 @@ fun MhubApp(
             // ── Account ──
             composable(Routes.DASHBOARD) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     DashboardScreen(onBack = { navController.popBackStack() })
@@ -875,10 +879,10 @@ fun MhubApp(
 
             composable(Routes.SECURITY) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     SecurityScreen(onBack = { navController.popBackStack() })
@@ -888,10 +892,10 @@ fun MhubApp(
 
             composable(Routes.ACCOUNT_DELETE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     AccountDeleteScreen(onBack = { navController.popBackStack() })
@@ -901,10 +905,10 @@ fun MhubApp(
 
             composable(Routes.VERIFICATION) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     VerificationScreen(onBack = { navController.popBackStack() })
@@ -914,10 +918,10 @@ fun MhubApp(
 
             composable(Routes.ANALYTICS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    if (!isAuthenticated) {
+                    if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                         )
                     } else {
                     AnalyticsScreen(onBack = { navController.popBackStack() })
@@ -930,8 +934,8 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     ChannelsListScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) },
-                        onCreateChannel = { navController.navigate(Routes.CHANNEL_CREATE) },
+                        onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) { launchSingleTop = true } },
+                        onCreateChannel = { navController.navigate(Routes.CHANNEL_CREATE) { launchSingleTop = true } },
                     )
                 }
             }
@@ -952,8 +956,8 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     CentreListScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) },
-                        onCreateCentre = { navController.navigate(Routes.CENTRE_CREATE) },
+                        onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
+                        onCreateCentre = { navController.navigate(Routes.CENTRE_CREATE) { launchSingleTop = true } },
                     )
                 }
             }
@@ -1014,14 +1018,14 @@ fun MhubApp(
                         onBack = { navController.popBackStack() },
                         onNavigate = { key ->
                             when (key) {
-                                "chat" -> navController.navigate(Routes.CHAT)
-                                "offers" -> navController.navigate(Routes.OFFERS)
-                                "reviews" -> navController.navigate(Routes.PROFILE)
-                                "nearby" -> navController.navigate(Routes.NEARBY)
-                                "wishlist" -> navController.navigate(Routes.WISHLIST)
-                                "cart" -> navController.navigate(Routes.CART)
-                                "my-posts" -> navController.navigate(Routes.MY_POSTS)
-                                "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
+                                "chat" -> navController.navigate(Routes.CHAT) { launchSingleTop = true }
+                                "offers" -> navController.navigate(Routes.OFFERS) { launchSingleTop = true }
+                                "reviews" -> navController.navigate(Routes.PROFILE) { launchSingleTop = true }
+                                "nearby" -> navController.navigate(Routes.NEARBY) { launchSingleTop = true }
+                                "wishlist" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
+                                "cart" -> navController.navigate(Routes.CART) { launchSingleTop = true }
+                                "my-posts" -> navController.navigate(Routes.MY_POSTS) { launchSingleTop = true }
+                                "notifications" -> navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
                             }
                         },
                     )
@@ -1050,11 +1054,11 @@ fun MhubApp(
                             launchSingleTop = true
                         }
                     },
-                    onOpenSearch = { navController.navigate("${Routes.SEARCH}?query=${catKey}") },
-                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                    onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) },
-                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                    onOpenHelp = { navController.navigate(Routes.FAQ) },
+                    onOpenSearch = { navController.navigate("${Routes.SEARCH}?query=${catKey}") { launchSingleTop = true } },
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) { launchSingleTop = true } },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                    onOpenHelp = { navController.navigate(Routes.FAQ) { launchSingleTop = true } },
                     onSwitchCategory = { nextKey ->
                         val safeKey = nextKey.lowercase().let {
                             if (it in setOf("electronics", "fashion", "vehicles", "others")) it else "electronics"
@@ -1073,13 +1077,13 @@ fun MhubApp(
                     onOpenPostDetail = { id ->
                         // route mock product IDs to MockProductDetailScreen
                         if (id.startsWith("ep") || id.startsWith("fp") || id.startsWith("gp") || id.startsWith("fup")) {
-                            navController.navigate("cat-product/$id")
+                            navController.navigate("cat-product/$id") { launchSingleTop = true }
                         } else {
-                            navController.navigate(Routes.postDetail(id))
+                            navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
                         }
                     },
-                    onOpenFeed = { navController.navigate(Routes.FEED) },
-                    onOpenForYou = { navController.navigate(Routes.FOR_YOU) },
+                    onOpenFeed = { navController.navigate(Routes.FEED) { launchSingleTop = true } },
+                    onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
                 )
                 }
             }
@@ -1093,7 +1097,7 @@ fun MhubApp(
                 MockProductDetailScreen(
                     productId = productId,
                     onBack = { navController.popBackStack() },
-                    onOpenProduct = { id -> navController.navigate("cat-product/$id") },
+                    onOpenProduct = { id -> navController.navigate("cat-product/$id") { launchSingleTop = true } },
                 )
             }
 
@@ -1102,7 +1106,7 @@ fun MhubApp(
                 CheckoutAddressScreen(
                     onBack = { navController.popBackStack() },
                     onNext = { _, _, address ->
-                        navController.navigate(Routes.CHECKOUT_PAYMENT)
+                        navController.navigate(Routes.CHECKOUT_PAYMENT) { launchSingleTop = true }
                     },
                 )
             }
@@ -1111,7 +1115,7 @@ fun MhubApp(
                 CheckoutPaymentScreen(
                     onBack = { navController.popBackStack() },
                     onNext = { method ->
-                        navController.navigate(Routes.CHECKOUT_REVIEW + "?method=" + method)
+                        navController.navigate(Routes.CHECKOUT_REVIEW + "?method=" + method) { launchSingleTop = true }
                     },
                 )
             }
@@ -1149,7 +1153,7 @@ fun MhubApp(
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    onViewOrder = { navController.navigate(Routes.BOUGHT_POSTS) },
+                    onViewOrder = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
                     orderId = orderId,
                 )
             }
@@ -1157,7 +1161,7 @@ fun MhubApp(
             composable(Routes.CHECKOUT_FAILED) {
                 OrderFailedScreen(
                     onRetry = { navController.popBackStack() },
-                    onGoToCart = { navController.navigate(Routes.CART) },
+                    onGoToCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                 )
             }
 
@@ -1165,7 +1169,7 @@ fun MhubApp(
             composable(Routes.RECENTLY_VIEWED_SCREEN) {
                 RecentlyViewedFullScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenProduct = { id -> navController.navigate("cat-product/$id") },
+                    onOpenProduct = { id -> navController.navigate("cat-product/$id") { launchSingleTop = true } },
                 )
             }
 
@@ -1190,7 +1194,7 @@ fun MhubApp(
             composable(Routes.ORDER_HISTORY) {
                 com.mhub.app.ui.profile.OrderHistoryScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenOrderDetail = { id -> navController.navigate(Routes.orderDetail(id)) },
+                    onOpenOrderDetail = { id -> navController.navigate(Routes.orderDetail(id)) { launchSingleTop = true } },
                 )
             }
 
@@ -1208,8 +1212,8 @@ fun MhubApp(
             composable(Routes.ADDRESS_BOOK) {
                 com.mhub.app.ui.profile.AddressBookScreen(
                     onBack = { navController.popBackStack() },
-                    onAddAddress = { navController.navigate(Routes.ADDRESS_ADD) },
-                    onEditAddress = { id -> navController.navigate(Routes.addressEdit(id)) },
+                    onAddAddress = { navController.navigate(Routes.ADDRESS_ADD) { launchSingleTop = true } },
+                    onEditAddress = { id -> navController.navigate(Routes.addressEdit(id)) { launchSingleTop = true } },
                 )
             }
 
@@ -1254,8 +1258,8 @@ fun MhubApp(
         // ── Auth Gate Popup (app-level overlay) ─────────────────────────
         com.mhub.app.core.AuthGatePopup(
             visible = showAuthGate,
-            onSignIn = { showAuthGate = false; navController.navigate(Routes.LOGIN) },
-            onCreateAccount = { showAuthGate = false; navController.navigate(Routes.SIGNUP) },
+            onSignIn = { showAuthGate = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
+            onCreateAccount = { showAuthGate = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
             onDismiss = { showAuthGate = false },
         )
 
@@ -1293,48 +1297,50 @@ fun MhubApp(
                         .clickable(enabled = false) {},
                 ) {
                     MoreScreen(
-                        onOpenNotifications = { showMoreDrawer = false; navController.navigate(Routes.NOTIFICATIONS) },
-                        onOpenWishlist = { showMoreDrawer = false; navController.navigate(Routes.WISHLIST) },
-                        onOpenSearch = { showMoreDrawer = false; navController.navigate(Routes.SEARCH) },
-                        onOpenCategories = { showMoreDrawer = false; navController.navigate(Routes.CATEGORIES) },
-                        onOpenCreatePost = { showMoreDrawer = false; navController.navigate(Routes.POST_WELCOME) },
-                        onOpenChat = { showMoreDrawer = false; navController.navigate(Routes.CHAT) },
-                        onOpenKyc = { showMoreDrawer = false; navController.navigate(Routes.KYC) },
-                        onOpenSettings = { showMoreDrawer = false; navController.navigate(Routes.SETTINGS) },
-                        onOpenForYou = { showMoreDrawer = false; navController.navigate(Routes.FOR_YOU) },
-                        onOpenRewards = { showMoreDrawer = false; navController.navigate(Routes.REWARDS) },
-                        onOpenOffers = { showMoreDrawer = false; navController.navigate(Routes.OFFERS) },
-                        onOpenNearby = { showMoreDrawer = false; navController.navigate(Routes.NEARBY) },
-                        onOpenDashboard = { showMoreDrawer = false; navController.navigate(Routes.DASHBOARD) },
-                        onOpenScanner = { showMoreDrawer = false; navController.navigate(Routes.SCANNER) },
-                        onOpenCart = { showMoreDrawer = false; navController.navigate(Routes.CART) },
-                        onOpenTierSelection = { showMoreDrawer = false; navController.navigate(Routes.TIER_SELECTION) },
-                        onOpenCentre = { showMoreDrawer = false; navController.navigate(Routes.CENTRE_LIST) },
-                        onOpenCategoryMode = { showMoreDrawer = false; navController.navigate(Routes.CATEGORY_MODE) },
-                        onOpenSavedSearches = { showMoreDrawer = false; navController.navigate(Routes.SAVED_SEARCHES) },
-                        onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) },
-                        onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) },
-                        onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) },
-                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) },
-                        onOpenChannels = { showMoreDrawer = false; navController.navigate(Routes.CHANNELS) },
-                        onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) },
-                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) },
-                        onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) },
-                        onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) },
-                        onOpenActivityHub = { showMoreDrawer = false; navController.navigate(Routes.ACTIVITY_HUB) },
-                        onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) },
-                        onOpenMyPosts = { showMoreDrawer = false; navController.navigate(Routes.MY_POSTS) },
-                        onOpenBoughtPosts = { showMoreDrawer = false; navController.navigate(Routes.BOUGHT_POSTS) },
-                        onOpenSoldPosts = { showMoreDrawer = false; navController.navigate(Routes.SOLD_POSTS) },
-                        onOpenVerification = { showMoreDrawer = false; navController.navigate(Routes.VERIFICATION) },
-                        onOpenAnalytics = { showMoreDrawer = false; navController.navigate(Routes.ANALYTICS) },
-                        onOpenAccountDelete = { showMoreDrawer = false; navController.navigate(Routes.ACCOUNT_DELETE) },
-                        onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) },
-                        onOpenAboutUs = { showMoreDrawer = false; navController.navigate(Routes.ABOUT_US) },
-                        onOpenContactUs = { showMoreDrawer = false; navController.navigate(Routes.CONTACT_US) },
-                        onOpenFaq = { showMoreDrawer = false; navController.navigate(Routes.FAQ) },
-                        onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) },
-                        onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) },
+                        onDismiss = { showMoreDrawer = false },
+                        onOpenNotifications = { showMoreDrawer = false; navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                        onOpenWishlist = { showMoreDrawer = false; navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                        onOpenSearch = { showMoreDrawer = false; navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                        onOpenCategories = { showMoreDrawer = false; navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
+                        onOpenCreatePost = { showMoreDrawer = false; navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
+                        onOpenChat = { showMoreDrawer = false; navController.navigate(Routes.CHAT) { launchSingleTop = true } },
+                        onOpenKyc = { showMoreDrawer = false; navController.navigate(Routes.KYC) { launchSingleTop = true } },
+                        onOpenSettings = { showMoreDrawer = false; navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                        onOpenForYou = { showMoreDrawer = false; navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
+                        onOpenRewards = { showMoreDrawer = false; navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
+                        onOpenOffers = { showMoreDrawer = false; navController.navigate(Routes.OFFERS) { launchSingleTop = true } },
+                        onOpenNearby = { showMoreDrawer = false; navController.navigate(Routes.NEARBY) { launchSingleTop = true } },
+                        onOpenDashboard = { showMoreDrawer = false; navController.navigate(Routes.DASHBOARD) { launchSingleTop = true } },
+                        onOpenScanner = { showMoreDrawer = false; navController.navigate(Routes.SCANNER) { launchSingleTop = true } },
+                        onOpenCart = { showMoreDrawer = false; navController.navigate(Routes.CART) { launchSingleTop = true } },
+                        onOpenTierSelection = { showMoreDrawer = false; navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
+                        onOpenCentre = { showMoreDrawer = false; navController.navigate(Routes.CENTRE_LIST) { launchSingleTop = true } },
+                        onOpenCategoryMode = { showMoreDrawer = false; navController.navigate(Routes.CATEGORY_MODE) { launchSingleTop = true } },
+                        onOpenSavedSearches = { showMoreDrawer = false; navController.navigate(Routes.SAVED_SEARCHES) { launchSingleTop = true } },
+                        onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                        onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                        onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) { launchSingleTop = true } },
+                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
+                        onOpenChannels = { showMoreDrawer = false; navController.navigate(Routes.CHANNELS) { launchSingleTop = true } },
+                        onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) { launchSingleTop = true } },
+                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                        onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) { launchSingleTop = true } },
+                        onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
+                        onOpenActivityHub = { showMoreDrawer = false; navController.navigate(Routes.ACTIVITY_HUB) { launchSingleTop = true } },
+                        onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                        onOpenMyPosts = { showMoreDrawer = false; navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
+                        onOpenBoughtPosts = { showMoreDrawer = false; navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
+                        onOpenSoldPosts = { showMoreDrawer = false; navController.navigate(Routes.SOLD_POSTS) { launchSingleTop = true } },
+                        onOpenVerification = { showMoreDrawer = false; navController.navigate(Routes.VERIFICATION) { launchSingleTop = true } },
+                        onOpenAnalytics = { showMoreDrawer = false; navController.navigate(Routes.ANALYTICS) { launchSingleTop = true } },
+                        onOpenAccountDelete = { showMoreDrawer = false; navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
+                        onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) { launchSingleTop = true } },
+                        onOpenAboutUs = { showMoreDrawer = false; navController.navigate(Routes.ABOUT_US) { launchSingleTop = true } },
+                        onOpenContactUs = { showMoreDrawer = false; navController.navigate(Routes.CONTACT_US) { launchSingleTop = true } },
+                        onOpenFaq = { showMoreDrawer = false; navController.navigate(Routes.FAQ) { launchSingleTop = true } },
+                        onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) { launchSingleTop = true } },
+                        onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                        onLanguageChange = { code -> localeManager?.setLocale(code) },
                         isAdmin = false,
                         currentThemeMode = themeMode,
                         onSetThemeMode = { themeVm.setThemeMode(it) },
@@ -1387,10 +1393,10 @@ fun MainShell(
             topBar = {
                 if (showTopBar) {
                 MhubTopBar(
-                    onSearch = { navController.navigate(Routes.SEARCH) },
-                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                    onCart = { navController.navigate(Routes.CART) },
-                    onWishlist = { navController.navigate(Routes.WISHLIST) },
+                    onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                    onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                 )
                 }
             },
@@ -1416,7 +1422,13 @@ fun MainShell(
                                 } else {
                                     tab.route
                                 }
-                                if (targetRoute != currentRoute) {
+                                // For HOME tab, always reset to home (clear category context)
+                                if (tab == BottomTab.HOME) {
+                                    navController.navigate(Routes.HOME) {
+                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                } else if (targetRoute != currentRoute) {
                                     navController.navigate(targetRoute) {
                                         // Pop up to the main graph root (not HOME) so category
                                         // routes in the back stack survive tab switches.
@@ -1482,19 +1494,18 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
             navController.navigate("${Routes.POST_DETAIL}/$id")
         }
         "chat", "messages" -> {
-            val id = segments.getOrNull(1)
-            if (id != null) navController.navigate("${Routes.CHAT}/$id")
-            else navController.navigate(Routes.CHAT)
+            // Note: "chat/{id}" route not registered — navigate to chat list
+            navController.navigate(Routes.CHAT) { launchSingleTop = true }
         }
-        "search" -> navController.navigate(Routes.SEARCH)
-        "create-post", "sell" -> navController.navigate(Routes.CREATE_POST)
+        "search" -> navController.navigate(Routes.SEARCH) { launchSingleTop = true }
+        "create-post", "sell" -> navController.navigate(Routes.CREATE_POST) { launchSingleTop = true }
         "profile" -> {
-            val id = segments.getOrNull(1)
-            if (id != null) navController.navigate("${Routes.PROFILE}/$id")
+            // Note: "profile/{id}" route not registered — navigate to own profile
+            navController.navigate(Routes.PROFILE) { launchSingleTop = true }
         }
-        "wishlist", "saved" -> navController.navigate(Routes.WISHLIST)
-        "cart" -> navController.navigate(Routes.CART)
-        "notifications" -> navController.navigate(Routes.NOTIFICATIONS)
-        "settings" -> navController.navigate(Routes.SETTINGS)
+        "wishlist", "saved" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
+        "cart" -> navController.navigate(Routes.CART) { launchSingleTop = true }
+        "notifications" -> navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
+        "settings" -> navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
     }
 }

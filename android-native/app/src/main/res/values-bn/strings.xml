@@ -455,4 +455,34 @@
     <string name="detail_boost">আপনার তালিকা বুস্ট করুন</string>
     <string name="detail_interested">আগ্রহী</string>
     <string name="detail_compare">তুলনা</string>
+
+    <!-- MoreScreen / Drawer -->
+    <string name="more_footer">MHub — সব কিছু এক জায়গায়</string>
+    <string name="more_close_menu">মেনু বন্ধ করুন</string>
+    <string name="more_collapse">সংকুচিত করুন</string>
+    <string name="more_expand">প্রসারিত করুন</string>
+
+    <!-- TopBar -->
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">অনুসন্ধান</string>
+    <string name="topbar_notifications">বিজ্ঞপ্তি</string>
+    <string name="topbar_wishlist">ইচ্ছা তালিকা</string>
+    <string name="topbar_cart">কার্ট</string>
+
+    <!-- ExploreScreen -->
+    <string name="explore_browse_categories">বিভাগ ব্রাউজ করুন</string>
+    <string name="explore_browse_categories_desc">আপনি যা খুঁজছেন তা খুঁজুন</string>
+    <string name="explore_no_categories">কোনো বিভাগ নেই</string>
+    <string name="explore_no_categories_desc">বিভাগ এখানে দেখা যাবে।</string>
+    <string name="explore_trending_now">এখন ট্রেন্ডিং</string>
+    <string name="explore_trending_desc">সবচেয়ে বেশি দেখা তালিকা</string>
+    <string name="explore_for_you">আপনার জন্য</string>
+    <string name="explore_for_you_desc">ব্যক্তিগত সুপারিশ</string>
+    <string name="explore_no_results">কোনো ফলাফল পাওয়া যায়নি</string>
+    <string name="explore_no_results_desc">ছোট বা ভিন্ন অনুসন্ধান শব্দ চেষ্টা করুন।</string>
+    <string name="explore_search_hint">পণ্য, পরিষেবা, চাকরি খুঁজুন…</string>
+
+    <!-- General -->
+    <string name="msg_press_back_exit">বের হতে আবার ব্যাক টিপুন</string>
 </resources>
+

@@ -37,7 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mhub.app.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
@@ -120,7 +122,7 @@ fun MhubTopBar(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "MHub",
+                    text = stringResource(R.string.topbar_logo),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
@@ -134,7 +136,7 @@ fun MhubTopBar(
                 IconButton(onClick = onSearch) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.topbar_search),
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )
@@ -162,7 +164,7 @@ fun MhubTopBar(
                     ) {
                         Icon(
                             Icons.Default.NotificationsNone,
-                            contentDescription = "Notifications",
+                            contentDescription = stringResource(R.string.topbar_notifications),
                             tint = Color.White.copy(alpha = 0.92f),
                             modifier = Modifier.size(22.dp),
                         )
@@ -173,7 +175,7 @@ fun MhubTopBar(
                 IconButton(onClick = onWishlist) {
                     Icon(
                         Icons.Default.FavoriteBorder,
-                        contentDescription = "Wishlist",
+                        contentDescription = stringResource(R.string.topbar_wishlist),
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )
@@ -183,7 +185,7 @@ fun MhubTopBar(
                 IconButton(onClick = onCart) {
                     Icon(
                         Icons.Default.ShoppingCart,
-                        contentDescription = "Cart",
+                        contentDescription = stringResource(R.string.topbar_cart),
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )

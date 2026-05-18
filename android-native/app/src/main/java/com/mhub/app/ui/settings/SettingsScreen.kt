@@ -2,10 +2,10 @@
 
 package com.mhub.app.ui.settings
 
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.appcompat.app.AppCompatDelegate
+import com.mhub.app.core.LocalLocaleManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -219,6 +219,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    val localeManager = LocalLocaleManager.current
     val baseUrl by viewModel.baseUrl.collectAsState()
     val saved by viewModel.saved.collectAsState()
     val saving by viewModel.saving.collectAsState()
@@ -333,9 +334,7 @@ fun SettingsScreen(
                                 selected = selectedLang == code,
                                 onClick = {
                                     selectedLang = code
-                                    AppCompatDelegate.setApplicationLocales(
-                                        LocaleListCompat.forLanguageTags(code),
-                                    )
+                                    localeManager.setLocale(code)
                                 },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                             )
@@ -352,9 +351,7 @@ fun SettingsScreen(
                                     selected = selectedLang == code,
                                     onClick = {
                                         selectedLang = code
-                                        AppCompatDelegate.setApplicationLocales(
-                                            LocaleListCompat.forLanguageTags(code),
-                                        )
+                                        localeManager.setLocale(code)
                                     },
                                     label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                                 )

@@ -75,9 +75,19 @@ data class NearbyUiState(
 @HiltViewModel
 class NearbyViewModel @Inject constructor(
     private val repo: PostsRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(NearbyUiState())
     val state: StateFlow<NearbyUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                val s = _state.value
+                if (s.locationGranted && version > 0L) { loadPosts(s.lat, s.lng, s.radius) }
+            }
+        }
+    }
 
     fun onLocationGranted(lat: Double, lng: Double) {
         _state.value = _state.value.copy(locationGranted = true, lat = lat, lng = lng)

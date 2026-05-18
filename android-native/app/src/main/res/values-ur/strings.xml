@@ -279,4 +279,27 @@
     <string name="detail_make_offer">آفر دیں</string>
     <string name="detail_interested">دلچسپی</string>
     <string name="detail_compare">موازنہ</string>
+
+    <string name="more_footer">MHub — سب کچھ ایک جگہ</string>
+    <string name="more_close_menu">مینو بند کریں</string>
+    <string name="more_collapse">سکیڑیں</string>
+    <string name="more_expand">پھیلائیں</string>
+    <string name="topbar_logo">MHub</string>
+    <string name="topbar_search">تلاش</string>
+    <string name="topbar_notifications">اطلاعات</string>
+    <string name="topbar_wishlist">خواہش فہرست</string>
+    <string name="topbar_cart">کارٹ</string>
+    <string name="explore_browse_categories">زمرے براؤز کریں</string>
+    <string name="explore_browse_categories_desc">جو آپ ڈھونڈ رہے ہیں وہ تلاش کریں</string>
+    <string name="explore_no_categories">کوئی زمرے نہیں</string>
+    <string name="explore_no_categories_desc">زمرے یہاں نظر آئیں گے۔</string>
+    <string name="explore_trending_now">ابھی ٹرینڈنگ</string>
+    <string name="explore_trending_desc">سب سے زیادہ دیکھی گئی فہرست</string>
+    <string name="explore_for_you">آپ کے لیے</string>
+    <string name="explore_for_you_desc">ذاتی سفارشات</string>
+    <string name="explore_no_results">کوئی نتائج نہیں ملے</string>
+    <string name="explore_no_results_desc">چھوٹا یا مختلف تلاش لفظ آزمائیں۔</string>
+    <string name="explore_search_hint">مصنوعات، خدمات، ملازمتیں تلاش کریں…</string>
+    <string name="msg_press_back_exit">باہر نکلنے کے لیے دوبارہ واپس دبائیں</string>
 </resources>
+
