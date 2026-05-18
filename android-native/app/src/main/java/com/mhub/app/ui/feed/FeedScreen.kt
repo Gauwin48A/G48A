@@ -383,7 +383,7 @@ fun FeedScreen(
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
                             ) {
-                                Text("Translated to $selectedLang · Tap language to switch", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(6.dp))
+                                Text(stringResource(R.string.feed_translated_to, selectedLang), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(6.dp))
                             }
                         }
                         LazyRow(

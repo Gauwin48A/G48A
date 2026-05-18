@@ -448,7 +448,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                                 Box(contentAlignment = Alignment.Center) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Icon(Icons.Default.AddPhotoAlternate, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-                                        Text("Add", fontSize = 10.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                                        Text(stringResource(R.string.commerce_add_images), fontSize = 10.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -457,7 +457,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
 
                     // Title with char counter
                     MhubTextFieldWithCounter(
-                        label = "Title",
+                        label = stringResource(R.string.commerce_field_title),
                         value = state.title,
                         onValueChange = viewModel::setTitle,
                         maxLength = 100,
@@ -465,7 +465,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     )
                     // Description with char counter
                     MhubTextFieldWithCounter(
-                        label = "Description",
+                        label = stringResource(R.string.commerce_field_description),
                         value = state.description,
                         onValueChange = viewModel::setDescription,
                         maxLength = 2000,
@@ -489,9 +489,9 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         Switch(checked = state.flashSale, onCheckedChange = { viewModel.toggleFlashSale() })
                     }
 
-                    MhubTextField("Location", state.location, viewModel::setLocation)
-                    MhubTextField("Brand", state.brand, viewModel::setBrand)
-                    MhubTextField("Model", state.model, viewModel::setModel)
+                    MhubTextField(stringResource(R.string.commerce_field_location), state.location, viewModel::setLocation)
+                    MhubTextField(stringResource(R.string.commerce_field_brand), state.brand, viewModel::setBrand)
+                    MhubTextField(stringResource(R.string.commerce_field_model), state.model, viewModel::setModel)
 
                     // Warranty select
                     Text(stringResource(R.string.commerce_warranty), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
@@ -880,7 +880,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
             ScreenTopBar(stringResource(R.string.my_posts_label), onBack)
             // Status filter tabs
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("all" to "All", "active" to "Active", "draft" to "Draft", "sold" to "Sold", "archived" to "Archived").forEach { (key, label) ->
+                listOf("all" to stringResource(R.string.commerce_filter_all), "active" to stringResource(R.string.commerce_filter_active), "draft" to stringResource(R.string.commerce_filter_draft), "sold" to stringResource(R.string.commerce_filter_sold), "archived" to stringResource(R.string.commerce_filter_archived)).forEach { (key, label) ->
                     FilterChip(
                         selected = state.statusFilter == key,
                         onClick = { viewModel.setStatusFilter(key) },
@@ -904,11 +904,11 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                         Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 when (state.sortBy) {
-                                    "views" -> "Views"
-                                    "likes" -> "Likes"
-                                    "price" -> "Price"
-                                    "title" -> "Title"
-                                    else -> "Date"
+                                    "views" -> stringResource(R.string.commerce_sort_views)
+                                    "likes" -> stringResource(R.string.commerce_sort_likes)
+                                    "price" -> stringResource(R.string.commerce_sort_price)
+                                    "title" -> stringResource(R.string.commerce_sort_title)
+                                    else -> stringResource(R.string.commerce_sort_date)
                                 },
                                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB),
                             )
@@ -916,7 +916,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                         }
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        listOf("date" to "Date", "views" to "Views", "likes" to "Likes", "price" to "Price", "title" to "Title").forEach { (key, label) ->
+                        listOf("date" to stringResource(R.string.commerce_sort_date), "views" to stringResource(R.string.commerce_sort_views), "likes" to stringResource(R.string.commerce_sort_likes), "price" to stringResource(R.string.commerce_sort_price), "title" to stringResource(R.string.commerce_sort_title)).forEach { (key, label) ->
                             DropdownMenuItem(text = { Text(label) }, onClick = { viewModel.setSortBy(key); expanded = false })
                         }
                     }
@@ -927,10 +927,10 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
                 filtered.isEmpty() -> EmptyState(
                     icon = { Icon(Icons.Filled.PostAdd, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                    title = "No posts found", subtitle = "Create your first listing to get started",
+                    title = stringResource(R.string.commerce_no_posts), subtitle = stringResource(R.string.commerce_no_posts_desc),
                 )
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item { Text("${filtered.size} posts", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                    item { Text(stringResource(R.string.commerce_posts_count, filtered.size), fontSize = 13.sp, color = Color(0xFF64748B)) }
                     items(filtered, key = { it.stableId }) { post ->
                         MyPostCard(
                             post = post,
@@ -957,9 +957,9 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 Button(
                     onClick = { viewModel.deletePost(state.showDeleteDialog!!) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.action_delete)) }
             },
-            dismissButton = { TextButton(onClick = { viewModel.showDeleteDialog(null) }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { viewModel.showDeleteDialog(null) }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 
@@ -989,9 +989,9 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.showPromoteDialog(null) }) { Text("Continue to Payment") }
+                Button(onClick = { viewModel.showPromoteDialog(null) }) { Text(stringResource(R.string.commerce_continue_payment)) }
             },
-            dismissButton = { TextButton(onClick = { viewModel.showPromoteDialog(null) }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { viewModel.showPromoteDialog(null) }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
@@ -1146,7 +1146,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                     )
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         // Extended sort: now includes views/likes (web-parity: SoldPosts.jsx sort options)
-                        listOf("newest" to "Newest", "price_desc" to "Price ↓", "views" to "Views", "likes" to "Likes").forEach { (key, label) ->
+                        listOf("newest" to stringResource(R.string.commerce_sort_newest), "price_desc" to stringResource(R.string.commerce_sort_price_down), "views" to stringResource(R.string.commerce_sort_views), "likes" to stringResource(R.string.commerce_sort_likes)).forEach { (key, label) ->
                             FilterChip(selected = sortBy == key, onClick = { sortBy = key },
                                 label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
@@ -1154,7 +1154,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                     }
                     if (displayed.isEmpty()) EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) }, title = stringResource(R.string.sold_empty), subtitle = stringResource(R.string.sold_empty_subtitle))
                     else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { Text("${displayed.size} sales", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        item { Text(stringResource(R.string.commerce_sales_count, displayed.size), fontSize = 13.sp, color = Color(0xFF64748B)) }
                         items(displayed, key = { it.stableId }) { post ->
                             // Rich card with per-item analytics mini-row (web-parity: SoldPosts.jsx statRow)
                             Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
@@ -1259,7 +1259,7 @@ private fun PostsListScreen(
                         title = if (search.isNotBlank()) "No results for \"$search\"" else emptyMsg, subtitle = subtitle,
                     )
                     else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { Text("${displayed.size} items", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        item { Text(stringResource(R.string.commerce_items_count, displayed.size), fontSize = 13.sp, color = Color(0xFF64748B)) }
                         items(displayed, key = { it.stableId }) { post ->
                             PostListItem(post) { (post.id ?: post.postId)?.let(onOpenPost) }
                         }
@@ -2780,10 +2780,10 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-    val steps = listOf("Listing Live", "Deal Agreed", "Payment", "Confirmation", "Complete")
+    val steps = listOf(stringResource(R.string.commerce_step_listing_live), stringResource(R.string.commerce_step_deal_agreed), stringResource(R.string.commerce_step_payment), stringResource(R.string.commerce_step_confirmation), stringResource(R.string.commerce_step_complete))
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFDCFCE7))))) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Mark as Sold", onBack)
+            ScreenTopBar(stringResource(R.string.commerce_mark_sold), onBack)
             // Stepper
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 steps.forEachIndexed { i, label ->
@@ -2886,40 +2886,40 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                             ) {
                                 Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Share Receipt", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.commerce_share_receipt), fontWeight = FontWeight.SemiBold)
                             }
                             Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                                Text("Done", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.commerce_done), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     } else {
-                        MhubTextField("Post ID", state.postId, viewModel::setPostId)
-                        MhubTextField("Buyer ID", state.buyerId, viewModel::setBuyerId)
-                        MhubTextField("Sale Amount (₹)", state.saleAmount, viewModel::setSaleAmount)
+                        MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
+                        MhubTextField(stringResource(R.string.commerce_field_buyer_id), state.buyerId, viewModel::setBuyerId)
+                        MhubTextField(stringResource(R.string.commerce_field_sale_amount), state.saleAmount, viewModel::setSaleAmount)
                         Button(onClick = { viewModel.initiateSale() }, enabled = !state.loading,
                             shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
                             modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                            Text(if (state.loading) "Processing…" else "Initiate Sale", fontWeight = FontWeight.SemiBold)
+                            Text(if (state.loading) stringResource(R.string.commerce_processing) else stringResource(R.string.commerce_initiate_sale), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 } else {
-                    MhubTextField("Transaction ID", state.txnId, viewModel::setTxnId)
-                    MhubTextField("OTP", state.otp, viewModel::setOtp)
+                    MhubTextField(stringResource(R.string.commerce_field_txn_id), state.txnId, viewModel::setTxnId)
+                    MhubTextField(stringResource(R.string.commerce_field_otp), state.otp, viewModel::setOtp)
                     Button(onClick = { viewModel.confirmSale() }, enabled = !state.loading,
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
                         modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                        Text(if (state.loading) "Confirming…" else "Confirm Sale", fontWeight = FontWeight.SemiBold)
+                        Text(if (state.loading) stringResource(R.string.commerce_confirming) else stringResource(R.string.commerce_confirm_sale), fontWeight = FontWeight.SemiBold)
                     }
                 }
                 // Pending sales
                 if (state.pending.isNotEmpty()) {
-                    Text("Pending Sales", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                     state.pending.forEach { sale ->
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
-                                    Text(sale.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                    Text("Buyer: ${sale.buyerName ?: "Unknown"}", fontSize = 12.sp, color = Color(0xFF64748B))
+                                    Text(sale.postTitle ?: stringResource(R.string.commerce_listing), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                    Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = Color(0xFF64748B))
                                 }
                                 Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
                             }
@@ -2977,11 +2977,11 @@ class SaleUndoneViewModel @Inject constructor(private val repo: TransactionsRepo
 @Composable
 fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val steps = listOf("Listed", "Marked Sold", "Issue Found", "Undo Request", "Reactivated")
+    val steps = listOf(stringResource(R.string.commerce_step_listed), stringResource(R.string.commerce_step_marked_sold), stringResource(R.string.commerce_step_issue_found), stringResource(R.string.commerce_step_undo_request), stringResource(R.string.commerce_step_reactivated))
     var expanded by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Undo Sale", onBack)
+            ScreenTopBar(stringResource(R.string.commerce_undo_sale), onBack)
             // Stepper
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 val currentStep = if (state.success) 4 else 2
@@ -3002,14 +3002,14 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(32.dp)) {
                         Icon(Icons.Filled.Autorenew, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("Listing Reactivated!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
-                        Text("The sale has been undone successfully.", fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = Color(0xFF64748B))
                     }
                 } else {
-                    MhubTextField("Post ID", state.postId, viewModel::setPostId)
+                    MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
                     // Reason dropdown
                     Column {
-                        Text("Reason", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text(stringResource(R.string.commerce_field_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                         Spacer(Modifier.height(4.dp))
                         Box {
                             OutlinedTextField(
@@ -3029,18 +3029,18 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                         }
                     }
                     if (state.reason == "other") {
-                        MhubTextField("Description", state.description, viewModel::setDescription, maxLines = 3, minLines = 2)
+                        MhubTextField(stringResource(R.string.commerce_field_description), state.description, viewModel::setDescription, maxLines = 3, minLines = 2)
                     }
                     Button(onClick = { viewModel.submit() }, enabled = !state.loading,
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
                         modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                        Text(if (state.loading) "Processing…" else "Undo Sale", fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text(if (state.loading) stringResource(R.string.commerce_processing) else stringResource(R.string.commerce_undo_sale), fontWeight = FontWeight.SemiBold, color = Color.White)
                     }
                 }
                 // History
                 if (state.history.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Undo History", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.commerce_undo_history), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                     state.history.forEach { rec ->
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {

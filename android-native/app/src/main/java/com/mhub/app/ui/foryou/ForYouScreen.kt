@@ -358,7 +358,7 @@ fun ForYouScreen(
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
                             ) {
                                 Text(
-                                    "🤖 AI Curated",
+                                    stringResource(R.string.foryou_ai_curated),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -390,7 +390,7 @@ fun ForYouScreen(
                         Spacer(Modifier.height(4.dp))
                         Text(state.error ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.load() }) { Text("Retry") }
+                        Button(onClick = { viewModel.load() }) { Text(stringResource(R.string.foryou_retry)) }
                     }
                 }
                 else -> LazyColumn(
@@ -405,7 +405,7 @@ fun ForYouScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search posts...", style = MaterialTheme.typography.bodySmall) },
+                                placeholder = { Text(stringResource(R.string.foryou_search_placeholder), style = MaterialTheme.typography.bodySmall) },
                                 leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
@@ -465,30 +465,30 @@ fun ForYouScreen(
                             FilterChip(
                                 selected = state.sortAscending,
                                 onClick = { if (!state.sortAscending) viewModel.toggleSortDirection() },
-                                label = { Text("Ascending", style = MaterialTheme.typography.labelSmall) },
+                                label = { Text(stringResource(R.string.foryou_ascending), style = MaterialTheme.typography.labelSmall) },
                                 leadingIcon = { Icon(Icons.Default.ArrowUpward, null, modifier = Modifier.size(14.dp)) }
                             )
                             FilterChip(
                                 selected = !state.sortAscending,
                                 onClick = { if (state.sortAscending) viewModel.toggleSortDirection() },
-                                label = { Text("Descending", style = MaterialTheme.typography.labelSmall) },
+                                label = { Text(stringResource(R.string.foryou_descending), style = MaterialTheme.typography.labelSmall) },
                                 leadingIcon = { Icon(Icons.Default.ArrowDownward, null, modifier = Modifier.size(14.dp)) }
                             )
                             Spacer(Modifier.weight(1f))
                             FilterChip(
                                 selected = density == PageDensity.COMPACT,
                                 onClick = { density = PageDensity.COMPACT },
-                                label = { Text("Compact", style = MaterialTheme.typography.labelSmall) }
+                                label = { Text(stringResource(R.string.foryou_compact), style = MaterialTheme.typography.labelSmall) }
                             )
                             FilterChip(
                                 selected = density == PageDensity.NORMAL,
                                 onClick = { density = PageDensity.NORMAL },
-                                label = { Text("Normal", style = MaterialTheme.typography.labelSmall) }
+                                label = { Text(stringResource(R.string.foryou_normal), style = MaterialTheme.typography.labelSmall) }
                             )
                             FilterChip(
                                 selected = density == PageDensity.SPACIOUS,
                                 onClick = { density = PageDensity.SPACIOUS },
-                                label = { Text("Spacious", style = MaterialTheme.typography.labelSmall) }
+                                label = { Text(stringResource(R.string.foryou_spacious), style = MaterialTheme.typography.labelSmall) }
                             )
                         }
                     }
@@ -610,7 +610,7 @@ fun ForYouScreen(
                     }
 
                     item {
-                        Text("Recommended for you", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        Text(stringResource(R.string.foryou_recommended), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
 
                     if (displayed.isEmpty()) {
@@ -619,8 +619,8 @@ fun ForYouScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Outlined.Recommend, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.height(8.dp))
-                                    Text("No recommendations yet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                    Text("Browse more to improve suggestions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.foryou_no_recommendations), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.foryou_browse_more), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -756,20 +756,20 @@ fun ForYouScreen(
                                     Icon(Icons.Default.Lock, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
                                     Spacer(Modifier.height(12.dp))
                                     Text(
-                                        "Sign in for more",
+                                        stringResource(R.string.foryou_sign_in_more),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        "Create an account to see personalized recommendations",
+                                        stringResource(R.string.foryou_sign_in_desc),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 16.dp)
                                     )
                                     Spacer(Modifier.height(16.dp))
                                     Button(onClick = onNavigateToLogin) {
-                                        Text("Sign In")
+                                        Text(stringResource(R.string.foryou_sign_in))
                                     }
                                 }
                             }
@@ -788,7 +788,7 @@ fun ForYouScreen(
                                 ) {
                                     Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Load More")
+                                    Text(stringResource(R.string.foryou_load_more))
                                 }
                             }
                         }
