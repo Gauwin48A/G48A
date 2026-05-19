@@ -2532,8 +2532,10 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                                     stringResource(R.string.compare_mileage) to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "—" },
                                     stringResource(R.string.compare_ram_storage) to { p: Post -> p.ramStorage ?: "—" },
                                     stringResource(R.string.compare_category) to { p: Post -> p.categoryName ?: "—" },
+                                    "Subcategory" to { p: Post -> p.subcategoryName ?: "—" },
                                     stringResource(R.string.compare_seller) to { p: Post -> p.userName ?: "—" },
                                     stringResource(R.string.compare_status) to { p: Post -> p.status ?: "—" },
+                                    "Posted" to { p: Post -> p.createdAt?.take(10) ?: "—" },
                                 )
                                 val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "—" } }
                                 visibleSpecs.forEach { (label, getter) ->

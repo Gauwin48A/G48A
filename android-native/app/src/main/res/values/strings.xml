@@ -90,7 +90,7 @@
     <string name="nav_feed">Feed</string>
     <string name="nav_rewards">Rewards</string>
     <string name="nav_categories">Categories</string>
-    <string name="nav_explore">Explore</string>
+    <string name="nav_explore">All Posts</string>
     <string name="nav_notifications">Alerts</string>
     <string name="nav_profile">Profile</string>
     <string name="nav_more">More</string>
@@ -298,6 +298,8 @@
     <string name="feed_title">Feed</string>
     <string name="feed_subtitle">Community updates</string>
     <string name="feed_search_placeholder">Search in feed…</string>
+    <string name="feed_login_to_see_more">Sign in to see more</string>
+    <string name="feed_login_subtitle">Create an account or log in to access the full community feed</string>
     <string name="feed_unavailable">Feed unavailable</string>
     <string name="feed_empty_title">No posts yet</string>
     <string name="feed_empty_message">Be the first to share something with the community</string>

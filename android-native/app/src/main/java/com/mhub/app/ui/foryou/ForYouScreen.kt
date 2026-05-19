@@ -214,9 +214,10 @@ class ForYouViewModel @Inject constructor(
             val nextPage = _state.value.currentPage + 1
             when (val r = sponsoredRepo.forYou(limit = 30, page = nextPage)) {
                 is ApiResult.Success -> {
-                    val newPosts = _state.value.posts + r.data
+                    val existingIds = _state.value.posts.map { it.stableId }.toSet()
+                    val deduped = r.data.filter { it.stableId !in existingIds }
                     _state.value = _state.value.copy(
-                        posts = newPosts,
+                        posts = _state.value.posts + deduped,
                         currentPage = nextPage,
                         hasMorePosts = r.data.size >= 30
                     )
@@ -344,7 +345,7 @@ fun ForYouScreen(
                     }
                 }
             }
-            .let { list -> if (isGuest) list.take(3) else list }
+            .let { list -> if (isGuest) list.take(5) else list }
     }
 
     Scaffold(
@@ -743,7 +744,7 @@ fun ForYouScreen(
                         }
                     }
 
-                    if (isGuest && displayed.size >= 3) {
+                    if (isGuest && displayed.size >= 5) {
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),

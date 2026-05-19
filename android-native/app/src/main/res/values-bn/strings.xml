@@ -1120,7 +1120,7 @@
     <string name="my_feed_title">My Feed</string>
     <string name="my_posts_label">My Posts</string>
     <string name="my_posts_title">My posts</string>
-    <string name="nav_explore">Explore</string>
+    <string name="nav_explore">সব পোস্ট</string>
     <string name="nav_feed_tab">Feed</string>
     <string name="nav_rewards_tab">Rewards</string>
     <string name="notif_accept_offer">Accept Offer</string>

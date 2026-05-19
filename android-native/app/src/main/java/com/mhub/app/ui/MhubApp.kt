@@ -359,7 +359,7 @@ fun MhubApp(
             // ── Main Graph (Bottom Nav) ──
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
-                    MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false, showBottomBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true, showBottomBar = true) {
                     CategoryHubScreen(
                         onOpenCategory = { category ->
                             val mapped = when ((category.categoryGroup ?: category.name ?: "").lowercase()) {
@@ -415,7 +415,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.ALL_POSTS) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         ExploreScreen(
                             onOpenPost = { id ->
                                 if (id.startsWith("ep") || id.startsWith("fp") || id.startsWith("gp") || id.startsWith("fup")) {
@@ -446,6 +446,8 @@ fun MhubApp(
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
+                            isGuest = !isAuthenticated,
+                            onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )
                     }
                 }
