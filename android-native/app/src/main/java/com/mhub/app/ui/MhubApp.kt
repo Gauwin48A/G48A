@@ -24,8 +24,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Home
@@ -35,9 +37,11 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.FloatingActionButton
@@ -431,7 +435,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FOR_YOU) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -442,7 +446,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
@@ -453,7 +457,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.REWARDS) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.REWARDS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         RewardsScreen(
                             isAuthenticated = isAuthenticated,
                             onSignInRequired = {
@@ -669,7 +673,7 @@ fun MhubApp(
             }
 
             composable(Routes.CHAT) {
-                MainShell(navController = navController, selected = BottomTab.CHAT, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     if (needsLogin) {
                         com.mhub.app.ui.components.LoginPromptCard(
                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
@@ -1389,7 +1393,9 @@ enum class BottomTab(
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
     ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.Search, Icons.Filled.Search),
-    CHAT(Routes.CHAT, R.string.nav_chat, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble),
+    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.AutoAwesome, Icons.Filled.AutoAwesome),
+    FEED(Routes.FEED, R.string.nav_feed, Icons.Outlined.Forum, Icons.Filled.Forum),
+    REWARDS(Routes.REWARDS, R.string.nav_rewards, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
 }
 
@@ -1456,8 +1462,8 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // LEFT: Home | All Posts
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
+                        // LEFT: Home | All Posts | For You
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1487,8 +1493,8 @@ fun MainShell(
                                 )
                             }
                         }
-                        // RIGHT: Chat | Profile
-                        listOf(BottomTab.CHAT, BottomTab.PROFILE).forEach { tab ->
+                        // RIGHT: Feed | Rewards | Profile
+                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,

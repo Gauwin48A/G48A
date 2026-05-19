@@ -140,6 +140,7 @@ class PostsRepository @Inject constructor(
     suspend fun clearRecentlyViewed(): ApiResult<Unit> = safeApiCall { api.clearRecentlyViewed(); Unit }
 
     suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().items }
+    suspend fun addToCompare(postId: String): ApiResult<Unit> = safeApiCall { api.addToCompare(postId); Unit }
     suspend fun removeFromCompare(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCompare(postId); Unit }
     suspend fun clearCompare(): ApiResult<Unit> = safeApiCall { api.clearCompare(); Unit }
 
