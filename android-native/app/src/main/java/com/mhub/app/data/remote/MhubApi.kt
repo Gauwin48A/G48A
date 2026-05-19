@@ -290,6 +290,13 @@ interface MhubApi {
     @POST("api/profile/update")
     suspend fun updateProfile(@Body body: ProfileUpdateRequest): MessageResponse
 
+    // ---- Profile Preferences ----
+    @GET("api/profile/preferences")
+    suspend fun getPreferences(): PreferencesResponse
+
+    @POST("api/profile/preferences/update")
+    suspend fun updatePreferences(@Body body: PreferencesUpdateRequest): PreferencesResponse
+
     // ---- Dashboard ----
     @GET("api/dashboard")
     suspend fun dashboard(): DashboardResponse

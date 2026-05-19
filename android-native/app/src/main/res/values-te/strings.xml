@@ -1090,7 +1090,7 @@
     <string name="my_posts_empty">You have not posted anything yet.</string>
     <string name="my_posts_label">My Posts</string>
     <string name="my_posts_title">My posts</string>
-    <string name="nav_explore">Explore</string>
+    <string name="nav_explore">అన్ని పోస్ట్‌లు</string>
     <string name="nav_feed_tab">Feed</string>
     <string name="nav_rewards_tab">Rewards</string>
     <string name="nav_wishlist">Wishlist</string>

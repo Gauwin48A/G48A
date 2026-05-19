@@ -242,10 +242,13 @@ private val feedSortOptions = listOf("For You", "Shuffle", "Recent", "Updated", 
 fun FeedScreen(
     onOpenPost: (String) -> Unit,
     onCreatePost: () -> Unit = {},
+    isGuest: Boolean = false,
+    onNavigateToLogin: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -256,13 +259,20 @@ fun FeedScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
-    val filteredPosts = remember(state.posts, searchQuery) {
-        if (searchQuery.isBlank()) state.posts
+    // Search debounce (350ms matching web)
+    LaunchedEffect(searchQuery) {
+        kotlinx.coroutines.delay(350)
+        debouncedQuery = searchQuery
+    }
+
+    val filteredPosts = remember(state.posts, debouncedQuery, isGuest) {
+        val searched = if (debouncedQuery.isBlank()) state.posts
         else state.posts.filter {
-            it.displayTitle.contains(searchQuery, ignoreCase = true) ||
-                it.description?.contains(searchQuery, ignoreCase = true) == true ||
-                it.userName?.contains(searchQuery, ignoreCase = true) == true
+            it.displayTitle.contains(debouncedQuery, ignoreCase = true) ||
+                it.description?.contains(debouncedQuery, ignoreCase = true) == true ||
+                it.userName?.contains(debouncedQuery, ignoreCase = true) == true
         }
+        if (isGuest) searched.take(5) else searched
     }
 
     if (showImageZoom && zoomImages.isNotEmpty()) {
@@ -473,12 +483,46 @@ fun FeedScreen(
                                     onLike = { viewModel.toggleLike(post.stableId) },
                                 )
                             }
-                            if (state.hasMore && filteredPosts.isNotEmpty()) {
+                            if (state.hasMore && filteredPosts.isNotEmpty() && !isGuest) {
                                 item {
                                     LaunchedEffect(Unit) { viewModel.loadMore() }
                                     if (state.loadingMore) {
                                         Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                                             CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                        }
+                                    }
+                                }
+                            }
+                            // Guest login overlay (web parity: shows after 5 posts)
+                            if (isGuest && state.posts.size > 5) {
+                                item(key = "guest_login_cta") {
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(24.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.feed_login_to_see_more),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            )
+                                            Text(
+                                                stringResource(R.string.feed_login_subtitle),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                            )
+                                            androidx.compose.material3.Button(
+                                                onClick = onNavigateToLogin,
+                                                shape = RoundedCornerShape(12.dp),
+                                            ) {
+                                                Text(stringResource(R.string.action_sign_in))
+                                            }
                                         }
                                     }
                                 }

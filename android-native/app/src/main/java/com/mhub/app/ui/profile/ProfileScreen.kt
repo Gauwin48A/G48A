@@ -136,6 +136,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import javax.inject.Inject
 
@@ -181,6 +182,7 @@ class ProfileViewModel @Inject constructor(
     private val rewardsRepo: RewardsRepository,
     private val socialRepo: UserSocialRepository,
     private val uploadRepo: com.mhub.app.data.repository.UploadRepository,
+    private val api: com.mhub.app.data.remote.MhubApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
     val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -369,6 +371,67 @@ class ProfileViewModel @Inject constructor(
                 is ApiResult.Success -> _state.value = _state.value.copy(dataExportDone = true, editResult = "Data export request sent. You'll receive an email.")
                 is ApiResult.Failure -> _state.value = _state.value.copy(editResult = "Export request failed. Please try again.")
             }
+        }
+    }
+
+    // ── Preferences persistence ──
+    private val _prefsSaving = MutableStateFlow(false)
+    val prefsSaving: StateFlow<Boolean> = _prefsSaving.asStateFlow()
+
+    private val _prefsLoaded = MutableStateFlow<com.mhub.app.data.remote.dto.PreferencesResponse?>(null)
+    val prefsLoaded: StateFlow<com.mhub.app.data.remote.dto.PreferencesResponse?> = _prefsLoaded.asStateFlow()
+
+    fun loadPreferences() {
+        viewModelScope.launch {
+            try {
+                val resp = api.getPreferences()
+                _prefsLoaded.value = resp
+            } catch (_: Exception) { }
+        }
+    }
+
+    fun savePreferences(location: String, minPrice: Int?, maxPrice: Int?) {
+        _prefsSaving.value = true
+        viewModelScope.launch {
+            try {
+                api.updatePreferences(
+                    com.mhub.app.data.remote.dto.PreferencesUpdateRequest(
+                        location = location,
+                        minPrice = minPrice,
+                        maxPrice = maxPrice,
+                    )
+                )
+                _state.value = _state.value.copy(editResult = "Preferences saved")
+            } catch (_: Exception) {
+                _state.value = _state.value.copy(editResult = "Failed to save preferences")
+            } finally {
+                _prefsSaving.value = false
+            }
+        }
+    }
+
+    // ── Reviews loading ──
+    private var reviewsLoaded = false
+
+    fun loadReviews() {
+        if (reviewsLoaded) return
+        reviewsLoaded = true
+        val userId = _state.value.user?.id ?: return
+        viewModelScope.launch {
+            try {
+                val resp = api.userReviews(userId.toString())
+                val mapped = resp.reviews.map { r ->
+                    UserReview(
+                        id = r.stableId,
+                        reviewerName = r.reviewerName ?: "Anonymous",
+                        reviewerAvatar = r.reviewerAvatar,
+                        rating = r.rating.toInt().coerceIn(1, 5),
+                        message = r.comment ?: "",
+                        date = r.createdAt?.take(10) ?: "",
+                    )
+                }
+                _state.value = _state.value.copy(reviews = mapped)
+            } catch (_: Exception) { }
         }
     }
 }
@@ -1219,7 +1282,17 @@ fun ProfileScreen(
 
                         // ─── Tab 2: Preferences ───────────────────────────────
                         if (selectedTab == 2) {
-                            PreferencesTab(onOpenCategoryMode = {})
+                            val prefs by viewModel.prefsLoaded.collectAsState()
+                            val prefsSaving by viewModel.prefsSaving.collectAsState()
+                            LaunchedEffect(Unit) { viewModel.loadPreferences() }
+                            PreferencesTab(
+                                onOpenCategoryMode = {},
+                                initialLocation = prefs?.location ?: "",
+                                initialMinPrice = prefs?.minPrice?.toString() ?: "",
+                                initialMaxPrice = prefs?.maxPrice?.toString() ?: "",
+                                saving = prefsSaving,
+                                onSave = { loc, min, max -> viewModel.savePreferences(loc, min, max) },
+                            )
                         }
 
                         // ─── Tab 3: Settings ──────────────────────────────────
@@ -1237,6 +1310,7 @@ fun ProfileScreen(
 
                         // ─── Tab 4: Reviews ───────────────────────────────────
                         if (selectedTab == 4) {
+                            LaunchedEffect(state.user?.id) { viewModel.loadReviews() }
                             ReviewsTab(reviews = state.reviews)
                         }
 
@@ -1338,11 +1412,18 @@ private fun PersonalInfoTab(
 }
 
 @Composable
-private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
-    var location by remember { mutableStateOf("") }
+private fun PreferencesTab(
+    onOpenCategoryMode: () -> Unit,
+    initialLocation: String = "",
+    initialMinPrice: String = "",
+    initialMaxPrice: String = "",
+    saving: Boolean = false,
+    onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit = { _, _, _ -> },
+) {
+    var location by remember { mutableStateOf(initialLocation) }
     var selectedRadius by remember { mutableIntStateOf(25) }
-    var minPrice by remember { mutableStateOf("") }
-    var maxPrice by remember { mutableStateOf("") }
+    var minPrice by remember { mutableStateOf(initialMinPrice) }
+    var maxPrice by remember { mutableStateOf(initialMaxPrice) }
     var pageDensity by remember { mutableStateOf("comfortable") }
     val radii = listOf(5, 10, 25, 50)
 
@@ -1411,12 +1492,17 @@ private fun PreferencesTab(onOpenCategoryMode: () -> Unit) {
                 }
 
                 Button(
-                    onClick = {},
+                    onClick = { onSave(location, minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
+                    enabled = !saving,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                 ) {
-                    Text(stringResource(R.string.profile_save_prefs), fontWeight = FontWeight.SemiBold)
+                    if (saving) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.profile_save_prefs), fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }

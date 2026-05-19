@@ -744,6 +744,22 @@ data class ProfileUpdateRequest(
     @SerialName("avatar") val avatar: String? = null,
 )
 
+@Serializable
+data class PreferencesUpdateRequest(
+    val location: String? = null,
+    @SerialName("minPrice") val minPrice: Int? = null,
+    @SerialName("maxPrice") val maxPrice: Int? = null,
+    val categories: List<String>? = null,
+)
+
+@Serializable
+data class PreferencesResponse(
+    val location: String? = null,
+    @SerialName("min_price") val minPrice: Int? = null,
+    @SerialName("max_price") val maxPrice: Int? = null,
+    val categories: List<String>? = null,
+)
+
 // -------- Chat extras --------
 @Serializable
 data class ChatReactionRequest(
