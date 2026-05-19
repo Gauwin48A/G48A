@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -500,7 +502,8 @@ fun ForYouScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(categories, key = { it.first ?: "all" }) { (key, label) ->
+                            // Use index-based keys to avoid crash when API returns category with slug matching fallback key
+                            itemsIndexed(categories) { idx, (key, label) ->
                                 FilterChip(
                                     selected = state.selectedCategory == key,
                                     onClick = { viewModel.setCategory(key) },
@@ -612,7 +615,20 @@ fun ForYouScreen(
                     }
 
                     item {
-                        Text(stringResource(R.string.foryou_recommended), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF2563EB).copy(alpha = 0.1f)) {
+                                Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                                    Text(stringResource(R.string.foryou_recommended), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
+                                }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Text("${displayed.size} picks", fontSize = 12.sp, color = Color(0xFF64748B))
+                        }
                     }
 
                     if (displayed.isEmpty()) {
@@ -631,114 +647,140 @@ fun ForYouScreen(
                     items(displayed, key = { it.stableId }) { post ->
                         var wishlisted by remember { mutableStateOf(false) }
                         var liked by remember { mutableStateOf(false) }
+                        var likeCount by remember { mutableStateOf(post.likeCount ?: 0) }
 
-                        val cardPadding = when (density) {
-                            PageDensity.COMPACT -> PaddingValues(horizontal = 16.dp, vertical = 2.dp)
-                            PageDensity.NORMAL -> PaddingValues(horizontal = 16.dp, vertical = 4.dp)
-                            PageDensity.SPACIOUS -> PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                        }
-
+                        // AI-curated premium card — single column, larger image, Add to Cart
                         Card(
                             onClick = { onOpenPost(post.stableId) },
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.fillMaxWidth().padding(cardPadding),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                         ) {
                             Column {
-                                Box(Modifier.fillMaxWidth().height(200.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                                    post.primaryImage?.let { img ->
+                                // Image with gradient overlay
+                                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                                    val images = listOfNotNull(post.primaryImage) + (post.images)
+                                    var imageIdx by remember { mutableStateOf(0) }
+                                    if (images.isNotEmpty()) {
                                         AsyncImage(
-                                            model = img, contentDescription = null,
+                                            model = images[imageIdx.coerceIn(0, images.size - 1)],
+                                            contentDescription = post.displayTitle,
                                             contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize().clickable { zoomImages = listOf(img) },
+                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                                                .clickable { zoomImages = images },
                                         )
-                                    } ?: Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Outlined.ImageNotSupported, null, modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        // Image nav arrows for multi-image
+                                        if (images.size > 1) {
+                                            Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                                IconButton(onClick = { if (imageIdx > 0) imageIdx-- }, modifier = Modifier.size(36.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
+                                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                                }
+                                                IconButton(onClick = { if (imageIdx < images.size - 1) imageIdx++ }, modifier = Modifier.size(36.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
+                                                    Icon(Icons.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                                }
+                                            }
+                                            // Dot indicators
+                                            Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                images.forEachIndexed { i, _ ->
+                                                    Box(Modifier.size(if (i == imageIdx) 8.dp else 5.dp).clip(CircleShape).background(if (i == imageIdx) Color.White else Color.White.copy(alpha = 0.5f)))
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Outlined.ImageNotSupported, null, modifier = Modifier.size(48.dp), tint = Color(0xFFCBD5E1))
+                                        }
                                     }
-                                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)), startY = 100f)))
+                                    // Price badge bottom-left
                                     post.price?.let { p ->
-                                        Text("₹${"%,.0f".format(p)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+                                        Surface(Modifier.align(Alignment.BottomStart).padding(10.dp), shape = RoundedCornerShape(10.dp), color = Color(0xFF1E293B).copy(alpha = 0.85f)) {
+                                            Text("₹${"%,.0f".format(p)}", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        }
                                     }
-                                    IconButton(
-                                        onClick = {
-                                            wishlisted = !wishlisted
-                                            viewModel.toggleBookmark(post.stableId)
-                                        },
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape),
-                                    ) {
-                                        Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark", tint = if (wishlisted) Color(0xFFFBBF24) else Color.White, modifier = Modifier.size(18.dp))
+                                    // Bookmark top-right
+                                    Box(Modifier.align(Alignment.TopEnd).padding(10.dp)) {
+                                        IconButton(onClick = { wishlisted = !wishlisted; viewModel.toggleBookmark(post.stableId) }, modifier = Modifier.size(34.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
+                                            Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = if (wishlisted) Color(0xFFFBBF24) else Color.White, modifier = Modifier.size(18.dp))
+                                        }
                                     }
-                                    PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                                    // AI badge top-left
+                                    Surface(Modifier.align(Alignment.TopStart).padding(10.dp), shape = RoundedCornerShape(8.dp), color = Color(0xFF2563EB)) {
+                                        Row(Modifier.padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                            Icon(Icons.Default.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(10.dp))
+                                            Text("For You", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                    }
+                                    PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(start = 10.dp, top = 36.dp))
                                 }
 
-                                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    val sellerName = post.sellerName ?: post.userName
-                                    if (sellerName != null) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(Modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
-                                                Text(sellerName.take(1).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                            }
-                                            Spacer(Modifier.width(6.dp))
-                                            Text(sellerName, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                            if (post.sellerName != null) {
-                                                Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
-                                            }
+                                Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    // Seller row
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        val initial = (post.sellerName ?: post.userName ?: "?").take(1).uppercase()
+                                        Box(Modifier.size(28.dp).clip(CircleShape).background(Color(0xFF2563EB).copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                                            Text(initial, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
                                         }
-                                        Spacer(Modifier.height(2.dp))
-                                    }
-
-                                    Text(post.displayTitle, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 15.sp)
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(post.sellerName ?: post.userName ?: "", fontSize = 12.sp, color = Color(0xFF64748B), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         post.condition?.let { cond ->
-                                            Surface(shape = RoundedCornerShape(4.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
-                                                Text(cond.replaceFirstChar { c -> c.uppercase() }, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                            }
-                                        }
-                                        post.brand?.let { b ->
-                                            Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                                                Text(b, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Surface(shape = RoundedCornerShape(6.dp), color = if (cond.equals("New", ignoreCase = true)) Color(0xFFDCFCE7) else Color(0xFFFFF7ED)) {
+                                                Text(cond, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (cond.equals("New", ignoreCase = true)) Color(0xFF16A34A) else Color(0xFFD97706), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                             }
                                         }
                                     }
 
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    // Title
+                                    Text(post.displayTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)
+
+                                    // Location + views row
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         post.location?.let {
-                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                                Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Spacer(Modifier.width(2.dp))
-                                                Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(13.dp), tint = Color(0xFF94A3B8))
+                                                Text(it, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             }
                                         }
                                         post.viewCount?.let { v ->
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Spacer(Modifier.width(2.dp))
-                                                Text(v.toString(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(13.dp), tint = Color(0xFF94A3B8))
+                                                Text("$v views", fontSize = 12.sp, color = Color(0xFF64748B))
                                             }
                                         }
                                     }
 
-                                    HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                                    PostActionRow(
-                                        postId = post.stableId,
-                                        viewCount = post.viewCount ?: 0,
-                                        isLiked = liked,
-                                        isWishlisted = wishlisted,
-                                        onLike = { liked = !liked },
-                                        onWishlist = { wishlisted = !wishlisted },
-                                        onInterested = {
-                                            interestPostId = post.stableId
-                                            interestPostTitle = post.displayTitle
-                                            showInterestModal = true
-                                        },
-                                        onShare = {
-                                            sharePostId = post.stableId
-                                            sharePostTitle = post.displayTitle
-                                            showShareSheet = true
-                                        },
-                                    )
+                                    // Action row: Like | Share | Interested | View Details CTA
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        // Like
+                                        IconButton(onClick = { liked = !liked; if (liked) likeCount++ else likeCount-- }, modifier = Modifier.size(36.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                Icon(if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (liked) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                                            }
+                                        }
+                                        Text("$likeCount", fontSize = 12.sp, color = Color(0xFF64748B))
+                                        IconButton(onClick = { sharePostId = post.stableId; sharePostTitle = post.displayTitle; showShareSheet = true }, modifier = Modifier.size(36.dp)) {
+                                            Icon(Icons.Outlined.Share, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                                        }
+                                        Spacer(Modifier.weight(1f))
+                                        // "Interested" button
+                                        androidx.compose.material3.OutlinedButton(
+                                            onClick = { interestPostId = post.stableId; interestPostTitle = post.displayTitle; showInterestModal = true },
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier.height(34.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                        ) {
+                                            Text("Interested", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        }
+                                        // "View" CTA
+                                        Button(
+                                            onClick = { onOpenPost(post.stableId) },
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                            modifier = Modifier.height(34.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                        ) {
+                                            Text("View", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                    }
                                 }
                             }
                         }

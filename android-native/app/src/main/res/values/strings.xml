@@ -1046,6 +1046,10 @@
     <string name="profile_verification">Verification</string>
     <string name="profile_get_verified">Get verified</string>
     <string name="profile_verified_check">Verified ✓</string>
+    <string name="profile_orders">Orders</string>
+    <string name="profile_track_orders">Track orders</string>
+    <string name="profile_addresses">Addresses</string>
+    <string name="profile_manage_addresses">Manage addresses</string>
     <string name="profile_recent_posts">MY RECENT POSTS</string>
     <string name="profile_response_time">⚡ %dm response</string>
     <string name="profile_verified">Verified</string>

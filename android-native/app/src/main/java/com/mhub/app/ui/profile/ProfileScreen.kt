@@ -1047,6 +1047,10 @@ fun ProfileScreen(
                                 QuickActionCard(icon = Icons.Default.BarChart, label = stringResource(R.string.profile_my_offers), subtitle = stringResource(R.string.profile_negotiations), accentColor = Color(0xFFF97316), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
                                 QuickActionCard(icon = Icons.Default.VerifiedUser, label = stringResource(R.string.profile_verification), subtitle = if (user?.isKycVerified == true) stringResource(R.string.profile_verified_check) else stringResource(R.string.profile_get_verified), accentColor = Color(0xFF8B5CF6), onClick = onOpenKyc, modifier = Modifier.weight(1f))
                             }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                QuickActionCard(icon = Icons.Default.Receipt, label = stringResource(R.string.profile_orders), subtitle = stringResource(R.string.profile_track_orders), accentColor = Color(0xFF0891B2), onClick = onOpenOrders, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Default.Home, label = stringResource(R.string.profile_addresses), subtitle = stringResource(R.string.profile_manage_addresses), accentColor = Color(0xFF7C3AED), onClick = onOpenAddresses, modifier = Modifier.weight(1f))
+                            }
                         }
 
                         // ─── User Posts Grid ──────────────────────────────────
