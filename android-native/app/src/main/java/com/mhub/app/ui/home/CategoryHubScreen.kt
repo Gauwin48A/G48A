@@ -23,15 +23,16 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
@@ -43,8 +44,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
@@ -62,11 +61,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -165,6 +161,7 @@ class CategoryHubViewModel @Inject constructor(
 
 /* ── Screen ─────────────────────────────────────────────────────────────── */
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryHubScreen(
     onOpenCategory: (Category) -> Unit = {},
@@ -187,94 +184,262 @@ fun CategoryHubScreen(
     val pageGradient = Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
     val titleGradient = Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFFEC4899)))
 
-    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
     PullToRefreshBox(
         isRefreshing = state.refreshing,
         onRefresh = { viewModel.refresh() },
         modifier = Modifier.fillMaxSize().background(pageGradient),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
+                bottom = 100.dp,
+            ),
         ) {
-            Spacer(Modifier.height(16.dp))
 
-            // Title
-            Text(
-                text = buildAnnotatedString {
-                    append(stringResource(R.string.hub_choose_world))
-                },
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF0F172A),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.semantics { heading() },
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.hub_subtitle),
-                fontSize = 13.sp, color = Color(0xFF64748B),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Live stats row
-            if (!state.loading) {
-                HubStatsRow(
-                    totalListings = totalListings,
-                    newToday = newToday,
-                    categoryCount = state.categories.size,
-                )
-                Spacer(Modifier.height(10.dp))
+            // ── Header: greeting + search + pills ──────────────────────
+            item(key = "header") {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Welcome to MHub 👋", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text(stringResource(R.string.hub_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
+                        }
+                        IconButton(onClick = onOpenNotifications) {
+                            BadgedBox(badge = { if (unreadNotifications > 0) Badge { Text("$unreadNotifications") } }) {
+                                Icon(Icons.Default.Notifications, null, tint = Color(0xFF6366F1))
+                            }
+                        }
+                        IconButton(onClick = onOpenCart) {
+                            BadgedBox(badge = { if (cartItemCount > 0) Badge { Text("$cartItemCount") } }) {
+                                Icon(Icons.Default.ShoppingCart, null, tint = Color(0xFF6366F1))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    // Search bar — tappable, navigates to search
+                    Surface(
+                        onClick = onOpenSearch,
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color.White,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF6366F1), modifier = Modifier.size(22.dp))
+                            Text(
+                                "Search phones, fashion, cars…",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 14.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f)) {
+                                Text(
+                                    "Search",
+                                    color = Color(0xFF6366F1),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    // Quick action pills
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(
+                            onClick = { onSelectApp("sell") },
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFF10B981).copy(alpha = 0.12f),
+                        ) {
+                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.Add, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                Text("Sell", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
+                            }
+                        }
+                        Surface(
+                            onClick = onOpenScanner,
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFF6366F1).copy(alpha = 0.12f),
+                        ) {
+                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.QrCodeScanner, null, tint = Color(0xFF6366F1), modifier = Modifier.size(16.dp))
+                                Text("Scan", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+                            }
+                        }
+                        Surface(
+                            onClick = { onSelectApp("nearby") },
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFFF59E0B).copy(alpha = 0.12f),
+                        ) {
+                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.LocationOn, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
+                                Text("Nearby", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF59E0B))
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Surface(
+                            onClick = onOpenAllPosts,
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFF0F172A).copy(alpha = 0.07f),
+                        ) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("All", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF475569), modifier = Modifier.size(13.dp))
+                            }
+                        }
+                    }
+                }
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            // Error banner (dismissed on successful refresh)
-            if (state.error != null && !state.loading) {
-                Surface(
-                    color = Color(0xFFFEF2F2),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                ) {
-                    Text(
-                        text = "⚠️ Offline — showing cached data",
-                        color = Color(0xFFDC2626),
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            // ── Stats row ──────────────────────────────────────────────
+            if (!state.loading) {
+                item(key = "stats") {
+                    Spacer(Modifier.height(12.dp))
+                    HubStatsRow(
+                        totalListings = totalListings,
+                        newToday = newToday,
+                        categoryCount = state.categories.size,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
 
+            // ── Error banner ───────────────────────────────────────────
+            if (state.error != null && !state.loading) {
+                item(key = "error") {
+                    Surface(
+                        color = Color(0xFFFEF2F2),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    ) {
+                        Text(
+                            "⚠️ Offline — showing cached data",
+                            color = Color(0xFFDC2626),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+            }
+
+            // ── Section header ─────────────────────────────────────────
+            item(key = "cat_header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "BROWSE CATEGORIES",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF94A3B8),
+                        letterSpacing = 1.5.sp,
+                    )
+                    Surface(onClick = onOpenAllPosts, shape = RoundedCornerShape(8.dp), color = Color.Transparent) {
+                        Text(
+                            "View All →",
+                            fontSize = 12.sp,
+                            color = Color(0xFF6366F1),
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+            }
+
+            // ── Loading state ──────────────────────────────────────────
             if (state.loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF6366F1))
+                item(key = "loading") {
+                    Box(Modifier.fillMaxWidth().height(340.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF6366F1))
+                    }
                 }
             } else {
-                // App grid — 2 columns on mobile
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(bottom = 100.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    itemsIndexed(APPS, key = { _, app -> app.key }) { index, app ->
-                        val catCount = state.categories.count { cat ->
-                            val group = (cat.categoryGroup ?: "others").lowercase()
-                            group == app.key || (app.key == "others" && group !in listOf("electronics", "fashion", "vehicles"))
-                        }
-                        val stat = state.stats.find { it.key?.lowercase() == app.key }
-                        val activeCount = stat?.activeCount ?: catCount
-                        val newTodayApp = stat?.newToday ?: 0
-                        AppTile(app = app, listingsCount = activeCount, newToday = newTodayApp, index = index) {
-                            onSelectApp(app.key)
-                        }
+                // ── Row 1: Electronics + Fashion ───────────────────────
+                item(key = "row1") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        val s0 = state.stats.find { it.key?.lowercase() == "electronics" }
+                        val s1 = state.stats.find { it.key?.lowercase() == "fashion" }
+                        AppTile(
+                            app = APPS[0],
+                            listingsCount = s0?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "electronics" },
+                            newToday = s0?.newToday ?: 0,
+                            index = 0,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelectApp(APPS[0].key) },
+                        )
+                        AppTile(
+                            app = APPS[1],
+                            listingsCount = s1?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "fashion" },
+                            newToday = s1?.newToday ?: 0,
+                            index = 1,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelectApp(APPS[1].key) },
+                        )
                     }
+                }
+                // ── Row 2: Vehicles + Others ───────────────────────────
+                item(key = "row2") {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        val s2 = state.stats.find { it.key?.lowercase() == "vehicles" }
+                        val s3 = state.stats.find { it.key?.lowercase() == "others" }
+                        AppTile(
+                            app = APPS[2],
+                            listingsCount = s2?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "vehicles" },
+                            newToday = s2?.newToday ?: 0,
+                            index = 2,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelectApp(APPS[2].key) },
+                        )
+                        AppTile(
+                            app = APPS[3],
+                            listingsCount = s3?.activeCount ?: state.categories.count {
+                                (it.categoryGroup ?: "").lowercase() !in listOf("electronics", "fashion", "vehicles")
+                            },
+                            newToday = s3?.newToday ?: 0,
+                            index = 3,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelectApp(APPS[3].key) },
+                        )
+                    }
+                }
+                // ── Promo banner ───────────────────────────────────────
+                item(key = "promo") {
+                    Spacer(Modifier.height(20.dp))
+                    PromoBanner(
+                        onOpenAllPosts = onOpenAllPosts,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+                // ── Quick links ────────────────────────────────────────
+                item(key = "quicklinks") {
+                    Spacer(Modifier.height(16.dp))
+                    QuickLinksSection(
+                        onOpenAllPosts = onOpenAllPosts,
+                        onSelectApp = onSelectApp,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
@@ -292,12 +457,12 @@ private fun formatCompact(n: Int): String = when {
 /* ── Hub Stats Row ─────────────────────────────────────────────────────── */
 
 @Composable
-private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int) {
+private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int, modifier: Modifier = Modifier.fillMaxWidth()) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = Color.White.copy(alpha = 0.75f),
         shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -326,14 +491,13 @@ private fun HubStat(emoji: String, value: String, label: String) {
 /* ── App tile composable ────────────────────────────────────────────────── */
 
 @Composable
-private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, index: Int = 0, onClick: () -> Unit) {
+private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, index: Int = 0, modifier: Modifier = Modifier, onClick: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { delay(index * 120L); visible = true }
     val tileAlpha by animateFloatAsState(if (visible) 1f else 0f, tween(350), label = "tileAlpha")
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .height(168.dp)
             .alpha(tileAlpha)
             .shadow(14.dp, RoundedCornerShape(24.dp))
@@ -426,4 +590,127 @@ private fun AppPulsingDot() {
         label = "dotAlpha",
     )
     Box(Modifier.size(6.dp).alpha(dotAlpha).background(Color(0xFF4ADE80), CircleShape))
+}
+
+/* ── Promo banner ──────────────────────────────────────────────────────── */
+
+@Composable
+private fun PromoBanner(onOpenAllPosts: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFFEC4899)),
+                )
+            )
+            .clickable { onOpenAllPosts() }
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(bottom = 8.dp),
+                ) {
+                    Text(
+                        "🔥  TRENDING NOW",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+                Text(
+                    "Discover latest\nlistings near you",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    lineHeight = 22.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.White,
+                    modifier = Modifier.clickable { onOpenAllPosts() },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Browse All", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+            Text("🛍️", fontSize = 64.sp, modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+/* ── Quick links section ───────────────────────────────────────────────── */
+
+private data class QuickLink(val label: String, val emoji: String, val key: String, val color: Color)
+
+private val QUICK_LINKS = listOf(
+    QuickLink("Wishlist", "❤️", "wishlist", Color(0xFFEF4444)),
+    QuickLink("Offers", "🤝", "offers", Color(0xFF10B981)),
+    QuickLink("Compare", "⚖️", "compare", Color(0xFF6366F1)),
+    QuickLink("Rewards", "🏆", "rewards", Color(0xFFF59E0B)),
+    QuickLink("Dashboard", "📊", "dashboard", Color(0xFF0EA5E9)),
+    QuickLink("Saved", "🔖", "saved", Color(0xFF8B5CF6)),
+)
+
+@Composable
+private fun QuickLinksSection(
+    onOpenAllPosts: () -> Unit,
+    onSelectApp: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            "QUICK ACCESS",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF94A3B8),
+            letterSpacing = 1.5.sp,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(QUICK_LINKS, key = { it.key }) { link ->
+                Surface(
+                    onClick = { onSelectApp(link.key) },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.White,
+                    shadowElevation = 3.dp,
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(link.color.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(link.emoji, fontSize = 18.sp)
+                        }
+                        Text(link.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155))
+                    }
+                }
+            }
+        }
+    }
 }

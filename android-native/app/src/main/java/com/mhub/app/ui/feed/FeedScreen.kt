@@ -706,26 +706,26 @@ private fun FeedCard(
                 }
             }
 
-            // Price chip if available
-            post.price?.let { price ->
-                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                    Text(
-                        "₹${"%,.0f".format(price)}",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    )
-                }
-            }
-
+            // Image FIRST (prominent, social-first layout — like LinkedIn/Twitter)
             if (post.primaryImage != null) {
-                AsyncImage(
-                    model = post.primaryImage,
-                    contentDescription = post.displayTitle,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
-                )
+                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = post.displayTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable { onImageZoom(listOfNotNull(post.primaryImage) + post.images) },
+                    )
+                    // Price badge if applicable
+                    post.price?.let { price ->
+                        Surface(
+                            Modifier.align(Alignment.BottomStart).padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                        ) {
+                            Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
+                    }
+                }
             }
 
             // Engagement bar
