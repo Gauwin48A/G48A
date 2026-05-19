@@ -1,6 +1,7 @@
 package com.mhub.app.ui.commerce
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -668,24 +670,42 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
 @Composable
 fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF), Color(0xFFF0F9FF))))) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.plans_title), onBack)
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
             } else {
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Hero section
                     item {
-                        Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(bottom = 8.dp))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                            Surface(shape = CircleShape, color = Color(0xFF2563EB).copy(alpha = 0.1f), modifier = Modifier.size(64.dp)) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(Icons.Filled.Bolt, null, tint = Color(0xFF2563EB), modifier = Modifier.size(32.dp))
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(stringResource(R.string.plans_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF0F172A))
+                            Spacer(Modifier.height(4.dp))
+                            Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
+                        }
                     }
-                    // Trial-period banner (web-parity: TierSelection.jsx trial banner)
+                    // Trial-period banner
                     item {
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF9C3), modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Filled.Bolt, null, tint = Color(0xFFCA8A04), modifier = Modifier.size(20.dp))
-                                Column {
-                                    Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
-                                    Text(stringResource(R.string.plans_trial_subtitle), fontSize = 11.sp, color = Color(0xFFB45309))
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Surface(shape = CircleShape, color = Color(0xFFFBBF24).copy(alpha = 0.3f), modifier = Modifier.size(40.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp))
+                                    }
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
+                                    Text(stringResource(R.string.plans_trial_subtitle), fontSize = 12.sp, color = Color(0xFF92400E))
+                                }
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFD97706)) {
+                                    Text("FREE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
                             }
                         }
@@ -693,10 +713,13 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                     items(state.tiers, key = { it.id ?: it.name ?: "" }) { tier ->
                         TierCard(tier = tier, onSelect = { viewModel.subscribe(tier.id ?: "") })
                     }
-                    // Feature-matrix comparison table (web-parity: TierSelection.jsx featureMatrix)
+                    // Feature comparison
                     item {
                         Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.plans_feature_comparison), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(bottom = 8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+                            Icon(Icons.Filled.CompareArrows, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
+                            Text(stringResource(R.string.plans_feature_comparison), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0F172A))
+                        }
                         val tierNames = listOf(stringResource(R.string.plans_basic), stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium))
                         val featureMatrixRows = listOf(
                             stringResource(R.string.plans_post_listings) to listOf("1", "3", "5", "10", stringResource(R.string.plans_unlimited)),
@@ -714,24 +737,26 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         )
                         val unlimitedLabel = stringResource(R.string.plans_unlimited)
                         val fullLabel = stringResource(R.string.plans_full)
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(12.dp)) {
-                                // Header row
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text(stringResource(R.string.commerce_feature_col), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(120.dp))
+                                    Text(stringResource(R.string.commerce_feature_col), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(110.dp))
                                     tierNames.forEach { name ->
-                                        Text(name, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF1E293B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+                                        Text(name, fontWeight = FontWeight.Bold, fontSize = 9.sp, color = Color(0xFF1E293B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f), maxLines = 1)
                                     }
                                 }
-                                HorizontalDivider(Modifier.padding(vertical = 6.dp))
-                                featureMatrixRows.forEach { (feature, values) ->
-                                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(feature, fontSize = 11.sp, color = Color(0xFF374151), modifier = Modifier.width(120.dp))
+                                HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFE2E8F0))
+                                featureMatrixRows.forEachIndexed { idx, (feature, values) ->
+                                    Row(
+                                        Modifier.fillMaxWidth().then(if (idx % 2 == 0) Modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(6.dp)) else Modifier).padding(vertical = 6.dp, horizontal = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(feature, fontSize = 11.sp, color = Color(0xFF374151), modifier = Modifier.width(110.dp))
                                         values.forEach { v ->
                                             Text(
                                                 v, fontSize = 10.sp,
                                                 color = when { v == "✓" || v == unlimitedLabel || v == fullLabel -> Color(0xFF22C55E); v == "✗" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
-                                                fontWeight = if (v == "✓" || v == "✗") FontWeight.Bold else FontWeight.Normal,
+                                                fontWeight = if (v == "✓" || v == "✗" || v == unlimitedLabel) FontWeight.Bold else FontWeight.Normal,
                                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                                 modifier = Modifier.weight(1f),
                                             )
@@ -740,6 +765,20 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                             }
                         }
+                    }
+                    // Bottom FAQ/Trust section
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFF0FDF4), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Filled.Security, null, tint = Color(0xFF16A34A), modifier = Modifier.size(24.dp))
+                                Column {
+                                    Text("100% Secure Payment", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF14532D))
+                                    Text("Cancel anytime • No hidden charges • Instant activation", fontSize = 11.sp, color = Color(0xFF166534))
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(80.dp))
                     }
                 }
             }
@@ -750,55 +789,100 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
 @Composable
 private fun TierCard(tier: Tier, onSelect: () -> Unit) {
     val isPopular = tier.popular
-    val borderColor = if (isPopular) Color(0xFF2563EB) else Color(0xFFE2E8F0)
+    val cardColors = if (isPopular) {
+        listOf(Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF3B82F6))
+    } else null
+
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = if (isPopular) Color(0xFFF0F9FF) else Color.White,
-        border = ButtonDefaults.outlinedButtonBorder.copy(width = if (isPopular) 2.dp else 1.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = if (isPopular) Color.Transparent else Color.White,
+        border = if (!isPopular) BorderStroke(1.dp, Color(0xFFE2E8F0)) else null,
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = if (isPopular) 4.dp else 2.dp,
+        shadowElevation = if (isPopular) 8.dp else 3.dp,
     ) {
-        Column(Modifier.padding(20.dp)) {
-            if (isPopular) {
-                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF2563EB), modifier = Modifier.padding(bottom = 12.dp)) {
-                    Text(stringResource(R.string.plans_recommended), fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(tier.name ?: "", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
-                Spacer(Modifier.weight(1f))
-                if (tier.price == 0.0) {
-                    Text(stringResource(R.string.plans_free), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF22C55E))
-                } else {
-                    Text("₹${tier.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
-                    val period = when {
-                        tier.duration >= 365 -> stringResource(R.string.plans_per_year)
-                        tier.duration >= 180 -> stringResource(R.string.plans_per_half_year)
-                        tier.duration >= 90 -> stringResource(R.string.plans_per_quarter)
-                        else -> stringResource(R.string.plans_per_listing)
-                    }
-                    Text(period, fontSize = 12.sp, color = Color(0xFF64748B))
-                }
-            }
-            Spacer(Modifier.height(14.dp))
-            tier.features.forEach { feature ->
-                Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(feature, fontSize = 13.sp, color = Color(0xFF374151))
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = onSelect, shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isPopular) Color(0xFF2563EB) else Color(0xFFF1F5F9)),
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+        Box(
+            modifier = if (isPopular) Modifier.background(Brush.linearGradient(cardColors!!)).padding(1.dp) else Modifier,
+        ) {
+            Column(
+                Modifier
+                    .then(if (isPopular) Modifier.background(Color(0xFFF0F9FF), RoundedCornerShape(19.dp)) else Modifier)
+                    .padding(20.dp)
             ) {
-                Text(
-                    if (tier.price == 0.0) stringResource(R.string.plans_get_started_free) else stringResource(R.string.plans_subscribe_now),
-                    color = if (isPopular) Color.White else Color(0xFF374151),
-                    fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                )
+                if (isPopular) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF2563EB)) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Filled.Star, null, tint = Color(0xFFFBBF24), modifier = Modifier.size(12.dp))
+                                Text(stringResource(R.string.plans_recommended), fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFDCFCE7)) {
+                            Text("BEST VALUE", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+                }
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text(tier.name ?: "", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF0F172A))
+                        if (tier.duration > 0) {
+                            val durationText = when {
+                                tier.duration >= 365 -> "${tier.duration / 365} year"
+                                tier.duration >= 30 -> "${tier.duration / 30} months"
+                                else -> "${tier.duration} days"
+                            }
+                            Text(durationText, fontSize = 12.sp, color = Color(0xFF64748B))
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        if (tier.price == 0.0) {
+                            Text(stringResource(R.string.plans_free), fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Color(0xFF22C55E))
+                        } else {
+                            Text("₹${tier.price.toLong()}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = if (isPopular) Color(0xFF1E40AF) else Color(0xFF0F172A))
+                            val period = when {
+                                tier.duration >= 365 -> stringResource(R.string.plans_per_year)
+                                tier.duration >= 180 -> stringResource(R.string.plans_per_half_year)
+                                tier.duration >= 90 -> stringResource(R.string.plans_per_quarter)
+                                else -> stringResource(R.string.plans_per_listing)
+                            }
+                            Text(period, fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = if (isPopular) Color(0xFFBFDBFE) else Color(0xFFF1F5F9))
+                Spacer(Modifier.height(14.dp))
+                tier.features.forEach { feature ->
+                    Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = CircleShape, color = Color(0xFFDCFCE7), modifier = Modifier.size(20.dp)) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Icon(Icons.Filled.Check, null, tint = Color(0xFF16A34A), modifier = Modifier.size(12.dp))
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(feature, fontSize = 13.sp, color = Color(0xFF374151), lineHeight = 18.sp)
+                    }
+                }
+                Spacer(Modifier.height(18.dp))
+                Button(
+                    onClick = onSelect,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isPopular) Color(0xFF2563EB) else Color(0xFF0F172A),
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = if (isPopular) 6.dp else 2.dp),
+                ) {
+                    Text(
+                        if (tier.price == 0.0) stringResource(R.string.plans_get_started_free) else stringResource(R.string.plans_subscribe_now),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                    )
+                    if (isPopular) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    }
+                }
             }
         }
     }
@@ -2785,47 +2869,80 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
     val context = androidx.compose.ui.platform.LocalContext.current
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val steps = listOf(stringResource(R.string.commerce_step_listing_live), stringResource(R.string.commerce_step_deal_agreed), stringResource(R.string.commerce_step_payment), stringResource(R.string.commerce_step_confirmation), stringResource(R.string.commerce_step_complete))
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFDCFCE7))))) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFECFDF5), Color(0xFFF0FDF4))))) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.commerce_mark_sold), onBack)
-            // Stepper
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                steps.forEachIndexed { i, label ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(if (i <= state.step) Color(0xFF22C55E) else Color(0xFFE2E8F0)),
-                            contentAlignment = Alignment.Center) {
-                            if (i < state.step) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            else Text("${i + 1}", fontSize = 11.sp, color = if (i <= state.step) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+            // Premium Stepper with connecting lines
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                        steps.forEachIndexed { i, label ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                Box(
+                                    Modifier.size(32.dp).clip(CircleShape).background(
+                                        when {
+                                            i < state.step -> Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF22C55E)))
+                                            i == state.step -> Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))
+                                            else -> Brush.linearGradient(listOf(Color(0xFFE2E8F0), Color(0xFFE2E8F0)))
+                                        }
+                                    ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (i < state.step) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    else Text("${i + 1}", fontSize = 12.sp, color = if (i == state.step) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(label, fontSize = 8.sp, color = if (i <= state.step) Color(0xFF16A34A) else Color(0xFF94A3B8), maxLines = 2, textAlign = TextAlign.Center, fontWeight = if (i == state.step) FontWeight.Bold else FontWeight.Normal)
+                            }
                         }
-                        Text(label, fontSize = 9.sp, color = Color(0xFF64748B), maxLines = 1)
                     }
                 }
             }
             // Seller / Buyer tabs
-            TabRow(selectedTabIndex = if (state.tab == "seller") 0 else 1, containerColor = Color.Transparent) {
-                Tab(selected = state.tab == "seller", onClick = { viewModel.setTab("seller") }, text = { Text(stringResource(R.string.commerce_tab_seller)) })
-                Tab(selected = state.tab == "buyer", onClick = { viewModel.setTab("buyer") }, text = { Text(stringResource(R.string.commerce_tab_buyer_confirm)) })
+            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                Row(Modifier.padding(4.dp)) {
+                    listOf("seller" to stringResource(R.string.commerce_tab_seller), "buyer" to stringResource(R.string.commerce_tab_buyer_confirm)).forEach { (key, label) ->
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (state.tab == key) Color.White else Color.Transparent,
+                            shadowElevation = if (state.tab == key) 2.dp else 0.dp,
+                            modifier = Modifier.weight(1f).clickable { viewModel.setTab(key) },
+                        ) {
+                            Text(label, fontSize = 13.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF16A34A) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
+                        }
+                    }
+                }
             }
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                state.error?.let {
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF2F2)) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Filled.Error, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                            Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                        }
+                    }
+                }
                 if (state.tab == "seller") {
                     if (state.success) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             // Success animation card
-                            Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF22C55E)), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(48.dp))
+                            Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                    Box(Modifier.size(88.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(52.dp))
                                     }
-                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF14532D))
-                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 13.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF14532D))
+                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
                                 }
                             }
                             // Receipt card
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF166534), letterSpacing = 1.5.sp)
-                                    androidx.compose.material3.HorizontalDivider(color = Color(0xFF86EFAC))
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Filled.Receipt, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
+                                        Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF166534), letterSpacing = 1.sp)
+                                    }
+                                    HorizontalDivider(color = Color(0xFF86EFAC))
                                     if (state.receiptId != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = Color(0xFF64748B))
@@ -2841,7 +2958,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                                     onClick = {
                                                         clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.transactionId!!))
                                                     },
-                                                    modifier = Modifier.size(20.dp),
+                                                    modifier = Modifier.size(22.dp),
                                                 ) {
                                                     Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
                                                 }
@@ -2851,25 +2968,25 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     if (state.saleAmount.isNotBlank()) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text("₹${state.saleAmount}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                            Text("₹${state.saleAmount}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
                                         }
                                     }
                                 }
                             }
                             // Reward earned card
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
                                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFEF3C7)), contentAlignment = Alignment.Center) {
-                                        Text("🪙", fontSize = 26.sp)
+                                    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFEF3C7), modifier = Modifier.size(48.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("🪙", fontSize = 26.sp) }
                                     }
                                     Column {
-                                        Text("Rewards Earned", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                        Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
                                         Text("+25 coins for completing the sale!", fontSize = 13.sp, color = Color(0xFFB45309))
                                     }
                                 }
                             }
-                            // Share receipt button
-                            androidx.compose.material3.OutlinedButton(
+                            // Action buttons
+                            OutlinedButton(
                                 onClick = {
                                     val receipt = buildString {
                                         appendLine("=== MHub Sale Receipt ===")
@@ -2887,49 +3004,111 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
+                                border = BorderStroke(1.5.dp, Color(0xFF22C55E)),
                             ) {
-                                Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Share, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.commerce_share_receipt), fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.commerce_share_receipt), fontWeight = FontWeight.SemiBold, color = Color(0xFF22C55E))
                             }
-                            Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                                Text(stringResource(R.string.commerce_done), fontWeight = FontWeight.SemiBold)
+                            Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp), elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
+                                Icon(Icons.Filled.Home, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.commerce_done), fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     } else {
-                        MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
-                        MhubTextField(stringResource(R.string.commerce_field_buyer_id), state.buyerId, viewModel::setBuyerId)
-                        MhubTextField(stringResource(R.string.commerce_field_sale_amount), state.saleAmount, viewModel::setSaleAmount)
-                        Button(onClick = { viewModel.initiateSale() }, enabled = !state.loading,
-                            shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                            Text(if (state.loading) stringResource(R.string.commerce_processing) else stringResource(R.string.commerce_initiate_sale), fontWeight = FontWeight.SemiBold)
+                        // Seller initiation form
+                        Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Surface(shape = CircleShape, color = Color(0xFFDCFCE7), modifier = Modifier.size(36.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(Icons.Filled.Sell, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                    Text("Initiate Sale", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                }
+                                MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
+                                MhubTextField(stringResource(R.string.commerce_field_buyer_id), state.buyerId, viewModel::setBuyerId)
+                                MhubTextField(stringResource(R.string.commerce_field_sale_amount), state.saleAmount, viewModel::setSaleAmount)
+                                Button(
+                                    onClick = { viewModel.initiateSale() },
+                                    enabled = !state.loading,
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                                ) {
+                                    if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    else {
+                                        Icon(Icons.Filled.Handshake, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(stringResource(R.string.commerce_initiate_sale), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
-                    MhubTextField(stringResource(R.string.commerce_field_txn_id), state.txnId, viewModel::setTxnId)
-                    MhubTextField(stringResource(R.string.commerce_field_otp), state.otp, viewModel::setOtp)
-                    Button(onClick = { viewModel.confirmSale() }, enabled = !state.loading,
-                        shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                        Text(if (state.loading) stringResource(R.string.commerce_confirming) else stringResource(R.string.commerce_confirm_sale), fontWeight = FontWeight.SemiBold)
+                    // Buyer confirmation form
+                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Surface(shape = CircleShape, color = Color(0xFFEDE9FE), modifier = Modifier.size(36.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(Icons.Filled.Verified, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                                Text("Confirm Purchase", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                            }
+                            MhubTextField(stringResource(R.string.commerce_field_txn_id), state.txnId, viewModel::setTxnId)
+                            MhubTextField(stringResource(R.string.commerce_field_otp), state.otp, viewModel::setOtp)
+                            Button(
+                                onClick = { viewModel.confirmSale() },
+                                enabled = !state.loading,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                            ) {
+                                if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                else {
+                                    Icon(Icons.Filled.Verified, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.commerce_confirm_sale), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                                }
+                            }
+                        }
                     }
                 }
                 // Pending sales
                 if (state.pending.isNotEmpty()) {
-                    Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.PendingActions, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                    }
                     state.pending.forEach { sale ->
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEF3C7), modifier = Modifier.size(40.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(Icons.Filled.Timer, null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                                Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(sale.postTitle ?: stringResource(R.string.commerce_listing), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
                                     Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = Color(0xFF64748B))
                                 }
-                                Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
+                                    Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
                             }
                         }
                     }
                 }
+                Spacer(Modifier.height(60.dp))
             }
         }
     }

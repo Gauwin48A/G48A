@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,9 +26,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ImageNotSupported
@@ -54,6 +60,9 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,6 +86,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.RecommendationsRepository
+import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
@@ -109,6 +119,7 @@ class ExploreViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val postsRepo: PostsRepository,
     private val recsRepo: RecommendationsRepository,
+    private val wishlistRepo: WishlistRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
@@ -210,6 +221,20 @@ class ExploreViewModel @Inject constructor(
         searchJob?.cancel()
         _state.value = _state.value.copy(searchQuery = "", searchResults = emptyList(), isSearching = false)
     }
+
+    private val _wishlisted = MutableStateFlow<Set<String>>(emptySet())
+    val wishlisted: StateFlow<Set<String>> = _wishlisted.asStateFlow()
+
+    fun toggleWishlist(postId: String) {
+        val current = _wishlisted.value.toMutableSet()
+        if (current.contains(postId)) current.remove(postId) else current.add(postId)
+        _wishlisted.value = current
+        viewModelScope.launch { postsRepo.toggleWishlist(postId) }
+    }
+
+    fun addToCompare(postId: String) {
+        viewModelScope.launch { postsRepo.addToCompare(postId) }
+    }
 }
 
 // Map category name → emoji for visual richness
@@ -243,6 +268,7 @@ fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val wishlistedSet by viewModel.wishlisted.collectAsState()
     val focusManager = LocalFocusManager.current
     val title = stringResource(R.string.explore_title)
     val subtitle = stringResource(R.string.explore_subtitle)
@@ -319,7 +345,14 @@ fun ExploreScreen(
             if (state.searchQuery.isNotBlank()) {
                 SearchResults(loading = state.isSearching, posts = state.searchResults, onOpenPost = onOpenPost)
             } else {
-                DiscoveryFeed(state = state, onOpenPost = onOpenPost, onOpenSearch = onOpenSearch)
+                DiscoveryFeed(
+                    state = state,
+                    wishlisted = wishlistedSet,
+                    onOpenPost = onOpenPost,
+                    onOpenSearch = onOpenSearch,
+                    onToggleWishlist = viewModel::toggleWishlist,
+                    onAddToCompare = viewModel::addToCompare,
+                )
             }
         }
         }
@@ -350,41 +383,140 @@ private val quickFilters = listOf(
 @Composable
 private fun GreatDealsBanner(onShopNow: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(Modifier.size(6.dp).background(Color(0xFFF59E0B), CircleShape))
-                    Text(stringResource(R.string.explore_sponsored), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B), letterSpacing = 1.sp)
-                }
-                Spacer(Modifier.height(6.dp))
-                Text(stringResource(R.string.explore_great_deals), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E3A5F))
-                Text(stringResource(R.string.explore_great_deals_desc), fontSize = 12.sp, color = Color(0xFF64748B))
-                Spacer(Modifier.height(10.dp))
-                Surface(
-                    onClick = onShopNow,
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF2563EB),
-                ) {
-                    Text(
-                        stringResource(R.string.explore_shop_now),
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF1E40AF),
+                            Color(0xFF3B82F6),
+                            Color(0xFF6366F1),
+                        )
                     )
+                )
+                .padding(20.dp),
+        ) {
+            // Subtle decorative circles
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 20.dp, y = (-10).dp)
+                    .background(Color.White.copy(alpha = 0.08f), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(x = (-10).dp, y = 10.dp)
+                    .background(Color.White.copy(alpha = 0.06f), CircleShape)
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White.copy(alpha = 0.15f),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                Icons.Filled.LocalFireDepartment,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = Color(0xFFFBBF24),
+                            )
+                            Text(
+                                "LIMITED TIME",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                letterSpacing = 1.sp,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.explore_great_deals),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp,
+                        color = Color.White,
+                        lineHeight = 26.sp,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.explore_great_deals_desc),
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.85f),
+                        lineHeight = 18.sp,
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    Surface(
+                        onClick = onShopNow,
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White,
+                        shadowElevation = 4.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.explore_shop_now),
+                                color = Color(0xFF1E40AF),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = Color(0xFF1E40AF),
+                            )
+                        }
+                    }
+                }
+                // Right side: Premium icon stack
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(start = 12.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.15f),
+                        modifier = Modifier.size(72.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("🔥", fontSize = 36.sp)
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFBBF24),
+                    ) {
+                        Text(
+                            "UP TO 60% OFF",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF78350F),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
                 }
             }
-            Text("🛍️", fontSize = 48.sp, modifier = Modifier.padding(start = 12.dp))
         }
     }
 }
@@ -392,55 +524,80 @@ private fun GreatDealsBanner(onShopNow: () -> Unit) {
 @Composable
 private fun DiscoveryFeed(
     state: ExploreState,
+    wishlisted: Set<String>,
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
+    onToggleWishlist: (String) -> Unit,
+    onAddToCompare: (String) -> Unit,
 ) {
+    var selectedFilter by remember { mutableStateOf(-1) }
+    var selectedPrice by remember { mutableStateOf(-1) }
     LazyColumn(contentPadding = PaddingValues(bottom = 90.dp)) {
-        // ── Quick Filter Chips (sticky-feel, scrollable) ──
+        // ── Quick Filter Chips (interactive, scrollable) ──
         item {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 8.dp),
             ) {
-                items(quickFilters) { filter ->
+                items(quickFilters.size) { idx ->
+                    val filter = quickFilters[idx]
+                    val isSelected = selectedFilter == idx
                     FilterChip(
-                        selected = false,
-                        onClick = onOpenSearch,
-                        label = { Text(stringResource(filter.labelRes), style = MaterialTheme.typography.labelMedium) },
+                        selected = isSelected,
+                        onClick = {
+                            selectedFilter = if (isSelected) -1 else idx
+                            onOpenSearch()
+                        },
+                        label = { Text(stringResource(filter.labelRes), style = MaterialTheme.typography.labelMedium, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                         leadingIcon = {
-                            Icon(filter.icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(filter.icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = if (isSelected) Color.White else Color(0xFF2563EB))
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
+                            containerColor = Color.White,
+                            selectedContainerColor = Color(0xFF2563EB),
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White,
                         ),
                         border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                            borderColor = Color(0xFFE2E8F0),
+                            selectedBorderColor = Color(0xFF2563EB),
                             enabled = true,
-                            selected = false,
+                            selected = isSelected,
                         ),
+                        shape = RoundedCornerShape(20.dp),
                     )
                 }
                 // Price range chips
-                items(listOf(
+                val priceLabels = listOf(
                     R.string.explore_price_under_1k,
                     R.string.explore_price_1k_5k,
                     R.string.explore_price_5k_20k,
                     R.string.explore_price_above_20k,
-                )) { labelRes ->
+                )
+                items(priceLabels.size) { idx ->
+                    val isSelected = selectedPrice == idx
                     FilterChip(
-                        selected = false,
-                        onClick = onOpenSearch,
-                        label = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary) },
+                        selected = isSelected,
+                        onClick = {
+                            selectedPrice = if (isSelected) -1 else idx
+                            onOpenSearch()
+                        },
+                        label = { Text(stringResource(priceLabels[idx]), style = MaterialTheme.typography.labelSmall, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (isSelected) Color.White else Color(0xFF22C55E)) },
                         colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            containerColor = Color(0xFFF0FDF4),
+                            selectedContainerColor = Color(0xFF22C55E),
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White,
                         ),
                         border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            borderColor = Color(0xFFBBF7D0),
+                            selectedBorderColor = Color(0xFF22C55E),
                             enabled = true,
-                            selected = false,
+                            selected = isSelected,
                         ),
+                        shape = RoundedCornerShape(20.dp),
                     )
                 }
             }
@@ -529,7 +686,13 @@ private fun DiscoveryFeed(
                     modifier = Modifier.padding(vertical = 4.dp),
                 ) {
                     items(state.trending, key = { it.stableId }) { post ->
-                        TrendingCard(post = post, onClick = { onOpenPost(post.stableId) })
+                        TrendingCard(
+                            post = post,
+                            onClick = { onOpenPost(post.stableId) },
+                            isWishlisted = wishlisted.contains(post.stableId),
+                            onToggleWishlist = { onToggleWishlist(post.stableId) },
+                            onAddToCompare = { onAddToCompare(post.stableId) },
+                        )
                     }
                 }
             }
@@ -560,7 +723,14 @@ private fun DiscoveryFeed(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     row.forEach { post ->
-                        TrendingCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.weight(1f))
+                        TrendingCard(
+                            post = post,
+                            onClick = { onOpenPost(post.stableId) },
+                            isWishlisted = wishlisted.contains(post.stableId),
+                            onToggleWishlist = { onToggleWishlist(post.stableId) },
+                            onAddToCompare = { onAddToCompare(post.stableId) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
@@ -609,7 +779,14 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier.width(170.dp)) {
+private fun TrendingCard(
+    post: Post,
+    onClick: () -> Unit,
+    isWishlisted: Boolean = false,
+    onToggleWishlist: () -> Unit = {},
+    onAddToCompare: () -> Unit = {},
+    modifier: Modifier = Modifier.width(170.dp),
+) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -650,6 +827,37 @@ private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = M
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
+                    }
+                }
+                // Heart + Compare overlay (top-end)
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.size(28.dp),
+                        onClick = onToggleWishlist,
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                if (isWishlisted) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (isWishlisted) Color(0xFFEF4444) else Color.White,
+                                modifier = Modifier.size(14.dp),
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.size(28.dp),
+                        onClick = onAddToCompare,
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(Icons.Filled.Compare, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        }
                     }
                 }
             }
