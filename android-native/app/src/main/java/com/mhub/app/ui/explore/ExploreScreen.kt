@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ImageNotSupported
@@ -98,27 +99,54 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.content.Intent
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.RadioButton
+import com.mhub.app.ui.LocalActiveCategoryKey
 
 data class ExploreState(
-    val categories: List<Category> = emptyList(),
-    val trending: List<Post> = emptyList(),
-    val recommendations: List<Post> = emptyList(),
+    val ecosystemKey: String? = null,
+    val sortBy: String = "newest",
+    val filterCondition: String = "any",  // "any" | "new" | "used"
+    val filterSubcategory: String? = null,
+    val hasActiveFilters: Boolean = false,
+    val posts: List<Post> = emptyList(),
+    val page: Int = 1,
+    val hasMore: Boolean = true,
+    val loadingPosts: Boolean = true,
+    val loadingMore: Boolean = false,
+    val compareItems: Set<String> = emptySet(),
     val searchQuery: String = "",
     val searchResults: List<Post> = emptyList(),
     val isSearching: Boolean = false,
     val refreshing: Boolean = false,
-    val loadingCategories: Boolean = true,
-    val loadingTrending: Boolean = true,
-    val loadingRecs: Boolean = true,
 )
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
-    private val categoriesRepo: CategoriesRepository,
     private val postsRepo: PostsRepository,
-    private val recsRepo: RecommendationsRepository,
     private val wishlistRepo: WishlistRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
@@ -129,60 +157,60 @@ class ExploreViewModel @Inject constructor(
     private var lastLocaleVersion = 0L
 
     init {
-        loadCategories()
-        loadTrending()
-        loadRecommendations()
-        // Observe locale changes → reload data with new language
+        loadPosts(reset = true)
         viewModelScope.launch {
             localeManager.localeVersion.collect { version ->
-                if (version > lastLocaleVersion && lastLocaleVersion > 0L) {
-                    loadCategories()
-                    loadTrending()
-                    loadRecommendations()
-                }
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) loadPosts(reset = true)
                 lastLocaleVersion = version
             }
         }
     }
 
-    private fun loadCategories() {
-        viewModelScope.launch {
-            when (val result = categoriesRepo.all()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loadingCategories = false,
-                    categories = result.data,
-                )
-                is ApiResult.Failure -> _state.value = _state.value.copy(loadingCategories = false)
-            }
-        }
+    fun setEcosystem(key: String?) {
+        if (_state.value.ecosystemKey == key) return
+        _state.value = _state.value.copy(ecosystemKey = key)
+        loadPosts(reset = true)
     }
 
-    private fun loadTrending() {
-        viewModelScope.launch {
-            when (val result = postsRepo.feed(limit = 12)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loadingTrending = false,
-                    trending = result.data.ifEmpty { com.mhub.app.ui.foryou.samplePosts.take(6) },
-                )
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    loadingTrending = false,
-                    trending = com.mhub.app.ui.foryou.samplePosts.take(6),
-                )
-            }
-        }
+    fun setFilterCondition(condition: String) {
+        val newFilters = condition != "any" || _state.value.filterSubcategory != null
+        _state.value = _state.value.copy(filterCondition = condition, hasActiveFilters = newFilters)
+        loadPosts(reset = true)
     }
 
-    private fun loadRecommendations() {
+    fun setFilterSubcategory(sub: String?) {
+        val newFilters = _state.value.filterCondition != "any" || sub != null
+        _state.value = _state.value.copy(filterSubcategory = sub, hasActiveFilters = newFilters)
+        loadPosts(reset = true)
+    }
+
+    fun clearFilters() {
+        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, hasActiveFilters = false)
+        loadPosts(reset = true)
+    }
+
+    fun loadPosts(reset: Boolean = false) {
+        val currentPage = if (reset) 1 else _state.value.page
+        val categoryKey = _state.value.ecosystemKey
+        val sort = _state.value.sortBy
+        if (reset) {
+            _state.value = _state.value.copy(loadingPosts = true, posts = emptyList(), page = 1, hasMore = true)
+        } else {
+            if (!_state.value.hasMore || _state.value.loadingMore) return
+            _state.value = _state.value.copy(loadingMore = true)
+        }
         viewModelScope.launch {
-            when (val result = recsRepo.forYou()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loadingRecs = false,
-                    recommendations = result.data.ifEmpty { com.mhub.app.ui.foryou.samplePosts.drop(3).take(6) },
-                )
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    loadingRecs = false,
-                    recommendations = com.mhub.app.ui.foryou.samplePosts.drop(3).take(6),
-                )
+            when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort)) {
+                is ApiResult.Success -> {
+                    val newPosts = result.data
+                    _state.value = _state.value.copy(
+                        loadingPosts = false, loadingMore = false,
+                        posts = if (reset) newPosts else _state.value.posts + newPosts,
+                        page = currentPage + 1,
+                        hasMore = newPosts.size >= 20,
+                    )
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(loadingPosts = false, loadingMore = false)
             }
         }
     }
@@ -190,11 +218,36 @@ class ExploreViewModel @Inject constructor(
     fun refresh() {
         _state.value = _state.value.copy(refreshing = true)
         viewModelScope.launch {
-            loadCategories()
-            loadTrending()
-            loadRecommendations()
+            loadPosts(reset = true)
             _state.value = _state.value.copy(refreshing = false)
         }
+    }
+
+    // Retained for back-compat but ecosystem is set via setEcosystem()
+    fun setCategory(idx: Int) {
+        // no-op: category is now locked by ecosystem from Home screen
+        // Remove if no callers remain
+        _state.value = _state.value.copy()
+        loadPosts(reset = true)
+    }
+
+    fun setSortBy(sort: String) {
+        if (_state.value.sortBy == sort) return
+        _state.value = _state.value.copy(sortBy = sort)
+        loadPosts(reset = true)
+    }
+
+    fun loadMore() = loadPosts(reset = false)
+
+    fun toggleCompare(postId: String) {
+        val current = _state.value.compareItems.toMutableSet()
+        if (current.contains(postId)) current.remove(postId) else if (current.size < 4) current.add(postId)
+        _state.value = _state.value.copy(compareItems = current)
+    }
+
+    fun clearCompare() {
+        _state.value = _state.value.copy(compareItems = emptySet())
+        viewModelScope.launch { postsRepo.clearCompare() }
     }
 
     fun onQueryChange(query: String) {
@@ -208,10 +261,7 @@ class ExploreViewModel @Inject constructor(
             delay(300)
             _state.value = _state.value.copy(isSearching = true)
             when (val result = postsRepo.feed(query = query)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    isSearching = false,
-                    searchResults = result.data,
-                )
+                is ApiResult.Success -> _state.value = _state.value.copy(isSearching = false, searchResults = result.data)
                 is ApiResult.Failure -> _state.value = _state.value.copy(isSearching = false)
             }
         }
@@ -265,96 +315,222 @@ fun ExploreScreen(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
+    onOpenCompare: () -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val wishlistedSet by viewModel.wishlisted.collectAsState()
+    var showSearch by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusManager = LocalFocusManager.current
-    val title = stringResource(R.string.explore_title)
-    val subtitle = stringResource(R.string.explore_subtitle)
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = { viewModel.refresh() },
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ── Hero Section (web-parity: AllPosts.jsx hero) ──
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.linearGradient(listOf(Color(0xFF1E40AF), Color(0xFF4338CA), Color(0xFF6D28D9))),
-                    )
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        stringResource(R.string.explore_marketplace),
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 1.sp,
-                    )
-                    Text(
-                        title,
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 26.sp,
-                    )
-                    Text(subtitle, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
-                    Spacer(Modifier.height(4.dp))
-                    // Stats pills
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        val recCount = state.recommendations.size + state.trending.size
-                        HeroPill(if (recCount > 0) stringResource(R.string.explore_items_count, recCount) else stringResource(R.string.explore_browse_label))
-                        HeroPill(stringResource(R.string.explore_live_market))
-                        HeroPill(stringResource(R.string.explore_categories_count, state.categories.size))
-                    }
-                }
-            }
+    // Ecosystem from CompositionLocal — set when user enters a category from Home
+    val ecosystemKey = LocalActiveCategoryKey.current
+    val ecosystemLabel = when (ecosystemKey) {
+        "electronics" -> "📱 Electronics"
+        "fashion" -> "👗 Fashion"
+        "vehicles" -> "🚗 Vehicles"
+        "others" -> "✨ Others"
+        else -> null
+    }
+    val ecosystemSubcategories: List<String> = when (ecosystemKey) {
+        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
+        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
+        "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
+        "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
+        else -> emptyList()
+    }
 
-            // Search bar
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = viewModel::onQueryChange,
-                singleLine = true,
-                placeholder = { Text(stringResource(R.string.explore_search_hint)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (state.searchQuery.isNotBlank()) {
-                        IconButton(onClick = { viewModel.clearSearch() }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.explore_clear))
+    // Draft filter state for the bottom sheet
+    var draftCondition by remember(showFilterSheet) { mutableStateOf(state.filterCondition) }
+    var draftSubcategory by remember(showFilterSheet) { mutableStateOf(state.filterSubcategory) }
+
+    // Sync ecosystem into ViewModel whenever it changes
+    LaunchedEffect(ecosystemKey) { viewModel.setEcosystem(ecosystemKey) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    if (showSearch) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = viewModel::onQueryChange,
+                            singleLine = true,
+                            placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
+                            leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+                            trailingIcon = {
+                                IconButton(onClick = { showSearch = false; viewModel.clearSearch(); focusManager.clearFocus() }) {
+                                    Icon(Icons.Default.Close, null)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.Center) {
+                            Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                            if (ecosystemLabel != null) {
+                                Text(ecosystemLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                actions = {
+                    if (!showSearch) {
+                        IconButton(onClick = { showSearch = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                        BadgedBox(badge = { if (state.hasActiveFilters) Badge() }) {
+                            IconButton(onClick = {
+                                draftCondition = state.filterCondition
+                                draftSubcategory = state.filterSubcategory
+                                showFilterSheet = true
+                            }) {
+                                Icon(Icons.Default.Tune, contentDescription = "Filters")
+                            }
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
-
-            if (state.searchQuery.isNotBlank()) {
-                SearchResults(loading = state.isSearching, posts = state.searchResults, onOpenPost = onOpenPost)
-            } else {
-                DiscoveryFeed(
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            PullToRefreshBox(
+                isRefreshing = state.refreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                AllPostsBrowse(
                     state = state,
                     wishlisted = wishlistedSet,
+                    ecosystemSubcategories = ecosystemSubcategories,
                     onOpenPost = onOpenPost,
-                    onOpenSearch = onOpenSearch,
                     onToggleWishlist = viewModel::toggleWishlist,
-                    onAddToCompare = viewModel::addToCompare,
+                    onSetSort = viewModel::setSortBy,
+                    onToggleCompare = viewModel::toggleCompare,
+                    onLoadMore = viewModel::loadMore,
+                    onOpenSearch = onOpenSearch,
+                    onSelectSubcategory = { sub ->
+                        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+                    },
                 )
             }
+            // Compare floater bar
+            if (state.compareItems.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 8.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "${state.compareItems.size} item${if (state.compareItems.size > 1) "s" else ""} selected",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = viewModel::clearCompare) { Text("Clear") }
+                            Button(
+                                onClick = {
+                                    state.compareItems.forEach { viewModel.addToCompare(it) }
+                                    onOpenCompare()
+                                },
+                                enabled = state.compareItems.size >= 2,
+                            ) { Text("Compare (${state.compareItems.size})") }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    // Filter bottom sheet
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = filterSheetState,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (state.hasActiveFilters) {
+                        OutlinedButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
+                            Text("Clear All", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+                HorizontalDivider()
+                // Condition filter
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Condition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("any" to "Any", "new" to "New", "used" to "Used").forEach { (key, label) ->
+                            FilterChip(
+                                selected = draftCondition == key,
+                                onClick = { draftCondition = key },
+                                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White),
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                        }
+                    }
+                }
+                // Subcategory filter (only when ecosystem is active)
+                if (ecosystemSubcategories.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Subcategory", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(ecosystemSubcategories.size) { idx ->
+                                val sub = ecosystemSubcategories[idx]
+                                FilterChip(
+                                    selected = draftSubcategory == sub,
+                                    onClick = { draftSubcategory = if (draftSubcategory == sub) null else sub },
+                                    label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White),
+                                    shape = RoundedCornerShape(20.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                // Apply button
+                Button(
+                    onClick = {
+                        viewModel.setFilterCondition(draftCondition)
+                        viewModel.setFilterSubcategory(draftSubcategory)
+                        showFilterSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Apply Filters", fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     }
 }
@@ -521,218 +697,127 @@ private fun GreatDealsBanner(onShopNow: () -> Unit) {
     }
 }
 
+
 @Composable
-private fun DiscoveryFeed(
+private fun AllPostsBrowse(
     state: ExploreState,
     wishlisted: Set<String>,
+    ecosystemSubcategories: List<String>,
     onOpenPost: (String) -> Unit,
-    onOpenSearch: () -> Unit,
     onToggleWishlist: (String) -> Unit,
-    onAddToCompare: (String) -> Unit,
+    onSetSort: (String) -> Unit,
+    onToggleCompare: (String) -> Unit,
+    onLoadMore: () -> Unit,
+    onOpenSearch: () -> Unit,
+    onSelectSubcategory: (String) -> Unit = {},
 ) {
-    var selectedFilter by remember { mutableStateOf(-1) }
-    var selectedPrice by remember { mutableStateOf(-1) }
-    LazyColumn(contentPadding = PaddingValues(bottom = 90.dp)) {
-        // ── Quick Filter Chips (interactive, scrollable) ──
-        item {
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp),
-            ) {
-                items(quickFilters.size) { idx ->
-                    val filter = quickFilters[idx]
-                    val isSelected = selectedFilter == idx
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            selectedFilter = if (isSelected) -1 else idx
-                            onOpenSearch()
-                        },
-                        label = { Text(stringResource(filter.labelRes), style = MaterialTheme.typography.labelMedium, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                        leadingIcon = {
-                            Icon(filter.icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = if (isSelected) Color.White else Color(0xFF2563EB))
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = Color.White,
-                            selectedContainerColor = Color(0xFF2563EB),
-                            selectedLabelColor = Color.White,
-                            selectedLeadingIconColor = Color.White,
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = Color(0xFFE2E8F0),
-                            selectedBorderColor = Color(0xFF2563EB),
-                            enabled = true,
-                            selected = isSelected,
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                    )
+    val sortOptions = listOf(
+        "newest" to "Newest", "popular" to "Popular",
+        "price_asc" to "Price ↑", "price_desc" to "Price ↓",
+    )
+    val listState = rememberLazyListState()
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
+            last >= listState.layoutInfo.totalItemsCount - 3
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore && state.hasMore && !state.loadingMore && !state.loadingPosts && state.posts.isNotEmpty()) onLoadMore()
+    }
+
+    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 100.dp)) {
+        if (state.searchQuery.isNotBlank()) {
+            if (state.isSearching) {
+                item(key = "search_loading") {
+                    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
                 }
-                // Price range chips
-                val priceLabels = listOf(
-                    R.string.explore_price_under_1k,
-                    R.string.explore_price_1k_5k,
-                    R.string.explore_price_5k_20k,
-                    R.string.explore_price_above_20k,
-                )
-                items(priceLabels.size) { idx ->
-                    val isSelected = selectedPrice == idx
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            selectedPrice = if (isSelected) -1 else idx
-                            onOpenSearch()
-                        },
-                        label = { Text(stringResource(priceLabels[idx]), style = MaterialTheme.typography.labelSmall, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (isSelected) Color.White else Color(0xFF22C55E)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = Color(0xFFF0FDF4),
-                            selectedContainerColor = Color(0xFF22C55E),
-                            selectedLabelColor = Color.White,
-                            selectedLeadingIconColor = Color.White,
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = Color(0xFFBBF7D0),
-                            selectedBorderColor = Color(0xFF22C55E),
-                            enabled = true,
-                            selected = isSelected,
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                    )
+            } else if (state.searchResults.isEmpty()) {
+                item(key = "search_empty") {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = "No results found", subtitle = "Try different keywords")
+                    }
+                }
+            } else {
+                items(state.searchResults, key = { it.stableId }) { post ->
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                }
+            }
+            return@LazyColumn
+        }
+
+        item(key = "sort_chips") {
+            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 10.dp)) {
+                items(sortOptions.size) { idx ->
+                    val (key, label) = sortOptions[idx]
+                    val isSelected = state.sortBy == key
+                    FilterChip(selected = isSelected, onClick = { onSetSort(key) }, label = { Text(label, style = MaterialTheme.typography.labelMedium) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White), shape = RoundedCornerShape(20.dp))
                 }
             }
         }
 
-        // ── Great Deals Banner ──
-        item {
-            GreatDealsBanner(onShopNow = onOpenSearch)
+        // Ecosystem subcategory chips — only for locked ecosystem mode
+        if (ecosystemSubcategories.isNotEmpty()) {
+            item(key = "subcategory_chips") {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 6.dp)) {
+                    items(ecosystemSubcategories.size) { idx ->
+                        val sub = ecosystemSubcategories[idx]
+                        val isSelected = state.filterSubcategory == sub
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onSelectSubcategory(sub) },
+                            label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface),
+                            border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant, enabled = true, selected = isSelected),
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                    }
+                }
+            }
         }
 
-        // Categories header
-        item {
-            SectionHeader(
-                title = stringResource(R.string.explore_browse_categories),
-                subtitle = stringResource(R.string.explore_browse_categories_desc),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+        item(key = "quick_filters") {
+            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                items(quickFilters.size) { idx ->
+                    val f = quickFilters[idx]
+                    FilterChip(selected = false, onClick = { onOpenSearch() }, label = { Text(stringResource(f.labelRes), style = MaterialTheme.typography.labelMedium) }, leadingIcon = { Icon(f.icon, null, modifier = Modifier.size(16.dp), tint = Color(0xFF2563EB)) }, colors = FilterChipDefaults.filterChipColors(containerColor = Color.White), border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFE2E8F0), enabled = true, selected = false), shape = RoundedCornerShape(20.dp))
+                }
+                val priceLabels = listOf(R.string.explore_price_under_1k, R.string.explore_price_1k_5k, R.string.explore_price_5k_20k, R.string.explore_price_above_20k)
+                items(priceLabels.size) { idx ->
+                    FilterChip(selected = false, onClick = { onOpenSearch() }, label = { Text(stringResource(priceLabels[idx]), style = MaterialTheme.typography.labelSmall) }, leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color(0xFF22C55E)) }, colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF0FDF4)), border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFBBF7D0), enabled = true, selected = false), shape = RoundedCornerShape(20.dp))
+                }
+            }
         }
 
-        // Category grid (2 columns)
-        if (state.loadingCategories) {
-            item {
-                Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
+        item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
+
+        if (state.loadingPosts && state.posts.isEmpty()) {
+            item(key = "loading") {
+                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
-        } else if (state.categories.isEmpty()) {
-            item {
+        } else if (!state.loadingPosts && state.posts.isEmpty()) {
+            item(key = "empty") {
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    AppEmptyState(
-                        icon = Icons.Outlined.Category,
-                        title = stringResource(R.string.explore_no_categories),
-                        subtitle = stringResource(R.string.explore_no_categories_desc),
-                    )
+                    AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = "No listings found", subtitle = "Try a different category or filter")
                 }
             }
         } else {
-            items(state.categories.chunked(3), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    row.forEachIndexed { index, category ->
-                        val tint = CategoryTints[(row.indexOf(category) + state.categories.indexOf(category)) % CategoryTints.size]
-                        CategoryCard(
-                            category = category,
-                            tint = tint,
-                            emoji = categoryEmoji(category.displayName),
-                            onClick = onOpenSearch,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    // Fill remaining slots if row is incomplete
-                    repeat(3 - row.size) {
-                        Spacer(Modifier.weight(1f))
-                    }
-                }
+            items(state.posts, key = { it.stableId }) { post ->
+                AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
             }
-        }
-
-        // Trending header
-        item {
-            SectionHeader(
-                title = stringResource(R.string.explore_trending_now),
-                subtitle = stringResource(R.string.explore_trending_desc),
-                actionLabel = stringResource(R.string.explore_see_all),
-                onAction = onOpenSearch,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-
-        // Trending horizontal scroll
-        if (state.loadingTrending) {
-            item {
-                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            }
-        } else if (state.trending.isNotEmpty()) {
-            item {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.padding(vertical = 4.dp),
-                ) {
-                    items(state.trending, key = { it.stableId }) { post ->
-                        TrendingCard(
-                            post = post,
-                            onClick = { onOpenPost(post.stableId) },
-                            isWishlisted = wishlisted.contains(post.stableId),
-                            onToggleWishlist = { onToggleWishlist(post.stableId) },
-                            onAddToCompare = { onAddToCompare(post.stableId) },
-                        )
+            item(key = "load_more") {
+                if (state.loadingMore) {
+                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary)
                     }
-                }
-            }
-        }
-
-        // For You header
-        item {
-            SectionHeader(
-                title = stringResource(R.string.explore_for_you),
-                subtitle = stringResource(R.string.explore_for_you_desc),
-                actionLabel = stringResource(R.string.explore_see_all),
-                onAction = onOpenSearch,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-
-        // For You grid (2 columns)
-        if (state.loadingRecs) {
-            item {
-                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            }
-        } else if (state.recommendations.isNotEmpty()) {
-            items(state.recommendations.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    row.forEach { post ->
-                        TrendingCard(
-                            post = post,
-                            onClick = { onOpenPost(post.stableId) },
-                            isWishlisted = wishlisted.contains(post.stableId),
-                            onToggleWishlist = { onToggleWishlist(post.stableId) },
-                            onAddToCompare = { onAddToCompare(post.stableId) },
-                            modifier = Modifier.weight(1f),
-                        )
+                } else if (!state.hasMore && state.posts.isNotEmpty()) {
+                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Text("You've seen all listings", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
@@ -774,6 +859,192 @@ private fun CategoryCard(
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+        }
+    }
+}
+
+@Composable
+private fun AllPostCard(
+    post: Post,
+    onClick: () -> Unit,
+    isWishlisted: Boolean = false,
+    onToggleWishlist: () -> Unit = {},
+    isCompared: Boolean = false,
+    onToggleCompare: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    var showFullDescription by remember { mutableStateOf(false) }
+    var localLiked by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            // Author row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val initial = (post.userName?.firstOrNull() ?: post.sellerName?.firstOrNull() ?: 'M').uppercaseChar().toString()
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = post.userName ?: post.sellerName ?: "Community member",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = post.location ?: "MHub network",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        post.createdAt?.take(10)?.let { date ->
+                            Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            Text(date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+
+            // Title
+            Text(
+                text = post.displayTitle,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            // Category + subcategory tags
+            if (!post.category.isNullOrBlank()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
+                        Text(post.category, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF3B82F6), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                    }
+                    post.subcategory?.let { sub ->
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
+                            Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF10B981), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                        }
+                    }
+                }
+            }
+
+            // Description
+            if (!post.description.isNullOrBlank()) {
+                Column {
+                    Text(
+                        text = post.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
+                        overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
+                    )
+                    if (post.description.length > 120) {
+                        Text(
+                            text = if (showFullDescription) "Show less" else "Read more",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { showFullDescription = !showFullDescription }.padding(top = 4.dp),
+                        )
+                    }
+                }
+            }
+
+            // Image with price badge
+            if (post.primaryImage != null) {
+                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = post.displayTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                    )
+                    post.price?.let { price ->
+                        Surface(
+                            Modifier.align(Alignment.BottomStart).padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                        ) {
+                            Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
+                    }
+                }
+            }
+
+            // Engagement bar: Like | Save | Views + Share
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { localLiked = !localLiked },
+                ) {
+                    Icon(if (localLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, null, tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                    Text(if (localLiked) "Liked" else "Like", style = MaterialTheme.typography.labelMedium, color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onClick() },
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.Chat, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    Text("Comment", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onToggleWishlist() },
+                ) {
+                    Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, tint = if (isWishlisted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    Text(if (isWishlisted) "Saved" else "Save", style = MaterialTheme.typography.labelMedium, color = if (isWishlisted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onToggleCompare() },
+                ) {
+                    Icon(Icons.Filled.Compare, null, tint = if (isCompared) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    Text(if (isCompared) "Added" else "Compare", style = MaterialTheme.typography.labelMedium, color = if (isCompared) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    post.viewCount?.let { views ->
+                        Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        Text("$views", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    IconButton(
+                        onClick = {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on MHub!")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                        },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(Icons.Outlined.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
         }
     }
 }

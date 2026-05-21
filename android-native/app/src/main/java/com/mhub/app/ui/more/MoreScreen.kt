@@ -1,4 +1,4 @@
-﻿package com.mhub.app.ui.more
+package com.mhub.app.ui.more
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +30,8 @@ import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.AccountTree
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.BarChart
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LocalOffer
@@ -137,8 +140,16 @@ fun MoreScreen(
     onOpenComplaints: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
     onOpenVerification: () -> Unit = {},
+    onOpenSecurity: () -> Unit = {},
     onOpenAccountDelete: () -> Unit = {},
     onOpenAdminPanel: () -> Unit = {},
+    onOpenBought: () -> Unit = {},
+    onOpenSold: () -> Unit = {},
+    onOpenSaleDone: () -> Unit = {},
+    onOpenSaleUndone: () -> Unit = {},
+    onOpenAllPosts: () -> Unit = {},
+    onOpenFollowing: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
     onOpenSubcategories: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -151,48 +162,47 @@ fun MoreScreen(
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
 
     // â”€â”€ Quick tiles: 4-per-row icon grid (most-used features) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    val quickTiles = listOf(
-        QuickTile("Sell", Icons.Outlined.ShoppingCart, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenCreatePost),
-        QuickTile("Cart", Icons.Outlined.ShoppingCart, Color(0xFFDBEAFE), Color(0xFF1D4ED8), badge = "2", onClick = onOpenCart),
-        QuickTile("Wishlist", Icons.Outlined.VolunteerActivism, Color(0xFFFCE7F3), Color(0xFFBE185D), onClick = onOpenWishlist),
-        QuickTile("Notifications", Icons.Outlined.Notifications, Color(0xFFFEF3C7), Color(0xFFD97706), badge = "3", onClick = onOpenNotifications),
-        QuickTile("Nearby", Icons.Outlined.LocationOn, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenNearby),
-        QuickTile("Chat", Icons.AutoMirrored.Outlined.Chat, Color(0xFFEDE9FE), Color(0xFF7C3AED), onClick = onOpenChat),
-        QuickTile("Compare", Icons.Outlined.BarChart, Color(0xFFE0F2FE), Color(0xFF0369A1), onClick = onOpenCompare),
-        QuickTile("Plans", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
-    )
+
 
     // â”€â”€ My Activity section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    val activityRows = listOf(
-        MenuRow("Mark Sale Done", "Confirm a completed transaction", Icons.Outlined.VerifiedUser, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = {
-            onOpenProfile() // navigates to sold posts where Mark Sale Done is accessible
-        }),
-        MenuRow("My Offers", "Offers you've received", Icons.Outlined.LocalOffer, Color(0xFFEDE9FE), Color(0xFF7C3AED), onClick = onOpenOffers),
-        MenuRow("Sold Posts", "Items you've sold", Icons.Outlined.Dashboard, Color(0xFFDBEAFE), Color(0xFF1D4ED8), onClick = onOpenDashboard),
-        MenuRow("Recently Viewed", "Your browsing history", Icons.Outlined.History, Color(0xFFF1F5F9), Color(0xFF64748B), onClick = onOpenRecentlyViewed),
-        MenuRow("Saved Searches", "Your saved search filters", Icons.Outlined.Search, Color(0xFFEDE9FE), Color(0xFF8B5CF6), onClick = onOpenSavedSearches),
+    val tradeRows = listOf(
+        MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
+        MenuRow("Select Plan", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
+        MenuRow("Centre Page", "Your seller centre and listings", Icons.Outlined.Category, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenCentre),
+        MenuRow("All Categories", "Browse all product categories", Icons.Outlined.Apps, Color(0xFFEDE9FE), Color(0xFF7C3AED), onClick = onOpenCategories),
+        MenuRow("Category Mode", "Switch active product category", Icons.Outlined.GridView, Color(0xFFF0F9FF), Color(0xFF0284C7), onClick = onOpenCategoryMode),
+        MenuRow("Subcategories", "Filter by subcategory", Icons.Outlined.AccountTree, Color(0xFFF0FDF4), Color(0xFF15803D), onClick = onOpenSubcategories),
+        MenuRow("Nearby", "Find items near you", Icons.Outlined.LocationOn, Color(0xFFE0F2FE), Color(0xFF0369A1), onClick = onOpenNearby),
+        MenuRow("Saved Searches", "Your saved search alerts", Icons.Outlined.Search, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenSavedSearches),
+        MenuRow("Wishlist", "Saved items and listings", Icons.Outlined.VolunteerActivism, Color(0xFFFCE7F3), Color(0xFFBE185D), onClick = onOpenWishlist),
+        MenuRow("Recently Viewed", "Your browsing history", Icons.Outlined.History, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenRecentlyViewed),
+        MenuRow("Cart", "Items ready to purchase", Icons.Outlined.ShoppingCart, Color(0xFFDBEAFE), Color(0xFF1D4ED8), onClick = onOpenCart),
+        MenuRow("Compare", "Compare products side by side", Icons.Outlined.BarChart, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenCompare),
     )
 
     // â”€â”€ Discover section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    val discoverRows = listOf(
-        MenuRow("All Categories", "Browse all product categories", Icons.Outlined.Category, Color(0xFFE0F2FE), Color(0xFF0369A1), onClick = onOpenCategories),
-        MenuRow("Category Mode", "Switch to category-focused view", Icons.Outlined.Apps, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenCategoryMode),
-        MenuRow("Subcategories", "Explore subcategories", Icons.Outlined.Category, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenSubcategories),
-        MenuRow("Business Centre", "Manage your business centre", Icons.Outlined.Dashboard, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenCentre),
-        MenuRow("Public Wall", "See community posts", Icons.Outlined.Group, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenPublicWall),
+    val socialRows = listOf(
+        MenuRow("Feed", "Social marketplace feed", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenFeed),
+        MenuRow("Public Wall", "Community posts and updates", Icons.Outlined.Group, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenPublicWall),
+        MenuRow("Chat", "Messages with buyers and sellers", Icons.AutoMirrored.Outlined.Chat, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenChat),
+        MenuRow("My Reviews", "Ratings received from others", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenMyReviews),
+        MenuRow("My Offers", "Active price negotiations", Icons.Outlined.LocalOffer, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenOffers),
+        MenuRow("Feedback", "Share your app experience", Icons.Outlined.EmojiEvents, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
+        MenuRow("Complaints", "Report an issue", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
     // â”€â”€ Account & Support section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     val accountRows = listOf(
-        MenuRow("Verification", "Verify your identity (Aadhaar/PAN)", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenVerification),
-        MenuRow("Dashboard & Analytics", "View your seller analytics", Icons.Outlined.BarChart, Color(0xFFDBEAFE), Color(0xFF1D4ED8), onClick = onOpenDashboard),
-        MenuRow("My Reviews", "Reviews from buyers/sellers", Icons.Outlined.Star, Color(0xFFFEF3C7), Color(0xFFD97706), onClick = onOpenMyReviews),
-        MenuRow("Feedback", "Share your feedback", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFFECFDF5), Color(0xFF22C55E), onClick = onOpenFeedback),
-        MenuRow("Complaints", "Report an issue", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
-        MenuRow("Security", "Password & account security", Icons.Outlined.Security, Color(0xFFF1F5F9), Color(0xFF64748B), onClick = onOpenSettings),
-        MenuRow("Delete Account", "Permanently delete your account", Icons.Outlined.Delete, Color(0xFFFEF2F2), Color(0xFFEF4444), onClick = onOpenAccountDelete),
-        if (isAdmin) MenuRow("Admin Panel", "Manage the platform", Icons.Outlined.Settings, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenAdminPanel) else null,
-    ).filterNotNull()
+        MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenProfile),
+        MenuRow("Rewards", "Your points, achievements and badges", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenRewards),
+        MenuRow("Notifications", "Alerts, updates and messages", Icons.Outlined.Notifications, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenNotifications),
+        MenuRow("Verification", "Verify your identity and documents", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenVerification),
+        MenuRow("Dashboard", "Seller analytics and performance", Icons.Outlined.Dashboard, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenDashboard),
+        MenuRow("Security", "Password and account security", Icons.Outlined.Security, Color(0xFFF1F5F9), Color(0xFF64748B), onClick = onOpenSecurity),
+        MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings),
+        MenuRow("Help & Support", "FAQs, guides and customer support", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFFECFDF5), Color(0xFF22C55E), onClick = onOpenHelp),
+        MenuRow("Delete Account", "Permanently delete your account", Icons.Outlined.Delete, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenAccountDelete),
+    ) + if (isAdmin) listOf(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel)) else emptyList()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -216,60 +226,22 @@ fun MoreScreen(
             }
         }
 
-        // â”€â”€ Quick Access Grid (4 per row) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         item {
-            Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF64748B), letterSpacing = 0.5.sp, modifier = Modifier.padding(bottom = 8.dp))
-            val rows = quickTiles.chunked(4)
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                rows.forEach { rowTiles ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowTiles.forEach { tile ->
-                            Column(
-                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable(onClick = tile.onClick).padding(vertical = 12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Box {
-                                    Box(
-                                        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(tile.iconBg),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(tile.icon, null, tint = tile.iconTint, modifier = Modifier.size(22.dp))
-                                    }
-                                    if (tile.badge != null) {
-                                        Box(
-                                            modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(16.dp).clip(CircleShape).background(Color(0xFFEF4444)),
-                                            contentAlignment = Alignment.Center,
-                                        ) { Text(tile.badge, color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold) }
-                                    }
-                                }
-                                Text(tile.title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B), maxLines = 1)
-                            }
-                        }
-                        // fill empty slots
-                        repeat(4 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
-            }
-        }
-
-        // â”€â”€ My Activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        item {
-            MoreSectionHeader("My Activity", Color(0xFF2563EB))
+            MoreSectionHeader("TRADE", Color(0xFF2563EB))
             Spacer(Modifier.height(6.dp))
-            MoreRowList(activityRows)
+            MoreRowList(tradeRows)
         }
 
         // â”€â”€ Discover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         item {
-            MoreSectionHeader("Discover", Color(0xFF059669))
+            MoreSectionHeader("SOCIAL", Color(0xFF059669))
             Spacer(Modifier.height(6.dp))
-            MoreRowList(discoverRows)
+            MoreRowList(socialRows)
         }
 
         // â”€â”€ Account & Support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         item {
-            MoreSectionHeader("Account & Support", Color(0xFFF59E0B))
+            MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
             Spacer(Modifier.height(6.dp))
             MoreRowList(accountRows)
         }

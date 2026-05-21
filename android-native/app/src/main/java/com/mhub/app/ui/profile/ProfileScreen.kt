@@ -480,10 +480,16 @@ fun ProfileScreen(
     onOpenSecurity: () -> Unit = {},
     onOpenDashboard: () -> Unit = {},
     onOpenAnalytics: () -> Unit = {},
+    onOpenOffers: () -> Unit = {},
     onOpenAccountDelete: () -> Unit = {},
     onOpenPost: (String) -> Unit = {},
     onOpenOrders: () -> Unit = {},
     onOpenAddresses: () -> Unit = {},
+    onOpenMyFeed: () -> Unit = {},
+    onOpenReviews: (String) -> Unit = {},
+    onOpenCentre: () -> Unit = {},
+    onOpenSaleDone: () -> Unit = {},
+    onOpenSaleUndone: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -1017,39 +1023,33 @@ fun ProfileScreen(
                                 .padding(top = 4.dp, bottom = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    stringResource(R.string.profile_quick_actions),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    letterSpacing = 1.2.sp,
-                                )
-                                Text(
-                                    stringResource(R.string.profile_jump_actions),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
+                            Text(
+                                stringResource(R.string.profile_quick_actions),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                letterSpacing = 1.2.sp,
+                            )
+                            // Row 1: My Home | My Feed
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.Dashboard, label = stringResource(R.string.profile_my_home), subtitle = stringResource(R.string.profile_dashboard), accentColor = Color(0xFF6366F1), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = stringResource(R.string.profile_my_feed), subtitle = stringResource(R.string.profile_personalized), accentColor = Color(0xFF0EA5E9), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Home", subtitle = "Your listings", accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.AutoMirrored.Filled.Message, label = "My Feed", subtitle = "Your updates", accentColor = Color(0xFF6366F1), onClick = onOpenMyFeed, modifier = Modifier.weight(1f))
                             }
+                            // Row 2: My Reviews | Centre Page
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.Star, label = stringResource(R.string.profile_my_reviews), subtitle = stringResource(R.string.profile_ratings_feedback), accentColor = Color(0xFFF59E0B), onClick = onOpenAnalytics, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = stringResource(R.string.profile_my_listings), subtitle = stringResource(R.string.profile_active_posts), accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                val userId = state.user?.id ?: ""
+                                QuickActionCard(icon = Icons.Filled.Star, label = "My Reviews", subtitle = "Ratings received", accentColor = Color(0xFFF59E0B), onClick = { onOpenReviews(userId) }, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Filled.Dashboard, label = "Centre Page", subtitle = "Your seller hub", accentColor = Color(0xFF8B5CF6), onClick = onOpenCentre, modifier = Modifier.weight(1f))
                             }
+                            // Row 3: Sale Done | Sale Undone
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.BarChart, label = stringResource(R.string.profile_my_offers), subtitle = stringResource(R.string.profile_negotiations), accentColor = Color(0xFFF97316), onClick = onOpenDashboard, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.Default.VerifiedUser, label = stringResource(R.string.profile_verification), subtitle = if (user?.isKycVerified == true) stringResource(R.string.profile_verified_check) else stringResource(R.string.profile_get_verified), accentColor = Color(0xFF8B5CF6), onClick = onOpenKyc, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Filled.CheckCircle, label = "Sale Done", subtitle = "Mark item sold", accentColor = Color(0xFF22C55E), onClick = onOpenSaleDone, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.Filled.RadioButtonUnchecked, label = "Sale Undone", subtitle = "Reactivate listing", accentColor = Color(0xFFEF4444), onClick = onOpenSaleUndone, modifier = Modifier.weight(1f))
                             }
+                            // Row 4: My Offers
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Default.Receipt, label = stringResource(R.string.profile_orders), subtitle = stringResource(R.string.profile_track_orders), accentColor = Color(0xFF0891B2), onClick = onOpenOrders, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.Default.Home, label = stringResource(R.string.profile_addresses), subtitle = stringResource(R.string.profile_manage_addresses), accentColor = Color(0xFF7C3AED), onClick = onOpenAddresses, modifier = Modifier.weight(1f))
+                                QuickActionCard(icon = Icons.AutoMirrored.Filled.TrendingUp, label = stringResource(R.string.profile_my_offers), subtitle = stringResource(R.string.profile_negotiations), accentColor = Color(0xFFF97316), onClick = onOpenOffers, modifier = Modifier.weight(1f))
+                                Box(modifier = Modifier.weight(1f))
                             }
                         }
 
