@@ -265,7 +265,7 @@ fun CategoryHubScreen(
                         ) {
                             Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Icon(Icons.Default.Add, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
-                                Text("Sell", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
+                                Text("+ Sell", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
                             }
                         }
                         Surface(
@@ -278,25 +278,15 @@ fun CategoryHubScreen(
                                 Text("Scan", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
                             }
                         }
-                        Surface(
-                            onClick = { onSelectApp("nearby") },
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFF59E0B).copy(alpha = 0.12f),
-                        ) {
-                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(Icons.Default.LocationOn, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
-                                Text("Nearby", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF59E0B))
-                            }
-                        }
                         Spacer(Modifier.weight(1f))
                         Surface(
                             onClick = onOpenAllPosts,
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF0F172A).copy(alpha = 0.07f),
+                            color = Color(0xFF6366F1).copy(alpha = 0.10f),
                         ) {
                             Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("All", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF475569), modifier = Modifier.size(13.dp))
+                                Text("Browse All", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF6366F1), modifier = Modifier.size(13.dp))
                             }
                         }
                     }
@@ -334,30 +324,9 @@ fun CategoryHubScreen(
                 }
             }
 
-            // ── Section header ─────────────────────────────────────────
+            // ── Section spacer ────────────────────────────────────────
             item(key = "cat_header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "BROWSE CATEGORIES",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF94A3B8),
-                        letterSpacing = 1.5.sp,
-                    )
-                    Surface(onClick = onOpenAllPosts, shape = RoundedCornerShape(8.dp), color = Color.Transparent) {
-                        Text(
-                            "View All →",
-                            fontSize = 12.sp,
-                            color = Color(0xFF6366F1),
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        )
-                    }
-                }
+                Spacer(Modifier.height(16.dp))
             }
 
             // ── Loading state ──────────────────────────────────────────
@@ -498,7 +467,7 @@ private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, index: I
 
     Box(
         modifier = modifier
-            .height(168.dp)
+            .height(200.dp)
             .alpha(tileAlpha)
             .shadow(14.dp, RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(24.dp))

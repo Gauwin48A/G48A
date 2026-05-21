@@ -252,8 +252,6 @@ fun FeedScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
-    var showSortMenu by remember { mutableStateOf(false) }
-    var showDensityMenu by remember { mutableStateOf(false) }
     var feedModeTab by remember { mutableIntStateOf(0) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -297,29 +295,11 @@ fun FeedScreen(
                         }
                     },
                     actions = {
-                        // Density toggle
-                        Box {
-                            IconButton(onClick = { showDensityMenu = !showDensityMenu }) {
-                                Icon(Icons.Default.ArrowDropDown, "Density")
-                            }
-                            DropdownMenu(expanded = showDensityMenu, onDismissRequest = { showDensityMenu = false }) {
-                                listOf("COMPACT", "NORMAL", "SPACIOUS").forEach { density ->
-                                    DropdownMenuItem(
-                                        text = { Text(density) },
-                                        onClick = { viewModel.setDensity(density); showDensityMenu = false },
-                                        trailingIcon = if (state.density == density) {{ Icon(Icons.Default.Bookmark, null, modifier = Modifier.size(16.dp)) }} else null,
-                                    )
-                                }
-                            }
-                        }
                         IconButton(onClick = { showSearch = !showSearch }) {
                             Icon(
                                 if (showSearch) Icons.Default.Close else Icons.Default.Search,
                                 contentDescription = "Search",
                             )
-                        }
-                        IconButton(onClick = { viewModel.load(refresh = true) }) {
-                            Icon(Icons.Outlined.Update, contentDescription = "Refresh")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -362,31 +342,11 @@ fun FeedScreen(
                         )
                     }
                 }
-                // Sort dropdown (6 options) replacing tabs
+                // Language filter chips
+                var selectedLang by remember { mutableStateOf("") }
+                val langOptions = listOf("English", "हिंदी", "తెలుగు", "தமிழ்", "ಕನ್ನಡ")
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     Column {
-                        Box {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().clickable { showSortMenu = !showSortMenu }.padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(stringResource(R.string.feed_sort_label, state.sortOption), fontWeight = FontWeight.SemiBold)
-                                Icon(Icons.Default.ArrowDropDown, "Sort options")
-                            }
-                            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }, modifier = Modifier.fillMaxWidth(0.5f)) {
-                                feedSortOptions.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option) },
-                                        onClick = { viewModel.setSortOption(option); showSortMenu = false },
-                                        trailingIcon = if (state.sortOption == option) {{ Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }} else null,
-                                    )
-                                }
-                            }
-                        }
-                        // Translation language chips (web-parity: FeedPage.jsx inline translation strip)
-                        var selectedLang by remember { mutableStateOf("") }
-                        val langOptions = listOf("English", "हिंदी", "తెలుగు", "தமிழ்", "ಕನ್ನಡ")
                         if (selectedLang.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -398,7 +358,7 @@ fun FeedScreen(
                         }
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         ) {
                             items(langOptions) { lang ->
                                 FilterChip(
