@@ -38,6 +38,7 @@ object Routes {
     const val EDIT_POST = "post/edit/{postId}"
     fun editPost(id: String): String = "post/edit/$id"
     const val MY_POSTS = "post/mine"
+    const val MY_HOME = MY_POSTS   // My Home = current user's own marketplace listings (Phase 9)
     const val POST_WELCOME = "post/welcome"
     const val TIER_SELECTION = "tier-selection"
     const val KYC = "kyc"

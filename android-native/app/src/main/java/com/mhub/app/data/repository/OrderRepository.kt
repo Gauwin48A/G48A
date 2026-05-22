@@ -35,10 +35,11 @@ class OrderRepository @Inject constructor(private val api: MhubApi) {
         }
         return when (fallback) {
             is ApiResult.Success -> {
+                val txnId = fallback.data.transaction?.transactionId ?: "MH-${System.currentTimeMillis()}"
                 val mapped = CreateOrderResponse(
-                    success = fallback.data.success,
-                    orderId = fallback.data.transactionId ?: "MH-${System.currentTimeMillis()}",
-                    transactionId = fallback.data.transactionId,
+                    success = true,
+                    orderId = txnId,
+                    transactionId = txnId,
                     message = fallback.data.message,
                 )
                 lastOrder = mapped

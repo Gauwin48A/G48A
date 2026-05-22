@@ -36,6 +36,8 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Delete
@@ -43,6 +45,7 @@ import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.automirrored.outlined.Login
@@ -133,6 +136,7 @@ fun MoreScreen(
     onOpenSavedSearches: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
+    onOpenMyHome: () -> Unit = {},
     onOpenFeed: () -> Unit = {},
     onOpenPublicWall: () -> Unit = {},
     onOpenMyReviews: () -> Unit = {},
@@ -152,6 +156,7 @@ fun MoreScreen(
     onOpenHelp: () -> Unit = {},
     onOpenSubcategories: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onOpenMyFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
     isAdmin: Boolean = false,
@@ -161,48 +166,46 @@ fun MoreScreen(
 ) {
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // â”€â”€ Quick tiles: 4-per-row icon grid (most-used features) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-
-    // â”€â”€ My Activity section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── TRADE section: 9 focused items (contextual utilities moved to AllPosts/search)
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
-        MenuRow("Select Plan", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
-        MenuRow("Centre Page", "Your seller centre and listings", Icons.Outlined.Category, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenCentre),
-        MenuRow("All Categories", "Browse all product categories", Icons.Outlined.Apps, Color(0xFFEDE9FE), Color(0xFF7C3AED), onClick = onOpenCategories),
-        MenuRow("Category Mode", "Switch active product category", Icons.Outlined.GridView, Color(0xFFF0F9FF), Color(0xFF0284C7), onClick = onOpenCategoryMode),
-        MenuRow("Subcategories", "Filter by subcategory", Icons.Outlined.AccountTree, Color(0xFFF0FDF4), Color(0xFF15803D), onClick = onOpenSubcategories),
-        MenuRow("Nearby", "Find items near you", Icons.Outlined.LocationOn, Color(0xFFE0F2FE), Color(0xFF0369A1), onClick = onOpenNearby),
-        MenuRow("Saved Searches", "Your saved search alerts", Icons.Outlined.Search, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenSavedSearches),
-        MenuRow("Wishlist", "Saved items and listings", Icons.Outlined.VolunteerActivism, Color(0xFFFCE7F3), Color(0xFFBE185D), onClick = onOpenWishlist),
-        MenuRow("Recently Viewed", "Your browsing history", Icons.Outlined.History, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenRecentlyViewed),
-        MenuRow("Cart", "Items ready to purchase", Icons.Outlined.ShoppingCart, Color(0xFFDBEAFE), Color(0xFF1D4ED8), onClick = onOpenCart),
-        MenuRow("Compare", "Compare products side by side", Icons.Outlined.BarChart, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenCompare),
+        MenuRow("Plans", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
+        MenuRow("Centre", "Your seller centre", Icons.Outlined.GridView, Color(0xFFE0E7FF), Color(0xFF4F46E5), onClick = onOpenCentre),
+        MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
+        MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
+        MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
+        MenuRow("Category Mode", "Switch category browsing mode", Icons.Outlined.Apps, Color(0xFFF0FDF4), Color(0xFF16A34A), onClick = onOpenCategoryMode),
+        MenuRow("Subcategories", "Browse subcategories", Icons.Outlined.AccountTree, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenSubcategories),
+        MenuRow("Nearby", "Find listings near you", Icons.Outlined.LocationOn, Color(0xFFFDF4FF), Color(0xFF9333EA), onClick = onOpenNearby),
     )
 
-    // â”€â”€ Discover section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── SOCIAL section: 7 items — Feed removed (already in bottom navbar)
     val socialRows = listOf(
-        MenuRow("Feed", "Social marketplace feed", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenFeed),
-        MenuRow("Public Wall", "Community posts and updates", Icons.Outlined.Group, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenPublicWall),
-        MenuRow("Chat", "Messages with buyers and sellers", Icons.AutoMirrored.Outlined.Chat, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenChat),
-        MenuRow("My Reviews", "Ratings received from others", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenMyReviews),
-        MenuRow("My Offers", "Active price negotiations", Icons.Outlined.LocalOffer, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenOffers),
-        MenuRow("Feedback", "Share your app experience", Icons.Outlined.EmojiEvents, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
-        MenuRow("Complaints", "Report an issue", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
+        MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall),
+        MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed),
+        MenuRow("Chat", "Messages and conversations", Icons.AutoMirrored.Outlined.Chat, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenChat),
+        MenuRow("My Reviews", "Reviews you have received", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenMyReviews),
+        MenuRow("My Offers", "Offers made and received", Icons.Outlined.LocalOffer, Color(0xFFF0FDF4), Color(0xFF059669), onClick = onOpenOffers),
+        MenuRow("Feedback", "Share your app experience", Icons.Outlined.VolunteerActivism, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
+        MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
-    // â”€â”€ Account & Support section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    val accountRows = listOf(
-        MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenProfile),
-        MenuRow("Rewards", "Your points, achievements and badges", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenRewards),
-        MenuRow("Notifications", "Alerts, updates and messages", Icons.Outlined.Notifications, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenNotifications),
-        MenuRow("Verification", "Verify your identity and documents", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenVerification),
-        MenuRow("Dashboard", "Seller analytics and performance", Icons.Outlined.Dashboard, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenDashboard),
-        MenuRow("Security", "Password and account security", Icons.Outlined.Security, Color(0xFFF1F5F9), Color(0xFF64748B), onClick = onOpenSecurity),
-        MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings),
-        MenuRow("Help & Support", "FAQs, guides and customer support", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFFECFDF5), Color(0xFF22C55E), onClick = onOpenHelp),
-        MenuRow("Delete Account", "Permanently delete your account", Icons.Outlined.Delete, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenAccountDelete),
-    ) + if (isAdmin) listOf(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel)) else emptyList()
+    // ── ACCOUNT section: 7 items — Notifications removed (already in top navbar)
+    val accountRows = buildList {
+        add(MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile))
+        add(MenuRow("Rewards", "Your points, achievements and badges", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenRewards))
+        add(MenuRow("Verification", "Verify your account identity", Icons.Outlined.VerifiedUser, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenVerification))
+        add(MenuRow("Dashboard", "Seller analytics and performance", Icons.Outlined.Dashboard, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenDashboard))
+        add(MenuRow("Security", "Password and security settings", Icons.Outlined.Security, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSecurity))
+        add(MenuRow("Delete Account", "Permanently remove your account", Icons.Outlined.Delete, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenAccountDelete))
+        if (isAdmin) add(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel))
+    }
+    // ── Utilities (settings + logout always at bottom) ────────────────────────
+    val utilRows = buildList {
+        add(MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings))
+        add(MenuRow("Help & Support", "FAQs, guides and customer support", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFFECFDF5), Color(0xFF22C55E), onClick = onOpenHelp))
+        if (isLoggedIn) add(MenuRow("Logout", "Sign out of your account", Icons.AutoMirrored.Outlined.Logout, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onLogout))
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -246,7 +249,27 @@ fun MoreScreen(
             MoreRowList(accountRows)
         }
 
-        // â”€â”€ Appearance & Language â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        item {
+            MoreSectionHeader("SETTINGS", Color(0xFF64748B))
+            Spacer(Modifier.height(6.dp))
+            MoreRowList(utilRows)
+        }
+
+        item {
+            if (!isLoggedIn) {
+                Button(
+                    onClick = onOpenLogin,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Log In to MHub", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+
         item {
             androidx.compose.material3.Card(
                 shape = RoundedCornerShape(16.dp),
@@ -301,33 +324,6 @@ fun MoreScreen(
             }
         }
 
-        // â”€â”€ Login / Logout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        item {
-            if (!isLoggedIn) {
-                Button(
-                    onClick = onOpenLogin,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Log In to MHub", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            } else {
-                OutlinedButton(
-                    onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.Logout, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Sign Out", fontWeight = FontWeight.SemiBold, color = Color(0xFFEF4444))
-                }
-            }
-        }
-
         item { Spacer(Modifier.height(60.dp)) }
     }
 }
@@ -374,4 +370,3 @@ private fun MoreRowList(rows: List<MenuRow>) {
         }
     }
 }
-

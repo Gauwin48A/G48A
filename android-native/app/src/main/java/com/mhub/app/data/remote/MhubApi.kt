@@ -80,6 +80,8 @@ interface MhubApi {
         @Query("category") categoryId: String? = null,
         @Query("q") query: String? = null,
         @Query("sort") sort: String? = null,
+        @Query("condition") condition: String? = null,
+        @Query("subcategory") subcategory: String? = null,
     ): PostsResponse
 
     @GET("api/posts/{id}")
@@ -348,6 +350,9 @@ interface MhubApi {
     @GET("api/wall")
     suspend fun publicWall(@Query("userId") userId: String): FeedResponse
 
+    @GET("api/publicwall")
+    suspend fun publicWallLeaderboard(): PublicWallLeaderboardResponse
+
     // ---- Reviews ----
     @GET("api/reviews")
     suspend fun reviews(@Query("userId") userId: String): ReviewsResponse
@@ -536,11 +541,11 @@ interface MhubApi {
     suspend fun adminSendWarning(@Body body: Map<String, String>): MessageResponse
 
     // ---- Sale Transactions ----
-    @POST("api/transactions/initiate")
-    suspend fun initiateSale(@Body body: InitiateSaleRequest): SaleResponse
+    @POST("api/sale/initiate")
+    suspend fun initiateSale(@Body body: InitiateSaleRequest): InitiateSaleResponse
 
-    @POST("api/transactions/confirm")
-    suspend fun confirmSale(@Body body: ConfirmSaleRequest): SaleResponse
+    @POST("api/sale/confirm")
+    suspend fun confirmSale(@Body body: ConfirmSaleRequest): ConfirmSaleResponse
 
     @GET("api/transactions/pending")
     suspend fun pendingSales(): PendingSalesResponse

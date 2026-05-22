@@ -27,10 +27,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -293,6 +297,14 @@ fun SearchScreen(
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
     val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank(), selectedModel.isNotBlank(), locationRadius.isNotBlank(), dateFrom.isNotBlank(), dateTo.isNotBlank(), selectedSubcategory.isNotBlank()).count { it }
 
+    val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+        spokenText?.firstOrNull()?.let { text ->
+            viewModel.onQueryChange(text)
+            viewModel.search(text)
+        }
+    }
+
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     if (showShareSheet) {
@@ -319,6 +331,17 @@ fun SearchScreen(
                             if (state.query.isNotBlank()) {
                                 IconButton(onClick = { viewModel.onQueryChange("") }) {
                                     Icon(Icons.Default.Close, "Clear")
+                                }
+                            } else {
+                                IconButton(onClick = {
+                                    val intent = android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for items...")
+                                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                    }
+                                    try { voiceLauncher.launch(intent) } catch (_: Exception) { }
+                                }) {
+                                    Icon(Icons.Filled.Mic, "Voice search", tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         },
@@ -369,7 +392,7 @@ fun SearchScreen(
                                 Modifier.fillMaxWidth().clickable { viewModel.onQueryChange(suggestion); viewModel.search(suggestion) }.padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                Icon(Icons.Default.TrendingUp, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 Text(suggestion, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
@@ -673,7 +696,7 @@ fun SearchScreen(
                                         items(trending) { topic ->
                                             Surface(onClick = { viewModel.onQueryChange(topic); viewModel.search(topic) }, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                                                 Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.TrendingUp, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                                                     Spacer(Modifier.width(4.dp))
                                                     Text(topic, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                                                 }
@@ -722,7 +745,7 @@ fun SearchScreen(
                             }
                             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.TrendingUp, null, modifier = Modifier.size(16.dp), tint = Color(0xFFEF4444))
+                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(16.dp), tint = Color(0xFFEF4444))
                                     Spacer(Modifier.width(6.dp))
                                     Text("Trending Now", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 }
@@ -735,7 +758,7 @@ fun SearchScreen(
                                             color = MaterialTheme.colorScheme.secondaryContainer,
                                         ) {
                                             Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Filled.TrendingUp, null, modifier = Modifier.size(12.dp), tint = Color(0xFFEF4444))
+                                                Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(12.dp), tint = Color(0xFFEF4444))
                                                 Spacer(Modifier.width(4.dp))
                                                 Text(q, style = MaterialTheme.typography.labelMedium)
                                             }

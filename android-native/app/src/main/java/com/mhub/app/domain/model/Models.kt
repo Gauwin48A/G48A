@@ -77,6 +77,7 @@ data class Post(
     val mileage: Int? = null,
     @SerialName("ram_storage") val ramStorage: String? = null,
     @SerialName("is_promoted") val isPromoted: Boolean? = null,
+    @SerialName("seller_verified") val sellerVerified: Boolean? = null,
     @SerialName("latitude") val latitude: Double? = null,
     @SerialName("longitude") val longitude: Double? = null,
     @SerialName("distance") val distance: Double? = null,

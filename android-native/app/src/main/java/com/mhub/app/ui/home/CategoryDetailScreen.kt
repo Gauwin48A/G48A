@@ -34,10 +34,10 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -244,7 +244,7 @@ fun CategoryDetailScreen(
                     },
                     actions = {
                         IconButton(onClick = { viewModel.toggleViewMode() }) {
-                            Icon(if (state.isGridView) Icons.Filled.ViewList else Icons.AutoMirrored.Filled.ViewList, "Toggle view", tint = Color.White)
+                            Icon(if (state.isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView, "Toggle view", tint = Color.White)
                         }
                         IconButton(onClick = { showSortSheet = true }) {
                             Icon(Icons.AutoMirrored.Filled.Sort, "Sort", tint = Color.White)

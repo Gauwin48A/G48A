@@ -1,7 +1,6 @@
-package com.mhub.app.ui.feed
+﻿package com.mhub.app.ui.feed
 
 import android.content.Intent
-import com.mhub.app.ui.foryou.samplePosts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -29,14 +28,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.Card
@@ -88,8 +93,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
-import com.mhub.app.data.repository.PostsRepository
-import com.mhub.app.domain.model.Post
+import com.mhub.app.data.remote.dto.FeedItem
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ListShimmer
@@ -106,7 +110,7 @@ data class FeedState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val loadingMore: Boolean = false,
-    val posts: List<Post> = emptyList(),
+    val feedItems: List<FeedItem> = emptyList(),
     val error: String? = null,
     val sortOption: String = "For You", // Changed from selectedTab
     val currentPage: Int = 1,
@@ -118,7 +122,6 @@ data class FeedState(
 
 @HiltViewModel
 class FeedViewModel @Inject constructor(
-    private val postsRepository: PostsRepository,
     private val socialRepo: com.mhub.app.data.repository.SocialRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
@@ -138,38 +141,29 @@ class FeedViewModel @Inject constructor(
 
     fun load(refresh: Boolean = false) {
         _state.value = _state.value.copy(
-            loading = !refresh && _state.value.posts.isEmpty(),
+            loading = !refresh && _state.value.feedItems.isEmpty(),
             refreshing = refresh,
             error = null,
             currentPage = 1,
             hasMore = true,
         )
         viewModelScope.launch {
-            val sort = when (_state.value.sortOption) {
-                "Recent" -> "newest"
-                "Updated" -> "updated"
-                "Views" -> "popular"
-                "Likes" -> "likes"
-                "Title" -> "title"
-                "Shuffle" -> "shuffle"
-                else -> null
-            }
-            when (val result = postsRepository.feed(page = 1, limit = 20, sort = sort)) {
+            when (val result = socialRepo.feed(page = 1)) {
                 is ApiResult.Success -> {
-                    val posts = result.data.ifEmpty { samplePosts }
+                    val items = sortFeedItems(result.data, _state.value.sortOption)
                     _state.value = _state.value.copy(
                         loading = false,
                         refreshing = false,
-                        posts = posts,
+                        feedItems = items,
                         currentPage = 1,
                         hasMore = result.data.size >= 20,
                     )
                 }
-
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
-                    posts = samplePosts,
+                    feedItems = emptyList(),
+                    error = result.error.message,
                 )
             }
         }
@@ -199,19 +193,10 @@ class FeedViewModel @Inject constructor(
         val nextPage = current.currentPage + 1
         _state.value = current.copy(loadingMore = true)
         viewModelScope.launch {
-            val sort = when (current.sortOption) {
-                "Recent" -> "newest"
-                "Updated" -> "updated"
-                "Views" -> "popular"
-                "Likes" -> "likes"
-                "Title" -> "title"
-                "Shuffle" -> "shuffle"
-                else -> null
-            }
-            when (val result = postsRepository.feed(page = nextPage, limit = 20, sort = sort)) {
+            when (val result = socialRepo.feed(page = nextPage)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loadingMore = false,
-                    posts = _state.value.posts + result.data,
+                    feedItems = _state.value.feedItems + sortFeedItems(result.data, current.sortOption),
                     currentPage = nextPage,
                     hasMore = result.data.size >= 20,
                 )
@@ -220,18 +205,23 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun toggleLike(postId: String) {
-        val current = _state.value
-        val newLiked = if (postId in current.likedIds) current.likedIds - postId else current.likedIds + postId
-        _state.value = current.copy(likedIds = newLiked)
-        viewModelScope.launch { runCatching { socialRepo.likePost(postId) } }
+    private fun sortFeedItems(items: List<FeedItem>, sortOption: String): List<FeedItem> = when (sortOption) {
+        "Recent" -> items.sortedByDescending { it.createdAt }
+        "Views", "Likes" -> items.sortedByDescending { it.likeCount }
+        "Shuffle" -> items.shuffled()
+        else -> items
     }
 
-    fun toggleBookmark(postId: String) {
+    fun toggleLike(itemId: String) {
         val current = _state.value
-        val newBookmarked = if (postId in current.bookmarkedIds) current.bookmarkedIds - postId else current.bookmarkedIds + postId
+        val newLiked = if (itemId in current.likedIds) current.likedIds - itemId else current.likedIds + itemId
+        _state.value = current.copy(likedIds = newLiked)
+    }
+
+    fun toggleBookmark(itemId: String) {
+        val current = _state.value
+        val newBookmarked = if (itemId in current.bookmarkedIds) current.bookmarkedIds - itemId else current.bookmarkedIds + itemId
         _state.value = current.copy(bookmarkedIds = newBookmarked)
-        viewModelScope.launch { runCatching { socialRepo.bookmarkPost(postId) } }
     }
 }
 
@@ -263,11 +253,11 @@ fun FeedScreen(
         debouncedQuery = searchQuery
     }
 
-    val filteredPosts = remember(state.posts, debouncedQuery, isGuest) {
-        val searched = if (debouncedQuery.isBlank()) state.posts
-        else state.posts.filter {
-            it.displayTitle.contains(debouncedQuery, ignoreCase = true) ||
-                it.description?.contains(debouncedQuery, ignoreCase = true) == true ||
+    val filteredPosts = remember(state.feedItems, debouncedQuery, isGuest) {
+        val searched = if (debouncedQuery.isBlank()) state.feedItems
+        else state.feedItems.filter {
+            it.title?.contains(debouncedQuery, ignoreCase = true) == true ||
+                it.content?.contains(debouncedQuery, ignoreCase = true) == true ||
                 it.userName?.contains(debouncedQuery, ignoreCase = true) == true
         }
         if (isGuest) searched.take(5) else searched
@@ -295,6 +285,22 @@ fun FeedScreen(
                         }
                     },
                     actions = {
+                        // Sort dropdown
+                        var showSortMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showSortMenu = true }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
+                            }
+                            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                                listOf("For You" to "For You", "Recent" to "Recent", "Views" to "Views", "Likes" to "Likes", "Shuffle" to "Shuffle").forEach { (label, value) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = { viewModel.setSortOption(value); showSortMenu = false },
+                                        leadingIcon = if (state.sortOption == value) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }} else null,
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = { showSearch = !showSearch }) {
                             Icon(
                                 if (showSearch) Icons.Default.Close else Icons.Default.Search,
@@ -319,6 +325,38 @@ fun FeedScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     )
+                }
+                // Sort order pills row (web parity)
+                var sortDesc by remember { mutableStateOf(true) }
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (sortDesc) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { sortDesc = true; viewModel.setSortOption("Recent") },
+                        ) {
+                            Text("↓ Newest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                                color = if (sortDesc) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (!sortDesc) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { sortDesc = false; viewModel.setSortOption("For You") },
+                        ) {
+                            Text("↑ Oldest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                                color = if (!sortDesc) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+                        }
+                        if (state.feedItems.isNotEmpty()) {
+                            Spacer(Modifier.weight(1f))
+                            Text("${state.feedItems.size} posts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
                 // Feed mode tabs: For You | Following | Recent
                 TabRow(
@@ -345,6 +383,45 @@ fun FeedScreen(
                 // Language filter chips
                 var selectedLang by remember { mutableStateOf("") }
                 val langOptions = listOf("English", "हिंदी", "తెలుగు", "தமிழ்", "ಕನ್ನಡ")
+                // Trending topics bar
+                val trendingTopics = listOf("#Electronics", "#Fashion", "#Vehicles", "#Deals", "#Jobs", "#RealEstate", "#Motors", "#Mobiles")
+                Surface(color = Color(0xFFF8FAFC)) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xFF6366F1).copy(alpha = 0.1f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.3f)),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
+                                    Text("Trending", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6366F1))
+                                }
+                            }
+                        }
+                        items(trendingTopics) { topic ->
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            ) {
+                                Text(
+                                    topic,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                )
+                            }
+                        }
+                    }
+                }
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     Column {
                         if (selectedLang.isNotEmpty()) {
@@ -395,7 +472,7 @@ fun FeedScreen(
             when {
                 state.loading -> ListShimmer(count = 5, modifier = Modifier.padding(top = 12.dp))
 
-                state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                state.error != null && state.feedItems.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
                         title = stringResource(R.string.feed_unavailable),
                         message = state.error ?: stringResource(R.string.feed_unavailable),
@@ -404,7 +481,7 @@ fun FeedScreen(
                     )
                 }
 
-                state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                state.feedItems.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppEmptyState(
                         icon = Icons.Outlined.AccountCircle,
                         title = "No feed posts yet",
@@ -454,7 +531,7 @@ fun FeedScreen(
                                 }
                             }
                             // Guest login overlay (web parity: shows after 5 posts)
-                            if (isGuest && state.posts.size > 5) {
+                            if (isGuest && state.feedItems.size > 5) {
                                 item(key = "guest_login_cta") {
                                     Surface(
                                         shape = RoundedCornerShape(16.dp),
@@ -534,7 +611,7 @@ private fun ComposerCard(onCreatePost: () -> Unit) {
 
 @Composable
 private fun FeedCard(
-    post: Post,
+    post: FeedItem,
     onOpenPost: () -> Unit,
     onImageZoom: (List<String>) -> Unit = {},
     density: String = "NORMAL",
@@ -585,76 +662,84 @@ private fun FeedCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 val initial = (post.userName?.firstOrNull() ?: 'M').uppercaseChar().toString()
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                if (post.userAvatar != null) {
+                    AsyncImage(model = post.userAvatar, contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(40.dp).clip(CircleShape))
+                } else {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                    }
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = post.userName ?: "Community member",
+                        text = post.displayName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = post.location ?: "MHub network",
+                            text = "MHub network",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        post.createdAt?.take(10)?.let { date ->
+                        val timeAgo = relativeTime(post.createdAt)
+                        if (timeAgo.isNotBlank()) {
                             Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                            Text(date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(timeAgo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    // Location row
+                    if (!post.location.isNullOrBlank()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                            Text(post.location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
-            }
-
-            Text(
-                text = post.displayTitle,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            // Category + Subcategory tags
-            if (!post.category.isNullOrBlank()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
-                        Text(
-                            post.category,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF3B82F6),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                // More menu (web parity: report, promote)
+                var showMoreMenu by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { showMoreMenu = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    }
+                    DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Report") },
+                            leadingIcon = { Icon(Icons.Outlined.Flag, null, modifier = Modifier.size(18.dp)) },
+                            onClick = { showMoreMenu = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Promote") },
+                            leadingIcon = { Icon(Icons.Outlined.Campaign, null, modifier = Modifier.size(18.dp)) },
+                            onClick = { showMoreMenu = false },
                         )
                     }
-                    post.subcategory?.let { sub ->
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
-                            Text(
-                                sub,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF10B981),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-                    }
                 }
             }
 
-            if (!post.description.isNullOrBlank()) {
+            if (!post.title.isNullOrBlank()) {
+                Text(
+                    text = post.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (!post.content.isNullOrBlank()) {
                 Column {
                     Text(
-                        text = post.description,
+                        text = post.content,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
                         overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
                     )
-                    if (post.description.length > 120) {
+                    if ((post.content.length) > 120) {
                         Text(
                             text = if (showFullDescription) "Show less" else "Read more",
                             style = MaterialTheme.typography.labelSmall,
@@ -666,25 +751,43 @@ private fun FeedCard(
                 }
             }
 
-            // Image FIRST (prominent, social-first layout — like LinkedIn/Twitter)
-            if (post.primaryImage != null) {
-                Box(Modifier.fillMaxWidth().height(220.dp)) {
-                    AsyncImage(
-                        model = post.primaryImage,
-                        contentDescription = post.displayTitle,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable { onImageZoom(listOfNotNull(post.primaryImage) + post.images) },
-                    )
-                    // Price badge if applicable
-                    post.price?.let { price ->
+            // Category/subcategory badges (web parity)
+            if (!post.categoryName.isNullOrBlank() || !post.subcategoryName.isNullOrBlank()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    post.categoryName?.takeIf { it.isNotBlank() }?.let { cat ->
                         Surface(
-                            Modifier.align(Alignment.BottomStart).padding(8.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF6366F1).copy(alpha = 0.1f),
                         ) {
-                            Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                            Text(cat, style = MaterialTheme.typography.labelSmall, color = Color(0xFF6366F1), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                         }
                     }
+                    post.subcategoryName?.takeIf { it.isNotBlank() }?.let { sub ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF8B5CF6).copy(alpha = 0.1f),
+                        ) {
+                            Text(sub, style = MaterialTheme.typography.labelSmall, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                        }
+                    }
+                }
+            }
+
+            // Image section — social-first, no price badge
+            val mainImage = post.imageUrl ?: post.images.firstOrNull()
+            if (mainImage != null) {
+                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                    AsyncImage(
+                        model = mainImage,
+                        contentDescription = post.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable {
+                            onImageZoom(listOfNotNull(mainImage) + post.images.drop(1))
+                        },
+                    )
                 }
             }
 
@@ -709,8 +812,9 @@ private fun FeedCard(
                         tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(22.dp).scale(if (localLiked) likeScale else 1f),
                     )
+                    val likeDisplay = post.likeCount + (if (localLiked && !isLiked) 1 else if (!localLiked && isLiked) -1 else 0)
                     Text(
-                        if (localLiked) "Liked" else "Like",
+                        if (likeDisplay > 0) "$likeDisplay" else if (localLiked) "Liked" else "Like",
                         style = MaterialTheme.typography.labelMedium,
                         color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -742,18 +846,25 @@ private fun FeedCard(
                         color = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                // Share + views
+                // Share + comment count
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    post.viewCount?.let { views ->
-                        Icon(Icons.Default.Visibility, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                        Text("$views", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    post.viewCount?.let { v: Int ->
+                        if (v > 0) {
+                            Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                            Text("$v", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(6.dp))
+                        }
+                    }
+                    if (post.commentCount > 0) {
+                        Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                        Text("${post.commentCount}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(8.dp))
                     }
                     IconButton(
                         onClick = {
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on MHub!")
+                                putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on MHub!")
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                         },
@@ -802,4 +913,26 @@ private fun FeedCard(
             }
         }
     }
+}
+
+private fun relativeTime(dateStr: String?): String {
+    if (dateStr.isNullOrBlank()) return ""
+    return try {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).also { it.timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        val sdf2 = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).also { it.timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        val date = try { sdf2.parse(dateStr) } catch (_: Exception) { sdf.parse(dateStr) } ?: return ""
+        val diffMs = System.currentTimeMillis() - date.time
+        val mins = diffMs / 60_000
+        val hours = mins / 60
+        val days = hours / 24
+        when {
+            mins < 1 -> "Just now"
+            mins < 60 -> "${mins}m ago"
+            hours < 24 -> "${hours}h ago"
+            days < 7 -> "${days}d ago"
+            days < 30 -> "${days / 7}w ago"
+            days < 365 -> "${days / 30}mo ago"
+            else -> "${days / 365}y ago"
+        }
+    } catch (_: Exception) { "" }
 }

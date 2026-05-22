@@ -1,7 +1,6 @@
 package com.mhub.app.ui.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -130,6 +129,8 @@ class OrderHistoryViewModel @Inject constructor(
             _state.value = _state.value.copy(loading = false, boughtPosts = bought, soldPosts = sold)
         }
     }
+
+    fun selectTab(idx: Int) { _state.value = _state.value.copy(tab = idx) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,12 +163,10 @@ fun OrderHistoryScreen(
             ) {
                 listOf("Purchases" to 0, "Sales" to 1).forEach { (label, idx) ->
                     Surface(
-                        onClick = { /* tab switching handled via state */ },
+                        onClick = { viewModel.selectTab(idx) },
                         shape = RoundedCornerShape(20.dp),
                         color = if (state.tab == idx) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.weight(1f).clickable {
-                            viewModel.state.value.let { /* state is immutable, UI handles tab display */ }
-                        },
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(
                             label,
@@ -185,7 +184,7 @@ fun OrderHistoryScreen(
                     CircularProgressIndicator()
                 }
                 else -> {
-                    val orders = state.boughtPosts + state.soldPosts
+                    val orders = if (state.tab == 0) state.boughtPosts else state.soldPosts
                     if (orders.isEmpty()) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -44,6 +44,8 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -241,6 +243,14 @@ fun MhubApp(
         // Observe locale version to trigger recomposition on locale change
         val localeVersion = localeManager?.localeVersion?.collectAsState()
 
+        // Reset guest mode when user becomes authenticated (prevents stale guest state after login)
+        LaunchedEffect(isAuthenticated) {
+            if (isAuthenticated) {
+                guestBrowsing = false
+                showAuthGate = false
+            }
+        }
+
         // Provide activeCategoryKey and locale manager via CompositionLocal
         CompositionLocalProvider(
             LocalActiveCategoryKey provides activeCategoryKey,
@@ -425,7 +435,7 @@ fun MhubApp(
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
-                            isGuest = !isAuthenticated,
+                            isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )
                     }
@@ -1119,9 +1129,10 @@ fun MhubApp(
                         onOpenSavedSearches = { showMoreDrawer = false; navController.navigate(Routes.SAVED_SEARCHES) { launchSingleTop = true } },
                         onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                         onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                        onOpenMyHome = { showMoreDrawer = false; navController.navigate(Routes.MY_HOME) { launchSingleTop = true } },
                         onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) { launchSingleTop = true } },
                         onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) { launchSingleTop = true } },
-                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.reviews("me")) { launchSingleTop = true } },
                         onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) { launchSingleTop = true } },
                         onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
                         onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
@@ -1131,6 +1142,7 @@ fun MhubApp(
                         onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) { launchSingleTop = true } },
                         onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) { launchSingleTop = true } },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
                         onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         onLanguageChange = { code -> localeManager?.setLocale(code) },
                         isAdmin = isAdmin,
@@ -1261,10 +1273,21 @@ fun MainShell(
                             }
                         }
                         // RIGHT: Feed | Rewards | Profile
+                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                        val notifState by notifVm.state.collectAsState()
+                        val unreadNotifCount = notifState.items.count { !it.isRead }
+                        val wishlistVm: com.mhub.app.ui.wishlist.WishlistViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                        val wishlistState by wishlistVm.state.collectAsState()
+                        val wishlistCount = wishlistState.items.size
                         listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
+                                badgeCount = when (tab) {
+                                    BottomTab.FEED -> unreadNotifCount
+                                    BottomTab.REWARDS -> wishlistCount.coerceAtMost(99)
+                                    else -> 0
+                                },
                                 modifier = Modifier.weight(1f),
                                 onClick = { navigateToTab(tab) },
                             )
@@ -1311,6 +1334,7 @@ fun MainShell(
 private fun BottomNavTabItem(
     tab: BottomTab,
     isSelected: Boolean,
+    badgeCount: Int = 0,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -1326,12 +1350,26 @@ private fun BottomNavTabItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            imageVector = if (isSelected) tab.iconFilled else tab.iconOutlined,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = contentColor,
-        )
+        BadgedBox(
+            badge = {
+                if (badgeCount > 0) {
+                    Badge(containerColor = MaterialTheme.colorScheme.error) {
+                        Text(
+                            if (badgeCount > 99) "99+" else "$badgeCount",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onError,
+                        )
+                    }
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isSelected) tab.iconFilled else tab.iconOutlined,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = contentColor,
+            )
+        }
         Text(
             text = stringResource(tab.labelRes),
             style = MaterialTheme.typography.labelSmall,

@@ -257,6 +257,81 @@ data class ConfirmSaleRequest(
     val otp: String,
 )
 
+// initiate sale response — server wraps transactionId inside `transaction` object
+@Serializable
+data class SaleTransactionInfo(
+    val transactionId: String? = null,
+    val status: String? = null,
+    val completedAt: String? = null,
+    val agreedPrice: Double? = null,
+    val otpExpiresIn: String? = null,
+    val expiresAt: String? = null,
+)
+
+@Serializable
+data class InitiateSaleResponse(
+    val message: String? = null,
+    val transaction: SaleTransactionInfo? = null,
+    val instructions: String? = null,
+)
+
+// confirm sale response — rich object with buyer/item/rewards/receipt
+@Serializable
+data class SalePartyInfo(
+    val id: String? = null,
+    val name: String? = null,
+    val username: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("user_id") val userId: String? = null,
+)
+
+@Serializable
+data class SaleItemInfo(
+    @SerialName("post_id") val postId: String? = null,
+    val title: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    val location: String? = null,
+    val category: String? = null,
+    @SerialName("category_name") val categoryName: String? = null,
+    @SerialName("subcategory_name") val subcategoryName: String? = null,
+    val price: Double? = null,
+    @SerialName("listing_price") val listingPrice: Double? = null,
+    @SerialName("agreed_price") val agreedPrice: Double? = null,
+)
+
+@Serializable
+data class SaleRewardsInfo(
+    val sellerPoints: Int? = null,
+    val buyerPoints: Int? = null,
+    val bonusPoints: Int? = null,
+    val referralPoints: Int? = null,
+    val chainPoints: Int? = null,
+) {
+    val totalPoints: Int get() = (sellerPoints ?: 0) + (bonusPoints ?: 0) + (referralPoints ?: 0) + (chainPoints ?: 0)
+}
+
+@Serializable
+data class SaleReceiptInfo(
+    val receiptId: String? = null,
+    val transactionId: String? = null,
+    val amount: Double? = null,
+    val currency: String? = null,
+    val completedAt: String? = null,
+)
+
+@Serializable
+data class ConfirmSaleResponse(
+    val message: String? = null,
+    val transaction: SaleTransactionInfo? = null,
+    val postStatus: String? = null,
+    val item: SaleItemInfo? = null,
+    val buyer: SalePartyInfo? = null,
+    val seller: SalePartyInfo? = null,
+    val rewards: SaleRewardsInfo? = null,
+    val receipt: SaleReceiptInfo? = null,
+)
+
+// Legacy — keep for backward compat with other callers
 @Serializable
 data class SaleResponse(
     val success: Boolean = true,
@@ -821,7 +896,13 @@ data class FeedItem(
     @SerialName("like_count") val likeCount: Int = 0,
     @SerialName("comment_count") val commentCount: Int = 0,
     @SerialName("is_liked") val isLiked: Boolean = false,
+    @SerialName("view_count") val viewCount: Int? = null,
     @SerialName("post_id") val postId: String? = null,
+    @SerialName("category_name") val categoryName: String? = null,
+    @SerialName("subcategory_name") val subcategoryName: String? = null,
+    @SerialName("location") val location: String? = null,
+    @SerialName("area") val area: String? = null,
+    @SerialName("city") val city: String? = null,
 ) {
     val stableId: String get() = id ?: feedId ?: "${userId}-${createdAt}"
     val displayName: String get() = userName ?: "User"
@@ -1178,22 +1259,30 @@ data class DraftRequest(
 // -------- Notification Preferences --------
 @Serializable
 data class NotificationPrefsResponse(
-    val chat: Boolean = true,
+    @SerialName("email_enabled") val emailEnabled: Boolean = true,
+    @SerialName("push_enabled") val pushEnabled: Boolean = true,
+    @SerialName("sms_enabled") val smsEnabled: Boolean = false,
+    @SerialName("marketing_enabled") val marketing: Boolean = false,
+    @SerialName("order_updates_enabled") val sales: Boolean = true,
+    @SerialName("price_drop_enabled") val priceDrops: Boolean = true,
+    @SerialName("message_enabled") val chat: Boolean = true,
+    // Legacy field aliases for backward compat
     val offers: Boolean = true,
-    @SerialName("price_drops") val priceDrops: Boolean = true,
-    val sales: Boolean = true,
     val system: Boolean = true,
-    val marketing: Boolean = false,
 )
 
 @Serializable
 data class NotificationPrefsRequest(
-    val chat: Boolean? = null,
+    @SerialName("email_enabled") val emailEnabled: Boolean? = null,
+    @SerialName("push_enabled") val pushEnabled: Boolean? = null,
+    @SerialName("sms_enabled") val smsEnabled: Boolean? = null,
+    @SerialName("marketing_enabled") val marketing: Boolean? = null,
+    @SerialName("order_updates_enabled") val sales: Boolean? = null,
+    @SerialName("price_drop_enabled") val priceDrops: Boolean? = null,
+    @SerialName("message_enabled") val chat: Boolean? = null,
+    // Legacy aliases kept for compat
     val offers: Boolean? = null,
-    @SerialName("price_drops") val priceDrops: Boolean? = null,
-    val sales: Boolean? = null,
     val system: Boolean? = null,
-    val marketing: Boolean? = null,
 )
 
 // -------- Daily Code --------
@@ -1328,4 +1417,30 @@ data class CreateOrderResponse(
 @Serializable
 data class TrendingSearchResponse(
     val queries: List<String> = emptyList(),
+)
+
+// -------- Public Wall Leaderboard --------
+@Serializable
+data class PublicWallEntry(
+    val id: String? = null,
+    val name: String = "User",
+    val rank: String? = null,
+    val rating: String? = null,
+    val sales: Int? = null,
+    val purchases: Int? = null,
+    val coins: Int? = null,
+    val verified: Boolean = false,
+    @SerialName("total_coins") val totalCoins: Int? = null,
+    val level: Int? = null,
+    val badge: String? = null,
+) {
+    val displayName: String get() = name.ifBlank { "User" }
+    val initials: String get() = name.take(2).uppercase().ifBlank { "U" }
+}
+
+@Serializable
+data class PublicWallLeaderboardResponse(
+    @SerialName("topSellers") val topSellers: List<PublicWallEntry> = emptyList(),
+    @SerialName("topBuyers") val topBuyers: List<PublicWallEntry> = emptyList(),
+    @SerialName("topUsers") val topUsers: List<PublicWallEntry> = emptyList(),
 )

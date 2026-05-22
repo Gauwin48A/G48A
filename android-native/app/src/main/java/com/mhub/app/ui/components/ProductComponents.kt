@@ -1,5 +1,6 @@
 package com.mhub.app.ui.components
 
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -275,7 +276,7 @@ fun RatingStars(
             Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(14.dp))
         }
         if (hasHalf) {
-            Icon(Icons.Filled.StarHalf, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(14.dp))
+            Icon(Icons.AutoMirrored.Filled.StarHalf, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(14.dp))
         }
         repeat(emptyStars.coerceAtLeast(0)) {
             Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(14.dp))

@@ -21,6 +21,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -401,6 +404,17 @@ fun PostDetailScreen(
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
                 val lazyState = rememberLazyListState()
+                val scope = rememberCoroutineScope()
+                var activeSection by remember { mutableStateOf(0) }
+                // Scroll-spy: update active section tab based on scroll position
+                LaunchedEffect(lazyState.firstVisibleItemIndex) {
+                    activeSection = when (lazyState.firstVisibleItemIndex) {
+                        0 -> 0; 2 -> 2; 3 -> 3; 4 -> 4; else -> if (lazyState.firstVisibleItemIndex >= 5) 5 else 1
+                    }
+                }
+                // sectionScrollIndices maps each tab to a LazyColumn item index
+                // Items: 0=images, 1=overview, 2=specs, 3=trust, 4=similar, 5=seller
+                val sectionScrollIndices = listOf(0, 1, 2, 3, 1, 5)
                 val sectionLabels = listOf(stringResource(R.string.detail_overview), stringResource(R.string.detail_details), stringResource(R.string.detail_specs), stringResource(R.string.detail_trust), stringResource(R.string.detail_description_tab), stringResource(R.string.detail_seller_tab))
 
                 Column(
@@ -454,20 +468,30 @@ fun PostDetailScreen(
                         }
                     }
 
-                    // Section navigation strip
+                    // Section navigation strip (scroll-to-section on click, scroll-spy highlighting)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
                     ) {
-                        items(sectionLabels) { label ->
+                        itemsIndexed(sectionLabels) { idx, label ->
+                            val isActive = activeSection == idx
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                                onClick = {},
+                                color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = if (isActive) 1f else 0.3f)),
+                                onClick = {
+                                    activeSection = idx
+                                    scope.launch { lazyState.animateScrollToItem(sectionScrollIndices[idx]) }
+                                },
                             ) {
-                                Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    label,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
                     }
@@ -552,7 +576,7 @@ fun PostDetailScreen(
                             }
                         }
 
-                        item {
+                        item(key = "sec_overview") {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -636,6 +660,15 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                            }
+                        }
+                        item(key = "sec_specs") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
                                 // Specifications table
                                 val conditionLabel = stringResource(R.string.detail_condition)
                                 val brandLabel = stringResource(R.string.detail_brand)
@@ -705,6 +738,15 @@ fun PostDetailScreen(
                                     EngagementChip("🔗", "0", stringResource(R.string.detail_shares))
                                 }
 
+                            }
+                        }
+                        item(key = "sec_trust") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
                                 // Trust Score Badge
                                 state.trustScore?.let { ts ->
                                     val score = ts.trustScore.toInt()
@@ -837,6 +879,15 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                            }
+                        }
+                        item(key = "sec_similar") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
                                 // Similar Posts section
                                 state.similarPosts.takeIf { it.isNotEmpty() }?.let { similar ->
                                     Text(stringResource(R.string.detail_similar), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
@@ -913,6 +964,15 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                            }
+                        }
+                        item(key = "sec_seller") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
                                 post.userName?.let {
                                     Card(
                                         shape = RoundedCornerShape(14.dp),

@@ -216,7 +216,12 @@ fun MyPostsScreen(
                 )
             } else {
                 TopAppBar(
-                    title = { Text(stringResource(R.string.profile_my_posts), fontWeight = FontWeight.Bold) },
+                    title = {
+                        Column {
+                            Text("My Home", fontWeight = FontWeight.ExtraBold)
+                            Text("Your marketplace listings", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
                     actions = { IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") } },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -267,8 +272,13 @@ fun MyPostsScreen(
                                 ),
                             ) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text("My Listings", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
-                                    Text("Manage and track your listings", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("My Home", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color.White)
+                                        Surface(shape = RoundedCornerShape(8.dp), color = Color.White.copy(alpha = 0.2f)) {
+                                            Text("OWNER", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    Text("Your marketplace inventory", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         StatMiniCard("Total", "${allItems.size}", Icons.Default.ShoppingBag, Color(0xFF3B82F6), Modifier.weight(1f))
                                         StatMiniCard("Active", "$activeCount", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF22C55E), Modifier.weight(1f))
