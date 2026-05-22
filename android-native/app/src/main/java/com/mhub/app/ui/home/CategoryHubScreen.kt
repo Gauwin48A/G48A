@@ -410,6 +410,21 @@ fun CategoryHubScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
+                // ── Trending Categories pills ──────────────────────────
+                item(key = "trending_cats") {
+                    Spacer(Modifier.height(16.dp))
+                    TrendingCategoriesSection(
+                        onSelectApp = onSelectApp,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                // ── Platform Trust strip ──────────────────────────────
+                item(key = "trust") {
+                    Spacer(Modifier.height(12.dp))
+                    PlatformTrustStrip(modifier = Modifier.padding(horizontal = 16.dp))
+                    Spacer(Modifier.height(16.dp))
+                }
             }
         }
     }
@@ -678,6 +693,85 @@ private fun QuickLinksSection(
                         }
                         Text(link.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155))
                     }
+                }
+            }
+        }
+    }
+}
+
+/* ── Trending categories horizontal strip ─────────────────────────────── */
+
+private data class TrendingCat(val label: String, val emoji: String, val key: String, val bg: Color)
+private val TRENDING_CATS = listOf(
+    TrendingCat("Phones", "📱", "electronics", Color(0xFF3B82F6)),
+    TrendingCat("Cars", "🚗", "vehicles", Color(0xFF10B981)),
+    TrendingCat("Clothes", "👗", "fashion", Color(0xFFEC4899)),
+    TrendingCat("Laptops", "💻", "electronics", Color(0xFF8B5CF6)),
+    TrendingCat("Bikes", "🏍️", "vehicles", Color(0xFFEA580C)),
+    TrendingCat("Shoes", "👟", "fashion", Color(0xFFF59E0B)),
+    TrendingCat("Home", "🏠", "others", Color(0xFF0891B2)),
+    TrendingCat("Jobs", "💼", "others", Color(0xFF059669)),
+)
+
+@Composable
+private fun TrendingCategoriesSection(onSelectApp: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("🔥 Trending", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
+            Text("See all →", fontSize = 12.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(Modifier.height(10.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(TRENDING_CATS, key = { it.label }) { cat ->
+                Surface(
+                    onClick = { onSelectApp(cat.key) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = cat.bg.copy(alpha = 0.1f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, cat.bg.copy(alpha = 0.3f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(cat.emoji, fontSize = 16.sp)
+                        Text(cat.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cat.bg)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ── Platform trust strip ───────────────────────────────────────────────── */
+
+@Composable
+private fun PlatformTrustStrip(modifier: Modifier = Modifier) {
+    val trustItems = listOf(
+        Triple("🔒", "Secure", "Verified sellers"),
+        Triple("⚡", "Fast", "Quick listings"),
+        Triple("🌍", "Local", "Near you"),
+        Triple("💬", "Support", "24/7 help"),
+    )
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            trustItems.forEach { (emoji, title, subtitle) ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(emoji, fontSize = 20.sp)
+                    Text(title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                    Text(subtitle, fontSize = 9.sp, color = Color(0xFF94A3B8))
                 }
             }
         }

@@ -127,6 +127,7 @@ data class RewardsUiState(
 @HiltViewModel
 class RewardsViewModel @Inject constructor(
     private val rewardsRepository: RewardsRepository,
+    private val tokenStore: com.mhub.app.data.local.TokenStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RewardsUiState())
     val state: StateFlow<RewardsUiState> = _state.asStateFlow()
@@ -150,7 +151,24 @@ class RewardsViewModel @Inject constructor(
                 )
                 is ApiResult.Failure -> {
                     if (result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden) {
-                        _state.value = RewardsUiState(requiresAuth = true)
+                        // Retry once before showing auth gate (avoids false positives from token refresh races)
+                        kotlinx.coroutines.delay(800) // Wait for token refresh to complete
+                        when (val retry = rewardsRepository.overview()) {
+                            is ApiResult.Success -> _state.value = _state.value.copy(
+                                loading = false, refreshing = false, rewards = retry.data,
+                            )
+                            is ApiResult.Failure -> {
+                                // Only show auth gate if token is truly gone (not just a refresh race)
+                                if ((retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden) && !tokenStore.hasSession) {
+                                    _state.value = RewardsUiState(requiresAuth = true)
+                                } else if (retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden) {
+                                    // Token exists but server rejects — likely expired, show error not login gate
+                                    _state.value = _state.value.copy(loading = false, refreshing = false, error = "Session expired. Please try again.")
+                                } else {
+                                    _state.value = _state.value.copy(loading = false, refreshing = false, error = retry.error.message)
+                                }
+                            }
+                        }
                     } else {
                         _state.value = _state.value.copy(
                             loading = false, refreshing = false, error = result.error.message,
@@ -287,8 +305,14 @@ fun RewardsScreen(
     val clipboardManager = LocalClipboardManager.current
     val darkTheme = isSystemInDarkTheme()
 
+    // Always attempt to load on mount — ViewModel handles 401 internally.
+    // Never pre-emptively show auth gate from token-buffer fluctuations.
+    LaunchedEffect(Unit) {
+        viewModel.load()
+    }
+    // Silently re-load when user logs back in (e.g. from the in-screen auth gate)
     LaunchedEffect(isAuthenticated) {
-        if (!isAuthenticated) viewModel.showAuthGate() else viewModel.load()
+        if (isAuthenticated && state.requiresAuth) viewModel.load()
     }
 
     // Auto-clear action result

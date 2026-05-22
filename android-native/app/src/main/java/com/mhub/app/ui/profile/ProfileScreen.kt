@@ -201,12 +201,22 @@ class ProfileViewModel @Inject constructor(
                     loading = false, user = result.data, lastLoadTimeMs = System.currentTimeMillis(),
                 )
                 is ApiResult.Failure -> {
-                    val isAuth = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
-                    _state.value = _state.value.copy(
-                        loading = false,
-                        isSessionExpired = isAuth,
-                        error = result.error.message,
-                    )
+                    val isUnauth = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
+                    if (isUnauth) {
+                        // Retry once before declaring session expired (avoids false positives)
+                        when (val retry = repo.me()) {
+                            is ApiResult.Success -> _state.value = _state.value.copy(
+                                loading = false, user = retry.data, lastLoadTimeMs = System.currentTimeMillis(),
+                            )
+                            is ApiResult.Failure -> _state.value = _state.value.copy(
+                                loading = false,
+                                isSessionExpired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden,
+                                error = retry.error.message,
+                            )
+                        }
+                    } else {
+                        _state.value = _state.value.copy(loading = false, error = result.error.message)
+                    }
                 }
             }
             loadStats()
@@ -1015,7 +1025,7 @@ fun ProfileScreen(
                             }
                         }
 
-                        // ─── Quick Actions ───────────────────────────────────
+                        // ─── Quick Actions (4-per-row compact grid) ───────────
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1030,26 +1040,20 @@ fun ProfileScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 1.2.sp,
                             )
-                            // Row 1: My Home | My Feed
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Home", subtitle = "Your listings", accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.Message, label = "My Feed", subtitle = "Your updates", accentColor = Color(0xFF6366F1), onClick = onOpenMyFeed, modifier = Modifier.weight(1f))
+                            val userId = state.user?.id ?: ""
+                            // Row 1: 4 actions compact
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                CompactActionChip(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Home", accentColor = Color(0xFF10B981), onClick = onOpenMyPosts, modifier = Modifier.weight(1f))
+                                CompactActionChip(icon = Icons.AutoMirrored.Filled.Message, label = "Feed", accentColor = Color(0xFF6366F1), onClick = onOpenMyFeed, modifier = Modifier.weight(1f))
+                                CompactActionChip(icon = Icons.Filled.Star, label = "Reviews", accentColor = Color(0xFFF59E0B), onClick = { onOpenReviews(userId) }, modifier = Modifier.weight(1f))
+                                CompactActionChip(icon = Icons.Filled.Dashboard, label = "Hub", accentColor = Color(0xFF8B5CF6), onClick = onOpenCentre, modifier = Modifier.weight(1f))
                             }
-                            // Row 2: My Reviews | Centre Page
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                val userId = state.user?.id ?: ""
-                                QuickActionCard(icon = Icons.Filled.Star, label = "My Reviews", subtitle = "Ratings received", accentColor = Color(0xFFF59E0B), onClick = { onOpenReviews(userId) }, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.Filled.Dashboard, label = "Centre Page", subtitle = "Your seller hub", accentColor = Color(0xFF8B5CF6), onClick = onOpenCentre, modifier = Modifier.weight(1f))
-                            }
-                            // Row 3: Sale Done | Sale Undone
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.Filled.CheckCircle, label = "Sale Done", subtitle = "Mark item sold", accentColor = Color(0xFF22C55E), onClick = onOpenSaleDone, modifier = Modifier.weight(1f))
-                                QuickActionCard(icon = Icons.Filled.RadioButtonUnchecked, label = "Sale Undone", subtitle = "Reactivate listing", accentColor = Color(0xFFEF4444), onClick = onOpenSaleUndone, modifier = Modifier.weight(1f))
-                            }
-                            // Row 4: My Offers
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickActionCard(icon = Icons.AutoMirrored.Filled.TrendingUp, label = stringResource(R.string.profile_my_offers), subtitle = stringResource(R.string.profile_negotiations), accentColor = Color(0xFFF97316), onClick = onOpenOffers, modifier = Modifier.weight(1f))
-                                Box(modifier = Modifier.weight(1f))
+                            // Row 2: 3 actions + spacer
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                CompactActionChip(icon = Icons.Filled.CheckCircle, label = "Sale Done", accentColor = Color(0xFF22C55E), onClick = onOpenSaleDone, modifier = Modifier.weight(1f))
+                                CompactActionChip(icon = Icons.Filled.RadioButtonUnchecked, label = "Reactivate", accentColor = Color(0xFFEF4444), onClick = onOpenSaleUndone, modifier = Modifier.weight(1f))
+                                CompactActionChip(icon = Icons.AutoMirrored.Filled.TrendingUp, label = "Offers", accentColor = Color(0xFFF97316), onClick = onOpenOffers, modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
 
@@ -2372,4 +2376,32 @@ private fun SocialLinksEditDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
+}
+
+/* ── Compact action chip (4-per-row) ─────────────────────────────────────── */
+
+@Composable
+private fun CompactActionChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = accentColor.copy(alpha = 0.1f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.25f)),
+        modifier = modifier,
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(icon, contentDescription = label, tint = accentColor, modifier = Modifier.size(20.dp))
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = accentColor, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+        }
+    }
 }

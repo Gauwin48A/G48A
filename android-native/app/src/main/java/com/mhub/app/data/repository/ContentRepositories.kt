@@ -97,8 +97,10 @@ class PostsRepository @Inject constructor(
         categoryId: String? = null,
         query: String? = null,
         sort: String? = null,
+        condition: String? = null,
+        subcategory: String? = null,
     ): ApiResult<List<Post>> {
-        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort).items }
+        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort, condition, subcategory).items }
         if (result is ApiResult.Success && page == 1) {
             // Cache page 1 results; evict entries older than TTL
             postDao.evictStale(System.currentTimeMillis() - CACHE_TTL_MS)
@@ -451,11 +453,13 @@ class AdminRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class TransactionsRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun initiate(req: InitiateSaleRequest): ApiResult<SaleResponse> = safeApiCall { api.initiateSale(req) }
-    suspend fun confirm(req: ConfirmSaleRequest): ApiResult<SaleResponse> = safeApiCall { api.confirmSale(req) }
+    suspend fun initiate(req: InitiateSaleRequest): ApiResult<InitiateSaleResponse> = safeApiCall { api.initiateSale(req) }
+    suspend fun confirm(req: ConfirmSaleRequest): ApiResult<ConfirmSaleResponse> = safeApiCall { api.confirmSale(req) }
     suspend fun pending(): ApiResult<List<PendingSale>> = safeApiCall { api.pendingSales().sales }
     suspend fun undoSale(req: UndoSaleRequest): ApiResult<Unit> = safeApiCall { api.undoSale(req); Unit }
     suspend fun undoneHistory(): ApiResult<List<UndoneRecord>> = safeApiCall { api.undoneHistory().records }
+    suspend fun soldHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).items }
+    suspend fun boughtHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).items }
 }
 
 @Singleton
@@ -500,6 +504,7 @@ class SocialRepository @Inject constructor(private val api: MhubApi) {
     suspend fun feedDetail(id: String): ApiResult<FeedItem> = safeApiCall { api.feedDetail(id) }
     suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page).allItems }
     suspend fun publicWall(userId: String): ApiResult<List<FeedItem>> = safeApiCall { api.publicWall(userId).allItems }
+    suspend fun publicWallLeaderboard(): ApiResult<PublicWallLeaderboardResponse> = safeApiCall { api.publicWallLeaderboard() }
     suspend fun createPost(req: CreateFeedRequest): ApiResult<String> = safeApiCall {
         api.createFeedPost(req).id ?: error("No id")
     }

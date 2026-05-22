@@ -41,11 +41,16 @@ class TokenStore @Inject constructor(context: Context) {
 
     val accessToken: StateFlow<String?> = _accessToken.asStateFlow()
 
-    /** True only if token is present AND not expired (with 60s buffer) */
+    /** True only if token is present AND not expired (with 10s buffer).
+     *  Reduced from 60s to prevent false-negative auth states during token refresh windows. */
     val isAuthenticated: Boolean get() {
         val token = _accessToken.value
-        return !token.isNullOrBlank() && !JwtHelper.isExpired(token, bufferSeconds = 60)
+        return !token.isNullOrBlank() && !JwtHelper.isExpired(token, bufferSeconds = 10)
     }
+
+    /** True if any token exists (even if near-expiry). Used for UI-level "user logged in" checks
+     *  to prevent flash-of-login-gate during token refresh cycles. */
+    val hasSession: Boolean get() = !_accessToken.value.isNullOrBlank()
 
     /** Non-blocking read of cached access token (safe to call from any thread). */
     fun accessTokenImmediate(): String? = _accessToken.value

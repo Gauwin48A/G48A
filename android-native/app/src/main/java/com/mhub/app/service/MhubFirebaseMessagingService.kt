@@ -36,8 +36,10 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "mhub_general"
-        private const val CHANNEL_NAME = "MHub Notifications"
+        const val CHANNEL_ORDERS  = "mhub_orders"
+        const val CHANNEL_CHAT    = "mhub_chat"
+        const val CHANNEL_REWARDS = "mhub_rewards"
+        const val CHANNEL_GENERAL = "mhub_general"
         private const val NOTIFICATION_ID_BASE = 1000
     }
 
@@ -54,7 +56,14 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(message)
         val title = message.notification?.title ?: message.data["title"] ?: return
         val body  = message.notification?.body  ?: message.data["body"]  ?: return
-        showNotification(title, body, message.messageId?.hashCode() ?: System.currentTimeMillis().toInt())
+        val type  = message.data["type"] ?: ""
+        val channel = when {
+            type.contains("order", ignoreCase = true) || type.contains("sale", ignoreCase = true) -> CHANNEL_ORDERS
+            type.contains("chat", ignoreCase = true) || type.contains("message", ignoreCase = true) -> CHANNEL_CHAT
+            type.contains("reward", ignoreCase = true) || type.contains("coin", ignoreCase = true) -> CHANNEL_REWARDS
+            else -> CHANNEL_GENERAL
+        }
+        showNotification(title, body, channel, message.messageId?.hashCode() ?: System.currentTimeMillis().toInt())
     }
 
     private fun registerTokenWithServer(fcmToken: String) {
@@ -71,17 +80,11 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun showNotification(title: String, body: String, id: Int) {
+    private fun showNotification(title: String, body: String, channelId: String, id: Int) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                )
-            )
+            ensureChannels(manager)
         }
 
         val tapIntent = Intent(this, MainActivity::class.java).apply {
@@ -92,7 +95,7 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
@@ -101,5 +104,19 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         manager.notify(NOTIFICATION_ID_BASE + id, notification)
+    }
+
+    private fun ensureChannels(manager: NotificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        listOf(
+            NotificationChannel(CHANNEL_ORDERS,  "Orders & Sales",   NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL_CHAT,    "Chat Messages",    NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL_REWARDS, "Rewards & Coins",  NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_GENERAL, "General",          NotificationManager.IMPORTANCE_DEFAULT),
+        ).forEach { channel ->
+            if (manager.getNotificationChannel(channel.id) == null) {
+                manager.createNotificationChannel(channel)
+            }
+        }
     }
 }

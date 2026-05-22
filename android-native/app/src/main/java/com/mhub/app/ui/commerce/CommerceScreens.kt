@@ -1,5 +1,6 @@
 package com.mhub.app.ui.commerce
 
+import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -636,7 +640,16 @@ private fun MhubTextField(label: String, value: String, onValueChange: (String) 
 // ──────────────────────────────────────────────────────────────────────────────
 // TierSelectionScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class TiersUiState(val loading: Boolean = true, val tiers: List<Tier> = emptyList(), val error: String? = null)
+data class TiersUiState(
+    val loading: Boolean = true,
+    val tiers: List<Tier> = emptyList(),
+    val error: String? = null,
+    val currentSubscription: SubscriptionRecord? = null,
+    val subscriptionHistory: List<SubscriptionRecord> = emptyList(),
+    val historyLoading: Boolean = false,
+    val cancelLoading: Boolean = false,
+    val cancelSuccess: Boolean = false,
+)
 
 @HiltViewModel
 class TiersViewModel @Inject constructor(private val repo: TiersRepository) : ViewModel() {
@@ -650,12 +663,42 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
                 is ApiResult.Success -> _state.value = TiersUiState(loading = false, tiers = r.data.ifEmpty { defaultTiers })
                 is ApiResult.Failure -> _state.value = TiersUiState(loading = false, tiers = defaultTiers)
             }
+            // Load current subscription and history in parallel
+            loadSubscriptionData()
+        }
+    }
+
+    private fun loadSubscriptionData() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(historyLoading = true)
+            val mySub = repo.mySubscription()
+            val history = repo.subscriptionHistory()
+            _state.value = _state.value.copy(
+                historyLoading = false,
+                currentSubscription = (mySub as? ApiResult.Success)?.data?.subscription,
+                subscriptionHistory = (history as? ApiResult.Success)?.data ?: emptyList(),
+            )
         }
     }
 
     fun subscribe(tierId: String) {
         viewModelScope.launch {
             repo.subscribe(SubscribeRequest(tierId = tierId))
+            loadSubscriptionData()
+        }
+    }
+
+    fun cancelSubscription() {
+        val subId = _state.value.currentSubscription?.id ?: return
+        _state.value = _state.value.copy(cancelLoading = true)
+        viewModelScope.launch {
+            when (repo.cancelSubscription(subId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(cancelLoading = false, cancelSuccess = true, currentSubscription = null)
+                    loadSubscriptionData()
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(cancelLoading = false)
+            }
         }
     }
 
@@ -706,6 +749,49 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFD97706)) {
                                     Text("FREE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                    // Active subscription banner with cancel
+                    state.currentSubscription?.let { sub ->
+                        item(key = "active_sub") {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = BorderStroke(1.5.dp, Color(0xFF2563EB).copy(alpha = 0.4f)),
+                                modifier = Modifier.fillMaxWidth(),
+                                shadowElevation = 2.dp,
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+                                        Text("Active Plan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                        Spacer(Modifier.weight(1f))
+                                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF2563EB)) {
+                                            Text("ACTIVE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                        }
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Column {
+                                            Text(sub.tier?.replaceFirstChar(Char::uppercase) ?: "Subscription", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                            sub.expiresAt?.let { exp ->
+                                                Text("Expires: $exp", fontSize = 11.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                        OutlinedButton(
+                                            onClick = { viewModel.cancelSubscription() },
+                                            enabled = !state.cancelLoading,
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                                            border = BorderStroke(1.dp, Color(0xFFDC2626).copy(alpha = 0.5f)),
+                                        ) {
+                                            if (state.cancelLoading) {
+                                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color(0xFFDC2626))
+                                            } else {
+                                                Text("Cancel", fontSize = 12.sp)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -761,6 +847,50 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                                 modifier = Modifier.weight(1f),
                                             )
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Subscription history
+                    if (state.historyLoading || state.subscriptionHistory.isNotEmpty()) {
+                        item(key = "sub_history_header") {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+                                Icon(Icons.Filled.History, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+                                Text("Subscription History", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                            }
+                            if (state.historyLoading) {
+                                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color(0xFF2563EB))
+                                }
+                            }
+                        }
+                        items(state.subscriptionHistory, key = { it.id ?: it.tier ?: it.hashCode().toString() }) { record ->
+                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Surface(shape = CircleShape, color = Color(0xFFEFF6FF), modifier = Modifier.size(36.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(Icons.Filled.Receipt, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                    Column(Modifier.weight(1f)) {
+                                        Text(record.tier?.replaceFirstChar(Char::uppercase) ?: "Plan", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF0F172A))
+                                        record.startedAt?.let { Text("Started: $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                        record.expiresAt?.let { Text("Expires: $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                    }
+                                    val statusColor = when (record.status?.lowercase()) {
+                                        "active" -> Color(0xFF22C55E)
+                                        "cancelled", "canceled" -> Color(0xFFEF4444)
+                                        "expired" -> Color(0xFF94A3B8)
+                                        else -> Color(0xFF94A3B8)
+                                    }
+                                    Surface(shape = RoundedCornerShape(20.dp), color = statusColor.copy(alpha = 0.1f)) {
+                                        Text(
+                                            record.status?.replaceFirstChar(Char::uppercase) ?: "Unknown",
+                                            fontSize = 10.sp, fontWeight = FontWeight.Bold, color = statusColor,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        )
                                     }
                                 }
                             }
@@ -2804,33 +2934,47 @@ private fun BuyerPostCard(post: Post) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SaleDoneScreen — 5-step stepper: initiate, confirm, pending, receipt
+// SaleDoneScreen — 3-tab: Mark as Sold (seller initiate + buyer confirm) + Sold History
 // ──────────────────────────────────────────────────────────────────────────────
 data class SaleDoneUiState(
     val step: Int = 0,
     val loading: Boolean = false,
+    val historyLoading: Boolean = false,
     val pending: List<PendingSale> = emptyList(),
+    val soldHistory: List<Post> = emptyList(),
     val postId: String = "",
     val buyerId: String = "",
     val saleAmount: String = "",
     val txnId: String = "",
     val otp: String = "",
-    val receiptId: String? = null,
-    val transactionId: String? = null,
+    // initiate result
+    val initiatedTxnId: String? = null,
+    // confirm result
+    val completedReceipt: SaleReceiptInfo? = null,
+    val completedBuyer: SalePartyInfo? = null,
+    val completedItem: SaleItemInfo? = null,
+    val completedRewards: SaleRewardsInfo? = null,
     val error: String? = null,
     val success: Boolean = false,
-    val tab: String = "seller",
+    val tab: String = "seller",      // seller | buyer | history
 )
 
 @HiltViewModel
 class SaleDoneViewModel @Inject constructor(private val repo: TransactionsRepository) : ViewModel() {
     private val _state = MutableStateFlow(SaleDoneUiState())
     val state: StateFlow<SaleDoneUiState> = _state.asStateFlow()
-    init { loadPending() }
+    init { loadPending(); loadSoldHistory() }
     fun loadPending() { viewModelScope.launch {
         when (val r = repo.pending()) {
             is ApiResult.Success -> _state.value = _state.value.copy(pending = r.data)
             is ApiResult.Failure -> {}
+        }
+    } }
+    fun loadSoldHistory() { viewModelScope.launch {
+        _state.value = _state.value.copy(historyLoading = true)
+        when (val r = repo.soldHistory()) {
+            is ApiResult.Success -> _state.value = _state.value.copy(historyLoading = false, soldHistory = r.data)
+            is ApiResult.Failure -> _state.value = _state.value.copy(historyLoading = false)
         }
     } }
     fun setTab(t: String) { _state.value = _state.value.copy(tab = t, error = null) }
@@ -2845,7 +2989,10 @@ class SaleDoneViewModel @Inject constructor(private val repo: TransactionsReposi
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
             when (val r = repo.initiate(InitiateSaleRequest(postId = s.postId, buyerId = s.buyerId, saleAmount = s.saleAmount.toDoubleOrNull() ?: 0.0))) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, transactionId = r.data.transactionId, step = 2)
+                is ApiResult.Success -> {
+                    val txnId = r.data.transaction?.transactionId ?: ""
+                    _state.value = _state.value.copy(loading = false, initiatedTxnId = txnId, txnId = txnId, step = 2, tab = "buyer")
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
             }
         }
@@ -2856,10 +3003,24 @@ class SaleDoneViewModel @Inject constructor(private val repo: TransactionsReposi
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
             when (val r = repo.confirm(ConfirmSaleRequest(transactionId = s.txnId, otp = s.otp))) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, success = true, receiptId = r.data.receiptId, step = 4)
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        loading = false, success = true, step = 4,
+                        completedReceipt = r.data.receipt,
+                        completedBuyer = r.data.buyer,
+                        completedItem = r.data.item,
+                        completedRewards = r.data.rewards,
+                    )
+                    loadSoldHistory() // refresh history after confirming a sale
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
             }
         }
+    }
+    fun resetForNewSale() {
+        _state.value = SaleDoneUiState()
+        loadPending()
+        loadSoldHistory()
     }
 }
 
@@ -2898,17 +3059,21 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     }
                 }
             }
-            // Seller / Buyer tabs
+            // Seller / Buyer / History tabs
             Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                 Row(Modifier.padding(4.dp)) {
-                    listOf("seller" to stringResource(R.string.commerce_tab_seller), "buyer" to stringResource(R.string.commerce_tab_buyer_confirm)).forEach { (key, label) ->
+                    listOf(
+                        "seller" to stringResource(R.string.commerce_tab_seller),
+                        "buyer" to stringResource(R.string.commerce_tab_buyer_confirm),
+                        "history" to "Sold History",
+                    ).forEach { (key, label) ->
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = if (state.tab == key) Color.White else Color.Transparent,
                             shadowElevation = if (state.tab == key) 2.dp else 0.dp,
                             modifier = Modifier.weight(1f).clickable { viewModel.setTab(key) },
                         ) {
-                            Text(label, fontSize = 13.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF16A34A) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
+                            Text(label, fontSize = 12.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF16A34A) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp), maxLines = 1)
                         }
                     }
                 }
@@ -2943,77 +3108,245 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                         Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF166534), letterSpacing = 1.sp)
                                     }
                                     HorizontalDivider(color = Color(0xFF86EFAC))
-                                    if (state.receiptId != null) {
+                                    // Item title
+                                    state.completedItem?.title?.let { title ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(state.receiptId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                            Text("Item", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B), modifier = Modifier.weight(1f, fill = false), textAlign = TextAlign.End)
                                         }
                                     }
-                                    if (state.transactionId != null) {
+                                    // Buyer name
+                                    state.completedBuyer?.name?.let { name ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Buyer", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                    // Receipt ID
+                                    state.completedReceipt?.receiptId?.let { rid ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(rid, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                    // Transaction ID with copy
+                                    val txId = state.completedReceipt?.transactionId ?: state.initiatedTxnId
+                                    if (txId != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Text(stringResource(R.string.commerce_transaction), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                Text(state.transactionId!!, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
-                                                IconButton(
-                                                    onClick = {
-                                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.transactionId!!))
-                                                    },
-                                                    modifier = Modifier.size(22.dp),
-                                                ) {
-                                                    Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text(txId, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                                IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(txId)) }, modifier = Modifier.size(20.dp)) {
+                                                    Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF64748B), modifier = Modifier.size(12.dp))
                                                 }
                                             }
                                         }
                                     }
-                                    if (state.saleAmount.isNotBlank()) {
+                                    // Amount
+                                    val amount = state.completedReceipt?.amount ?: state.saleAmount.toDoubleOrNull()
+                                    if (amount != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text("₹${state.saleAmount}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                            Text("₹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                        }
+                                    }
+                                    // Completed at
+                                    state.completedReceipt?.completedAt?.let { ts ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Completed", fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(ts.take(19).replace("T", " "), fontSize = 11.sp, color = Color(0xFF64748B))
                                         }
                                     }
                                 }
                             }
-                            // Reward earned card
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
-                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFEF3C7), modifier = Modifier.size(48.dp)) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("🪙", fontSize = 26.sp) }
+                            // Reward earned card — show actual points from API
+                            val rewardsInfo = state.completedRewards
+                            val totalPoints = rewardsInfo?.totalPoints ?: 0
+                            if (totalPoints > 0) {
+                                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("🪙", fontSize = 22.sp)
+                                            Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                        }
+                                        // 4-metric breakdown (web parity)
+                                        val metricsRow1 = listOf(
+                                            "Seller Points" to (rewardsInfo?.sellerPoints ?: 0),
+                                            "Buyer Points" to (rewardsInfo?.buyerPoints ?: 0),
+                                        )
+                                        val metricsRow2 = listOf(
+                                            "Bonus Points" to (rewardsInfo?.bonusPoints ?: 0),
+                                            "Referral Points" to ((rewardsInfo?.referralPoints ?: 0) + (rewardsInfo?.chainPoints ?: 0)),
+                                        )
+                                        listOf(metricsRow1, metricsRow2).forEach { row ->
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                row.forEach { (label, pts) ->
+                                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
+                                                        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            Text("+$pts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFFB45309))
+                                                            Text(label, fontSize = 10.sp, color = Color(0xFF92400E), textAlign = TextAlign.Center)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
-                                    Column {
-                                        Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
-                                        Text("+25 coins for completing the sale!", fontSize = 13.sp, color = Color(0xFFB45309))
+                                }
+                            }
+                            // Sold Item Card (web parity)
+                            state.completedItem?.let { item ->
+                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Filled.Inventory2, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                                            Text("Sold Item", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                        }
+                                        HorizontalDivider(color = Color(0xFFE2E8F0))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                                            // Item image
+                                            item.imageUrl?.let { url ->
+                                                AsyncImage(
+                                                    model = url,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                                                    contentScale = ContentScale.Crop,
+                                                )
+                                            } ?: Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFE2E8F0), modifier = Modifier.size(60.dp)) {
+                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                    Icon(Icons.Filled.Image, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(28.dp))
+                                                }
+                                            }
+                                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                item.title?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF0F172A), maxLines = 2) }
+                                                item.categoryName?.let { cat ->
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Text(cat, fontSize = 11.sp, color = Color(0xFF64748B))
+                                                        item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                    }
+                                                }
+                                                item.location?.let { Text("📍 $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                // Agreed vs listing price
+                                                val agreed = item.agreedPrice ?: item.price
+                                                val listing = item.listingPrice ?: item.price
+                                                if (agreed != null) {
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        Text("₹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF22C55E))
+                                                        if (listing != null && listing != agreed) {
+                                                            Text("₹${listing.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Buyer Details Card (web parity)
+                            state.completedBuyer?.let { buyer ->
+                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Filled.Person, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
+                                            Text("Buyer Details", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                        }
+                                        HorizontalDivider(color = Color(0xFFE2E8F0))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            // Avatar circle
+                                            Surface(shape = CircleShape, color = Color(0xFF7C3AED).copy(alpha = 0.15f), modifier = Modifier.size(48.dp)) {
+                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                    Text(buyer.name?.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF7C3AED))
+                                                }
+                                            }
+                                            Column(Modifier.weight(1f)) {
+                                                buyer.name?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF0F172A)) }
+                                                buyer.username?.let { Text("@$it", fontSize = 12.sp, color = Color(0xFF64748B)) }
+                                                val buyerIdDisplay = buyer.userId ?: buyer.id
+                                                buyerIdDisplay?.let { uid ->
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Text("ID: $uid", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                                        IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(uid)) }, modifier = Modifier.size(18.dp)) {
+                                                            Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Receipt Actions row (web parity: copy/share)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                // Copy receipt
+                                OutlinedButton(
+                                    onClick = {
+                                        val receiptText = buildString {
+                                            append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
+                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
+                                        }
+                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(receiptText))
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Copy", style = MaterialTheme.typography.labelMedium)
+                                }
+                                // Share receipt
+                                OutlinedButton(
+                                    onClick = {
+                                        val shareText = buildString {
+                                            append("MHub Sale Receipt\n")
+                                            append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
+                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
+                                        }
+                                        val intent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, shareText)
+                                            putExtra(Intent.EXTRA_SUBJECT, "Sale Receipt")
+                                        }
+                                        context.startActivity(Intent.createChooser(intent, "Share Receipt"))
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Icon(Icons.Outlined.Share, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Share", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                            // Next Steps Section (web parity)
+                            Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFEFF6FF), border = BorderStroke(1.dp, Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Next Steps", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
+                                    listOf(
+                                        "🏠" to "View your post in My Home → Sold tab",
+                                        "⭐" to "Leave a review for the buyer",
+                                        "📈" to "List more items to grow your sales",
+                                    ).forEach { (emoji, text) ->
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                                            Text(emoji, fontSize = 14.sp)
+                                            Text(text, fontSize = 12.sp, color = Color(0xFF1E40AF))
+                                        }
                                     }
                                 }
                             }
                             // Action buttons
                             OutlinedButton(
-                                onClick = {
-                                    val receipt = buildString {
-                                        appendLine("=== MHub Sale Receipt ===")
-                                        if (state.receiptId != null) appendLine("Receipt ID: ${state.receiptId}")
-                                        if (state.transactionId != null) appendLine("Transaction ID: ${state.transactionId}")
-                                        if (state.saleAmount.isNotBlank()) appendLine("Amount: ₹${state.saleAmount}")
-                                        appendLine("Status: Completed")
-                                    }
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(android.content.Intent.EXTRA_TEXT, receipt)
-                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "MHub Sale Receipt")
-                                    }
-                                    context.startActivity(android.content.Intent.createChooser(intent, "Share Receipt"))
-                                },
+                                onClick = { viewModel.resetForNewSale() },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                                border = BorderStroke(1.5.dp, Color(0xFF22C55E)),
+                                border = BorderStroke(1.5.dp, Color(0xFF16A34A)),
                             ) {
-                                Icon(Icons.Default.Share, null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Add, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.commerce_share_receipt), fontWeight = FontWeight.SemiBold, color = Color(0xFF22C55E))
+                                Text("Confirm Another Sale", fontWeight = FontWeight.SemiBold, color = Color(0xFF16A34A))
                             }
                             Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp), elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
                                 Icon(Icons.Filled.Home, null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.commerce_done), fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("View My Listings", fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     } else {
@@ -3081,8 +3414,8 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         }
                     }
                 }
-                // Pending sales
-                if (state.pending.isNotEmpty()) {
+                // Pending sales (shown on seller/buyer tabs only)
+                if (state.tab != "history" && state.pending.isNotEmpty()) {
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Filled.PendingActions, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
@@ -3108,6 +3441,53 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         }
                     }
                 }
+                // Sold History tab content
+                if (state.tab == "history") {
+                    if (state.historyLoading) {
+                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color(0xFF22C55E))
+                        }
+                    } else if (state.soldHistory.isEmpty()) {
+                        Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(56.dp))
+                            Text("No completed sales yet", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color(0xFF94A3B8))
+                            Text("Your completed marketplace sales will appear here", fontSize = 13.sp, color = Color(0xFFCBD5E1), textAlign = TextAlign.Center)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+                            Text("Completed Sales (${state.soldHistory.size})", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                        }
+                        state.soldHistory.forEach { post ->
+                            Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    if (post.primaryImage != null) {
+                                        AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop,
+                                            modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
+                                    } else {
+                                        Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(24.dp))
+                                        }
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
+                                        if (post.price != null) {
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF22C55E))
+                                        }
+                                        post.location?.let { loc ->
+                                            Text(loc, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1)
+                                        }
+                                    }
+                                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
+                                        Text("Sold", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 Spacer(Modifier.height(60.dp))
             }
         }
@@ -3124,6 +3504,7 @@ data class SaleUndoneUiState(
     val description: String = "",
     val history: List<UndoneRecord> = emptyList(),
     val success: Boolean = false,
+    val transactionId: String? = null,
     val error: String? = null,
 )
 
@@ -3131,7 +3512,7 @@ data class SaleUndoneUiState(
 class SaleUndoneViewModel @Inject constructor(private val repo: TransactionsRepository) : ViewModel() {
     private val _state = MutableStateFlow(SaleUndoneUiState())
     val state: StateFlow<SaleUndoneUiState> = _state.asStateFlow()
-    private val reasons = listOf("buyer_backed_out", "wrong_item", "payment_issue", "mutual_agreement", "other")
+    private val reasons = listOf("buyer_no_show", "price_dispute", "item_not_as_described", "payment_failed", "other")
     fun getReasons() = reasons
     init { loadHistory() }
     fun loadHistory() { viewModelScope.launch {
@@ -3150,7 +3531,7 @@ class SaleUndoneViewModel @Inject constructor(private val repo: TransactionsRepo
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
             when (repo.undoSale(UndoSaleRequest(postId = s.postId, reason = s.reason, description = s.description.ifBlank { null }))) {
-                is ApiResult.Success -> { _state.value = _state.value.copy(loading = false, success = true); loadHistory() }
+                is ApiResult.Success -> { _state.value = _state.value.copy(loading = false, success = true, transactionId = null); loadHistory() }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "Failed to undo sale")
             }
         }
@@ -3165,28 +3546,49 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.commerce_undo_sale), onBack)
-            // Stepper
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            // Stepper with connector lines (web parity)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 val currentStep = if (state.success) 4 else 2
                 steps.forEachIndexed { i, label ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(if (i <= currentStep) Color(0xFFF59E0B) else Color(0xFFE2E8F0)),
-                            contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(30.dp).clip(CircleShape).background(
+                            when { i < currentStep -> Color(0xFFF59E0B); i == currentStep -> Color(0xFF3B82F6); else -> Color(0xFFE2E8F0) }
+                        ), contentAlignment = Alignment.Center) {
                             if (i < currentStep) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
                             else Text("${i + 1}", fontSize = 11.sp, color = if (i <= currentStep) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
                         }
-                        Text(label, fontSize = 9.sp, color = Color(0xFF64748B), maxLines = 1)
+                        Spacer(Modifier.height(2.dp))
+                        Text(label, fontSize = 8.sp, color = if (i <= currentStep) Color(0xFF374151) else Color(0xFF94A3B8), maxLines = 1, textAlign = TextAlign.Center)
+                    }
+                    if (i < steps.size - 1) {
+                        HorizontalDivider(modifier = Modifier.weight(0.5f).padding(bottom = 14.dp), color = if (i < currentStep) Color(0xFFF59E0B) else Color(0xFFE2E8F0), thickness = 2.dp)
                     }
                 }
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                 if (state.success) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-                        Icon(Icons.Filled.Autorenew, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(64.dp))
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
-                        Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = Color(0xFF64748B))
+                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFFBEB), border = BorderStroke(1.dp, Color(0xFFF59E0B)), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFFEF3C7)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Autorenew, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(40.dp))
+                            }
+                            Text(stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+                            Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                            state.transactionId?.let { txnId ->
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF)) {
+                                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Tag, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                                        Text("Reference: $txnId", fontSize = 12.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                            Button(onClick = onBack, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)), modifier = Modifier.fillMaxWidth()) {
+                                Icon(Icons.Filled.Home, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("View My Listings", fontWeight = FontWeight.SemiBold, color = Color.White)
+                            }
+                        }
                     }
                 } else {
                     MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
@@ -3212,7 +3614,14 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                         }
                     }
                     if (state.reason == "other") {
-                        MhubTextField(stringResource(R.string.commerce_field_description), state.description, viewModel::setDescription, maxLines = 3, minLines = 2)
+                        Column {
+                            MhubTextField(stringResource(R.string.commerce_field_description), state.description, viewModel::setDescription, maxLines = 5, minLines = 3)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                if (state.description.length < 20) Text("Minimum 20 characters required", fontSize = 11.sp, color = Color(0xFFEF4444))
+                                else Spacer(Modifier.weight(1f))
+                                Text("${state.description.length}/2000", fontSize = 11.sp, color = if (state.description.length < 20) Color(0xFFEF4444) else Color(0xFF94A3B8))
+                            }
+                        }
                     }
                     Button(onClick = { viewModel.submit() }, enabled = !state.loading,
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),

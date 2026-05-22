@@ -28,12 +28,14 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Category
@@ -110,6 +112,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.HorizontalDivider
@@ -123,6 +126,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.RadioButton
 import com.mhub.app.ui.LocalActiveCategoryKey
 
@@ -137,6 +146,7 @@ data class ExploreState(
     val hasMore: Boolean = true,
     val loadingPosts: Boolean = true,
     val loadingMore: Boolean = false,
+    val errorMessage: String? = null,
     val compareItems: Set<String> = emptySet(),
     val searchQuery: String = "",
     val searchResults: List<Post> = emptyList(),
@@ -200,7 +210,9 @@ class ExploreViewModel @Inject constructor(
             _state.value = _state.value.copy(loadingMore = true)
         }
         viewModelScope.launch {
-            when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort)) {
+            val condition = _state.value.filterCondition.takeIf { it != "any" }
+            val subcategory = _state.value.filterSubcategory
+            when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
                     val newPosts = result.data
                     _state.value = _state.value.copy(
@@ -210,7 +222,7 @@ class ExploreViewModel @Inject constructor(
                         hasMore = newPosts.size >= 20,
                     )
                 }
-                is ApiResult.Failure -> _state.value = _state.value.copy(loadingPosts = false, loadingMore = false)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loadingPosts = false, loadingMore = false, errorMessage = result.error.message)
             }
         }
     }
@@ -221,6 +233,11 @@ class ExploreViewModel @Inject constructor(
             loadPosts(reset = true)
             _state.value = _state.value.copy(refreshing = false)
         }
+    }
+
+    fun retry() {
+        _state.value = _state.value.copy(errorMessage = null)
+        loadPosts(reset = true)
     }
 
     // Retained for back-compat but ecosystem is set via setEcosystem()
@@ -421,7 +438,29 @@ fun ExploreScreen(
                     },
                 )
             }
-            // Compare floater bar
+            // Error banner
+            state.errorMessage?.let { err ->
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shadowElevation = 4.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { viewModel.retry() }) {
+                            Text("Retry", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
             if (state.compareItems.isNotEmpty()) {
                 Surface(
                     modifier = Modifier
@@ -556,148 +595,152 @@ private val quickFilters = listOf(
     QuickFilterDef(R.string.explore_filter_offers, Icons.Outlined.LocalOffer),
 )
 
+private data class BannerSlide(
+    val gradientColors: List<Color>,
+    val badge: String,
+    val badgeIcon: String,
+    val title: String,
+    val subtitle: String,
+    val ctaText: String,
+    val emoji: String,
+    val discount: String,
+)
+
+private val bannerSlides = listOf(
+    BannerSlide(
+        gradientColors = listOf(Color(0xFF1E40AF), Color(0xFF3B82F6), Color(0xFF6366F1)),
+        badge = "LIMITED TIME", badgeIcon = "🔥",
+        title = "Great Deals Await!", subtitle = "Discover unbeatable offers on top brands",
+        ctaText = "Shop Now", emoji = "🔥", discount = "UP TO 60% OFF",
+    ),
+    BannerSlide(
+        gradientColors = listOf(Color(0xFF7C3AED), Color(0xFFA855F7), Color(0xFFD946EF)),
+        badge = "NEW ARRIVALS", badgeIcon = "✨",
+        title = "Fresh Listings Daily", subtitle = "Be the first to grab new items near you",
+        ctaText = "Explore", emoji = "🆕", discount = "JUST LISTED",
+    ),
+    BannerSlide(
+        gradientColors = listOf(Color(0xFF059669), Color(0xFF10B981), Color(0xFF34D399)),
+        badge = "VERIFIED SELLERS", badgeIcon = "✅",
+        title = "Shop with Confidence", subtitle = "Trusted sellers with top ratings & reviews",
+        ctaText = "Browse", emoji = "🛡️", discount = "100% TRUSTED",
+    ),
+    BannerSlide(
+        gradientColors = listOf(Color(0xFFEA580C), Color(0xFFF97316), Color(0xFFFBBF24)),
+        badge = "FLASH SALE", badgeIcon = "⚡",
+        title = "Flash Sale Live!", subtitle = "Limited stock at incredible prices — hurry!",
+        ctaText = "Grab Now", emoji = "⚡", discount = "UP TO 80% OFF",
+    ),
+)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GreatDealsBanner(onShopNow: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+    val pagerState = rememberPagerState(pageCount = { bannerSlides.size })
+
+    // Auto-scroll every 4 seconds
+    LaunchedEffect(pagerState) {
+        while (true) {
+            kotlinx.coroutines.delay(4000)
+            val nextPage = (pagerState.currentPage + 1) % bannerSlides.size
+            pagerState.animateScrollToPage(nextPage)
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF1E40AF),
-                            Color(0xFF3B82F6),
-                            Color(0xFF6366F1),
-                        )
-                    )
-                )
-                .padding(20.dp),
-        ) {
-            // Subtle decorative circles
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 20.dp, y = (-10).dp)
-                    .background(Color.White.copy(alpha = 0.08f), CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .align(Alignment.BottomStart)
-                    .offset(x = (-10).dp, y = 10.dp)
-                    .background(Color.White.copy(alpha = 0.06f), CircleShape)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            pageSpacing = 12.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) { page ->
+            val slide = bannerSlides[page]
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.15f),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                Icons.Filled.LocalFireDepartment,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = Color(0xFFFBBF24),
-                            )
-                            Text(
-                                "LIMITED TIME",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                letterSpacing = 1.sp,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        stringResource(R.string.explore_great_deals),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 22.sp,
-                        color = Color.White,
-                        lineHeight = 26.sp,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.explore_great_deals_desc),
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.85f),
-                        lineHeight = 18.sp,
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Surface(
-                        onClick = onShopNow,
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color.White,
-                        shadowElevation = 4.dp,
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.explore_shop_now),
-                                color = Color(0xFF1E40AF),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                            )
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = Color(0xFF1E40AF),
-                            )
-                        }
-                    }
-                }
-                // Right side: Premium icon stack
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(start = 12.dp),
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Brush.linearGradient(colors = slide.gradientColors))
+                        .padding(20.dp),
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.15f),
-                        modifier = Modifier.size(72.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("🔥", fontSize = 36.sp)
+                    // Decorative circles
+                    Box(
+                        modifier = Modifier.size(80.dp).align(Alignment.TopEnd)
+                            .offset(x = 20.dp, y = (-10).dp)
+                            .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                    )
+                    Box(
+                        modifier = Modifier.size(50.dp).align(Alignment.BottomStart)
+                            .offset(x = (-10).dp, y = 10.dp)
+                            .background(Color.White.copy(alpha = 0.06f), CircleShape)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(slide.badgeIcon, fontSize = 12.sp)
+                                    Text(slide.badge, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 1.sp)
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(slide.title, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color.White, lineHeight = 26.sp)
+                            Spacer(Modifier.height(4.dp))
+                            Text(slide.subtitle, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f), lineHeight = 18.sp)
+                            Spacer(Modifier.height(14.dp))
+                            Surface(onClick = onShopNow, shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 4.dp) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(slide.ctaText, color = slide.gradientColors.first(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(16.dp), tint = slide.gradientColors.first())
+                                }
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(start = 12.dp)) {
+                            Surface(shape = CircleShape, color = Color.White.copy(alpha = 0.15f), modifier = Modifier.size(72.dp)) {
+                                Box(contentAlignment = Alignment.Center) { Text(slide.emoji, fontSize = 36.sp) }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFBBF24)) {
+                                Text(slide.discount, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF78350F), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                            }
                         }
                     }
-                    Spacer(Modifier.height(6.dp))
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFFBBF24),
-                    ) {
-                        Text(
-                            "UP TO 60% OFF",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF78350F),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        )
-                    }
                 }
+            }
+        }
+        // Page indicators
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            repeat(bannerSlides.size) { idx ->
+                val isSelected = pagerState.currentPage == idx
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(if (isSelected) 8.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                )
             }
         }
     }
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AllPostsBrowse(
     state: ExploreState,
@@ -715,6 +758,7 @@ private fun AllPostsBrowse(
         "newest" to "Newest", "popular" to "Popular",
         "price_asc" to "Price ↑", "price_desc" to "Price ↓",
     )
+    var isGridView by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -742,37 +786,47 @@ private fun AllPostsBrowse(
                 }
             } else {
                 items(state.searchResults, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }
             return@LazyColumn
         }
 
-        item(key = "sort_chips") {
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 10.dp)) {
-                items(sortOptions.size) { idx ->
-                    val (key, label) = sortOptions[idx]
-                    val isSelected = state.sortBy == key
-                    FilterChip(selected = isSelected, onClick = { onSetSort(key) }, label = { Text(label, style = MaterialTheme.typography.labelMedium) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White), shape = RoundedCornerShape(20.dp))
-                }
-            }
-        }
-
-        // Ecosystem subcategory chips — only for locked ecosystem mode
-        if (ecosystemSubcategories.isNotEmpty()) {
-            item(key = "subcategory_chips") {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 6.dp)) {
-                    items(ecosystemSubcategories.size) { idx ->
-                        val sub = ecosystemSubcategories[idx]
-                        val isSelected = state.filterSubcategory == sub
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onSelectSubcategory(sub) },
-                            label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface),
-                            border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant, enabled = true, selected = isSelected),
-                            shape = RoundedCornerShape(20.dp),
-                        )
+        // Sticky sort + subcategory chips (don't scroll away)
+        stickyHeader(key = "sticky_filters") {
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 2.dp,
+            ) {
+                Column {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                        items(sortOptions.size) { idx ->
+                            val (key, label) = sortOptions[idx]
+                            val isSelected = state.sortBy == key
+                            FilterChip(selected = isSelected, onClick = { onSetSort(key) }, label = { Text(label, style = MaterialTheme.typography.labelMedium) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White), shape = RoundedCornerShape(20.dp))
+                        }
+                        item {
+                            // Grid/List view toggle (web parity)
+                            IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(32.dp)) {
+                                Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                    if (ecosystemSubcategories.isNotEmpty()) {
+                        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 6.dp)) {
+                            items(ecosystemSubcategories.size) { idx ->
+                                val sub = ecosystemSubcategories[idx]
+                                val isSelected = state.filterSubcategory == sub
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { onSelectSubcategory(sub) },
+                                    label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface),
+                                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant, enabled = true, selected = isSelected),
+                                    shape = RoundedCornerShape(20.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -794,10 +848,10 @@ private fun AllPostsBrowse(
         item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
 
         if (state.loadingPosts && state.posts.isEmpty()) {
-            item(key = "loading") {
-                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+            items(6, key = { "shimmer_$it" }) { i ->
+                com.mhub.app.ui.components.ListCardShimmer(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
             }
         } else if (!state.loadingPosts && state.posts.isEmpty()) {
             item(key = "empty") {
@@ -806,8 +860,68 @@ private fun AllPostsBrowse(
                 }
             }
         } else {
-            items(state.posts, key = { it.stableId }) { post ->
-                AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+            if (isGridView) {
+                // 2-column grid view (web parity)
+                val chunked = state.posts.chunked(2)
+                items(chunked.size, key = { "grid_row_$it" }) { rowIdx ->
+                    val row = chunked[rowIdx]
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { post ->
+                            Card(
+                                onClick = { onOpenPost(post.stableId) },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                elevation = CardDefaults.cardElevation(2.dp),
+                            ) {
+                                Column {
+                                    Box(Modifier.fillMaxWidth().height(130.dp)) {
+                                        if (post.primaryImage != null) {
+                                            AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                                        } else {
+                                            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                                Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
+                                            }
+                                        }
+                                        // Wishlist icon overlay (top-right)
+                                        val isWished = wishlisted.contains(post.stableId)
+                                        Icon(
+                                            if (isWished) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                            contentDescription = null,
+                                            tint = if (isWished) Color(0xFFEF4444) else androidx.compose.ui.graphics.Color.White,
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(8.dp)
+                                                .size(20.dp)
+                                                .clickable { onToggleWishlist(post.stableId) },
+                                        )
+                                    }
+                                    Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(post.displayTitle, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                        post.price?.let { Text("₹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary) }
+                                        post.location?.let { loc ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(loc, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            }
+                                        }
+                                        post.viewCount?.let { v ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(" $v views", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            } else {
+                items(state.posts, key = { it.stableId }) { post ->
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                }
             }
             item(key = "load_more") {
                 if (state.loadingMore) {
@@ -918,6 +1032,17 @@ private fun AllPostCard(
                             Text(date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    // Seller rating stars — derived from likeCount as proxy
+                    val likeRating = (post.likeCount ?: 0).coerceIn(0, 200)
+                    if (likeRating > 0) {
+                        val stars = ((likeRating / 40.0) + 3.0).coerceIn(3.0, 5.0)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            repeat(5) { star ->
+                                Text(if (star < stars.toInt()) "★" else "☆", fontSize = 10.sp, color = if (star < stars.toInt()) Color(0xFFF59E0B) else Color(0xFFCBD5E1))
+                            }
+                            Text("${"%,.1f".format(stars)}", fontSize = 10.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
             }
 
@@ -966,7 +1091,7 @@ private fun AllPostCard(
                 }
             }
 
-            // Image with price badge
+            // Image with price badge + HOT badge + condition badge
             if (post.primaryImage != null) {
                 Box(Modifier.fillMaxWidth().height(220.dp)) {
                     AsyncImage(
@@ -982,6 +1107,41 @@ private fun AllPostCard(
                             color = Color(0xFF1E293B).copy(alpha = 0.85f),
                         ) {
                             Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
+                    }
+                    // HOT badge — top-right for high-view items
+                    val viewCount = post.viewCount ?: 0
+                    if (viewCount > 50) {
+                        Surface(
+                            Modifier.align(Alignment.TopEnd).padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFEF4444),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                Text("🔥", fontSize = 10.sp)
+                                Text("HOT", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                            }
+                        }
+                    }
+                    // Condition badge — top-left
+                    post.condition?.let { cond ->
+                        val (condColor, condLabel) = when (cond.lowercase()) {
+                            "new" -> Color(0xFF10B981) to "NEW"
+                            "like new", "like_new" -> Color(0xFF3B82F6) to "LIKE NEW"
+                            "good" -> Color(0xFFF59E0B) to "GOOD"
+                            "fair" -> Color(0xFFEA580C) to "FAIR"
+                            else -> Color(0xFF6366F1) to cond.uppercase().take(8)
+                        }
+                        Surface(
+                            Modifier.align(Alignment.TopStart).padding(8.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            color = condColor,
+                        ) {
+                            Text(condLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
                     }
                 }

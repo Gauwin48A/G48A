@@ -13,9 +13,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -153,8 +155,6 @@ class ForYouViewModel @Inject constructor(
                     }
                 }
             }
-            // Fallback to sample data if API returns empty
-            if (posts.isEmpty()) posts = samplePosts
             _state.value = _state.value.copy(loading = false, posts = posts)
             when (val s = sponsoredRepo.list(8)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(sponsored = s.data)
@@ -176,7 +176,6 @@ class ForYouViewModel @Inject constructor(
                     }
                 }
             }
-            if (posts.isEmpty()) posts = samplePosts
             _state.value = _state.value.copy(refreshing = false, posts = posts)
             when (val s = sponsoredRepo.list(8)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(sponsored = s.data)
@@ -266,6 +265,9 @@ fun ForYouScreen(
 
     var quickFilter by remember { mutableStateOf<String?>(null) }
     var timeFilter by remember { mutableStateOf<String?>(null) }
+    var minPrice by remember { mutableStateOf("") }
+    var maxPrice by remember { mutableStateOf("") }
+    var verifiedOnly by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var sharePostId by remember { mutableStateOf("") }
     var sharePostTitle by remember { mutableStateOf("") }
@@ -301,13 +303,28 @@ fun ForYouScreen(
             }
     }
 
-    val displayed = remember(state.posts, state.selectedCategory, quickFilter, timeFilter, searchQuery, state.sortBy, state.sortAscending) {
+    val displayed = remember(state.posts, state.selectedCategory, quickFilter, timeFilter, searchQuery, state.sortBy, state.sortAscending, minPrice, maxPrice, verifiedOnly) {
         state.posts
             .filter { post ->
                 state.selectedCategory == null || post.categoryName?.contains(state.selectedCategory!!, ignoreCase = true) == true
             }
             .filter { post ->
                 searchQuery.isBlank() || post.displayTitle.contains(searchQuery, ignoreCase = true) || post.description?.contains(searchQuery, ignoreCase = true) == true
+            }
+            .let { list ->
+                // Price range filter (web parity)
+                val min = minPrice.toDoubleOrNull()
+                val max = maxPrice.toDoubleOrNull()
+                if (min != null || max != null) {
+                    list.filter { post ->
+                        val p = post.price ?: return@filter true
+                        (min == null || p >= min) && (max == null || p <= max)
+                    }
+                } else list
+            }
+            .let { list ->
+                // Verified-only filter (web parity)
+                if (verifiedOnly) list.filter { it.sellerVerified == true } else list
             }
             .let { list ->
                 when (quickFilter) {
@@ -385,7 +402,13 @@ fun ForYouScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                state.loading -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+                    items(5, key = { "foryou_shimmer_$it" }) {
+                        com.mhub.app.ui.components.ListCardShimmer(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+                }
                 state.error != null && state.posts.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Outlined.ErrorOutline, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
@@ -550,7 +573,7 @@ fun ForYouScreen(
                         ) {
                             val qFilters = listOf(
                                 "Under ₹500" to Icons.Default.LocalOffer,
-                                "Trending" to Icons.Default.TrendingUp,
+                                "Trending" to Icons.AutoMirrored.Filled.TrendingUp,
                                 "New Arrivals" to Icons.Default.NewReleases,
                             )
                             items(qFilters, key = { it.first }) { (label, icon) ->
@@ -566,6 +589,45 @@ fun ForYouScreen(
                                     ),
                                 )
                             }
+                        }
+                    }
+
+                    // Price range & verified filter (web parity)
+                    item {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedTextField(
+                                value = minPrice,
+                                onValueChange = { minPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                                label = { Text("Min ₹") },
+                                modifier = Modifier.weight(1f).height(52.dp),
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            )
+                            OutlinedTextField(
+                                value = maxPrice,
+                                onValueChange = { maxPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                                label = { Text("Max ₹") },
+                                modifier = Modifier.weight(1f).height(52.dp),
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            )
+                            FilterChip(
+                                selected = verifiedOnly,
+                                onClick = { verifiedOnly = !verifiedOnly },
+                                label = { Text("Verified", style = MaterialTheme.typography.labelSmall) },
+                                leadingIcon = { Icon(Icons.Default.Verified, null, modifier = Modifier.size(14.dp)) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            )
                         }
                     }
 
@@ -631,6 +693,36 @@ fun ForYouScreen(
                         }
                     }
 
+                    // AI Insight Card — explains why these picks are shown
+                    item(key = "ai_insight") {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F9FF)),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Surface(shape = CircleShape, color = Color(0xFF2563EB).copy(alpha = 0.12f), modifier = Modifier.size(40.dp)) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Psychology, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
+                                    }
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Personalized for you", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E40AF))
+                                    Text(
+                                        "Based on your browsing history, location, and preferences",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B),
+                                        lineHeight = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     if (displayed.isEmpty()) {
                         item {
                             Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
@@ -644,10 +736,42 @@ fun ForYouScreen(
                         }
                     }
 
-                    items(displayed, key = { it.stableId }) { post ->
+                    // ─── AI Section header before first item ──────────────
+                    if (displayed.isNotEmpty()) {
+                        item(key = "section_trending") {
+                            AiSectionHeader(
+                                emoji = "📍",
+                                title = "Trending Near You",
+                                subtitle = "Popular picks in your location",
+                                accentColor = Color(0xFF10B981),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+
+                    itemsIndexed(displayed, key = { _, post -> post.stableId }) { index, post ->
                         var wishlisted by remember { mutableStateOf(false) }
                         var liked by remember { mutableStateOf(false) }
                         var likeCount by remember { mutableStateOf(post.likeCount ?: 0) }
+                        // Insert section headers at specific indices
+                        if (index == 5 && displayed.size > 5) {
+                            AiSectionHeader(
+                                emoji = "🆕",
+                                title = "New Today",
+                                subtitle = "Just listed in the last 24 hours",
+                                accentColor = Color(0xFF6366F1),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                        if (index == 10 && displayed.size > 10) {
+                            AiSectionHeader(
+                                emoji = "🎯",
+                                title = "Based on Your Browsing",
+                                subtitle = "AI-matched to your interests",
+                                accentColor = Color(0xFFF59E0B),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
 
                         // AI-curated premium card — single column, larger image, Add to Cart
                         Card(
@@ -677,7 +801,7 @@ fun ForYouScreen(
                                                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(16.dp))
                                                 }
                                                 IconButton(onClick = { if (imageIdx < images.size - 1) imageIdx++ }, modifier = Modifier.size(36.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
-                                                    Icon(Icons.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
                                                 }
                                             }
                                             // Dot indicators
@@ -839,6 +963,49 @@ fun ForYouScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/* ── AI Section header ───────────────────────────────────────────────────── */
+
+@Composable
+private fun AiSectionHeader(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    accentColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Surface(
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = accentColor.copy(alpha = 0.12f),
+            modifier = Modifier.size(36.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(emoji, fontSize = 18.sp)
+            }
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF0F172A))
+            Text(subtitle, fontSize = 11.sp, color = Color(0xFF64748B))
+        }
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = accentColor.copy(alpha = 0.1f),
+        ) {
+            Text(
+                "AI",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = accentColor,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            )
         }
     }
 }

@@ -33,6 +33,9 @@ import javax.inject.Inject
 
 data class NotifPrefsState(
     val loading: Boolean = true,
+    val pushEnabled: Boolean = true,
+    val emailEnabled: Boolean = true,
+    val smsEnabled: Boolean = false,
     val chat: Boolean = true,
     val offers: Boolean = true,
     val priceDrops: Boolean = true,
@@ -56,6 +59,9 @@ class NotifPrefsViewModel @Inject constructor(
             when (val r = repo.get()) {
                 is ApiResult.Success -> _state.value = NotifPrefsState(
                     loading = false,
+                    pushEnabled = r.data.pushEnabled,
+                    emailEnabled = r.data.emailEnabled,
+                    smsEnabled = r.data.smsEnabled,
                     chat = r.data.chat,
                     offers = r.data.offers,
                     priceDrops = r.data.priceDrops,
@@ -71,11 +77,14 @@ class NotifPrefsViewModel @Inject constructor(
     fun toggle(field: String) {
         val s = _state.value
         _state.value = when (field) {
-            "chat" -> s.copy(chat = !s.chat)
-            "offers" -> s.copy(offers = !s.offers)
-            "priceDrops" -> s.copy(priceDrops = !s.priceDrops)
-            "sales" -> s.copy(sales = !s.sales)
-            "system" -> s.copy(system = !s.system)
+            "push"      -> s.copy(pushEnabled = !s.pushEnabled)
+            "email"     -> s.copy(emailEnabled = !s.emailEnabled)
+            "sms"       -> s.copy(smsEnabled = !s.smsEnabled)
+            "chat"      -> s.copy(chat = !s.chat)
+            "offers"    -> s.copy(offers = !s.offers)
+            "priceDrops"-> s.copy(priceDrops = !s.priceDrops)
+            "sales"     -> s.copy(sales = !s.sales)
+            "system"    -> s.copy(system = !s.system)
             "marketing" -> s.copy(marketing = !s.marketing)
             else -> s
         }
@@ -86,6 +95,9 @@ class NotifPrefsViewModel @Inject constructor(
         val s = _state.value
         viewModelScope.launch {
             repo.update(NotificationPrefsRequest(
+                pushEnabled = s.pushEnabled,
+                emailEnabled = s.emailEnabled,
+                smsEnabled = s.smsEnabled,
                 chat = s.chat,
                 offers = s.offers,
                 priceDrops = s.priceDrops,

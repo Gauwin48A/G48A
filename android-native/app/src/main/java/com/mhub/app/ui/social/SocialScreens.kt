@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -535,21 +536,44 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
 // ──────────────────────────────────────────────────────────────────────────────
 // PublicWallScreen
 // ──────────────────────────────────────────────────────────────────────────────
+data class PublicWallUiState(
+    val loading: Boolean = true,
+    val error: String? = null,
+    val topSellers: List<PublicWallEntry> = emptyList(),
+    val topBuyers: List<PublicWallEntry> = emptyList(),
+    val topUsers: List<PublicWallEntry> = emptyList(),
+) {
+    val hasData get() = topSellers.isNotEmpty() || topBuyers.isNotEmpty() || topUsers.isNotEmpty()
+    // Computed aggregate stats (matching web's PublicWall.jsx stats useMemo)
+    val totalSales get() = topSellers.sumOf { it.sales ?: 0 }
+    val activeBuyers get() = topBuyers.size
+    val totalVolume get() = topSellers.sumOf { it.coins ?: 0 }
+    val verificationRate get() = run {
+        val combined = topSellers + topBuyers
+        if (combined.isEmpty()) 0 else (combined.count { it.verified } * 100 / combined.size)
+    }
+}
+
 @HiltViewModel
 class PublicWallViewModel @Inject constructor(private val repo: SocialRepository) : ViewModel() {
-    private val _state = MutableStateFlow(FeedListUiState())
-    val state: StateFlow<FeedListUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(PublicWallUiState())
+    val state: StateFlow<PublicWallUiState> = _state.asStateFlow()
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
-    private var userId: String = ""
-    fun load(userId: String) { this.userId = userId; viewModelScope.launch {
-        when (val r = repo.publicWall(userId)) {
-            is ApiResult.Success -> _state.value = FeedListUiState(loading = false, items = r.data)
-            is ApiResult.Failure -> _state.value = FeedListUiState(loading = false, error = r.error.message)
+    init { load() }
+    fun load() { viewModelScope.launch {
+        _state.value = PublicWallUiState(loading = true)
+        when (val r = repo.publicWallLeaderboard()) {
+            is ApiResult.Success -> _state.value = PublicWallUiState(
+                loading = false,
+                topSellers = r.data.topSellers,
+                topBuyers = r.data.topBuyers,
+                topUsers = r.data.topUsers,
+            )
+            is ApiResult.Failure -> _state.value = PublicWallUiState(loading = false, error = r.error.message)
         }
     } }
-    fun refresh() { viewModelScope.launch { _refreshing.value = true; load(userId); _refreshing.value = false } }
-    fun retry() { _state.value = FeedListUiState(); load(userId) }
+    fun refresh() { viewModelScope.launch { _refreshing.value = true; load(); _refreshing.value = false } }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -557,120 +581,221 @@ class PublicWallViewModel @Inject constructor(private val repo: SocialRepository
 fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
-    var leaderboardTab by remember { mutableStateOf("Top Users") }
-    var userSearchQuery by remember { mutableStateOf("") }
-    
+    var activeTab by remember { mutableStateOf("Top Sellers") }
+    var searchQuery by remember { mutableStateOf("") }
+
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            SocialTopBar("Public Wall", onBack)
-            // Leaderboard tabs
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
-                listOf("Top Users", "Top Sellers", "Top Buyers").forEach { tab ->
-                    FilterChip(
-                        selected = leaderboardTab == tab,
-                        onClick = { leaderboardTab = tab },
-                        label = { Text(tab, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF2563EB),
-                            selectedLabelColor = Color.White,
-                        ),
-                    )
+            // Header
+            Row(
+                Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Public Wall", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    Text("Monthly Champions · Community Rankings", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
+                Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(28.dp))
             }
-            // User search
-            OutlinedTextField(
-                value = userSearchQuery,
-                onValueChange = { userSearchQuery = it },
-                placeholder = { Text(stringResource(R.string.social_search_leaderboard)) },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
-                trailingIcon = { if (userSearchQuery.isNotEmpty()) IconButton(onClick = { userSearchQuery = "" }) { Icon(Icons.Filled.Clear, null) } },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF3B82F6),
-                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                ),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-            )
+
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-                state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                state.error != null && !state.hasData -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(48.dp))
                         Spacer(Modifier.height(12.dp))
-                        Text(state.error ?: "Failed to load", color = Color(0xFF64748B), fontSize = 14.sp)
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.retry() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text(stringResource(R.string.social_retry)) }
-                    }
-                }
-                state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                        Icon(Icons.Filled.Person, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.social_no_wall_posts), fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
+                        Text("Public wall unavailable", fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
                         Spacer(Modifier.height(4.dp))
-                        Text(stringResource(R.string.social_wall_posts_appear), fontSize = 13.sp, color = Color(0xFF64748B))
+                        Text(state.error ?: "Failed to load leaderboard", fontSize = 13.sp, color = Color(0xFF64748B))
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { viewModel.load() }, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text("Retry") }
                     }
                 }
-                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Profile header card
-                    item {
-                        val firstPost = state.items.firstOrNull()
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF2563EB)), contentAlignment = Alignment.Center) {
-                                    Text((firstPost?.userName?.firstOrNull()?.uppercase() ?: "U"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                }
-                                Spacer(Modifier.width(14.dp))
-                                Column {
-                                    Text(firstPost?.userName ?: "User", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1E293B))
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("${state.items.size} post${if (state.items.size != 1) "s" else ""}", fontSize = 13.sp, color = Color(0xFF64748B))
-                                }
-                            }
-                        }
-                    }
-                    // Leaderboard rank badges
-                    item {
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp)) {
-                                Text(stringResource(R.string.social_community_ranking), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                Spacer(Modifier.height(10.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    val totalPosts = state.items.size
-                                    val rank = when { totalPosts >= 20 -> Triple("Gold", "🥇", Color(0xFFF59E0B)); totalPosts >= 10 -> Triple("Silver", "🥈", Color(0xFF94A3B8)); totalPosts >= 5 -> Triple("Bronze", "🥉", Color(0xFFCD7F32)); else -> Triple("Starter", "⭐", Color(0xFF64748B)) }
-                                    Surface(shape = RoundedCornerShape(20.dp), color = rank.third.copy(alpha = 0.1f)) {
-                                        Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Text(rank.second, fontSize = 16.sp)
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(rank.first, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = rank.third)
-                                        }
-                                    }
-                                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F9FF)) {
-                                        Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("${state.items.sumOf { it.likeCount }} likes", fontSize = 12.sp, color = Color(0xFF2563EB))
+                else -> PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                        // Aggregate stats banner
+                        if (state.hasData) {
+                            item(key = "stats_banner") {
+                                Surface(
+                                    shape = RoundedCornerShape(0.dp),
+                                    color = Color(0xFF2563EB),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                    ) {
+                                        listOf(
+                                            Triple("${state.totalSales}", "Total Sales", "🛒"),
+                                            Triple("${state.activeBuyers}", "Active Buyers", "👥"),
+                                            Triple("${state.totalVolume}", "Vol. Coins", "💰"),
+                                            Triple("${state.verificationRate}%", "Verified", "✅"),
+                                        ).forEach { (value, label, emoji) ->
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(emoji, fontSize = 14.sp)
+                                                Text(value, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                                                Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        // Error banner when data is stale
+                        if (state.error != null && state.hasData) {
+                            item(key = "stale_error") {
+                                Surface(color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                                    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Warning, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Latest refresh failed. Showing cached data.", fontSize = 12.sp, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
+                                        TextButton(onClick = { viewModel.refresh() }) { Text("Retry", fontSize = 12.sp) }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Tab strip
+                        item(key = "tabs") {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
+                            ) {
+                                listOf("Top Sellers" to "🏆", "Top Buyers" to "🛍️", "Top Users" to "⭐").forEach { (tab, emoji) ->
+                                    FilterChip(
+                                        selected = activeTab == tab,
+                                        onClick = { activeTab = tab },
+                                        label = { Text("$emoji $tab", fontSize = 12.sp) },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFF2563EB),
+                                            selectedLabelColor = Color.White,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+
+                        // Search
+                        item(key = "search") {
+                            OutlinedTextField(
+                                value = searchQuery, onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search users...", fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.Filled.Search, null, modifier = Modifier.size(18.dp)) },
+                                trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Filled.Clear, null) } },
+                                singleLine = true, shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                        }
+
+                        // Leaderboard entries
+                        val entries = when (activeTab) {
+                            "Top Sellers" -> state.topSellers
+                            "Top Buyers" -> state.topBuyers
+                            else -> state.topUsers
+                        }.filter { entry -> searchQuery.isBlank() || entry.displayName.contains(searchQuery, ignoreCase = true) }
+
+                        if (!state.loading && entries.isEmpty()) {
+                            item(key = "empty") {
+                                Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(56.dp))
+                                        Spacer(Modifier.height(12.dp))
+                                        Text(
+                                            if (searchQuery.isNotBlank()) "No results for \"$searchQuery\"" else "No rankings yet",
+                                            fontWeight = FontWeight.SemiBold, color = Color(0xFF374151),
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Complete trusted sales to appear here.", fontSize = 13.sp, color = Color(0xFF64748B))
+                                    }
+                                }
+                            }
+                        }
+
+                        itemsIndexed(entries, key = { i, e -> "${activeTab}_${e.id ?: i}" }) { index, entry ->
+                            val rankColor = when (entry.rank) {
+                                "Gold" -> Color(0xFFF59E0B)
+                                "Silver" -> Color(0xFF94A3B8)
+                                "Bronze" -> Color(0xFFCD7F32)
+                                else -> Color(0xFF6B7280)
+                            }
+                            val rankEmoji = when (entry.rank) {
+                                "Gold" -> "🥇"
+                                "Silver" -> "🥈"
+                                "Bronze" -> "🥉"
+                                else -> "#${index + 1}"
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 1.dp,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            ) {
+                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    // Rank badge
+                                    Surface(shape = RoundedCornerShape(8.dp), color = rankColor.copy(alpha = 0.12f), modifier = Modifier.size(40.dp)) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(rankEmoji, fontSize = if (entry.rank in listOf("Gold","Silver","Bronze")) 18.sp else 13.sp, fontWeight = FontWeight.Bold, color = rankColor)
+                                        }
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    // Avatar
+                                    Box(Modifier.size(44.dp).clip(CircleShape).background(Color(0xFF2563EB).copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                                        Text(entry.initials, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    // Name and stats
+                                    Column(Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(entry.displayName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 1)
+                                            if (entry.verified) {
+                                                Spacer(Modifier.width(4.dp))
+                                                Icon(Icons.Filled.Verified, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                                            }
+                                        }
+                                        val statText = when (activeTab) {
+                                            "Top Sellers" -> "${entry.sales ?: 0} sales · ${entry.coins ?: 0} coins"
+                                            "Top Buyers" -> "${entry.purchases ?: 0} purchases · ${entry.coins ?: 0} coins"
+                                            else -> "${entry.totalCoins ?: 0} coins · Level ${entry.level ?: 1}"
+                                        }
+                                        Text(statText, fontSize = 12.sp, color = Color(0xFF64748B))
+                                    }
+                                    // Rating / Badge
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        entry.rating?.let { r ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Star, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp))
+                                                Text(r, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF92400E))
+                                            }
+                                        }
+                                        entry.badge?.let { b ->
+                                            Surface(shape = RoundedCornerShape(4.dp), color = rankColor.copy(alpha = 0.1f)) {
+                                                Text(b, fontSize = 10.sp, color = rankColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    items(state.items, key = { it.stableId }) { FeedCard(it) }
-                } }
+                }
             }
         }
     }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ComplaintsScreen
+// ComplaintsScreen — Web parity: 6 types, sellerId+postId+secretCode, hero, guidelines
 // ──────────────────────────────────────────────────────────────────────────────
-data class ComplaintsUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val subject: String = "", val description: String = "", val type: String = "transaction", val postId: String = "", val history: List<com.mhub.app.data.remote.dto.ComplaintRecord> = emptyList(), val historyLoading: Boolean = false)
+data class ComplaintsUiState(
+    val loading: Boolean = false, val error: String? = null, val success: Boolean = false,
+    val sellerId: String = "", val postId: String = "", val secretCode: String = "",
+    val description: String = "", val type: String = "transaction",
+    val history: List<com.mhub.app.data.remote.dto.ComplaintRecord> = emptyList(),
+    val historyLoading: Boolean = false, val recentRefId: String? = null,
+)
 
 @HiltViewModel
 class ComplaintsViewModel @Inject constructor(
@@ -689,17 +814,23 @@ class ComplaintsViewModel @Inject constructor(
             }
         }
     }
-    fun setSubject(v: String) { _state.value = _state.value.copy(subject = v) }
+    fun setSellerId(v: String) { _state.value = _state.value.copy(sellerId = v) }
+    fun setPostId(v: String) { _state.value = _state.value.copy(postId = v) }
+    fun setSecretCode(v: String) { _state.value = _state.value.copy(secretCode = v) }
     fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
     fun setType(v: String) { _state.value = _state.value.copy(type = v) }
-    fun setPostId(v: String) { _state.value = _state.value.copy(postId = v) }
     fun submit() {
         val s = _state.value
-        if (s.subject.isBlank() || s.description.isBlank()) { _state.value = s.copy(error = "All fields are required"); return }
+        if (s.postId.isBlank()) { _state.value = s.copy(error = "Post ID is required"); return }
+        if (s.description.length < 20) { _state.value = s.copy(error = "Description must be at least 20 characters"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = repo.submit(ComplaintRequest(subject = s.subject, description = s.description))) {
-                is ApiResult.Success -> { _state.value = ComplaintsUiState(success = true); loadHistory() }
+            when (val r = repo.submit(ComplaintRequest(subject = s.type, description = s.description))) {
+                is ApiResult.Success -> {
+                    val refId = "CMP-${System.currentTimeMillis().toString(36).uppercase().takeLast(8)}"
+                    _state.value = ComplaintsUiState(success = true, recentRefId = refId)
+                    loadHistory()
+                }
                 is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
             }
         }
@@ -709,22 +840,72 @@ class ComplaintsViewModel @Inject constructor(
 @Composable
 fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val complaintTypes = listOf("transaction" to "Transaction", "quality" to "Quality", "delivery" to "Delivery", "service" to "Service", "other" to "Other")
+    val clipboardManager = LocalClipboardManager.current
+    // Web-parity: 6 complaint types matching Complaints.jsx
+    val complaintTypes = listOf(
+        "transaction" to "💳 Transaction",
+        "quality" to "📦 Quality",
+        "communication" to "💬 Communication",
+        "fraud" to "⚠️ Fraud",
+        "delivery" to "🚚 Delivery",
+        "other" to "❓ Other",
+    )
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Complaints", onBack)
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // Hero section (web parity)
+                Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFF97316)))), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.ReportProblem, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text("File a Complaint", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                        Spacer(Modifier.height(4.dp))
+                        Text("Report issues with transactions, sellers, or products", fontSize = 13.sp, color = Color(0xFF64748B))
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("🔒 Secure" to Color(0xFFDCFCE7), "⏱ 24-48h Response" to Color(0xFFF0F9FF), "⚖️ Fair Resolution" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                                Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
+                                    Text(badge, fontSize = 10.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (state.success) {
                     Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(10.dp))
-                            Text("Complaint submitted successfully. We'll review it soon.", fontSize = 14.sp, color = Color(0xFF166534))
+                        Column(Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text("Complaint submitted successfully. We'll review it within 24-48 hours.", fontSize = 14.sp, color = Color(0xFF166534))
+                            }
+                            state.recentRefId?.let { refId ->
+                                Spacer(Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Reference: $refId", fontSize = 12.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                                    Spacer(Modifier.width(8.dp))
+                                    Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp).clickable {
+                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(refId))
+                                    }, tint = Color(0xFF2563EB))
+                                }
+                            }
                         }
                     }
                 } else {
-                    state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
-                    // Complaint type selector
+                    state.error?.let {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    // Complaint type selector (6 types matching web)
                     Text(stringResource(R.string.social_complaint_type), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                         complaintTypes.forEach { (key, label) ->
@@ -733,15 +914,35 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                         }
                     }
-                    FormField("Post / Seller ID (optional)", state.postId, viewModel::setPostId, "e.g. post123 or seller456")
-                    FormField("Subject", state.subject, viewModel::setSubject, "e.g. Fake listing, Fraud buyer…")
-                    FormField("Description", state.description, viewModel::setDescription, "Describe the issue in detail…", maxLines = 5, minLines = 4)
+                    // Web parity: sellerId and postId in row, plus secretCode
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.weight(1f)) { FormField("Seller ID (optional)", state.sellerId, viewModel::setSellerId, "e.g. seller456") }
+                        Column(Modifier.weight(1f)) { FormField("Post ID *", state.postId, viewModel::setPostId, "e.g. post123") }
+                    }
+                    FormField("Transaction Code (optional)", state.secretCode, viewModel::setSecretCode, "Secret/transaction code if applicable")
+                    FormField("Description *", state.description, viewModel::setDescription, "Describe the issue in detail (min 20 chars)…", maxLines = 5, minLines = 4)
+                    Text("${state.description.length}/2000", fontSize = 11.sp, color = if (state.description.length < 20) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.align(Alignment.End))
                     Button(
-                        onClick = { viewModel.submit() }, enabled = !state.loading,
+                        onClick = { viewModel.submit() }, enabled = !state.loading && state.postId.isNotBlank() && state.description.length >= 20,
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                     ) { Text(if (state.loading) "Submitting…" else "Submit Complaint", fontWeight = FontWeight.SemiBold) }
                 }
+
+                // Guidelines section (web parity)
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("📋 Important Guidelines", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        listOf("Provide accurate Post ID for faster resolution", "Include any transaction codes if applicable", "Detailed descriptions help us investigate faster", "False complaints may result in account restrictions").forEach { guideline ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("✓", fontSize = 12.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.width(6.dp))
+                                Text(guideline, fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                        }
+                    }
+                }
+
                 // Complaint history
                 if (state.historyLoading) {
                     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
@@ -751,15 +952,17 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                     Spacer(Modifier.height(8.dp))
                     Text(stringResource(R.string.social_complaint_history), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
                     state.history.forEach { complaint ->
-                        val clipboardManager = LocalClipboardManager.current
                         Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text(complaint.subject.orEmpty(), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Text(complaint.subject?.let { complaintTypes.find { (k, _) -> k == it }?.second } ?: complaint.subject.orEmpty(), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                    }
                                     val statusColor = when (complaint.status?.lowercase()) {
-                                        "resolved" -> Color(0xFF22C55E)
+                                        "resolved", "closed" -> Color(0xFF22C55E)
                                         "rejected" -> Color(0xFFEF4444)
-                                        "pending" -> Color(0xFFF59E0B)
+                                        "pending", "triage", "investigating" -> Color(0xFFF59E0B)
+                                        "open" -> Color(0xFF3B82F6)
                                         else -> Color(0xFF64748B)
                                     }
                                     Surface(shape = RoundedCornerShape(6.dp), color = statusColor.copy(alpha = 0.12f)) {
@@ -776,7 +979,6 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                 if (!complaint.description.isNullOrBlank()) {
                                     Text(complaint.description, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 2)
                                 }
-                                // Evidence attachments
                                 if (complaint.evidence.isNotEmpty()) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF64748B))
@@ -796,7 +998,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// FeedbackScreen
+// FeedbackScreen — Web parity: hero, subject, categories with icons, why matters, direct contact
 // ──────────────────────────────────────────────────────────────────────────────
 data class FeedbackUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val type: String = "general", val subject: String = "", val message: String = "", val rating: Int = 5, val refId: String = "FB-${System.currentTimeMillis().toString(36).uppercase().takeLast(6)}")
 
@@ -810,10 +1012,10 @@ class FeedbackViewModel @Inject constructor(private val repo: ComplaintsReposito
     fun setRating(v: Int) { _state.value = _state.value.copy(rating = v) }
     fun submit() {
         val s = _state.value
-        if (s.message.isBlank()) { _state.value = s.copy(error = "Please write your feedback"); return }
+        if (s.subject.isBlank() || s.message.isBlank()) { _state.value = s.copy(error = "Subject and message are required"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, message = s.message, rating = s.rating))) {
+            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, message = "${s.subject}\n\n${s.message}", rating = s.rating))) {
                 is ApiResult.Success -> _state.value = FeedbackUiState(success = true)
                 is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
             }
@@ -824,22 +1026,79 @@ class FeedbackViewModel @Inject constructor(private val repo: ComplaintsReposito
 @Composable
 fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val feedbackTypes = listOf("general" to "General", "bug" to "Bug Report", "feature" to "Feature Request", "ui_ux" to "UI/UX", "performance" to "Performance")
+    val clipboardManager = LocalClipboardManager.current
+    var showWhyMatters by remember { mutableStateOf(false) }
+    var showCategoryCards by remember { mutableStateOf(false) }
+    var showHero by remember { mutableStateOf(true) }
+    // Web parity: 5 feedback types with icons, names, descriptions matching Feedback.jsx
+    data class FeedbackType(val key: String, val emoji: String, val name: String, val description: String, val bgColor: Color, val tintColor: Color)
+    val feedbackTypes = listOf(
+        FeedbackType("bug", "🐛", "Bug Report", "Found something broken? Let us know", Color(0xFFFEF2F2), Color(0xFFDC2626)),
+        FeedbackType("feature", "💡", "Feature Request", "Have an idea to make MHub better?", Color(0xFFFEFCE8), Color(0xFFCA8A04)),
+        FeedbackType("ui", "🎨", "UI Improvement", "Suggestions for design and layout", Color(0xFFF5F3FF), Color(0xFF7C3AED)),
+        FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", Color(0xFFFFF7ED), Color(0xFFEA580C)),
+        FeedbackType("general", "💬", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
+    )
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Feedback", onBack)
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // Hero section with toggle (web parity: Show/Hide Highlights)
+                if (showHero) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.RateReview, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text("Share Your Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Help us improve MHub for everyone", fontSize = 13.sp, color = Color(0xFF64748B))
+                            Spacer(Modifier.height(10.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("🗣 Your Voice Matters" to Color(0xFFF0F9FF), "👂 We Listen" to Color(0xFFDCFCE7), "🚀 Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                                    Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
+                                        Text(badge, fontSize = 9.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Hero toggle button (web parity)
+                TextButton(onClick = { showHero = !showHero }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (showHero) "Hide Highlights" else "Show Highlights", fontSize = 12.sp, color = Color(0xFF6366F1))
+                }
+
                 if (state.success) {
                     Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(10.dp))
-                            Text(stringResource(R.string.social_feedback_thanks), fontSize = 14.sp, color = Color(0xFF166534))
+                        Column(Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text(stringResource(R.string.social_feedback_thanks), fontSize = 14.sp, color = Color(0xFF166534))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Reference: ${state.refId}", fontSize = 12.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                                Spacer(Modifier.width(8.dp))
+                                Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp).clickable {
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.refId))
+                                }, tint = Color(0xFF2563EB))
+                            }
                         }
                     }
                 } else {
-                    state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
-                    // Reference ID
+                    state.error?.let {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    // Reference ID preview
                     Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.Tag, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
@@ -847,30 +1106,126 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                             Text("Reference: ${state.refId}", fontSize = 12.sp, color = Color(0xFF2563EB))
                         }
                     }
-                    // Category buttons
+                    // Category buttons with emojis (web parity: chips + expandable cards)
                     Text(stringResource(R.string.social_category), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    // Show selected type preview
+                    val selectedType = feedbackTypes.find { it.key == state.type }
+                    selectedType?.let { sel ->
+                        Surface(shape = RoundedCornerShape(10.dp), color = sel.bgColor, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(sel.emoji, fontSize = 18.sp)
+                                Column {
+                                    Text(sel.name, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = sel.tintColor)
+                                    Text(sel.description, fontSize = 11.sp, color = sel.tintColor.copy(alpha = 0.7f))
+                                }
+                            }
+                        }
+                    }
+                    // Chips row (quick selection)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                        feedbackTypes.forEach { (key, label) ->
+                        feedbackTypes.forEach { ft ->
                             FilterChip(
-                                selected = state.type == key, onClick = { viewModel.setType(key) },
-                                label = { Text(label, fontSize = 12.sp) },
+                                selected = state.type == ft.key, onClick = { viewModel.setType(ft.key) },
+                                label = { Text("${ft.emoji} ${ft.name}", fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
                         }
                     }
+                    // More Options toggle → full category cards (web parity)
+                    TextButton(onClick = { showCategoryCards = !showCategoryCards }) {
+                        Text(if (showCategoryCards) "Hide Cards" else "More Options", fontSize = 12.sp, color = Color(0xFF6366F1))
+                        Spacer(Modifier.width(4.dp))
+                        Icon(if (showCategoryCards) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, modifier = Modifier.size(14.dp), tint = Color(0xFF6366F1))
+                    }
+                    if (showCategoryCards) {
+                        // 2-column card grid (web parity: sm:grid-cols-2)
+                        val chunked = feedbackTypes.chunked(2)
+                        chunked.forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { ft ->
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (state.type == ft.key) ft.bgColor else Color.White,
+                                        shadowElevation = if (state.type == ft.key) 3.dp else 1.dp,
+                                        border = if (state.type == ft.key) androidx.compose.foundation.BorderStroke(1.5.dp, ft.tintColor) else null,
+                                        modifier = Modifier.weight(1f).clickable { viewModel.setType(ft.key) },
+                                    ) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text(ft.emoji, fontSize = 20.sp)
+                                            Text(ft.name, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = ft.tintColor)
+                                            Text(ft.description, fontSize = 10.sp, color = Color(0xFF64748B), maxLines = 2)
+                                        }
+                                    }
+                                }
+                                // Fill empty cell if odd number
+                                if (row.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                    // Star rating (web parity)
                     Text(stringResource(R.string.social_rating), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         (1..5).forEach { i ->
                             IconButton(onClick = { viewModel.setRating(i) }, modifier = Modifier.size(36.dp)) {
                                 Icon(Icons.Filled.Star, null, tint = if (i <= state.rating) Color(0xFFF59E0B) else Color(0xFFE2E8F0), modifier = Modifier.size(28.dp))
                             }
                         }
+                        Spacer(Modifier.width(8.dp))
+                        Text("${state.rating} / 5", fontSize = 13.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
                     }
-                    FormField("Message", state.message, viewModel::setMessage, "Share your thoughts…", maxLines = 5, minLines = 4)
+                    // Subject field (web parity — missing in previous version)
+                    FormField("Subject *", state.subject, viewModel::setSubject, "Brief title for your feedback")
+                    FormField("Message *", state.message, viewModel::setMessage, "Share your detailed thoughts…", maxLines = 6, minLines = 4)
                     Button(
-                        onClick = { viewModel.submit() }, enabled = !state.loading,
+                        onClick = { viewModel.submit() }, enabled = !state.loading && state.subject.isNotBlank() && state.message.isNotBlank(),
                         shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                     ) { Text(if (state.loading) "Submitting…" else "Submit Feedback", fontWeight = FontWeight.SemiBold) }
+                    // Link to complaints
+                    TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                        Text("Report a transaction issue instead →", fontSize = 12.sp, color = Color(0xFF6366F1))
+                    }
+                }
+
+                // Why Feedback Matters (web parity: collapsible)
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { showWhyMatters = !showWhyMatters }) {
+                            Text("💡 Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
+                            Icon(if (showWhyMatters) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = Color(0xFF64748B))
+                        }
+                        if (showWhyMatters) {
+                            Spacer(Modifier.height(10.dp))
+                            val whyItems = listOf(
+                                "🧠" to "Helps us understand your needs and pain points",
+                                "✨" to "Guides what features to build next",
+                                "👍" to "Improves the experience for all users",
+                                "✅" to "Builds a better, safer platform",
+                            )
+                            // 2-column grid (web parity: sm:grid-cols-2)
+                            whyItems.chunked(2).forEach { row ->
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { (emoji, text) ->
+                                        Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.weight(1f)) {
+                                            Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Top) {
+                                                Text(emoji, fontSize = 14.sp)
+                                                Text(text, fontSize = 11.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                    }
+                                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+                // Direct contact (web parity)
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("📧 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text("Email: feedback@mobilehub.com", fontSize = 12.sp, color = Color(0xFF2563EB))
+                        Text("Response time: 24-48 hours", fontSize = 11.sp, color = Color(0xFF64748B))
+                        Text("Priority support for verified users", fontSize = 11.sp, color = Color(0xFF64748B))
+                    }
                 }
             }
         }
