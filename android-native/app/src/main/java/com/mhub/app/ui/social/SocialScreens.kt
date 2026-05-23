@@ -817,21 +817,39 @@ class ComplaintsViewModel @Inject constructor(
     fun setSellerId(v: String) { _state.value = _state.value.copy(sellerId = v) }
     fun setPostId(v: String) { _state.value = _state.value.copy(postId = v) }
     fun setSecretCode(v: String) { _state.value = _state.value.copy(secretCode = v) }
-    fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
+    fun setDescription(v: String) { if (v.length <= 2000) _state.value = _state.value.copy(description = v) }
     fun setType(v: String) { _state.value = _state.value.copy(type = v) }
     fun submit() {
         val s = _state.value
         if (s.postId.isBlank()) { _state.value = s.copy(error = "Post ID is required"); return }
         if (s.description.length < 20) { _state.value = s.copy(error = "Description must be at least 20 characters"); return }
+        if (s.description.length > 2000) { _state.value = s.copy(error = "Description must be under 2000 characters"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = repo.submit(ComplaintRequest(subject = s.type, description = s.description))) {
+            val fullDesc = buildString {
+                append("[Type: ${s.type}]")
+                if (s.sellerId.isNotBlank()) append(" [Seller: ${s.sellerId}]")
+                if (s.postId.isNotBlank()) append(" [Post: ${s.postId}]")
+                if (s.secretCode.isNotBlank()) append(" [Code: ${s.secretCode}]")
+                append("\n\n${s.description}")
+            }
+            when (val r = repo.submit(ComplaintRequest(subject = s.type, description = fullDesc))) {
                 is ApiResult.Success -> {
                     val refId = "CMP-${System.currentTimeMillis().toString(36).uppercase().takeLast(8)}"
                     _state.value = ComplaintsUiState(success = true, recentRefId = refId)
                     loadHistory()
                 }
-                is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
+                is ApiResult.Failure -> {
+                    val msg = r.error.message ?: ""
+                    val mapped = when {
+                        msg.lowercase().contains("auth") || msg.lowercase().contains("401") -> "Please sign in to file a complaint."
+                        msg.lowercase().contains("network") || msg.lowercase().contains("timeout") -> "Network error. Please check your connection."
+                        msg.lowercase().contains("404") || msg.lowercase().contains("not found") -> "The referenced post was not found."
+                        msg.lowercase().contains("validation") -> "Please check your inputs and try again."
+                        else -> msg.ifBlank { "Failed to submit complaint. Please try again." }
+                    }
+                    _state.value = s.copy(loading = false, error = mapped)
+                }
             }
         }
     }
@@ -841,6 +859,7 @@ class ComplaintsViewModel @Inject constructor(
 fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val clipboardManager = LocalClipboardManager.current
+    var density by remember { mutableStateOf("comfortable") } // compact / comfortable / spacious
     // Web-parity: 6 complaint types matching Complaints.jsx
     val complaintTypes = listOf(
         "transaction" to "💳 Transaction",
@@ -850,10 +869,20 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
         "delivery" to "🚚 Delivery",
         "other" to "❓ Other",
     )
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFFF7F7), Color(0xFFFFF3E0), Color(0xFFFFF8E1))))) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Complaints", onBack)
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Density toggle (web parity: Complaints.jsx densitySelector)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text("Density", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
+                listOf("compact" to "▤", "comfortable" to "≡", "spacious" to "☰").forEach { (mode, icon) ->
+                    val sel = density == mode
+                    Surface(modifier = Modifier.padding(2.dp).clickable { density = mode }, shape = RoundedCornerShape(6.dp), color = if (sel) Color(0xFFEF4444) else Color.Transparent) {
+                        Text(icon, fontSize = 14.sp, color = if (sel) Color.White else Color(0xFF94A3B8), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                    }
+                }
+            }
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(when (density) { "compact" -> 8.dp; "spacious" -> 20.dp; else -> 14.dp })) {
                 // Hero section (web parity)
                 Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -896,37 +925,100 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                         }
                     }
                 } else {
-                    state.error?.let {
-                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                    // Premium card with gradient header (web parity: bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500)
+                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            // Gradient card header
+                            Box(
+                                modifier = Modifier.fillMaxWidth()
+                                    .background(Brush.horizontalGradient(listOf(Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFEAB308))))
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Box(
+                                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(Icons.Filled.ReportProblem, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                    }
+                                    Column {
+                                        Text("Submit New Complaint", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                                        Text("Provide details about the issue", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                                    }
+                                }
+                            }
+                            // Form content
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                state.error?.let {
+                                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                                        }
+                                    }
+                                }
+                                // Complaint type selector — 2x3 grid (web parity)
+                                Text("Complaint Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                                val complaintTypeCards = listOf(
+                                    Triple("transaction", "💳", "Transaction Issue"),
+                                    Triple("quality", "📦", "Product Quality"),
+                                    Triple("communication", "💬", "Communication"),
+                                    Triple("fraud", "⚠️", "Suspected Fraud"),
+                                    Triple("delivery", "🚚", "Delivery Issue"),
+                                    Triple("other", "❓", "Other"),
+                                )
+                                complaintTypeCards.chunked(2).forEach { row ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        row.forEach { (key, emoji, label) ->
+                                            val selected = state.type == key
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = if (selected) Color(0xFF2563EB) else Color(0xFFF8FAFC),
+                                                border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                                                shadowElevation = if (selected) 4.dp else 1.dp,
+                                                modifier = Modifier.weight(1f).clickable { viewModel.setType(key) },
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(12.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                ) {
+                                                    Text(emoji, fontSize = 20.sp)
+                                                    Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Color.White else Color(0xFF374151), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                                }
+                                            }
+                                        }
+                                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                                    }
+                                }
+                                // Seller ID + Post ID in 2-col grid
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.weight(1f)) { FormField("Seller ID (optional)", state.sellerId, viewModel::setSellerId, "e.g. USER123") }
+                                    Column(Modifier.weight(1f)) { FormField("Post ID *", state.postId, viewModel::setPostId, "e.g. POST001") }
+                                }
+                                FormField("Transaction Code (optional)", state.secretCode, viewModel::setSecretCode, "e.g. ABC123")
+                                FormField("Description *", state.description, viewModel::setDescription, "Describe the problem in detail (min 20 chars)…", maxLines = 6, minLines = 4)
+                                Text(
+                                    "${state.description.length}/2000",
+                                    fontSize = 11.sp,
+                                    color = if (state.description.length < 20) Color(0xFFEF4444) else Color(0xFF94A3B8),
+                                    modifier = Modifier.align(Alignment.End),
+                                )
+                                Button(
+                                    onClick = { viewModel.submit() },
+                                    enabled = !state.loading && state.postId.isNotBlank() && state.description.length >= 20,
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                                ) {
+                                    Icon(Icons.Filled.ReportProblem, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(if (state.loading) "Submitting…" else "Submit Complaint", fontWeight = FontWeight.SemiBold, color = Color.White)
+                                }
                             }
                         }
                     }
-                    // Complaint type selector (6 types matching web)
-                    Text(stringResource(R.string.social_complaint_type), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                        complaintTypes.forEach { (key, label) ->
-                            FilterChip(selected = state.type == key, onClick = { viewModel.setType(key) },
-                                label = { Text(label, fontSize = 12.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
-                        }
-                    }
-                    // Web parity: sellerId and postId in row, plus secretCode
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.weight(1f)) { FormField("Seller ID (optional)", state.sellerId, viewModel::setSellerId, "e.g. seller456") }
-                        Column(Modifier.weight(1f)) { FormField("Post ID *", state.postId, viewModel::setPostId, "e.g. post123") }
-                    }
-                    FormField("Transaction Code (optional)", state.secretCode, viewModel::setSecretCode, "Secret/transaction code if applicable")
-                    FormField("Description *", state.description, viewModel::setDescription, "Describe the issue in detail (min 20 chars)…", maxLines = 5, minLines = 4)
-                    Text("${state.description.length}/2000", fontSize = 11.sp, color = if (state.description.length < 20) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.align(Alignment.End))
-                    Button(
-                        onClick = { viewModel.submit() }, enabled = !state.loading && state.postId.isNotBlank() && state.description.length >= 20,
-                        shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                    ) { Text(if (state.loading) "Submitting…" else "Submit Complaint", fontWeight = FontWeight.SemiBold) }
                 }
 
                 // Guidelines section (web parity)
@@ -1000,7 +1092,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
 // ──────────────────────────────────────────────────────────────────────────────
 // FeedbackScreen — Web parity: hero, subject, categories with icons, why matters, direct contact
 // ──────────────────────────────────────────────────────────────────────────────
-data class FeedbackUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val type: String = "general", val subject: String = "", val message: String = "", val rating: Int = 5, val refId: String = "FB-${System.currentTimeMillis().toString(36).uppercase().takeLast(6)}")
+data class FeedbackUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val type: String = "general", val subject: String = "", val message: String = "", val rating: Int = 5, val refId: String = "")
 
 @HiltViewModel
 class FeedbackViewModel @Inject constructor(private val repo: ComplaintsRepository) : ViewModel() {
@@ -1013,11 +1105,24 @@ class FeedbackViewModel @Inject constructor(private val repo: ComplaintsReposito
     fun submit() {
         val s = _state.value
         if (s.subject.isBlank() || s.message.isBlank()) { _state.value = s.copy(error = "Subject and message are required"); return }
+        if (s.message.length < 10) { _state.value = s.copy(error = "Message must be at least 10 characters"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, message = "${s.subject}\n\n${s.message}", rating = s.rating))) {
-                is ApiResult.Success -> _state.value = FeedbackUiState(success = true)
-                is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
+            val fullMessage = "[${s.type.uppercase()}] ${s.subject}\n\n${s.message}"
+            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, message = fullMessage, rating = s.rating))) {
+                is ApiResult.Success -> {
+                    val generatedRef = "FB-${System.currentTimeMillis().toString(36).uppercase().takeLast(6)}"
+                    _state.value = FeedbackUiState(success = true, refId = generatedRef)
+                }
+                is ApiResult.Failure -> {
+                    val msg = r.error.message ?: ""
+                    val mapped = when {
+                        msg.lowercase().contains("auth") || msg.lowercase().contains("401") -> "Please sign in to submit feedback."
+                        msg.lowercase().contains("network") || msg.lowercase().contains("timeout") -> "Network error. Please check your connection."
+                        else -> msg.ifBlank { "Failed to submit feedback. Please try again." }
+                    }
+                    _state.value = s.copy(loading = false, error = mapped)
+                }
             }
         }
     }
@@ -1030,6 +1135,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
     var showWhyMatters by remember { mutableStateOf(false) }
     var showCategoryCards by remember { mutableStateOf(false) }
     var showHero by remember { mutableStateOf(true) }
+    var density by remember { mutableStateOf("comfortable") } // compact / comfortable / spacious
     // Web parity: 5 feedback types with icons, names, descriptions matching Feedback.jsx
     data class FeedbackType(val key: String, val emoji: String, val name: String, val description: String, val bgColor: Color, val tintColor: Color)
     val feedbackTypes = listOf(
@@ -1039,10 +1145,20 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
         FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", Color(0xFFFFF7ED), Color(0xFFEA580C)),
         FeedbackType("general", "💬", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
     )
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEEF2FF), Color(0xFFF5F3FF))))) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Feedback", onBack)
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Density toggle (web parity: Feedback.jsx densitySelector)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text("Density", fontSize = 11.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(end = 6.dp))
+                listOf("compact" to "▤", "comfortable" to "≡", "spacious" to "☰").forEach { (mode, icon) ->
+                    val sel = density == mode
+                    Surface(modifier = Modifier.padding(2.dp).clickable { density = mode }, shape = RoundedCornerShape(6.dp), color = if (sel) Color(0xFF6366F1) else Color.Transparent) {
+                        Text(icon, fontSize = 14.sp, color = if (sel) Color.White else Color(0xFF94A3B8), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                    }
+                }
+            }
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(when (density) { "compact" -> 8.dp; "spacious" -> 20.dp; else -> 14.dp })) {
                 // Hero section with toggle (web parity: Show/Hide Highlights)
                 if (showHero) {
                     Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
@@ -1089,8 +1205,29 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                         }
                     }
                 } else {
-                    state.error?.let {
-                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                    // Main card with gradient header (web parity: mhub-premium-surface rounded-3xl + CardHeader bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500)
+                    Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            Box(
+                                modifier = Modifier.fillMaxWidth()
+                                    .background(Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1), Color(0xFFA855F7))))
+                                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.2f), modifier = Modifier.size(46.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(Icons.Filled.RateReview, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        }
+                                    }
+                                    Column {
+                                        Text("Your Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                                        Text("Your opinion matters", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                                    }
+                                }
+                            }
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                state.error?.let {
+                                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
@@ -1184,47 +1321,42 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                     TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
                         Text("Report a transaction issue instead →", fontSize = 12.sp, color = Color(0xFF6366F1))
                     }
+                            } // end form Column
+                        } // end card Column
+                    } // end Surface card
                 }
 
-                // Why Feedback Matters (web parity: collapsible)
+                // Why Feedback Matters — enhanced 2-col grid (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { showWhyMatters = !showWhyMatters }) {
-                            Text("💡 Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
-                            Icon(if (showWhyMatters) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = Color(0xFF64748B))
-                        }
-                        if (showWhyMatters) {
-                            Spacer(Modifier.height(10.dp))
-                            val whyItems = listOf(
-                                "🧠" to "Helps us understand your needs and pain points",
-                                "✨" to "Guides what features to build next",
-                                "👍" to "Improves the experience for all users",
-                                "✅" to "Builds a better, safer platform",
-                            )
-                            // 2-column grid (web parity: sm:grid-cols-2)
-                            whyItems.chunked(2).forEach { row ->
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    row.forEach { (emoji, text) ->
-                                        Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.weight(1f)) {
-                                            Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Top) {
-                                                Text(emoji, fontSize = 14.sp)
-                                                Text(text, fontSize = 11.sp, color = Color(0xFF64748B))
-                                            }
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("💡 Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        listOf(
+                            Triple("🚀", "Shapes Features", "Your ideas guide what we build next"),
+                            Triple("🛡", "Improves Safety", "Bug reports keep the platform secure"),
+                            Triple("✨", "Better UX", "Your UI feedback drives design decisions"),
+                            Triple("🌍", "Grows Community", "Your input makes MHub better for everyone"),
+                        ).chunked(2).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { (emoji, title, desc) ->
+                                    Surface(shape = RoundedCornerShape(10.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
+                                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text(emoji, fontSize = 18.sp)
+                                            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B))
+                                            Text(desc, fontSize = 11.sp, color = Color(0xFF64748B))
                                         }
                                     }
-                                    if (row.size == 1) Spacer(Modifier.weight(1f))
                                 }
+                                if (row.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
                 }
                 // Direct contact (web parity)
-                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("📧 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                        Text("Email: feedback@mobilehub.com", fontSize = 12.sp, color = Color(0xFF2563EB))
-                        Text("Response time: 24-48 hours", fontSize = 11.sp, color = Color(0xFF64748B))
-                        Text("Priority support for verified users", fontSize = 11.sp, color = Color(0xFF64748B))
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("📞 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        Text("For urgent issues, reach us at support@mhub.app", fontSize = 12.sp, color = Color(0xFF4B5563))
+                        Text("We respond within 24 hours on business days.", fontSize = 11.sp, color = Color(0xFF64748B))
                     }
                 }
             }

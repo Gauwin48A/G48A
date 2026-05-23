@@ -1,4 +1,6 @@
-﻿package com.mhub.app.ui.feed
+﻿@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
+package com.mhub.app.ui.feed
 
 import android.content.Intent
 import androidx.compose.animation.core.Spring
@@ -49,8 +51,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,8 +59,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -70,7 +68,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,6 +76,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -91,6 +89,8 @@ import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.FeedItem
@@ -207,21 +207,26 @@ class FeedViewModel @Inject constructor(
 
     private fun sortFeedItems(items: List<FeedItem>, sortOption: String): List<FeedItem> = when (sortOption) {
         "Recent" -> items.sortedByDescending { it.createdAt }
-        "Views", "Likes" -> items.sortedByDescending { it.likeCount }
+        "Updated" -> items.sortedByDescending { it.createdAt } // FeedItem has no updatedAt; fall back to created
+        "Views" -> items.sortedByDescending { it.effectiveViews }
+        "Likes" -> items.sortedByDescending { it.effectiveLikes }
+        "Title" -> items.sortedBy { it.title?.lowercase() ?: "" }
         "Shuffle" -> items.shuffled()
-        else -> items
+        else -> items // "For You" = API default (relevance order)
     }
 
     fun toggleLike(itemId: String) {
         val current = _state.value
         val newLiked = if (itemId in current.likedIds) current.likedIds - itemId else current.likedIds + itemId
         _state.value = current.copy(likedIds = newLiked)
+        viewModelScope.launch { runCatching { socialRepo.likePost(itemId) } }
     }
 
     fun toggleBookmark(itemId: String) {
         val current = _state.value
         val newBookmarked = if (itemId in current.bookmarkedIds) current.bookmarkedIds - itemId else current.bookmarkedIds + itemId
         _state.value = current.copy(bookmarkedIds = newBookmarked)
+        viewModelScope.launch { runCatching { socialRepo.bookmarkPost(itemId) } }
     }
 }
 
@@ -242,7 +247,6 @@ fun FeedScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
-    var feedModeTab by remember { mutableIntStateOf(0) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -292,11 +296,27 @@ fun FeedScreen(
                                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
                             }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                                listOf("For You" to "For You", "Recent" to "Recent", "Views" to "Views", "Likes" to "Likes", "Shuffle" to "Shuffle").forEach { (label, value) ->
+                                listOf("For You" to "✨ Discover", "Shuffle" to "🔀 Shuffle", "Recent" to "🆕 Newest", "Updated" to "📝 Updated", "Views" to "👁 Popular", "Likes" to "❤ Most Liked", "Title" to "🔤 Title").forEach { (value, label) ->
                                     DropdownMenuItem(
                                         text = { Text(label) },
                                         onClick = { viewModel.setSortOption(value); showSortMenu = false },
                                         leadingIcon = if (state.sortOption == value) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }} else null,
+                                    )
+                                }
+                            }
+                        }
+                        // Density toggle
+                        var showDensityMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showDensityMenu = true }) {
+                                Icon(Icons.Default.Visibility, contentDescription = "Density", modifier = Modifier.size(20.dp))
+                            }
+                            DropdownMenu(expanded = showDensityMenu, onDismissRequest = { showDensityMenu = false }) {
+                                listOf("COMPACT" to "Compact", "NORMAL" to "Normal", "SPACIOUS" to "Spacious").forEach { (value, label) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = { viewModel.setDensity(value); showDensityMenu = false },
+                                        leadingIcon = if (state.density == value) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }} else null,
                                     )
                                 }
                             }
@@ -358,99 +378,6 @@ fun FeedScreen(
                         }
                     }
                 }
-                // Feed mode tabs: For You | Following | Recent
-                TabRow(
-                    selectedTabIndex = feedModeTab,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ) {
-                    listOf("For You", "Following", "Recent").forEachIndexed { index, label ->
-                        Tab(
-                            selected = feedModeTab == index,
-                            onClick = {
-                                feedModeTab = index
-                                viewModel.setSortOption(
-                                    when (index) {
-                                        1 -> "Likes"
-                                        2 -> "Recent"
-                                        else -> "For You"
-                                    }
-                                )
-                            },
-                            text = { Text(label, style = MaterialTheme.typography.labelMedium) },
-                        )
-                    }
-                }
-                // Language filter chips
-                var selectedLang by remember { mutableStateOf("") }
-                val langOptions = listOf("English", "हिंदी", "తెలుగు", "தமிழ்", "ಕನ್ನಡ")
-                // Trending topics bar
-                val trendingTopics = listOf("#Electronics", "#Fashion", "#Vehicles", "#Deals", "#Jobs", "#RealEstate", "#Motors", "#Mobiles")
-                Surface(color = Color(0xFFF8FAFC)) {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        item {
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFF6366F1).copy(alpha = 0.1f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.3f)),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
-                                    Text("Trending", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6366F1))
-                                }
-                            }
-                        }
-                        items(trendingTopics) { topic ->
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                            ) {
-                                Text(
-                                    topic,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-                Surface(color = MaterialTheme.colorScheme.surface) {
-                    Column {
-                        if (selectedLang.isNotEmpty()) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
-                            ) {
-                                Text(stringResource(R.string.feed_translated_to, selectedLang), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(6.dp))
-                            }
-                        }
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                        ) {
-                            items(langOptions) { lang ->
-                                FilterChip(
-                                    selected = selectedLang == lang,
-                                    onClick = { selectedLang = if (selectedLang == lang) "" else lang },
-                                    label = { Text(lang, fontSize = 11.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                }
             }
         },
         floatingActionButton = {
@@ -501,6 +428,56 @@ fun FeedScreen(
                                 else -> 10.dp
                             }),
                         ) {
+                            // Hero banner (web parity: from-indigo-600 via-purple-600 to-blue-600)
+                            item(key = "hero_banner") {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .background(Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF2563EB))))
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Icon(Icons.Outlined.Update, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(22.dp))
+                                                Text("News & Updates", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                                            }
+                                            Text(
+                                                "Share knowledge, news, and updates with the community",
+                                                fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f), lineHeight = 16.sp,
+                                            )
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
+                                                    Text("Community feed", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                                }
+                                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
+                                                    Text("Browse marketplace", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.End) {
+                                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.15f), modifier = Modifier.clickable { }) {
+                                                Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    Icon(Icons.Outlined.AccountCircle, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                                    Text("My Feed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                            if (!isGuest) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.clickable(onClick = onCreatePost)) {
+                                                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Icon(Icons.Filled.Add, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
+                                                        Text("Share Update", color = Color(0xFF4F46E5), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             // Composer Card at top
                             item(key = "composer_card") {
                                 ComposerCard(onCreatePost = onCreatePost)
@@ -609,6 +586,23 @@ private fun ComposerCard(onCreatePost: () -> Unit) {
     }
 }
 
+// Avatar gradient system (web parity: FeedPage.jsx AVATAR_GRADIENTS + getAvatarGradient)
+private val AVATAR_GRADIENT_PAIRS = listOf(
+    Color(0xFF818CF8) to Color(0xFFA855F7),  // indigo-400 to purple-500
+    Color(0xFF34D399) to Color(0xFF14B8A6),  // emerald-400 to teal-500
+    Color(0xFFFBBF24) to Color(0xFFF97316),  // amber-400 to orange-500
+    Color(0xFFF472B6) to Color(0xFFF43F5E),  // pink-400 to rose-500
+    Color(0xFF38BDF8) to Color(0xFF3B82F6),  // sky-400 to blue-500
+)
+
+private fun getAvatarGradient(username: String): Pair<Color, Color> {
+    val value = username.trim()
+    if (value.isEmpty()) return AVATAR_GRADIENT_PAIRS[0]
+    var hash = 0
+    for (c in value) { hash = (hash * 31 + c.code) % 100000 }
+    return AVATAR_GRADIENT_PAIRS[Math.abs(hash) % AVATAR_GRADIENT_PAIRS.size]
+}
+
 @Composable
 private fun FeedCard(
     post: FeedItem,
@@ -622,8 +616,6 @@ private fun FeedCard(
 ) {
     var localLiked by remember(isLiked) { mutableStateOf(isLiked) }
     var showFullDescription by remember { mutableStateOf(false) }
-    var showComments by remember { mutableStateOf(false) }
-    var commentText by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     // Like animation
@@ -662,15 +654,18 @@ private fun FeedCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 val initial = (post.userName?.firstOrNull() ?: 'M').uppercaseChar().toString()
+                val (avatarStart, avatarEnd) = getAvatarGradient(post.displayName)
                 if (post.userAvatar != null) {
                     AsyncImage(model = post.userAvatar, contentDescription = null, contentScale = ContentScale.Crop,
                         modifier = Modifier.size(40.dp).clip(CircleShape))
                 } else {
                     Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(
+                            Brush.linearGradient(listOf(avatarStart, avatarEnd))
+                        ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                        Text(initial, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -730,28 +725,7 @@ private fun FeedCard(
                 )
             }
 
-            if (!post.content.isNullOrBlank()) {
-                Column {
-                    Text(
-                        text = post.content,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
-                        overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
-                    )
-                    if ((post.content.length) > 120) {
-                        Text(
-                            text = if (showFullDescription) "Show less" else "Read more",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable { showFullDescription = !showFullDescription }.padding(top = 4.dp),
-                        )
-                    }
-                }
-            }
-
-            // Category/subcategory badges (web parity)
+            // Category/subcategory badges (web parity: shown below author row)
             if (!post.categoryName.isNullOrBlank() || !post.subcategoryName.isNullOrBlank()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -776,138 +750,155 @@ private fun FeedCard(
                 }
             }
 
-            // Image section — social-first, no price badge
-            val mainImage = post.imageUrl ?: post.images.firstOrNull()
-            if (mainImage != null) {
-                Box(Modifier.fillMaxWidth().height(220.dp)) {
-                    AsyncImage(
-                        model = mainImage,
-                        contentDescription = post.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable {
-                            onImageZoom(listOfNotNull(mainImage) + post.images.drop(1))
-                        },
+            if (!post.content.isNullOrBlank()) {
+                Column {
+                    Text(
+                        text = post.content,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
+                        overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
                     )
+                    if ((post.content.length) > 120) {
+                        Text(
+                            text = if (showFullDescription) "Show less" else "Read more",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { showFullDescription = !showFullDescription }.padding(top = 4.dp),
+                        )
+                    }
                 }
             }
 
-            // Engagement bar
-            Row(
+            // Image carousel — multi-image support (web parity: FeedPage.jsx image slider)
+            val allImages = remember(post.imageUrl, post.images) {
+                (listOfNotNull(post.imageUrl) + post.images.filter { it.isNotBlank() && it != post.imageUrl })
+                    .filter { it.isNotBlank() }
+            }
+            if (allImages.isNotEmpty()) {
+                if (allImages.size == 1) {
+                    Box(Modifier.fillMaxWidth().height(220.dp)) {
+                        AsyncImage(
+                            model = allImages[0],
+                            contentDescription = post.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable {
+                                onImageZoom(allImages)
+                            },
+                        )
+                    }
+                } else {
+                    val pagerState = rememberPagerState { allImages.size }
+                    Box(Modifier.fillMaxWidth().height(220.dp)) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                        ) { page ->
+                            AsyncImage(
+                                model = allImages[page],
+                                contentDescription = "${post.title} image ${page + 1}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clickable { onImageZoom(allImages) },
+                            )
+                        }
+                        // Dot indicators
+                        Row(
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            allImages.indices.forEach { idx ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (pagerState.currentPage == idx) 8.dp else 5.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (pagerState.currentPage == idx) Color.White
+                                            else Color.White.copy(alpha = 0.55f)
+                                        ),
+                                )
+                            }
+                        }
+                        // Page count badge
+                        Surface(
+                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.Black.copy(alpha = 0.45f),
+                        ) {
+                            Text(
+                                "${pagerState.currentPage + 1}/${allImages.size}",
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Action bar: pill buttons (web parity: Like | Share | Save | Views | View Details)
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                // Like button with animation
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                val likeDisplay = post.effectiveLikes + (if (localLiked && !isLiked) 1 else if (!localLiked && isLiked) -1 else 0)
+                // Like pill
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (localLiked) Color(0xFFEF4444).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.clickable { localLiked = !localLiked; onLike() },
+                ) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(if (localLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp).scale(if (localLiked) likeScale else 1f))
+                        Text(if (likeDisplay > 0) "$likeDisplay" else if (localLiked) "Liked" else "Like", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                // Share pill
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable {
-                        localLiked = !localLiked
-                        onLike()
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on MHub!") }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     },
                 ) {
-                    Icon(
-                        if (localLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp).scale(if (localLiked) likeScale else 1f),
-                    )
-                    val likeDisplay = post.likeCount + (if (localLiked && !isLiked) 1 else if (!localLiked && isLiked) -1 else 0)
-                    Text(
-                        if (likeDisplay > 0) "$likeDisplay" else if (localLiked) "Liked" else "Like",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Text("Share", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                // Comment button
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { showComments = !showComments },
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                    Text(stringResource(R.string.feed_comment), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                // Bookmark button
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                // Save pill
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (isBookmarked) Color(0xFF6366F1).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable { onBookmark() },
                 ) {
-                    Icon(
-                        if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                        contentDescription = null,
-                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        if (isBookmarked) "Saved" else "Save",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = if (isBookmarked) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Text(if (isBookmarked) "Saved" else "Save", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isBookmarked) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                // Share + comment count
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    post.viewCount?.let { v: Int ->
-                        if (v > 0) {
+                // Views pill
+                post.effectiveViews.takeIf { it > 0 }?.let { v ->
+                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                            Text("$v", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.width(6.dp))
+                            Text("$v", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                    }
-                    if (post.commentCount > 0) {
-                        Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                        Text("${post.commentCount}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    IconButton(
-                        onClick = {
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on MHub!")
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-                        },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(Icons.Outlined.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
                 }
-            }
-
-            // Inline comment section
-            if (showComments) {
+                Spacer(Modifier.weight(1f))
+                // View Details CTA (web parity: indigo pill button)
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFF6366F1).copy(alpha = 0.1f),
+                    modifier = Modifier.clickable(onClick = onOpenPost),
                 ) {
-                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.feed_comments), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "No comments yet. Be the first!",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = commentText,
-                                onValueChange = { commentText = it },
-                                placeholder = { Text(stringResource(R.string.feed_write_comment), fontSize = 13.sp) },
-                                singleLine = true,
-                                shape = RoundedCornerShape(20.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                ),
-                                modifier = Modifier.weight(1f).height(44.dp),
-                            )
-                            IconButton(
-                                onClick = { commentText = "" },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            }
-                        }
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Visibility, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
+                        Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
                     }
                 }
             }

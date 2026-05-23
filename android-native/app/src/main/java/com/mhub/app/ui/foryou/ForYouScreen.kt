@@ -329,7 +329,11 @@ fun ForYouScreen(
             .let { list ->
                 when (quickFilter) {
                     "Under ₹500" -> list.filter { (it.price ?: Double.MAX_VALUE) < 500.0 }
+                    "Under ₹1000" -> list.filter { (it.price ?: Double.MAX_VALUE) < 1000.0 }
                     "Trending" -> list.sortedByDescending { it.viewCount ?: 0 }
+                    "New Arrivals" -> list.sortedByDescending { it.createdAt ?: "" }
+                    "Latest 10" -> list.sortedByDescending { it.createdAt ?: "" }.take(10)
+                    "Latest 50" -> list.sortedByDescending { it.createdAt ?: "" }.take(50)
                     else -> list
                 }
             }
@@ -425,6 +429,32 @@ fun ForYouScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp),
                 ) {
+                    // Hero gradient section (web parity: AllPostsFeedHeader)
+                    item(key = "for_you_hero") {
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                                .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5), Color(0xFF2563EB)))),
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Default.AutoAwesome, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(22.dp))
+                                    Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color.White)
+                                }
+                                Text(stringResource(R.string.foryou_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
+                                        Text("✨ AI Curated", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    }
+                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
+                                        Text("📍 Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    }
+                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
+                                        Text("🔥 Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
                     item { GreatDealsBanner(onShopNow = { quickFilter = "Under ₹500" }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
 
                     item {
@@ -462,16 +492,31 @@ fun ForYouScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             Box {
+                                val sortLabel = when (state.sortBy) {
+                                    SortBy.RELEVANCE -> "✨ Relevance"
+                                    SortBy.PRICE_ASC -> "💰 Price ↑"
+                                    SortBy.PRICE_DESC -> "💰 Price ↓"
+                                    SortBy.NEWEST -> "🆕 Newest"
+                                    SortBy.POPULAR -> "🔥 Popular"
+                                    SortBy.TRENDING -> "📈 Trending"
+                                }
                                 FilterChip(
                                     selected = false,
                                     onClick = { sortMenuExpanded = true },
-                                    label = { Text("Sort: ${state.sortBy.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.labelSmall) },
+                                    label = { Text("Sort: $sortLabel", style = MaterialTheme.typography.labelSmall) },
                                     trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp)) }
                                 )
                                 DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                                    SortBy.entries.forEach { sort ->
+                                    listOf(
+                                        SortBy.RELEVANCE to "✨ Relevance",
+                                        SortBy.PRICE_ASC to "💰 Price: Low to High",
+                                        SortBy.PRICE_DESC to "💰 Price: High to Low",
+                                        SortBy.NEWEST to "🆕 Newest First",
+                                        SortBy.POPULAR to "🔥 Most Popular",
+                                        SortBy.TRENDING to "📈 Trending",
+                                    ).forEach { (sort, label) ->
                                         DropdownMenuItem(
-                                            text = { Text(sort.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }) },
+                                            text = { Text(label) },
                                             onClick = {
                                                 viewModel.setSortBy(sort)
                                                 sortMenuExpanded = false
@@ -573,8 +618,11 @@ fun ForYouScreen(
                         ) {
                             val qFilters = listOf(
                                 "Under ₹500" to Icons.Default.LocalOffer,
+                                "Under ₹1000" to Icons.Default.LocalOffer,
                                 "Trending" to Icons.AutoMirrored.Filled.TrendingUp,
                                 "New Arrivals" to Icons.Default.NewReleases,
+                                "Latest 10" to Icons.Default.FilterList,
+                                "Latest 50" to Icons.Default.FilterList,
                             )
                             items(qFilters, key = { it.first }) { (label, icon) ->
                                 FilterChip(
@@ -588,6 +636,17 @@ fun ForYouScreen(
                                         selectedLeadingIconColor = MaterialTheme.colorScheme.onTertiary,
                                     ),
                                 )
+                            }
+                            // Clear all filters
+                            item {
+                                if (quickFilter != null || timeFilter != null || minPrice.isNotBlank() || maxPrice.isNotBlank() || verifiedOnly || searchQuery.isNotBlank()) {
+                                    FilterChip(
+                                        selected = false,
+                                        onClick = { quickFilter = null; timeFilter = null; minPrice = ""; maxPrice = ""; verifiedOnly = false; searchQuery = "" },
+                                        label = { Text("✕ Clear", style = MaterialTheme.typography.labelSmall) },
+                                        colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                                    )
+                                }
                             }
                         }
                     }

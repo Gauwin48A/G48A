@@ -334,7 +334,7 @@ interface MhubApi {
     suspend fun feed(
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20,
-    ): FeedResponse
+    ): List<FeedItem>
 
     @GET("api/feed/{id}")
     suspend fun feedDetail(@Path("id") id: String): FeedItem
@@ -342,13 +342,13 @@ interface MhubApi {
     @GET("api/feed/my")
     suspend fun myFeed(
         @Query("page") page: Int = 1,
-    ): FeedResponse
+    ): List<FeedItem>
 
     @POST("api/feed")
     suspend fun createFeedPost(@Body body: CreateFeedRequest): IdResponse
 
     @GET("api/wall")
-    suspend fun publicWall(@Query("userId") userId: String): FeedResponse
+    suspend fun publicWall(@Query("userId") userId: String): List<FeedItem>
 
     @GET("api/publicwall")
     suspend fun publicWallLeaderboard(): PublicWallLeaderboardResponse
