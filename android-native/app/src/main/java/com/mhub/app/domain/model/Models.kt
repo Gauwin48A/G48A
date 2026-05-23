@@ -57,7 +57,9 @@ data class Post(
     @SerialName("user_name") val userName: String? = null,
     val status: String? = null,
     @SerialName("view_count") val viewCount: Int? = null,
+    @SerialName("views_count") val viewsCount: Int? = null,
     @SerialName("like_count") val likeCount: Int? = null,
+    @SerialName("likes") val likesApi: Int? = null,
     val condition: String? = null,
     val brand: String? = null,
     @SerialName("seller_name") val sellerName: String? = null,
@@ -85,9 +87,9 @@ data class Post(
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()
     val displayTitle: String get() = title ?: "Untitled"
-    // Aliases for backward compatibility
-    val views: Int? get() = viewCount
-    val likes: Int? get() = likeCount
+    // Resolve both API naming conventions
+    val views: Int? get() = viewCount ?: viewsCount
+    val likes: Int? get() = likeCount ?: likesApi
 }
 
 @Immutable

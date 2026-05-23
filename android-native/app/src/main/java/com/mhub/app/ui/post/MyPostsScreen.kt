@@ -22,22 +22,31 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -66,6 +75,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -93,10 +103,15 @@ data class MyPostsState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val items: List<Post> = emptyList(),
+    val boughtItems: List<Post> = emptyList(),
     val error: String? = null,
     val statusFilter: String? = null,
+    val sortBy: String = "date",
+    val sortAscending: Boolean = false,
     val selectedIds: Set<String> = emptySet(),
     val bulkMode: Boolean = false,
+    val markSoldTarget: Post? = null,
+    val markSoldLoading: Boolean = false,
 )
 
 @HiltViewModel
@@ -119,22 +134,45 @@ class MyPostsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = repo.mine()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, refreshing = false, items = result.data)
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    loading = false,
-                    refreshing = false,
-                    error = result.error.message,
-                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, refreshing = false, error = result.error.message)
+            }
+            when (val bought = repo.bought()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(boughtItems = bought.data)
+                is ApiResult.Failure -> {}
             }
         }
     }
 
     fun setStatusFilter(f: String?) { _state.value = _state.value.copy(statusFilter = f) }
+    fun setSortBy(sort: String) { _state.value = _state.value.copy(sortBy = sort) }
+    fun toggleSortOrder() { _state.value = _state.value.copy(sortAscending = !_state.value.sortAscending) }
+    fun showMarkSold(post: Post?) { _state.value = _state.value.copy(markSoldTarget = post) }
+    fun confirmMarkSold() {
+        val post = _state.value.markSoldTarget ?: return
+        _state.value = _state.value.copy(markSoldLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.markSold(post.stableId) }
+            _state.value = _state.value.copy(markSoldLoading = false, markSoldTarget = null)
+            load()
+        }
+    }
 
     fun filteredItems(query: String = ""): List<Post> {
         val s = _state.value
-        var list = if (s.statusFilter == null) s.items else s.items.filter { it.status?.lowercase() == s.statusFilter }
+        var list = when (s.statusFilter) {
+            "bought" -> s.boughtItems
+            null -> s.items
+            else -> s.items.filter { it.status?.lowercase() == s.statusFilter }
+        }
         if (query.isNotBlank()) list = list.filter { it.displayTitle.contains(query, ignoreCase = true) || it.location?.contains(query, ignoreCase = true) == true }
-        return list
+        list = when (s.sortBy) {
+            "price" -> list.sortedBy { it.price ?: 0.0 }
+            "views" -> list.sortedBy { it.viewCount ?: 0 }
+            "likes" -> list.sortedBy { it.likeCount ?: 0 }
+            "title" -> list.sortedBy { it.displayTitle }
+            else -> list.sortedBy { it.createdAt ?: "" }
+        }
+        return if (s.sortAscending) list else list.reversed()
     }
 
     fun delete(id: String) {
@@ -176,8 +214,69 @@ fun MyPostsScreen(
     viewModel: MyPostsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
     var deleteTarget by remember { mutableStateOf<Post?>(null) }
+    var promoteTarget by remember { mutableStateOf<Post?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // Mark as Sold confirmation dialog (web parity)
+    if (state.markSoldTarget != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showMarkSold(null) },
+            title = { Text("Mark as Sold", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Mark \"${state.markSoldTarget!!.displayTitle}\" as sold?")
+                    Spacer(Modifier.height(8.dp))
+                    Text("The listing will move to your Sold tab.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmMarkSold() },
+                    enabled = !state.markSoldLoading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                ) { Text(if (state.markSoldLoading) "Processing…" else "Yes, Mark Sold") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.showMarkSold(null) }) { Text(stringResource(R.string.action_cancel)) }
+            },
+            shape = RoundedCornerShape(22.dp),
+        )
+    }
+
+    // Promote dialog (web parity: MyHome.jsx promote modal)
+    promoteTarget?.let { post ->
+        AlertDialog(
+            onDismissRequest = { promoteTarget = null },
+            title = { Text("🚀 Promote Listing", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = Color(0xFF374151))
+                    Spacer(Modifier.height(2.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("🪙 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
+                                Text("24 hours", fontSize = 12.sp, color = Color(0xFF064E3B))
+                                Text("Standard boost", fontSize = 10.sp, color = Color(0xFF6B7280))
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("🪙 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
+                                Text("7 days", fontSize = 12.sp, color = Color(0xFF78350F))
+                                Text("Featured boost", fontSize = 10.sp, color = Color(0xFF6B7280))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { promoteTarget = null }) { Text("Promote", color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold) } },
+            dismissButton = { TextButton(onClick = { promoteTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
+            shape = RoundedCornerShape(22.dp),
+        )
+    }
 
     if (deleteTarget != null) {
         AlertDialog(
@@ -237,7 +336,6 @@ fun MyPostsScreen(
         val allItems = state.items
         val activeCount = allItems.count { it.status?.lowercase() == "active" }
         val soldCount = allItems.count { it.status?.lowercase() == "sold" }
-        val totalViews = allItems.sumOf { it.viewCount ?: 0 }
 
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
             isRefreshing = state.refreshing,
@@ -264,26 +362,51 @@ fun MyPostsScreen(
                         contentPadding = PaddingValues(bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
-                        // ── Hero Stats Section ────────────────────────────────────
+                        // ── Hero Stats Section (web parity: profile-hero-bg sky→blue→violet + rewards-stat-card) ────
                         item {
-                            Box(
-                                Modifier.fillMaxWidth().background(
-                                    Brush.verticalGradient(listOf(Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF3B82F6)))
-                                ),
-                            ) {
-                                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("My Home", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color.White)
-                                        Surface(shape = RoundedCornerShape(8.dp), color = Color.White.copy(alpha = 0.2f)) {
-                                            Text("OWNER", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Column {
+                                // Hero: sky→blue→violet gradient (profile-hero-bg)
+                                Box(
+                                    Modifier.fillMaxWidth().background(
+                                        Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF3B82F6), Color(0xFF7C3AED)))
+                                    ).padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 24.dp),
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.ShoppingBag, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                        }
+                                        Column {
+                                            Text("MY HOME", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.7f), letterSpacing = 1.5.sp)
+                                            Text("My Home", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
+                                            Text("Your marketplace listings", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                                         }
                                     }
-                                    Text("Your marketplace inventory", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        StatMiniCard("Total", "${allItems.size}", Icons.Default.ShoppingBag, Color(0xFF3B82F6), Modifier.weight(1f))
-                                        StatMiniCard("Active", "$activeCount", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF22C55E), Modifier.weight(1f))
-                                        StatMiniCard("Sold", "$soldCount", Icons.Default.Favorite, Color(0xFFF59E0B), Modifier.weight(1f))
-                                        StatMiniCard("Views", "$totalViews", Icons.Default.Visibility, Color(0xFF8B5CF6), Modifier.weight(1f))
+                                }
+                                // Stat cards: rewards-stat-card style (white bg + top accent gradient bar)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    listOf(
+                                        Triple("${allItems.size}", "Total", listOf(Color(0xFF38BDF8), Color(0xFF6366F1))),
+                                        Triple("$activeCount", "Active", listOf(Color(0xFF34D399), Color(0xFF10B981))),
+                                        Triple("$soldCount", "Sold", listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))),
+                                        Triple("${state.boughtItems.size}", "Bought", listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
+                                    ).forEach { (value, label, accent) ->
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = Color.White,
+                                            shadowElevation = 4.dp,
+                                            modifier = Modifier.weight(1f),
+                                        ) {
+                                            Column {
+                                                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(accent)))
+                                                Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = Color(0xFF0F172A))
+                                                    Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B), letterSpacing = 0.8.sp)
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -307,10 +430,11 @@ fun MyPostsScreen(
                             )
                         }
 
-                        // ── Status filter chips ────────────────────────────────────
+                        // ── Status filter chips (web parity: All/Active/Sold/Bought) ─────────────────────────────────
                         item {
                             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                val filters = listOf(null to "All (${allItems.size})", "active" to "Active ($activeCount)", "sold" to "Sold ($soldCount)", "draft" to "Draft")
+                                val boughtCount = state.boughtItems.size
+                                val filters = listOf(null to "All (${allItems.size})", "active" to "Active ($activeCount)", "sold" to "Sold ($soldCount)", "bought" to "Bought ($boughtCount)")
                                 items(filters, key = { it.first ?: "all" }) { (key, label) ->
                                     FilterChip(
                                         selected = state.statusFilter == key,
@@ -324,6 +448,46 @@ fun MyPostsScreen(
                                 }
                             }
                             Spacer(Modifier.height(4.dp))
+                        }
+
+                        // ── Sort controls (web parity: sort by date/price/views/likes/title + asc/desc) ─────────────
+                        item {
+                            var sortMenuExpanded by remember { mutableStateOf(false) }
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text("Sort:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Box {
+                                    Surface(
+                                        onClick = { sortMenuExpanded = true },
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                    ) {
+                                        Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                when (state.sortBy) {
+                                                    "price" -> "Price"; "views" -> "Views"; "likes" -> "Likes"; "title" -> "Title"; else -> "Date"
+                                                },
+                                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                                            )
+                                            Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                    DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
+                                        listOf("date" to "Date", "price" to "Price", "views" to "Views", "likes" to "Likes", "title" to "Title").forEach { (key, label) ->
+                                            DropdownMenuItem(text = { Text(label) }, onClick = { viewModel.setSortBy(key); sortMenuExpanded = false })
+                                        }
+                                    }
+                                }
+                                IconButton(onClick = { viewModel.toggleSortOrder() }, modifier = Modifier.size(32.dp)) {
+                                    Icon(
+                                        if (state.sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
                         }
 
                         if (allItems.isEmpty()) {
@@ -400,12 +564,50 @@ fun MyPostsScreen(
                                                 }
                                             }
                                         }
-                                        Column {
-                                            IconButton(onClick = { onOpenPost(post.stableId) }, modifier = Modifier.size(34.dp)) {
-                                                Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                        // Post actions dropdown (web parity: Edit/Mark Sold/Share/Promote/Delete)
+                                        var cardMenuExpanded by remember { mutableStateOf(false) }
+                                        Box {
+                                            IconButton(onClick = { cardMenuExpanded = true }, modifier = Modifier.size(34.dp)) {
+                                                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                                             }
-                                            IconButton(onClick = { deleteTarget = post }, modifier = Modifier.size(34.dp)) {
-                                                Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                            DropdownMenu(expanded = cardMenuExpanded, onDismissRequest = { cardMenuExpanded = false }) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Edit") },
+                                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                                    onClick = { onOpenPost(post.stableId); cardMenuExpanded = false },
+                                                )
+                                                if (post.status?.lowercase() == "active") {
+                                                    DropdownMenuItem(
+                                                        text = { Text("Mark as Sold") },
+                                                        leadingIcon = { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E)) },
+                                                        onClick = { viewModel.showMarkSold(post); cardMenuExpanded = false },
+                                                    )
+                                                }
+                                                DropdownMenuItem(
+                                                    text = { Text("Share") },
+                                                    leadingIcon = { Icon(Icons.Default.Share, null) },
+                                                    onClick = {
+                                                        cardMenuExpanded = false
+                                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                            type = "text/plain"
+                                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${post.displayTitle} on MHub!")
+                                                        }
+                                                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+                                                    },
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Promote") },
+                                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null) },
+                                                    onClick = {
+                                                        cardMenuExpanded = false
+                                                        promoteTarget = post
+                                                    },
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
+                                                    leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                                    onClick = { deleteTarget = post; cardMenuExpanded = false },
+                                                )
                                             }
                                         }
                                     }

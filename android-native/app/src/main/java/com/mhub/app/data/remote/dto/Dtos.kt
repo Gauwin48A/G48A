@@ -887,27 +887,47 @@ data class FeedItem(
     @SerialName("feed_id") val feedId: String? = null,
     val content: String? = null,
     val title: String? = null,
+    val description: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
     val images: List<String> = emptyList(),
     @SerialName("user_id") val userId: String? = null,
     @SerialName("user_name") val userName: String? = null,
     @SerialName("user_avatar") val userAvatar: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+    // like_count = social feed style; likes = marketplace post style
     @SerialName("like_count") val likeCount: Int = 0,
+    @SerialName("likes") val likesApi: Int = 0,
     @SerialName("comment_count") val commentCount: Int = 0,
     @SerialName("is_liked") val isLiked: Boolean = false,
+    // view_count = social feed style; views_count = marketplace post style
     @SerialName("view_count") val viewCount: Int? = null,
+    @SerialName("views_count") val viewsCount: Int? = null,
     @SerialName("post_id") val postId: String? = null,
+    val price: Double? = null,
+    val status: String? = null,
     @SerialName("category_name") val categoryName: String? = null,
     @SerialName("subcategory_name") val subcategoryName: String? = null,
     @SerialName("location") val location: String? = null,
     @SerialName("area") val area: String? = null,
     @SerialName("city") val city: String? = null,
+    val user: FeedItemUser? = null,
 ) {
-    val stableId: String get() = id ?: feedId ?: "${userId}-${createdAt}"
-    val displayName: String get() = userName ?: "User"
-    val displayContent: String get() = content ?: title ?: ""
+    val stableId: String get() = id ?: feedId ?: postId ?: "${userId}-${createdAt}"
+    val displayName: String get() = userName ?: user?.name ?: "User"
+    val displayContent: String get() = content ?: title ?: description ?: ""
+    val effectiveLikes: Int get() = maxOf(likeCount, likesApi)
+    val effectiveViews: Int get() = viewCount ?: viewsCount ?: 0
+    val primaryImage: String? get() = imageUrl ?: images.firstOrNull()
 }
+
+@Serializable
+data class FeedItemUser(
+    val id: String? = null,
+    val name: String? = null,
+    val username: String? = null,
+    val avatar: String? = null,
+    @SerialName("profile_picture") val profilePicture: String? = null,
+)
 
 @Serializable
 data class FeedResponse(

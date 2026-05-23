@@ -500,10 +500,10 @@ class TrustRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class SocialRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page).allItems }
+    suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page) }
     suspend fun feedDetail(id: String): ApiResult<FeedItem> = safeApiCall { api.feedDetail(id) }
-    suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page).allItems }
-    suspend fun publicWall(userId: String): ApiResult<List<FeedItem>> = safeApiCall { api.publicWall(userId).allItems }
+    suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page) }
+    suspend fun publicWall(userId: String): ApiResult<List<FeedItem>> = safeApiCall { api.publicWall(userId) }
     suspend fun publicWallLeaderboard(): ApiResult<PublicWallLeaderboardResponse> = safeApiCall { api.publicWallLeaderboard() }
     suspend fun createPost(req: CreateFeedRequest): ApiResult<String> = safeApiCall {
         api.createFeedPost(req).id ?: error("No id")

@@ -687,6 +687,17 @@ fun ProfileScreen(
                                         color = Color.White.copy(alpha = 0.8f),
                                     )
 
+                                    // Bio (web parity: shown in hero section)
+                                    user?.bio?.takeIf { it.isNotBlank() }?.let { bio ->
+                                        Text(
+                                            text = bio,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+
                                     // Followers / Following inline
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text(
