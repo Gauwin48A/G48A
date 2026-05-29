@@ -91,7 +91,22 @@ interface MhubApi {
     suspend fun createPost(@Body body: CreatePostRequest): IdResponse
 
     @GET("api/posts/mine")
-    suspend fun myPosts(): PostsResponse
+    suspend fun myPosts(
+        @Query("userId") userId: String? = null,
+        @Query("category") category: String? = null,
+    ): PostsResponse
+
+    @GET("api/posts/mine/totals")
+    suspend fun myPostsTotals(
+        @Query("userId") userId: String? = null,
+        @Query("category") category: String? = null,
+    ): PostTotalsResponse
+
+    @PATCH("api/posts/{id}/status")
+    suspend fun patchPostStatus(
+        @Path("id") id: String,
+        @Body body: PatchPostStatusRequest,
+    ): MessageResponse
 
     @DELETE("api/posts/{id}")
     suspend fun deletePost(@Path("id") id: String): MessageResponse
@@ -334,7 +349,7 @@ interface MhubApi {
     suspend fun feed(
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20,
-    ): List<FeedItem>
+    ): FeedResponse
 
     @GET("api/feed/{id}")
     suspend fun feedDetail(@Path("id") id: String): FeedItem
@@ -342,7 +357,7 @@ interface MhubApi {
     @GET("api/feed/my")
     suspend fun myFeed(
         @Query("page") page: Int = 1,
-    ): List<FeedItem>
+    ): FeedResponse
 
     @POST("api/feed")
     suspend fun createFeedPost(@Body body: CreateFeedRequest): IdResponse

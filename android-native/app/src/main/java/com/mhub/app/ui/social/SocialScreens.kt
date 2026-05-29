@@ -38,6 +38,7 @@ import com.mhub.app.R
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
+import com.mhub.app.ui.components.ListShimmer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -158,7 +159,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Post", onBack)
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> ListShimmer(count = 3, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
                 state.item != null -> {
                     val item = state.item!!
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -387,7 +388,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                 }
             }
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> ListShimmer(count = 5, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
                 state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.DynamicFeed, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
@@ -403,7 +404,19 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     // Metrics row
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            listOf("Total" to "${state.items.size}" to Color(0xFF2563EB), "Likes" to "${state.items.sumOf { it.likeCount }}" to Color(0xFFEF4444), "This Week" to "${state.items.size.coerceAtMost(5)}" to Color(0xFF22C55E)).forEach { (pair, color) ->
+                            val sevenDaysMs = 7L * 24 * 60 * 60 * 1000
+                            val nowMs = System.currentTimeMillis()
+                            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                                timeZone = java.util.TimeZone.getTimeZone("UTC")
+                            }
+                            val thisWeekCount = state.items.count { item ->
+                                val ts = item.createdAt ?: return@count false
+                                try {
+                                    val created = sdf.parse(ts.take(19)) ?: return@count false
+                                    (nowMs - created.time) < sevenDaysMs
+                                } catch (_: Exception) { false }
+                            }
+                            listOf("Total" to "${state.items.size}" to Color(0xFF2563EB), "Likes" to "${state.items.sumOf { it.likeCount }}" to Color(0xFFEF4444), "This Week" to "$thisWeekCount" to Color(0xFF22C55E)).forEach { (pair, color) ->
                                 val (label, value) = pair
                                 Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp) {
                                     Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -426,7 +439,10 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                             }
                         }
                     }
-                    val filteredItems = state.items.filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, true) || it.displayContent.contains(searchQuery, true) }
+                    val filteredItems = state.items.filter { item ->
+                        (searchQuery.isBlank() || item.displayName.contains(searchQuery, true) || item.displayContent.contains(searchQuery, true)) &&
+                        (statusFilter == "All" || item.status?.lowercase() == statusFilter.lowercase())
+                    }
                     items(filteredItems, key = { it.stableId }) { item ->
                         FeedCard(item, onClick = null, onPromote = { promoteTarget = item }, onShare = { shareTarget = item })
                         // Delete button row
@@ -601,7 +617,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
             }
 
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> ListShimmer(count = 5, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
                 state.error != null && !state.hasData -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(48.dp))
@@ -1434,7 +1450,7 @@ fun ReviewsScreen(userId: String, onBack: () -> Unit, viewModel: ReviewsViewMode
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Reviews", onBack)
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> ListShimmer(count = 5, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Summary card with distribution
                     item {

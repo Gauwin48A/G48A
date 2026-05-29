@@ -83,6 +83,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -754,16 +756,24 @@ private fun MessageThreadScreen(
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.bodyLarge,
                             )
-                            Text(
-                                text = if (state.isTyping) "typing…"
-                                       else if (state.peerOnline) "Online"
-                                       else if (state.wsConnected) "Offline"
-                                       else "Connecting…",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (state.isTyping) MaterialTheme.colorScheme.primary
-                                        else if (state.peerOnline) Color(0xFF22C55E)
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            if (state.isTyping) {
+                                // Animated typing dots in TopAppBar subtitle
+                                val typingTransition = rememberInfiniteTransition(label = "topBarTyping")
+                                val dot1 by typingTransition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "td1")
+                                val dot2 by typingTransition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(500, delayMillis = 167), RepeatMode.Reverse), label = "td2")
+                                val dot3 by typingTransition.animateFloat(0.3f, 1f, infiniteRepeatable(tween(500, delayMillis = 333), RepeatMode.Reverse), label = "td3")
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    listOf(dot1, dot2, dot3).forEach { alpha ->
+                                        Box(Modifier.size(5.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = alpha), CircleShape))
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = if (state.peerOnline) "Online" else if (state.wsConnected) "Offline" else "Connecting…",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (state.peerOnline) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 },
@@ -975,6 +985,9 @@ private fun MessageThreadScreen(
 private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -> Unit = {}) {
     @Suppress("UNUSED_VARIABLE")
     var showTimestamp by remember { mutableStateOf(false) }
+    var myReaction by remember { mutableStateOf<String?>(null) }
+    var showReactionPicker by remember { mutableStateOf(false) }
+    val reactions = listOf("❤️", "👍", "😂", "😮", "😢", "🎉")
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -1010,16 +1023,75 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                 shadowElevation = 1.dp,
                 modifier = Modifier.combinedClickable(
                     onClick = { showTimestamp = !showTimestamp },
-                    onLongClick = onLongPress,
+                    onLongClick = { showReactionPicker = true; onLongPress() },
                 ),
             ) {
-                Text(
-                    text = message.displayContent,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isMe) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                )
+                Column {
+                    // Attachment preview
+                    if (message.attachmentUrl != null) {
+                        val isImage = message.attachmentType?.startsWith("image") == true ||
+                            message.attachmentUrl.matches(Regex(".*\\.(jpg|jpeg|png|gif|webp).*", RegexOption.IGNORE_CASE))
+                        if (isImage) {
+                            AsyncImage(
+                                model = message.attachmentUrl,
+                                contentDescription = "Image attachment",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(200.dp, 140.dp)
+                                    .clip(RoundedCornerShape(topStart = if (isMe) 18.dp else 4.dp, topEnd = if (isMe) 4.dp else 18.dp)),
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Icon(Icons.Default.AttachFile, null, modifier = Modifier.size(16.dp), tint = if (isMe) Color.White.copy(0.8f) else Color(0xFF64748B))
+                                Text("📎 Attachment", fontSize = 12.sp, color = if (isMe) Color.White.copy(0.9f) else Color(0xFF374151))
+                            }
+                        }
+                    }
+                    if (message.displayContent.isNotBlank()) {
+                        Text(
+                            text = message.displayContent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isMe) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            }
+            // Reaction display
+            if (myReaction != null) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.offset(y = (-4).dp),
+                ) {
+                    Text(myReaction!!, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+            // Reaction picker popup
+            if (showReactionPicker) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 4.dp,
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        reactions.forEach { emoji ->
+                            Text(
+                                emoji,
+                                fontSize = 20.sp,
+                                modifier = Modifier.clickable {
+                                    myReaction = if (myReaction == emoji) null else emoji
+                                    showReactionPicker = false
+                                }.padding(4.dp),
+                            )
+                        }
+                    }
+                }
             }
             message.createdAt?.let { ts ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {

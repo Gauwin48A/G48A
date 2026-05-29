@@ -10,15 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -82,6 +84,7 @@ import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.ListShimmer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -296,9 +299,7 @@ fun WishlistScreen(
                 .padding(padding),
         ) {
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                state.loading -> ListShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
 
                 state.error != null && state.items.isEmpty() -> Box(
                     Modifier.fillMaxSize(),
@@ -313,145 +314,137 @@ fun WishlistScreen(
                 }
 
                 else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(bottom = 90.dp),
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
+                    // Fixed: use Column for header UI + conditional LazyColumn/LazyVerticalGrid
+                    // This eliminates the nested-LazyVerticalGrid-inside-LazyColumn bug that broke scrolling
+                    Column(modifier = Modifier.fillMaxSize()) {
                         // Search bar
-                        item {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search your saved items...") },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                                trailingIcon = {
-                                    if (searchQuery.isNotBlank()) {
-                                        IconButton(onClick = { searchQuery = "" }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Clear")
-                                        }
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search your saved items...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotBlank()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear")
                                     }
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(16.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                ),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                            )
-                        }
-
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                        )
                         // Sort chips
-                        item {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            ) {
-                                WishlistSort.entries.forEach { option ->
-                                    FilterChip(
-                                        selected = sortBy == option,
-                                        onClick = { sortBy = option },
-                                        label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        ),
-                                    )
-                                }
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            WishlistSort.entries.forEach { option ->
+                                FilterChip(
+                                    selected = sortBy == option,
+                                    onClick = { sortBy = option },
+                                    label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
                             }
                         }
-
                         // Status filter chips
-                        item {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            ) {
-                                listOf("all" to "All", "active" to "Active", "sold" to "Sold", "inactive" to "Inactive").forEach { (key, label) ->
-                                    FilterChip(
-                                        selected = statusFilter == key,
-                                        onClick = { statusFilter = key },
-                                        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
-                                        ),
-                                    )
-                                }
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val statusOptions = listOf("all" to "All", "active" to "Active", "sold" to "Sold", "inactive" to "Inactive")
+                            statusOptions.forEach { (key, label) ->
+                                FilterChip(
+                                    selected = statusFilter == key,
+                                    onClick = { statusFilter = key },
+                                    label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                    ),
+                                )
                             }
                         }
 
-                        if (state.items.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 64.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    AppEmptyState(
-                                        icon = Icons.Default.Favorite,
-                                        title = "Nothing saved yet",
-                                        subtitle = "Tap the heart icon on listings to save them here.",
-                                    )
-                                }
+                        when {
+                            state.items.isEmpty() -> Box(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 64.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppEmptyState(
+                                    icon = Icons.Default.Favorite,
+                                    title = "Nothing saved yet",
+                                    subtitle = "Tap the heart icon on listings to save them here.",
+                                )
                             }
-                        } else if (filteredItems.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 64.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    AppEmptyState(
-                                        icon = Icons.Default.Search,
-                                        title = "No items match",
-                                        subtitle = "Try adjusting your filters.",
-                                    )
-                                }
+                            filteredItems.isEmpty() -> Box(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 64.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppEmptyState(
+                                    icon = Icons.Default.Search,
+                                    title = "No items match",
+                                    subtitle = "Try adjusting your filters.",
+                                )
                             }
-                        } else {
-                            if (gridMode) {
-                                // Grid mode: 2 columns using a single item with custom layout
-                                item {
-                                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                                        columns = GridCells.Fixed(2),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(max = 2000.dp),
-                                    ) {
-                                        items(
-                                            filteredItems,
-                                            key = { it.stableId },
-                                        ) { post ->
-                                            WishlistGridCard(
-                                                post = post,
-                                                onOpen = { onOpenPost(post.stableId) },
-                                                onRemove = { viewModel.remove(post.stableId) },
-                                            )
+                            gridMode -> {
+                                // Grid mode: Column+verticalScroll with chunked rows (avoids LazyListScope overload issues)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 90.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    filteredItems.chunked(2).forEach { row ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            row.forEach { post ->
+                                                Box(modifier = Modifier.weight(1f)) {
+                                                    WishlistGridCard(
+                                                        post = post,
+                                                        onOpen = { onOpenPost(post.stableId) },
+                                                        onRemove = { viewModel.remove(post.stableId) },
+                                                    )
+                                                }
+                                            }
+                                            if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                                         }
                                     }
                                 }
-                            } else {
-                                items(filteredItems, key = { it.stableId }) { post ->
-                                    WishlistListCard(
-                                        post = post,
-                                        onOpen = { onOpenPost(post.stableId) },
-                                        onRemove = { viewModel.remove(post.stableId) },
-                                        onAddToCart = { viewModel.addToCart(post.stableId) },
-                                        isMultiSelectMode = state.isMultiSelectMode,
-                                        isSelected = post.stableId in state.selectedItems,
-                                        onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    )
+                            }
+                            else -> {
+                                // List mode: standard LazyColumn
+                                LazyColumn(
+                                    contentPadding = PaddingValues(bottom = 90.dp),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    items(filteredItems, key = { it.stableId }) { post ->
+                                        WishlistListCard(
+                                            post = post,
+                                            onOpen = { onOpenPost(post.stableId) },
+                                            onRemove = { viewModel.remove(post.stableId) },
+                                            onAddToCart = { viewModel.addToCart(post.stableId) },
+                                            isMultiSelectMode = state.isMultiSelectMode,
+                                            isSelected = post.stableId in state.selectedItems,
+                                            onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -475,13 +468,14 @@ private fun WishlistListCard(
 ) {
     // Price drop not available without historical pricing data
     val priceDrop: Int? = null
+    var priceAlertEnabled by remember { mutableStateOf(false) }
     
     // Mock date added (in reality, would come from API)
     val dateAdded = remember { 
         val daysAgo = (post.stableId.hashCode().and(0xFF)) % 30
-        val instant = java.time.Instant.now().minus(daysAgo.toLong(), java.time.temporal.ChronoUnit.DAYS)
-        java.time.format.DateTimeFormatter.ofPattern("MMM d")
-            .format(instant.atZone(java.time.ZoneId.systemDefault()))
+        val cal = java.util.Calendar.getInstance()
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -daysAgo)
+        java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault()).format(cal.time)
     }
 
     Card(
@@ -613,6 +607,17 @@ private fun WishlistListCard(
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(
+                        onClick = { priceAlertEnabled = !priceAlertEnabled },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            if (priceAlertEnabled) Icons.Default.Notifications else Icons.Default.NotificationsOff,
+                            contentDescription = if (priceAlertEnabled) "Price alert on" else "Price alert off",
+                            modifier = Modifier.size(16.dp),
+                            tint = if (priceAlertEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     IconButton(
                         onClick = onAddToCart,

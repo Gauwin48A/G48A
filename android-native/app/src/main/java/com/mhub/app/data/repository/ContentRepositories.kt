@@ -100,7 +100,7 @@ class PostsRepository @Inject constructor(
         condition: String? = null,
         subcategory: String? = null,
     ): ApiResult<List<Post>> {
-        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort, condition, subcategory).items }
+        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort, condition, subcategory).allItems }
         if (result is ApiResult.Success && page == 1) {
             // Cache page 1 results; evict entries older than TTL
             postDao.evictStale(System.currentTimeMillis() - CACHE_TTL_MS)
@@ -127,21 +127,30 @@ class PostsRepository @Inject constructor(
         api.updatePost(id, req); Unit
     }
 
-    suspend fun mine(): ApiResult<List<Post>> = safeApiCall { api.myPosts().items }
+    suspend fun mine(userId: String? = null, category: String? = null): ApiResult<List<Post>> =
+        safeApiCall { api.myPosts(userId = userId, category = category).allItems }
 
-    suspend fun sold(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).items }
+    suspend fun mineTotals(userId: String? = null, category: String? = null): ApiResult<com.mhub.app.data.remote.dto.PostTotals?> =
+        safeApiCall {
+            val resp = api.myPostsTotals(userId = userId, category = category)
+            resp.totals ?: com.mhub.app.data.remote.dto.PostTotals(
+                total = resp.total, active = resp.active, sold = resp.sold, bought = resp.bought,
+            )
+        }
 
-    suspend fun bought(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).items }
+    suspend fun sold(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).allItems }
+
+    suspend fun bought(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).allItems }
 
     suspend fun nearby(lat: Double, lng: Double, radius: Int = 10): ApiResult<List<Post>> = safeApiCall {
-        api.nearbyPosts(lat, lng, radius).items
+        api.nearbyPosts(lat, lng, radius).allItems
     }
 
-    suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().items }
+    suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().allItems }
     suspend fun deleteRecentlyViewed(postId: String): ApiResult<Unit> = safeApiCall { api.deleteRecentlyViewed(postId); Unit }
     suspend fun clearRecentlyViewed(): ApiResult<Unit> = safeApiCall { api.clearRecentlyViewed(); Unit }
 
-    suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().items }
+    suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().allItems }
     suspend fun addToCompare(postId: String): ApiResult<Unit> = safeApiCall { api.addToCompare(postId); Unit }
     suspend fun removeFromCompare(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCompare(postId); Unit }
     suspend fun clearCompare(): ApiResult<Unit> = safeApiCall { api.clearCompare(); Unit }
@@ -354,7 +363,7 @@ class ChannelsRepository @Inject constructor(private val api: MhubApi) {
 class CentresRepository @Inject constructor(private val api: MhubApi) {
     suspend fun list(): ApiResult<List<Centre>> = safeApiCall { api.centres().centres }
     suspend fun detail(id: String): ApiResult<Centre> = safeApiCall { api.centreDetail(id) }
-    suspend fun listings(id: String): ApiResult<List<Post>> = safeApiCall { api.centreListings(id).items }
+    suspend fun listings(id: String): ApiResult<List<Post>> = safeApiCall { api.centreListings(id).allItems }
     suspend fun create(req: CreateCentreRequest): ApiResult<String> = safeApiCall {
         api.createCentre(req).id ?: error("No id")
     }
@@ -457,19 +466,33 @@ class TransactionsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun confirm(req: ConfirmSaleRequest): ApiResult<ConfirmSaleResponse> = safeApiCall { api.confirmSale(req) }
     suspend fun pending(): ApiResult<List<PendingSale>> = safeApiCall { api.pendingSales().sales }
     suspend fun undoSale(req: UndoSaleRequest): ApiResult<Unit> = safeApiCall {
-        // Web app calls POST /posts/:postId/reactivate — not /transactions/undone
-        api.reactivatePost(
-            postId = req.postId,
-            body = com.mhub.app.data.remote.dto.ReactivatePostRequest(
-                reason = req.reason,
-                description = req.description,
-            ),
-        )
+        // Web app tries POST /posts/:postId/reactivate first, falls back to PATCH /posts/:postId/status
+        try {
+            api.reactivatePost(
+                postId = req.postId,
+                body = com.mhub.app.data.remote.dto.ReactivatePostRequest(
+                    reason = req.reason,
+                    description = req.description,
+                ),
+            )
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() == 404 || e.code() == 405) {
+                // Fallback: PATCH /posts/:postId/status (web parity)
+                api.patchPostStatus(
+                    id = req.postId,
+                    body = com.mhub.app.data.remote.dto.PatchPostStatusRequest(
+                        status = "active",
+                        reason = req.reason,
+                        description = req.description,
+                    ),
+                )
+            } else throw e
+        }
         Unit
     }
     suspend fun undoneHistory(): ApiResult<List<UndoneRecord>> = safeApiCall { api.undoneHistory().records }
-    suspend fun soldHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).items }
-    suspend fun boughtHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).items }
+    suspend fun soldHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).allItems }
+    suspend fun boughtHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).allItems }
 }
 
 @Singleton
@@ -499,7 +522,7 @@ class RecommendationsRepository @Inject constructor(private val api: MhubApi) {
         maxPrice: Double? = null,
         location: String? = null,
     ): ApiResult<List<Post>> = safeApiCall {
-        api.recommendations(search, categoryId, minPrice, maxPrice, location).items
+        api.recommendations(search, categoryId, minPrice, maxPrice, location).allItems
     }
 }
 
@@ -510,9 +533,9 @@ class TrustRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class SocialRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page) }
+    suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page).allItems }
     suspend fun feedDetail(id: String): ApiResult<FeedItem> = safeApiCall { api.feedDetail(id) }
-    suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page) }
+    suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page).allItems }
     suspend fun publicWall(userId: String): ApiResult<List<FeedItem>> = safeApiCall { api.publicWall(userId) }
     suspend fun publicWallLeaderboard(): ApiResult<PublicWallLeaderboardResponse> = safeApiCall { api.publicWallLeaderboard() }
     suspend fun createPost(req: CreateFeedRequest): ApiResult<String> = safeApiCall {
@@ -540,8 +563,8 @@ class BoostRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class SponsoredRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).items }
-    suspend fun forYou(limit: Int = 20, page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit, page).items }
+    suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).allItems }
+    suspend fun forYou(limit: Int = 20, page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit, page).allItems }
 }
 
 @Singleton

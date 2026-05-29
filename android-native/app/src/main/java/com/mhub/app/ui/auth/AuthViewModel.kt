@@ -71,6 +71,7 @@ class AuthViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
+    fun setError(msg: String) { _state.value = _state.value.copy(error = msg, loading = false) }
 
     fun signInWithGoogle(idToken: String) {
         if (_state.value.loading) return

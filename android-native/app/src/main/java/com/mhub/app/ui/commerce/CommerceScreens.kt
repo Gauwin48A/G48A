@@ -2950,6 +2950,8 @@ data class SaleDoneUiState(
     val otp: String = "",
     // initiate result
     val initiatedTxnId: String? = null,
+    val initiatedOtp: String? = null,
+    val initiatedOtpExpiresIn: String? = null,
     // confirm result
     val completedReceipt: SaleReceiptInfo? = null,
     val completedBuyer: SalePartyInfo? = null,
@@ -2985,7 +2987,9 @@ class SaleDoneViewModel @Inject constructor(private val repo: TransactionsReposi
             when (val r = repo.initiate(InitiateSaleRequest(postId = s.postId, buyerId = s.buyerId, agreedPrice = s.saleAmount.toDoubleOrNull() ?: 0.0))) {
                 is ApiResult.Success -> {
                     val txnId = r.data.transaction?.transactionId ?: ""
-                    _state.value = _state.value.copy(loading = false, initiatedTxnId = txnId, txnId = txnId, step = 2, tab = "buyer")
+                    val otp = r.data.transaction?.secretOTP
+                    val expiresIn = r.data.transaction?.otpExpiresIn
+                    _state.value = _state.value.copy(loading = false, initiatedTxnId = txnId, initiatedOtp = otp, initiatedOtpExpiresIn = expiresIn, txnId = txnId, step = 2, tab = "buyer")
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = mapSaleError(r.error.message))
             }
@@ -3444,10 +3448,39 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                 ) {
                                     if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                                     else {
-                                        Icon(Icons.Filled.Handshake, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Filled.Favorite, null, tint = Color.White, modifier = Modifier.size(20.dp))
                                         Spacer(Modifier.width(8.dp))
                                         Text(stringResource(R.string.commerce_initiate_sale), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
                                     }
+                                }
+                            }
+                        }
+                        // Blue info card: show transaction ID + OTP after successful initiation (web parity: initiatedSale card in Saledone.jsx)
+                        if (state.initiatedTxnId != null) {
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("Transaction Created", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Transaction ID:", fontSize = 12.sp, color = Color(0xFF2563EB))
+                                        Text(state.initiatedTxnId!!, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF1E40AF), modifier = Modifier.weight(1f, fill = false), maxLines = 1)
+                                    }
+                                    if (state.initiatedOtp != null) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("OTP to share with buyer:", fontSize = 12.sp, color = Color(0xFF2563EB))
+                                            Text(state.initiatedOtp!!, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                        }
+                                    } else {
+                                        Text("OTP sent to buyer's notification channel.", fontSize = 12.sp, color = Color(0xFF3B82F6))
+                                    }
+                                    state.initiatedOtpExpiresIn?.let { expiry ->
+                                        Text("Expires in: $expiry", fontSize = 11.sp, color = Color(0xFF60A5FA))
+                                    }
+                                    Text("Switch to 'Confirm Purchase' tab to complete the sale.", fontSize = 11.sp, color = Color(0xFF93C5FD))
                                 }
                             }
                         }

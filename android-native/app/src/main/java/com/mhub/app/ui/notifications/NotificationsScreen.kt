@@ -62,6 +62,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -99,6 +100,7 @@ import com.mhub.app.data.repository.NotificationsRepository
 import com.mhub.app.domain.model.Notification
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.ListShimmer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -420,12 +422,10 @@ fun NotificationsScreen(
                 .padding(padding),
         ) {
             when {
-                state.loading && state.items.isEmpty() -> Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                state.loading && state.items.isEmpty() -> ListShimmer(
+                    count = 6,
+                    modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                )
 
                 state.error != null && state.items.isEmpty() -> Box(
                     Modifier.fillMaxSize(),
@@ -618,42 +618,45 @@ fun NotificationsScreen(
     
     // Settings dialog
     if (state.showSettings) {
-        AlertDialog(
+        ModalBottomSheet(
             onDismissRequest = { viewModel.toggleSettings() },
-            title = { Text(stringResource(R.string.notif_preferences)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.notif_preferences_subtitle), 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    
-                    listOf(
-                        Triple("Offers & Deals", "Get notified about price drops and offers", true),
-                        Triple("Messages & Chat", "New messages from buyers and sellers", true),
-                        Triple("System Updates", "Account security and app updates", true),
-                        Triple("Marketing", "Promotional offers and campaigns", false),
-                    ).forEach { (title, desc, checked) ->
-                        var isChecked by remember { mutableStateOf(checked) }
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Switch(checked = isChecked, onCheckedChange = { isChecked = it })
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(stringResource(R.string.notif_preferences), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.notif_preferences_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                listOf(
+                    Triple("Offers & Deals", "Get notified about price drops and offers", true),
+                    Triple("Messages & Chat", "New messages from buyers and sellers", true),
+                    Triple("System Updates", "Account security and app updates", true),
+                    Triple("Marketing", "Promotional offers and campaigns", false),
+                    Triple("Order Updates", "Shipping and delivery notifications", true),
+                    Triple("New Followers", "When someone follows your profile", false),
+                ).forEach { (title, desc, checked) ->
+                    var isChecked by remember { mutableStateOf(checked) }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        Switch(checked = isChecked, onCheckedChange = { isChecked = it })
                     }
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 }
-            },
-            confirmButton = {
-                Button(onClick = { viewModel.toggleSettings() }) { Text(stringResource(R.string.notif_save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.toggleSettings() }) { Text(stringResource(R.string.notif_cancel)) }
-            },
-        )
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = { viewModel.toggleSettings() }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.notif_save))
+                }
+            }
+        }
     }
 }
 

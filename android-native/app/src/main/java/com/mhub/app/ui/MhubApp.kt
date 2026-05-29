@@ -712,7 +712,7 @@ fun MhubApp(
 
             composable(Routes.SETTINGS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    SettingsScreen(onBack = { navController.popBackStack() })
+                    SettingsScreen(onBack = { navController.popBackStack() }, onLogout = { navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } })
                 }
             }
 

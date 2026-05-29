@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,6 +98,9 @@ class SettingsViewModel @Inject constructor(
     private val _validationMessage = MutableStateFlow<String?>(null)
     val validationMessage: StateFlow<String?> = _validationMessage.asStateFlow()
 
+    private val _loggedOut = MutableStateFlow(false)
+    val loggedOut: StateFlow<Boolean> = _loggedOut.asStateFlow()
+
     val themeMode: StateFlow<ThemeMode> = prefs.themeMode
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, ThemeMode.SYSTEM)
 
@@ -123,7 +127,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 tokenStore.clear()
-                _validationMessage.value = "All sessions cleared. Restart the app to log in again."
+                _loggedOut.value = true
             } catch (e: Exception) {
                 _validationMessage.value = "Failed to logout: ${e.message}"
             }
@@ -217,6 +221,7 @@ class SettingsViewModel @Inject constructor(
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onLogout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val localeManager = LocalLocaleManager.current
@@ -226,6 +231,8 @@ fun SettingsScreen(
     val validating by viewModel.validating.collectAsState()
     val validationMessage by viewModel.validationMessage.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
+    val loggedOut by viewModel.loggedOut.collectAsState()
+    LaunchedEffect(loggedOut) { if (loggedOut) onLogout() }
     val localPreset = BuildConfig.DEFAULT_API_BASE_URL
     val stagingPreset = BuildConfig.STAGING_API_BASE_URL.takeIf { it.isNotBlank() }
     val normalizedBaseUrl = InputValidators.toDisplayBaseUrl(baseUrl, localPreset)

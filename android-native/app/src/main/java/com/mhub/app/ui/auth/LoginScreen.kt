@@ -25,6 +25,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -512,6 +514,48 @@ fun LoginScreen(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                     )
+                }
+            }
+
+            // ── Google Sign-In ────────────────────────────────────────
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+                Text("OR", color = mutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            val googleContext = LocalContext.current
+            val googleScope = rememberCoroutineScope()
+            var googleLoading by remember { mutableStateOf(false) }
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    googleScope.launch {
+                        googleLoading = true
+                        val result = GoogleSignInHelper.signIn(googleContext, com.mhub.app.BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                        when (result) {
+                            is GoogleSignInHelper.Result.Success -> viewModel.signInWithGoogle(result.idToken)
+                            is GoogleSignInHelper.Result.Error -> viewModel.setError(result.message)
+                            is GoogleSignInHelper.Result.Cancelled -> { /* no-op */ }
+                        }
+                        googleLoading = false
+                    }
+                },
+                enabled = !state.loading && !googleLoading,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).height(48.dp),
+            ) {
+                if (googleLoading) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("G", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF4285F4))
+                        Text("Continue with Google", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    }
                 }
             }
 

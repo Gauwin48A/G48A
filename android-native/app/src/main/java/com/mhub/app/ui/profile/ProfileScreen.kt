@@ -105,6 +105,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -425,8 +426,8 @@ class ProfileViewModel @Inject constructor(
 
     fun loadReviews() {
         if (reviewsLoaded) return
-        reviewsLoaded = true
         val userId = _state.value.user?.id ?: return
+        reviewsLoaded = true
         viewModelScope.launch {
             try {
                 val resp = api.userReviews(userId.toString())
@@ -514,6 +515,16 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = {
+                        val userId = state.user?.id ?: ""
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out my MHub profile: https://mhub.app/u/$userId")
+                        }
+                        context.startActivity(android.content.Intent.createChooser(intent, "Share profile via"))
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share profile")
+                    }
                     androidx.compose.material3.IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -2294,6 +2305,10 @@ private fun EditProfileDialog(
     var name by remember { mutableStateOf(user?.displayName ?: "") }
     var phone by remember { mutableStateOf(user?.phone ?: "") }
     var bio by remember { mutableStateOf("") }
+    val bioMaxLen = 160
+    val nameError = if (name.isNotBlank() && name.length < 2) "Name must be at least 2 characters"
+        else if (name.length > 60) "Name too long"
+        else null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2305,6 +2320,8 @@ private fun EditProfileDialog(
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.profile_full_name)) },
                     singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall) } },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
@@ -2314,19 +2331,30 @@ private fun EditProfileDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text(stringResource(R.string.profile_bio_optional)) },
-                    maxLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Column {
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { if (it.length <= bioMaxLen) bio = it },
+                        label = { Text(stringResource(R.string.profile_bio_optional)) },
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                Text(
+                                    "${bio.length}/$bioMaxLen",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (bio.length > bioMaxLen * 0.9) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        },
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = { onSave(name.ifBlank { null }, phone.ifBlank { null }, bio.ifBlank { null }) },
-                enabled = !saving,
+                enabled = !saving && nameError == null,
             ) { Text(if (saving) stringResource(R.string.commerce_saving) else stringResource(R.string.btn_save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },

@@ -140,6 +140,8 @@ data class ExploreState(
     val sortBy: String = "newest",
     val filterCondition: String = "any",  // "any" | "new" | "used"
     val filterSubcategory: String? = null,
+    val filterMinPrice: Float = 0f,
+    val filterMaxPrice: Float = 500000f,
     val hasActiveFilters: Boolean = false,
     val posts: List<Post> = emptyList(),
     val page: Int = 1,
@@ -197,8 +199,14 @@ class ExploreViewModel @Inject constructor(
         loadPosts(reset = true)
     }
 
+    fun setFilterPrice(min: Float, max: Float) {
+        val newFilters = _state.value.filterCondition != "any" || _state.value.filterSubcategory != null || min > 0f || max < 500000f
+        _state.value = _state.value.copy(filterMinPrice = min, filterMaxPrice = max, hasActiveFilters = newFilters)
+        loadPosts(reset = true)
+    }
+
     fun clearFilters() {
-        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, hasActiveFilters = false)
+        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, filterMinPrice = 0f, filterMaxPrice = 500000f, hasActiveFilters = false)
         loadPosts(reset = true)
     }
 
@@ -370,6 +378,9 @@ fun ExploreScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusManager = LocalFocusManager.current
+    var showInterestModal by remember { mutableStateOf(false) }
+    var interestPostId by remember { mutableStateOf("") }
+    var interestPostTitle by remember { mutableStateOf("") }
 
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
@@ -392,6 +403,7 @@ fun ExploreScreen(
     // Draft filter state for the bottom sheet
     var draftCondition by remember(showFilterSheet) { mutableStateOf(state.filterCondition) }
     var draftSubcategory by remember(showFilterSheet) { mutableStateOf(state.filterSubcategory) }
+    var draftPriceRange by remember(showFilterSheet) { mutableStateOf(state.filterMinPrice..state.filterMaxPrice) }
 
     // Sync ecosystem into ViewModel whenever it changes
     LaunchedEffect(ecosystemKey) { viewModel.setEcosystem(ecosystemKey) }
@@ -465,6 +477,11 @@ fun ExploreScreen(
                     onOpenSearch = onOpenSearch,
                     onSelectSubcategory = { sub ->
                         viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+                    },
+                    onInterested = { postId, postTitle ->
+                        interestPostId = postId
+                        interestPostTitle = postTitle
+                        showInterestModal = true
                     },
                 )
             }
@@ -554,6 +571,18 @@ fun ExploreScreen(
                     }
                 }
                 HorizontalDivider()
+                // Price range filter
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val minVal = draftPriceRange.start.toInt()
+                    val maxVal = draftPriceRange.endInclusive.toInt()
+                    Text("Price Range: ₹$minVal – ₹$maxVal", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    androidx.compose.material3.RangeSlider(
+                        value = draftPriceRange,
+                        onValueChange = { draftPriceRange = it },
+                        valueRange = 0f..500000f,
+                        steps = 99,
+                    )
+                }
                 // Condition filter
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Condition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -592,6 +621,7 @@ fun ExploreScreen(
                     onClick = {
                         viewModel.setFilterCondition(draftCondition)
                         viewModel.setFilterSubcategory(draftSubcategory)
+                        viewModel.setFilterPrice(draftPriceRange.start, draftPriceRange.endInclusive)
                         showFilterSheet = false
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -601,6 +631,16 @@ fun ExploreScreen(
                 }
             }
         }
+    }
+
+    // Buyer Interest Modal (web parity: "Interested" button → contact seller)
+    if (showInterestModal) {
+        com.mhub.app.ui.components.BuyerInterestModal(
+            postId = interestPostId,
+            postTitle = interestPostTitle,
+            onDismiss = { showInterestModal = false },
+            onSubmit = { _, _, _ -> showInterestModal = false },
+        )
     }
 }
 
@@ -783,6 +823,7 @@ private fun AllPostsBrowse(
     onLoadMore: () -> Unit,
     onOpenSearch: () -> Unit,
     onSelectSubcategory: (String) -> Unit = {},
+    onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
 ) {
     val sortOptions = listOf(
         "newest" to "Newest", "popular" to "Popular",
@@ -816,7 +857,7 @@ private fun AllPostsBrowse(
                 }
             } else {
                 items(state.searchResults, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }
             return@LazyColumn
@@ -950,7 +991,7 @@ private fun AllPostsBrowse(
                 }
             } else {
                 items(state.posts, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }
             item(key = "load_more") {
@@ -1015,6 +1056,7 @@ private fun AllPostCard(
     onToggleWishlist: () -> Unit = {},
     isCompared: Boolean = false,
     onToggleCompare: () -> Unit = {},
+    onInterested: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showFullDescription by remember { mutableStateOf(false) }
@@ -1189,6 +1231,20 @@ private fun AllPostCard(
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(if (localLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, null, tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                         Text(if (localLiked) "Liked" else "Like", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                // Interested pill (web parity: FaHandHoldingHeart "Interested" button)
+                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF059669).copy(alpha = 0.12f), modifier = Modifier.clickable { onInterested() }) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Star, null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                        Text("Interested", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF059669))
+                    }
+                }
+                // Compare pill (web parity: CompareIcon "Compare" dropdown item)
+                Surface(shape = RoundedCornerShape(20.dp), color = if (isCompared) Color(0xFF6366F1).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable { onToggleCompare() }) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Compare, null, tint = if (isCompared) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Text(if (isCompared) "In Compare" else "Compare", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isCompared) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 // Share pill

@@ -264,6 +264,30 @@ data class ReactivatePostRequest(
     val description: String? = null,
 )
 
+@Serializable
+data class PostTotalsResponse(
+    val totals: PostTotals? = null,
+    val total: Int = 0,
+    val active: Int = 0,
+    val sold: Int = 0,
+    val bought: Int = 0,
+)
+
+@Serializable
+data class PostTotals(
+    val total: Int = 0,
+    val active: Int = 0,
+    val sold: Int = 0,
+    val bought: Int = 0,
+)
+
+@Serializable
+data class PatchPostStatusRequest(
+    val status: String,
+    val reason: String? = null,
+    val description: String? = null,
+)
+
 // initiate sale response — server wraps transactionId inside `transaction` object
 @Serializable
 data class SaleTransactionInfo(
@@ -273,6 +297,8 @@ data class SaleTransactionInfo(
     val agreedPrice: Double? = null,
     val otpExpiresIn: String? = null,
     val expiresAt: String? = null,
+    // secretOTP returned by server on initiation so seller can share with buyer
+    @SerialName("secretOTP") val secretOTP: String? = null,
 )
 
 @Serializable
@@ -476,9 +502,18 @@ data class UploadResponse(val url: String? = null, val key: String? = null, val 
 data class PostsResponse(
     val posts: List<Post> = emptyList(),
     val data: List<Post> = emptyList(),
+    val items: List<Post> = emptyList(),
+    val rows: List<Post> = emptyList(),
     val total: Int? = null,
 ) {
-    val items: List<Post> get() = if (posts.isNotEmpty()) posts else data
+    // Mirror web app extractPostList() — handle all response shapes
+    val allItems: List<Post> get() = when {
+        posts.isNotEmpty() -> posts
+        data.isNotEmpty() -> data
+        items.isNotEmpty() -> items
+        rows.isNotEmpty() -> rows
+        else -> emptyList()
+    }
 }
 
 @Serializable
@@ -940,9 +975,18 @@ data class FeedItemUser(
 data class FeedResponse(
     val items: List<FeedItem> = emptyList(),
     val feed: List<FeedItem> = emptyList(),
+    val posts: List<FeedItem> = emptyList(),
+    val data: List<FeedItem> = emptyList(),
     val total: Int? = null,
 ) {
-    val allItems: List<FeedItem> get() = if (items.isNotEmpty()) items else feed
+    // Handle server returning {posts:[...]}, {items:[...]}, {feed:[...]}, {data:[...]}
+    val allItems: List<FeedItem> get() = when {
+        posts.isNotEmpty() -> posts
+        items.isNotEmpty() -> items
+        feed.isNotEmpty() -> feed
+        data.isNotEmpty() -> data
+        else -> emptyList()
+    }
 }
 
 @Serializable

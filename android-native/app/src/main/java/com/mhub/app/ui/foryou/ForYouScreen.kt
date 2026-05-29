@@ -42,6 +42,7 @@ import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.SponsoredRepository
+import com.mhub.app.data.repository.RecommendationsRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.ProfileRepository
@@ -89,6 +90,7 @@ data class ForYouState(
 @HiltViewModel
 class ForYouViewModel @Inject constructor(
     private val sponsoredRepo: SponsoredRepository,
+    private val recommendationsRepo: RecommendationsRepository,
     private val postsRepo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
     private val profileRepo: ProfileRepository,
@@ -143,7 +145,12 @@ class ForYouViewModel @Inject constructor(
 
     /** Centralised three-tier fetch logic so load() and refresh() stay DRY. */
     private suspend fun fetchForYouPosts(page: Int): List<Post> {
-        // Tier 1: personalised recommendations
+        // Tier 1: GET /recommendations — personalised recommendations (web parity: ForYou.jsx tries this first)
+        when (val r = recommendationsRepo.forYou()) {
+            is ApiResult.Success -> if (r.data.isNotEmpty()) return r.data
+            is ApiResult.Failure -> {}
+        }
+        // Tier 1b: GET /posts/for-you fallback (web parity: requestWithFallback pattern)
         when (val r = sponsoredRepo.forYou(limit = 30, page = page)) {
             is ApiResult.Success -> if (r.data.isNotEmpty()) return r.data
             is ApiResult.Failure -> {}
@@ -260,6 +267,7 @@ fun ForYouScreen(
     var searchQuery by remember { mutableStateOf("") }
     var density by remember { mutableStateOf(PageDensity.NORMAL) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var hiddenPostIds by remember { mutableStateOf(emptySet<String>()) }
 
     if (showShareSheet) {
         ShareLinkBottomSheet(title = sharePostTitle, postId = sharePostId, onDismiss = { showShareSheet = false })
@@ -285,8 +293,9 @@ fun ForYouScreen(
             }
     }
 
-    val displayed = remember(state.posts, state.selectedCategory, quickFilter, timeFilter, searchQuery, state.sortBy, state.sortAscending, minPrice, maxPrice, verifiedOnly) {
+    val displayed = remember(state.posts, state.selectedCategory, quickFilter, timeFilter, searchQuery, state.sortBy, state.sortAscending, minPrice, maxPrice, verifiedOnly, hiddenPostIds) {
         state.posts
+            .filter { post -> post.stableId !in hiddenPostIds }
             .filter { post ->
                 state.selectedCategory == null || post.categoryName?.contains(state.selectedCategory!!, ignoreCase = true) == true
             }
@@ -815,6 +824,7 @@ fun ForYouScreen(
                         }
 
                         // AI-curated premium card — single column, larger image, Add to Cart
+                        var showNotInterestedMenu by remember { mutableStateOf(false) }
                         Card(
                             onClick = { onOpenPost(post.stableId) },
                             shape = RoundedCornerShape(20.dp),
@@ -924,6 +934,19 @@ fun ForYouScreen(
                                         Text("$likeCount", fontSize = 12.sp, color = Color(0xFF64748B))
                                         IconButton(onClick = { sharePostId = post.stableId; sharePostTitle = post.displayTitle; showShareSheet = true }, modifier = Modifier.size(36.dp)) {
                                             Icon(Icons.Outlined.Share, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                                        }
+                                        // "Not Interested" more menu
+                                        Box {
+                                            IconButton(onClick = { showNotInterestedMenu = true }, modifier = Modifier.size(36.dp)) {
+                                                Icon(Icons.Default.MoreVert, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                                            }
+                                            DropdownMenu(expanded = showNotInterestedMenu, onDismissRequest = { showNotInterestedMenu = false }) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Not interested", fontSize = 14.sp) },
+                                                    onClick = { hiddenPostIds = hiddenPostIds + post.stableId; showNotInterestedMenu = false },
+                                                    leadingIcon = { Icon(Icons.Default.ThumbDown, null, modifier = Modifier.size(16.dp), tint = Color(0xFF64748B)) },
+                                                )
+                                            }
                                         }
                                         Spacer(Modifier.weight(1f))
                                         // "Interested" button

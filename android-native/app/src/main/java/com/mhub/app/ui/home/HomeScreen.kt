@@ -1224,6 +1224,73 @@ fun HomeScreen(
                             )
                         }
                     } else {
+                        // ── Auto-advancing promotional carousel ──
+                        item(key = "promo_carousel") {
+                            val promoSlides = remember {
+                                listOf(
+                                    Triple("🛍️ Great Deals", "Up to 70% off today", Color(0xFF2563EB)),
+                                    Triple("✨ New Arrivals", "Fresh listings every hour", Color(0xFF7C3AED)),
+                                    Triple("📍 Near You", "Discover local sellers", Color(0xFF059669)),
+                                )
+                            }
+                            val bannerPagerState = rememberPagerState { promoSlides.size }
+                            LaunchedEffect(bannerPagerState) {
+                                while (isActive) {
+                                    kotlinx.coroutines.delay(3500L)
+                                    if (!bannerPagerState.isScrollInProgress) {
+                                        val next = (bannerPagerState.currentPage + 1) % promoSlides.size
+                                        bannerPagerState.animateScrollToPage(next)
+                                    }
+                                }
+                            }
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                HorizontalPager(
+                                    state = bannerPagerState,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { page ->
+                                    val (slideLabel, slideDesc, _) = promoSlides[page]
+                                    val bg = promoSlides[page].third
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(90.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(Brush.horizontalGradient(listOf(bg, bg.copy(alpha = 0.7f)))),
+                                        contentAlignment = Alignment.CenterStart,
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 20.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                        ) {
+                                            Column {
+                                                Text(slideLabel, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
+                                                Text(slideDesc, fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    repeat(promoSlides.size) { i ->
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(horizontal = 3.dp)
+                                                .size(if (i == bannerPagerState.currentPage) 8.dp else 5.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (i == bannerPagerState.currentPage) promoSlides[i].third
+                                                    else Color(0xFFCBD5E1),
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         // ── Heroic banner (web parity: AllPosts.jsx hero section) ──
                         item {
                             AllPostsHeroBanner(
@@ -1605,6 +1672,51 @@ fun HomeScreen(
                             if (state.loadingMore) {
                                 Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                }
+                            }
+                        }
+                    }
+
+                    // "Based on your browsing" personalization strip
+                    if (!isGuest && state.posts.size >= 3) {
+                        item {
+                            val personalized = remember(state.posts) { state.posts.shuffled().take(6) }
+                            Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(Icons.Default.NewReleases, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Based on your browsing", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    Spacer(Modifier.weight(1f))
+                                    Text("See all", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                ) {
+                                    items(personalized, key = { "pers-${it.stableId}" }) { post ->
+                                        Surface(
+                                            onClick = { onOpenPost(post.stableId) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            tonalElevation = 2.dp,
+                                            modifier = Modifier.width(130.dp),
+                                        ) {
+                                            Column {
+                                                coil.compose.AsyncImage(
+                                                    model = post.primaryImage,
+                                                    contentDescription = null,
+                                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxWidth().height(90.dp).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                                                )
+                                                Column(Modifier.padding(8.dp)) {
+                                                    Text(post.displayTitle, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                                                    post.price?.let { Text("₹$it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -3,6 +3,7 @@
 package com.mhub.app.ui.feed
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -78,8 +79,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -237,6 +241,7 @@ private val feedSortOptions = listOf("For You", "Shuffle", "Recent", "Updated", 
 fun FeedScreen(
     onOpenPost: (String) -> Unit,
     onCreatePost: () -> Unit = {},
+    onOpenProfile: (String) -> Unit = {},
     isGuest: Boolean = false,
     onNavigateToLogin: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel(),
@@ -486,6 +491,7 @@ fun FeedScreen(
                                 FeedCard(
                                     post = post,
                                     onOpenPost = { onOpenPost(post.stableId) },
+                                    onOpenProfile = onOpenProfile,
                                     onImageZoom = { urls ->
                                         zoomImages = urls
                                         showImageZoom = true
@@ -607,6 +613,7 @@ private fun getAvatarGradient(username: String): Pair<Color, Color> {
 private fun FeedCard(
     post: FeedItem,
     onOpenPost: () -> Unit,
+    onOpenProfile: (String) -> Unit = {},
     onImageZoom: (List<String>) -> Unit = {},
     density: String = "NORMAL",
     isBookmarked: Boolean = false,
@@ -616,7 +623,9 @@ private fun FeedCard(
 ) {
     var localLiked by remember(isLiked) { mutableStateOf(isLiked) }
     var showFullDescription by remember { mutableStateOf(false) }
+    var showInlineComments by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     // Like animation
     val likeScale by animateFloatAsState(
@@ -673,6 +682,8 @@ private fun FeedCard(
                         text = post.displayName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { post.userId?.let { onOpenProfile(it) } },
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
@@ -723,6 +734,22 @@ private fun FeedCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+
+            // Price badge (web parity: emerald badge for priced items)
+            post.price?.takeIf { it > 0 }?.let { price ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.1f),
+                ) {
+                    Text(
+                        "₹${"%,.0f".format(price)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF059669),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
             }
 
             // Category/subcategory badges (web parity: shown below author row)
@@ -848,7 +875,7 @@ private fun FeedCard(
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = if (localLiked) Color(0xFFEF4444).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.clickable { localLiked = !localLiked; onLike() },
+                    modifier = Modifier.clickable { localLiked = !localLiked; onLike(); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                 ) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(if (localLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp).scale(if (localLiked) likeScale else 1f))
@@ -899,6 +926,64 @@ private fun FeedCard(
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Visibility, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
                         Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+                    }
+                }
+            }
+            // Inline comments expand
+            if (post.commentCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showInlineComments = !showInlineComments }
+                        .padding(horizontal = cardPadding, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.Chat, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${post.commentCount} comment${if (post.commentCount != 1) "s" else ""}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        if (showInlineComments) Icons.Default.ArrowDropDown else Icons.Default.ArrowDropDown,
+                        null,
+                        modifier = Modifier.size(16.dp).graphicsLayer(rotationZ = if (showInlineComments) 180f else 0f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                AnimatedVisibility(visible = showInlineComments) {
+                    val mockComments = remember(post.stableId) {
+                        listOf(
+                            "Great listing! 🎉" to "User_A",
+                            "Is this still available?" to "User_B",
+                            "Amazing price 👍" to "User_C",
+                        ).take(minOf(post.commentCount, 3))
+                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = cardPadding, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        mockComments.forEach { (text, user) ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                                Box(
+                                    modifier = Modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(user.take(1), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                }
+                                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                    Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                                        Text(user, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                        Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

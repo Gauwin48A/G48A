@@ -326,7 +326,7 @@ fun PostActionRow(
         ActionItem(
             icon = {
                 Icon(
-                    imageVector = Icons.Default.Handshake,
+                    imageVector = Icons.Outlined.FavoriteBorder,
                     contentDescription = "Interested",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -135,6 +135,8 @@ data class ChatMessage(
     @SerialName("sender_id") val senderId: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("is_read") val isRead: Boolean = false,
+    @SerialName("attachment_url") val attachmentUrl: String? = null,
+    @SerialName("attachment_type") val attachmentType: String? = null,
 ) {
     val stableId: String get() = id ?: messageId ?: "${senderId}-${createdAt}"
     val displayContent: String get() = content ?: ""

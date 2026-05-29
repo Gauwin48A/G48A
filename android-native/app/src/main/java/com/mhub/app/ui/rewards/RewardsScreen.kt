@@ -10,9 +10,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,11 +77,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -303,6 +314,7 @@ fun RewardsScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
     val darkTheme = isSystemInDarkTheme()
 
     // Always attempt to load on mount — ViewModel handles 401 internally.
@@ -575,15 +587,45 @@ fun RewardsScreen(
                                     // Action buttons
                                     PrimaryButton(
                                         text = if (state.actionLoading == "checkin") "Claiming..." else if (canCheckIn) "Check in (+$todayReward \uD83E\uDE99)" else "Checked in \u2713",
-                                        onClick = { if (canCheckIn) viewModel.dailyCheckIn() },
+                                        onClick = { if (canCheckIn) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); viewModel.dailyCheckIn() } },
                                         enabled = canCheckIn && state.actionLoading == null,
                                     )
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedButton(onClick = { viewModel.spinWheel() }, modifier = Modifier.weight(1f).height(40.dp), enabled = canSpin && state.actionLoading == null, shape = RoundedCornerShape(12.dp)) {
-                                            Text(if (state.actionLoading == "spin") "..." else if (canSpin) "\uD83C\uDFA1 Spin" else "\uD83C\uDFA1 Spun \u2713", style = MaterialTheme.typography.labelMedium)
+                                        // Canvas Spin Wheel visual + button
+                                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            SpinWheelCanvas(isSpinning = state.actionLoading == "spin", modifier = Modifier.fillMaxWidth())
+                                            OutlinedButton(
+                                                onClick = { viewModel.spinWheel() },
+                                                modifier = Modifier.fillMaxWidth().height(40.dp),
+                                                enabled = canSpin && state.actionLoading == null,
+                                                shape = RoundedCornerShape(12.dp),
+                                            ) {
+                                                if (state.actionLoading == "spin") {
+                                                    val spinTransition = rememberInfiniteTransition(label = "spinAnim")
+                                                    val spinRot by spinTransition.animateFloat(0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart), label = "spinRot")
+                                                    Text("🎡", modifier = Modifier.graphicsLayer(rotationZ = spinRot), style = MaterialTheme.typography.labelMedium)
+                                                } else {
+                                                    Text(if (canSpin) "🎡 Spin" else "🎡 Spun ✓", style = MaterialTheme.typography.labelMedium)
+                                                }
+                                            }
                                         }
-                                        OutlinedButton(onClick = { viewModel.scratchCard() }, modifier = Modifier.weight(1f).height(40.dp), enabled = canScratch && state.actionLoading == null, shape = RoundedCornerShape(12.dp)) {
-                                            Text(if (state.actionLoading == "scratch") "..." else if (canScratch) "\uD83C\uDF9F Scratch ($scratchCount)" else "\uD83C\uDF9F None", style = MaterialTheme.typography.labelMedium)
+                                        // Scratch Card visual + button
+                                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            ScratchCardCanvas(rewardText = "₹${(scratchCount * 5 + 10)}", modifier = Modifier.fillMaxWidth())
+                                            OutlinedButton(
+                                                onClick = { viewModel.scratchCard() },
+                                                modifier = Modifier.fillMaxWidth().height(40.dp),
+                                                enabled = canScratch && state.actionLoading == null,
+                                                shape = RoundedCornerShape(12.dp),
+                                            ) {
+                                                if (state.actionLoading == "scratch") {
+                                                    val scratchTransition = rememberInfiniteTransition(label = "scratchAnim")
+                                                    val scratchScale by scratchTransition.animateFloat(0.9f, 1.1f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "scratchScale")
+                                                    Text("🎟", modifier = Modifier.graphicsLayer(scaleX = scratchScale, scaleY = scratchScale), style = MaterialTheme.typography.labelMedium)
+                                                } else {
+                                                    Text(if (canScratch) "🎟 Scratch ($scratchCount)" else "🎟 None", style = MaterialTheme.typography.labelMedium)
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1057,3 +1099,109 @@ private fun ConfettiAnimation() {
     }
 }
 
+@Composable
+fun SpinWheelCanvas(
+    isSpinning: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val segments = remember {
+        listOf(
+            "₹10" to Color(0xFFFF6B6B),
+            "₹25" to Color(0xFF4ECDC4),
+            "₹50" to Color(0xFF45B7D1),
+            "₹100" to Color(0xFF96CEB4),
+            "₹5" to Color(0xFFFFEAA7),
+            "₹15" to Color(0xFFF7AEF8),
+            "₹200" to Color(0xFF6BCB77),
+            "₹20" to Color(0xFFFF9F1C),
+        )
+    }
+    val infiniteTransition = rememberInfiniteTransition(label = "spinWheel")
+    val rotation by if (isSpinning) {
+        infiniteTransition.animateFloat(
+            0f, 360f,
+            infiniteRepeatable(tween(600, easing = LinearEasing), RepeatMode.Restart),
+            label = "wheelRotation",
+        )
+    } else {
+        remember { mutableStateOf(0f) }
+    }
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(
+            modifier = Modifier
+                .size(180.dp)
+                .graphicsLayer(rotationZ = rotation),
+        ) {
+            val anglePerSegment = 360f / segments.size
+            segments.forEachIndexed { i, (_, color) ->
+                drawArc(
+                    color = color,
+                    startAngle = i * anglePerSegment - 90f,
+                    sweepAngle = anglePerSegment - 2f,
+                    useCenter = true,
+                )
+            }
+            // Center white circle
+            drawCircle(Color.White, radius = size.minDimension * 0.12f)
+        }
+        // Pointer arrow at top
+        Text("▼", fontSize = 20.sp, color = Color(0xFF1F2937), modifier = Modifier.offset(y = (-96).dp))
+    }
+}
+
+@Composable
+fun ScratchCardCanvas(
+    rewardText: String = "₹50",
+    modifier: Modifier = Modifier,
+) {
+    val scratchedPoints = remember { mutableStateListOf<Offset>() }
+    val isRevealed = scratchedPoints.size > 30
+    Box(
+        modifier = modifier
+            .size(200.dp, 100.dp)
+            .clip(RoundedCornerShape(12.dp)),
+    ) {
+        // Reward content underneath
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF059669)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🎁", fontSize = 28.sp)
+                Text(rewardText, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+            }
+        }
+        // Scratchable silver overlay
+        if (!isRevealed) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, _ ->
+                            scratchedPoints.add(change.position)
+                        }
+                    },
+            ) {
+                // Draw silver base
+                drawRect(Color(0xFFC0C0C0))
+                // Scratch away — clear circles at drag points
+                scratchedPoints.forEach { point ->
+                    drawCircle(
+                        color = Color.Transparent,
+                        radius = 28f,
+                        center = point,
+                        blendMode = BlendMode.Clear,
+                    )
+                }
+            }
+            if (scratchedPoints.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("✋ Scratch here!", color = Color(0xFF4B5563), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}

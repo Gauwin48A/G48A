@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
@@ -98,6 +100,7 @@ fun CreatePostScreen(
     var ageMonths by rememberSaveable { mutableStateOf("") }
     var warrantyExpanded by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var categoryQuery by rememberSaveable { mutableStateOf("") }
     var showDuplicateWarning by remember { mutableStateOf(false) }
 
     // Auto-save draft every 10 seconds
@@ -268,12 +271,29 @@ fun CreatePostScreen(
                                     ) {
                                         Text("${idx + 1}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
-                                    // Drag handle for reordering
-                                    Box(
-                                        Modifier.align(Alignment.BottomCenter).padding(2.dp).clip(RoundedCornerShape(4.dp)).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 8.dp, vertical = 2.dp),
-                                        contentAlignment = Alignment.Center,
+                                    // Up/Down reorder arrows
+                                    Column(
+                                        Modifier.align(Alignment.CenterStart).padding(start = 2.dp),
+                                        verticalArrangement = Arrangement.spacedBy(0.dp),
                                     ) {
-                                        Icon(Icons.Default.DragHandle, contentDescription = "Reorder", tint = Color.White, modifier = Modifier.size(12.dp))
+                                        if (idx > 0) {
+                                            Box(
+                                                Modifier.size(16.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)).clickable {
+                                                    val updated = state.imageUris.toMutableList().apply { add(idx - 1, removeAt(idx)) }
+                                                    viewModel.setImages(updated)
+                                                },
+                                                contentAlignment = Alignment.Center,
+                                            ) { Icon(Icons.Default.ArrowUpward, null, tint = Color.White, modifier = Modifier.size(10.dp)) }
+                                        }
+                                        if (idx < state.imageUris.size - 1) {
+                                            Box(
+                                                Modifier.size(16.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)).clickable {
+                                                    val updated = state.imageUris.toMutableList().apply { add(idx + 1, removeAt(idx)) }
+                                                    viewModel.setImages(updated)
+                                                },
+                                                contentAlignment = Alignment.Center,
+                                            ) { Icon(Icons.Default.ArrowDownward, null, tint = Color.White, modifier = Modifier.size(10.dp)) }
+                                        }
                                     }
                                     // Remove button
                                     Box(
@@ -449,19 +469,23 @@ fun CreatePostScreen(
             }
 
             // ── Category ─────────────────────────────────────────────
+            val filteredCategories = remember(categoryQuery, state.categories) {
+                if (categoryQuery.isBlank()) state.categories
+                else state.categories.filter { it.displayName.contains(categoryQuery, ignoreCase = true) }
+            }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
-                    value = state.selectedCategory?.displayName.orEmpty(),
-                    onValueChange = {},
-                    readOnly = true,
+                    value = if (expanded) categoryQuery else state.selectedCategory?.displayName.orEmpty(),
+                    onValueChange = { categoryQuery = it; expanded = true },
+                    readOnly = false,
                     label = { Text(stringResource(R.string.post_category)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true),
                     shape = RoundedCornerShape(16.dp),
                 )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    state.categories.forEach { category ->
-                        DropdownMenuItem(text = { Text(category.displayName) }, onClick = { viewModel.selectCategory(category); expanded = false })
+                ExposedDropdownMenu(expanded = expanded && filteredCategories.isNotEmpty(), onDismissRequest = { expanded = false }) {
+                    filteredCategories.forEach { category ->
+                        DropdownMenuItem(text = { Text(category.displayName) }, onClick = { viewModel.selectCategory(category); categoryQuery = ""; expanded = false })
                     }
                 }
             }
