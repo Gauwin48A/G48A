@@ -244,17 +244,24 @@ data class AdminActivity(
 )
 
 // -------- Sale / Transaction DTOs --------
+// NOTE: Field names must match the server's camelCase destructuring — do NOT use @SerialName here.
 @Serializable
 data class InitiateSaleRequest(
-    @SerialName("post_id") val postId: String,
-    @SerialName("buyer_id") val buyerId: String,
-    @SerialName("sale_amount") val saleAmount: Double,
+    val postId: String,
+    val buyerId: String,
+    val agreedPrice: Double,
 )
 
 @Serializable
 data class ConfirmSaleRequest(
-    @SerialName("transaction_id") val transactionId: String,
+    val transactionId: String,
     val otp: String,
+)
+
+@Serializable
+data class ReactivatePostRequest(
+    val reason: String,
+    val description: String? = null,
 )
 
 // initiate sale response — server wraps transactionId inside `transaction` object
@@ -1127,6 +1134,8 @@ data class FeedbackRequest(
     val type: String,
     val message: String,
     val rating: Int? = null,
+    val subject: String? = null,
+    val category: String? = null,
 )
 
 // -------- Analytics --------

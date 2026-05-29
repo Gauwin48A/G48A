@@ -26,8 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -323,7 +323,7 @@ fun ProductListingScreen(
                         onClick = { showSortMenu = true },
                         label = { Text(sortOption.label, style = MaterialTheme.typography.labelMedium) },
                         leadingIcon = {
-                            Icon(Icons.Filled.Sort, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, modifier = Modifier.size(16.dp))
                         },
                         modifier = Modifier.semantics { contentDescription = "Sort: ${sortOption.label}" },
                     )
@@ -388,7 +388,7 @@ fun ProductListingScreen(
                     },
                 ) {
                     Icon(
-                        if (isGridView) Icons.Filled.List else Icons.Filled.GridView,
+                        if (isGridView) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
                         contentDescription = null,
                     )
                 }

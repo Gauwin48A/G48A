@@ -553,6 +553,9 @@ interface MhubApi {
     @POST("api/transactions/undone")
     suspend fun undoSale(@Body body: UndoSaleRequest): MessageResponse
 
+    @POST("api/posts/{postId}/reactivate")
+    suspend fun reactivatePost(@Path("postId") postId: String, @Body body: ReactivatePostRequest): MessageResponse
+
     @GET("api/transactions/undone")
     suspend fun undoneHistory(): UndoneHistoryResponse
 

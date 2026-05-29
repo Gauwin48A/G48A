@@ -456,7 +456,17 @@ class TransactionsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun initiate(req: InitiateSaleRequest): ApiResult<InitiateSaleResponse> = safeApiCall { api.initiateSale(req) }
     suspend fun confirm(req: ConfirmSaleRequest): ApiResult<ConfirmSaleResponse> = safeApiCall { api.confirmSale(req) }
     suspend fun pending(): ApiResult<List<PendingSale>> = safeApiCall { api.pendingSales().sales }
-    suspend fun undoSale(req: UndoSaleRequest): ApiResult<Unit> = safeApiCall { api.undoSale(req); Unit }
+    suspend fun undoSale(req: UndoSaleRequest): ApiResult<Unit> = safeApiCall {
+        // Web app calls POST /posts/:postId/reactivate — not /transactions/undone
+        api.reactivatePost(
+            postId = req.postId,
+            body = com.mhub.app.data.remote.dto.ReactivatePostRequest(
+                reason = req.reason,
+                description = req.description,
+            ),
+        )
+        Unit
+    }
     suspend fun undoneHistory(): ApiResult<List<UndoneRecord>> = safeApiCall { api.undoneHistory().records }
     suspend fun soldHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).items }
     suspend fun boughtHistory(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).items }
@@ -532,6 +542,13 @@ class BoostRepository @Inject constructor(private val api: MhubApi) {
 class SponsoredRepository @Inject constructor(private val api: MhubApi) {
     suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).items }
     suspend fun forYou(limit: Int = 20, page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit, page).items }
+}
+
+@Singleton
+class ProfileRepository @Inject constructor(private val api: MhubApi) {
+    /** Fetches the current user's saved category & price preferences. */
+    suspend fun preferences(): ApiResult<com.mhub.app.data.remote.dto.PreferencesResponse> =
+        safeApiCall { api.getPreferences() }
 }
 
 @Singleton

@@ -44,6 +44,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.SponsoredRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.CategoriesRepository
+import com.mhub.app.data.repository.ProfileRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.BackToTopButton
 import com.mhub.app.ui.components.GreatDealsBanner
@@ -85,76 +86,41 @@ data class ForYouState(
     val categories: List<Pair<String?, String>> = listOf(null to "All"),
 )
 
-/** Sample posts shown when API returns empty — ensures pages never feel blank */
-internal val samplePosts = listOf(
-    Post(id = "sample-1", title = "iPhone 15 Pro Max 256GB", price = 134900.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/iphone15/400/300", category = "electronics",
-        categoryName = "Electronics", location = "Mumbai", viewCount = 245, likeCount = 42,
-        sellerName = "TechStore India", condition = "New", createdAt = "2025-05-15T10:00:00Z"),
-    Post(id = "sample-2", title = "Royal Enfield Classic 350", price = 195000.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/bullet350/400/300", category = "vehicles",
-        categoryName = "Vehicles", location = "Delhi", viewCount = 189, likeCount = 35,
-        sellerName = "MotoMart", condition = "Used - Like New", createdAt = "2025-05-14T08:30:00Z"),
-    Post(id = "sample-3", title = "Samsung Galaxy S24 Ultra", price = 129999.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/s24ultra/400/300", category = "electronics",
-        categoryName = "Electronics", location = "Bangalore", viewCount = 312, likeCount = 67,
-        sellerName = "GadgetHub", condition = "New", createdAt = "2025-05-13T14:20:00Z"),
-    Post(id = "sample-4", title = "Nike Air Jordan 1 Retro High", price = 16995.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/jordan1/400/300", category = "fashion",
-        categoryName = "Fashion", location = "Pune", viewCount = 156, likeCount = 28,
-        sellerName = "SneakerStreet", condition = "New", createdAt = "2025-05-12T09:15:00Z"),
-    Post(id = "sample-5", title = "MacBook Air M3 15-inch", price = 149900.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/macbookm3/400/300", category = "electronics",
-        categoryName = "Electronics", location = "Hyderabad", viewCount = 278, likeCount = 53,
-        sellerName = "AppleReseller", condition = "New", createdAt = "2025-05-11T16:45:00Z"),
-    Post(id = "sample-6", title = "Sony WH-1000XM5 Headphones", price = 29990.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/sonyxm5/400/300", category = "electronics",
-        categoryName = "Electronics", location = "Chennai", viewCount = 198, likeCount = 41,
-        sellerName = "AudioPhile", condition = "New", createdAt = "2025-05-10T11:00:00Z"),
-    Post(id = "sample-7", title = "Honda City 2024 ZX CVT", price = 1549000.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/hondacity/400/300", category = "vehicles",
-        categoryName = "Vehicles", location = "Ahmedabad", viewCount = 432, likeCount = 78,
-        sellerName = "AutoDeals", condition = "New", createdAt = "2025-05-09T07:30:00Z"),
-    Post(id = "sample-8", title = "Levi's 501 Original Fit Jeans", price = 4599.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/levis501/400/300", category = "fashion",
-        categoryName = "Fashion", location = "Kolkata", viewCount = 89, likeCount = 15,
-        sellerName = "DenimWorld", condition = "New", createdAt = "2025-05-08T13:20:00Z"),
-    Post(id = "sample-9", title = "LG 55\" OLED C3 4K TV", price = 129990.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/lgoled/400/300", category = "electronics",
-        categoryName = "Electronics", location = "Jaipur", viewCount = 167, likeCount = 32,
-        sellerName = "HomeElectro", condition = "New", createdAt = "2025-05-07T10:10:00Z"),
-    Post(id = "sample-10", title = "Freelance Web Developer Available", price = 2500.0, currency = "INR",
-        imageUrl = "https://picsum.photos/seed/webdev/400/300", category = "others",
-        categoryName = "Services", location = "Remote", viewCount = 345, likeCount = 56,
-        sellerName = "DevPro", condition = null, createdAt = "2025-05-06T15:00:00Z"),
-)
-
 @HiltViewModel
 class ForYouViewModel @Inject constructor(
     private val sponsoredRepo: SponsoredRepository,
     private val postsRepo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
+    private val profileRepo: ProfileRepository,
+    private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ForYouState())
     val state: StateFlow<ForYouState> = _state.asStateFlow()
     private val viewedPostIds = mutableSetOf<String>()
     private var batchViewJob: Job? = null
+    private var lastLocaleVersion = 0L
 
-    init { load(); loadCategories() }
+    init {
+        load()
+        loadCategories()
+        viewModelScope.launch {
+            localeManager.localeVersion.collect { version ->
+                if (version > lastLocaleVersion && lastLocaleVersion > 0L) { load() }
+                lastLocaleVersion = version
+            }
+        }
+    }
 
+    /**
+     * Load For You posts with three-tier fallback matching web app ForYou.jsx:
+     *   1. /api/recommendations — personalised recommendations
+     *   2. /api/profile/preferences → preferred categories → /api/posts filtered by those
+     *   3. /api/posts/feed — general feed as last resort
+     */
     fun load() {
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            var posts = emptyList<Post>()
-            when (val r = sponsoredRepo.forYou(30)) {
-                is ApiResult.Success -> posts = r.data
-                is ApiResult.Failure -> {
-                    when (val f = postsRepo.feed(limit = 30)) {
-                        is ApiResult.Success -> posts = f.data
-                        is ApiResult.Failure -> {} // will use sample data below
-                    }
-                }
-            }
+            val posts = fetchForYouPosts(page = 1)
             _state.value = _state.value.copy(loading = false, posts = posts)
             when (val s = sponsoredRepo.list(8)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(sponsored = s.data)
@@ -166,21 +132,37 @@ class ForYouViewModel @Inject constructor(
     fun refresh() {
         _state.value = _state.value.copy(refreshing = true, error = null)
         viewModelScope.launch {
-            var posts = emptyList<Post>()
-            when (val r = sponsoredRepo.forYou(30)) {
-                is ApiResult.Success -> posts = r.data
-                is ApiResult.Failure -> {
-                    when (val f = postsRepo.feed(limit = 30)) {
-                        is ApiResult.Success -> posts = f.data
-                        is ApiResult.Failure -> {}
-                    }
-                }
-            }
+            val posts = fetchForYouPosts(page = 1)
             _state.value = _state.value.copy(refreshing = false, posts = posts)
             when (val s = sponsoredRepo.list(8)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(sponsored = s.data)
                 is ApiResult.Failure -> {}
             }
+        }
+    }
+
+    /** Centralised three-tier fetch logic so load() and refresh() stay DRY. */
+    private suspend fun fetchForYouPosts(page: Int): List<Post> {
+        // Tier 1: personalised recommendations
+        when (val r = sponsoredRepo.forYou(limit = 30, page = page)) {
+            is ApiResult.Success -> if (r.data.isNotEmpty()) return r.data
+            is ApiResult.Failure -> {}
+        }
+        // Tier 2: preference-filtered posts (web app: fetchUserPreferencesCached)
+        val preferredCategoryId: String? = when (val pref = profileRepo.preferences()) {
+            is ApiResult.Success -> pref.data.categories?.firstOrNull()
+            is ApiResult.Failure -> null
+        }
+        if (preferredCategoryId != null) {
+            when (val r = postsRepo.feed(page = page, limit = 30, categoryId = preferredCategoryId)) {
+                is ApiResult.Success -> if (r.data.isNotEmpty()) return r.data
+                is ApiResult.Failure -> {}
+            }
+        }
+        // Tier 3: general feed fallback
+        return when (val f = postsRepo.feed(limit = 30)) {
+            is ApiResult.Success -> f.data
+            is ApiResult.Failure -> emptyList()
         }
     }
 

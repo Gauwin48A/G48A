@@ -152,12 +152,14 @@ data class ExploreState(
     val searchResults: List<Post> = emptyList(),
     val isSearching: Boolean = false,
     val refreshing: Boolean = false,
+    val subcategories: List<String> = emptyList(),
 )
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val postsRepo: PostsRepository,
     private val wishlistRepo: WishlistRepository,
+    private val categoriesRepo: CategoriesRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
@@ -179,6 +181,7 @@ class ExploreViewModel @Inject constructor(
     fun setEcosystem(key: String?) {
         if (_state.value.ecosystemKey == key) return
         _state.value = _state.value.copy(ecosystemKey = key)
+        loadSubcategories(key)
         loadPosts(reset = true)
     }
 
@@ -238,6 +241,32 @@ class ExploreViewModel @Inject constructor(
     fun retry() {
         _state.value = _state.value.copy(errorMessage = null)
         loadPosts(reset = true)
+    }
+
+    private fun loadSubcategories(key: String?) {
+        if (key == null) {
+            _state.value = _state.value.copy(subcategories = emptyList())
+            return
+        }
+        viewModelScope.launch {
+            when (val r = categoriesRepo.subcategories(key)) {
+                is ApiResult.Success -> {
+                    val names = r.data.mapNotNull { it.name }.take(10)
+                    _state.value = _state.value.copy(subcategories = names)
+                }
+                is ApiResult.Failure -> {
+                    // Keep hardcoded fallback
+                    val fallback = when (key) {
+                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
+                        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
+                        "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
+                        "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
+                        else -> emptyList()
+                    }
+                    _state.value = _state.value.copy(subcategories = fallback)
+                }
+            }
+        }
     }
 
     // Retained for back-compat but ecosystem is set via setEcosystem()
@@ -351,11 +380,12 @@ fun ExploreScreen(
         "others" -> "✨ Others"
         else -> null
     }
-    val ecosystemSubcategories: List<String> = when (ecosystemKey) {
-        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
-        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
-        "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
-        "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
+    val ecosystemSubcategories: List<String> = when {
+        state.subcategories.isNotEmpty() -> state.subcategories
+        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
+        ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
+        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
+        ecosystemKey == "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
         else -> emptyList()
     }
 

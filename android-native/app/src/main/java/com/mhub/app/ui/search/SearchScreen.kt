@@ -100,11 +100,17 @@ data class SearchState(
 class SearchViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val savedSearchesRepo: SavedSearchesRepository,
+    private val categoriesRepo: com.mhub.app.data.repository.CategoriesRepository,
+    private val brandsRepo: com.mhub.app.data.repository.BrandsRepository,
     private val prefs: com.mhub.app.data.local.AppPreferences,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
+
+    // Live brand/category name pools for autocomplete — loaded from API
+    private var brandNames: List<String> = emptyList()
+    private var categoryNames: List<String> = emptyList()
 
     private var job: Job? = null
 
@@ -118,6 +124,19 @@ class SearchViewModel @Inject constructor(
             when (val r = savedSearchesRepo.list()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(savedSearches = r.data)
                 is ApiResult.Failure -> {}
+            }
+        }
+        // Load brand and category names for autocomplete from API
+        viewModelScope.launch {
+            when (val r = brandsRepo.list()) {
+                is ApiResult.Success -> brandNames = r.data.mapNotNull { it.name }.filter { it.isNotBlank() }
+                is ApiResult.Failure -> {} // use empty list — won't show brand suggestions
+            }
+        }
+        viewModelScope.launch {
+            when (val r = categoriesRepo.all()) {
+                is ApiResult.Success -> categoryNames = r.data.mapNotNull { it.name }.filter { it.isNotBlank() }
+                is ApiResult.Failure -> {} // use empty list
             }
         }
         viewModelScope.launch {
@@ -139,14 +158,12 @@ class SearchViewModel @Inject constructor(
             _state.value = _state.value.copy(items = emptyList(), searched = false, suggestions = emptyList())
             return
         }
-        // Generate autocomplete suggestions (brands + categories + subcategories)
-        val brands = listOf("Apple", "Samsung", "Nike", "Adidas", "Sony", "Dell", "HP", "Lenovo", "OnePlus", "Xiaomi", "Asus", "LG", "Bose", "Canon", "Toyota", "Honda", "Hyundai", "Maruti")
-        val categories = listOf("Electronics", "Fashion", "Grocery", "Furniture", "Vehicles", "Home & Living", "Sports", "Books", "Beauty", "Health")
-        val subcategories = listOf("Smartphones", "Laptops", "Headphones", "TVs", "Cameras", "Shoes", "Watches", "T-Shirts", "Jeans", "Dresses", "Kitchen", "Bedroom", "Office", "Cars", "Bikes")
-        val matchedBrands = brands.filter { it.contains(query, ignoreCase = true) }
-        val matchedCategories = categories.filter { it.contains(query, ignoreCase = true) }
-        val matchedSubcats = subcategories.filter { it.contains(query, ignoreCase = true) }
-        val allSuggestions = (matchedBrands + matchedCategories + matchedSubcats).distinct().take(8)
+        // Generate autocomplete suggestions from API-loaded brands + categories
+        // Combined with recent queries that match the current input
+        val matchedBrands = brandNames.filter { it.contains(query, ignoreCase = true) }
+        val matchedCategories = categoryNames.filter { it.contains(query, ignoreCase = true) }
+        val matchedRecent = _state.value.recentQueries.filter { it.contains(query, ignoreCase = true) }
+        val allSuggestions = (matchedRecent + matchedBrands + matchedCategories).distinct().take(8)
         _state.value = _state.value.copy(suggestions = allSuggestions)
 
         job = viewModelScope.launch {
