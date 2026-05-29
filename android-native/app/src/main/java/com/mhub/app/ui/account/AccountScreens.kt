@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -301,7 +302,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                                 Text("${seller.sales} sales", fontSize = 11.sp, color = Color(0xFF64748B))
                                             }
                                         }
-                                        if (seller.rank < 5) Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                                        if (seller.rank < 5) HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
                                     }
                                 }
                             }
@@ -319,7 +320,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 BuyerStatCard(Modifier.weight(1f), "${bs.savedItems}", "Saved Items", Icons.Filled.Bookmark, Color(0xFF8B5CF6))
-                                BuyerStatCard(Modifier.weight(1f), "${bs.activeChats}", "Active Chats", Icons.Filled.Chat, Color(0xFF2563EB))
+                                BuyerStatCard(Modifier.weight(1f), "${bs.activeChats}", "Active Chats", Icons.AutoMirrored.Filled.Chat, Color(0xFF2563EB))
                             }
                         }
                     }

@@ -10,9 +10,12 @@ import com.mhub.app.data.repository.KycRepository
 import com.mhub.app.data.repository.UploadRepository
 import com.mhub.app.ui.common.InputValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,6 +39,7 @@ class KycViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(KycState())
     val state: StateFlow<KycState> = _state.asStateFlow()
+    private var pollingJob: Job? = null
 
     init { refresh() }
 
@@ -43,10 +47,47 @@ class KycViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             when (val r = kycRepo.status()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, status = r.data)
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(loading = false, status = r.data)
+                    // Auto-poll every 30 s while status is "pending" so user sees update without restarting app
+                    val isPending = r.data.kycStatus.lowercase().let {
+                        it.contains("pending") || it.contains("under_review") || it.contains("review")
+                    } == true
+                    if (isPending) startStatusPolling() else stopStatusPolling()
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
             }
         }
+    }
+
+    /** Poll every 30 s while KYC status is pending — stops automatically when resolved. */
+    private fun startStatusPolling() {
+        if (pollingJob?.isActive == true) return
+        pollingJob = viewModelScope.launch {
+            while (isActive) {
+                delay(30_000)
+                when (val r = kycRepo.status()) {
+                    is ApiResult.Success -> {
+                        _state.value = _state.value.copy(status = r.data)
+                        val stillPending = r.data.kycStatus.lowercase().let {
+                            it.contains("pending") || it.contains("under_review") || it.contains("review")
+                        } == true
+                        if (!stillPending) break // status resolved — stop polling
+                    }
+                    is ApiResult.Failure -> break // stop polling on error
+                }
+            }
+        }
+    }
+
+    private fun stopStatusPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopStatusPolling()
     }
 
     fun setDocType(v: String) {

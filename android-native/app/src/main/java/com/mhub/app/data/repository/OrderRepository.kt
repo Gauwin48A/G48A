@@ -29,7 +29,7 @@ class OrderRepository @Inject constructor(private val api: MhubApi) {
                 InitiateSaleRequest(
                     postId = request.postId,
                     buyerId = request.buyerId,
-                    saleAmount = request.amount,
+                    agreedPrice = request.amount,
                 ),
             )
         }

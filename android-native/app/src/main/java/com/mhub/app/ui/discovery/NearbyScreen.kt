@@ -147,14 +147,41 @@ fun NearbyScreen(
     val refreshing by viewModel.refreshing.collectAsState()
     val ctx = LocalContext.current
 
+    // Runtime permission launcher — requests both fine and coarse location
+    val permLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val granted = grants[android.Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            grants[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            try {
+                val lm = ctx.getSystemService(android.location.LocationManager::class.java)
+                val gps = lm?.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                val net = lm?.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+                val loc = gps ?: net
+                if (loc != null) viewModel.onLocationGranted(loc.latitude, loc.longitude)
+            } catch (_: SecurityException) { }
+        }
+    }
+
+    // Auto-request permissions if not already granted on screen open
     LaunchedEffect(Unit) {
-        try {
-            val lm = ctx.getSystemService(android.location.LocationManager::class.java)
-            val gps = lm?.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-            val net = lm?.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-            val loc = gps ?: net
-            if (loc != null) viewModel.onLocationGranted(loc.latitude, loc.longitude)
-        } catch (_: SecurityException) { /* show prompt */ }
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            ctx, android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            try {
+                val lm = ctx.getSystemService(android.location.LocationManager::class.java)
+                val gps = lm?.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                val net = lm?.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+                val loc = gps ?: net
+                if (loc != null) viewModel.onLocationGranted(loc.latitude, loc.longitude)
+            } catch (_: SecurityException) { }
+        }
     }
 
     val bg = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
@@ -196,13 +223,10 @@ fun NearbyScreen(
                         Spacer(Modifier.height(24.dp))
                         Button(
                             onClick = {
-                                try {
-                                    val lm = ctx.getSystemService(android.location.LocationManager::class.java)
-                                    val gps = lm?.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-                                    val net = lm?.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-                                    val loc = gps ?: net
-                                    if (loc != null) viewModel.onLocationGranted(loc.latitude, loc.longitude)
-                                } catch (_: SecurityException) { }
+                                permLauncher.launch(arrayOf(
+                                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                ))
                             },
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),

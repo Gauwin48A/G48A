@@ -176,6 +176,9 @@ import com.mhub.app.data.local.ThemeMode
 import kotlinx.coroutines.launch
 import com.google.firebase.analytics.FirebaseAnalytics
 import android.os.Bundle
+import com.mhub.app.data.repository.KycRepository
+import com.mhub.app.data.repository.TiersRepository
+import com.mhub.app.core.ApiResult
 
 @HiltViewModel
 class AppThemeViewModel @Inject constructor(
@@ -186,6 +189,36 @@ class AppThemeViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { prefs.setThemeMode(mode) }
+    }
+}
+
+/**
+ * Resolves the correct destination for the + (Sell) FAB:
+ *   1. KYC not approved → Routes.KYC
+ *   2. No active subscription → Routes.TIER_SELECTION
+ *   3. Everything OK → Routes.POST_WELCOME
+ */
+@HiltViewModel
+class SellFlowViewModel @Inject constructor(
+    private val kycRepo: KycRepository,
+    private val tiersRepo: TiersRepository,
+) : ViewModel() {
+    /** Returns the route to navigate to when the sell button is tapped. */
+    suspend fun resolveDestination(): String {
+        when (val kycResult = kycRepo.status()) {
+            is ApiResult.Success -> {
+                val status = kycResult.data.kycStatus
+                if (status != "approved") return com.mhub.app.ui.navigation.Routes.KYC
+            }
+            is ApiResult.Failure -> return com.mhub.app.ui.navigation.Routes.KYC
+        }
+        when (val subResult = tiersRepo.mySubscription()) {
+            is ApiResult.Success -> {
+                if (!subResult.data.active) return com.mhub.app.ui.navigation.Routes.TIER_SELECTION
+            }
+            is ApiResult.Failure -> return com.mhub.app.ui.navigation.Routes.TIER_SELECTION
+        }
+        return com.mhub.app.ui.navigation.Routes.POST_WELCOME
     }
 }
 
@@ -255,7 +288,7 @@ fun MhubApp(
         CompositionLocalProvider(
             LocalActiveCategoryKey provides activeCategoryKey,
             LocalOnOpenMore provides { showMoreDrawer = true },
-            LocalAuthGate provides { if (needsLogin) showAuthGate = true },
+            LocalAuthGate provides { if (!isAuthenticated) showAuthGate = true },
             *listOfNotNull(
                 localeManager?.let { LocalLocaleManager provides it },
             ).toTypedArray(),
@@ -789,11 +822,25 @@ fun MhubApp(
             }
 
             composable(Routes.SALE_DONE) {
-                SaleDoneScreen(onBack = { navController.popBackStack() })
+                if (needsLogin) {
+                    com.mhub.app.ui.components.LoginPromptCard(
+                        onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                        onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+                    )
+                } else {
+                    SaleDoneScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.SALE_UNDONE) {
-                SaleUndoneScreen(onBack = { navController.popBackStack() })
+                if (needsLogin) {
+                    com.mhub.app.ui.components.LoginPromptCard(
+                        onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                        onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+                    )
+                } else {
+                    SaleUndoneScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Routes.OFFERS) {
@@ -1255,8 +1302,22 @@ fun MainShell(
                             modifier = Modifier.size(52.dp),
                             contentAlignment = Alignment.Center,
                         ) {
+                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
+                            val authGate = LocalAuthGate.current
+                            val authVm: com.mhub.app.ui.auth.AuthViewModel = hiltViewModel()
+                            val isAuthed by authVm.isAuthenticated.collectAsState()
+                            val sellScope = rememberCoroutineScope()
                             FloatingActionButton(
-                                onClick = { navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
+                                onClick = {
+                                    if (!isAuthed) {
+                                        authGate()
+                                    } else {
+                                        sellScope.launch {
+                                            val dest = sellFlowVm.resolveDestination()
+                                            navController.navigate(dest) { launchSingleTop = true }
+                                        }
+                                    }
+                                },
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White,
                                 modifier = Modifier.size(44.dp),

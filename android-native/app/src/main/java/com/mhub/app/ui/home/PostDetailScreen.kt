@@ -161,6 +161,7 @@ class PostDetailViewModel @Inject constructor(
     private val socialRepo: SocialRepository,
     private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
     private val boostRepo: com.mhub.app.data.repository.BoostRepository,
+    private val analyticsRepo: com.mhub.app.data.repository.AnalyticsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
@@ -207,16 +208,49 @@ class PostDetailViewModel @Inject constructor(
                             }
                         }
                     }
-                    // Load owner insights (inquiries, offers, viewers, watchers)
+                    // Load owner insights from real analytics API (only meaningful if owner)
                     launch {
-                        runCatching {
-                            val insights = OwnerInsights(
-                                totalViews = (10..250).random(),
-                                totalInquiries = (0..15).random(),
-                                totalOffers = (0..8).random(),
-                                activeWatchers = (0..20).random(),
-                            )
-                            _state.value = _state.value.copy(ownerInsights = insights)
+                        when (val a = analyticsRepo.postAnalytics()) {
+                            is com.mhub.app.core.ApiResult.Success -> {
+                                val postStat = a.data.firstOrNull { it.postId == postId }
+                                if (postStat != null) {
+                                    _state.value = _state.value.copy(
+                                        ownerInsights = OwnerInsights(
+                                            totalViews = postStat.views,
+                                            totalInquiries = postStat.inquiries,
+                                            totalOffers = postStat.offers,
+                                            activeWatchers = 0, // not available from API
+                                        )
+                                    )
+                                } else {
+                                    // Viewer context: show view count from post object itself
+                                    val post = _state.value.post
+                                    if (post != null) {
+                                        _state.value = _state.value.copy(
+                                            ownerInsights = OwnerInsights(
+                                                totalViews = post.viewCount ?: 0,
+                                                totalInquiries = 0,
+                                                totalOffers = 0,
+                                                activeWatchers = 0,
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            is com.mhub.app.core.ApiResult.Failure -> {
+                                // Non-owner or analytics not available — use post.viewCount only
+                                val post = _state.value.post
+                                if (post != null) {
+                                    _state.value = _state.value.copy(
+                                        ownerInsights = OwnerInsights(
+                                            totalViews = post.viewCount ?: 0,
+                                            totalInquiries = 0,
+                                            totalOffers = 0,
+                                            activeWatchers = 0,
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }

@@ -333,7 +333,7 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
     shareTarget?.let { post ->
         AlertDialog(
             onDismissRequest = { shareTarget = null },
-            title = { Text("📤 Share Post") },
+            title = { Text(stringResource(R.string.social_share_post)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = {
@@ -1108,8 +1108,7 @@ class FeedbackViewModel @Inject constructor(private val repo: ComplaintsReposito
         if (s.message.length < 10) { _state.value = s.copy(error = "Message must be at least 10 characters"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            val fullMessage = "[${s.type.uppercase()}] ${s.subject}\n\n${s.message}"
-            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, message = fullMessage, rating = s.rating))) {
+            when (val r = repo.submitFeedback(FeedbackRequest(type = s.type, subject = s.subject, message = s.message, rating = s.rating, category = s.type))) {
                 is ApiResult.Success -> {
                     val generatedRef = "FB-${System.currentTimeMillis().toString(36).uppercase().takeLast(6)}"
                     _state.value = FeedbackUiState(success = true, refId = generatedRef)
