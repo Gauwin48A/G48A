@@ -181,7 +181,9 @@ fun CategoryHubScreen(
         ?: (state.categories.size * 5)
     val newToday = state.stats.sumOf { it.newToday ?: 0 }
 
-    val pageGradient = Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val pageGradient = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
+        else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
     val titleGradient = Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFFEC4899)))
 
     PullToRefreshBox(

@@ -489,17 +489,17 @@ interface MhubApi {
     @POST("api/channels/{id}/unfollow")
     suspend fun unfollowChannel(@Path("id") id: String): MessageResponse
 
-    // ---- Centres ----
-    @GET("api/centres")
+    // ---- Centres (remapped to /channels — server has no /centres route) ----
+    @GET("api/channels")
     suspend fun centres(): CentresResponse
 
-    @POST("api/centres")
+    @POST("api/channels/create")
     suspend fun createCentre(@Body body: CreateCentreRequest): IdResponse
 
-    @GET("api/centres/{id}")
+    @GET("api/channels/{id}")
     suspend fun centreDetail(@Path("id") id: String): Centre
 
-    @GET("api/centres/{id}/listings")
+    @GET("api/channels/{id}")
     suspend fun centreListings(@Path("id") id: String): PostsResponse
 
     // ---- Complaints / Feedback ----
@@ -572,10 +572,10 @@ interface MhubApi {
     suspend fun adminSendWarning(@Body body: Map<String, String>): MessageResponse
 
     // ---- Sale Transactions ----
-    @POST("api/sale/initiate")
+    @POST("api/transactions/initiate")
     suspend fun initiateSale(@Body body: InitiateSaleRequest): InitiateSaleResponse
 
-    @POST("api/sale/confirm")
+    @POST("api/transactions/confirm")
     suspend fun confirmSale(@Body body: ConfirmSaleRequest): ConfirmSaleResponse
 
     @GET("api/transactions/pending")

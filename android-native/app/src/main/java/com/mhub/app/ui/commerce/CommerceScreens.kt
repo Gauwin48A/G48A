@@ -654,10 +654,16 @@ data class TiersUiState(
     val cancelSuccess: Boolean = false,
     val bronzeClaimLoading: Boolean = false,
     val bronzeClaimSuccess: Boolean = false,
+    val coinBalance: Int = 0,
+    val coinsApplied: Int = 0,
+    val subscribeLoading: String? = null,
 )
 
 @HiltViewModel
-class TiersViewModel @Inject constructor(private val repo: TiersRepository) : ViewModel() {
+class TiersViewModel @Inject constructor(
+    private val repo: TiersRepository,
+    private val rewardsRepo: RewardsRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(TiersUiState())
     val state: StateFlow<TiersUiState> = _state.asStateFlow()
 
@@ -668,8 +674,17 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
                 is ApiResult.Success -> _state.value = TiersUiState(loading = false, tiers = r.data.ifEmpty { defaultTiers })
                 is ApiResult.Failure -> _state.value = TiersUiState(loading = false, tiers = defaultTiers)
             }
-            // Load current subscription and history in parallel
             loadSubscriptionData()
+            loadCoinBalance()
+        }
+    }
+
+    private fun loadCoinBalance() {
+        viewModelScope.launch {
+            when (val r = rewardsRepo.overview()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(coinBalance = r.data.user.totalCoins)
+                is ApiResult.Failure -> {} // Keep 0
+            }
         }
     }
 
@@ -687,10 +702,30 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
     }
 
     fun subscribe(tierId: String) {
+        _state.value = _state.value.copy(subscribeLoading = tierId)
         viewModelScope.launch {
             repo.subscribe(SubscribeRequest(tierId = tierId))
+            _state.value = _state.value.copy(subscribeLoading = null, coinsApplied = 0)
             loadSubscriptionData()
+            loadCoinBalance()
         }
+    }
+
+    fun setCoinsApplied(coins: Int) {
+        _state.value = _state.value.copy(coinsApplied = coins.coerceIn(0, _state.value.coinBalance))
+    }
+
+    /** Max discount % by tier: premium/silver=30%, basic/bronze=50% */
+    fun maxDiscountPercent(tierId: String): Int = when (tierId.lowercase()) {
+        "premium", "silver" -> 30
+        else -> 50
+    }
+
+    /** Coins value in INR (1 coin = ₹1) */
+    fun discountAmount(tierId: String, price: Double): Double {
+        val maxPct = maxDiscountPercent(tierId)
+        val maxDiscount = price * maxPct / 100.0
+        return minOf(_state.value.coinsApplied.toDouble(), maxDiscount)
     }
 
     fun cancelSubscription() {
@@ -728,7 +763,10 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
 @Composable
 fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF), Color(0xFFF0F9FF))))) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val bgGrad = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
+        else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF), Color(0xFFF0F9FF)))
+    Box(Modifier.fillMaxSize().background(bgGrad)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.plans_title), onBack)
             if (state.loading) {
@@ -870,7 +908,86 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         }
                     }
                     items(state.tiers, key = { it.id ?: it.name ?: "" }) { tier ->
-                        TierCard(tier = tier, onSelect = { viewModel.subscribe(tier.id ?: "") })
+                        val perPostCost = when (tier.id?.lowercase()) {
+                            "basic" -> "₹500/post"
+                            "bronze" -> "₹8.50/post"
+                            "silver" -> "₹6/post"
+                            "premium" -> "Unlimited"
+                            else -> ""
+                        }
+                        TierCard(
+                            tier = tier,
+                            perPostCost = perPostCost,
+                            coinBalance = state.coinBalance,
+                            maxDiscountPct = viewModel.maxDiscountPercent(tier.id ?: ""),
+                            isLoading = state.subscribeLoading == tier.id,
+                            onSelect = { viewModel.subscribe(tier.id ?: "") },
+                        )
+                    }
+                    // Coins discount info card
+                    if (state.coinBalance > 0) {
+                        item(key = "coins_discount") {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFFFFBEB),
+                                border = BorderStroke(1.dp, Color(0xFFFBBF24).copy(alpha = 0.5f)),
+                                modifier = Modifier.fillMaxWidth(),
+                                shadowElevation = 2.dp,
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Surface(shape = CircleShape, color = Color(0xFFFBBF24).copy(alpha = 0.2f), modifier = Modifier.size(40.dp)) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Text("🪙", fontSize = 20.sp)
+                                            }
+                                        }
+                                        Column(Modifier.weight(1f)) {
+                                            Text("Use Coins for Discounts", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
+                                            Text("You have ${state.coinBalance} coins (₹${state.coinBalance} value)", fontSize = 12.sp, color = Color(0xFF92400E))
+                                        }
+                                    }
+                                    Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text("Discount limits:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF374151))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("• Basic / Bronze:", fontSize = 11.sp, color = Color(0xFF6B7280), modifier = Modifier.width(120.dp))
+                                                Text("Up to 50% off", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("• Silver / Premium:", fontSize = 11.sp, color = Color(0xFF6B7280), modifier = Modifier.width(120.dp))
+                                                Text("Up to 30% off", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("1 coin = ₹1 discount. Coins are applied automatically at checkout.", fontSize = 10.sp, color = Color(0xFF9CA3AF))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Savings calculator
+                    item(key = "savings_calc") {
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Filled.Calculate, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
+                                    Text("Savings Calculator", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                }
+                                Text("Cost per post if you list regularly:", fontSize = 12.sp, color = Color(0xFF64748B))
+                                val calcData = listOf(
+                                    Triple("Basic (1 post)", "₹500/post", Color(0xFF64748B)),
+                                    Triple("Bronze (100 posts/3mo)", "₹8.50/post", Color(0xFFB45309)),
+                                    Triple("Silver (200 posts/6mo)", "₹6/post", Color(0xFF0369A1)),
+                                    Triple("Premium (Unlimited/yr)", "Best value!", Color(0xFF7C3AED)),
+                                )
+                                calcData.forEach { (label, cost, color) ->
+                                    Row(Modifier.fillMaxWidth().background(color.copy(alpha = 0.05f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text(label, fontSize = 12.sp, color = Color(0xFF374151))
+                                        Text(cost, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color)
+                                    }
+                                }
+                            }
+                        }
                     }
                     // Feature comparison
                     item {
@@ -981,6 +1098,44 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                             }
                         }
+                    }
+                    // FAQ section
+                    item(key = "faq_section") {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                            Icon(Icons.Filled.HelpOutline, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
+                            Text("Frequently Asked Questions", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                        }
+                        val faqItems = listOf(
+                            "What happens when my plan expires?" to "Your active listings remain visible until their individual expiry date, but you won't be able to create new listings until you renew or subscribe to a new plan.",
+                            "Can I upgrade mid-plan?" to "Yes! When you upgrade, the remaining value of your current plan is prorated and applied as credit toward the new plan.",
+                            "How do coins work for discounts?" to "Each MHub coin equals ₹1. You can apply coins at checkout for up to 50% off Basic/Bronze or 30% off Silver/Premium plans. Earn coins through referrals, daily check-ins, and successful sales.",
+                            "What is the Bronze welcome offer?" to "New users who complete KYC verification can claim a free Bronze plan (one-time only). This gives you 100 listings, 30-day visibility, and a seller badge at no cost.",
+                            "How do boosts and promotions work?" to "Silver and Premium plans include bundled boosts, featured slots, and spotlights. Basic and Bronze users can redeem boosts using MHub coins from the Rewards section.",
+                            "Can I cancel anytime?" to "Yes, cancel anytime from this page. Your plan benefits continue until the expiry date. No partial refunds are issued for unused time.",
+                        )
+                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
+                                faqItems.forEachIndexed { idx, (question, answer) ->
+                                    var expanded by remember { mutableStateOf(false) }
+                                    Column(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(question, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151), modifier = Modifier.weight(1f))
+                                            Icon(
+                                                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                                null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp),
+                                            )
+                                        }
+                                        if (expanded) {
+                                            Text(answer, fontSize = 12.sp, color = Color(0xFF6B7280), modifier = Modifier.padding(top = 6.dp), lineHeight = 18.sp)
+                                        }
+                                    }
+                                    if (idx < faqItems.lastIndex) {
+                                        HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    }
+                                }
+                            }
+                        }
                         Spacer(Modifier.height(80.dp))
                     }
                 }
@@ -990,7 +1145,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
 }
 
 @Composable
-private fun TierCard(tier: Tier, onSelect: () -> Unit) {
+private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, maxDiscountPct: Int, isLoading: Boolean, onSelect: () -> Unit) {
     val isPopular = tier.popular
     val cardColors = if (isPopular) {
         listOf(Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF3B82F6))
@@ -1051,6 +1206,19 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
                         }
                     }
                 }
+                // Per-post cost badge
+                if (perPostCost.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFECFDF5)) {
+                        Text("⚡ $perPostCost", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                    }
+                }
+                // Coin discount hint
+                if (coinBalance > 0 && tier.price > 0) {
+                    Spacer(Modifier.height(4.dp))
+                    val maxSave = (tier.price * maxDiscountPct / 100.0).toLong().coerceAtMost(coinBalance.toLong())
+                    Text("🪙 Save up to ₹$maxSave with your coins ($maxDiscountPct% max)", fontSize = 10.sp, color = Color(0xFFB45309))
+                }
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = if (isPopular) Color(0xFFBFDBFE) else Color(0xFFF1F5F9))
                 Spacer(Modifier.height(14.dp))
@@ -1068,6 +1236,7 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
                 Spacer(Modifier.height(18.dp))
                 Button(
                     onClick = onSelect,
+                    enabled = !isLoading,
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isPopular) Color(0xFF2563EB) else Color(0xFF0F172A),
@@ -1075,15 +1244,19 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = if (isPopular) 6.dp else 2.dp),
                 ) {
-                    Text(
-                        if (tier.price == 0.0) stringResource(R.string.plans_get_started_free) else stringResource(R.string.plans_subscribe_now),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                    )
-                    if (isPopular) {
-                        Spacer(Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                    } else {
+                        Text(
+                            if (tier.price == 0.0) stringResource(R.string.plans_get_started_free) else stringResource(R.string.plans_subscribe_now),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                        )
+                        if (isPopular) {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }

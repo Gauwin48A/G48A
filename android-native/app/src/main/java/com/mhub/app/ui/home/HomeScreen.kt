@@ -3,6 +3,7 @@ package com.mhub.app.ui.home
 import com.mhub.app.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -1138,7 +1139,9 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         // Premium gradient page-shell (web-parity: AllPosts.jsx page gradient wrapper)
-        val pageShellGradient = Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
+        val darkTheme = isSystemInDarkTheme()
+        val pageShellGradient = if (darkTheme) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
+            else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
         Box(modifier = Modifier.fillMaxSize().background(pageShellGradient)) {
             PullToRefreshBox(
                 isRefreshing = state.refreshing,

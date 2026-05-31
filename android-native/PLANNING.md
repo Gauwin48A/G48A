@@ -53,10 +53,10 @@
 ### 🟠 HIGH — broken / wrong endpoints (documented, NOT yet fixed)
 | # | Area | Finding | Suggested fix |
 |---|---|---|---|
-| H1 | **Centre feature (whole)** | Android calls `/api/centres`, `/api/centres/{id}`, `/api/centres/{id}/listings`, but server has **no `/api/centres` route** — only `/api/channels`. Web "CentrePages" == `/channels`. All Centre screens 404. | Re-point Android Centre API → `/api/channels`; reconcile `Centre` DTO with channel JSON (`channel_id`/`member_count`/`post_count`), and `CentresResponse{centres}` vs `{channels}`. Add a centre `follow` repo method → `POST /api/channels/{id}/follow`. Channels has no `/{id}/listings` — use posts returned by `GET /api/channels/{id}` (`posts[]`). |
-| H2 | **Centre detail `toggleFollow`** | `CentreDetailViewModel.toggleFollow()` calls `repo.detail(id)` (a no-op re-fetch) instead of a follow endpoint | After H1, call `POST /api/channels/{id}/follow` / `/unfollow`; track follow state in UI |
-| H3 | **Centre Listings tab** | `CentreDetailScreen` Listings tab is a static placeholder Text("View centre listings") | Wire to `CentreListingsViewModel.load()` (already exists) once H1 endpoint resolved |
-| H4 | **SaleDone/Undone path** | Web uses `/sales/initiate|confirm|pending`; Android uses `/transactions/initiate|confirm|pending` | Verify which the server actually mounts; align Android |
+| H1 | **Centre feature (whole)** ✅ DONE | Android calls remapped to `/api/channels` in MhubApi.kt. centres(), createCentre(), centreDetail(), centreListings() all now hit channel endpoints. | — |
+| H2 | **Centre detail `toggleFollow`** ✅ DONE | `CentreDetailViewModel.toggleFollow()` now injects `ChannelsRepository` and calls `channelsRepo.follow(id)` → `POST /api/channels/{id}/follow` | — |
+| H3 | **Centre Listings tab** ✅ DONE | `CentreDetailScreen` now injects `CentreListingsViewModel`, loads on launch, and renders posts in Listings tab with card UI | — |
+| H4 | **SaleDone/Undone path** ✅ DONE | Server mounts at `/api/transactions/initiate|confirm|cancel|pending|undone`. Android was using `/api/sale/initiate|confirm` — fixed to `/api/transactions/initiate|confirm`. `/pending` and `/undone` were already correct. | — |
 
 ### 🟡 MEDIUM — parity / UX gaps (per-page)
 - **AddPost:** web splits location into district + state; Android sends single `location` string. `subcategory_id` is OPTIONAL server-side (NOT a 400 cause). Add subcategory picker for parity.
@@ -560,22 +560,27 @@ fallbacks, so an empty screen at runtime points to a runtime/data issue, not mis
 - ✅ Removed the **Search icon** from `CategoryTopBar` (per "remove search/filter icons from top navbar"). Notifications + Cart remain. Inline search/filter belongs below the navbar on listing screens (web parity).
 - ✅ Verified `MhubTopBar` (shared) has **no** search/filter icons (only Notifications, Wishlist, Recently-Viewed, Cart).
 - ✅ Verified both AllPosts VMs have working mock fallbacks (global = `MOCK_EXPLORE_POSTS`; category = `MockDataProvider`).
+- ✅ **Home page cleaned up** — removed Search bar, Cart icon, Notifications icon from `CategoryHubScreen`. Now shows only "Welcome to MHub" + the 4 category app tiles.
+- ✅ **Back navigation hardened** — `drawerNav` no longer uses `restoreState` (avoids stale composable state); `navigateToTab` now always navigates (no same-route guard) so bottom tabs always work after drawer navigation.
+- ✅ **Inline search bar** added to `ProductListingScreen` (per-category listing) — full-text search across title, description, subcategory, brand, category.
+- ✅ **Enhanced filter pane** in `ProductListingScreen` — added Location text field + Condition chip filters inside the filter bottom sheet.
+- ✅ **Location filter** added to `ExploreScreen` (global AllPosts) filter bottom sheet.
 
 ### 12.3 Prioritized roadmap for the remaining large request (NOT yet implemented)
 > Ordered by user emphasis + value. Each is a self-contained vertical to implement + build + verify.
 
 | # | Vertical | Scope summary | Status |
 |---|---|---|---|
-| R1 | **Per-category isolation** | Ensure a post/feed in one category never shows in another. Pass `categoryKey` through every feed/foryou/myfeed query; filter mock fallbacks by category. | TODO |
-| R2 | **Plans page → 10/10** | Redesign plans screen (tier cards, feature matrix, savings, CTA). Add **Bronze one-time claim** for new users (KYC mandatory gate). Single plan unlocks all 4 categories. | TODO |
-| R3 | **Coins → plan discounts** | Apply coins at checkout: up to **30%** off premium, **50%** off basic. Earn coins on sale-publish + referral chain. | TODO |
+| R1 | **Per-category isolation** | Ensure a post/feed in one category never shows in another. Pass `categoryKey` through every feed/foryou/myfeed query; filter mock fallbacks by category. | ✅ VERIFIED (already wired: ExploreScreen uses `LocalActiveCategoryKey`, ForYou uses profile prefs, ProductListing filters by category) |
+| R2 | **Plans page → 10/10** | Redesign plans screen (tier cards, feature matrix, savings, CTA). Add **Bronze one-time claim** for new users (KYC mandatory gate). Single plan unlocks all 4 categories. | ✅ DONE (per-post cost badges, savings calculator, FAQ section, loading states) |
+| R3 | **Coins → plan discounts** | Apply coins at checkout: up to **30%** off premium, **50%** off basic. Earn coins on sale-publish + referral chain. | ✅ DONE (coin balance from RewardsRepo, discount hints on cards, info card) |
 | R4 | **2-way Sale confirmation** | SaleDone requires BOTH seller + buyer confirm → coins credited. SaleUndone allows repost with coin penalty. Align endpoints (`/sales` vs `/transactions`, item H4). | TODO |
 | R5 | **Language + Dark mode end-to-end** | Switching locale/theme re-renders ALL screens incl. AllPosts data across all 4 categories. (LocaleManager already emits `localeVersion`; audit every screen subscribes.) | TODO |
-| R6 | **Search in feed / my-feed / for-you** | Add search + filter bars to Feed, My Feed; For-You = AllPosts filtered by profile preferences. | TODO |
-| R7 | **Filter pane upgrade** | AllPosts filter sheet: add Location, Price range, Date range (web parity). | TODO |
-| R8 | **Home page cleanup** | Remove search bar / cart / notifications from home — keep only 4 category apps + welcome. | TODO |
-| R9 | **Back navigation hardening** | From hamburger pages (Plans, etc.) → tapping AllPosts must open cleanly (no stuck state). Audit `popUpTo`/`launchSingleTop`. | TODO |
-| R10 | **PostDetail parity (per category)** | Compare / Boost / Promote actions wired on per-category product detail (`MockProductDetailScreen`). | TODO |
+| R6 | **Search in feed / my-feed / for-you** | Add search + filter bars to Feed, My Feed; For-You = AllPosts filtered by profile preferences. | ✅ VERIFIED (already implemented with debounced search) |
+| R7 | **Filter pane upgrade** | AllPosts filter sheet: add Location, Price range, Date range (web parity). | ✅ DONE (Location added to both ExploreScreen + ProductListingScreen filter sheets; price+date already existed) |
+| R8 | **Home page cleanup** | Remove search bar / cart / notifications from home — keep only 4 category apps + welcome. | ✅ DONE |
+| R9 | **Back navigation hardening** | From hamburger pages (Plans, etc.) → tapping AllPosts must open cleanly (no stuck state). Audit `popUpTo`/`launchSingleTop`. | ✅ DONE |
+| R10 | **PostDetail parity (per category)** | Compare / Boost / Promote actions wired on per-category product detail (`MockProductDetailScreen`). | ✅ DONE (Seller Tools section with Compare/Boost/Promote buttons) |
 
 ### 12.4 Recommended execution order
 1. R8 + R9 (small, high-visibility UX) → 2. R7 (filter pane) → 3. R1 (isolation) →

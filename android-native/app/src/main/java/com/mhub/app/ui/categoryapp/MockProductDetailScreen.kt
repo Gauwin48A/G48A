@@ -79,6 +79,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import android.graphics.Color as AndroidColor
 import com.mhub.app.data.mock.MockDataProvider
@@ -447,6 +448,58 @@ fun MockProductDetailScreen(
                             style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
+                }
+                HorizontalDivider()
+            }
+
+            // ── Actions: Compare / Boost / Promote ────────────────────────
+            item(key = "actions") {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(
+                        "Seller Tools",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilledTonalButton(
+                            onClick = { /* Compare action */ },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = Color(0xFFEFF6FF),
+                                contentColor = Color(0xFF2563EB),
+                            ),
+                        ) {
+                            Text("Compare", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        FilledTonalButton(
+                            onClick = { /* Boost action */ },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = Color(0xFFFEF3C7),
+                                contentColor = Color(0xFFB45309),
+                            ),
+                        ) {
+                            Text("⚡ Boost", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        FilledTonalButton(
+                            onClick = { /* Promote action */ },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = Color(0xFFECFDF5),
+                                contentColor = Color(0xFF059669),
+                            ),
+                        ) {
+                            Text("Promote", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Boost your listing for more visibility. Use coins or plan credits.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    )
                 }
                 HorizontalDivider()
             }

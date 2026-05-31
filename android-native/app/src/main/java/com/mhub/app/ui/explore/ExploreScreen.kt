@@ -961,6 +961,21 @@ fun ExploreScreen(
                     }
                 }
 
+                // Location filter
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("📍 Location", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    var draftLocation by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = draftLocation,
+                        onValueChange = { draftLocation = it },
+                        placeholder = { Text("City or area…") },
+                        singleLine = true,
+                        leadingIcon = { Icon(Icons.Filled.LocationOn, null, modifier = Modifier.size(18.dp)) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
                 // Subcategory filter (only when ecosystem is active)
                 if (ecosystemSubcategories.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

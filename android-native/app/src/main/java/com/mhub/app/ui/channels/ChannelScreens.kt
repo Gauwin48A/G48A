@@ -620,7 +620,10 @@ fun CreateCentreScreen(onBack: () -> Unit, viewModel: CreateCentreViewModel = hi
 data class CentreDetailUiState(val loading: Boolean = true, val centre: Centre? = null, val error: String? = null)
 
 @HiltViewModel
-class CentreDetailViewModel @Inject constructor(private val repo: CentresRepository) : ViewModel() {
+class CentreDetailViewModel @Inject constructor(
+    private val repo: CentresRepository,
+    private val channelsRepo: ChannelsRepository
+) : ViewModel() {
     private val _state = MutableStateFlow(CentreDetailUiState())
     val state: StateFlow<CentreDetailUiState> = _state.asStateFlow()
     fun load(id: String) { viewModelScope.launch {
@@ -629,15 +632,16 @@ class CentreDetailViewModel @Inject constructor(private val repo: CentresReposit
             is ApiResult.Failure -> _state.value = CentreDetailUiState(loading = false, error = r.error.message)
         }
     } }
-    fun toggleFollow(id: String) { viewModelScope.launch { repo.detail(id) } }
+    fun toggleFollow(id: String) { viewModelScope.launch { channelsRepo.follow(id) } }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDetailViewModel = hiltViewModel()) {
+fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDetailViewModel = hiltViewModel(), listingsVm: CentreListingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val listingsState by listingsVm.state.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
-    LaunchedEffect(centreId) { viewModel.load(centreId) }
+    LaunchedEffect(centreId) { viewModel.load(centreId); listingsVm.load(centreId) }
     Scaffold(topBar = { TopBar(state.centre?.displayName ?: "Centre", onBack) }) { padding ->
         when {
             state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -698,7 +702,27 @@ fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDe
                                 }
                             }
                         }
-                        1 -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("View centre listings", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                        1 -> {
+                            when {
+                                listingsState.loading -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                                listingsState.posts.isEmpty() -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No listings yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                                else -> items(listingsState.posts.size, key = { (listingsState.posts[it].id ?: "idx_$it") }) { idx ->
+                                    val post = listingsState.posts[idx]
+                                    Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Box(Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF10B981).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                                Icon(Icons.Filled.ShoppingBag, null, tint = Color(0xFF10B981))
+                                            }
+                                            Spacer(Modifier.width(12.dp))
+                                            Column(Modifier.weight(1f)) {
+                                                Text(post.title ?: "Untitled", fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                Text("₹${post.price ?: 0}", fontSize = 13.sp, color = Color(0xFF10B981), fontWeight = FontWeight.SemiBold)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         2 -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No reviews yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     }
                 }
