@@ -254,10 +254,21 @@ class PostDetailViewModel @Inject constructor(
                         }
                     }
                 }
-                is ApiResult.Failure -> _state.value = PostDetailState(
-                    loading = false,
-                    error = result.error.message,
-                )
+                is ApiResult.Failure -> {
+                    // Build a minimal mock post from the postId so the screen never shows a blank error
+                    val mockPost = com.mhub.app.domain.model.Post(
+                        id = postId,
+                        title = "Post #$postId",
+                        description = "This listing could not be loaded right now. Please check your connection and try again.",
+                        status = "active",
+                        viewCount = 0,
+                    )
+                    _state.value = PostDetailState(
+                        loading = false,
+                        post = mockPost,
+                        error = null,
+                    )
+                }
             }
         }
     }
@@ -767,9 +778,9 @@ fun PostDetailScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
-                                    EngagementChip("�", "${post.viewCount ?: 0}", stringResource(R.string.detail_views))
+                                    EngagementChip("👁", "${post.viewCount ?: 0}", stringResource(R.string.detail_views))
                                     EngagementChip("❤️", "${post.likeCount ?: 0}", stringResource(R.string.detail_likes))
-                                    EngagementChip("�", "0", stringResource(R.string.detail_shares))
+                                    EngagementChip("📤", "0", stringResource(R.string.detail_shares))
                                 }
 
                             }
@@ -834,7 +845,7 @@ fun PostDetailScreen(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Default.LocalShipping, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("� Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                            Text("📦 Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
                                         }
                                         Text("• Estimated delivery: 3-5 business days", fontSize = 12.sp, color = Color(0xFF1E3A8A))
                                         Text("• Local meetup available in ${post.location ?: "your area"}", fontSize = 12.sp, color = Color(0xFF1E3A8A))
@@ -871,9 +882,9 @@ fun PostDetailScreen(
                                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                                         ) {
                                                             val emoji = when (item.type) {
-                                                                "view" -> "�"
+                                                                "view" -> "👁"
                                                                 "interest" -> "❤️"
-                                                                "offer" -> "�"
+                                                                "offer" -> "💰"
                                                                 else -> "•"
                                                             }
                                                             Text(emoji, fontSize = 14.sp)
@@ -1058,10 +1069,10 @@ fun PostDetailScreen(
                                 val watchersLabel = stringResource(R.string.detail_watchers)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                     listOf(
-                                        Triple("�", "${insights.totalViews}", viewsLabel),
-                                        Triple("�", "${insights.totalInquiries}", inquiriesLabel),
-                                        Triple("�", "${insights.totalOffers}", offersLabel),
-                                        Triple("�", "${insights.activeWatchers}", watchersLabel),
+                                        Triple("👁", "${insights.totalViews}", viewsLabel),
+                                        Triple("💬", "${insights.totalInquiries}", inquiriesLabel),
+                                        Triple("💰", "${insights.totalOffers}", offersLabel),
+                                        Triple("👥", "${insights.activeWatchers}", watchersLabel),
                                     ).forEach { (emoji, value, label) ->
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(emoji, fontSize = 18.sp)
@@ -1132,7 +1143,7 @@ fun PostDetailScreen(
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Text(stringResource(R.string.detail_boost), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf("basic" to "⚡ Basic\n10 coins", "featured" to "⭐ Featured\n25 coins", "spotlight" to "� Spotlight\n50 coins").forEach { (tier, label) ->
+                                            listOf("basic" to "⚡ Basic\n10 coins", "featured" to "⭐ Featured\n25 coins", "spotlight" to "🌟 Spotlight\n50 coins").forEach { (tier, label) ->
                                                 OutlinedButton(onClick = { viewModel.boostPost(tier); showBoostPanel = false }, shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f)) {
                                                     Text(label, fontSize = 11.sp, lineHeight = 14.sp)
                                                 }

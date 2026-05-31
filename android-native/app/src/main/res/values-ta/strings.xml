@@ -1425,4 +1425,10 @@
     <string name="commerce_badge_secure">🔒 பாதுகாப்பானது</string>
     <string name="commerce_badge_rewarded">✓ வெகுமதி</string>
     <string name="commerce_badge_verified">📋 சரிபார்க்கப்பட்டது</string>
+    <string name="profile_orders">ஆர்டர்கள்</string>
+    <string name="feed_login_subtitle">முழு சமூக ஊட்டத்தை அணுக கணக்கை உருவாக்கவும் அல்லது உள்நுழைக</string>
+    <string name="feed_login_to_see_more">மேலும் பார்க்க உள்நுழைக</string>
+    <string name="profile_manage_addresses">முகவரிகளை நிர்வகிக்கவும்</string>
+    <string name="profile_addresses">முகவரிகள்</string>
+    <string name="profile_track_orders">ஆர்டர்களை கண்காணிக்கவும்</string>
 </resources>

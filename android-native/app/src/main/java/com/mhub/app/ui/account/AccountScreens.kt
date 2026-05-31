@@ -287,9 +287,9 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                     state.topSellers.forEach { seller ->
                                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                             val medal = when (seller.rank) {
-                                                1 -> "�"
-                                                2 -> "�"
-                                                3 -> "�"
+                                                1 -> "🥇"
+                                                2 -> "🥈"
+                                                3 -> "🥉"
                                                 else -> "${seller.rank}"
                                             }
                                             Text(medal, fontSize = 20.sp, modifier = Modifier.width(36.dp))

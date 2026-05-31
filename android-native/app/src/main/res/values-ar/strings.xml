@@ -1427,4 +1427,10 @@
     <string name="commerce_badge_secure">🔒 آمن</string>
     <string name="commerce_badge_rewarded">✓ مكافأ</string>
     <string name="commerce_badge_verified">📋 موثق</string>
+    <string name="profile_orders">الطلبات</string>
+    <string name="feed_login_subtitle">أنشئ حساباً أو سجّل الدخول للوصول إلى خلاصة المجتمع الكاملة</string>
+    <string name="feed_login_to_see_more">سجّل الدخول لرؤية المزيد</string>
+    <string name="profile_manage_addresses">إدارة العناوين</string>
+    <string name="profile_addresses">العناوين</string>
+    <string name="profile_track_orders">تتبع الطلبات</string>
 </resources>

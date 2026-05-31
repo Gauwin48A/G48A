@@ -91,9 +91,9 @@ data class CategoryAppDef(
 )
 
 val CATEGORY_APPS = listOf(
-    CategoryAppDef("electronics", "Electronics", "�"),
-    CategoryAppDef("fashion",     "Fashion",     "�"),
-    CategoryAppDef("vehicles",    "Vehicles",    "�"),
+    CategoryAppDef("electronics", "Electronics", "💻"),
+    CategoryAppDef("fashion",     "Fashion",     "👗"),
+    CategoryAppDef("vehicles",    "Vehicles",    "🚗"),
     CategoryAppDef("others",      "Others",      "✨"),
 )
 

@@ -1079,6 +1079,95 @@ HorizontalDividers between each row; full-width **Save** button at bottom.
 
 **Danger Zone:**
 - "Logout All Devices" button → confirmation AlertDialog → `TokenStore.clear()` → `_loggedOut.value = true` → `LaunchedEffect` triggers `onLogout()` callback → `navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }`
+
+---
+
+## App Flow & Functionality
+
+### Bottom Navigation (5 tabs)
+
+| Tab | Screen | Purpose |
+|-----|--------|---------|
+| Home | CategoryHubScreen | Category tiles, promo banners, quick links, trending categories |
+| AllPosts | ExploreScreen | All marketplace listings (text+image) with filters, search, compare |
+| **+** (Sell) | Floating Action Button | KYC → Plans → Sell flow (see below) |
+| Feed | FeedScreen | News & knowledge sharing (text-only, Facebook-style posts) |
+| Rewards | RewardsScreen | Points, badges, achievements, daily streak |
+
+### Page Descriptions
+
+**Feed** — Community knowledge hub for news, tips, and discussions among all users. Text-based posts only (no product images). Features: like, share, save, view count, inline comments, "Read more" expansion, composer card, search, sort (For You / Recent / Views / Likes / Shuffle), density toggle (Compact / Normal / Spacious).
+
+**My Feed** — Same style as Feed, but only shows the current user's own feed posts.
+
+**AllPosts (Explore)** — Full marketplace listings with images AND text. Shows ALL posts from all users across all categories. Features: image with price/condition/HOT badges, like, share, save, compare, interested, view count, view details, 3-dot menu (Compare, Wishlist, Share, Report), category/subcategory filter pills, search with debounce, trending section, great deals banner.
+
+**For You** — Same layout as AllPosts but shows AI-recommended and user-preferred posts based on:
+1. `/api/recommendations` (personalised)
+2. User category preferences from profile
+3. General feed fallback
+
+**My Home (MyPosts)** — Only the current user's own marketplace listings. Manage, edit, delete, mark sold.
+
+### + Button (Sell) Flow
+
+```
+User taps +
+  ├─ Not authenticated → Login screen
+  ├─ KYC not approved → KYC verification screen
+  ├─ No active subscription plan → Plans/Tier selection screen
+  └─ All OK → Post creation wizard (PostWelcome)
+```
+
+**Plan logic:**
+- Active plan required to create marketplace posts
+- If plan is inactive, user cannot post (even in feed)
+- First 3 months after app launch: free plan for all users
+- Plan expiring soon → push notification to renew
+
+### Hamburger Menu (More Screen)
+
+**TRADE section:** Sell, Plans, Centre, My Home, Sale Done, Sale Undone, Category Mode, Subcategories, Nearby
+
+**SOCIAL section:** Public Wall, My Feed, Feedback, Complaints
+
+**ACCOUNT section:** Profile, Rewards, Verification, Dashboard, Security, Delete Account, (Admin Panel if admin)
+
+**UTILITIES:** Settings, Help & Support, Logout
+
+### Language Support
+
+Fully functional language switching with 14+ languages:
+- English (en), Hindi (hi), Spanish (es), French (fr), Arabic (ar)
+- Bengali (bn), Tamil (ta), Telugu (te), Kannada (kn), Marathi (mr)
+- Gujarati (gu), Malayalam (ml), Punjabi (pa), Urdu (ur)
+
+Locale change → `AppCompatDelegate.setApplicationLocales()` → Activity recreate → all ViewModels reload data with new locale.
+
+### Authentication Flow
+
+```
+App Launch
+  ├─ Has valid JWT → Main app (Category Hub)
+  ├─ Expired JWT → Auto-refresh via OkHttp Authenticator → Main app
+  ├─ No token → Login screen
+  └─ Guest browsing → Limited access (5 feed posts, no posting)
+```
+
+### Key Features Summary
+
+- **Offline-first**: Room DB caches posts/categories; shows cached data when network fails
+- **Pull-to-refresh**: Every screen supports swipe-to-refresh
+- **Infinite scroll**: Paginated feeds with auto-load-more at scroll bottom
+- **Dark mode**: Full Material 3 light/dark/system theme support
+- **Compare**: Select 2+ items for side-by-side comparison
+- **Wishlist**: Save items for later
+- **Search**: 350ms debounced search across all screens
+- **Share**: Native Android share sheet for all posts
+- **Push notifications**: FCM for messages, plan reminders, new activity
+- **Seller verification**: KYC (Aadhaar + PAN) flow
+- **Trust score**: Seller reputation system
+- **Real-time connectivity**: Animated offline/online banner
 - "Delete Account" link → AccountDeleteScreen
 
 ---
@@ -1386,3 +1475,380 @@ When the device goes offline:
 
 4. **First frame** rendered in < 300 ms on mid-range devices thanks to Baseline Profile pre-compilation
 
+
+---
+
+## Application Overview
+
+MHub is a **category-driven marketplace and community platform** for India. Users can browse, buy, and sell goods across curated categories while participating in knowledge-sharing communities.
+
+### Business Purpose
+- Peer-to-peer marketplace for second-hand and new goods
+- Category-specific ecosystems (Electronics, Fashion, Vehicles, Others)
+- Community knowledge sharing via Feed posts
+- Subscription-based seller access with KYC verification
+- Rewards program for active community members
+
+### Category Architecture
+Each category is a self-contained **ecosystem**:
+
+| Category | Subcategories (examples) |
+|---|---|
+| Electronics | Phones, Laptops, Cameras, Audio, Gaming, Accessories |
+| Fashion | Men's/Women's Clothing, Shoes, Bags, Watches, Jewellery |
+| Vehicles | Cars, Motorcycles, Scooters, Bicycles, Spare Parts |
+| Others | Home & Furniture, Sports, Books, Health & Beauty, Agriculture, Real Estate |
+
+**Category Isolation Rule:** When a user enters a category from the Home screen, the entire browsing ecosystem (AllPosts, subcategories, filters, compare) scopes to that category only. To switch categories, the user must return to Home.
+
+---
+
+## User Lifecycle Journey
+
+`
+New User
+  │
+  ├─► Register (email/phone + Aadhaar KYC)
+  │       ↓
+  ├─► Browse (AllPosts, Feed, ForYou) — Guest or Authenticated
+  │       ↓
+  ├─► Complete KYC → Verified Seller
+  │       ↓
+  ├─► Activate Plan (or use Free Launch Promo)
+  │       ↓
+  ├─► Post Listings → Manage in My Posts
+  │       ↓
+  ├─► Mark Sales Done → Earn Rewards
+  │       ↓
+  └─► Renew Plan → Continue Selling
+`
+
+---
+
+## Authentication Flow
+
+1. **Landing**: App checks TokenStore — valid token → MAIN_GRAPH; no token → AUTH_GRAPH
+2. **Login**: Email/phone + password → JWT access + refresh tokens stored in EncryptedSharedPreferences
+3. **Token Refresh**: TokenRefreshAuthenticator auto-refreshes on 401 using OkHttp interceptor
+4. **Google Sign-In**: Firebase Auth idToken → /api/auth/google → JWT
+5. **Logout**: Tokens cleared → AUTH_GRAPH (2s grace period for refresh)
+6. **Session Persistence**: Language preference and auth tokens persist across restarts
+
+---
+
+## KYC Flow
+
+`
+User clicks "+" (Sell) or navigates to KYC
+  │
+  ├─► Step 1: Enter Aadhaar number
+  ├─► Step 2: Enter OTP (sent to Aadhaar-linked phone)
+  ├─► Step 3: Enter PAN number
+  └─► Step 4: Set password → Account created + KYC Approved
+`
+
+**KYC Status Values:** pending → submitted → pproved | 
+ejected
+
+---
+
+## Subscription Flow
+
+`
+User wants to post a listing
+  │
+  ├─► KYC not approved → Redirect to KYC screen
+  ├─► Free Launch Promo active → Allow posting directly
+  ├─► No active plan → Redirect to Plans screen
+  └─► Plan active → Open Sell/Post screen
+`
+
+### Plans Screen Features
+- Lists all available subscription tiers from /api/tiers
+- Shows current active plan with expiry date
+- Allows plan upgrade/downgrade
+- Shows Free Launch Promo banner when active
+- Razorpay payment integration for paid plans
+
+---
+
+## Plan Renewal Flow
+
+When plan expires:
+1. Banner shown on AllPosts screen (red)
+2. Push notification sent (see Notification System)
+3. "+ Sell" button redirects to Plans screen
+4. Feed post creation also gated by plan status
+5. After renewal, all posting features restore immediately
+
+---
+
+## Plan Expiry Flow (Notification System)
+
+Daily background check via PlanExpiryNotificationWorker (WorkManager):
+
+| Days Before Expiry | Notification |
+|---|---|
+| 7 days | "Plan expiring in 7 days — Renew now" |
+| 3 days | "Only 3 days left — Renew to avoid interruption" |
+| 1 day | "Plan expires tomorrow!" |
+| 0 days (expired) | "Plan expired — Renew to continue" |
+
+**In-app banners:**
+- Orange banner: Plan expires within 7 days
+- Red banner: Plan already expired
+- Both shown on AllPosts screen, dismissable
+
+---
+
+## Free Launch Plan (3-Month Promo)
+
+For the first 3 months after app launch (June 1, 2026 – September 1, 2026):
+- All authenticated users can post listings and feed posts **without a subscription**
+- KYC is still required to post
+- Free Launch banner shown on Plans screen and AllPosts screen
+- Managed via FreeLaunchPlan object in core/PlanManager.kt
+- After promo ends, normal subscription flow resumes
+
+---
+
+## Feed Module
+
+**Purpose:** Community news, knowledge sharing, discussions, industry updates
+
+**Post types:** Text-only posts (no marketplace images)
+
+**Features:**
+- Facebook-style post cards with author avatar, title, content, Like/Share/Save/Views
+- "Read more" expansion for long posts
+- Inline comment previews
+- FAB (+) to create new feed post — requires active plan (or free promo)
+- Pull-to-refresh with 4-second timeout fallback to mock data
+
+**Tabs:**
+- **Feed** — All community posts
+- **My Feed** — Current user's own feed posts (with promote/delete)
+
+---
+
+## All Posts Module
+
+**Purpose:** Marketplace listings — all users' product posts within selected category
+
+**Features:**
+- Category + subcategory filtering
+- Sort by: Newest, Price (asc/desc), Popular, Trending
+- 3-dot menu per card: Compare, Wishlist, Share, Report
+- Like, Interested, Compare, Save, Share, Views pills
+- "View Details" button → Full PostDetailScreen
+- Compare mode: select up to 4 posts, compare side-by-side
+- Pull-to-refresh
+- Infinite scroll (pagination)
+- Filter bottom sheet: condition, subcategory, price range
+- Plan expiry banner (orange/red)
+- Free Launch promo banner (green)
+
+**Sample Data (mock fallback):** 40+ posts across all categories:
+- Electronics: iPhone 14 Pro, MacBook Air M2, PS5, Sony WH-1000XM5, Canon EOS R50, DJI Mini 3 Pro…
+- Fashion: Jordan 1, Yeezy 350, LV Neverfull, Rolex Submariner…
+- Vehicles: RE Classic 350, Nexon EV Max, Hyundai Creta…
+- Others: IKEA MALM, Harry Potter set, 2BHK Flat Koramangala…
+
+---
+
+## For You Module
+
+**Purpose:** Personalized AllPosts — filtered by user's selected preferences
+
+**Recommendation tiers:**
+1. /api/recommendations — AI-personalized recommendations
+2. /api/profile/preferences → user's category preferences → filtered posts
+3. /api/posts/feed — general feed fallback → mock posts
+
+**Difference from AllPosts:** Content prioritizes user's preferred categories (set in Profile → Preferences)
+
+---
+
+## My Posts Module
+
+**Purpose:** Current user's own marketplace listings
+
+**Features:**
+- Edit post
+- Delete post
+- View post statistics (views, likes, interested buyers)
+- Mark Sale Done / Reactivate listing
+- Share post
+- Filter by status (Active, Sold, Pending)
+
+---
+
+## Rewards Module
+
+**Features:**
+- Points balance with tier badges (Bronze/Silver/Gold/Platinum)
+- Earn points: posting listings, completing sales, referring users, daily logins
+- Redeem: coupons, cashback, premium features
+- Leaderboard
+- Task/challenge tracking
+- Streak tracking
+- Requires authentication (login prompt for guests)
+
+---
+
+## Profile Module
+
+**Sections:**
+- Account info (name, email, phone, avatar)
+- KYC status with verification badge
+- My Posts management
+- Sale Done / Sale Undone history
+- Addresses management
+- Orders history
+- Preferences (preferred categories for ForYou)
+- App Settings (language, theme, notifications)
+- Logout
+
+---
+
+## Notification System
+
+**Channels:**
+
+| Channel | Purpose | Priority |
+|---|---|---|
+| mhub_plan_expiry | Plan expiry reminders | HIGH |
+| CHANNEL_OFFERS | Deals & marketplace alerts | HIGH |
+| CHANNEL_CHAT | Messages | HIGH |
+| CHANNEL_SYSTEM | System updates | DEFAULT |
+| CHANNEL_MARKETING | Promotions | LOW |
+
+**Push via FCM:** Deep links via mhub://post/{id}, mhub://chat/{id}, etc.
+
+**WorkManager jobs:**
+- plan_expiry_check — Daily, checks subscription expiry and sends notifications
+- offline_sync — On network reconnect, processes queued write operations
+
+---
+
+## Localization System
+
+**Supported languages (14):**
+en (default), hi, 	e, 	a, kn, mr, n, gu, ml, pa, ur, r, es, r
+
+**Implementation:**
+- LocaleManager (Singleton) — persists selected locale to SharedPreferences ("mhub_locale")
+- AppCompatDelegate.setApplicationLocales() — per-app language (Android 13+)
+- localeVersion StateFlow — increments on change → forces ViewModels to reload data
+- Language selector in Settings with Indian + International language groups
+- Selection persists across restarts, logout/login, and updates
+
+**String coverage:** 1,425 string keys translated in all 14 languages
+
+---
+
+## Publishing Workflow
+
+### Sell / Marketplace Post
+`
+"+" FAB click
+  ├─► Not authenticated → Login screen
+  ├─► KYC not approved → KYC screen
+  ├─► Free Promo active → POST_WELCOME (skip plan check)
+  ├─► No active plan → Plans screen
+  └─► Plan active → Sell screen (PostWelcomeScreen)
+`
+
+### Feed Post
+`
+Feed FAB click
+  ├─► Not authenticated → Login screen
+  ├─► Free Promo active → FeedPostAddScreen
+  ├─► No active plan → Plans screen
+  └─► Plan active → FeedPostAddScreen
+`
+
+---
+
+## Mobile Application Navigation Flow
+
+### Bottom Navigation (5 tabs)
+
+| Tab | Screen | Purpose |
+|---|---|---|
+| Home 🏠 | HomeScreen | Category selection, trending, banners |
+| Posts 📋 | ExploreScreen (AllPosts) | Browse all marketplace listings |
+| + | SellFlow | Post a new listing (KYC+Plan gated) |
+| Feed 📰 | FeedScreen | Community news and discussions |
+| Rewards 🏆 | RewardsScreen | Points, badges, leaderboard |
+
+### Hamburger Menu (More drawer)
+
+| Section | Items |
+|---|---|
+| Social | Public Wall, My Feed, Feedback, Complaints |
+| Commerce | Sale Done, Sale Undone, Recently Viewed, Saved Searches, Wishlist, Compare |
+| Account | Profile, KYC, Plans/Subscription, Settings |
+| Info | About, Terms, Privacy, Refund Policy |
+| Admin | Admin Dashboard (admin users only) |
+
+### Additional Routes
+- ForYou — Personalized recommendations (accessible from Home)
+- MyPosts / MyHome — User's own listings
+- PostDetail — Full listing detail with images, seller info, buyer interest
+- FeedDetail — Full text post view
+
+---
+
+## Category-Based Architecture
+
+### Category Ecosystem Isolation
+When user selects a category from Home:
+- LocalActiveCategoryKey (CompositionLocal) is set to category key ("electronics", "fashion", "vehicles", "others")
+- ExploreViewModel.setEcosystem() scopes all API calls to that category
+- Subcategories load category-specific items
+- Returning to Home resets the ecosystem key
+
+### Shared vs Category-Specific Modules
+
+| Module | Shared | Category-Specific |
+|---|---|---|
+| Profile | ✅ | ❌ |
+| Rewards | ✅ | ❌ |
+| KYC | ✅ | ❌ |
+| Plans | ✅ | ❌ |
+| AllPosts | ❌ | ✅ (filtered by category) |
+| My Posts | ❌ | ✅ |
+| Feed | ✅ | ❌ |
+| For You | ✅ | Preference-based |
+| Sale Done | ❌ | ✅ |
+| Sale Undone | ❌ | ✅ |
+
+---
+
+## Web Application Parity
+
+**Reference:** http://localhost:8081/ (local dev) or production URL
+
+### Key Parity Points
+- AllPosts card design matches web: image, price badge, HOT badge, condition badge, engagement pills
+- Feed posts are text-only (news/discussions), same as web Feed.jsx
+- ForYou uses same 3-tier recommendation fallback as web ForYou.jsx
+- Sale Done / Sale Undone match Saledone.jsx stepper + seller/buyer tabs
+- Category ecosystem isolation matches web category routing
+- KYC flow matches web Aadhaar + PAN 4-step flow
+- Plan gating logic identical (KYC → Plan → Sell)
+- Language switching behavior mirrors web i18n system
+
+---
+
+## Future Scalability Considerations
+
+1. **Modularization:** Current single-module codebase can be split into feature modules (:feature:feed, :feature:allposts, etc.) for faster build times
+2. **Offline support:** Room DB caching already in place — extend for full offline browsing
+3. **Real-time messaging:** Architecture supports WebSocket upgrades for Chat feature
+4. **A/B testing:** Firebase Remote Config integration ready
+5. **Dynamic delivery:** Play Feature Delivery for on-demand language packs
+6. **Compose Multiplatform:** UI layer is Compose-only, enabling future iOS sharing
+7. **Analytics:** Firebase Analytics events defined at key user journeys
+8. **Performance:** Baseline Profile reduces cold start by ~30%

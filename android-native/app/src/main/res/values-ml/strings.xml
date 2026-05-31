@@ -1423,4 +1423,10 @@
     <string name="commerce_badge_secure">🔒 സുരക്ഷിതം</string>
     <string name="commerce_badge_rewarded">✓ പ്രതിഫലം</string>
     <string name="commerce_badge_verified">📋 സ്ഥിരീകരിച്ചു</string>
+    <string name="profile_orders">ഓർഡറുകൾ</string>
+    <string name="feed_login_subtitle">പൂർണ്ണ കമ്മ്യൂണിറ്റി ഫീഡ് ആക്സസ് ചെയ്യാൻ അക്കൗണ്ട് ഉണ്ടാക്കുക അല്ലെങ്കിൽ ലോഗിൻ ചെയ്യുക</string>
+    <string name="feed_login_to_see_more">കൂടുതൽ കാണാൻ സൈൻ ഇൻ ചെയ്യുക</string>
+    <string name="profile_manage_addresses">വിലാസങ്ങൾ നിര്‍വഹിക്കുക</string>
+    <string name="profile_addresses">വിലാസങ്ങൾ</string>
+    <string name="profile_track_orders">ഓർഡറുകൾ ട്രാക്ക് ചെയ്യുക</string>
 </resources>

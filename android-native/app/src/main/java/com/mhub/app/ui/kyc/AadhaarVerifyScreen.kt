@@ -322,7 +322,7 @@ fun AadhaarVerifyScreen(
                     Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFEF3C7)), contentAlignment = Alignment.Center) {
-                                Text("�", fontSize = 26.sp)
+                                Text("🆔", fontSize = 26.sp)
                             }
                             Column {
                                 Text("Reward Earned", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF92400E))
@@ -345,10 +345,10 @@ fun AadhaarVerifyScreen(
             // Benefits section
             Text("Benefits of Verification", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                AadhaarBenefit("�️", "Verified Badge", "Display a trust badge on your profile and listings")
+                AadhaarBenefit("🛡️", "Verified Badge", "Display a trust badge on your profile and listings")
                 AadhaarBenefit("⭐", "Boost Listings", "Verified sellers get higher visibility in search")
-                AadhaarBenefit("�", "Build Trust", "Buyers prefer verified sellers for higher-value items")
-                AadhaarBenefit("�", "Earn Coins", "Get 50 bonus coins on successful verification")
+                AadhaarBenefit("🤝", "Build Trust", "Buyers prefer verified sellers for higher-value items")
+                AadhaarBenefit("🪙", "Earn Coins", "Get 50 bonus coins on successful verification")
             }
 
             Spacer(Modifier.height(24.dp))

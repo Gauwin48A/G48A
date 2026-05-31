@@ -1441,4 +1441,10 @@
     <string name="commerce_badge_secure">🔒 सुरक्षित</string>
     <string name="commerce_badge_rewarded">✓ पुरस्कृत</string>
     <string name="commerce_badge_verified">📋 सत्यापित</string>
+    <string name="profile_orders">ऑर्डर</string>
+    <string name="feed_login_subtitle">पूरी कम्युनिटी फ़ीड देखने के लिए अकाउंट बनाएं या लॉग इन करें</string>
+    <string name="feed_login_to_see_more">अधिक देखने के लिए साइन इन करें</string>
+    <string name="profile_manage_addresses">पते प्रबंधित करें</string>
+    <string name="profile_addresses">पते</string>
+    <string name="profile_track_orders">ऑर्डर ट्रैक करें</string>
 </resources>

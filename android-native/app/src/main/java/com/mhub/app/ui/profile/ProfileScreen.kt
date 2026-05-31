@@ -739,10 +739,10 @@ fun ProfileScreen(
                                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                                     Text(
                                                         when (platform.lowercase()) {
-                                                            "twitter" -> "�"
-                                                            "instagram" -> "�"
+                                                            "twitter" -> "🐦"
+                                                            "instagram" -> "📸"
                                                             "linkedin" -> "in"
-                                                            else -> "�"
+                                                            else -> "🌐"
                                                         },
                                                         color = Color.White,
                                                         fontSize = 11.sp,
@@ -1167,7 +1167,7 @@ fun ProfileScreen(
                             ) {
                                 Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Text("�", fontSize = 20.sp)
+                                        Text("👤", fontSize = 20.sp)
                                     }
                                 }
                                 Column(Modifier.weight(1f)) {
@@ -1538,7 +1538,7 @@ private fun PreferencesTab(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCategoryMode),
         ) {
             Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("�", fontSize = 22.sp)
+                Text("🏪", fontSize = 22.sp)
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
                     Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))

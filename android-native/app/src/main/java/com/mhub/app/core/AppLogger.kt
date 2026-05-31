@@ -37,7 +37,7 @@ object AppLogger {
     }
 
     fun authTokenRefresh(success: Boolean) {
-        if (ENABLED) Log.d("MHub-Auth", if (success) "� TOKEN REFRESH: success" else "� TOKEN REFRESH: FAILED")
+        if (ENABLED) Log.d("MHub-Auth", if (success) "↻ TOKEN REFRESH: success" else "↻ TOKEN REFRESH: FAILED")
     }
 
     fun authTokenExpired() {
@@ -68,7 +68,7 @@ object AppLogger {
 
     // ─── Locale ──────────────────────────────────────────────────────────────
     fun localeChange(from: String, to: String) {
-        if (ENABLED) Log.d("MHub-Locale", "� LOCALE: $from → $to")
+        if (ENABLED) Log.d("MHub-Locale", "🌐 LOCALE: $from → $to")
     }
 
     fun localeReload(vmName: String) {

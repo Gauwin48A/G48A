@@ -126,110 +126,236 @@ private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null, onPromote: (
 // ──────────────────────────────────────────────────────────────────────────────
 // FeedDetailScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class FeedDetailUiState(val loading: Boolean = true, val item: FeedItem? = null, val error: String? = null, val liked: Boolean = false, val likeCount: Int = 0)
+private val MOCK_FEED_MAP = mapOf(
+    "mock_1" to com.mhub.app.data.remote.dto.FeedItem(id = "mock_1", title = "How to negotiate the best price when buying a used car", content = "Buying a used car can be tricky. Here are 7 proven tips to get the best deal:\n\n1) Research market prices on MHub before visiting. Always know the average price range for the model you're looking at.\n\n2) Always inspect the vehicle in daylight — scratches and dents are much harder to see at night.\n\n3) Get a mechanic inspection before paying. A ₹500 inspection fee can save you ₹50,000 in repairs.\n\n4) Check the RC certificate, insurance, and service history documents carefully.\n\n5) Never pay in advance without meeting the seller in person.\n\n6) Negotiate confidently — most sellers expect a counter-offer.\n\n7) Use MHub's compare feature to check similar listings before finalizing.", userName = "AutoExpert_Ravi", createdAt = "2024-01-15T10:30:00Z", likeCount = 234, commentCount = 18, viewCount = 1850, categoryName = "Vehicles"),
+    "mock_2" to com.mhub.app.data.remote.dto.FeedItem(id = "mock_2", title = "Top 5 budget smartphones under ₹15,000 in 2024", content = "The budget smartphone market has exploded this year. Redmi, Realme and Poco are fighting hard for your money.\n\nHere's our analysis of the best bang-for-buck options available on MHub right now:\n\n• Redmi 13C – Best camera in segment\n• Realme C65 – Best battery life\n• POCO M6 Pro – Best performance\n• Samsung Galaxy M14 – Best display\n• Motorola G34 – Best after-sales support\n\nAll of these have pre-owned listings available on MHub at 30-40% below retail price. Check the 'Electronics → Phones' category to find great deals near you.", userName = "TechReview_Ananya", createdAt = "2024-01-14T14:22:00Z", likeCount = 567, commentCount = 45, viewCount = 4200, categoryName = "Electronics"),
+    "mock_7" to com.mhub.app.data.remote.dto.FeedItem(id = "mock_7", title = "EV revolution in India: Should you buy an electric vehicle now?", content = "With petrol prices rising and EV subsidies available, more Indians are considering electric vehicles. I test drove 4 electric scooters last month.\n\nHere's my honest take:\n\nThe Good:\n• Daily commute costs drop by 80%\n• Government FAME II subsidy saves ₹15,000-25,000\n• Very low maintenance (no engine oil, fewer moving parts)\n\nThe Challenges:\n• Charging infrastructure still patchy in tier-2/3 cities\n• Range anxiety for trips beyond 80km\n• Resale value still uncertain\n\nVerdict: If your daily commute is under 50km and you have home charging, EVs make excellent financial sense in 2024.", userName = "GreenMobility_Arjun", createdAt = "2024-01-09T13:00:00Z", likeCount = 1203, commentCount = 145, viewCount = 9800, categoryName = "Vehicles"),
+    "mock_10" to com.mhub.app.data.remote.dto.FeedItem(id = "mock_10", title = "Safety tips when buying or selling on MHub", content = "Your safety matters. Here are essential tips for safe transactions:\n\n🔒 BUYING SAFETY\n• Meet in public places like malls, police stations, or busy coffee shops\n• Never share OTP or UPI PIN with anyone\n• Test electronics before paying — insist on a demo\n• For vehicles, verify RC in the Parivahan app before paying\n• Avoid advance payments to unverified sellers\n\n📦 SELLING SAFETY\n• Don't share your home address publicly in listings\n• Meet buyers in neutral locations for high-value items\n• Accept only bank transfers or UPI — no wallet-to-wallet for large amounts\n• Verify buyer identity before delivering\n• Screenshot all conversations for dispute resolution\n\n⚠️ RED FLAGS\n• Offers too good to be true\n• Pressure to transact quickly\n• Requests to pay outside MHub\n• Anyone asking for remote access to your device", userName = "SafetyFirst_MHub", createdAt = "2024-01-06T10:00:00Z", likeCount = 2100, commentCount = 234, viewCount = 18500),
+)
+
+data class FeedDetailUiState(val loading: Boolean = true, val item: com.mhub.app.data.remote.dto.FeedItem? = null, val error: String? = null, val liked: Boolean = false, val likeCount: Int = 0)
 
 @HiltViewModel
 class FeedDetailViewModel @Inject constructor(private val repo: SocialRepository) : ViewModel() {
     private val _state = MutableStateFlow(FeedDetailUiState())
     val state: StateFlow<FeedDetailUiState> = _state.asStateFlow()
-    fun load(id: String) { viewModelScope.launch {
-        when (val r = repo.feedDetail(id)) {
-            is ApiResult.Success -> {
-                _state.value = FeedDetailUiState(loading = false, item = r.data, liked = r.data.isLiked, likeCount = r.data.likeCount)
-                repo.viewPost(id)
-                repo.trackViewed(id)
+    fun load(id: String) {
+        // Instant mock fallback for demo/offline
+        if (id.startsWith("mock_")) {
+            val mock = MOCK_FEED_MAP[id]
+            if (mock != null) {
+                _state.value = FeedDetailUiState(loading = false, item = mock, liked = false, likeCount = mock.likeCount)
+                return
             }
-            is ApiResult.Failure -> _state.value = FeedDetailUiState(loading = false, error = r.error.message)
         }
-    } }
+        viewModelScope.launch {
+            val result = kotlinx.coroutines.withTimeoutOrNull(5000L) { repo.feedDetail(id) }
+                ?: ApiResult.Failure(com.mhub.app.core.ApiError.Timeout)
+            when (result) {
+                is ApiResult.Success -> {
+                    _state.value = FeedDetailUiState(loading = false, item = result.data, liked = result.data.isLiked, likeCount = result.data.likeCount)
+                    runCatching { repo.viewPost(id); repo.trackViewed(id) }
+                }
+                is ApiResult.Failure -> _state.value = FeedDetailUiState(loading = false, error = result.error.message)
+            }
+        }
+    }
     fun toggleLike() {
         val s = _state.value
         val item = s.item ?: return
         val newLiked = !s.liked
         _state.value = s.copy(liked = newLiked, likeCount = s.likeCount + if (newLiked) 1 else -1)
-        viewModelScope.launch { repo.likePost(item.stableId) }
+        viewModelScope.launch { runCatching { repo.likePost(item.stableId) } }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(feedId) { viewModel.load(feedId) }
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
-        Column(Modifier.fillMaxSize()) {
-            SocialTopBar("Post", onBack)
-            when {
-                state.loading -> ListShimmer(count = 3, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
-                state.item != null -> {
-                    val item = state.item!!
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-                        // Author header
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(48.dp).clip(CircleShape).background(
-                                Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)))),
-                                contentAlignment = Alignment.Center) {
-                                Text(item.displayName.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    androidx.compose.material3.Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Post", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { padding ->
+        when {
+            state.loading -> ListShimmer(count = 4, modifier = Modifier.fillMaxSize().padding(padding).padding(top = 8.dp))
+            state.item != null -> {
+                val item = state.item!!
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Author card (Facebook-style post header)
+                    item(key = "author") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            val initial = item.displayName.take(1).uppercase()
+                            Box(
+                                modifier = Modifier.size(48.dp).clip(CircleShape).background(
+                                    Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)))
+                                ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(initial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                             }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(item.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(2.dp))
-                                    Text(item.createdAt?.take(16)?.replace("T", " ") ?: "", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        // Title
-                        if (item.title != null) {
-                            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        // Content
-                        Text(item.displayContent, fontSize = 15.sp, color = Color(0xFF374151), lineHeight = 22.sp)
-                        Spacer(Modifier.height(16.dp))
-                        // Images
-                        item.images.forEach { imgUrl ->
-                            coil.compose.AsyncImage(model = imgUrl, contentDescription = null,
-                                contentScale = androidx.compose.ui.layout.ContentScale.FillWidth,
-                                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).padding(bottom = 8.dp))
-                        }
-                        // Interactions bar
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                // Like
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { viewModel.toggleLike() }) {
-                                    Icon(if (state.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, null,
-                                        tint = if (state.liked) Color(0xFFEF4444) else Color(0xFF64748B), modifier = Modifier.size(22.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("${state.likeCount}", fontSize = 14.sp, color = Color(0xFF64748B))
-                                }
-                                // Comments count
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.ChatBubbleOutline, null, tint = Color(0xFF64748B), modifier = Modifier.size(22.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("${item.commentCount}", fontSize = 14.sp, color = Color(0xFF64748B))
-                                }
-                                // Share
-                                val context = androidx.compose.ui.platform.LocalContext.current
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub: ${item.title ?: item.content?.take(80) ?: ""}")
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.displayName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        item.createdAt?.take(10) ?: "",
+                                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    if (!item.categoryName.isNullOrBlank()) {
+                                        Text("·", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f)) {
+                                            Text(item.categoryName, fontSize = 11.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
                                     }
-                                    context.startActivity(android.content.Intent.createChooser(intent, "Share"))
-                                }) {
-                                    Icon(Icons.Filled.Share, null, tint = Color(0xFF64748B), modifier = Modifier.size(22.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.social_share), fontSize = 14.sp, color = Color(0xFF64748B))
+                                }
+                            }
+                            // Share icon
+                            IconButton(onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}\n\n${item.content?.take(120) ?: ""}")
+                                }
+                                context.startActivity(android.content.Intent.createChooser(intent, "Share"))
+                            }) {
+                                Icon(Icons.Filled.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    // Title (large, bold — like a blog post)
+                    if (!item.title.isNullOrBlank()) {
+                        item(key = "title") {
+                            Text(
+                                text = item.title,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 22.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 30.sp,
+                            )
+                        }
+                    }
+
+                    // Full content (no truncation — full post body)
+                    if (!item.content.isNullOrBlank()) {
+                        item(key = "content") {
+                            Text(
+                                text = item.content,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 26.sp,
+                            )
+                        }
+                    }
+
+                    // Engagement stats bar
+                    item(key = "stats") {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Filled.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                    Text("${state.likeCount} likes", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Filled.ChatBubbleOutline, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(16.dp))
+                                    Text("${item.commentCount} comments", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                item.viewCount?.takeIf { it > 0 }?.let { v ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(Icons.Filled.Visibility, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                                        Text("$v views", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                         }
                     }
+
+                    // Action buttons (Like + Share — Facebook style)
+                    item(key = "actions") {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 1.dp,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(4.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                            ) {
+                                // Like button
+                                TextButton(
+                                    onClick = { viewModel.toggleLike() },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Icon(
+                                        if (state.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                        null,
+                                        tint = if (state.liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        if (state.liked) "Liked" else "Like",
+                                        color = if (state.liked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                                    )
+                                }
+                                HorizontalDivider(modifier = Modifier.width(1.dp).height(40.dp).align(Alignment.CenterVertically))
+                                // Share button
+                                TextButton(
+                                    onClick = {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}")
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(intent, "Share"))
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Icon(Icons.Filled.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Share", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
-                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.error ?: "Post not found", color = Color(0xFF64748B))
+            }
+            else -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Filled.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                    Text(state.error ?: "Post not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { viewModel.load(feedId) }) { Text("Retry") }
                 }
             }
         }
@@ -311,13 +437,13 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("� 50", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                Text("🪙 50", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
                                 Text("24 hours", fontSize = 11.sp, color = Color(0xFF064E3B))
                             }
                         }
                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("� 150", fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                Text("🪙 150", fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
                                 Text("7 days", fontSize = 11.sp, color = Color(0xFF78350F))
                             }
                         }
@@ -342,11 +468,11 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, text) }
                         context.startActivity(android.content.Intent.createChooser(intent, "Share via"))
                         shareTarget = null
-                    }, modifier = Modifier.fillMaxWidth()) { Text("� Share anywhere") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("📤 Share anywhere") }
                     OutlinedButton(onClick = {
                         clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://mhub.app/post/${post.stableId}"))
                         shareTarget = null
-                    }, modifier = Modifier.fillMaxWidth()) { Text("� Copy link") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
                 }
             },
             confirmButton = { TextButton(onClick = { shareTarget = null }) { Text(stringResource(R.string.social_close)) } },
@@ -644,9 +770,9 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                         horizontalArrangement = Arrangement.SpaceEvenly,
                                     ) {
                                         listOf(
-                                            Triple("${state.totalSales}", "Total Sales", "�"),
-                                            Triple("${state.activeBuyers}", "Active Buyers", "�"),
-                                            Triple("${state.totalVolume}", "Vol. Coins", "�"),
+                                            Triple("${state.totalSales}", "Total Sales", "📊"),
+                                            Triple("${state.activeBuyers}", "Active Buyers", "👥"),
+                                            Triple("${state.totalVolume}", "Vol. Coins", "🪙"),
                                             Triple("${state.verificationRate}%", "Verified", "✅"),
                                         ).forEach { (value, label, emoji) ->
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -680,7 +806,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
                             ) {
-                                listOf("Top Sellers" to "�", "Top Buyers" to "�️", "Top Users" to "⭐").forEach { (tab, emoji) ->
+                                listOf("Top Sellers" to "🏆", "Top Buyers" to "🛒", "Top Users" to "⭐").forEach { (tab, emoji) ->
                                     FilterChip(
                                         selected = activeTab == tab,
                                         onClick = { activeTab = tab },
@@ -740,9 +866,9 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                 else -> Color(0xFF6B7280)
                             }
                             val rankEmoji = when (entry.rank) {
-                                "Gold" -> "�"
-                                "Silver" -> "�"
-                                "Bronze" -> "�"
+                                "Gold" -> "🥇"
+                                "Silver" -> "🥈"
+                                "Bronze" -> "🥉"
                                 else -> "#${index + 1}"
                             }
                             Surface(
@@ -878,11 +1004,11 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
     var density by remember { mutableStateOf("comfortable") } // compact / comfortable / spacious
     // Web-parity: 6 complaint types matching Complaints.jsx
     val complaintTypes = listOf(
-        "transaction" to "� Transaction",
-        "quality" to "� Quality",
-        "communication" to "� Communication",
+        "transaction" to "💳 Transaction",
+        "quality" to "⭐ Quality",
+        "communication" to "💬 Communication",
         "fraud" to "⚠️ Fraud",
-        "delivery" to "� Delivery",
+        "delivery" to "🚚 Delivery",
         "other" to "❓ Other",
     )
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFFF7F7), Color(0xFFFFF3E0), Color(0xFFFFF8E1))))) {
@@ -911,7 +1037,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                         Text("Report issues with transactions, sellers, or products", fontSize = 13.sp, color = Color(0xFF64748B))
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("� Secure" to Color(0xFFDCFCE7), "⏱ 24-48h Response" to Color(0xFFF0F9FF), "⚖️ Fair Resolution" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                            listOf("🛡 Secure" to Color(0xFFDCFCE7), "⏱ 24-48h Response" to Color(0xFFF0F9FF), "⚖️ Fair Resolution" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
                                 Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
                                     Text(badge, fontSize = 10.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
@@ -977,11 +1103,11 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                 // Complaint type selector — 2x3 grid (web parity)
                                 Text("Complaint Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                                 val complaintTypeCards = listOf(
-                                    Triple("transaction", "�", "Transaction Issue"),
-                                    Triple("quality", "�", "Product Quality"),
-                                    Triple("communication", "�", "Communication"),
+                                    Triple("transaction", "💳", "Transaction Issue"),
+                                    Triple("quality", "⭐", "Product Quality"),
+                                    Triple("communication", "💬", "Communication"),
                                     Triple("fraud", "⚠️", "Suspected Fraud"),
-                                    Triple("delivery", "�", "Delivery Issue"),
+                                    Triple("delivery", "🚚", "Delivery Issue"),
                                     Triple("other", "❓", "Other"),
                                 )
                                 complaintTypeCards.chunked(2).forEach { row ->
@@ -1040,7 +1166,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                 // Guidelines section (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("� Important Guidelines", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text("⚠️ Important Guidelines", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                         listOf("Provide accurate Post ID for faster resolution", "Include any transaction codes if applicable", "Detailed descriptions help us investigate faster", "False complaints may result in account restrictions").forEach { guideline ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("✓", fontSize = 12.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.Bold)
@@ -1154,11 +1280,11 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
     // Web parity: 5 feedback types with icons, names, descriptions matching Feedback.jsx
     data class FeedbackType(val key: String, val emoji: String, val name: String, val description: String, val bgColor: Color, val tintColor: Color)
     val feedbackTypes = listOf(
-        FeedbackType("bug", "�", "Bug Report", "Found something broken? Let us know", Color(0xFFFEF2F2), Color(0xFFDC2626)),
-        FeedbackType("feature", "�", "Feature Request", "Have an idea to make MHub better?", Color(0xFFFEFCE8), Color(0xFFCA8A04)),
-        FeedbackType("ui", "�", "UI Improvement", "Suggestions for design and layout", Color(0xFFF5F3FF), Color(0xFF7C3AED)),
+        FeedbackType("bug", "🐛", "Bug Report", "Found something broken? Let us know", Color(0xFFFEF2F2), Color(0xFFDC2626)),
+        FeedbackType("feature", "💡", "Feature Request", "Have an idea to make MHub better?", Color(0xFFFEFCE8), Color(0xFFCA8A04)),
+        FeedbackType("ui", "🎨", "UI Improvement", "Suggestions for design and layout", Color(0xFFF5F3FF), Color(0xFF7C3AED)),
         FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", Color(0xFFFFF7ED), Color(0xFFEA580C)),
-        FeedbackType("general", "�", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
+        FeedbackType("general", "💬", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
     )
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEEF2FF), Color(0xFFF5F3FF))))) {
         Column(Modifier.fillMaxSize()) {
@@ -1187,7 +1313,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                             Text("Help us improve MHub for everyone", fontSize = 13.sp, color = Color(0xFF64748B))
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("� Your Voice Matters" to Color(0xFFF0F9FF), "� We Listen" to Color(0xFFDCFCE7), "� Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                                listOf("📢 Your Voice Matters" to Color(0xFFF0F9FF), "👂 We Listen" to Color(0xFFDCFCE7), "🔄 Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
                                     Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
                                         Text(badge, fontSize = 9.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
                                     }
@@ -1344,12 +1470,12 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 // Why Feedback Matters — enhanced 2-col grid (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("� Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        Text("💡 Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
                         listOf(
-                            Triple("�", "Shapes Features", "Your ideas guide what we build next"),
-                            Triple("�", "Improves Safety", "Bug reports keep the platform secure"),
+                            Triple("💡", "Shapes Features", "Your ideas guide what we build next"),
+                            Triple("🛡", "Improves Safety", "Bug reports keep the platform secure"),
                             Triple("✨", "Better UX", "Your UI feedback drives design decisions"),
-                            Triple("�", "Grows Community", "Your input makes MHub better for everyone"),
+                            Triple("🌱", "Grows Community", "Your input makes MHub better for everyone"),
                         ).chunked(2).forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { (emoji, title, desc) ->
@@ -1369,7 +1495,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 // Direct contact (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("� Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        Text("📞 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
                         Text("For urgent issues, reach us at support@mhub.app", fontSize = 12.sp, color = Color(0xFF4B5563))
                         Text("We respond within 24 hours on business days.", fontSize = 11.sp, color = Color(0xFF64748B))
                     }

@@ -205,6 +205,17 @@ class SellFlowViewModel @Inject constructor(
 ) : ViewModel() {
     /** Returns the route to navigate to when the sell button is tapped. */
     suspend fun resolveDestination(): String {
+        // Free 3-month launch promo: skip subscription check
+        if (com.mhub.app.core.FreeLaunchPlan.isActive()) {
+            // Still require KYC
+            when (val kycResult = kycRepo.status()) {
+                is ApiResult.Success -> {
+                    if (kycResult.data.kycStatus != "approved") return com.mhub.app.ui.navigation.Routes.KYC
+                }
+                is ApiResult.Failure -> return com.mhub.app.ui.navigation.Routes.KYC
+            }
+            return com.mhub.app.ui.navigation.Routes.POST_WELCOME
+        }
         when (val kycResult = kycRepo.status()) {
             is ApiResult.Success -> {
                 val status = kycResult.data.kycStatus
@@ -219,6 +230,16 @@ class SellFlowViewModel @Inject constructor(
             is ApiResult.Failure -> return com.mhub.app.ui.navigation.Routes.TIER_SELECTION
         }
         return com.mhub.app.ui.navigation.Routes.POST_WELCOME
+    }
+
+    /** Returns true if user has an active subscription (for Feed post creation). */
+    suspend fun checkSubscriptionOnly(): Boolean {
+        // Free 3-month launch promo: everyone can post
+        if (com.mhub.app.core.FreeLaunchPlan.isActive()) return true
+        return when (val subResult = tiersRepo.mySubscription()) {
+            is ApiResult.Success -> subResult.data.active
+            is ApiResult.Failure -> false
+        }
     }
 }
 
@@ -277,10 +298,13 @@ fun MhubApp(
         val localeVersion = localeManager?.localeVersion?.collectAsState()
 
         // Reset guest mode when user becomes authenticated (prevents stale guest state after login)
+        val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
         LaunchedEffect(isAuthenticated) {
             if (isAuthenticated) {
                 guestBrowsing = false
                 showAuthGate = false
+                // Schedule daily plan expiry notification checks
+                com.mhub.app.core.schedulePlanExpiryChecks(appContext)
             }
         }
 
@@ -472,9 +496,26 @@ fun MhubApp(
 
                 composable(Routes.FEED) {
                     MainShell(navController = navController, selected = BottomTab.FEED, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                        val feedSellVm: SellFlowViewModel = hiltViewModel()
+                        val feedScope = rememberCoroutineScope()
                         FeedScreen(
-                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                            onCreatePost = { navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true } },
+                            onOpenPost = { id -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
+                            onCreatePost = {
+                                if (!isAuthenticated) {
+                                    guestBrowsing = false
+                                    navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
+                                } else {
+                                    feedScope.launch {
+                                        // Feed posts require active plan (same as sell flow)
+                                        val subResult = feedSellVm.checkSubscriptionOnly()
+                                        if (subResult) {
+                                            navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
+                                        } else {
+                                            navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
+                                        }
+                                    }
+                                }
+                            },
                             isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )

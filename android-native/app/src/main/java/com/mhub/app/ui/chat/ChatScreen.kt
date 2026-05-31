@@ -403,7 +403,7 @@ fun ChatScreen(
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
                 modifier = androidx.compose.ui.Modifier.padding(32.dp),
             ) {
-                Text("�", fontSize = 48.sp)
+                Text("💬", fontSize = 48.sp)
                 Text(stringResource(R.string.chat_sign_in_title), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
                 Text(stringResource(R.string.chat_sign_in_subtitle), color = Color(0xFF64748B), textAlign = TextAlign.Center)
                 Button(
@@ -723,7 +723,7 @@ private fun MessageThreadScreen(
             title = { Text(stringResource(R.string.chat_react)) },
             text = {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-                    listOf("❤️", "�", "�", "�", "�", "�").forEach { emoji ->
+                    listOf("❤️", "👍", "😂", "😮", "😢", "🔥").forEach { emoji ->
                         Text(
                             emoji,
                             style = MaterialTheme.typography.headlineMedium,
@@ -997,7 +997,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
     var showTimestamp by remember { mutableStateOf(false) }
     var myReaction by remember { mutableStateOf<String?>(null) }
     var showReactionPicker by remember { mutableStateOf(false) }
-    val reactions = listOf("❤️", "�", "�", "�", "�", "�")
+    val reactions = listOf("❤️", "👍", "😂", "😮", "😢", "🔥")
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -1057,7 +1057,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 Icon(Icons.Default.AttachFile, null, modifier = Modifier.size(16.dp), tint = if (isMe) Color.White.copy(0.8f) else Color(0xFF64748B))
-                                Text("� Attachment", fontSize = 12.sp, color = if (isMe) Color.White.copy(0.9f) else Color(0xFF374151))
+                                Text("📎 Attachment", fontSize = 12.sp, color = if (isMe) Color.White.copy(0.9f) else Color(0xFF374151))
                             }
                         }
                     }

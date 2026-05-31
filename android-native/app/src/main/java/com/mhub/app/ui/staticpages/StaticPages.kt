@@ -296,7 +296,7 @@ fun FAQScreen(onBack: () -> Unit) {
             if (filtered.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("�", style = MaterialTheme.typography.displayMedium)
+                        Text("🔍", style = MaterialTheme.typography.displayMedium)
                         Spacer(Modifier.height(12.dp))
                         Text(stringResource(R.string.faq_no_results), style = MaterialTheme.typography.titleMedium)
                     }

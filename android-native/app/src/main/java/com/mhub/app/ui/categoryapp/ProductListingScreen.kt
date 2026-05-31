@@ -252,7 +252,7 @@ fun ProductListingScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "� Great Deals",
+                                "🎉 Great Deals",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -459,7 +459,7 @@ fun ProductListingScreen(
                     // Empty state
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("�", style = MaterialTheme.typography.displayMedium)
+                            Text("📦", style = MaterialTheme.typography.displayMedium)
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 "No products found",

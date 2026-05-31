@@ -1431,4 +1431,10 @@
     <string name="commerce_badge_secure">🔒 নিরাপদ</string>
     <string name="commerce_badge_rewarded">✓ পুরস্কৃত</string>
     <string name="commerce_badge_verified">📋 যাচাইকৃত</string>
+    <string name="profile_orders">অর্ডারসমূহ</string>
+    <string name="feed_login_subtitle">সম্পূর্ণ কমিউনিটি ফিড দেখতে অ্যাকাউন্ট তৈরি করুন বা লগইন করুন</string>
+    <string name="feed_login_to_see_more">আরও দেখতে সাইন ইন করুন</string>
+    <string name="profile_manage_addresses">ঠিকানা পরিচালনা করুন</string>
+    <string name="profile_addresses">ঠিকানাসমূহ</string>
+    <string name="profile_track_orders">অর্ডার ট্র্যাক করুন</string>
 </resources>

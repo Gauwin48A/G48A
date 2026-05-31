@@ -83,7 +83,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -96,9 +95,6 @@ import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.FeedItem
 import com.mhub.app.ui.components.AppEmptyState
@@ -110,6 +106,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Stable
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import javax.inject.Inject
 
 private val MOCK_FEED_ITEMS: List<FeedItem> = listOf(
@@ -168,7 +166,11 @@ class FeedViewModel @Inject constructor(
             hasMore = true,
         )
         viewModelScope.launch {
-            when (val result = socialRepo.feed(page = 1)) {
+            // Fast timeout: show mock data within 4s if API unavailable
+            val result = kotlinx.coroutines.withTimeoutOrNull(4000L) {
+                socialRepo.feed(page = 1)
+            } ?: ApiResult.Failure(com.mhub.app.core.ApiError.Timeout)
+            when (result) {
                 is ApiResult.Success -> {
                     val items = sortFeedItems(result.data, _state.value.sortOption)
                     _state.value = _state.value.copy(
@@ -266,8 +268,6 @@ fun FeedScreen(
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
-    var showImageZoom by remember { mutableStateOf(false) }
-    var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -286,13 +286,6 @@ fun FeedScreen(
                 it.userName?.contains(debouncedQuery, ignoreCase = true) == true
         }
         if (isGuest) searched.take(5) else searched
-    }
-
-    if (showImageZoom && zoomImages.isNotEmpty()) {
-        com.mhub.app.ui.components.ImageZoomDialog(
-            imageUrls = zoomImages,
-            onDismiss = { showImageZoom = false },
-        )
     }
 
     Scaffold(
@@ -317,7 +310,7 @@ fun FeedScreen(
                                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
                             }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                                listOf("For You" to "✨ Discover", "Shuffle" to "� Shuffle", "Recent" to "� Newest", "Updated" to "� Updated", "Views" to "� Popular", "Likes" to "❤ Most Liked", "Title" to "� Title").forEach { (value, label) ->
+                                listOf("For You" to "✨ Discover", "Shuffle" to "🔀 Shuffle", "Recent" to "🕒 Newest", "Updated" to "⚡ Updated", "Views" to "👁 Popular", "Likes" to "❤ Most Liked", "Title" to "🗒 Title").forEach { (value, label) ->
                                     DropdownMenuItem(
                                         text = { Text(label) },
                                         onClick = { viewModel.setSortOption(value); showSortMenu = false },
@@ -508,10 +501,6 @@ fun FeedScreen(
                                     post = post,
                                     onOpenPost = { onOpenPost(post.stableId) },
                                     onOpenProfile = onOpenProfile,
-                                    onImageZoom = { urls ->
-                                        zoomImages = urls
-                                        showImageZoom = true
-                                    },
                                     density = state.density,
                                     isBookmarked = post.stableId in state.bookmarkedIds,
                                     onBookmark = { viewModel.toggleBookmark(post.stableId) },
@@ -666,7 +655,6 @@ private fun FeedCard(
     post: FeedItem,
     onOpenPost: () -> Unit,
     onOpenProfile: (String) -> Unit = {},
-    onImageZoom: (List<String>) -> Unit = {},
     density: String = "NORMAL",
     isBookmarked: Boolean = false,
     onBookmark: () -> Unit = {},
@@ -850,72 +838,6 @@ private fun FeedCard(
                 }
             }
 
-            // Image carousel — multi-image support (web parity: FeedPage.jsx image slider)
-            val allImages = remember(post.imageUrl, post.images) {
-                (listOfNotNull(post.imageUrl) + post.images.filter { it.isNotBlank() && it != post.imageUrl })
-                    .filter { it.isNotBlank() }
-            }
-            if (allImages.isNotEmpty()) {
-                if (allImages.size == 1) {
-                    Box(Modifier.fillMaxWidth().height(220.dp)) {
-                        AsyncImage(
-                            model = allImages[0],
-                            contentDescription = post.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).clickable {
-                                onImageZoom(allImages)
-                            },
-                        )
-                    }
-                } else {
-                    val pagerState = rememberPagerState { allImages.size }
-                    Box(Modifier.fillMaxWidth().height(220.dp)) {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
-                        ) { page ->
-                            AsyncImage(
-                                model = allImages[page],
-                                contentDescription = "${post.title} image ${page + 1}",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().clickable { onImageZoom(allImages) },
-                            )
-                        }
-                        // Dot indicators
-                        Row(
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            allImages.indices.forEach { idx ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(if (pagerState.currentPage == idx) 8.dp else 5.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (pagerState.currentPage == idx) Color.White
-                                            else Color.White.copy(alpha = 0.55f)
-                                        ),
-                                )
-                            }
-                        }
-                        // Page count badge
-                        Surface(
-                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.Black.copy(alpha = 0.45f),
-                        ) {
-                            Text(
-                                "${pagerState.currentPage + 1}/${allImages.size}",
-                                fontSize = 11.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-                    }
-                }
-            }
-
             // Action bar: pill buttons (web parity: Like | Share | Save | Views | View Details)
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -1009,9 +931,9 @@ private fun FeedCard(
                 AnimatedVisibility(visible = showInlineComments) {
                     val mockComments = remember(post.stableId) {
                         listOf(
-                            "Great listing! �" to "User_A",
+                            "Great listing! 👍" to "User_A",
                             "Is this still available?" to "User_B",
-                            "Amazing price �" to "User_C",
+                            "Amazing price 💰" to "User_C",
                         ).take(minOf(post.commentCount, 3))
                     }
                     Column(

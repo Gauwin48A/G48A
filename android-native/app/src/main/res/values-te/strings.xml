@@ -1427,4 +1427,10 @@
     <string name="commerce_badge_secure">🔒 సురక్షితం</string>
     <string name="commerce_badge_rewarded">✓ పురస్కారం</string>
     <string name="commerce_badge_verified">📋 ధృవీకరించబడింది</string>
+    <string name="profile_orders">ఆర్డర్‌లు</string>
+    <string name="feed_login_subtitle">పూర్తి కమ్యూనిటీ ఫీడ్ యాక్సెస్ చేయడానికి అకౌంట్ సృష్టించండి లేదా లాగిన్ అవ్వండి</string>
+    <string name="feed_login_to_see_more">మరింత చూడటానికి సైన్ ఇన్ చేయండి</string>
+    <string name="profile_manage_addresses">చిరునామాలు నిర్వహించండి</string>
+    <string name="profile_addresses">చిరునామాలు</string>
+    <string name="profile_track_orders">ఆర్డర్‌లను ట్రాక్ చేయండి</string>
 </resources>

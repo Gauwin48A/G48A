@@ -121,7 +121,7 @@ class CategoriesViewModel @Inject constructor(
 }
 
 private val GROUP_TABS = listOf("All", "Electronics", "Fashion", "Vehicles", "Others")
-private val GROUP_EMOJIS = mapOf("All" to "�", "Electronics" to "�", "Fashion" to "�", "Vehicles" to "�", "Others" to "✨")
+private val GROUP_EMOJIS = mapOf("All" to "🏪", "Electronics" to "💻", "Fashion" to "👗", "Vehicles" to "🚗", "Others" to "✨")
 
 private fun categoryGroup(name: String, groupField: String?): String {
     val g = groupField?.lowercase() ?: ""
@@ -357,20 +357,20 @@ private fun CategoryTile(
 private fun categoryEmoji(name: String): String {
     val n = name.lowercase()
     return when {
-        n.contains("electron") || n.contains("tech") || n.contains("gadget") -> "�"
-        n.contains("fashion") || n.contains("cloth") || n.contains("apparel") -> "�"
-        n.contains("vehicle") || n.contains("car") || n.contains("bike") || n.contains("motor") -> "�"
-        n.contains("furniture") || n.contains("home") || n.contains("decor") -> "�️"
-        n.contains("book") || n.contains("education") || n.contains("study") -> "�"
+        n.contains("electron") || n.contains("tech") || n.contains("gadget") -> "💻"
+        n.contains("fashion") || n.contains("cloth") || n.contains("apparel") -> "👗"
+        n.contains("vehicle") || n.contains("car") || n.contains("bike") || n.contains("motor") -> "🚗"
+        n.contains("furniture") || n.contains("home") || n.contains("decor") -> "🏠"
+        n.contains("book") || n.contains("education") || n.contains("study") -> "📚"
         n.contains("sport") || n.contains("fitness") || n.contains("gym") -> "⚽"
-        n.contains("food") || n.contains("grocery") || n.contains("restaurant") -> "�"
-        n.contains("job") || n.contains("service") || n.contains("freelan") -> "�"
-        n.contains("real estate") || n.contains("property") || n.contains("house") || n.contains("flat") -> "�"
-        n.contains("toy") || n.contains("game") || n.contains("kid") -> "�"
-        n.contains("health") || n.contains("beauty") || n.contains("cosmetic") -> "�"
-        n.contains("pet") || n.contains("animal") -> "�"
-        n.contains("music") || n.contains("instrument") -> "�"
-        n.contains("art") || n.contains("craft") || n.contains("handmade") -> "�"
-        else -> "�️"
+        n.contains("food") || n.contains("grocery") || n.contains("restaurant") -> "🍔"
+        n.contains("job") || n.contains("service") || n.contains("freelan") -> "💼"
+        n.contains("real estate") || n.contains("property") || n.contains("house") || n.contains("flat") -> "🏠"
+        n.contains("toy") || n.contains("game") || n.contains("kid") -> "🎮"
+        n.contains("health") || n.contains("beauty") || n.contains("cosmetic") -> "💄"
+        n.contains("pet") || n.contains("animal") -> "🐾"
+        n.contains("music") || n.contains("instrument") -> "🎵"
+        n.contains("art") || n.contains("craft") || n.contains("handmade") -> "🎨"
+        else -> "🏷️"
     }
 }

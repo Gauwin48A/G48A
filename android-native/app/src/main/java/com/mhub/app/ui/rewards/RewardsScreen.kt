@@ -494,9 +494,9 @@ fun RewardsScreen(
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(stringResource(R.string.rewards_tier_progression), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                                 Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    TierCard("Bronze �", listOf("Basic rewards", "+5% bonus", "Weekly challenges"), user.rank == "Bronze" || user.rank == null, Color(0xFFCD7F32))
-                                    TierCard("Silver �", listOf("Premium rewards", "+10% bonus", "Daily spins", "Priority support"), user.rank == "Silver", Color(0xFF94A3B8))
-                                    TierCard("Gold �", listOf("Elite rewards", "+20% bonus", "Exclusive perks", "VIP events", "Ad-free"), user.rank == "Gold", Color(0xFFF59E0B))
+                                    TierCard("Bronze 🥉", listOf("Basic rewards", "+5% bonus", "Weekly challenges"), user.rank == "Bronze" || user.rank == null, Color(0xFFCD7F32))
+                                    TierCard("Silver 🥈", listOf("Premium rewards", "+10% bonus", "Daily spins", "Priority support"), user.rank == "Silver", Color(0xFF94A3B8))
+                                    TierCard("Gold 🥇", listOf("Elite rewards", "+20% bonus", "Exclusive perks", "VIP events", "Ad-free"), user.rank == "Gold", Color(0xFFF59E0B))
                                 }
                             }
                         }
@@ -603,9 +603,9 @@ fun RewardsScreen(
                                                 if (state.actionLoading == "spin") {
                                                     val spinTransition = rememberInfiniteTransition(label = "spinAnim")
                                                     val spinRot by spinTransition.animateFloat(0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart), label = "spinRot")
-                                                    Text("�", modifier = Modifier.graphicsLayer(rotationZ = spinRot), style = MaterialTheme.typography.labelMedium)
+                                                    Text("🎰", modifier = Modifier.graphicsLayer(rotationZ = spinRot), style = MaterialTheme.typography.labelMedium)
                                                 } else {
-                                                    Text(if (canSpin) "� Spin" else "� Spun ✓", style = MaterialTheme.typography.labelMedium)
+                                                    Text(if (canSpin) "🎰 Spin" else "🎰 Spun ✓", style = MaterialTheme.typography.labelMedium)
                                                 }
                                             }
                                         }
@@ -621,9 +621,9 @@ fun RewardsScreen(
                                                 if (state.actionLoading == "scratch") {
                                                     val scratchTransition = rememberInfiniteTransition(label = "scratchAnim")
                                                     val scratchScale by scratchTransition.animateFloat(0.9f, 1.1f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "scratchScale")
-                                                    Text("�", modifier = Modifier.graphicsLayer(scaleX = scratchScale, scaleY = scratchScale), style = MaterialTheme.typography.labelMedium)
+                                                    Text("🎴", modifier = Modifier.graphicsLayer(scaleX = scratchScale, scaleY = scratchScale), style = MaterialTheme.typography.labelMedium)
                                                 } else {
-                                                    Text(if (canScratch) "� Scratch ($scratchCount)" else "� None", style = MaterialTheme.typography.labelMedium)
+                                                    Text(if (canScratch) "🎴 Scratch ($scratchCount)" else "🎴 None", style = MaterialTheme.typography.labelMedium)
                                                 }
                                             }
                                         }
@@ -743,13 +743,13 @@ fun RewardsScreen(
                             Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(stringResource(R.string.rewards_challenge_board), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    EarnPlaybookRow("�", "Invite Friends", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), Color(0xFF6366F1))
-                                    EarnPlaybookRow("�", "Daily Visit", "+2 coins", (user.visitStreak / 7f).coerceIn(0f, 1f), Color(0xFF10B981))
-                                    EarnPlaybookRow("�", "Create Post", "+5 coins", (stats.postsCount / 10f).coerceIn(0f, 1f), Color(0xFF0EA5E9))
-                                    EarnPlaybookRow("�", "Share Post", "+3 coins", (stats.sharesCount / 10f).coerceIn(0f, 1f), Color(0xFF8B5CF6))
+                                    EarnPlaybookRow("👥", "Invite Friends", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), Color(0xFF6366F1))
+                                    EarnPlaybookRow("📅", "Daily Visit", "+2 coins", (user.visitStreak / 7f).coerceIn(0f, 1f), Color(0xFF10B981))
+                                    EarnPlaybookRow("✍️", "Create Post", "+5 coins", (stats.postsCount / 10f).coerceIn(0f, 1f), Color(0xFF0EA5E9))
+                                    EarnPlaybookRow("📤", "Share Post", "+3 coins", (stats.sharesCount / 10f).coerceIn(0f, 1f), Color(0xFF8B5CF6))
                                     EarnPlaybookRow("✅", "Complete Profile", "+15 coins", if ((user.email ?: "").isNotBlank() && (user.phone ?: "").isNotBlank()) 1f else 0.5f, Color(0xFFF59E0B))
-                                    EarnPlaybookRow("�", "Complete Sale", "+25 coins", (stats.salesCount / 5f).coerceIn(0f, 1f), Color(0xFF059669))
-                                    EarnPlaybookRow("�", "Make Purchase", "+10 coins", (stats.purchasesCount / 5f).coerceIn(0f, 1f), Color(0xFFEC4899))
+                                    EarnPlaybookRow("💰", "Complete Sale", "+25 coins", (stats.salesCount / 5f).coerceIn(0f, 1f), Color(0xFF059669))
+                                    EarnPlaybookRow("🛒", "Make Purchase", "+10 coins", (stats.purchasesCount / 5f).coerceIn(0f, 1f), Color(0xFFEC4899))
                                 }
                             }
                         }
@@ -775,23 +775,23 @@ fun RewardsScreen(
                                     // Premium items
                                     if (redeemFilter == "All" || redeemFilter == "Premium") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("�", "Listing Boost", 100, user.totalCoins >= 100, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("🚀", "Listing Boost", 100, user.totalCoins >= 100, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
                                             RedeemCard("⭐", "Featured Badge", 200, user.totalCoins >= 200, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
-                                            RedeemCard("�", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
+                                            RedeemCard("⭐", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
                                         }
                                     }
                                     // Gift Cards
                                     if (redeemFilter == "All" || redeemFilter == "Gift Cards") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("�", "$5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
-                                            RedeemCard("�", "$10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
+                                            RedeemCard("🎁", "$5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
+                                            RedeemCard("🎫", "$10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
                                         }
                                     }
                                     // Accessories
                                     if (redeemFilter == "All" || redeemFilter == "Accessories") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("�", "Custom Theme", 150, user.totalCoins >= 150, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
-                                            RedeemCard("�️", "Badge Pack", 80, user.totalCoins >= 80, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badges" }
+                                            RedeemCard("🎨", "Custom Theme", 150, user.totalCoins >= 150, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
+                                            RedeemCard("🏷️", "Badge Pack", 80, user.totalCoins >= 80, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badges" }
                                         }
                                     }
                                 }
@@ -1069,7 +1069,7 @@ private fun TierCard(title: String, perks: List<String>, unlocked: Boolean, acce
             }
             if (!unlocked) {
                 Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
-                    Text("� Locked", modifier = Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("🔒 Locked", modifier = Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -1092,7 +1092,7 @@ private fun ConfettiAnimation() {
                     val offset by rememberInfiniteTransition(label = "confetti$i").animateFloat(
                         -50f, 50f, infiniteRepeatable(tween(800 + i * 100), RepeatMode.Reverse), label = "offset$i"
                     )
-                    Text("�", style = MaterialTheme.typography.displayLarge, modifier = Modifier.offset(x = offset.dp, y = (i * 20).dp))
+                    Text("🎉", style = MaterialTheme.typography.displayLarge, modifier = Modifier.offset(x = offset.dp, y = (i * 20).dp))
                 }
             }
         }
@@ -1169,7 +1169,7 @@ fun ScratchCardCanvas(
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("�", fontSize = 28.sp)
+                Text("🎁", fontSize = 28.sp)
                 Text(rewardText, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
             }
         }

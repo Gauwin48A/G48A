@@ -23,81 +23,78 @@ for (const [b, cp] of Object.entries(win1252SpecialToCodePoint)) {
   codePointToWin1252Byte[cp] = parseInt(b);
 }
 
+/**
+ * Get the original byte value for a character that may be a Win-1252 misinterpretation.
+ * Win-1252 bytes 0x80–0x9F map to special Unicode codepoints (often > 0xFF).
+ * Win-1252 bytes 0xA0–0xFF map directly to same Latin-1 codepoints.
+ */
+function getOrigByte(cp) {
+  // Check Win-1252 special reverse map first (covers codepoints like U+20AC, U+201A, U+0178 etc.)
+  if (codePointToWin1252Byte[cp] !== undefined) return codePointToWin1252Byte[cp];
+  // Direct Latin-1 extended range (0x80–0xFF): byte value == codepoint value
+  if (cp >= 0x80 && cp <= 0xFF) return cp;
+  return null;
+}
+
 function fixMojibake(content) {
   let result = '';
   let i = 0;
   while (i < content.length) {
     const cp = content.codePointAt(i);
     const charLen = cp > 0xFFFF ? 2 : 1;
-    
-    // Check if this char could be the start of a mojibake sequence
-    // Original UTF-8 multi-byte sequences start with 0xC2-0xF4
-    // After Win-1252 re-encoding:
-    //   0xC2-0xDF → shows as U+00C2-U+00DF (Latin chars like Â, Ã, Ä...)
-    //   0xE0-0xEF → shows as U+00E0-U+00EF (à, á, â, ã, ä, å...)
-    //   0xF0-0xF7 → shows as U+00F0-U+00F7 (ð, ñ, ò, ó, ô, õ, ö, ÷)
-    
-    if (cp >= 0xC0 && cp <= 0xDF && i + 1 < content.length) {
-      // Possible 2-byte UTF-8 sequence
+
+    // 2-byte UTF-8 lead: 0xC2–0xDF
+    if (cp >= 0xC2 && cp <= 0xDF && i + 1 < content.length) {
       const next = content.codePointAt(i + 1);
-      const nextByte = next >= 0x80 && next < 0xA0 ? codePointToWin1252Byte[next] : next < 0x100 ? next : null;
+      const nextByte = getOrigByte(next);
       if (nextByte !== null && nextByte >= 0x80 && nextByte <= 0xBF) {
-        const bytes = [cp, nextByte];
         try {
-          const decoded = Buffer.from(bytes).toString('utf8');
+          const decoded = Buffer.from([cp, nextByte]).toString('utf8');
           if (decoded.length === 1 && decoded.codePointAt(0) >= 0x80) {
-            result += decoded;
-            i += 2;
-            continue;
+            result += decoded; i += 2; continue;
           }
         } catch (e) {}
       }
     }
-    
+
+    // 3-byte UTF-8 lead: 0xE0–0xEF
     if (cp >= 0xE0 && cp <= 0xEF && i + 2 < content.length) {
-      // Possible 3-byte UTF-8 sequence
-      const next1 = content.codePointAt(i + 1);
-      const next2 = content.codePointAt(i + 2);
-      const b1 = next1 >= 0x80 && next1 < 0xA0 ? codePointToWin1252Byte[next1] : next1 < 0x100 ? next1 : null;
-      const b2 = next2 >= 0x80 && next2 < 0xA0 ? codePointToWin1252Byte[next2] : next2 < 0x100 ? next2 : null;
+      const n1 = content.codePointAt(i + 1);
+      const n2 = content.codePointAt(i + 2);
+      const b1 = getOrigByte(n1);
+      const b2 = getOrigByte(n2);
       if (b1 !== null && b2 !== null && b1 >= 0x80 && b1 <= 0xBF && b2 >= 0x80 && b2 <= 0xBF) {
-        const bytes = [cp, b1, b2];
         try {
-          const decoded = Buffer.from(bytes).toString('utf8');
+          const decoded = Buffer.from([cp, b1, b2]).toString('utf8');
           if (decoded.length === 1 && decoded.codePointAt(0) >= 0x800) {
-            result += decoded;
-            i += 3;
-            continue;
+            result += decoded; i += 3; continue;
           }
         } catch (e) {}
       }
     }
-    
+
+    // 4-byte UTF-8 lead: 0xF0–0xF7 (emoji and rare chars)
     if (cp >= 0xF0 && cp <= 0xF7 && i + 3 < content.length) {
-      // Possible 4-byte UTF-8 sequence (emoji)
-      const next1 = content.codePointAt(i + 1);
-      const next2 = content.codePointAt(i + 2);
-      const next3 = content.codePointAt(i + 3);
-      const b1 = next1 >= 0x80 && next1 < 0xA0 ? codePointToWin1252Byte[next1] : next1 < 0x100 ? next1 : null;
-      const b2 = next2 >= 0x80 && next2 < 0xA0 ? codePointToWin1252Byte[next2] : next2 < 0x100 ? next2 : null;
-      const b3 = next3 >= 0x80 && next3 < 0xA0 ? codePointToWin1252Byte[next3] : next3 < 0x100 ? next3 : null;
+      const n1 = content.codePointAt(i + 1);
+      const n2 = content.codePointAt(i + 2);
+      const n3 = content.codePointAt(i + 3);
+      const b1 = getOrigByte(n1);
+      const b2 = getOrigByte(n2);
+      const b3 = getOrigByte(n3);
       if (b1 !== null && b2 !== null && b3 !== null &&
           b1 >= 0x80 && b1 <= 0xBF && b2 >= 0x80 && b2 <= 0xBF && b3 >= 0x80 && b3 <= 0xBF) {
-        const bytes = [cp, b1, b2, b3];
         try {
-          const decoded = Buffer.from(bytes).toString('utf8');
+          const decoded = Buffer.from([cp, b1, b2, b3]).toString('utf8');
           const dcp = decoded.codePointAt(0);
           if (decoded && dcp >= 0x10000) {
-            result += decoded;
-            i += 4;
-            continue;
+            result += decoded; i += 4; continue;
           }
         } catch (e) {}
       }
     }
-    
-    // Not mojibake, keep as-is
-    result += content[i];
+
+    // Not mojibake — keep as-is (use substring to preserve surrogate pairs for emoji)
+    result += content.substring(i, i + charLen);
     i += charLen;
   }
   return result;

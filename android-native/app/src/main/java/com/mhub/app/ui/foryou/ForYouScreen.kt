@@ -449,10 +449,10 @@ fun ForYouScreen(
                                         Text("✨ AI Curated", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                     Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("� Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        Text("📍 Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                     Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("� Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        Text("🔥 Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                 }
                             }
@@ -489,7 +489,7 @@ fun ForYouScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "${displayed.size} items · ${categories.count { (catKey, catName) -> catKey == null || state.posts.any { p -> p.categoryName?.contains(catName, ignoreCase = true) == true } }} categories · � Live",
+                                "${displayed.size} items · ${categories.count { (catKey, catName) -> catKey == null || state.posts.any { p -> p.categoryName?.contains(catName, ignoreCase = true) == true } }} categories · 🔥 Live",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
@@ -497,11 +497,11 @@ fun ForYouScreen(
                             Box {
                                 val sortLabel = when (state.sortBy) {
                                     SortBy.RELEVANCE -> "✨ Relevance"
-                                    SortBy.PRICE_ASC -> "� Price ↑"
-                                    SortBy.PRICE_DESC -> "� Price ↓"
-                                    SortBy.NEWEST -> "� Newest"
-                                    SortBy.POPULAR -> "� Popular"
-                                    SortBy.TRENDING -> "� Trending"
+                                    SortBy.PRICE_ASC -> "💰 Price ↑"
+                                    SortBy.PRICE_DESC -> "💰 Price ↓"
+                                    SortBy.NEWEST -> "🕒 Newest"
+                                    SortBy.POPULAR -> "👁 Popular"
+                                    SortBy.TRENDING -> "🔥 Trending"
                                 }
                                 FilterChip(
                                     selected = state.sortBy != SortBy.RELEVANCE,
@@ -512,11 +512,11 @@ fun ForYouScreen(
                                 DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
                                     listOf(
                                         SortBy.RELEVANCE to "✨ Relevance",
-                                        SortBy.PRICE_ASC to "� Price: Low to High",
-                                        SortBy.PRICE_DESC to "� Price: High to Low",
-                                        SortBy.NEWEST to "� Newest First",
-                                        SortBy.POPULAR to "� Most Popular",
-                                        SortBy.TRENDING to "� Trending",
+                                        SortBy.PRICE_ASC to "🔥 Price: Low to High",
+                                        SortBy.PRICE_DESC to "🔥 Price: High to Low",
+                                        SortBy.NEWEST to "🕒 Newest First",
+                                        SortBy.POPULAR to "👁 Most Popular",
+                                        SortBy.TRENDING to "🔥 Trending",
                                     ).forEach { (sort, label) ->
                                         DropdownMenuItem(
                                             text = { Text(label) },
@@ -802,7 +802,7 @@ fun ForYouScreen(
                     if (displayed.isNotEmpty()) {
                         item(key = "section_trending") {
                             AiSectionHeader(
-                                emoji = "�",
+                                emoji = "🔥",
                                 title = "Trending Near You",
                                 subtitle = "Popular picks in your location",
                                 accentColor = Color(0xFF10B981),
@@ -818,7 +818,7 @@ fun ForYouScreen(
                         // Insert section headers at specific indices
                         if (index == 5 && displayed.size > 5) {
                             AiSectionHeader(
-                                emoji = "�",
+                                emoji = "✨",
                                 title = "New Today",
                                 subtitle = "Just listed in the last 24 hours",
                                 accentColor = Color(0xFF6366F1),
@@ -827,7 +827,7 @@ fun ForYouScreen(
                         }
                         if (index == 10 && displayed.size > 10) {
                             AiSectionHeader(
-                                emoji = "�",
+                                emoji = "🧠",
                                 title = "Based on Your Browsing",
                                 subtitle = "AI-matched to your interests",
                                 accentColor = Color(0xFFF59E0B),
@@ -919,6 +919,22 @@ fun ForYouScreen(
                                     // Title
                                     Text(post.displayTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)
 
+                                    // Category + subcategory tags (web parity: AllPostCard)
+                                    if (!post.categoryName.isNullOrBlank() || !post.subcategoryName.isNullOrBlank()) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            post.categoryName?.let { cat ->
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
+                                                    Text(cat, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF3B82F6), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                                }
+                                            }
+                                            post.subcategoryName?.let { sub ->
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9)) {
+                                                    Text(sub, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     // Location + views row
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         post.location?.let {
@@ -935,22 +951,48 @@ fun ForYouScreen(
                                         }
                                     }
 
-                                    // Action row: Like | Share | Interested | View Details CTA
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        // Like
-                                        IconButton(onClick = { liked = !liked; if (liked) likeCount++ else likeCount-- }, modifier = Modifier.size(36.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                Icon(if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (liked) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                                    // Engagement pills (web parity: AllPostCard style)
+                                    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                                    androidx.compose.foundation.layout.FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        // Like pill
+                                        Surface(shape = RoundedCornerShape(20.dp), color = if (liked) Color(0xFFEF4444).copy(alpha = 0.12f) else Color(0xFFF1F5F9), modifier = Modifier.clickable { liked = !liked; if (liked) likeCount++ else likeCount-- }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(if (liked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, null, tint = if (liked) Color(0xFFEF4444) else Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                Text(if (liked) "Liked" else "Like", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (liked) Color(0xFFEF4444) else Color(0xFF64748B))
                                             }
                                         }
-                                        Text("$likeCount", fontSize = 12.sp, color = Color(0xFF64748B))
-                                        IconButton(onClick = { sharePostId = post.stableId; sharePostTitle = post.displayTitle; showShareSheet = true }, modifier = Modifier.size(36.dp)) {
-                                            Icon(Icons.Outlined.Share, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                                        // Interested pill
+                                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF059669).copy(alpha = 0.12f), modifier = Modifier.clickable { interestPostId = post.stableId; interestPostTitle = post.displayTitle; showInterestModal = true }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Outlined.Star, null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                                                Text("Interested", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF059669))
+                                            }
                                         }
-                                        // "Not Interested" more menu
+                                        // Share pill
+                                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9), modifier = Modifier.clickable { sharePostId = post.stableId; sharePostTitle = post.displayTitle; showShareSheet = true }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Outlined.Share, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                Text("Share", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                        // Save pill
+                                        Surface(shape = RoundedCornerShape(20.dp), color = if (wishlisted) Color(0xFF6366F1).copy(alpha = 0.12f) else Color(0xFFF1F5F9), modifier = Modifier.clickable { wishlisted = !wishlisted; viewModel.toggleBookmark(post.stableId) }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = if (wishlisted) Color(0xFF6366F1) else Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                Text(if (wishlisted) "Saved" else "Save", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (wishlisted) Color(0xFF6366F1) else Color(0xFF64748B))
+                                            }
+                                        }
+                                        // Not Interested / hide pill
                                         Box {
-                                            IconButton(onClick = { showNotInterestedMenu = true }, modifier = Modifier.size(36.dp)) {
-                                                Icon(Icons.Default.MoreVert, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF1F5F9), modifier = Modifier.clickable { showNotInterestedMenu = true }) {
+                                                Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.MoreVert, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                    Text("More", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF64748B))
+                                                }
                                             }
                                             DropdownMenu(expanded = showNotInterestedMenu, onDismissRequest = { showNotInterestedMenu = false }) {
                                                 DropdownMenuItem(
@@ -961,24 +1003,12 @@ fun ForYouScreen(
                                             }
                                         }
                                         Spacer(Modifier.weight(1f))
-                                        // "Interested" button
-                                        androidx.compose.material3.OutlinedButton(
-                                            onClick = { interestPostId = post.stableId; interestPostTitle = post.displayTitle; showInterestModal = true },
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.height(34.dp),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                                        ) {
-                                            Text("Interested", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                        }
-                                        // "View" CTA
-                                        Button(
-                                            onClick = { onOpenPost(post.stableId) },
-                                            shape = RoundedCornerShape(10.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                                            modifier = Modifier.height(34.dp),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                                        ) {
-                                            Text("View", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        // View Details CTA pill
+                                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f), modifier = Modifier.clickable { onOpenPost(post.stableId) }) {
+                                            Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Visibility, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
+                                                Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+                                            }
                                         }
                                     }
                                 }

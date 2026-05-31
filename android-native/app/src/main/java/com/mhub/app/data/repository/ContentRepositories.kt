@@ -159,6 +159,18 @@ class PostsRepository @Inject constructor(
 
     suspend fun markSold(id: String): ApiResult<Unit> = safeApiCall { api.markPostSold(id); Unit }
 
+    /** Renew / re-activate a listing (expired, sold, or draft → active). */
+    suspend fun renew(id: String): ApiResult<Unit> = safeApiCall {
+        try {
+            api.reactivatePost(id, com.mhub.app.data.remote.dto.ReactivatePostRequest(reason = "renew", description = "Listing renewed by owner"))
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() == 404 || e.code() == 405) {
+                api.patchPostStatus(id, com.mhub.app.data.remote.dto.PatchPostStatusRequest(status = "active"))
+            } else throw e
+        }
+        Unit
+    }
+
     suspend fun batchView(postIds: List<String>): ApiResult<Unit> = safeApiCall {
         api.batchViewPosts(mapOf("postIds" to postIds)); Unit
     }

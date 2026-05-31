@@ -62,9 +62,9 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // Shared helpers
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 
 private val bgGradient get() = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
 private val brandGrad get() = Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))
@@ -109,7 +109,7 @@ private fun PostListItem(post: Post, onClick: () -> Unit) {
                 Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
                 if (post.price != null) {
                     Spacer(Modifier.height(4.dp))
-                    Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                    Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     post.status?.let { s ->
@@ -164,9 +164,9 @@ private fun EmptyState(icon: @Composable () -> Unit, title: String, subtitle: St
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // PostWelcomeScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 @Composable
 fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
     Box(Modifier.fillMaxSize().background(bgGradient)) {
@@ -226,7 +226,7 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                     }
                 }
             }
-            // â”€â”€ Sticky bottom CTA â”€â”€
+            // ── Sticky bottom CTA ──
             Surface(shadowElevation = 8.dp, color = Color.White) {
                 Button(
                     onClick = onStartPost,
@@ -245,9 +245,9 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // EditPostScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class EditPostUiState(
     val loading: Boolean = true,
     val saving: Boolean = false,
@@ -483,7 +483,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     )
                     // Price row
                     MhubTextFieldWithCounter(
-                        label = "Price (â‚¹)",
+                        label = "Price (₹)",
                         value = state.price,
                         onValueChange = viewModel::setPrice,
                         maxLength = 10,
@@ -546,7 +546,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     // Contact preference
                     Text(stringResource(R.string.commerce_contact_pref), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("call" to "ðŸ“ž Call", "chat" to "ðŸ’¬ Chat", "both" to "âœ… Both").forEach { (key, label) ->
+                        listOf("call" to "📞 Call", "chat" to "💬 Chat", "both" to "✅ Both").forEach { (key, label) ->
                             val sel = state.contactPreference == key
                             Surface(
                                 onClick = { viewModel.setContactPreference(key) },
@@ -640,9 +640,9 @@ private fun MhubTextField(label: String, value: String, onValueChange: (String) 
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // TierSelectionScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class TiersUiState(
     val loading: Boolean = true,
     val tiers: List<Tier> = emptyList(),
@@ -737,20 +737,28 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
                         }
                     }
-                    // Trial-period banner
+                    // Trial-period banner — shows free launch promo info if still active
                     item {
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp) {
+                        val isPromoActive = com.mhub.app.core.FreeLaunchPlan.isActive()
+                        val daysLeft = com.mhub.app.core.FreeLaunchPlan.daysRemaining()
+                        val promoEnd = com.mhub.app.core.FreeLaunchPlan.endDateLabel()
+                        Surface(shape = RoundedCornerShape(16.dp), color = if (isPromoActive) Color(0xFFECFDF5) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Surface(shape = CircleShape, color = Color(0xFFFBBF24).copy(alpha = 0.3f), modifier = Modifier.size(40.dp)) {
+                                Surface(shape = CircleShape, color = if (isPromoActive) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFFBBF24).copy(alpha = 0.3f), modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp))
+                                        Icon(if (isPromoActive) Icons.Filled.CardGiftcard else Icons.Filled.Bolt, null, tint = if (isPromoActive) Color(0xFF059669) else Color(0xFFD97706), modifier = Modifier.size(22.dp))
                                     }
                                 }
                                 Column(Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
-                                    Text(stringResource(R.string.plans_trial_subtitle), fontSize = 12.sp, color = Color(0xFF92400E))
+                                    if (isPromoActive) {
+                                        Text("🎉 Free Launch Offer Active!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF065F46))
+                                        Text("Post & sell FREE until $promoEnd ($daysLeft days left). No plan needed during the launch period!", fontSize = 12.sp, color = Color(0xFF047857))
+                                    } else {
+                                        Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
+                                        Text(stringResource(R.string.plans_trial_subtitle), fontSize = 12.sp, color = Color(0xFF92400E))
+                                    }
                                 }
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFD97706)) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = if (isPromoActive) Color(0xFF059669) else Color(0xFFD97706)) {
                                     Text("FREE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
                             }
@@ -813,16 +821,16 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         val featureMatrixRows = listOf(
                             stringResource(R.string.plans_post_listings) to listOf("1", "3", "5", "10", stringResource(R.string.plans_unlimited)),
                             stringResource(R.string.plans_photos_per_post) to listOf("1", "3", "5", "8", "10"),
-                            stringResource(R.string.plans_promoted_posts) to listOf("âœ—", "1", "2", "5", stringResource(R.string.plans_unlimited)),
-                            stringResource(R.string.plans_analytics_access) to listOf("âœ—", stringResource(R.string.plans_basic), stringResource(R.string.plans_basic), stringResource(R.string.plans_advanced), stringResource(R.string.plans_full)),
-                            stringResource(R.string.plans_priority_support) to listOf("âœ—", "âœ—", "âœ“", "âœ“", "âœ“"),
-                            stringResource(R.string.plans_profile_badge) to listOf("âœ—", stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium)),
-                            stringResource(R.string.plans_kyc_verified) to listOf("âœ“", "âœ“", "âœ“", "âœ“", "âœ“"),
-                            stringResource(R.string.plans_chat_support) to listOf("âœ—", "âœ—", "âœ“", "âœ“", "âœ“"),
-                            stringResource(R.string.plans_bulk_manage) to listOf("âœ—", "âœ—", "âœ—", "âœ“", "âœ“"),
-                            stringResource(R.string.plans_export_analytics) to listOf("âœ—", "âœ—", "âœ—", "âœ“", "âœ“"),
-                            stringResource(R.string.plans_custom_storefront) to listOf("âœ—", "âœ—", "âœ—", "âœ—", "âœ“"),
-                            stringResource(R.string.plans_dedicated_manager) to listOf("âœ—", "âœ—", "âœ—", "âœ—", "âœ“"),
+                            stringResource(R.string.plans_promoted_posts) to listOf("✗", "1", "2", "5", stringResource(R.string.plans_unlimited)),
+                            stringResource(R.string.plans_analytics_access) to listOf("✗", stringResource(R.string.plans_basic), stringResource(R.string.plans_basic), stringResource(R.string.plans_advanced), stringResource(R.string.plans_full)),
+                            stringResource(R.string.plans_priority_support) to listOf("✗", "✗", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_profile_badge) to listOf("✗", stringResource(R.string.plans_bronze), stringResource(R.string.plans_silver), stringResource(R.string.plans_gold), stringResource(R.string.plans_premium)),
+                            stringResource(R.string.plans_kyc_verified) to listOf("✓", "✓", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_chat_support) to listOf("✗", "✗", "✓", "✓", "✓"),
+                            stringResource(R.string.plans_bulk_manage) to listOf("✗", "✗", "✗", "✓", "✓"),
+                            stringResource(R.string.plans_export_analytics) to listOf("✗", "✗", "✗", "✓", "✓"),
+                            stringResource(R.string.plans_custom_storefront) to listOf("✗", "✗", "✗", "✗", "✓"),
+                            stringResource(R.string.plans_dedicated_manager) to listOf("✗", "✗", "✗", "✗", "✓"),
                         )
                         val unlimitedLabel = stringResource(R.string.plans_unlimited)
                         val fullLabel = stringResource(R.string.plans_full)
@@ -844,8 +852,8 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                         values.forEach { v ->
                                             Text(
                                                 v, fontSize = 10.sp,
-                                                color = when { v == "âœ“" || v == unlimitedLabel || v == fullLabel -> Color(0xFF22C55E); v == "âœ—" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
-                                                fontWeight = if (v == "âœ“" || v == "âœ—" || v == unlimitedLabel) FontWeight.Bold else FontWeight.Normal,
+                                                color = when { v == "✓" || v == unlimitedLabel || v == fullLabel -> Color(0xFF22C55E); v == "✗" -> Color(0xFFCBD5E1); else -> Color(0xFF374151) },
+                                                fontWeight = if (v == "✓" || v == "✗" || v == unlimitedLabel) FontWeight.Bold else FontWeight.Normal,
                                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                                 modifier = Modifier.weight(1f),
                                             )
@@ -907,7 +915,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 Icon(Icons.Filled.Security, null, tint = Color(0xFF16A34A), modifier = Modifier.size(24.dp))
                                 Column {
                                     Text("100% Secure Payment", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF14532D))
-                                    Text("Cancel anytime â€¢ No hidden charges â€¢ Instant activation", fontSize = 11.sp, color = Color(0xFF166534))
+                                    Text("Cancel anytime • No hidden charges • Instant activation", fontSize = 11.sp, color = Color(0xFF166534))
                                 }
                             }
                         }
@@ -970,7 +978,7 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
                         if (tier.price == 0.0) {
                             Text(stringResource(R.string.plans_free), fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Color(0xFF22C55E))
                         } else {
-                            Text("â‚¹${tier.price.toLong()}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = if (isPopular) Color(0xFF1E40AF) else Color(0xFF0F172A))
+                            Text("₹${tier.price.toLong()}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = if (isPopular) Color(0xFF1E40AF) else Color(0xFF0F172A))
                             val period = when {
                                 tier.duration >= 365 -> stringResource(R.string.plans_per_year)
                                 tier.duration >= 180 -> stringResource(R.string.plans_per_half_year)
@@ -1021,9 +1029,9 @@ private fun TierCard(tier: Tier, onSelect: () -> Unit) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// MyPostsScreen â€” with status filter, sort, menu, delete, promote, auto-refresh
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
+// MyPostsScreen — with status filter, sort, menu, delete, promote, auto-refresh
+// ──────────────────────────────────────────────────────────────────────────────
 data class MyPostsUiState(
     val loading: Boolean = true,
     val posts: List<Post> = emptyList(),
@@ -1190,9 +1198,9 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
-                        Triple("Basic Boost", "â‚¹49", "3 days featured â€¢ 2x visibility"),
-                        Triple("Pro Boost", "â‚¹99", "7 days featured â€¢ 5x visibility â€¢ Priority badge"),
-                        Triple("Premium Boost", "â‚¹199", "14 days featured â€¢ 10x visibility â€¢ Homepage placement"),
+                        Triple("Basic Boost", "₹49", "3 days featured • 2x visibility"),
+                        Triple("Pro Boost", "₹99", "7 days featured • 5x visibility • Priority badge"),
+                        Triple("Premium Boost", "₹199", "14 days featured • 10x visibility • Homepage placement"),
                     ).forEach { (tier, price, desc) ->
                         Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
@@ -1242,7 +1250,7 @@ private fun MyPostCard(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                    if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                    if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         post.status?.let { s -> StatusChip(s) }
                     }
@@ -1288,9 +1296,9 @@ private fun MyPostCard(
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // BoughtPostsScreen / SoldPostsScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class PostListUiState(val loading: Boolean = true, val posts: List<Post> = emptyList(), val error: String? = null)
 
 @HiltViewModel
@@ -1384,7 +1392,7 @@ private fun SoldPostsListScreen(state: PostListUiState, onBack: () -> Unit, onOp
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
                                             Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
                                         }
                                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
                                             Text(stringResource(R.string.commerce_badge_sold), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
@@ -1467,7 +1475,7 @@ private fun PostsListScreen(
                     )
                     // Sort chips
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("newest" to "Newest", "price_asc" to "Price â†‘", "price_desc" to "Price â†“").forEach { (key, label) ->
+                        listOf("newest" to "Newest", "price_asc" to "Price ↑", "price_desc" to "Price ↓").forEach { (key, label) ->
                             FilterChip(selected = sortBy == key, onClick = { sortBy = key },
                                 label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
@@ -1489,9 +1497,9 @@ private fun PostsListScreen(
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // OffersScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class OffersUiState(
     val loading: Boolean = true,
     val received: List<Offer> = emptyList(),
@@ -1642,10 +1650,10 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                 Column(Modifier.weight(1f)) {
                     Text(offer.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("â‚¹${offer.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
+                        Text("₹${offer.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
                         if (offer.originalPrice > 0) {
                             Spacer(Modifier.width(6.dp))
-                            Text("â‚¹${offer.originalPrice.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8),
+                            Text("₹${offer.originalPrice.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8),
                                 style = androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough))
                         }
                         if (savingsPercent > 0) {
@@ -1703,9 +1711,9 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // CartScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class CartUiState(
     val loading: Boolean = true,
     val items: List<CartItem> = emptyList(),
@@ -2025,25 +2033,25 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
                                 Row(Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.commerce_subtotal), fontSize = 14.sp, color = Color(0xFF64748B))
                                     Spacer(Modifier.weight(1f))
-                                    Text("â‚¹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = Color(0xFF1E293B))
+                                    Text("₹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = Color(0xFF1E293B))
                                 }
                                 Row(Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.commerce_shipping), fontSize = 14.sp, color = Color(0xFF64748B))
                                     Spacer(Modifier.weight(1f))
-                                    Text(if (viewModel.shipping == 0.0) "Free" else "â‚¹${viewModel.shipping.toLong()}", fontSize = 14.sp, color = if (viewModel.shipping == 0.0) Color(0xFF22C55E) else Color(0xFF1E293B))
+                                    Text(if (viewModel.shipping == 0.0) "Free" else "₹${viewModel.shipping.toLong()}", fontSize = 14.sp, color = if (viewModel.shipping == 0.0) Color(0xFF22C55E) else Color(0xFF1E293B))
                                 }
                                 if (state.couponDiscount > 0) {
                                     Row(Modifier.fillMaxWidth()) {
                                         Text(stringResource(R.string.commerce_discount), fontSize = 14.sp, color = Color(0xFF22C55E))
                                         Spacer(Modifier.weight(1f))
-                                        Text("-â‚¹${state.couponDiscount.toLong()}", fontSize = 14.sp, color = Color(0xFF22C55E))
+                                        Text("-₹${state.couponDiscount.toLong()}", fontSize = 14.sp, color = Color(0xFF22C55E))
                                     }
                                 }
                                 HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
                                 Row(Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.commerce_total), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                                     Spacer(Modifier.weight(1f))
-                                    Text("â‚¹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
+                                    Text("₹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2563EB))
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Button(onClick = {}, shape = RoundedCornerShape(12.dp),
@@ -2097,12 +2105,12 @@ private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(item.title ?: "Item", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                    if (item.price != null) Text("â‚¹${item.price.toLong()}", fontSize = 14.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                    if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 14.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
                     if (item.sellerName != null) Text(item.sellerName, fontSize = 12.sp, color = Color(0xFF64748B))
                     // Qty controls
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
                         Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity - 1) }) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("âˆ’", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("−", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
                         }
                         Text("${item.quantity}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 12.dp))
                         Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity + 1) }) {
@@ -2143,7 +2151,7 @@ private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(item.title ?: "Item", fontSize = 13.sp, color = Color(0xFF374151), maxLines = 1)
-                if (item.price != null) Text("â‚¹${item.price.toLong()}", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
             }
             TextButton(onClick = onMoveToCart, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
                 Text(stringResource(R.string.commerce_move_to_cart), fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
@@ -2157,9 +2165,9 @@ private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove
 
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // RecentlyViewedScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class RecentlyViewedUiState(val loading: Boolean = true, val posts: List<Post> = emptyList(), val error: String? = null)
 
 @HiltViewModel
@@ -2331,7 +2339,7 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                                         }
                                         Column(Modifier.padding(8.dp)) {
                                             Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                            if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
                                             val timeLabel = timeSinceLabel(post.createdAt)
                                             if (timeLabel.isNotEmpty()) Text(timeLabel, fontSize = 10.sp, color = Color(0xFF94A3B8))
                                         }
@@ -2402,7 +2410,7 @@ private fun RecentlyViewedListItem(post: Post, onClick: () -> Unit) {
                 Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
                 if (post.price != null) {
                     Spacer(Modifier.height(3.dp))
-                    Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                    Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
                 }
                 Spacer(Modifier.height(3.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -2431,9 +2439,9 @@ private fun RecentlyViewedListItem(post: Post, onClick: () -> Unit) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // SavedSearchesScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 data class SavedSearchesUiState(
     val loading: Boolean = true,
     val searches: List<SavedSearch> = emptyList(),
@@ -2545,7 +2553,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                 }
                                 Button(onClick = { viewModel.createSearch() }, enabled = state.newKeyword.isNotBlank() && !state.creating,
                                     shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                                    modifier = Modifier.fillMaxWidth()) { Text(if (state.creating) "Savingâ€¦" else "Save Search", fontWeight = FontWeight.SemiBold) }
+                                    modifier = Modifier.fillMaxWidth()) { Text(if (state.creating) "Saving…" else "Save Search", fontWeight = FontWeight.SemiBold) }
                             }
                         }
                     }
@@ -2634,9 +2642,9 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 // CompareScreen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
 @HiltViewModel
 class CompareViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
     private val _state = MutableStateFlow(PostListUiState())
@@ -2714,7 +2722,7 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                                                 }
                                             }
                                             Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                            if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
                                         }
                                     }
                                     // Remove X button
@@ -2738,23 +2746,23 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
                                 Spacer(Modifier.height(12.dp))
                                 // Build dynamic specs: include any field that has a non-null value across all posts
                                 val allSpecs = listOf(
-                                    stringResource(R.string.compare_price) to { p: Post -> if (p.price != null) "â‚¹${p.price.toLong()}" else "â€”" },
-                                    stringResource(R.string.compare_condition) to { p: Post -> p.condition ?: "â€”" },
-                                    stringResource(R.string.compare_brand) to { p: Post -> p.brand ?: "â€”" },
-                                    stringResource(R.string.compare_model) to { p: Post -> p.model ?: "â€”" },
-                                    stringResource(R.string.compare_location) to { p: Post -> p.location ?: "â€”" },
-                                    stringResource(R.string.compare_color) to { p: Post -> p.color ?: "â€”" },
-                                    stringResource(R.string.compare_size) to { p: Post -> p.size ?: "â€”" },
-                                    stringResource(R.string.compare_year) to { p: Post -> p.year?.toString() ?: "â€”" },
-                                    stringResource(R.string.compare_mileage) to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "â€”" },
-                                    stringResource(R.string.compare_ram_storage) to { p: Post -> p.ramStorage ?: "â€”" },
-                                    stringResource(R.string.compare_category) to { p: Post -> p.categoryName ?: "â€”" },
-                                    "Subcategory" to { p: Post -> p.subcategoryName ?: "â€”" },
-                                    stringResource(R.string.compare_seller) to { p: Post -> p.userName ?: "â€”" },
-                                    stringResource(R.string.compare_status) to { p: Post -> p.status ?: "â€”" },
-                                    "Posted" to { p: Post -> p.createdAt?.take(10) ?: "â€”" },
+                                    stringResource(R.string.compare_price) to { p: Post -> if (p.price != null) "₹${p.price.toLong()}" else "—" },
+                                    stringResource(R.string.compare_condition) to { p: Post -> p.condition ?: "—" },
+                                    stringResource(R.string.compare_brand) to { p: Post -> p.brand ?: "—" },
+                                    stringResource(R.string.compare_model) to { p: Post -> p.model ?: "—" },
+                                    stringResource(R.string.compare_location) to { p: Post -> p.location ?: "—" },
+                                    stringResource(R.string.compare_color) to { p: Post -> p.color ?: "—" },
+                                    stringResource(R.string.compare_size) to { p: Post -> p.size ?: "—" },
+                                    stringResource(R.string.compare_year) to { p: Post -> p.year?.toString() ?: "—" },
+                                    stringResource(R.string.compare_mileage) to { p: Post -> if (p.mileage != null) "${p.mileage} km" else "—" },
+                                    stringResource(R.string.compare_ram_storage) to { p: Post -> p.ramStorage ?: "—" },
+                                    stringResource(R.string.compare_category) to { p: Post -> p.categoryName ?: "—" },
+                                    "Subcategory" to { p: Post -> p.subcategoryName ?: "—" },
+                                    stringResource(R.string.compare_seller) to { p: Post -> p.userName ?: "—" },
+                                    stringResource(R.string.compare_status) to { p: Post -> p.status ?: "—" },
+                                    "Posted" to { p: Post -> p.createdAt?.take(10) ?: "—" },
                                 )
-                                val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "â€”" } }
+                                val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "—" } }
                                 visibleSpecs.forEach { (label, getter) ->
                                     HorizontalDivider(color = Color(0xFFF1F5F9))
                                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
@@ -2773,9 +2781,9 @@ fun CompareScreen(onBack: () -> Unit, viewModel: CompareViewModel = hiltViewMode
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// BuyerViewScreen â€” Full browse with search, brand, price filters
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
+// BuyerViewScreen — Full browse with search, brand, price filters
+// ──────────────────────────────────────────────────────────────────────────────
 data class BuyerViewUiState(
     val loading: Boolean = true,
     val posts: List<Post> = emptyList(),
@@ -2833,7 +2841,7 @@ class BuyerViewViewModel @Inject constructor(
 fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val filtered = remember(state) { viewModel.filteredPosts() }
-    val priceRanges = listOf(null to "All", "0-25k" to "Under â‚¹25K", "25k-50k" to "â‚¹25K-50K", "50k-75k" to "â‚¹50K-75K", "75k+" to "â‚¹75K+")
+    val priceRanges = listOf(null to "All", "0-25k" to "Under ₹25K", "25k-50k" to "₹25K-50K", "50k-75k" to "₹50K-75K", "75k+" to "₹75K+")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar("Browse Listings", onBack)
@@ -2906,7 +2914,7 @@ private fun BuyerPostCard(post: Post) {
                 if (post.price != null) {
                     Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1E293B).copy(alpha = 0.85f),
                         modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)) {
-                        Text("â‚¹${post.price.toLong()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        Text("₹${post.price.toLong()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                     }
                 }
@@ -2936,9 +2944,9 @@ private fun BuyerPostCard(post: Post) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SaleDoneScreen â€” 2-tab: Mark as Sold (seller initiate + buyer confirm)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
+// SaleDoneScreen — 2-tab: Mark as Sold (seller initiate + buyer confirm)
+// ──────────────────────────────────────────────────────────────────────────────
 data class SaleDoneUiState(
     val step: Int = 0,
     val loading: Boolean = false,
@@ -3131,16 +3139,16 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Icon(Icons.Filled.Info, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                                Text("How to test this page â€” tap to expand", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8), modifier = Modifier.weight(1f))
+                                Text("How to test this page — tap to expand", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8), modifier = Modifier.weight(1f))
                                 Icon(if (showTestingGuide) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
                             }
                             if (showTestingGuide) {
                                 Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf(
-                                        "Step 1 â€” Find your Post ID" to "Go to My Home â†’ tap any active listing â†’ copy the Post ID from the URL.",
-                                        "Step 2 â€” Get Buyer's User ID" to "Ask the buyer to share their User ID from Profile â†’ Settings â†’ Account Info.",
-                                        "Step 3 â€” Seller initiates" to "Enter Post ID, Buyer ID and agreed amount â†’ tap Initiate Sale. Share Transaction ID + OTP with buyer.",
-                                        "Step 4 â€” Buyer confirms" to "Switch to 'Confirm Purchase' tab. Enter Transaction ID + OTP â†’ tap Confirm Purchase. Post moves to Sold.",
+                                        "Step 1 — Find your Post ID" to "Go to My Home → tap any active listing → copy the Post ID from the URL.",
+                                        "Step 2 — Get Buyer's User ID" to "Ask the buyer to share their User ID from Profile → Settings → Account Info.",
+                                        "Step 3 — Seller initiates" to "Enter Post ID, Buyer ID and agreed amount → tap Initiate Sale. Share Transaction ID + OTP with buyer.",
+                                        "Step 4 — Buyer confirms" to "Switch to 'Confirm Purchase' tab. Enter Transaction ID + OTP → tap Confirm Purchase. Post moves to Sold.",
                                     ).forEach { (title, desc) ->
                                         Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
                                             Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -3215,7 +3223,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     if (amount != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text("â‚¹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                            Text("₹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
                                         }
                                     }
                                     // Completed at
@@ -3227,14 +3235,14 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     }
                                 }
                             }
-                            // Reward earned card â€” show actual points from API
+                            // Reward earned card — show actual points from API
                             val rewardsInfo = state.completedRewards
                             val totalPoints = rewardsInfo?.totalPoints ?: 0
                             if (totalPoints > 0) {
                                 Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("ðŸª™", fontSize = 22.sp)
+                                            Text("✅", fontSize = 22.sp)
                                             Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
                                         }
                                         // 4-metric breakdown (web parity)
@@ -3292,15 +3300,15 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                                         item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = Color(0xFF64748B)) }
                                                     }
                                                 }
-                                                item.location?.let { Text("ðŸ“ $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                item.location?.let { Text("📍 $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
                                                 // Agreed vs listing price
                                                 val agreed = item.agreedPrice ?: item.price
                                                 val listing = item.listingPrice ?: item.price
                                                 if (agreed != null) {
                                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                        Text("â‚¹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF22C55E))
+                                                        Text("₹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF22C55E))
                                                         if (listing != null && listing != agreed) {
-                                                            Text("â‚¹${listing.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                                                            Text("₹${listing.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                                                         }
                                                     }
                                                 }
@@ -3352,7 +3360,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     onClick = {
                                         val receiptText = buildString {
                                             append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
-                                            append("Amount: â‚¹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
+                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
                                         }
                                         clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(receiptText))
                                     },
@@ -3368,7 +3376,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                         val shareText = buildString {
                                             append("MHub Sale Receipt\n")
                                             append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
-                                            append("Amount: â‚¹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
+                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
                                         }
                                         val intent = Intent(Intent.ACTION_SEND).apply {
                                             type = "text/plain"
@@ -3389,9 +3397,9 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text("Next Steps", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
                                     listOf(
-                                        "ðŸ " to "View your post in My Home â†’ Sold tab",
-                                        "â­" to "Leave a review for the buyer",
-                                        "ðŸ“ˆ" to "List more items to grow your sales",
+                                        "📦" to "View your post in My Home → Sold tab",
+                                        "⭐" to "Leave a review for the buyer",
+                                        "🚀" to "List more items to grow your sales",
                                     ).forEach { (emoji, text) ->
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                                             Text(emoji, fontSize = 14.sp)
@@ -3542,7 +3550,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = Color(0xFF64748B))
                                 }
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
-                                    Text("â‚¹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                    Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
                             }
                         }
@@ -3554,9 +3562,9 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SaleUndoneScreen â€” 5-step stepper with undo form + history
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
+// SaleUndoneScreen — 5-step stepper with undo form + history
+// ──────────────────────────────────────────────────────────────────────────────
 data class SaleUndoneUiState(
     val loading: Boolean = false,
     val postId: String = "",
@@ -3669,7 +3677,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                     }
                     Text("Undo a sale and reactivate your listing.", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("ðŸ›¡ Safe Process", "âœ“ Listing Restored", "ðŸ“§ Buyer Notified").forEach { badge ->
+                        listOf("🛡 Safe Process", "✓ Listing Restored", "📣 Buyer Notified").forEach { badge ->
                             Surface(shape = RoundedCornerShape(8.dp), color = Color.White.copy(alpha = 0.15f)) {
                                 Text(badge, fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                             }
@@ -3704,7 +3712,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                             Box(Modifier.size(96.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF4ADE80), Color(0xFF22C55E), Color(0xFF16A34A)))), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Filled.Autorenew, null, tint = Color.White, modifier = Modifier.size(52.dp))
                             }
-                            Text("ðŸ”„ " + stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF14532D))
+                            Text("✅ " + stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF14532D))
                             Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = Color(0xFF166534), textAlign = TextAlign.Center)
                             // Active | Visible status panel (web parity)
                             Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), border = BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
@@ -3838,7 +3846,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                                     Text(rec.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
                                     Text(rec.reason ?: "", fontSize = 11.sp, color = Color(0xFF64748B))
                                 }
-                                Text("â‚¹${rec.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
+                                Text("₹${rec.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
                             }
                         }
                     }
@@ -3848,9 +3856,9 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// PaymentScreen â€” 5-step stepper: Select Plan â†’ Pay â†’ Submit UTR â†’ Verification â†’ Active
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────────
+// PaymentScreen — 5-step stepper: Select Plan → Pay → Submit UTR → Verification → Active
+// ──────────────────────────────────────────────────────────────────────────────
 data class PaymentUiState(
     val step: Int = 0,
     val loading: Boolean = true,
@@ -3901,7 +3909,7 @@ class PaymentViewModel @Inject constructor(private val repo: PaymentsRepository)
 fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val steps = listOf("Select Plan", "Pay", "Submit UTR", "Verification", "Active")
-    val plans = listOf("silver" to "Silver â‚¹149/mo", "gold" to "Gold â‚¹299/mo", "platinum" to "Platinum â‚¹999/mo")
+    val plans = listOf("silver" to "Silver ₹149/mo", "gold" to "Gold ₹299/mo", "platinum" to "Platinum ₹999/mo")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.checkout_payment_title), onBack)
@@ -3994,12 +4002,12 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                                         }
                                     }
                                     Spacer(Modifier.height(12.dp))
-                                    state.instructions.forEach { Text("â€¢ $it", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                                    state.instructions.forEach { Text("• $it", fontSize = 13.sp, color = Color(0xFF64748B)) }
                                     Spacer(Modifier.height(16.dp))
                                     Button(onClick = { viewModel.advanceStep() }, shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                         modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                                        Text("I've Paid â†’ Enter UTR", fontWeight = FontWeight.SemiBold)
+                                        Text("I've Paid → Enter UTR", fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -4010,7 +4018,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             Button(onClick = { viewModel.submitPayment() }, enabled = !state.submitting,
                                 shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                 modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                                Text(if (state.submitting) "Submittingâ€¦" else "Submit for Verification", fontWeight = FontWeight.SemiBold)
+                                Text(if (state.submitting) "Submitting…" else "Submit for Verification", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }

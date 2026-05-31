@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
@@ -166,38 +167,29 @@ fun MoreScreen(
 ) {
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 9 focused items (contextual utilities moved to AllPosts/search)
+    // ── TRADE section: 6 focused items — Centre/CategoryMode/Subcategories/Nearby removed (not in web app)
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
-        MenuRow("Centre", "Your seller centre", Icons.Outlined.GridView, Color(0xFFE0E7FF), Color(0xFF4F46E5), onClick = onOpenCentre),
         MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
         MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
         MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
-        MenuRow("Category Mode", "Switch category browsing mode", Icons.Outlined.Apps, Color(0xFFF0FDF4), Color(0xFF16A34A), onClick = onOpenCategoryMode),
-        MenuRow("Subcategories", "Browse subcategories", Icons.Outlined.AccountTree, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenSubcategories),
-        MenuRow("Nearby", "Find listings near you", Icons.Outlined.LocationOn, Color(0xFFFDF4FF), Color(0xFF9333EA), onClick = onOpenNearby),
+        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.Favorite, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
     )
 
-    // ── SOCIAL section: 7 items — Feed removed (already in bottom navbar)
+    // ── SOCIAL section: 4 items — Feed removed (already in bottom navbar), Chat/MyReviews/MyOffers removed per user request
     val socialRows = listOf(
         MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall),
         MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed),
-        MenuRow("Chat", "Messages and conversations", Icons.AutoMirrored.Outlined.Chat, Color(0xFFEDE9FE), Color(0xFF6366F1), onClick = onOpenChat),
-        MenuRow("My Reviews", "Reviews you have received", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenMyReviews),
-        MenuRow("My Offers", "Offers made and received", Icons.Outlined.LocalOffer, Color(0xFFF0FDF4), Color(0xFF059669), onClick = onOpenOffers),
         MenuRow("Feedback", "Share your app experience", Icons.Outlined.VolunteerActivism, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
-    // ── ACCOUNT section: 7 items — Notifications removed (already in top navbar)
+    // ── ACCOUNT section: focused — Dashboard/Security/DeleteAccount collapsed to Settings
     val accountRows = buildList {
         add(MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile))
         add(MenuRow("Rewards", "Your points, achievements and badges", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenRewards))
-        add(MenuRow("Verification", "Verify your account identity", Icons.Outlined.VerifiedUser, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenVerification))
-        add(MenuRow("Dashboard", "Seller analytics and performance", Icons.Outlined.Dashboard, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenDashboard))
-        add(MenuRow("Security", "Password and security settings", Icons.Outlined.Security, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSecurity))
-        add(MenuRow("Delete Account", "Permanently remove your account", Icons.Outlined.Delete, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenAccountDelete))
+        add(MenuRow("Verification", "Verify your KYC / identity", Icons.Outlined.VerifiedUser, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenVerification))
         if (isAdmin) add(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel))
     }
     // ── Utilities (settings + logout always at bottom) ────────────────────────
@@ -212,7 +204,7 @@ fun MoreScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Header ──────────────────────────────────────────────────────
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -235,14 +227,14 @@ fun MoreScreen(
             MoreRowList(tradeRows)
         }
 
-        // â”€â”€ Discover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Discover ────────────────────────────────────────────────────
         item {
             MoreSectionHeader("SOCIAL", Color(0xFF059669))
             Spacer(Modifier.height(6.dp))
             MoreRowList(socialRows)
         }
 
-        // â”€â”€ Account & Support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Account & Support ───────────────────────────────────────────
         item {
             MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
             Spacer(Modifier.height(6.dp))
@@ -307,7 +299,7 @@ fun MoreScreen(
                         Spacer(Modifier.height(6.dp))
                         val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
                         var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
-                        val langs = listOf("en" to "English", "hi" to "हिनà¥दà¥€", "te" to "తà±†లà±à°—à±", "ta" to "தமிழà¯", "kn" to "à²•ನà³ನಡ", "mr" to "मराठà¥€", "bn" to "বাà¦‚লা", "gu" to "àª—à«àªœરાતà«€")
+                        val langs = listOf("en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்", "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી")
                         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             langs.forEach { (code, label) ->
                                 FilterChip(

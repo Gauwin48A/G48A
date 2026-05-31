@@ -511,11 +511,11 @@ private data class CategoryTheme(
 )
 
 private val CATEGORY_THEMES = mapOf(
-    "electronics" to CategoryTheme("electronics", "Electronics", "�", "Phones, laptops & gadgets",
+    "electronics" to CategoryTheme("electronics", "Electronics", "💻", "Phones, laptops & gadgets",
         listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
-    "fashion" to CategoryTheme("fashion", "Fashion", "�", "Clothing, shoes & accessories",
+    "fashion" to CategoryTheme("fashion", "Fashion", "👗", "Clothing, shoes & accessories",
         listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
-    "vehicles" to CategoryTheme("vehicles", "Vehicles", "�", "Cars, bikes & spare parts",
+    "vehicles" to CategoryTheme("vehicles", "Vehicles", "🚗", "Cars, bikes & spare parts",
         listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
     "others" to CategoryTheme("others", "Others", "✨", "Home, services, jobs & more",
         listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
@@ -744,7 +744,7 @@ private fun AllPostsHeroBanner(
                     color = Color.White.copy(alpha = 0.18f),
                 ) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("�", fontSize = 14.sp)
+                        Text("💻", fontSize = 14.sp)
                         Spacer(Modifier.width(4.dp))
                         Text(
                             stringResource(R.string.allposts_items_count, listingsCount),
@@ -1228,9 +1228,9 @@ fun HomeScreen(
                         item(key = "promo_carousel") {
                             val promoSlides = remember {
                                 listOf(
-                                    Triple("�️ Great Deals", "Up to 70% off today", Color(0xFF2563EB)),
+                                    Triple("🎁 Great Deals", "Up to 70% off today", Color(0xFF2563EB)),
                                     Triple("✨ New Arrivals", "Fresh listings every hour", Color(0xFF7C3AED)),
-                                    Triple("� Near You", "Discover local sellers", Color(0xFF059669)),
+                                    Triple("📍 Near You", "Discover local sellers", Color(0xFF059669)),
                                 )
                             }
                             val bannerPagerState = rememberPagerState { promoSlides.size }

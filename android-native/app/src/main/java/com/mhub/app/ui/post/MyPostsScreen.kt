@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
@@ -115,6 +116,8 @@ data class MyPostsState(
     val bulkMode: Boolean = false,
     val markSoldTarget: Post? = null,
     val markSoldLoading: Boolean = false,
+    val renewTarget: Post? = null,
+    val renewLoading: Boolean = false,
 )
 
 @HiltViewModel
@@ -167,6 +170,17 @@ class MyPostsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repo.markSold(post.stableId) }
             _state.value = _state.value.copy(markSoldLoading = false, markSoldTarget = null)
+            load()
+        }
+    }
+
+    fun showRenew(post: Post?) { _state.value = _state.value.copy(renewTarget = post) }
+    fun confirmRenew() {
+        val post = _state.value.renewTarget ?: return
+        _state.value = _state.value.copy(renewLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.renew(post.stableId) }
+            _state.value = _state.value.copy(renewLoading = false, renewTarget = null)
             load()
         }
     }
@@ -282,7 +296,7 @@ fun MyPostsScreen(
     promoteTarget?.let { post ->
         AlertDialog(
             onDismissRequest = { promoteTarget = null },
-            title = { Text("� Promote Listing", fontWeight = FontWeight.Bold) },
+            title = { Text("🚀 Promote Listing", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = Color(0xFF374151))
@@ -290,14 +304,14 @@ fun MyPostsScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("� 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
+                                Text("🪙 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
                                 Text("24 hours", fontSize = 12.sp, color = Color(0xFF064E3B))
                                 Text("Standard boost", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
                         }
                         Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("� 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
+                                Text("🪙 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
                                 Text("7 days", fontSize = 12.sp, color = Color(0xFF78350F))
                                 Text("Featured boost", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
@@ -328,6 +342,35 @@ fun MyPostsScreen(
                 TextButton(onClick = { deleteTarget = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
+            },
+            shape = RoundedCornerShape(22.dp),
+        )
+    }
+
+    // Renew listing confirmation dialog
+    if (state.renewTarget != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showRenew(null) },
+            title = { Text("🔄 Renew Listing", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Re-activate \"${state.renewTarget!!.displayTitle}\"?")
+                    Text(
+                        "The listing will be set back to Active and appear in search results.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmRenew() },
+                    enabled = !state.renewLoading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                ) { Text(if (state.renewLoading) "Renewing…" else "Yes, Renew") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.showRenew(null) }) { Text(stringResource(R.string.action_cancel)) }
             },
             shape = RoundedCornerShape(22.dp),
         )
@@ -644,6 +687,14 @@ fun MyPostsScreen(
                                                         text = { Text("Mark as Sold") },
                                                         leadingIcon = { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E)) },
                                                         onClick = { viewModel.showMarkSold(post); cardMenuExpanded = false },
+                                                    )
+                                                }
+                                                // Renew option — for sold, expired, or draft listings
+                                                if (post.status?.lowercase() in listOf("sold", "expired", "draft", "inactive")) {
+                                                    DropdownMenuItem(
+                                                        text = { Text("Renew Listing", color = Color(0xFF2563EB)) },
+                                                        leadingIcon = { Icon(Icons.Default.Autorenew, null, tint = Color(0xFF2563EB)) },
+                                                        onClick = { viewModel.showRenew(post); cardMenuExpanded = false },
                                                     )
                                                 }
                                                 DropdownMenuItem(

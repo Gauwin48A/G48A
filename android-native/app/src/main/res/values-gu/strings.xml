@@ -1423,4 +1423,10 @@
     <string name="commerce_badge_secure">🔒 સુરક્ષિત</string>
     <string name="commerce_badge_rewarded">✓ પુરસ્કૃત</string>
     <string name="commerce_badge_verified">📋 ચકાસાયેલ</string>
+    <string name="profile_orders">ઓર્ડર</string>
+    <string name="feed_login_subtitle">સંપૂર્ણ કોમ્યુનિટી ફીડ એક્સેસ કરવા ખાતું બનાવો અથવા લૉગ ઇન કરો</string>
+    <string name="feed_login_to_see_more">વધુ જોવા સાઇન ઇન કરો</string>
+    <string name="profile_manage_addresses">સરનામાં સંચાલિત કરો</string>
+    <string name="profile_addresses">સરનામાં</string>
+    <string name="profile_track_orders">ઓર્ડર ટ્રૅક કરો</string>
 </resources>
