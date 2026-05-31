@@ -1265,8 +1265,8 @@ exports.createPost = async (req, res) => {
       expiresAt = rules.getExpiry();
     }
 
-    /* Normalise uploaded images */
-    const normalizedImages = images
+    /* Normalise uploaded images (multipart files) */
+    const uploadedImages = images
       .map(
         (img) =>
           normalizeUploadsPath(`/uploads/${img.filename}`) ||
@@ -1275,6 +1275,12 @@ exports.createPost = async (req, res) => {
           parseOptionalStringScalar(img.filename)
       )
       .filter(Boolean);
+    /* Also accept pre-uploaded image URLs sent in the JSON body
+       (used by the Android client's two-stage upload flow). */
+    const bodyImages = normalizeImagesPayload(req.body?.images);
+    const normalizedImages = Array.from(
+      new Set([...uploadedImages, ...bodyImages])
+    ).filter(Boolean);
     const imagesJson = JSON.stringify(normalizedImages);
 
     /* Audio file */

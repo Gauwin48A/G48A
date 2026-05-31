@@ -1001,7 +1001,8 @@ data class FeedResponse(
 
 @Serializable
 data class CreateFeedRequest(
-    val content: String,
+    // Server (POST /api/feed/add) reads req.body.description
+    @SerialName("description") val content: String,
     @SerialName("post_id") val postId: String? = null,
     val images: List<String> = emptyList(),
 )
@@ -1117,30 +1118,63 @@ data class Channel(
     @SerialName("channel_id") val channelId: String? = null,
     val name: String? = null,
     val description: String? = null,
+    val category: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("cover_url") val coverUrl: String? = null,
     @SerialName("member_count") val memberCount: Int = 0,
     @SerialName("post_count") val postCount: Int = 0,
     @SerialName("owner_id") val ownerId: String? = null,
     @SerialName("owner_name") val ownerName: String? = null,
     @SerialName("is_member") val isMember: Boolean = false,
+    @SerialName("is_following") val isFollowing: Boolean = false,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("is_verified") val isVerified: Boolean = false,
+    @SerialName("is_premium") val isPremium: Boolean = false,
     @SerialName("follower_count") val followerCount: Int = 0,
+    @SerialName("contact_email") val contactEmail: String? = null,
+    @SerialName("contact_website") val contactWebsite: String? = null,
+    @SerialName("contact_phone") val contactPhone: String? = null,
+    val location: String? = null,
     val posts: List<com.mhub.app.domain.model.Post> = emptyList(),
 ) {
-    val stableId: String get() = id ?: channelId ?: name.orEmpty()
-    val displayName: String get() = name ?: "Channel"
+    val stableId: String get() = channelId ?: id ?: name.orEmpty()
+    val displayName: String get() = name ?: "Centre Page"
+    /** Server marks following via either is_member or is_following. */
+    val followed: Boolean get() = isMember || isFollowing
+    val avatarUrl: String? get() = logoUrl ?: imageUrl
 }
 
+/** A social update/post made within a Centre Page (channel_posts table). */
 @Serializable
-data class ChannelsResponse(
-    val channels: List<Channel> = emptyList(),
+data class ChannelPost(
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("channel_id") val channelId: String? = null,
+    @SerialName("owner_id") val ownerId: String? = null,
+    val description: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("video_url") val videoUrl: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = postId ?: (description.orEmpty() + createdAt.orEmpty())
+}
+
+/** Response of GET /api/channels/:id — channel detail plus its update posts. */
+@Serializable
+data class ChannelDetailResponse(
+    val channel: Channel = Channel(),
+    val posts: List<ChannelPost> = emptyList(),
 )
 
 @Serializable
 data class CreateChannelRequest(
     val name: String,
+    val category: String,
     val description: String? = null,
+    val location: String? = null,
+    @SerialName("contact_email") val contactEmail: String? = null,
+    @SerialName("contact_phone") val contactPhone: String? = null,
+    @SerialName("contact_website") val contactWebsite: String? = null,
 )
 
 // -------- Centres --------

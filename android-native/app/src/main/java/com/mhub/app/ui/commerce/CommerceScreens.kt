@@ -652,6 +652,8 @@ data class TiersUiState(
     val historyLoading: Boolean = false,
     val cancelLoading: Boolean = false,
     val cancelSuccess: Boolean = false,
+    val bronzeClaimLoading: Boolean = false,
+    val bronzeClaimSuccess: Boolean = false,
 )
 
 @HiltViewModel
@@ -702,6 +704,16 @@ class TiersViewModel @Inject constructor(private val repo: TiersRepository) : Vi
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(cancelLoading = false)
             }
+        }
+    }
+
+    /** One-time Bronze plan claim for new users — subscribes to "bronze" tier for free. */
+    fun claimBronzePlan() {
+        _state.value = _state.value.copy(bronzeClaimLoading = true)
+        viewModelScope.launch {
+            repo.subscribe(SubscribeRequest(tierId = "bronze"))
+            _state.value = _state.value.copy(bronzeClaimLoading = false, bronzeClaimSuccess = true)
+            loadSubscriptionData()
         }
     }
 
@@ -760,6 +772,56 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                                 Surface(shape = RoundedCornerShape(8.dp), color = if (isPromoActive) Color(0xFF059669) else Color(0xFFD97706)) {
                                     Text("FREE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                    // Bronze plan — One-time welcome offer for new users (no active sub + not yet claimed)
+                    if (state.currentSubscription == null && !state.bronzeClaimSuccess) {
+                        item(key = "bronze_claim") {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFFEF3C7),
+                                border = BorderStroke(1.5.dp, Color(0xFFB45309).copy(alpha = 0.4f)),
+                                modifier = Modifier.fillMaxWidth(),
+                                shadowElevation = 3.dp,
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Surface(shape = CircleShape, color = Color(0xFFB45309).copy(alpha = 0.15f), modifier = Modifier.size(44.dp)) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Text("🥉", fontSize = 22.sp)
+                                            }
+                                        }
+                                        Column(Modifier.weight(1f)) {
+                                            Text("Welcome Offer — Bronze Plan FREE!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF78350F))
+                                            Text("One-time only • KYC verification required", fontSize = 12.sp, color = Color(0xFF92400E))
+                                        }
+                                    }
+                                    Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.7f), modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("What you get:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF78350F))
+                                            listOf("✅ Up to 100 listings", "✅ 30-day visibility", "✅ Bronze seller badge", "✅ 3 photos per post", "✅ Basic analytics").forEach {
+                                                Text(it, fontSize = 11.sp, color = Color(0xFF92400E))
+                                            }
+                                        }
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Button(
+                                            onClick = { viewModel.claimBronzePlan() },
+                                            enabled = !state.bronzeClaimLoading,
+                                            modifier = Modifier.weight(1f).height(44.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB45309)),
+                                        ) {
+                                            if (state.bronzeClaimLoading) {
+                                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                                            } else {
+                                                Text("🎁 Claim Bronze Plan", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            }
+                                        }
+                                    }
+                                    Text("⚠️ KYC must be completed before claiming. Complete your verification first if not done.", fontSize = 10.sp, color = Color(0xFFB45309).copy(alpha = 0.7f))
                                 }
                             }
                         }

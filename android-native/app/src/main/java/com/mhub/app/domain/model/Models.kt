@@ -83,6 +83,24 @@ data class Post(
     @SerialName("latitude") val latitude: Double? = null,
     @SerialName("longitude") val longitude: Double? = null,
     @SerialName("distance") val distance: Double? = null,
+    // Promo/boost fields
+    @SerialName("boost_level") val boostLevel: Int? = null,
+    @SerialName("promo_label") val promoLabel: String? = null,
+    @SerialName("tier") val tier: String? = null,
+    @SerialName("is_flash_sale") val isFlashSale: Boolean? = null,
+    @SerialName("is_negotiable") val isNegotiable: Boolean? = null,
+    @SerialName("original_price") val originalPrice: Double? = null,
+    @SerialName("tier_priority") val tierPriority: Int? = null,
+    @SerialName("is_premium") val isPremium: Boolean? = null,
+    @SerialName("completed_sales") val completedSales: Int? = null,
+    @SerialName("response_rate") val responseRate: Int? = null,
+    @SerialName("member_since") val memberSince: String? = null,
+    @SerialName("pricing_type") val pricingType: String? = null,
+    @SerialName("availability") val availability: String? = null,
+    @SerialName("warranty") val warranty: String? = null,
+    @SerialName("listing_id") val listingId: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()

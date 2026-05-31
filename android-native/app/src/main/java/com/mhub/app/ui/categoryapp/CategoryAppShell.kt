@@ -358,12 +358,8 @@ private fun CategoryTopBar(
             }
         },
         actions = {
-            IconButton(
-                onClick = onSearch,
-                modifier = Modifier.semantics { contentDescription = "Search in ${appDef.label}" },
-            ) {
-                Icon(Icons.Filled.Search, contentDescription = null)
-            }
+            // Search moved out of the top bar — AllPosts/listing screens expose an
+            // inline search + filter row below the navbar (web parity).
             IconButton(
                 onClick = onNotifications,
                 modifier = Modifier.semantics { contentDescription = "View notifications" },

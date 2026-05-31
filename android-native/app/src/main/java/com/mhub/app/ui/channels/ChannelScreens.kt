@@ -77,7 +77,7 @@ class ChannelsListViewModel @Inject constructor(private val repo: ChannelsReposi
     fun setSearch(v: String) { _state.value = _state.value.copy(search = v) }
     fun toggleFollow(ch: Channel) { viewModelScope.launch {
         val id = ch.stableId
-        if (ch.isMember) repo.unfollow(id) else repo.follow(id)
+        if (ch.followed) repo.unfollow(id) else repo.follow(id)
         load()
     } }
 }
@@ -89,13 +89,13 @@ fun ChannelsListScreen(onBack: () -> Unit, onOpenChannel: (String) -> Unit = {},
     val filtered = state.channels.filter { state.search.isBlank() || it.displayName.contains(state.search, true) || (it.description ?: "").contains(state.search, true) }
 
     Scaffold(
-        topBar = { TopBar("Channels", onBack) { IconButton(onClick = onCreateChannel) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) } } },
+        topBar = { TopBar("Centre Pages", onBack) { IconButton(onClick = onCreateChannel) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) } } },
     ) { padding ->
         PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(Modifier.fillMaxSize()) {
                 // Search bar
                 OutlinedTextField(value = state.search, onValueChange = { viewModel.setSearch(it) },
-                    placeholder = { Text("Search channels…") }, leadingIcon = { Icon(Icons.Filled.Search, null) },
+                    placeholder = { Text("Search centre pages…") }, leadingIcon = { Icon(Icons.Filled.Search, null) },
                     trailingIcon = { if (state.search.isNotBlank()) IconButton(onClick = { viewModel.setSearch("") }) { Icon(Icons.Filled.Close, null) } },
                     singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface))
@@ -106,12 +106,12 @@ fun ChannelsListScreen(onBack: () -> Unit, onOpenChannel: (String) -> Unit = {},
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                             Icon(Icons.Filled.Forum, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(64.dp))
                             Spacer(Modifier.height(16.dp))
-                            Text(if (state.search.isNotBlank()) "No channels match" else "No channels yet", fontWeight = FontWeight.SemiBold)
-                            if (state.search.isBlank()) { Spacer(Modifier.height(16.dp)); Button(onClick = onCreateChannel, shape = RoundedCornerShape(12.dp)) { Text("Create First Channel") } }
+                            Text(if (state.search.isNotBlank()) "No centre pages match" else "No centre pages yet", fontWeight = FontWeight.SemiBold)
+                            if (state.search.isBlank()) { Spacer(Modifier.height(16.dp)); Button(onClick = onCreateChannel, shape = RoundedCornerShape(12.dp)) { Text("Create Centre Page") } }
                         }
                     }
                     else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { Text("${filtered.size} channel${if (filtered.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        item { Text("${filtered.size} centre page${if (filtered.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(filtered, key = { it.stableId }) { ch ->
                             ChannelCard(ch, onFollow = { viewModel.toggleFollow(ch) }) { onOpenChannel(ch.stableId) }
                         }
@@ -126,8 +126,13 @@ fun ChannelsListScreen(onBack: () -> Unit, onOpenChannel: (String) -> Unit = {},
 private fun ChannelCard(channel: Channel, onFollow: () -> Unit, onClick: () -> Unit) {
     Card(onClick = onClick, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                Text(channel.displayName.take(1).uppercase(), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            val avatar = channel.avatarUrl
+            if (!avatar.isNullOrBlank()) {
+                AsyncImage(model = avatar, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(48.dp).clip(CircleShape))
+            } else {
+                Box(Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+                    Text(channel.displayName.take(1).uppercase(), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -138,13 +143,19 @@ private fun ChannelCard(channel: Channel, onFollow: () -> Unit, onClick: () -> U
                         Icon(Icons.Filled.Verified, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(16.dp))
                     }
                 }
+                channel.category?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(2.dp))
+                    Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
+                        Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp))
+                    }
+                }
                 channel.description?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.People, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
                         Spacer(Modifier.width(3.dp))
-                        Text("${channel.memberCount} members", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${channel.followerCount} followers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Article, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
@@ -153,7 +164,7 @@ private fun ChannelCard(channel: Channel, onFollow: () -> Unit, onClick: () -> U
                     }
                 }
             }
-            if (channel.isMember) {
+            if (channel.followed) {
                 OutlinedButton(onClick = onFollow, shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp), modifier = Modifier.height(32.dp)) { Text("Following", fontSize = 11.sp) }
             } else {
                 Button(onClick = onFollow, shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp), modifier = Modifier.height(32.dp)) { Text("Follow", fontSize = 11.sp) }
@@ -174,13 +185,21 @@ class CreateChannelViewModel @Inject constructor(private val repo: ChannelsRepos
     fun setCategory(v: String) { _state.value = _state.value.copy(category = v) }
     fun submit() {
         val s = _state.value
-        if (s.name.isBlank()) { _state.value = s.copy(error = "Channel name is required"); return }
+        if (s.name.isBlank()) { _state.value = s.copy(error = "Centre page name is required"); return }
         if (s.name.length < 3) { _state.value = s.copy(error = "Name must be at least 3 characters"); return }
+        if (s.category.isBlank()) { _state.value = s.copy(error = "Please select a category (one centre page allowed per category)"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = repo.create(CreateChannelRequest(name = s.name, description = s.description.ifBlank { null }))) {
+            when (val r = repo.create(CreateChannelRequest(name = s.name, category = s.category, description = s.description.ifBlank { null }))) {
                 is ApiResult.Success -> _state.value = CreateChannelUiState(success = true)
-                is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
+                is ApiResult.Failure -> {
+                    val msg = when (r.error) {
+                        is com.mhub.app.core.ApiError.Forbidden ->
+                            "Centre Pages are a Premium feature. Upgrade your plan to create one."
+                        else -> r.error.message
+                    }
+                    _state.value = s.copy(loading = false, error = msg)
+                }
             }
         }
     }
@@ -192,8 +211,16 @@ fun CreateChannelScreen(onBack: () -> Unit, viewModel: CreateChannelViewModel = 
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.success) { if (state.success) onBack() }
 
-    Scaffold(topBar = { TopBar("Create Channel", onBack) }) { padding ->
+    Scaffold(topBar = { TopBar("Create Centre Page", onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Premium notice (server enforces premium-only + one page per category)
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)), shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.WorkspacePremium, null, tint = Color(0xFFB45309), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Premium feature — one Centre Page per category.", color = Color(0xFFB45309), fontSize = 12.sp)
+                }
+            }
             state.error?.let {
                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), shape = RoundedCornerShape(10.dp)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -203,11 +230,11 @@ fun CreateChannelScreen(onBack: () -> Unit, viewModel: CreateChannelViewModel = 
                     }
                 }
             }
-            CField("Channel Name *", state.name, viewModel::setName, "e.g. Electronics Deals, Fashion Hub…")
+            CField("Centre Page Name *", state.name, viewModel::setName, "e.g. Electronics Deals, Fashion Hub…")
             Text("${state.name.length}/50", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.End))
 
-            // Category selector
-            Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            // Category selector (required — one centre page per category)
+            Text("Category *", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val cats = listOf("Electronics", "Fashion", "Vehicles", "Grocery", "Furniture", "Services", "Other")
                 items(cats) { cat ->
@@ -216,7 +243,7 @@ fun CreateChannelScreen(onBack: () -> Unit, viewModel: CreateChannelViewModel = 
                 }
             }
 
-            CField("Description (optional)", state.description, viewModel::setDescription, "What is this channel about?", maxLines = 3, minLines = 2)
+            CField("Description (optional)", state.description, viewModel::setDescription, "What is this centre page about?", maxLines = 3, minLines = 2)
             Text("${state.description.length}/500", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.End))
 
             // Logo placeholder
@@ -224,21 +251,21 @@ fun CreateChannelScreen(onBack: () -> Unit, viewModel: CreateChannelViewModel = 
                 Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Filled.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Add Channel Logo (optional)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Add Logo (optional)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Spacer(Modifier.height(8.dp))
-            Button(onClick = { viewModel.submit() }, enabled = !state.loading && state.name.isNotBlank(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp)) {
+            Button(onClick = { viewModel.submit() }, enabled = !state.loading && state.name.isNotBlank() && state.category.isNotBlank(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp)) {
                 if (state.loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                else Text("Create Channel", fontWeight = FontWeight.SemiBold)
+                else Text("Create Centre Page", fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
 // ─── ChannelDetailScreen ─────────────────────────────────────────────────────
-data class ChannelDetailUiState(val loading: Boolean = true, val channel: Channel? = null, val error: String? = null, val toggling: Boolean = false, val posts: List<Post> = emptyList())
+data class ChannelDetailUiState(val loading: Boolean = true, val channel: Channel? = null, val error: String? = null, val toggling: Boolean = false, val posts: List<ChannelPost> = emptyList())
 
 @HiltViewModel
 class ChannelDetailViewModel @Inject constructor(private val repo: ChannelsRepository) : ViewModel() {
@@ -247,7 +274,7 @@ class ChannelDetailViewModel @Inject constructor(private val repo: ChannelsRepos
     fun load(id: String) { viewModelScope.launch {
         when (val r = repo.detail(id)) {
             is ApiResult.Success -> {
-                _state.value = ChannelDetailUiState(loading = false, channel = r.data, posts = r.data.posts)
+                _state.value = ChannelDetailUiState(loading = false, channel = r.data.channel, posts = r.data.posts)
             }
             is ApiResult.Failure -> _state.value = ChannelDetailUiState(loading = false, error = r.error.message)
         }
@@ -255,7 +282,7 @@ class ChannelDetailViewModel @Inject constructor(private val repo: ChannelsRepos
     fun toggleFollow(id: String) { viewModelScope.launch {
         val ch = _state.value.channel ?: return@launch
         _state.value = _state.value.copy(toggling = true)
-        if (ch.isMember) repo.unfollow(id) else repo.follow(id)
+        if (ch.followed) repo.unfollow(id) else repo.follow(id)
         load(id)
         _state.value = _state.value.copy(toggling = false)
     } }
@@ -270,7 +297,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
     val channelContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(channelId) { viewModel.load(channelId) }
 
-    Scaffold(topBar = { TopBar(state.channel?.displayName ?: "Channel", onBack) }) { padding ->
+    Scaffold(topBar = { TopBar(state.channel?.displayName ?: "Centre Page", onBack) }) { padding ->
         when {
             state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             state.channel != null -> {
@@ -297,9 +324,9 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.memberCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Members", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.postCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Posts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${ch.followerCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Followers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${state.posts.size}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Updates", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(ch.category?.takeIf { it.isNotBlank() } ?: "—", fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1); Text("Category", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                 }
                                 Spacer(Modifier.height(14.dp))
                                 // Detect owner: userId is stored in ch.ownerId if API returns it
@@ -307,10 +334,10 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                 var showManageSheet by remember { mutableStateOf(false) }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(onClick = { viewModel.toggleFollow(channelId) }, enabled = !state.toggling, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(44.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = if (ch.isMember) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary)) {
-                                        Icon(if (ch.isMember) Icons.Filled.Check else Icons.Filled.PersonAdd, null, modifier = Modifier.size(18.dp))
+                                        colors = ButtonDefaults.buttonColors(containerColor = if (ch.followed) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary)) {
+                                        Icon(if (ch.followed) Icons.Filled.Check else Icons.Filled.PersonAdd, null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text(if (ch.isMember) "Following" else "Follow")
+                                        Text(if (ch.followed) "Following" else "Follow")
                                     }
                                     OutlinedButton(onClick = {
                                         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -360,17 +387,17 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                     // Tabs
                     item {
                         TabRow(selectedTabIndex = selectedTab, modifier = Modifier.padding(horizontal = 16.dp), containerColor = Color.Transparent) {
-                            listOf("About", "Listings", "Reviews").forEachIndexed { idx, title ->
+                            listOf("About", "Updates", "Reviews").forEachIndexed { idx, title ->
                                 Tab(selected = selectedTab == idx, onClick = { selectedTab = idx }, text = { Text(title) })
                             }
                         }
                     }
-                    // Sort options for listings tab
+                    // Sort options for updates tab
                     if (selectedTab == 1 && state.posts.isNotEmpty()) {
                         item {
                             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("Sort:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically))
-                                listOf("Newest", "Price", "Popular").forEach { sort ->
+                                listOf("Newest", "Oldest").forEach { sort ->
                                     FilterChip(selected = selectedSort == sort, onClick = { selectedSort = sort }, label = { Text(sort, fontSize = 11.sp) })
                                 }
                             }
@@ -399,6 +426,12 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                         Spacer(Modifier.height(8.dp))
                                         Text(ch.description ?: "No description provided", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(Modifier.height(12.dp))
+                                        ch.category?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Category, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
+                                        ch.location?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.LocationOn, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
+                                        ch.contactPhone?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Phone, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
+                                        ch.contactEmail?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Email, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
+                                        ch.contactWebsite?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Language, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
+                                        ch.ownerName?.takeIf { it.isNotBlank() }?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Person, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text("Owner: $it", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Spacer(Modifier.height(6.dp)) }
                                         ch.createdAt?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.CalendarToday, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.width(6.dp)); Text("Created ${it.take(10)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                                     }
                                 }
@@ -406,22 +439,18 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                         }
                         1 -> {
                             if (state.posts.isEmpty()) {
-                                item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No listings yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                                item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No updates yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                             }
-                            items(state.posts, key = { it.stableId }) { post ->
-                                Card(onClick = { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        post.primaryImage?.let { img ->
-                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)))
-                                        } ?: Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val sortedPosts = if (selectedSort == "Oldest") state.posts.sortedBy { it.createdAt ?: "" } else state.posts.sortedByDescending { it.createdAt ?: "" }
+                            items(sortedPosts, key = { it.stableId }) { post ->
+                                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                    Column(Modifier.padding(12.dp)) {
+                                        post.imageUrl?.takeIf { it.isNotBlank() }?.let { img ->
+                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(10.dp)))
+                                            Spacer(Modifier.height(8.dp))
                                         }
-                                        Spacer(Modifier.width(12.dp))
-                                        Column(Modifier.weight(1f)) {
-                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            post.price?.let { Text("₹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary) }
-                                            post.location?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.LocationOn, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant); Text(it, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) } }
-                                        }
+                                        post.description?.let { Text(it, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface) }
+                                        post.createdAt?.let { Spacer(Modifier.height(6.dp)); Text(it.take(10), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     }
                                 }
                             }
@@ -436,7 +465,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                             Text("4.5/5", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        Text("Based on ${ch.memberCount} reviews", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Based on ${ch.followerCount} followers", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }

@@ -362,12 +362,12 @@ interface MhubApi {
     suspend fun feedDetail(@Path("id") id: String): FeedItem
 
     // My-feed server also returns a raw array or {posts:[...]} — wrap defensively
-    @GET("api/feed/my")
+    @GET("api/feed/mine")
     suspend fun myFeed(
         @Query("page") page: Int = 1,
     ): List<FeedItem>
 
-    @POST("api/feed")
+    @POST("api/feed/add")
     suspend fun createFeedPost(@Body body: CreateFeedRequest): IdResponse
 
     @GET("api/wall")
@@ -465,20 +465,28 @@ interface MhubApi {
     @DELETE("api/compare")
     suspend fun clearCompare(): MessageResponse
 
-    // ---- Channels ----
+    // ---- Channels / Centre Pages ----
+    // Server returns a bare JSON array for the browse list.
     @GET("api/channels")
-    suspend fun channels(): ChannelsResponse
+    suspend fun channels(): List<Channel>
 
-    @POST("api/channels")
-    suspend fun createChannel(@Body body: CreateChannelRequest): IdResponse
+    @POST("api/channels/create")
+    suspend fun createChannel(@Body body: CreateChannelRequest): Channel
 
+    // Server returns { channel, posts: [] }
     @GET("api/channels/{id}")
-    suspend fun channelDetail(@Path("id") id: String): Channel
+    suspend fun channelDetail(@Path("id") id: String): ChannelDetailResponse
 
+    // Channels owned by a specific user (one per category).
+    @GET("api/channels/owner/{userId}")
+    suspend fun channelsByOwner(@Path("userId") userId: String): ChannelDetailResponse
+
+    // Toggle follow (server toggles on POST /:id/follow).
     @POST("api/channels/{id}/follow")
     suspend fun followChannel(@Path("id") id: String): MessageResponse
 
-    @DELETE("api/channels/{id}/follow")
+    // Explicit unfollow (server: POST /:id/unfollow).
+    @POST("api/channels/{id}/unfollow")
     suspend fun unfollowChannel(@Path("id") id: String): MessageResponse
 
     // ---- Centres ----

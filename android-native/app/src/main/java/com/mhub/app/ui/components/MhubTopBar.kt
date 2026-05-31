@@ -137,42 +137,6 @@ fun MhubTopBar(
 
             // Actions row
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Search
-                IconButton(onClick = onSearch) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = stringResource(R.string.topbar_search),
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
-                // Filter with active count badge
-                IconButton(onClick = onFilter) {
-                    BadgedBox(
-                        badge = {
-                            if (activeFilterCount > 0) {
-                                Badge(
-                                    containerColor = Color(0xFFF59E0B),
-                                    contentColor = Color.White,
-                                ) {
-                                    Text(
-                                        activeFilterCount.toString(),
-                                        fontSize = 9.sp,
-                                    )
-                                }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            Icons.Default.FilterList,
-                            contentDescription = "Filter",
-                            tint = Color.White.copy(alpha = 0.92f),
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-
                 // Notifications with badge
                 IconButton(onClick = {
                     viewModel.refresh()

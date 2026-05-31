@@ -479,6 +479,9 @@ fun MhubApp(
                             },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
+                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -576,7 +579,7 @@ fun MhubApp(
                             onOpenOffers = { navController.navigate(Routes.OFFERS) { launchSingleTop = true } },
                             onOpenMyFeed = { navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
                             onOpenReviews = { userId -> navController.navigate(Routes.reviews(userId.ifBlank { "me" })) { launchSingleTop = true } },
-                            onOpenCentre = { navController.navigate(Routes.CENTRE_LIST) { launchSingleTop = true } },
+                            onOpenCentre = { navController.navigate(Routes.CHANNELS) { launchSingleTop = true } },
                             onOpenSaleDone = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
                         )
@@ -1195,49 +1198,59 @@ fun MhubApp(
                         )
                         .clickable(enabled = false) {},
                 ) {
+                    // Helper: navigate from More drawer — pops to main graph so back navigation
+                    // always returns to the tab you were on (no stuck states).
+                    // NOTE: restoreState intentionally omitted to avoid restoring stale composable state.
+                    val drawerNav: (String) -> Unit = { route ->
+                        showMoreDrawer = false
+                        navController.navigate(route) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
                     MoreScreen(
                         onDismiss = { showMoreDrawer = false },
-                        onOpenNotifications = { showMoreDrawer = false; navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                        onOpenWishlist = { showMoreDrawer = false; navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
-                        onOpenSearch = { showMoreDrawer = false; navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                        onOpenCategories = { showMoreDrawer = false; navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
-                        onOpenCreatePost = { showMoreDrawer = false; navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
-                        onOpenChat = { showMoreDrawer = false; navController.navigate(Routes.CHAT) { launchSingleTop = true } },
-                        onOpenKyc = { showMoreDrawer = false; navController.navigate(Routes.KYC) { launchSingleTop = true } },
-                        onOpenSettings = { showMoreDrawer = false; navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                        onOpenForYou = { showMoreDrawer = false; navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
-                        onOpenRewards = { showMoreDrawer = false; navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
-                        onOpenOffers = { showMoreDrawer = false; navController.navigate(Routes.OFFERS) { launchSingleTop = true } },
-                        onOpenNearby = { showMoreDrawer = false; navController.navigate(Routes.NEARBY) { launchSingleTop = true } },
-                        onOpenDashboard = { showMoreDrawer = false; navController.navigate(Routes.DASHBOARD) { launchSingleTop = true } },
-                        onOpenBought = { showMoreDrawer = false; navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
-                        onOpenSold = { showMoreDrawer = false; navController.navigate(Routes.SOLD_POSTS) { launchSingleTop = true } },
-                        onOpenSaleDone = { showMoreDrawer = false; navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
-                        onOpenSaleUndone = { showMoreDrawer = false; navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
-                        onOpenAllPosts = { showMoreDrawer = false; navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true } },
-                        onOpenFollowing = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                        onOpenHelp = { showMoreDrawer = false; navController.navigate(Routes.SUPPORT_POLICY) { launchSingleTop = true } },
-                        onOpenCart = { showMoreDrawer = false; navController.navigate(Routes.CART) { launchSingleTop = true } },
-                        onOpenTierSelection = { showMoreDrawer = false; navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
-                        onOpenCentre = { showMoreDrawer = false; navController.navigate(Routes.CENTRE_LIST) { launchSingleTop = true } },
-                        onOpenCategoryMode = { showMoreDrawer = false; navController.navigate(Routes.CATEGORY_MODE) { launchSingleTop = true } },
-                        onOpenSavedSearches = { showMoreDrawer = false; navController.navigate(Routes.SAVED_SEARCHES) { launchSingleTop = true } },
-                        onOpenRecentlyViewed = { showMoreDrawer = false; navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                        onOpenCompare = { showMoreDrawer = false; navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
-                        onOpenMyHome = { showMoreDrawer = false; navController.navigate(Routes.MY_HOME) { launchSingleTop = true } },
-                        onOpenFeed = { showMoreDrawer = false; navController.navigate(Routes.FEED) { launchSingleTop = true } },
-                        onOpenPublicWall = { showMoreDrawer = false; navController.navigate(Routes.PUBLIC_WALL) { launchSingleTop = true } },
-                        onOpenMyReviews = { showMoreDrawer = false; navController.navigate(Routes.reviews("me")) { launchSingleTop = true } },
-                        onOpenFeedback = { showMoreDrawer = false; navController.navigate(Routes.FEEDBACK) { launchSingleTop = true } },
-                        onOpenComplaints = { showMoreDrawer = false; navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
-                        onOpenProfile = { showMoreDrawer = false; navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                        onOpenVerification = { showMoreDrawer = false; navController.navigate(Routes.VERIFICATION) { launchSingleTop = true } },
-                        onOpenSecurity = { showMoreDrawer = false; navController.navigate(Routes.SECURITY) { launchSingleTop = true } },
-                        onOpenAccountDelete = { showMoreDrawer = false; navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
-                        onOpenAdminPanel = { showMoreDrawer = false; navController.navigate(Routes.ADMIN_PANEL) { launchSingleTop = true } },
-                        onOpenSubcategories = { showMoreDrawer = false; navController.navigate(Routes.SUBCATEGORIES) { launchSingleTop = true } },
+                        onOpenNotifications = { drawerNav(Routes.NOTIFICATIONS) },
+                        onOpenWishlist = { drawerNav(Routes.WISHLIST) },
+                        onOpenSearch = { drawerNav(Routes.SEARCH) },
+                        onOpenCategories = { drawerNav(Routes.CATEGORIES) },
+                        onOpenCreatePost = { drawerNav(Routes.POST_WELCOME) },
+                        onOpenChat = { drawerNav(Routes.CHAT) },
+                        onOpenKyc = { drawerNav(Routes.KYC) },
+                        onOpenSettings = { drawerNav(Routes.SETTINGS) },
+                        onOpenForYou = { drawerNav(Routes.FOR_YOU) },
+                        onOpenRewards = { drawerNav(Routes.REWARDS) },
+                        onOpenOffers = { drawerNav(Routes.OFFERS) },
+                        onOpenNearby = { drawerNav(Routes.NEARBY) },
+                        onOpenDashboard = { drawerNav(Routes.DASHBOARD) },
+                        onOpenBought = { drawerNav(Routes.BOUGHT_POSTS) },
+                        onOpenSold = { drawerNav(Routes.SOLD_POSTS) },
+                        onOpenSaleDone = { drawerNav(Routes.SALE_DONE) },
+                        onOpenSaleUndone = { drawerNav(Routes.SALE_UNDONE) },
+                        onOpenAllPosts = { drawerNav(Routes.ALL_POSTS) },
+                        onOpenFollowing = { drawerNav(Routes.PROFILE) },
+                        onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
+                        onOpenCart = { drawerNav(Routes.CART) },
+                        onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
+                        onOpenCentre = { drawerNav(Routes.CHANNELS) },
+                        onOpenCategoryMode = { drawerNav(Routes.CATEGORY_MODE) },
+                        onOpenSavedSearches = { drawerNav(Routes.SAVED_SEARCHES) },
+                        onOpenRecentlyViewed = { drawerNav(Routes.RECENTLY_VIEWED) },
+                        onOpenCompare = { drawerNav(Routes.COMPARE) },
+                        onOpenMyHome = { drawerNav(Routes.MY_HOME) },
+                        onOpenFeed = { drawerNav(Routes.FEED) },
+                        onOpenPublicWall = { drawerNav(Routes.PUBLIC_WALL) },
+                        onOpenMyReviews = { drawerNav(Routes.reviews("me")) },
+                        onOpenFeedback = { drawerNav(Routes.FEEDBACK) },
+                        onOpenComplaints = { drawerNav(Routes.COMPLAINTS) },
+                        onOpenProfile = { drawerNav(Routes.PROFILE) },
+                        onOpenVerification = { drawerNav(Routes.VERIFICATION) },
+                        onOpenSecurity = { drawerNav(Routes.SECURITY) },
+                        onOpenAccountDelete = { drawerNav(Routes.ACCOUNT_DELETE) },
+                        onOpenAdminPanel = { drawerNav(Routes.ADMIN_PANEL) },
+                        onOpenSubcategories = { drawerNav(Routes.SUBCATEGORIES) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
-                        onOpenMyFeed = { showMoreDrawer = false; navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
+                        onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         onLanguageChange = { code -> localeManager?.setLocale(code) },
                         isAdmin = isAdmin,
@@ -1307,18 +1320,18 @@ fun MainShell(
                 val liveActiveCategoryKey = LocalActiveCategoryKey.current ?: activeCategoryKey
                 val openMore = LocalOnOpenMore.current
                 val navigateToTab: (BottomTab) -> Unit = { tab ->
-                    val currentRoute = navController.currentDestination?.route
                     val targetRoute = tab.route
                     if (tab == BottomTab.HOME) {
                         navController.navigate(Routes.HOME) {
                             popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                             launchSingleTop = true
                         }
-                    } else if (targetRoute != currentRoute) {
+                    } else {
+                        // Always navigate — even if already on the same route —
+                        // so the screen reopens cleanly from drawer or any stuck state.
                         navController.navigate(targetRoute) {
-                            popUpTo(Routes.MAIN_GRAPH) { saveState = true; inclusive = false }
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 }

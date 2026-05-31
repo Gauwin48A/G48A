@@ -197,99 +197,13 @@ fun CategoryHubScreen(
             ),
         ) {
 
-            // ── Header: greeting + search + pills ──────────────────────
+            // ── Header: greeting + 4 category apps ──────────────────────
             item(key = "header") {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Welcome to MHub 🌟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                            Text(stringResource(R.string.hub_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
-                        }
-                        IconButton(onClick = onOpenNotifications) {
-                            BadgedBox(badge = { if (unreadNotifications > 0) Badge { Text("$unreadNotifications") } }) {
-                                Icon(Icons.Default.Notifications, null, tint = Color(0xFF6366F1))
-                            }
-                        }
-                        IconButton(onClick = onOpenCart) {
-                            BadgedBox(badge = { if (cartItemCount > 0) Badge { Text("$cartItemCount") } }) {
-                                Icon(Icons.Default.ShoppingCart, null, tint = Color(0xFF6366F1))
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    // Search bar — tappable, navigates to search
-                    Surface(
-                        onClick = onOpenSearch,
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color.White,
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF6366F1), modifier = Modifier.size(22.dp))
-                            Text(
-                                "Search phones, fashion, cars…",
-                                color = Color(0xFF94A3B8),
-                                fontSize = 14.sp,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f)) {
-                                Text(
-                                    "Search",
-                                    color = Color(0xFF6366F1),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    // Quick action pills
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Surface(
-                            onClick = { onSelectApp("sell") },
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF10B981).copy(alpha = 0.12f),
-                        ) {
-                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(Icons.Default.Add, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
-                                Text("+ Sell", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
-                            }
-                        }
-                        Surface(
-                            onClick = onOpenScanner,
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF6366F1).copy(alpha = 0.12f),
-                        ) {
-                            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(Icons.Default.QrCodeScanner, null, tint = Color(0xFF6366F1), modifier = Modifier.size(16.dp))
-                                Text("Scan", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
-                            }
-                        }
-                        Spacer(Modifier.weight(1f))
-                        Surface(
-                            onClick = onOpenAllPosts,
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF6366F1).copy(alpha = 0.10f),
-                        ) {
-                            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Browse All", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF6366F1), modifier = Modifier.size(13.dp))
-                            }
-                        }
-                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Welcome to MHub 🌟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                    Text(stringResource(R.string.hub_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
+                    Spacer(Modifier.height(4.dp))
                 }
             }
 

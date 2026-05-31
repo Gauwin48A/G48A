@@ -360,11 +360,9 @@ class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class ChannelsRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun list(): ApiResult<List<Channel>> = safeApiCall { api.channels().channels }
-    suspend fun detail(id: String): ApiResult<Channel> = safeApiCall { api.channelDetail(id) }
-    suspend fun create(req: CreateChannelRequest): ApiResult<String> = safeApiCall {
-        api.createChannel(req).id ?: error("No id")
-    }
+    suspend fun list(): ApiResult<List<Channel>> = safeApiCall { api.channels() }
+    suspend fun detail(id: String): ApiResult<ChannelDetailResponse> = safeApiCall { api.channelDetail(id) }
+    suspend fun create(req: CreateChannelRequest): ApiResult<Channel> = safeApiCall { api.createChannel(req) }
     suspend fun follow(id: String): ApiResult<Unit> = safeApiCall { api.followChannel(id); Unit }
     suspend fun unfollow(id: String): ApiResult<Unit> = safeApiCall { api.unfollowChannel(id); Unit }
 }

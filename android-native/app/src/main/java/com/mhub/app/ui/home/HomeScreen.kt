@@ -801,6 +801,8 @@ fun HomeScreen(
     onCreatePost: () -> Unit = {},
     onOpenExplore: () -> Unit = {},
     onOpenCategories: () -> Unit = {},
+    onOpenForYou: () -> Unit = {},
+    onOpenFeed: () -> Unit = {},
     activeCategoryKey: String? = null,
     onChangeApp: () -> Unit = {},
     onOpenCart: () -> Unit = {},
@@ -1305,6 +1307,93 @@ fun HomeScreen(
                                 onShopNow = { quickFilter = "Under ₹500" },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             )
+                        }
+                        // ── Utility Tiles: For You / Feed / Deals / All (web parity) ──
+                        item(key = "utility_tiles") {
+                            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    listOf(
+                                        Triple("⭐", "For You", onOpenForYou),
+                                        Triple("📰", "Feed", onOpenFeed),
+                                        Triple("🏷️", "Deals", onOpenExplore),
+                                        Triple("📂", "All", onOpenCategories),
+                                    ).forEach { (emoji, label, onClick) ->
+                                        Surface(
+                                            onClick = onClick,
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                            modifier = Modifier.weight(1f),
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(vertical = 14.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                            ) {
+                                                Text(emoji, fontSize = 22.sp)
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // ── Trending Section (2-col, 8 posts — web parity) ──
+                        val trendingPosts = state.posts.sortedByDescending { it.viewCount ?: 0 }.take(8)
+                        if (trendingPosts.isNotEmpty()) {
+                            item(key = "trending_header") {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Trending Now", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                }
+                            }
+                            val trendingChunked = trendingPosts.chunked(2)
+                            items(trendingChunked.size, key = { "trending_row_$it" }) { rowIdx ->
+                                val row = trendingChunked[rowIdx]
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { post ->
+                                        Card(
+                                            onClick = { onOpenPost(post.stableId) },
+                                            shape = RoundedCornerShape(14.dp),
+                                            modifier = Modifier.weight(1f),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                            elevation = CardDefaults.cardElevation(2.dp),
+                                        ) {
+                                            Column {
+                                                Box(Modifier.fillMaxWidth().height(100.dp)) {
+                                                    if (post.primaryImage != null) {
+                                                        coil.compose.AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                                                    } else {
+                                                        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                                            Icon(Icons.Outlined.Inventory2, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                    }
+                                                    // Hot badge
+                                                    if ((post.viewCount ?: 0) > 50) {
+                                                        Surface(
+                                                            shape = RoundedCornerShape(bottomEnd = 10.dp),
+                                                            color = Color(0xFFEF4444),
+                                                            modifier = Modifier.align(Alignment.TopStart),
+                                                        ) {
+                                                            Text("🔥 HOT", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                        }
+                                                    }
+                                                }
+                                                Column(Modifier.padding(8.dp)) {
+                                                    Text(post.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                                    post.price?.let { Text("₹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
+                                                    Text("${post.viewCount ?: 0} views", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                                }
+                            }
                         }
                         // Promoted posts strip (web-parity: AllPosts.jsx promoted_strip)
                         val promotedPosts = state.posts.filter { it.isPromoted == true }.take(6)

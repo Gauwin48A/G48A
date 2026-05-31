@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
@@ -51,6 +54,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -113,8 +118,15 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.filled.RemoveShoppingCart
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.HorizontalDivider
@@ -139,10 +151,10 @@ import com.mhub.app.ui.LocalActiveCategoryKey
 
 private val MOCK_EXPLORE_POSTS = listOf(
     // ── ELECTRONICS — Phones ──────────────────────────────────────────────────
-    Post(id="mp-e1", title="iPhone 14 Pro Max 256GB – Deep Purple", description="1 year old, excellent condition. Original box, charger and earphones included. No scratches. Battery health 94%. Face ID working perfectly.", price=68000.0, imageUrl="https://picsum.photos/seed/iph14pro/400/300", category="electronics", subcategory="Phones", brand="Apple", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Rohit K.", viewCount=342, likeCount=28, interestedBuyers=12, createdAt="2024-01-20", sellerVerified=true),
-    Post(id="mp-e2", title="Samsung Galaxy S23 Ultra – Phantom Black 12/256GB", description="6 months old. 200MP camera, 12GB RAM. S-Pen included. Excellent condition. No dents or scratches. Full set with box.", price=82000.0, imageUrl="https://picsum.photos/seed/s23ultra/400/300", category="electronics", subcategory="Phones", brand="Samsung", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Priya S.", viewCount=215, likeCount=19, interestedBuyers=8, sellerVerified=true),
-    Post(id="mp-e3", title="OnePlus 12 – Silky Black 16/512GB", description="3 months old. Snapdragon 8 Gen 3, 50W wireless charging. 100W wired. Pristine. Original box included.", price=59000.0, imageUrl="https://picsum.photos/seed/oneplus12/400/300", category="electronics", subcategory="Phones", brand="OnePlus", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Kiran R.", viewCount=189, likeCount=22),
-    Post(id="mp-e4", title="Google Pixel 8 Pro – Bay Color 128GB", description="4 months old. Google AI features, best Android camera. 7 years of OS updates guaranteed. Mint condition.", price=72000.0, imageUrl="https://picsum.photos/seed/pixel8pro/400/300", category="electronics", subcategory="Phones", brand="Google", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Sneha R.", viewCount=156, likeCount=17),
+    Post(id="mp-e1", title="iPhone 14 Pro Max 256GB – Deep Purple", description="1 year old, excellent condition. Original box, charger and earphones included. No scratches. Battery health 94%. Face ID working perfectly.", price=68000.0, originalPrice=89000.0, imageUrl="https://picsum.photos/seed/iph14pro/400/300", category="electronics", subcategory="Phones", brand="Apple", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Rohit K.", viewCount=342, likeCount=28, interestedBuyers=12, createdAt="2024-01-20", sellerVerified=true, boostLevel=3, promoLabel="spotlight", tier="premium", isPremium=true, isNegotiable=true),
+    Post(id="mp-e2", title="Samsung Galaxy S23 Ultra – Phantom Black 12/256GB", description="6 months old. 200MP camera, 12GB RAM. S-Pen included. Excellent condition. No dents or scratches. Full set with box.", price=82000.0, imageUrl="https://picsum.photos/seed/s23ultra/400/300", category="electronics", subcategory="Phones", brand="Samsung", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Priya S.", viewCount=215, likeCount=19, interestedBuyers=8, sellerVerified=true, boostLevel=2, promoLabel="featured", tier="silver"),
+    Post(id="mp-e3", title="OnePlus 12 – Silky Black 16/512GB", description="3 months old. Snapdragon 8 Gen 3, 50W wireless charging. 100W wired. Pristine. Original box included.", price=59000.0, imageUrl="https://picsum.photos/seed/oneplus12/400/300", category="electronics", subcategory="Phones", brand="OnePlus", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Kiran R.", viewCount=189, likeCount=22, boostLevel=1, promoLabel="boost", isNegotiable=true),
+    Post(id="mp-e4", title="Google Pixel 8 Pro – Bay Color 128GB", description="4 months old. Google AI features, best Android camera. 7 years of OS updates guaranteed. Mint condition.", price=72000.0, originalPrice=84999.0, imageUrl="https://picsum.photos/seed/pixel8pro/400/300", category="electronics", subcategory="Phones", brand="Google", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Sneha R.", viewCount=156, likeCount=17, isFlashSale=true),
     // ── ELECTRONICS — Laptops ──────────────────────────────────────────────────
     Post(id="mp-e5", title="MacBook Air M2 13\" – Starlight 8GB/256GB", description="4 months old, pristine. AppleCare+ valid till 2025. No dents. Original packaging. Perfect for students and professionals.", price=105000.0, imageUrl="https://picsum.photos/seed/macm2/400/300", category="electronics", subcategory="Laptops", brand="Apple", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Vikram T.", viewCount=490, likeCount=45, interestedBuyers=21, sellerVerified=true),
     Post(id="mp-e6", title="Dell XPS 15 – i7 13th Gen 16GB RAM 512GB SSD", description="8 months old, barely used. 15.6\" OLED display. Comes with original charger and sleeve. Perfect for designers.", price=95000.0, imageUrl="https://picsum.photos/seed/dellxps15/400/300", category="electronics", subcategory="Laptops", brand="Dell", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Arjun M.", viewCount=178, likeCount=22, interestedBuyers=6),
@@ -213,11 +225,15 @@ data class ExploreState(
     val loadingMore: Boolean = false,
     val errorMessage: String? = null,
     val compareItems: Set<String> = emptySet(),
+    val cartItems: Set<String> = emptySet(),
     val searchQuery: String = "",
     val searchResults: List<Post> = emptyList(),
     val isSearching: Boolean = false,
     val refreshing: Boolean = false,
     val subcategories: List<String> = emptyList(),
+    // Quick filter state
+    val quickFilter: String? = null, // "latest5" | "latest10" | "today" | "nearme" | "verified"
+    val autoRefresh: Boolean = false,
     // Plan expiry banner state
     val showPlanExpiryBanner: Boolean = false,
     val planExpiringSoon: Boolean = false,   // true = expiring within 7 days
@@ -310,8 +326,32 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun clearFilters() {
-        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, filterMinPrice = 0f, filterMaxPrice = 500000f, hasActiveFilters = false)
+        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, filterMinPrice = 0f, filterMaxPrice = 500000f, hasActiveFilters = false, quickFilter = null)
         loadPosts(reset = true)
+    }
+
+    fun setQuickFilter(filter: String?) {
+        val current = _state.value.quickFilter
+        val newFilter = if (current == filter) null else filter
+        _state.value = _state.value.copy(quickFilter = newFilter, sortBy = if (newFilter != null) "newest" else _state.value.sortBy)
+        loadPosts(reset = true)
+    }
+
+    fun toggleAutoRefresh() {
+        val newVal = !_state.value.autoRefresh
+        _state.value = _state.value.copy(autoRefresh = newVal)
+        if (newVal) startAutoRefresh() else autoRefreshJob?.cancel()
+    }
+
+    private var autoRefreshJob: Job? = null
+    private fun startAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = viewModelScope.launch {
+            while (true) {
+                delay(30_000L)
+                if (_state.value.autoRefresh) refresh() else break
+            }
+        }
     }
 
     fun loadPosts(reset: Boolean = false) {
@@ -330,11 +370,26 @@ class ExploreViewModel @Inject constructor(
             when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
                     val newPosts = result.data
+                    // BUG-001 fix: if API returns success with 0 posts on reset, fall back to mocks
+                    val s = _state.value
+                    val mockFallback = if (reset && newPosts.isEmpty()) {
+                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter {
+                            it.category.equals(s.ecosystemKey, ignoreCase = true)
+                        } else MOCK_EXPLORE_POSTS
+                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+                        if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
+                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+                    } else emptyList()
+                    val finalPosts = applyQuickFilter(when {
+                        mockFallback.isNotEmpty() -> mockFallback
+                        reset -> newPosts
+                        else -> _state.value.posts + newPosts
+                    })
                     _state.value = _state.value.copy(
                         loadingPosts = false, loadingMore = false,
-                        posts = if (reset) newPosts else _state.value.posts + newPosts,
+                        posts = finalPosts,
                         page = currentPage + 1,
-                        hasMore = newPosts.size >= 20,
+                        hasMore = newPosts.size >= 20 && mockFallback.isEmpty(),
                     )
                 }
                 is ApiResult.Failure -> {
@@ -346,9 +401,10 @@ class ExploreViewModel @Inject constructor(
                         if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
                         list.ifEmpty { MOCK_EXPLORE_POSTS }
                     } else emptyList()
+                    val finalPosts = applyQuickFilter(if (mockFallback.isNotEmpty()) mockFallback else s.posts)
                     _state.value = s.copy(
                         loadingPosts = false, loadingMore = false,
-                        posts = if (mockFallback.isNotEmpty()) mockFallback else s.posts,
+                        posts = finalPosts,
                         hasMore = false,
                     )
                 }
@@ -367,6 +423,21 @@ class ExploreViewModel @Inject constructor(
     fun retry() {
         _state.value = _state.value.copy(errorMessage = null)
         loadPosts(reset = true)
+    }
+
+    private fun applyQuickFilter(posts: List<Post>): List<Post> {
+        val qf = _state.value.quickFilter ?: return posts
+        val now = System.currentTimeMillis()
+        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(now))
+        return when (qf) {
+            "latest5" -> posts.sortedByDescending { it.createdAt ?: "" }.take(5)
+            "latest10" -> posts.sortedByDescending { it.createdAt ?: "" }.take(10)
+            "today" -> posts.filter { it.createdAt?.startsWith(todayStr) == true }.ifEmpty { posts.take(5) }
+            "nearme" -> posts.filter { it.sellerVerified == true } // approximation: show verified sellers nearby
+            "verified" -> posts.filter { it.sellerVerified == true }
+            "shuffle" -> posts.shuffled()
+            else -> posts
+        }
     }
 
     private fun loadSubcategories(key: String?) {
@@ -415,6 +486,12 @@ class ExploreViewModel @Inject constructor(
         val current = _state.value.compareItems.toMutableSet()
         if (current.contains(postId)) current.remove(postId) else if (current.size < 4) current.add(postId)
         _state.value = _state.value.copy(compareItems = current)
+    }
+
+    fun toggleCart(postId: String) {
+        val current = _state.value.cartItems.toMutableSet()
+        if (current.contains(postId)) current.remove(postId) else current.add(postId)
+        _state.value = _state.value.copy(cartItems = current)
     }
 
     fun clearCompare() {
@@ -488,11 +565,13 @@ fun ExploreScreen(
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenCompare: () -> Unit = {},
+    onOpenCart: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    onAddPost: () -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val wishlistedSet by viewModel.wishlisted.collectAsState()
-    var showSearch by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusManager = LocalFocusManager.current
@@ -530,45 +609,27 @@ fun ExploreScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    if (showSearch) {
-                        OutlinedTextField(
-                            value = state.searchQuery,
-                            onValueChange = viewModel::onQueryChange,
-                            singleLine = true,
-                            placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
-                            leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
-                            trailingIcon = {
-                                IconButton(onClick = { showSearch = false; viewModel.clearSearch(); focusManager.clearFocus() }) {
-                                    Icon(Icons.Default.Close, null)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
-                        )
-                    } else {
-                        Column(verticalArrangement = Arrangement.Center) {
-                            Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                            if (ecosystemLabel != null) {
-                                Text(ecosystemLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                    Column(verticalArrangement = Arrangement.Center) {
+                        Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        if (ecosystemLabel != null) {
+                            Text(ecosystemLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 },
                 actions = {
-                    if (!showSearch) {
-                        IconButton(onClick = { showSearch = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                    // Cart icon with badge
+                    BadgedBox(badge = {
+                        val cartCount = state.cartItems.size
+                        if (cartCount > 0) Badge { Text("$cartCount") }
+                    }) {
+                        IconButton(onClick = onOpenCart) {
+                            Icon(Icons.Outlined.ShoppingCart, contentDescription = "Cart")
                         }
-                        BadgedBox(badge = { if (state.hasActiveFilters) Badge() }) {
-                            IconButton(onClick = {
-                                draftCondition = state.filterCondition
-                                draftSubcategory = state.filterSubcategory
-                                showFilterSheet = true
-                            }) {
-                                Icon(Icons.Default.Tune, contentDescription = "Filters")
-                            }
+                    }
+                    // Notifications bell
+                    BadgedBox(badge = { Badge() }) {
+                        IconButton(onClick = onOpenNotifications) {
+                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
                         }
                     }
                 },
@@ -577,7 +638,52 @@ fun ExploreScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // Search bar + Filter button — always visible below TopAppBar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = viewModel::onQueryChange,
+                    singleLine = true,
+                    placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+                    trailingIcon = {
+                        if (state.searchQuery.isNotBlank()) {
+                            IconButton(onClick = { viewModel.clearSearch(); focusManager.clearFocus() }) {
+                                Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                )
+                // Filter button with active badge
+                BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
+                    FilledIconButton(
+                        onClick = {
+                            draftCondition = state.filterCondition
+                            draftSubcategory = state.filterSubcategory
+                            showFilterSheet = true
+                        },
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    ) {
+                        Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            Box(Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
                 onRefresh = { viewModel.refresh() },
@@ -591,6 +697,10 @@ fun ExploreScreen(
                     onToggleWishlist = viewModel::toggleWishlist,
                     onSetSort = viewModel::setSortBy,
                     onToggleCompare = viewModel::toggleCompare,
+                    onToggleCart = viewModel::toggleCart,
+                    onOpenCompare = onOpenCompare,
+                    onSetQuickFilter = viewModel::setQuickFilter,
+                    onToggleAutoRefresh = viewModel::toggleAutoRefresh,
                     onLoadMore = viewModel::loadMore,
                     onOpenSearch = onOpenSearch,
                     onSelectSubcategory = { sub ->
@@ -601,6 +711,7 @@ fun ExploreScreen(
                         interestPostTitle = postTitle
                         showInterestModal = true
                     },
+                    onSetPriceRange = viewModel::setFilterPrice,
                 )
             }
             // Free launch plan promo banner
@@ -736,7 +847,8 @@ fun ExploreScreen(
                 }
             }
         }
-    }
+        } // close inner Box
+    } // close Column
 
     // Filter bottom sheet
     if (showFilterSheet) {
@@ -749,26 +861,50 @@ fun ExploreScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
                     .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Tune, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                        Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
                     if (state.hasActiveFilters) {
-                        OutlinedButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
+                        TextButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
+                            Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text("Clear All", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
-                HorizontalDivider()
-                // Price range filter
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                // Price range filter — enhanced with quick price chips
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val minVal = draftPriceRange.start.toInt()
                     val maxVal = draftPriceRange.endInclusive.toInt()
-                    Text("Price Range: ₹$minVal – ₹$maxVal", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("💰 Price Range", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                        Text("₹$minVal – ₹$maxVal", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    }
+                    // Quick price chips
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Under ₹1K" to (0f..1000f), "₹1K-5K" to (1000f..5000f), "₹5K-20K" to (5000f..20000f), "₹20K+" to (20000f..500000f)).forEach { (label, range) ->
+                            val selected = draftPriceRange.start == range.start && draftPriceRange.endInclusive == range.endInclusive
+                            FilterChip(
+                                selected = selected,
+                                onClick = { draftPriceRange = range },
+                                label = { Text(label, fontSize = 10.sp) },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.height(28.dp),
+                            )
+                        }
+                    }
                     androidx.compose.material3.RangeSlider(
                         value = draftPriceRange,
                         onValueChange = { draftPriceRange = it },
@@ -776,25 +912,59 @@ fun ExploreScreen(
                         steps = 99,
                     )
                 }
+
                 // Condition filter
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Condition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("any" to "Any", "new" to "New", "used" to "Used").forEach { (key, label) ->
+                    Text("📦 Condition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("any" to "All", "new" to "Brand New", "like_new" to "Like New", "used" to "Used", "refurbished" to "Refurbished").forEach { (key, label) ->
                             FilterChip(
                                 selected = draftCondition == key,
                                 onClick = { draftCondition = key },
-                                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                                label = { Text(label, fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White),
-                                shape = RoundedCornerShape(20.dp),
+                                shape = RoundedCornerShape(16.dp),
                             )
                         }
                     }
                 }
+
+                // Posted within filter
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("🕐 Posted Within", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("any" to "Any time", "today" to "Today", "3d" to "3 days", "7d" to "This week", "30d" to "This month").forEach { (key, label) ->
+                            FilterChip(
+                                selected = false,
+                                onClick = { if (key == "today") viewModel.setQuickFilter("today") },
+                                label = { Text(label, fontSize = 11.sp) },
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                        }
+                    }
+                }
+
+                // Seller type filter
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("👤 Seller Type", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("all" to "All Sellers", "verified" to "✓ Verified Only", "top_rated" to "⭐ Top Rated").forEach { (key, label) ->
+                            FilterChip(
+                                selected = false,
+                                onClick = { if (key == "verified") viewModel.setQuickFilter("verified") },
+                                label = { Text(label, fontSize = 11.sp) },
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                        }
+                    }
+                }
+
                 // Subcategory filter (only when ecosystem is active)
                 if (ecosystemSubcategories.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Subcategory", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("🏷️ Subcategory", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(ecosystemSubcategories.size) { idx ->
                                 val sub = ecosystemSubcategories[idx]
@@ -803,24 +973,37 @@ fun ExploreScreen(
                                     onClick = { draftSubcategory = if (draftSubcategory == sub) null else sub },
                                     label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
                                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White),
-                                    shape = RoundedCornerShape(20.dp),
+                                    shape = RoundedCornerShape(16.dp),
                                 )
                             }
                         }
                     }
                 }
-                // Apply button
-                Button(
-                    onClick = {
-                        viewModel.setFilterCondition(draftCondition)
-                        viewModel.setFilterSubcategory(draftSubcategory)
-                        viewModel.setFilterPrice(draftPriceRange.start, draftPriceRange.endInclusive)
-                        showFilterSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text("Apply Filters", fontWeight = FontWeight.SemiBold)
+
+                Spacer(Modifier.height(4.dp))
+                // Apply / Reset buttons row
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { viewModel.clearFilters(); showFilterSheet = false },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Reset", fontWeight = FontWeight.SemiBold)
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.setFilterCondition(draftCondition)
+                            viewModel.setFilterSubcategory(draftSubcategory)
+                            viewModel.setFilterPrice(draftPriceRange.start, draftPriceRange.endInclusive)
+                            showFilterSheet = false
+                        },
+                        modifier = Modifier.weight(2f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Apply Filters", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -1013,10 +1196,15 @@ private fun AllPostsBrowse(
     onToggleWishlist: (String) -> Unit,
     onSetSort: (String) -> Unit,
     onToggleCompare: (String) -> Unit,
+    onToggleCart: (String) -> Unit = {},
+    onOpenCompare: () -> Unit = {},
+    onSetQuickFilter: (String) -> Unit = {},
+    onToggleAutoRefresh: () -> Unit = {},
     onLoadMore: () -> Unit,
     onOpenSearch: () -> Unit,
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
+    onSetPriceRange: (Float, Float) -> Unit = { _, _ -> },
 ) {
     val sortOptions = listOf(
         "newest" to "Newest", "popular" to "Popular",
@@ -1034,7 +1222,8 @@ private fun AllPostsBrowse(
         if (shouldLoadMore && state.hasMore && !state.loadingMore && !state.loadingPosts && state.posts.isNotEmpty()) onLoadMore()
     }
 
-    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 100.dp)) {
+    Box(Modifier.fillMaxSize()) {
+    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 100.dp)) {
         if (state.searchQuery.isNotBlank()) {
             if (state.isSearching) {
                 item(key = "search_loading") {
@@ -1050,7 +1239,7 @@ private fun AllPostsBrowse(
                 }
             } else {
                 items(state.searchResults, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }
             return@LazyColumn
@@ -1102,9 +1291,47 @@ private fun AllPostsBrowse(
                     val f = quickFilters[idx]
                     FilterChip(selected = false, onClick = { onOpenSearch() }, label = { Text(stringResource(f.labelRes), style = MaterialTheme.typography.labelMedium) }, leadingIcon = { Icon(f.icon, null, modifier = Modifier.size(16.dp), tint = Color(0xFF2563EB)) }, colors = FilterChipDefaults.filterChipColors(containerColor = Color.White), border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFE2E8F0), enabled = true, selected = false), shape = RoundedCornerShape(20.dp))
                 }
-                val priceLabels = listOf(R.string.explore_price_under_1k, R.string.explore_price_1k_5k, R.string.explore_price_5k_20k, R.string.explore_price_above_20k)
-                items(priceLabels.size) { idx ->
-                    FilterChip(selected = false, onClick = { onOpenSearch() }, label = { Text(stringResource(priceLabels[idx]), style = MaterialTheme.typography.labelSmall) }, leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color(0xFF22C55E)) }, colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF0FDF4)), border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFBBF7D0), enabled = true, selected = false), shape = RoundedCornerShape(20.dp))
+                val priceRanges = listOf(
+                    Triple(R.string.explore_price_under_1k, 0f, 1000f),
+                    Triple(R.string.explore_price_1k_5k, 1000f, 5000f),
+                    Triple(R.string.explore_price_5k_20k, 5000f, 20000f),
+                    Triple(R.string.explore_price_above_20k, 20000f, 500000f),
+                )
+                items(priceRanges.size) { idx ->
+                    val (labelRes, minP, maxP) = priceRanges[idx]
+                    val isActive = state.filterMinPrice == minP && state.filterMaxPrice == maxP
+                    FilterChip(
+                        selected = isActive,
+                        onClick = { if (isActive) onSetPriceRange(0f, 500000f) else onSetPriceRange(minP, maxP) },
+                        label = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (isActive) Color.White else Color(0xFF22C55E)) },
+                        colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF0FDF4), selectedContainerColor = Color(0xFF059669), selectedLabelColor = Color.White),
+                        border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFBBF7D0), enabled = true, selected = isActive),
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                }
+                // Extra quick-filter chips: Latest 5, Latest 10, Posted Today, Near Me, Verified Only
+                val extraFilters = listOf(
+                    "latest5" to ("Latest 5" to "🕐"),
+                    "latest10" to ("Latest 10" to "🕐"),
+                    "today" to ("Posted Today" to "📅"),
+                    "nearme" to ("Near Me" to "📍"),
+                    "verified" to ("Verified Only" to "✅"),
+                    "shuffle" to ("Shuffle" to "🔀"),
+                )
+                items(extraFilters.size) { idx ->
+                    val (key, labelPair) = extraFilters[idx]
+                    val (label, emoji) = labelPair
+                    val isActive = state.quickFilter == key
+                    FilterChip(
+                        selected = isActive,
+                        onClick = { onSetQuickFilter(key) },
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                        leadingIcon = { Text(emoji, fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF8FAFC), selectedContainerColor = Color(0xFF3B82F6), selectedLabelColor = Color.White),
+                        border = FilterChipDefaults.filterChipBorder(borderColor = if (isActive) Color(0xFF3B82F6) else Color(0xFFE2E8F0), enabled = true, selected = isActive),
+                        shape = RoundedCornerShape(20.dp),
+                    )
                 }
             }
         }
@@ -1184,7 +1411,7 @@ private fun AllPostsBrowse(
                 }
             } else {
                 items(state.posts, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }
             item(key = "load_more") {
@@ -1200,6 +1427,45 @@ private fun AllPostsBrowse(
             }
         }
     }
+    // Floating Compare Panel — appears when ≥2 items selected (web parity)
+    if (state.compareItems.size >= 2) {
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(12.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFF1E293B),
+            shadowElevation = 8.dp,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text("${state.compareItems.size} items selected", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 13.sp)
+                    Text("Tap Compare to see side-by-side", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { state.compareItems.forEach { onToggleCompare(it) } },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = BorderStroke(1.dp, Color(0xFF475569)),
+                    ) {
+                        Text("Clear", fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = onOpenCompare,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                    ) {
+                        Text("Compare Now", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+    } // end Box
 }
 
 @Composable
@@ -1250,6 +1516,10 @@ private fun AllPostCard(
     isCompared: Boolean = false,
     onToggleCompare: () -> Unit = {},
     onInterested: () -> Unit = {},
+    isOwner: Boolean = false,
+    onPromote: () -> Unit = {},
+    isInCart: Boolean = false,
+    onToggleCart: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showFullDescription by remember { mutableStateOf(false) }
@@ -1336,6 +1606,18 @@ private fun AllPostCard(
                             },
                         )
                         androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(if (isInCart) "Remove from Cart" else "Add to Cart") },
+                            leadingIcon = { Icon(if (isInCart) Icons.Default.RemoveShoppingCart else Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp), tint = if (isInCart) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant) },
+                            onClick = { showPostMenu = false; onToggleCart() },
+                        )
+                        if (isOwner) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Promote") },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(18.dp), tint = Color(0xFFF59E0B)) },
+                                onClick = { showPostMenu = false; onPromote() },
+                            )
+                        }
+                        androidx.compose.material3.DropdownMenuItem(
                             text = { Text("Report") },
                             leadingIcon = { Icon(Icons.Outlined.Flag, null, modifier = Modifier.size(18.dp)) },
                             onClick = { showPostMenu = false },
@@ -1389,7 +1671,7 @@ private fun AllPostCard(
                 }
             }
 
-            // Image with price badge + HOT badge + condition badge
+            // Image with promo badges, price, HOT, condition overlays
             if (post.primaryImage != null) {
                 Box(Modifier.fillMaxWidth().height(220.dp)) {
                     AsyncImage(
@@ -1398,13 +1680,21 @@ private fun AllPostCard(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
                     )
+                    // Price badge — bottom-left
                     post.price?.let { price ->
                         Surface(
                             Modifier.align(Alignment.BottomStart).padding(8.dp),
                             shape = RoundedCornerShape(8.dp),
                             color = Color(0xFF1E293B).copy(alpha = 0.85f),
                         ) {
-                            Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                            Column(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                                Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White)
+                                val origPrice = post.originalPrice
+                                if (origPrice != null && origPrice > price) {
+                                    val pct = ((origPrice - price) / origPrice * 100).toInt()
+                                    Text("₹${"%,.0f".format(origPrice)}  -$pct%", fontSize = 10.sp, color = Color(0xFFFBBF24), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough.let { TextDecoration.None })
+                                }
+                            }
                         }
                     }
                     // HOT badge — top-right for high-view items
@@ -1425,21 +1715,73 @@ private fun AllPostCard(
                             }
                         }
                     }
-                    // Condition badge — top-left
-                    post.condition?.let { cond ->
-                        val (condColor, condLabel) = when (cond.lowercase()) {
-                            "new" -> Color(0xFF10B981) to "NEW"
-                            "like new", "like_new" -> Color(0xFF3B82F6) to "LIKE NEW"
-                            "good" -> Color(0xFFF59E0B) to "GOOD"
-                            "fair" -> Color(0xFFEA580C) to "FAIR"
-                            else -> Color(0xFF6366F1) to cond.uppercase().take(8)
+                    // Top-left badges column: Promo badge stacked above condition
+                    Column(
+                        Modifier.align(Alignment.TopStart).padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        // Tier badge (Premium/Silver/Standard)
+                        val tierLabel = when {
+                            post.isPremium == true || post.tierPriority != null && post.tierPriority!! >= 3
+                                || post.tier?.lowercase() == "premium" -> "PREMIUM" to Color(0xFFF59E0B)
+                            post.tier?.lowercase() == "silver" -> "SILVER" to Color(0xFF94A3B8)
+                            else -> null
                         }
-                        Surface(
-                            Modifier.align(Alignment.TopStart).padding(8.dp),
-                            shape = RoundedCornerShape(6.dp),
-                            color = condColor,
-                        ) {
-                            Text(condLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        tierLabel?.let { (label, color) ->
+                            Surface(shape = RoundedCornerShape(6.dp), color = color) {
+                                Row(
+                                    Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
+                                    Text("👑", fontSize = 8.sp)
+                                    Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                }
+                            }
+                        }
+                        // Promo badge: Spotlight → Featured → Boosted → Sponsored
+                        val boostLevel = post.boostLevel ?: 0
+                        val promoLabel = post.promoLabel?.lowercase() ?: ""
+                        val (promoBadgeLabel, promoBadgeColor) = when {
+                            boostLevel >= 3 || promoLabel.contains("spotlight") ->
+                                "⭐ SPOTLIGHT" to Color(0xFFF97316)
+                            boostLevel == 2 || promoLabel.contains("featured") ->
+                                "✨ FEATURED" to Color(0xFF7C3AED)
+                            boostLevel == 1 || promoLabel.contains("boost") ->
+                                "⚡ BOOSTED" to Color(0xFF10B981)
+                            post.isPromoted == true || promoLabel.contains("sponsor") ->
+                                "AD" to Color(0xFF2563EB)
+                            else -> null to null
+                        }
+                        if (promoBadgeLabel != null && promoBadgeColor != null) {
+                            Surface(shape = RoundedCornerShape(6.dp), color = promoBadgeColor.copy(alpha = 0.92f)) {
+                                Text(promoBadgeLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        // Condition badge
+                        post.condition?.let { cond ->
+                            val (condColor, condLabel) = when (cond.lowercase()) {
+                                "new" -> Color(0xFF10B981) to "NEW"
+                                "like new", "like_new" -> Color(0xFF3B82F6) to "LIKE NEW"
+                                "good" -> Color(0xFFF59E0B) to "GOOD"
+                                "fair" -> Color(0xFFEA580C) to "FAIR"
+                                else -> Color(0xFF6366F1) to cond.uppercase().take(8)
+                            }
+                            Surface(shape = RoundedCornerShape(6.dp), color = condColor) {
+                                Text(condLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        // Flash Sale badge
+                        if (post.isFlashSale == true) {
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFDC2626)) {
+                                Text("🔥 FLASH SALE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        // Negotiable badge
+                        if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669)) {
+                                Text("✋ NEGOTIABLE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
                         }
                     }
                 }

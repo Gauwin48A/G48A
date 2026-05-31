@@ -90,6 +90,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -135,6 +136,10 @@ data class PostDetailState(
     val inCompareList: Boolean = false,
     val inCart: Boolean = false,
     val ownerInsights: OwnerInsights? = null,
+    // Plan-gating for boost/promote panel (web parity)
+    val currentPlan: String? = null,   // "basic" | "bronze" | "silver" | "premium"
+    val coinBalance: Int = 0,
+    val boostMessage: String? = null,
 )
 
 data class OwnerInsights(
@@ -162,6 +167,8 @@ class PostDetailViewModel @Inject constructor(
     private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
     private val boostRepo: com.mhub.app.data.repository.BoostRepository,
     private val analyticsRepo: com.mhub.app.data.repository.AnalyticsRepository,
+    private val authRepo: com.mhub.app.data.repository.AuthRepository,
+    private val rewardsRepo: com.mhub.app.data.repository.RewardsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
@@ -188,7 +195,21 @@ class PostDetailViewModel @Inject constructor(
                     // Track view + recently viewed
                     launch { runCatching { socialRepo.viewPost(postId) } }
                     launch { runCatching { socialRepo.trackViewed(postId) } }
-                    // Load trust score for seller
+                    // Load current plan (for boost/promote gating) + coin balance
+                    launch {
+                        when (val me = authRepo.me()) {
+                            is ApiResult.Success -> _state.value = _state.value.copy(
+                                currentPlan = me.data.currentPlan?.lowercase()
+                            )
+                            is ApiResult.Failure -> {}
+                        }
+                    }
+                    launch {
+                        when (val c = rewardsRepo.coinBalance()) {
+                            is ApiResult.Success -> _state.value = _state.value.copy(coinBalance = c.data.balance)
+                            is ApiResult.Failure -> {}
+                        }
+                    }
                     result.data.userId?.let { userId ->
                         launch {
                             when (val t = trustRepo.score(userId)) {
@@ -321,11 +342,35 @@ class PostDetailViewModel @Inject constructor(
         viewModelScope.launch {
             boostRepo.boost(postId, tier, duration)
             when (val r = boostRepo.status(postId)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data)
+                is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data, boostMessage = "✅ Boost applied via your plan")
                 is ApiResult.Failure -> {}
             }
         }
     }
+
+    /** Redeem coins to boost a post. Maps boost tier → store redeem type used by the rewards API. */
+    fun boostWithCoins(tier: String, cost: Int) {
+        val balance = _state.value.coinBalance
+        if (balance < cost) {
+            _state.value = _state.value.copy(boostMessage = "Not enough coins ($balance/$cost). Upgrade your plan or top up.")
+            return
+        }
+        viewModelScope.launch {
+            val redeemType = when (tier) { "basic" -> "boost"; "featured" -> "feature"; else -> "spotlight" }
+            when (rewardsRepo.storeRedeem(redeemType, postId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(coinBalance = balance - cost, boostMessage = "✅ Boosted with $cost coins")
+                    when (val r = boostRepo.status(postId)) {
+                        is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data)
+                        is ApiResult.Failure -> {}
+                    }
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(boostMessage = "Coin redemption failed. Try again.")
+            }
+        }
+    }
+
+    fun clearBoostMessage() { _state.value = _state.value.copy(boostMessage = null) }
 
     fun toggleCompare() {
         _state.value = _state.value.copy(inCompareList = !_state.value.inCompareList)
@@ -443,6 +488,8 @@ fun PostDetailScreen(
 
             else -> {
                 val post = state.post ?: return@Scaffold
+                // Determine ownership: ownerInsights loaded only for post owner
+                val isOwner = state.ownerInsights != null
                 val images = buildList {
                     post.primaryImage?.let { add(it) }
                     post.images.filter { it != post.primaryImage }.forEach { add(it) }
@@ -605,8 +652,42 @@ fun PostDetailScreen(
                                         modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
                                     )
                                 }
-                                // Promo badges
-                                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
+                                // Promo badges — pass post data for real badges
+                                Column(
+                                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    // Tier badge (Premium/Silver/Standard)
+                                    val tierBadge = when {
+                                        post.isPremium == true || (post.tierPriority ?: 0) >= 3 || post.tier?.lowercase() == "premium" -> "👑 PREMIUM" to Color(0xFFF59E0B)
+                                        post.tier?.lowercase() == "silver" -> "🥈 SILVER" to Color(0xFF94A3B8)
+                                        else -> null
+                                    }
+                                    tierBadge?.let { (label, color) ->
+                                        Surface(shape = RoundedCornerShape(6.dp), color = color) {
+                                            Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    // Flash Sale badge
+                                    if (post.isFlashSale == true) {
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFDC2626)) {
+                                            Text("🔥 FLASH SALE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    // Negotiable badge
+                                    if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669)) {
+                                            Text("✋ NEGOTIABLE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    // Boost/Promo badge
+                                    PromoBadgeRow(
+                                        isBoosted = (post.boostLevel ?: 0) >= 1 || post.promoLabel?.contains("boost", true) == true,
+                                        isFeatured = (post.boostLevel ?: 0) >= 2 || post.promoLabel?.contains("feature", true) == true,
+                                        isHotDeal = post.isFlashSale == true,
+                                        isJustListed = (post.viewCount ?: 0) < 10,
+                                    )
+                                }
                             }
                             // Image zoom dialog
                             if (showImageZoom) {
@@ -633,13 +714,45 @@ fun PostDetailScreen(
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                post.price?.let {
-                                    Text(
-                                        text = "INR ${"%,.0f".format(it)}",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                                // Status badge: Active / Sold / Inactive / Expired
+                                post.status?.takeIf { it.isNotBlank() }?.let { status ->
+                                    val (statusColor, statusBg, statusLabel) = when (status.lowercase()) {
+                                        "active" -> Triple(Color(0xFF22C55E), Color(0xFFDCFCE7), "Active")
+                                        "sold" -> Triple(Color(0xFFEF4444), Color(0xFFFEE2E2), "Sold")
+                                        "inactive" -> Triple(Color(0xFFF59E0B), Color(0xFFFEF3C7), "Inactive")
+                                        "expired" -> Triple(Color(0xFFEF4444), Color(0xFFFEE2E2), "Expired")
+                                        else -> Triple(Color(0xFF6B7280), Color(0xFFF3F4F6), status.replaceFirstChar(Char::uppercase))
+                                    }
+                                    Surface(shape = RoundedCornerShape(6.dp), color = statusBg, border = BorderStroke(1.dp, statusColor.copy(alpha = 0.4f))) {
+                                        Text(statusLabel, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = statusColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                    }
+                                }
+                                post.price?.let { price ->
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                            text = "₹${"%,.0f".format(price)}",
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        val origPrice = post.originalPrice
+                                        if (origPrice != null && origPrice > price) {
+                                            val savings = origPrice - price
+                                            val pct = (savings / origPrice * 100).toInt()
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "₹${"%,.0f".format(origPrice)}",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    textDecoration = TextDecoration.LineThrough,
+                                                )
+                                                Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF22C55E).copy(alpha = 0.15f)) {
+                                                    Text("-$pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
+                                            }
+                                            Text("You save ₹${"%,.0f".format(savings)}", fontSize = 12.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.Medium)
+                                        }
+                                    }
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -762,7 +875,28 @@ fun PostDetailScreen(
                                             else -> "${mins / 10080}w ago"
                                         }
                                     } catch (_: Exception) { dateStr }
-                                    Text("Posted $timeAgo", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    // Freshness line: "Updated X ago • Expires in N days"
+                                    val updatedAgo = post.updatedAt?.let { uStr ->
+                                        try {
+                                            val uThen = java.time.Instant.parse(uStr)
+                                            val uMins = java.time.temporal.ChronoUnit.MINUTES.between(uThen, java.time.Instant.now())
+                                            when {
+                                                uMins < 60 -> "Updated ${uMins}m ago"
+                                                uMins < 1440 -> "Updated ${uMins / 60}h ago"
+                                                uMins < 10080 -> "Updated ${uMins / 1440}d ago"
+                                                else -> "Updated ${uMins / 10080}w ago"
+                                            }
+                                        } catch (_: Exception) { null }
+                                    }
+                                    val expiresIn = post.expiresAt?.let { eStr ->
+                                        try {
+                                            val eThen = java.time.Instant.parse(eStr)
+                                            val eDays = java.time.temporal.ChronoUnit.DAYS.between(java.time.Instant.now(), eThen)
+                                            if (eDays > 0) "Expires in ${eDays}d" else if (eDays == 0L) "Expires today" else "Expired"
+                                        } catch (_: Exception) { null }
+                                    }
+                                    val freshnessText = listOfNotNull(updatedAgo ?: "Posted $timeAgo", expiresIn).joinToString(" • ")
+                                    Text(freshnessText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
 
                                 post.viewCount?.let {
@@ -783,6 +917,99 @@ fun PostDetailScreen(
                                     EngagementChip("📤", "0", stringResource(R.string.detail_shares))
                                 }
 
+                            }
+                        }
+                        // Key Details section (Listing ID, Pricing Type, Availability, Warranty, Expires)
+                        item(key = "sec_key_details") {
+                            val keyDetails = buildList {
+                                post.listingId?.let { add("Listing ID" to it) }
+                                    ?: post.id?.let { add("Listing ID" to "#$it") }
+                                post.pricingType?.let { add("Pricing" to it.replaceFirstChar(Char::uppercase)) }
+                                post.isNegotiable?.takeIf { it }?.let { add("Pricing" to "Negotiable") }
+                                post.availability?.let { add("Availability" to it.replaceFirstChar(Char::uppercase)) }
+                                post.warranty?.let { add("Warranty" to it) }
+                                post.expiresAt?.take(10)?.let { add("Expires" to it) }
+                                post.updatedAt?.take(10)?.let { add("Updated" to it) }
+                            }
+                            if (keyDetails.isNotEmpty()) {
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Listing Details", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                        keyDetails.forEach { (key, value) ->
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text(key, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                            }
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Negotiate / BargainActions section (non-owner only) — web parity
+                        if (!isOwner) item(key = "sec_negotiate") {
+                            post.price?.let { basePrice ->
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Text("💬 Negotiate Price", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF166534))
+                                        Text("Offer a fair price to the seller", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4B7A5B))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf(10 to "10%", 15 to "15%", 20 to "20%").forEach { (pct, label) ->
+                                                val discounted = basePrice * (100 - pct) / 100
+                                                OutlinedButton(
+                                                    onClick = { viewModel.makeOffer(discounted) },
+                                                    modifier = Modifier.weight(1f),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF166534)),
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                                                ) {
+                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                        Text("-$label", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                        Text("₹${"%,.0f".format(discounted)}", fontSize = 10.sp)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // "Why trustworthy" panel (non-owner, 3-col) — web parity
+                        if (!isOwner) item(key = "sec_why_trust") {
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                            ) {
+                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("🛡️ Why this listing is trustworthy", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E3A8A))
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        val trustItems = listOf(
+                                            "✅" to "Verified Seller",
+                                            "⭐" to "High Trust Score",
+                                            "📍" to "Local Pickup",
+                                        )
+                                        trustItems.forEach { (emoji, label) ->
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                            ) {
+                                                Text(emoji, fontSize = 22.sp)
+                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1E3A8A), textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 13.sp)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         item(key = "sec_trust") {
@@ -924,6 +1151,32 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                                // Safety at a Glance (3 emerald tiles — web parity)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    val safetyItems = listOf(
+                                        "🤝" to "Public Meetup",
+                                        "🔒" to "No Pre-payment",
+                                        "✅" to "Verify Listing ID",
+                                    )
+                                    safetyItems.forEach { (emoji, label) ->
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color(0xFFECFDF5),
+                                            border = BorderStroke(1.dp, Color(0xFF6EE7B7)),
+                                            modifier = Modifier.weight(1f),
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(8.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                            ) {
+                                                Text(emoji, fontSize = 18.sp)
+                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF065F46), lineHeight = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
                         }
                         item(key = "sec_similar") {
@@ -1048,6 +1301,45 @@ fun PostDetailScreen(
                                             }
                                         }
                                     }
+                                    // Seller stats grid — web parity (Completed sales, Response rate, Member since)
+                                    val sellerStats = buildList {
+                                        post.completedSales?.let { add("✅ Sales" to "$it") }
+                                        post.responseRate?.let { add("⚡ Response" to "$it%") }
+                                        post.memberSince?.take(7)?.let { add("🗓 Member" to it) }
+                                    }
+                                    if (sellerStats.isNotEmpty()) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                        ) {
+                                            sellerStats.forEach { (label, value) ->
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(value, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                                    Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // Visit Seller's Farm Page — web parity
+                                    Surface(
+                                        onClick = { /* Navigate to seller centre */ },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFF7C3AED),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            Text("🌾", fontSize = 20.sp)
+                                            Column(Modifier.weight(1f)) {
+                                                Text("Visit Seller's Farm Page", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
+                                                Text("Browse all listings by $it", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                                            }
+                                            Icon(Icons.Default.ChevronRight, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1101,7 +1393,7 @@ fun PostDetailScreen(
                             // Bargain quick actions
                             if (showOfferDialog && post.price != null) {
                                 Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    listOf(10 to "-10%", 20 to "-20%", 30 to "-30%").forEach { (pct, label) ->
+                                    listOf(10 to "-10%", 15 to "-15%", 20 to "-20%").forEach { (pct, label) ->
                                         val discounted = post.price!! * (100 - pct) / 100
                                         Surface(
                                             onClick = { viewModel.makeOffer(discounted); showOfferDialog = false },
@@ -1120,16 +1412,24 @@ fun PostDetailScreen(
 
                             if (showOfferDialog) {
                                 Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedTextField(
-                                        value = offerAmount, onValueChange = { offerAmount = it.filter(Char::isDigit) },
-                                        placeholder = { Text("Your offer ₹") }, singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f).height(48.dp),
-                                    )
+                                    val offerVal = offerAmount.toDoubleOrNull()
+                                    val minAcceptable = (post.price ?: 0.0) * 0.5
+                                    val isTooLow = offerVal != null && offerVal < minAcceptable
+                                    val discountPct = if (offerVal != null && (post.price ?: 0.0) > 0) ((1.0 - offerVal / post.price!!) * 100).toInt() else null
+                                    Column(Modifier.weight(1f)) {
+                                        OutlinedTextField(
+                                            value = offerAmount, onValueChange = { offerAmount = it.filter(Char::isDigit) },
+                                            placeholder = { Text("Your offer ₹") }, singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            isError = isTooLow,
+                                            supportingText = if (isTooLow) {{ Text("Must be ≥50% of price (₹${"%,.0f".format(minAcceptable)})", color = Color(0xFFEF4444), fontSize = 10.sp) }} else if (discountPct != null && discountPct > 0) {{ Text("${discountPct}% off asking price", color = Color(0xFF22C55E), fontSize = 10.sp) }} else null,
+                                        )
+                                    }
                                     Button(onClick = {
-                                        offerAmount.toDoubleOrNull()?.let { viewModel.makeOffer(it) }
+                                        offerVal?.let { viewModel.makeOffer(it) }
                                         showOfferDialog = false
-                                    }, enabled = offerAmount.isNotBlank(), shape = RoundedCornerShape(10.dp),
+                                    }, enabled = offerAmount.isNotBlank() && !isTooLow, shape = RoundedCornerShape(10.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
                                         Text(stringResource(R.string.detail_send), fontWeight = FontWeight.SemiBold)
                                     }
@@ -1137,21 +1437,98 @@ fun PostDetailScreen(
                                 }
                             }
 
-                            // Boost panel (for own posts)
+                            // Boost panel (for own posts) — plan-gated like web app
                             if (showBoostPanel) {
+                                // Plan tier drives free quota per tier (web parity):
+                                //  basic/bronze → no included boosts; silver → 5/mo; premium → unlimited
+                                val plan = state.currentPlan ?: "basic"
+                                val planRank = when (plan) { "premium" -> 3; "silver" -> 2; "bronze" -> 1; else -> 0 }
                                 Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(stringResource(R.string.detail_boost), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf("basic" to "⚡ Basic\n10 coins", "featured" to "⭐ Featured\n25 coins", "spotlight" to "🌟 Spotlight\n50 coins").forEach { (tier, label) ->
-                                                OutlinedButton(onClick = { viewModel.boostPost(tier); showBoostPanel = false }, shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f)) {
-                                                    Text(label, fontSize = 11.sp, lineHeight = 14.sp)
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Text(stringResource(R.string.detail_boost), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        // Plan + coin balance context row
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            val planColor = when (plan) { "premium" -> Color(0xFF8B5CF6); "silver" -> Color(0xFF64748B); "bronze" -> Color(0xFFB45309); else -> Color(0xFF94A3B8) }
+                                            Surface(shape = RoundedCornerShape(6.dp), color = planColor.copy(alpha = 0.15f)) {
+                                                Text(
+                                                    "${plan.replaceFirstChar { it.uppercase() }} plan",
+                                                    fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = planColor,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                )
+                                            }
+                                            Text("🪙 ${state.coinBalance} coins", fontSize = 11.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.Medium)
+                                        }
+                                        Text("Choose visibility tier:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        // Tier cards: (tier, title, desc, minPlanRank, coinCost, price)
+                                        data class BoostTier(val tier: String, val title: String, val desc: String, val minRank: Int, val coins: Int, val price: String, val freeQuota: Int)
+                                        listOf(
+                                            BoostTier("basic", "⚡ Boost · 7 days", "More views in category feed", 1, 10, "₹49", if (planRank >= 3) 999 else if (planRank >= 2) 5 else 0),
+                                            BoostTier("featured", "⭐ Featured · 14 days", "Highlighted badge + top of results", 2, 20, "₹99", if (planRank >= 3) 999 else if (planRank >= 2) 2 else 0),
+                                            BoostTier("spotlight", "🌟 Spotlight · 30 days", "Home page showcase + all badges", 3, 40, "₹199", if (planRank >= 3) 999 else 0),
+                                        ).forEach { t ->
+                                            val hasPlanQuota = t.freeQuota > 0
+                                            val canAffordCoins = state.coinBalance >= t.coins
+                                            Card(
+                                                shape = RoundedCornerShape(10.dp),
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                                modifier = Modifier.fillMaxWidth(),
+                                            ) {
+                                                Column(Modifier.padding(10.dp)) {
+                                                    Text(t.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                    Text(t.desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Spacer(Modifier.height(6.dp))
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        // Use Plan Quota (only if plan grants it)
+                                                        OutlinedButton(
+                                                            onClick = { viewModel.boostPost(t.tier); showBoostPanel = false },
+                                                            enabled = hasPlanQuota,
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            modifier = Modifier.weight(1f),
+                                                            border = BorderStroke(1.dp, if (hasPlanQuota) Color(0xFF22C55E) else Color(0xFFCBD5E1)),
+                                                        ) {
+                                                            val label = when {
+                                                                t.freeQuota >= 999 -> "Plan ✓"
+                                                                t.freeQuota > 0 -> "Plan (${t.freeQuota})"
+                                                                else -> "Locked"
+                                                            }
+                                                            Text(label, fontSize = 10.sp, color = if (hasPlanQuota) Color(0xFF22C55E) else Color(0xFF94A3B8))
+                                                        }
+                                                        // Use Coins
+                                                        OutlinedButton(
+                                                            onClick = { viewModel.boostWithCoins(t.tier, t.coins); showBoostPanel = false },
+                                                            enabled = canAffordCoins,
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            modifier = Modifier.weight(1f),
+                                                            border = BorderStroke(1.dp, if (canAffordCoins) Color(0xFFF59E0B) else Color(0xFFCBD5E1)),
+                                                        ) {
+                                                            Text("${t.coins}🪙", fontSize = 10.sp, color = if (canAffordCoins) Color(0xFFF59E0B) else Color(0xFF94A3B8))
+                                                        }
+                                                        // Pay (always available fallback)
+                                                        Button(
+                                                            onClick = { viewModel.boostPost(t.tier); showBoostPanel = false },
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            modifier = Modifier.weight(1f),
+                                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                                        ) {
+                                                            Text(t.price, fontSize = 10.sp)
+                                                        }
+                                                    }
                                                 }
                                             }
+                                        }
+                                        if (planRank < 2) {
+                                            Text(
+                                                "💡 Upgrade to Silver or Premium for free monthly boosts.",
+                                                fontSize = 11.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Medium,
+                                            )
+                                        }
+                                        state.boostMessage?.let { msg ->
+                                            Text(msg, fontSize = 11.sp, color = Color(0xFF22C55E))
                                         }
                                         state.boostStatus?.let { bs ->
                                             if (bs.boosted) Text("✅ Currently boosted (${bs.tier}) — ${bs.viewsGained} extra views", fontSize = 11.sp, color = Color(0xFF22C55E))
                                         }
+                                        TextButton(onClick = { showBoostPanel = false }) { Text("Cancel") }
                                     }
                                 }
                             }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AssistChip
@@ -168,6 +169,7 @@ fun ProductListingScreen(
     val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
     val compareItems = vmState.compareItems
     var showCompareDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -191,10 +193,20 @@ fun ProductListingScreen(
 
     // ── Derived filtered + sorted list (using subcatProducts) ────────────────
     val filteredProducts by remember(
-        priceRange, selectedBrands.toList(), minRating, inStockOnly, sortOption, subcatProducts, conditionFilter, verifiedOnly,
+        priceRange, selectedBrands.toList(), minRating, inStockOnly, sortOption, subcatProducts, conditionFilter, verifiedOnly, searchQuery,
     ) {
         derivedStateOf {
+            val tokens = searchQuery.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
             subcatProducts
+                .filter { p ->
+                    tokens.isEmpty() || tokens.all { tok ->
+                        p.title.contains(tok, ignoreCase = true) ||
+                        p.description.contains(tok, ignoreCase = true) ||
+                        p.subcategory.contains(tok, ignoreCase = true) ||
+                        p.brand.contains(tok, ignoreCase = true) ||
+                        p.category.contains(tok, ignoreCase = true)
+                    }
+                }
                 .filter { p ->
                     p.price >= priceRange.start && p.price <= priceRange.endInclusive
                 }
@@ -235,6 +247,28 @@ fun ProductListingScreen(
     Scaffold { innerPad ->
         Box(modifier = Modifier.padding(innerPad).fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
+
+            // ── Inline Search Bar (web parity: search by title, description, subcategory) ──
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                singleLine = true,
+                placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(Icons.Filled.Search, null, modifier = Modifier.size(20.dp)) },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Close, null, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .height(48.dp),
+                textStyle = MaterialTheme.typography.bodyMedium,
+            )
 
             // ── Great Deals Banner ───────────────────────────────────────
             var showDealsBanner by remember { mutableStateOf(true) }
@@ -701,6 +735,36 @@ fun ProductListingScreen(
                             onCheckedChange = { inStockOnly = it },
                             modifier = Modifier.semantics { contentDescription = "In stock only: ${if (inStockOnly) "on" else "off"}" },
                         )
+                    }
+
+                    // Location filter
+                    Column {
+                        Text("Location", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Spacer(Modifier.height(4.dp))
+                        var locationQuery by remember { mutableStateOf("") }
+                        OutlinedTextField(
+                            value = locationQuery,
+                            onValueChange = { locationQuery = it },
+                            placeholder = { Text("City or area…") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    // Condition filter
+                    Column {
+                        Text("Condition", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Spacer(Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("All" to null, "New" to "new", "Used" to "used").forEach { (label, value) ->
+                                FilterChip(
+                                    selected = conditionFilter == value,
+                                    onClick = { conditionFilter = value },
+                                    label = { Text(label) },
+                                )
+                            }
+                        }
                     }
 
                     Button(

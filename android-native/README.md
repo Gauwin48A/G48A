@@ -1428,6 +1428,146 @@ App Launch
 | Images | Coil disk cache | LRU, max 100 MB | Loaded from cache if still on disk; re-fetched when evicted |
 | Images | Coil memory cache | 25% of JVM heap | Instant load for recently seen images |
 | JWT access token | EncryptedSharedPreferences | Until expiry or logout | Silently refreshed by `TokenRefreshAuthenticator` on HTTP 401 |
+
+---
+
+## Centre Pages (Premium "Pages" feature)
+
+Centre Pages are MHub's equivalent of Facebook Pages: a branded, public storefront/profile that a
+**premium** user owns. They give sellers a dedicated home for a single product domain (category),
+their listings, updates, contact details and follower base. The feature is shared with the web app —
+both clients call the **same** `/api/channels` backend (internally the table is `channels`; the
+user-facing name is "Centre Page").
+
+### Core rules (enforced server-side, mirrored in the app)
+
+| Rule | Detail |
+|------|--------|
+| **Premium only** | Only users on the **premium** tier can create a Centre Page. Non-premium create attempts return HTTP `403 { error, upgrade: true }`. The app shows an "upgrade to Premium" notice. |
+| **One per category** | A user may own **exactly one Centre Page per category**. A second page in the same category is rejected (`"Only one CentrePage per category is allowed"`). Category is therefore a **required** field in the create form. |
+| **Max pages** | A user can own at most **3** Centre Pages total (across 3 different categories). |
+| **Unique name** | Page names are globally unique and pass a profanity filter. |
+| **Follow model** | Any user can follow/unfollow a page. Owners cannot follow their own page. |
+
+### Data model — `Channel` DTO (Centre Page)
+`name`, `category`, `description`, `logo_url`, `cover_url`, `location`,
+`contact_email`, `contact_phone`, `contact_website`, `owner_id`, `owner_name`,
+`follower_count`, `is_following`, `is_verified`, `is_premium`, `created_at`, plus `posts`
+(a list of `ChannelPost` "Updates").
+
+### API contract (`MhubApi.kt`)
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| Browse list | `GET api/channels` | bare JSON array of `Channel` |
+| Create | `POST api/channels/create` | created `Channel` (premium-gated, one-per-category) |
+| Detail | `GET api/channels/{id}` | `ChannelDetailResponse { channel, posts }` |
+| By owner | `GET api/channels/owner/{userId}` | `{ channel, posts }` |
+| Follow (toggle) | `POST api/channels/{id}/follow` | `{ success, action }` |
+| Unfollow | `POST api/channels/{id}/unfollow` | `{ success }` |
+
+### Android screens (`ui/channels/ChannelScreens.kt`)
+
+- **`ChannelsListScreen`** ("Centre Pages") — searchable list, each card shows logo/avatar, name,
+  verified badge, **category chip**, follower & post counts, and an inline Follow/Following toggle.
+  FAB/▸ opens the create flow.
+- **`CreateChannelScreen`** ("Create Centre Page") — name (required, ≥3 chars), **category
+  (required)**, description, logo placeholder. Shows a persistent "Premium feature — one Centre Page
+  per category" banner and surfaces premium/one-per-category errors inline.
+- **`ChannelDetailScreen`** — hero cover banner, avatar, stat row (Followers / Updates / Category),
+  Follow + Share buttons, owner manage sheet, and three tabs:
+  - **About** — description, category, location, contact (phone/email/website), owner, created date.
+  - **Updates** — the page's `ChannelPost` feed (image + text + date), newest/oldest sort.
+  - **Reviews** — rating summary.
+
+### Navigation
+The user-facing **"Centre"** / **"Hub"** entry points (More menu, navigation drawer, and the Profile
+quick-action chip) all route to `Routes.CHANNELS` → the Centre Pages list. Create and detail use
+`Routes.CHANNEL_CREATE` and `Routes.CHANNEL_DETAIL`.
+
+---
+
+## Coins & Rewards
+
+Users earn in-app **coins** (XP/level economy) for marketplace activity. Coins are awarded
+**server-side** so web and Android stay consistent; the app reads balances/history from the wallet
+endpoints and reflects them in the Rewards/Profile screens.
+
+### Earning coins
+
+| Action | Coins |
+|--------|-------|
+| **Publish a sale post** | **+1 coin** per listing (base) |
+| **First listing bonus** | **+25 coins** (one-time, on your very first post) |
+| Daily listing cap | up to **50 coins/day** (≈10 listings/day) |
+| Welcome bonus (new user) | +100 coins |
+| Mark item as sold | +3 to +25 coins |
+| First successful sale | +50 coins |
+| Completing a purchase | +10 coins |
+| Leaving a 5-star review | +15 coins |
+| Daily login streak | ladder `[5, 10, 15, 20, 30, 50, 100]` |
+| Spin wheel | `[5, 10, 20, 30, 50, 100]` |
+| Scratch card | `[10, 20, 40, 60, 80, 100]` |
+
+Post-publish coins are granted automatically by the `awardCoinOnPostCreate` hook that runs before
+the create-post controller on `POST /api/posts` — no extra client call is required.
+
+### Coins API
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `api/coins/balance` | `{ total_coins, xp, level }` |
+| `GET` | `api/coins/history` | coin transaction ledger |
+| `POST` | `api/coins/daily-checkin` | claim daily login reward |
+| `POST` | `api/coins/spin` | spin wheel |
+| `POST` | `api/coins/scratch` | scratch card |
+| `GET` | `api/wallet/` | wallet alias |
+
+---
+
+## Referral & Referral-Chain System
+
+New users can join via a referrer's **5-character alphanumeric code** (entered during Aadhaar
+signup — `CompleteAadhaarSignupRequest.referralCode`). Referrals build a multi-level chain so that
+when a new member becomes active, coins flow **up the chain** to the people who (directly or
+indirectly) brought them in.
+
+### How rewards trigger
+Rewards are **not** paid at signup. They unlock when the referred user performs a qualifying
+**activity** — completing a transaction, **or** creating 2+ listings while verified. This prevents
+fake-signup farming.
+
+### 5-level chain payout
+When a referee activates, coins are distributed up to 5 levels of the referral closure:
+
+```
+Level 1 (direct referrer):  100 coins
+Level 2:                      40 coins
+Level 3:                      20 coins
+Level 4:                      10 coins
+Level 5:                       5 coins
+```
+
+Milestone bonus: reaching **3 referrals** grants an extra **+50 coins**.
+
+### Referral API
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `api/referral/` | referral stats (code, counts, earnings) |
+| `GET` | `api/referral/tree` | the user's referral chain/tree |
+| `POST` | `api/referral/create` | generate/ensure a referral code |
+| `POST` | `api/referral/track` | track an applied referral |
+
+### Android surfaces
+- `ProfileScreen` → **Referral code box** (share your code).
+- `ReferralTreeRepository` → fetches the referral tree + leaderboard for display.
+- Referral code is attached to the Aadhaar signup payload in `AuthRepository`.
+
+### Backend tables
+`referral_relationships`, `referral_closure` (transitive closure maintained by the
+`maintain_referral_closure()` trigger), `referral_rewards`, and the `coin_transactions` ledger
+record every chain payout.
 | API base URL | DataStore Preferences | Persistent | Survives app restart; editable in Settings |
 | Draft post | DataStore Preferences | Until published or discarded | Auto-saved every 10 seconds during CreatePost |
 | Saved searches | DataStore / API | Persistent | Synced with server; locally queryable |
