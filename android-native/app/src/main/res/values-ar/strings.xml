@@ -1419,4 +1419,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">متقدم</string>
     <string name="plans_full">كامل</string>
+    <string name="settings_show_less">عرض أقل</string>
+    <string name="settings_show_all_languages">عرض جميع 25 لغة →</string>
+    <string name="commerce_sale_verification_label">التحقق من البيع</string>
+    <string name="commerce_sale_confirmation_title">تأكيد البيع</string>
+    <string name="commerce_sale_confirmation_subtitle">قم بتأكيد البيع باستخدام OTP الخاص بالمشتري ومعرف المعاملة.</string>
+    <string name="commerce_badge_secure">🔒 آمن</string>
+    <string name="commerce_badge_rewarded">✓ مكافأ</string>
+    <string name="commerce_badge_verified">📋 موثق</string>
 </resources>

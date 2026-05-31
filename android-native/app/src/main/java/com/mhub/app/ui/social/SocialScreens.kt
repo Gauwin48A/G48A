@@ -311,13 +311,13 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🪙 50", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                Text("� 50", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
                                 Text("24 hours", fontSize = 11.sp, color = Color(0xFF064E3B))
                             }
                         }
                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🪙 150", fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                Text("� 150", fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
                                 Text("7 days", fontSize = 11.sp, color = Color(0xFF78350F))
                             }
                         }
@@ -342,11 +342,11 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
                         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, text) }
                         context.startActivity(android.content.Intent.createChooser(intent, "Share via"))
                         shareTarget = null
-                    }, modifier = Modifier.fillMaxWidth()) { Text("💬 Share anywhere") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("� Share anywhere") }
                     OutlinedButton(onClick = {
                         clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://mhub.app/post/${post.stableId}"))
                         shareTarget = null
-                    }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("� Copy link") }
                 }
             },
             confirmButton = { TextButton(onClick = { shareTarget = null }) { Text(stringResource(R.string.social_close)) } },
@@ -644,9 +644,9 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                         horizontalArrangement = Arrangement.SpaceEvenly,
                                     ) {
                                         listOf(
-                                            Triple("${state.totalSales}", "Total Sales", "🛒"),
-                                            Triple("${state.activeBuyers}", "Active Buyers", "👥"),
-                                            Triple("${state.totalVolume}", "Vol. Coins", "💰"),
+                                            Triple("${state.totalSales}", "Total Sales", "�"),
+                                            Triple("${state.activeBuyers}", "Active Buyers", "�"),
+                                            Triple("${state.totalVolume}", "Vol. Coins", "�"),
                                             Triple("${state.verificationRate}%", "Verified", "✅"),
                                         ).forEach { (value, label, emoji) ->
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -680,7 +680,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
                             ) {
-                                listOf("Top Sellers" to "🏆", "Top Buyers" to "🛍️", "Top Users" to "⭐").forEach { (tab, emoji) ->
+                                listOf("Top Sellers" to "�", "Top Buyers" to "�️", "Top Users" to "⭐").forEach { (tab, emoji) ->
                                     FilterChip(
                                         selected = activeTab == tab,
                                         onClick = { activeTab = tab },
@@ -740,9 +740,9 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                                 else -> Color(0xFF6B7280)
                             }
                             val rankEmoji = when (entry.rank) {
-                                "Gold" -> "🥇"
-                                "Silver" -> "🥈"
-                                "Bronze" -> "🥉"
+                                "Gold" -> "�"
+                                "Silver" -> "�"
+                                "Bronze" -> "�"
                                 else -> "#${index + 1}"
                             }
                             Surface(
@@ -878,11 +878,11 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
     var density by remember { mutableStateOf("comfortable") } // compact / comfortable / spacious
     // Web-parity: 6 complaint types matching Complaints.jsx
     val complaintTypes = listOf(
-        "transaction" to "💳 Transaction",
-        "quality" to "📦 Quality",
-        "communication" to "💬 Communication",
+        "transaction" to "� Transaction",
+        "quality" to "� Quality",
+        "communication" to "� Communication",
         "fraud" to "⚠️ Fraud",
-        "delivery" to "🚚 Delivery",
+        "delivery" to "� Delivery",
         "other" to "❓ Other",
     )
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFFF7F7), Color(0xFFFFF3E0), Color(0xFFFFF8E1))))) {
@@ -911,7 +911,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                         Text("Report issues with transactions, sellers, or products", fontSize = 13.sp, color = Color(0xFF64748B))
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("🔒 Secure" to Color(0xFFDCFCE7), "⏱ 24-48h Response" to Color(0xFFF0F9FF), "⚖️ Fair Resolution" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                            listOf("� Secure" to Color(0xFFDCFCE7), "⏱ 24-48h Response" to Color(0xFFF0F9FF), "⚖️ Fair Resolution" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
                                 Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
                                     Text(badge, fontSize = 10.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
@@ -977,11 +977,11 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                 // Complaint type selector — 2x3 grid (web parity)
                                 Text("Complaint Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                                 val complaintTypeCards = listOf(
-                                    Triple("transaction", "💳", "Transaction Issue"),
-                                    Triple("quality", "📦", "Product Quality"),
-                                    Triple("communication", "💬", "Communication"),
+                                    Triple("transaction", "�", "Transaction Issue"),
+                                    Triple("quality", "�", "Product Quality"),
+                                    Triple("communication", "�", "Communication"),
                                     Triple("fraud", "⚠️", "Suspected Fraud"),
-                                    Triple("delivery", "🚚", "Delivery Issue"),
+                                    Triple("delivery", "�", "Delivery Issue"),
                                     Triple("other", "❓", "Other"),
                                 )
                                 complaintTypeCards.chunked(2).forEach { row ->
@@ -1040,7 +1040,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                 // Guidelines section (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("📋 Important Guidelines", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text("� Important Guidelines", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
                         listOf("Provide accurate Post ID for faster resolution", "Include any transaction codes if applicable", "Detailed descriptions help us investigate faster", "False complaints may result in account restrictions").forEach { guideline ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("✓", fontSize = 12.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.Bold)
@@ -1154,11 +1154,11 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
     // Web parity: 5 feedback types with icons, names, descriptions matching Feedback.jsx
     data class FeedbackType(val key: String, val emoji: String, val name: String, val description: String, val bgColor: Color, val tintColor: Color)
     val feedbackTypes = listOf(
-        FeedbackType("bug", "🐛", "Bug Report", "Found something broken? Let us know", Color(0xFFFEF2F2), Color(0xFFDC2626)),
-        FeedbackType("feature", "💡", "Feature Request", "Have an idea to make MHub better?", Color(0xFFFEFCE8), Color(0xFFCA8A04)),
-        FeedbackType("ui", "🎨", "UI Improvement", "Suggestions for design and layout", Color(0xFFF5F3FF), Color(0xFF7C3AED)),
+        FeedbackType("bug", "�", "Bug Report", "Found something broken? Let us know", Color(0xFFFEF2F2), Color(0xFFDC2626)),
+        FeedbackType("feature", "�", "Feature Request", "Have an idea to make MHub better?", Color(0xFFFEFCE8), Color(0xFFCA8A04)),
+        FeedbackType("ui", "�", "UI Improvement", "Suggestions for design and layout", Color(0xFFF5F3FF), Color(0xFF7C3AED)),
         FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", Color(0xFFFFF7ED), Color(0xFFEA580C)),
-        FeedbackType("general", "💬", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
+        FeedbackType("general", "�", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), Color(0xFF2563EB)),
     )
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEEF2FF), Color(0xFFF5F3FF))))) {
         Column(Modifier.fillMaxSize()) {
@@ -1187,7 +1187,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                             Text("Help us improve MHub for everyone", fontSize = 13.sp, color = Color(0xFF64748B))
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("🗣 Your Voice Matters" to Color(0xFFF0F9FF), "👂 We Listen" to Color(0xFFDCFCE7), "🚀 Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                                listOf("� Your Voice Matters" to Color(0xFFF0F9FF), "� We Listen" to Color(0xFFDCFCE7), "� Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
                                     Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
                                         Text(badge, fontSize = 9.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
                                     }
@@ -1344,12 +1344,12 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 // Why Feedback Matters — enhanced 2-col grid (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("💡 Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        Text("� Why Your Feedback Matters", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
                         listOf(
-                            Triple("🚀", "Shapes Features", "Your ideas guide what we build next"),
-                            Triple("🛡", "Improves Safety", "Bug reports keep the platform secure"),
+                            Triple("�", "Shapes Features", "Your ideas guide what we build next"),
+                            Triple("�", "Improves Safety", "Bug reports keep the platform secure"),
                             Triple("✨", "Better UX", "Your UI feedback drives design decisions"),
-                            Triple("🌍", "Grows Community", "Your input makes MHub better for everyone"),
+                            Triple("�", "Grows Community", "Your input makes MHub better for everyone"),
                         ).chunked(2).forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { (emoji, title, desc) ->
@@ -1369,7 +1369,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 // Direct contact (web parity)
                 Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("📞 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                        Text("� Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
                         Text("For urgent issues, reach us at support@mhub.app", fontSize = 12.sp, color = Color(0xFF4B5563))
                         Text("We respond within 24 hours on business days.", fontSize = 11.sp, color = Color(0xFF64748B))
                     }

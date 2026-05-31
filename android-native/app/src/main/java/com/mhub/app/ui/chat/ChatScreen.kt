@@ -89,6 +89,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.JwtHelper
+import com.mhub.app.data.local.TokenStore
 import com.mhub.app.data.remote.ChatEvent
 import com.mhub.app.data.remote.ChatWebSocket
 import com.mhub.app.data.repository.ChatRepository
@@ -128,6 +130,7 @@ class ChatViewModel @Inject constructor(
     private val repo: ChatRepository,
     private val chatWebSocket: ChatWebSocket,
     private val localeManager: com.mhub.app.core.LocaleManager,
+    private val tokenStore: TokenStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
@@ -138,6 +141,13 @@ class ChatViewModel @Inject constructor(
     private var lastLocaleVersion = 0L
 
     init {
+        // Populate currentUserId from JWT so typing indicators and message ownership work correctly
+        val token = tokenStore.accessTokenImmediate()
+        if (token != null) {
+            val userId = JwtHelper.extractClaim(token, "userId")
+                ?: JwtHelper.extractClaim(token, "id")
+            if (userId != null) _state.value = _state.value.copy(currentUserId = userId)
+        }
         loadConversations()
         // Observe WebSocket connection state
         viewModelScope.launch {
@@ -393,7 +403,7 @@ fun ChatScreen(
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
                 modifier = androidx.compose.ui.Modifier.padding(32.dp),
             ) {
-                Text("🔒", fontSize = 48.sp)
+                Text("�", fontSize = 48.sp)
                 Text(stringResource(R.string.chat_sign_in_title), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1E293B))
                 Text(stringResource(R.string.chat_sign_in_subtitle), color = Color(0xFF64748B), textAlign = TextAlign.Center)
                 Button(
@@ -713,7 +723,7 @@ private fun MessageThreadScreen(
             title = { Text(stringResource(R.string.chat_react)) },
             text = {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-                    listOf("❤️", "👍", "😂", "😮", "😢", "🙏").forEach { emoji ->
+                    listOf("❤️", "�", "�", "�", "�", "�").forEach { emoji ->
                         Text(
                             emoji,
                             style = MaterialTheme.typography.headlineMedium,
@@ -987,7 +997,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
     var showTimestamp by remember { mutableStateOf(false) }
     var myReaction by remember { mutableStateOf<String?>(null) }
     var showReactionPicker by remember { mutableStateOf(false) }
-    val reactions = listOf("❤️", "👍", "😂", "😮", "😢", "🎉")
+    val reactions = listOf("❤️", "�", "�", "�", "�", "�")
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -1019,7 +1029,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                     bottomEnd = 18.dp,
                 ),
                 color = if (isMe) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surface,
+                else MaterialTheme.colorScheme.surfaceVariant,
                 shadowElevation = 1.dp,
                 modifier = Modifier.combinedClickable(
                     onClick = { showTimestamp = !showTimestamp },
@@ -1047,7 +1057,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 Icon(Icons.Default.AttachFile, null, modifier = Modifier.size(16.dp), tint = if (isMe) Color.White.copy(0.8f) else Color(0xFF64748B))
-                                Text("📎 Attachment", fontSize = 12.sp, color = if (isMe) Color.White.copy(0.9f) else Color(0xFF374151))
+                                Text("� Attachment", fontSize = 12.sp, color = if (isMe) Color.White.copy(0.9f) else Color(0xFF374151))
                             }
                         }
                     }
@@ -1056,7 +1066,7 @@ private fun MessageBubble(message: ChatMessage, isMe: Boolean, onLongPress: () -
                             text = message.displayContent,
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (isMe) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurface,
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         )
                     }

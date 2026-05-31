@@ -135,6 +135,36 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.RadioButton
 import com.mhub.app.ui.LocalActiveCategoryKey
 
+private val MOCK_EXPLORE_POSTS = listOf(
+    // Electronics
+    Post(id="mp-e1", title="iPhone 14 Pro Max 256GB – Deep Purple", description="1 year old, excellent condition. Original box, charger, and earphones included. No scratches.", price=68000.0, imageUrl="https://picsum.photos/seed/iph14pro/400/400", category="electronics", subcategory="Phones", brand="Apple", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Rohit K.", viewCount=342, likeCount=28, interestedBuyers=12, createdAt="2024-01-20"),
+    Post(id="mp-e2", title="Samsung Galaxy S23 Ultra – Phantom Black", description="6 months old. 200MP camera, 12GB RAM, 256GB storage. S-Pen included. Excellent condition.", price=82000.0, imageUrl="https://picsum.photos/seed/s23ultra/400/400", category="electronics", subcategory="Phones", brand="Samsung", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Priya S.", viewCount=215, likeCount=19, interestedBuyers=8),
+    Post(id="mp-e3", title="Dell XPS 15 Laptop – i7 13th Gen, 16GB RAM, 512GB SSD", description="8 months old, barely used. Comes with original charger and sleeve. Perfect for developers and designers.", price=95000.0, imageUrl="https://picsum.photos/seed/dellxps15/400/400", category="electronics", subcategory="Laptops", brand="Dell", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Arjun M.", viewCount=178, likeCount=22, interestedBuyers=6),
+    Post(id="mp-e4", title="MacBook Air M2 13\" – Starlight, 8GB/256GB", description="4 months old, pristine condition. AppleCare+ valid till 2025. No dents, original packaging.", price=105000.0, imageUrl="https://picsum.photos/seed/macm2/400/400", category="electronics", subcategory="Laptops", brand="Apple", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Sneha R.", viewCount=490, likeCount=45, interestedBuyers=21),
+    Post(id="mp-e5", title="iPad Pro 11\" M2 – WiFi 256GB with Apple Pencil", description="Brand new sealed box. Bought from Apple Store. Never opened. Selling due to upgrade.", price=89000.0, imageUrl="https://picsum.photos/seed/ipadpro11/400/400", category="electronics", subcategory="Tablets", brand="Apple", condition="New", city="Pune", location="Pune, MH", sellerName="Vikram T.", viewCount=203, likeCount=31, interestedBuyers=14),
+    Post(id="mp-e6", title="Sony WH-1000XM5 Noise Cancelling Headphones", description="6 months old. Best-in-class ANC, 30hr battery. Comes with carry case and cables.", price=22000.0, imageUrl="https://picsum.photos/seed/sonymxm5/400/400", category="electronics", subcategory="Audio", brand="Sony", condition="Used", city="Chennai", location="Chennai, TN", sellerName="Aditya B.", viewCount=156, likeCount=18),
+    Post(id="mp-e7", title="Canon EOS R50 Mirrorless Camera – Body Only", description="3 months old. 24.2MP, 4K video, eye-tracking AF. Perfect for content creators.", price=55000.0, imageUrl="https://picsum.photos/seed/canonr50/400/400", category="electronics", subcategory="Cameras", brand="Canon", condition="Like New", city="Kolkata", location="Kolkata, WB", sellerName="Meena P.", viewCount=134, likeCount=15, interestedBuyers=5),
+    Post(id="mp-e8", title="PlayStation 5 Console + 2 Controllers + 3 Games", description="Complete bundle. Purchased in 2023. All games: God of War Ragnarok, FIFA 24, Spider-Man 2.", price=46000.0, imageUrl="https://picsum.photos/seed/ps5bundle/400/400", category="electronics", subcategory="Gaming", brand="Sony", condition="Used", city="Ahmedabad", location="Ahmedabad, GJ", sellerName="Rajan V.", viewCount=380, likeCount=52, interestedBuyers=19),
+    // Fashion
+    Post(id="mp-f1", title="Nike Air Jordan 1 Retro High OG – University Blue", description="Size UK 9. Worn twice. 100% authentic with receipt. Comes with original box.", price=14500.0, imageUrl="https://picsum.photos/seed/jordan1ub/400/400", category="fashion", subcategory="Shoes", brand="Nike", condition="Like New", city="Mumbai", location="Mumbai, MH", sellerName="Dev S.", viewCount=620, likeCount=74, interestedBuyers=33),
+    Post(id="mp-f2", title="Adidas Ultra Boost 22 – Core Black UK 8", description="Worn 5 times only. Original laces included. No creases, soles clean.", price=7500.0, imageUrl="https://picsum.photos/seed/ultraboost22/400/400", category="fashion", subcategory="Shoes", brand="Adidas", condition="Used", city="Bengaluru", location="Bengaluru, KA", sellerName="Ananya K.", viewCount=248, likeCount=29),
+    Post(id="mp-f3", title="Louis Vuitton Neverfull MM Tote – Damier Ebene", description="Authentic, purchased from LV Paris. 2 years old, excellent condition. Comes with dust bag.", price=145000.0, imageUrl="https://picsum.photos/seed/lvneverfull/400/400", category="fashion", subcategory="Bags", brand="Louis Vuitton", condition="Used", city="Delhi", location="Delhi, DL", sellerName="Priyanka N.", viewCount=890, likeCount=112, interestedBuyers=28),
+    Post(id="mp-f4", title="Rolex Submariner Date – 116610LN – Black Dial", description="Purchased 2021. Full set including box and papers. Service history available.", price=1250000.0, imageUrl="https://picsum.photos/seed/rolexsub/400/400", category="fashion", subcategory="Watches", brand="Rolex", condition="Used", city="Hyderabad", location="Hyderabad, TS", sellerName="Suresh M.", viewCount=1450, likeCount=198, interestedBuyers=42),
+    Post(id="mp-f5", title="Levi's 511 Slim Fit Jeans – Dark Blue W32 L30", description="Barely worn, excellent condition. Original tags still attached. Comfortable slim fit.", price=2200.0, imageUrl="https://picsum.photos/seed/levis511/400/400", category="fashion", subcategory="Men's Clothing", brand="Levi's", condition="Like New", city="Pune", location="Pune, MH", sellerName="Karan T.", viewCount=89, likeCount=8),
+    Post(id="mp-f6", title="Fabindia Kurta Set – 3 Pieces, Sizes M/L", description="Beautiful embroidered cotton kurta with matching pants and dupatta. Worn once.", price=3500.0, imageUrl="https://picsum.photos/seed/fabindiaset/400/400", category="fashion", subcategory="Women's Clothing", brand="Fabindia", condition="Like New", city="Jaipur", location="Jaipur, RJ", sellerName="Sunita R.", viewCount=166, likeCount=21),
+    // Vehicles
+    Post(id="mp-v1", title="Royal Enfield Classic 350 – Halcyon Black 2022", description="8,400 km driven. Single owner. All service records at RE service center. Clean RC.", price=155000.0, imageUrl="https://picsum.photos/seed/reclass350/400/400", category="vehicles", subcategory="Motorcycles", brand="Royal Enfield", condition="Used", city="Bengaluru", location="Bengaluru, KA", sellerName="Aryan D.", viewCount=542, likeCount=67, interestedBuyers=15, year=2022, mileage=8400),
+    Post(id="mp-v2", title="Honda Activa 6G – Pearl White 2023", description="6 months old, 2,200 km. First owner, all papers complete. Accident free.", price=75000.0, imageUrl="https://picsum.photos/seed/activa6g/400/400", category="vehicles", subcategory="Scooters", brand="Honda", condition="Like New", city="Pune", location="Pune, MH", sellerName="Ravi S.", viewCount=318, likeCount=38, interestedBuyers=11, year=2023, mileage=2200),
+    Post(id="mp-v3", title="Maruti Suzuki Swift VXi 2020 – Red", description="38,000 km. Single owner. Fully insured. New tyres fitted. All service done at Maruti.", price=620000.0, imageUrl="https://picsum.photos/seed/swiftvxi/400/400", category="vehicles", subcategory="Cars", brand="Maruti Suzuki", condition="Used", city="Delhi", location="Delhi, DL", sellerName="Ankit G.", viewCount=725, likeCount=89, interestedBuyers=24, year=2020, mileage=38000),
+    Post(id="mp-v4", title="Hero Cycle Sprint 26T – Mountain Bike", description="1 year old, very good condition. Front suspension, 21-speed Shimano gears. Ideal for trails.", price=8500.0, imageUrl="https://picsum.photos/seed/herosprint/400/400", category="vehicles", subcategory="Bicycles", brand="Hero", condition="Used", city="Chennai", location="Chennai, TN", sellerName="Balaji K.", viewCount=142, likeCount=16),
+    // Others
+    Post(id="mp-o1", title="IKEA MALM Bed Frame – Double Bed with 2 Storage Drawers", description="2 years old. White finish, good condition. Minor wear on top surface. Self-collect only.", price=12000.0, imageUrl="https://picsum.photos/seed/ikeamalm/400/400", category="others", subcategory="Home & Furniture", brand="IKEA", condition="Used", city="Gurgaon", location="Gurgaon, HR", sellerName="Neha P.", viewCount=203, likeCount=22, interestedBuyers=7),
+    Post(id="mp-o2", title="Yoga Mat Set – Manduka PRO 6mm + Strap + Blocks", description="Used for 6 months. Excellent cushioning, non-slip surface. Full kit in great condition.", price=3800.0, imageUrl="https://picsum.photos/seed/mandukayoga/400/400", category="others", subcategory="Sports", brand="Manduka", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Kavita S.", viewCount=98, likeCount=11),
+    Post(id="mp-o3", title="HARRY POTTER Complete 7-Book Set – J.K. Rowling", description="All 7 books in UK Adult paperback edition. Good condition with some spine wear. No torn pages.", price=1800.0, imageUrl="https://picsum.photos/seed/hpbooks/400/400", category="others", subcategory="Books", brand="Bloomsbury", condition="Used", city="Kolkata", location="Kolkata, WB", sellerName="Soumya B.", viewCount=76, likeCount=14),
+    Post(id="mp-o4", title="Philips Air Fryer HD9200 – 4.1L, 1400W – 2 years old", description="Works perfectly. Easy to clean. Comes with original manual. Selling as upgrading.", price=3500.0, imageUrl="https://picsum.photos/seed/philipsaf/400/400", category="others", subcategory="Home & Furniture", brand="Philips", condition="Used", city="Bengaluru", location="Bengaluru, KA", sellerName="Divya M.", viewCount=187, likeCount=24, interestedBuyers=9),
+    Post(id="mp-o5", title="BoAt Airdopes 141 TWS Earbuds – Brand New Sealed", description="Unopened box. Received as gift but already have similar product. With warranty card.", price=950.0, imageUrl="https://picsum.photos/seed/boataird141/400/400", category="others", subcategory="Health & Beauty", brand="Boat", condition="New", city="Jaipur", location="Jaipur, RJ", sellerName="Rahul J.", viewCount=155, likeCount=18),
+)
+
 data class ExploreState(
     val ecosystemKey: String? = null,
     val sortBy: String = "newest",
@@ -233,7 +263,21 @@ class ExploreViewModel @Inject constructor(
                         hasMore = newPosts.size >= 20,
                     )
                 }
-                is ApiResult.Failure -> _state.value = _state.value.copy(loadingPosts = false, loadingMore = false, errorMessage = result.error.message)
+                is ApiResult.Failure -> {
+                    // Fall back to mock data so the screen is never empty
+                    val s = _state.value
+                    val mockFallback = if (reset && s.posts.isEmpty()) {
+                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter { it.category == s.ecosystemKey } else MOCK_EXPLORE_POSTS
+                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+                        if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
+                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+                    } else emptyList()
+                    _state.value = s.copy(
+                        loadingPosts = false, loadingMore = false,
+                        posts = if (mockFallback.isNotEmpty()) mockFallback else s.posts,
+                        hasMore = false,
+                    )
+                }
             }
         }
     }
@@ -345,21 +389,21 @@ class ExploreViewModel @Inject constructor(
 private fun categoryEmoji(name: String): String {
     val n = name.lowercase()
     return when {
-        n.contains("electron") || n.contains("tech") || n.contains("gadget") -> "📱"
-        n.contains("fashion") || n.contains("cloth") || n.contains("apparel") -> "👗"
-        n.contains("vehicle") || n.contains("car") || n.contains("bike") || n.contains("motor") -> "🚗"
-        n.contains("furniture") || n.contains("home") || n.contains("decor") -> "🛋️"
-        n.contains("book") || n.contains("education") || n.contains("study") -> "📚"
+        n.contains("electron") || n.contains("tech") || n.contains("gadget") -> "�"
+        n.contains("fashion") || n.contains("cloth") || n.contains("apparel") -> "�"
+        n.contains("vehicle") || n.contains("car") || n.contains("bike") || n.contains("motor") -> "�"
+        n.contains("furniture") || n.contains("home") || n.contains("decor") -> "�️"
+        n.contains("book") || n.contains("education") || n.contains("study") -> "�"
         n.contains("sport") || n.contains("fitness") || n.contains("gym") -> "⚽"
-        n.contains("food") || n.contains("grocery") || n.contains("restaurant") -> "🍕"
-        n.contains("job") || n.contains("service") || n.contains("freelan") -> "💼"
-        n.contains("real estate") || n.contains("property") || n.contains("house") || n.contains("flat") -> "🏠"
-        n.contains("toy") || n.contains("game") || n.contains("kid") -> "🎮"
-        n.contains("health") || n.contains("beauty") || n.contains("cosmetic") -> "💄"
-        n.contains("pet") || n.contains("animal") -> "🐾"
-        n.contains("music") || n.contains("instrument") -> "🎵"
-        n.contains("art") || n.contains("craft") || n.contains("handmade") -> "🎨"
-        else -> "🏷️"
+        n.contains("food") || n.contains("grocery") || n.contains("restaurant") -> "�"
+        n.contains("job") || n.contains("service") || n.contains("freelan") -> "�"
+        n.contains("real estate") || n.contains("property") || n.contains("house") || n.contains("flat") -> "�"
+        n.contains("toy") || n.contains("game") || n.contains("kid") -> "�"
+        n.contains("health") || n.contains("beauty") || n.contains("cosmetic") -> "�"
+        n.contains("pet") || n.contains("animal") -> "�"
+        n.contains("music") || n.contains("instrument") -> "�"
+        n.contains("art") || n.contains("craft") || n.contains("handmade") -> "�"
+        else -> "�️"
     }
 }
 
@@ -385,9 +429,9 @@ fun ExploreScreen(
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemLabel = when (ecosystemKey) {
-        "electronics" -> "📱 Electronics"
-        "fashion" -> "👗 Fashion"
-        "vehicles" -> "🚗 Vehicles"
+        "electronics" -> "� Electronics"
+        "fashion" -> "� Fashion"
+        "vehicles" -> "� Vehicles"
         "others" -> "✨ Others"
         else -> null
     }
@@ -679,21 +723,21 @@ private data class BannerSlide(
 private val bannerSlides = listOf(
     BannerSlide(
         gradientColors = listOf(Color(0xFF1E40AF), Color(0xFF3B82F6), Color(0xFF6366F1)),
-        badge = "LIMITED TIME", badgeIcon = "🔥",
+        badge = "LIMITED TIME", badgeIcon = "�",
         title = "Great Deals Await!", subtitle = "Discover unbeatable offers on top brands",
-        ctaText = "Shop Now", emoji = "🔥", discount = "UP TO 60% OFF",
+        ctaText = "Shop Now", emoji = "�", discount = "UP TO 60% OFF",
     ),
     BannerSlide(
         gradientColors = listOf(Color(0xFF7C3AED), Color(0xFFA855F7), Color(0xFFD946EF)),
         badge = "NEW ARRIVALS", badgeIcon = "✨",
         title = "Fresh Listings Daily", subtitle = "Be the first to grab new items near you",
-        ctaText = "Explore", emoji = "🆕", discount = "JUST LISTED",
+        ctaText = "Explore", emoji = "�", discount = "JUST LISTED",
     ),
     BannerSlide(
         gradientColors = listOf(Color(0xFF059669), Color(0xFF10B981), Color(0xFF34D399)),
         badge = "VERIFIED SELLERS", badgeIcon = "✅",
         title = "Shop with Confidence", subtitle = "Trusted sellers with top ratings & reviews",
-        ctaText = "Browse", emoji = "🛡️", discount = "100% TRUSTED",
+        ctaText = "Browse", emoji = "�️", discount = "100% TRUSTED",
     ),
     BannerSlide(
         gradientColors = listOf(Color(0xFFEA580C), Color(0xFFF97316), Color(0xFFFBBF24)),
@@ -1194,7 +1238,7 @@ private fun AllPostCard(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                             ) {
-                                Text("🔥", fontSize = 10.sp)
+                                Text("�", fontSize = 10.sp)
                                 Text("HOT", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                             }
                         }

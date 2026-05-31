@@ -44,6 +44,12 @@ const csrfProtection = (options = {}) => {
             return next();
         }
 
+        // Skip CSRF for native mobile app requests — not vulnerable to CSRF
+        const clientPlatform = req.headers['x-client-platform'] || '';
+        if (clientPlatform === 'android-native' || clientPlatform === 'ios-native') {
+            return next();
+        }
+
         // Skip CSRF for Capacitor native app requests (cross-origin WebView scenario)
         // Native apps are not vulnerable to CSRF as there's no way to trick the WebView from another origin
         const origin = req.headers.origin || req.headers.referer || '';

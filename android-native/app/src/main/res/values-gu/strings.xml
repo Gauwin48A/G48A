@@ -1415,4 +1415,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">અદ્યતન</string>
     <string name="plans_full">સંપૂર્ણ</string>
+    <string name="settings_show_less">ઓછું બતાવો</string>
+    <string name="settings_show_all_languages">બધી 25 ભાષાઓ બતાવો →</string>
+    <string name="commerce_sale_verification_label">વેચાણ ચકાસણી</string>
+    <string name="commerce_sale_confirmation_title">વેચાણ પુષ્ટિ</string>
+    <string name="commerce_sale_confirmation_subtitle">ખરીદનારની OTP અને ટ્રાન્ઝેક્શન ID સાથે વેચાણ કન્ફર્મ કરો.</string>
+    <string name="commerce_badge_secure">🔒 સુરક્ષિત</string>
+    <string name="commerce_badge_rewarded">✓ પુરસ્કૃત</string>
+    <string name="commerce_badge_verified">📋 ચકાસાયેલ</string>
 </resources>

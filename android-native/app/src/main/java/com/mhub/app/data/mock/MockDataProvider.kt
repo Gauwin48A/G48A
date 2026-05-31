@@ -562,12 +562,134 @@ object MockDataProvider {
 
     // ── Aggregated helpers ───────────────────────────────────────────────────
 
+    val vehiclesSubcategories = listOf(
+        MockSubcategory("v-cars",      "Cars",            "vehicles", img("car1"),       1240),
+        MockSubcategory("v-bikes",     "Bikes",           "vehicles", img("bike1"),      980),
+        MockSubcategory("v-scooters",  "Scooters",        "vehicles", img("scooter1"),   560),
+        MockSubcategory("v-trucks",    "Trucks & SUVs",   "vehicles", img("truck1"),     320),
+        MockSubcategory("v-parts",     "Auto Parts",      "vehicles", img("autopart1"),  740),
+        MockSubcategory("v-bicycle",   "Bicycles",        "vehicles", img("bicycle1"),   290),
+        MockSubcategory("v-electric",  "Electric Vehicles","vehicles",img("ev1"),        410),
+        MockSubcategory("v-rental",    "Rental Vehicles", "vehicles", img("rental1"),    180),
+    )
+
+    val vehiclesBanners = listOf(
+        HeroBanner("vb1", "Top Deals on Cars",      "Buy & sell certified pre-owned cars",       banner("car-ban"),     "vehicles"),
+        HeroBanner("vb2", "Bike Mela",              "Explore 100+ bikes from top brands",        banner("bike-ban"),    "vehicles"),
+        HeroBanner("vb3", "EV Revolution",          "Electric vehicles at affordable prices",    banner("ev-ban"),      "vehicles"),
+        HeroBanner("vb4", "Auto Parts Sale",        "Genuine spares & accessories — 20% off",   banner("parts-ban"),   "vehicles"),
+    )
+
+    val vehiclesProducts = listOf(
+        MockProduct(
+            id = "v1", title = "Maruti Suzuki Swift 2022", description = "Well-maintained petrol car, 18 km/l mileage, single owner.",
+            price = 650000.0, originalPrice = 720000.0, imageUrl = img("swift1"), images = listOf(img("swift1"), img("swift2")),
+            category = "vehicles", subcategory = "v-cars", brand = "Maruti", rating = 4.3f, reviewCount = 42,
+            colors = listOf("White", "Red"), sizes = emptyList(), inStock = true, condition = "Used",
+            specs = mapOf("Year" to "2022", "Mileage" to "28000 km", "Fuel" to "Petrol", "Transmission" to "Manual"),
+            deliveryDays = 0, freeShipping = false, isTrending = true, isNewArrival = false, isDeal = true,
+        ),
+        MockProduct(
+            id = "v2", title = "Royal Enfield Classic 350", description = "2021 model, ABS, all accessories, excellent condition.",
+            price = 165000.0, originalPrice = 180000.0, imageUrl = img("re350_1"), images = listOf(img("re350_1")),
+            category = "vehicles", subcategory = "v-bikes", brand = "Royal Enfield", rating = 4.5f, reviewCount = 78,
+            colors = listOf("Gunmetal Grey"), sizes = emptyList(), inStock = true, condition = "Used",
+            specs = mapOf("Year" to "2021", "Mileage" to "12000 km", "Fuel" to "Petrol", "Engine" to "349cc"),
+            deliveryDays = 0, freeShipping = false, isTrending = true, isNewArrival = false, isDeal = false,
+        ),
+        MockProduct(
+            id = "v3", title = "Honda Activa 6G", description = "2023 model, barely used, 55 km/l, with full service record.",
+            price = 72000.0, originalPrice = 80000.0, imageUrl = img("activa1"), images = listOf(img("activa1")),
+            category = "vehicles", subcategory = "v-scooters", brand = "Honda", rating = 4.4f, reviewCount = 55,
+            colors = listOf("Pearl Precious White"), sizes = emptyList(), inStock = true, condition = "Used",
+            specs = mapOf("Year" to "2023", "Mileage" to "3500 km", "Fuel" to "Petrol"),
+            deliveryDays = 0, freeShipping = false, isTrending = false, isNewArrival = true, isDeal = true,
+        ),
+        MockProduct(
+            id = "v4", title = "Tata Nexon EV 2023", description = "Electric SUV, 312 km range, fully loaded XZ+ trim.",
+            price = 1450000.0, originalPrice = 1600000.0, imageUrl = img("nexonev1"), images = listOf(img("nexonev1")),
+            category = "vehicles", subcategory = "v-electric", brand = "Tata", rating = 4.6f, reviewCount = 29,
+            colors = listOf("Calgary White"), sizes = emptyList(), inStock = true, condition = "Used",
+            specs = mapOf("Year" to "2023", "Range" to "312 km", "Mileage" to "8000 km", "Transmission" to "Automatic"),
+            deliveryDays = 0, freeShipping = false, isTrending = true, isNewArrival = true, isDeal = false,
+        ),
+        MockProduct(
+            id = "v5", title = "Shimano Mountain Bike", description = "21-speed gear, dual disc brakes, lightweight frame.",
+            price = 18500.0, originalPrice = 22000.0, imageUrl = img("mtb1"), images = listOf(img("mtb1")),
+            category = "vehicles", subcategory = "v-bicycle", brand = "Shimano", rating = 4.2f, reviewCount = 34,
+            colors = listOf("Black/Green"), sizes = listOf("26 inch", "29 inch"), inStock = true, condition = "New",
+            specs = mapOf("Gears" to "21-Speed", "Frame" to "Aluminium", "Brakes" to "Disc"),
+            deliveryDays = 5, freeShipping = true, isTrending = false, isNewArrival = true, isDeal = true,
+        ),
+    )
+
+    val othersSubcategories = listOf(
+        MockSubcategory("o-books",     "Books & Stationery", "others", img("books1"),   540),
+        MockSubcategory("o-sports",    "Sports & Fitness",   "others", img("sports1"),  670),
+        MockSubcategory("o-toys",      "Toys & Games",       "others", img("toys1"),    420),
+        MockSubcategory("o-music",     "Musical Instruments","others", img("music1"),   290),
+        MockSubcategory("o-art",       "Art & Craft",        "others", img("art1"),     210),
+        MockSubcategory("o-travel",    "Travel Accessories", "others", img("travel1"),  380),
+        MockSubcategory("o-pet",       "Pet Supplies",       "others", img("pet1"),     310),
+        MockSubcategory("o-health",    "Health & Wellness",  "others", img("health1"),  480),
+    )
+
+    val othersBanners = listOf(
+        HeroBanner("ob1", "Book Fair",       "Thousands of books at flat Rs.99",           banner("book-ban"),   "others"),
+        HeroBanner("ob2", "Sports Bonanza",  "Fitness equipment at never before prices",   banner("sport-ban"),  "others"),
+        HeroBanner("ob3", "Toy Fiesta",      "Learning toys for kids of all ages",          banner("toy-ban"),    "others"),
+        HeroBanner("ob4", "Pet Corner",      "Everything your furry friend needs",          banner("pet-ban"),    "others"),
+    )
+
+    val othersProducts = listOf(
+        MockProduct(
+            id = "oth1", title = "Yoga Mat Premium", description = "6mm thick non-slip yoga mat with carry strap, eco-friendly material.",
+            price = 899.0, originalPrice = 1299.0, imageUrl = img("yogamat1"), images = listOf(img("yogamat1")),
+            category = "others", subcategory = "o-sports", brand = "Decathlon", rating = 4.5f, reviewCount = 120,
+            colors = listOf("Purple", "Blue", "Black"), sizes = emptyList(), inStock = true, condition = "New",
+            specs = mapOf("Thickness" to "6mm", "Material" to "NBR Foam", "Size" to "183x61 cm"),
+            deliveryDays = 3, freeShipping = true, isTrending = true, isNewArrival = false, isDeal = true,
+        ),
+        MockProduct(
+            id = "oth2", title = "Casio SA-78 Mini Keyboard", description = "44 mini keys, 100 tones, 50 rhythms, battery powered.",
+            price = 2499.0, originalPrice = 3200.0, imageUrl = img("keyboard1"), images = listOf(img("keyboard1")),
+            category = "others", subcategory = "o-music", brand = "Casio", rating = 4.3f, reviewCount = 67,
+            colors = listOf("White"), sizes = emptyList(), inStock = true, condition = "New",
+            specs = mapOf("Keys" to "44", "Tones" to "100", "Rhythms" to "50", "Power" to "Battery/Adapter"),
+            deliveryDays = 4, freeShipping = false, isTrending = false, isNewArrival = true, isDeal = true,
+        ),
+        MockProduct(
+            id = "oth3", title = "LEGO Classic Bricks Set", description = "790-piece creative building blocks set for ages 4+.",
+            price = 1899.0, originalPrice = 2499.0, imageUrl = img("lego1"), images = listOf(img("lego1")),
+            category = "others", subcategory = "o-toys", brand = "LEGO", rating = 4.8f, reviewCount = 215,
+            colors = listOf("Multicolor"), sizes = emptyList(), inStock = true, condition = "New",
+            specs = mapOf("Pieces" to "790", "Age" to "4+", "Theme" to "Classic"),
+            deliveryDays = 3, freeShipping = true, isTrending = true, isNewArrival = false, isDeal = false,
+        ),
+        MockProduct(
+            id = "oth4", title = "Travel Neck Pillow", description = "Memory foam U-shaped travel pillow with snap button strap.",
+            price = 599.0, originalPrice = 899.0, imageUrl = img("neckpillow1"), images = listOf(img("neckpillow1")),
+            category = "others", subcategory = "o-travel", brand = "Generic", rating = 4.1f, reviewCount = 89,
+            colors = listOf("Grey", "Blue"), sizes = emptyList(), inStock = true, condition = "New",
+            specs = mapOf("Material" to "Memory Foam", "Weight" to "180g"),
+            deliveryDays = 2, freeShipping = true, isTrending = false, isNewArrival = false, isDeal = true,
+        ),
+        MockProduct(
+            id = "oth5", title = "Dog Harness Adjustable", description = "No-pull adjustable harness for medium dogs, reflective strap.",
+            price = 749.0, originalPrice = 999.0, imageUrl = img("dogharness1"), images = listOf(img("dogharness1")),
+            category = "others", subcategory = "o-pet", brand = "PetSafe", rating = 4.4f, reviewCount = 43,
+            colors = listOf("Red", "Blue"), sizes = listOf("S", "M", "L"), inStock = true, condition = "New",
+            specs = mapOf("Size" to "M", "Material" to "Nylon", "Feature" to "No-Pull"),
+            deliveryDays = 3, freeShipping = false, isTrending = false, isNewArrival = true, isDeal = false,
+        ),
+    )
+
     val allProducts: List<MockProduct> get() =
-        electronicsProducts + fashionProducts + groceryProducts + furnitureProducts
+        electronicsProducts + fashionProducts + groceryProducts + furnitureProducts + vehiclesProducts + othersProducts
 
     private fun resolveCategory(categoryKey: String): String = when (categoryKey) {
-        "vehicles" -> "grocery"   // vehicles uses grocery mock data
-        "others"   -> "furniture" // others uses furniture mock data
+        "vehicles" -> "vehicles"
+        "others"   -> "others"
         else -> categoryKey
     }
 
@@ -582,6 +704,8 @@ object MockDataProvider {
         "fashion"     -> fashionSubcategories
         "grocery"     -> grocerySubcategories
         "furniture"   -> furnitureSubcategories
+        "vehicles"    -> vehiclesSubcategories
+        "others"      -> othersSubcategories
         else          -> emptyList()
     }
 
@@ -590,6 +714,8 @@ object MockDataProvider {
         "fashion"     -> fashionBanners
         "grocery"     -> groceryBanners
         "furniture"   -> furnitureBanners
+        "vehicles"    -> vehiclesBanners
+        "others"      -> othersBanners
         else          -> emptyList()
     }
 

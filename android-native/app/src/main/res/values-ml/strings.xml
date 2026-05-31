@@ -1415,4 +1415,12 @@
     <string name="wishlist_empty">Your wishlist is empty.</string>
     <string name="plans_advanced">വിപുലമായ</string>
     <string name="plans_full">പൂർണ്ണ</string>
+    <string name="settings_show_less">കുറച്ച് കാണിക്കുക</string>
+    <string name="settings_show_all_languages">എല്ലാ 25 ഭാഷകളും കാണിക്കുക →</string>
+    <string name="commerce_sale_verification_label">വിൽപ്പന സ്ഥിരീകരണം</string>
+    <string name="commerce_sale_confirmation_title">വിൽപ്പന സ്ഥിരീകരണം</string>
+    <string name="commerce_sale_confirmation_subtitle">വാങ്ങുന്നയാളുടെ OTP, ഇടപാട് ID ഉപയോഗിച്ച് വിൽപ്പന സ്ഥിരീകരിക്കുക.</string>
+    <string name="commerce_badge_secure">🔒 സുരക്ഷിതം</string>
+    <string name="commerce_badge_rewarded">✓ പ്രതിഫലം</string>
+    <string name="commerce_badge_verified">📋 സ്ഥിരീകരിച്ചു</string>
 </resources>

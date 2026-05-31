@@ -307,7 +307,7 @@ fun MoreScreen(
                         Spacer(Modifier.height(6.dp))
                         val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
                         var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
-                        val langs = listOf("en" to "English", "hi" to "à¤¹à¤¿à¤¨à¥à¤¦à¥€", "te" to "à°¤à±†à°²à±à°—à±", "ta" to "à®¤à®®à®¿à®´à¯", "kn" to "à²•à²¨à³à²¨à²¡", "mr" to "à¤®à¤°à¤¾à¤ à¥€", "bn" to "à¦¬à¦¾à¦‚à¦²à¦¾", "gu" to "àª—à«àªœàª°àª¾àª¤à«€")
+                        val langs = listOf("en" to "English", "hi" to "हिनà¥दà¥€", "te" to "తà±†లà±à°—à±", "ta" to "தமிழà¯", "kn" to "à²•ನà³ನಡ", "mr" to "मराठà¥€", "bn" to "বাà¦‚লা", "gu" to "àª—à«àªœરાતà«€")
                         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             langs.forEach { (code, label) ->
                                 FilterChip(

@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -66,6 +65,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items as lazyItems
+import androidx.compose.ui.res.stringResource
+import com.mhub.app.R
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -152,6 +166,8 @@ fun ProductListingScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
+    val compareItems = vmState.compareItems
+    var showCompareDialog by remember { mutableStateOf(false) }
 
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -217,7 +233,8 @@ fun ProductListingScreen(
     }
 
     Scaffold { innerPad ->
-        Column(modifier = Modifier.padding(innerPad).fillMaxSize()) {
+        Box(modifier = Modifier.padding(innerPad).fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             // ── Great Deals Banner ───────────────────────────────────────
             var showDealsBanner by remember { mutableStateOf(true) }
@@ -235,7 +252,7 @@ fun ProductListingScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "🔥 Great Deals",
+                                "� Great Deals",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -442,7 +459,7 @@ fun ProductListingScreen(
                     // Empty state
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("😕", style = MaterialTheme.typography.displayMedium)
+                            Text("�", style = MaterialTheme.typography.displayMedium)
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 "No products found",
@@ -473,21 +490,116 @@ fun ProductListingScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(filteredProducts, key = { it.id }) { product ->
-                            EnhancedProductCard(
-                                product = product,
-                                isWishlisted = wishlistedIds.value.contains(product.id),
-                                onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { /* cart via parent */ },
-                                onToggleWishlist = {
-                                    wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
-                                        wishlistedIds.value - product.id
-                                    else wishlistedIds.value + product.id
-                                },
-                            )
+                            val isInCompare = compareItems.any { it.id == product.id }
+                            Box {
+                                EnhancedProductCard(
+                                    product = product,
+                                    isWishlisted = wishlistedIds.value.contains(product.id),
+                                    onTap = { onOpenProduct(product.id) },
+                                    onAddToCart = { /* cart via parent */ },
+                                    onToggleWishlist = {
+                                        wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
+                                            wishlistedIds.value - product.id
+                                        else wishlistedIds.value + product.id
+                                    },
+                                )
+                                // Compare checkbox overlay
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(6.dp)
+                                        .clickable { viewModel.toggleCompare(product) },
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (isInCompare) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    ) {
+                                        Checkbox(
+                                            checked = isInCompare,
+                                            onCheckedChange = { viewModel.toggleCompare(product) },
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Text(
+                                            "Compare",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isInCompare) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // ── Compare Tray ─────────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = compareItems.isNotEmpty(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Compare (${compareItems.size}/4)",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.clearCompare() }) { Text("Clear") }
+                        if (compareItems.size >= 2) {
+                            ElevatedButton(onClick = { showCompareDialog = true }) {
+                                Icon(Icons.Filled.Compare, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Compare Now")
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        compareItems.forEach { item ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(
+                                        item.title.take(18),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    IconButton(
+                                        onClick = { viewModel.toggleCompare(item) },
+                                        modifier = Modifier.size(16.dp),
+                                    ) {
+                                        Icon(Icons.Filled.Close, "Remove ${item.title}", modifier = Modifier.size(12.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Compare Dialog ────────────────────────────────────────────────────
+        if (showCompareDialog && compareItems.size >= 2) {
+            CompareProductsDialog(products = compareItems, onDismiss = { showCompareDialog = false })
         }
 
         // ── Filter bottom sheet ─────────────────────────────────────────────
@@ -596,6 +708,127 @@ fun ProductListingScreen(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
                         Text("Apply Filters (${filteredProducts.size} results)")
+                    }
+                }
+            }
+        }
+        } // Box
+    }
+}
+
+@Composable
+private fun CompareProductsDialog(
+    products: List<MockDataProvider.MockProduct>,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.97f)
+                .fillMaxHeight(0.85f),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp,
+        ) {
+            Column {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Compare, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Compare Products",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, "Close", tint = MaterialTheme.colorScheme.onPrimary)
+                    }
+                }
+                // Table
+                val attrs = listOf("Price", "Brand", "Condition", "Rating", "In Stock", "Delivery")
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    // Product headers row
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant)) {
+                            Spacer(Modifier.width(100.dp))
+                            products.forEach { p ->
+                                Text(
+                                    p.title.take(20),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    modifier = Modifier.weight(1f).padding(8.dp),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                        HorizontalDivider()
+                    }
+                    // Attribute rows
+                    lazyItems(attrs) { attr ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                attr,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                modifier = Modifier.width(100.dp).padding(8.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            products.forEach { p ->
+                                val value = when (attr) {
+                                    "Price"     -> "₹${p.price.toInt()}"
+                                    "Brand"     -> p.brand.ifBlank { "—" }
+                                    "Condition" -> p.condition
+                                    "Rating"    -> "%.1f ★".format(p.rating)
+                                    "In Stock"  -> if (p.inStock) "✓ Yes" else "✗ No"
+                                    "Delivery"  -> "${p.deliveryDays} days"
+                                    else        -> "—"
+                                }
+                                Text(
+                                    value,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f).padding(8.dp),
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                    // Specs rows from first product
+                    val allSpecKeys = products.flatMap { it.specs.keys }.distinct()
+                    lazyItems(allSpecKeys) { key ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                key,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                modifier = Modifier.width(100.dp).padding(8.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            products.forEach { p ->
+                                Text(
+                                    p.specs[key] ?: "—",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f).padding(8.dp),
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
             }

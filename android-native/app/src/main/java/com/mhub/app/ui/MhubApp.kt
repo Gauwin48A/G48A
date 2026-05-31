@@ -309,18 +309,25 @@ fun MhubApp(
         var wasAuthenticated by remember { mutableStateOf(isAuthenticated) }
         LaunchedEffect(isAuthenticated) {
             if (!isAuthenticated && wasAuthenticated && !guestBrowsing) {
-                // User was authenticated but now isn't → explicit logout
-                val currentRoute = navController.currentDestination?.route
-                if (currentRoute != null && !currentRoute.startsWith("auth")) {
-                    navController.navigate(Routes.AUTH_GRAPH) {
-                        popUpTo(0) { inclusive = true }
+                // Wait briefly to allow TokenRefreshAuthenticator to complete
+                // a token refresh before forcing the user to the login screen.
+                kotlinx.coroutines.delay(2000)
+                // Re-check: if still unauthenticated AND no session, force re-login
+                if (!authViewModel.isAuthenticated.value && !authViewModel.hasSession) {
+                    val currentRoute = navController.currentDestination?.route
+                    if (currentRoute != null && !currentRoute.startsWith("auth")) {
+                        navController.navigate(Routes.AUTH_GRAPH) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 }
             }
             wasAuthenticated = isAuthenticated
         }
 
-        val startDestination = if (isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
+        // Use hasSession so users with an expired-but-refreshable token start on the main
+        // graph where the first API call triggers the OkHttp token refresh flow.
+        val startDestination = if (authViewModel.hasSession || isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Offline banner shown above all content
@@ -457,7 +464,7 @@ fun MhubApp(
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                            isGuest = false,
+                            isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )
                     }
@@ -616,7 +623,7 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     com.mhub.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenCategory = { catKey -> navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true } },
+                        onOpenCategory = { catKey -> navController.navigate(Routes.categoryDetail(catKey)) { launchSingleTop = true } },
                     )
                 }
             }
@@ -686,8 +693,8 @@ fun MhubApp(
                     onBack = { navController.popBackStack() },
                     onSelectApp = { appKey ->
                         if (appKey.isNotBlank()) {
-                            navController.navigate("${Routes.ALL_POSTS}?category_group=${appKey}") {
-                                popUpTo(Routes.CATEGORY_MODE)
+                            navController.navigate(Routes.categoryDetail(appKey)) {
+                                popUpTo(Routes.CATEGORY_MODE) { inclusive = true }
                             }
                         } else {
                             navController.popBackStack()

@@ -103,12 +103,15 @@ fun CreatePostScreen(
     var categoryQuery by rememberSaveable { mutableStateOf("") }
     var showDuplicateWarning by remember { mutableStateOf(false) }
 
+    var draftSavedAt by remember { mutableStateOf(0L) }
+
     // Auto-save draft every 10 seconds
     LaunchedEffect(title, description, priceText) {
         while (isActive) {
             delay(10_000)
             if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank()) {
                 viewModel.saveDraft(title, description, priceText)
+                draftSavedAt = System.currentTimeMillis()
             }
         }
     }
@@ -152,7 +155,20 @@ fun CreatePostScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.post_create_title), fontWeight = FontWeight.Bold) },
+                title = {
+                    Column {
+                        Text(stringResource(R.string.post_create_title), fontWeight = FontWeight.Bold)
+                        if (draftSavedAt > 0L) {
+                            androidx.compose.animation.AnimatedVisibility(visible = true) {
+                                Text(
+                                    text = "Draft saved",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

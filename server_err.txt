@@ -1,0 +1,58 @@
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=655.07 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=0f194ec7-aae7-45f3-8798-4fdeb699349f
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=558.39 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=d8ee52c0-7c24-4c05-bf6f-27ce2d1e64d0
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=476.93 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=4c000532-9894-4817-8abe-85905dae7359
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=474.6 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=33b2b122-a2ce-41e9-9bed-67ee3d900b49
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=528.36 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=6b609844-10f2-4094-a4b6-ae3b3db495bd
+[RuntimeBudget] level=warn method=POST path=/api/auth/login status=200 latency_ms=765.86 latency_budget_ms=350 latency_breached=true egress_bytes=492 egress_budget_bytes=131072 egress_breached=false correlation_id=f1041cd8-800b-4eae-8791-ec1aa63ae8c4
+[RuntimeBudget] level=warn method=GET path=/api/feed?page=1&limit=20 status=200 latency_ms=695.84 latency_budget_ms=220 latency_breached=true egress_bytes=unknown egress_budget_bytes=131072 egress_breached=false correlation_id=aa4d234f-a468-4548-8e9c-5ac78325b726
+[2026-05-30T18:14:44.800Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sat May 30 2026 23:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-30T18:14:44.949Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sat May 30 2026 23:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:27.785Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 00:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.179Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 06:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.622Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 00:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.665Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 01:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.699Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 02:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.741Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 03:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.844Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 04:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.878Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 05:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.889Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 06:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.898Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 07:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.904Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 08:00:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.940Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 00:20:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.955Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 02:20:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.967Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 04:20:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.979Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 06:20:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:28.993Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 08:20:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.035Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 00:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.049Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 01:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.057Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 02:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.065Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 03:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.078Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 04:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.099Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 05:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.108Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 06:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.117Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 07:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[2026-05-31T03:05:29.142Z] [PID: 40084] [32m[NODE-CRON][32m [33m[WARN][0m missed execution at Sun May 31 2026 08:30:00 GMT+0530 (India Standard Time)! Possible blocking IO or high CPU user at the same process used by node-cron.
+[RuntimeBudget] level=warn method=GET path=/api/categories status=304 latency_ms=339.42 latency_budget_ms=220 latency_breached=true egress_bytes=unknown egress_budget_bytes=131072 egress_breached=false correlation_id=d1723815-907d-42a1-b82f-c78a4782dfe0
+[CRON] Expiry warning error: error: column n.reference_id does not exist
+    at C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async sendExpiryWarnings (C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\server\src\jobs\cronJobs.js:214:22)
+    at async Timeout._onTimeout (C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\server\node_modules\node-cron\dist\cjs\scheduler\runner.js:70:44) {
+  length: 113,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '366',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3721',
+  routine: 'errorMissingColumn'
+}

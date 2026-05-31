@@ -282,7 +282,7 @@ fun MyPostsScreen(
     promoteTarget?.let { post ->
         AlertDialog(
             onDismissRequest = { promoteTarget = null },
-            title = { Text("🚀 Promote Listing", fontWeight = FontWeight.Bold) },
+            title = { Text("� Promote Listing", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = Color(0xFF374151))
@@ -290,14 +290,14 @@ fun MyPostsScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("🪙 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
+                                Text("� 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
                                 Text("24 hours", fontSize = 12.sp, color = Color(0xFF064E3B))
                                 Text("Standard boost", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
                         }
                         Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("🪙 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
+                                Text("� 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
                                 Text("7 days", fontSize = 12.sp, color = Color(0xFF78350F))
                                 Text("Featured boost", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
@@ -465,7 +465,8 @@ fun MyPostsScreen(
                         item {
                             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val boughtCount = state.boughtItems.size
-                                val filters = listOf(null to "All (${allItems.size})", "active" to "Active ($activeCount)", "sold" to "Sold ($soldCount)", "bought" to "Bought ($boughtCount)")
+                                val draftCount = allItems.count { it.status?.lowercase() == "draft" }
+                                val filters = listOf(null to "All (${allItems.size})", "active" to "Active ($activeCount)", "sold" to "Sold ($soldCount)", "bought" to "Bought ($boughtCount)", "draft" to "Drafts ($draftCount)")
                                 items(filters, key = { it.first ?: "all" }) { (key, label) ->
                                     FilterChip(
                                         selected = state.statusFilter == key,

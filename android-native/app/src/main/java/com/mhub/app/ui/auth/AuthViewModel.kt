@@ -59,6 +59,21 @@ class AuthViewModel @Inject constructor(
     val isAuthenticated: StateFlow<Boolean> =
         repo.isAuthenticated.stateIn(viewModelScope, SharingStarted.Eagerly, repo.isCurrentlyAuthenticated)
 
+    /** True if a token string is present (regardless of expiry). Used for startDestination. */
+    val hasSession: Boolean get() = repo.hasSession
+
+    init {
+        // On startup, if a session exists but the access token is expired, proactively refresh.
+        // This prevents the app from landing on the login screen just because a short-lived
+        // access token expired while the app was in the background.
+        if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
+            viewModelScope.launch {
+                repo.tryRefreshToken()
+                // isAuthenticated flow will auto-update when tokenStore.accessToken changes
+            }
+        }
+    }
+
     val isAdmin: StateFlow<Boolean> =
         repo.accessTokenFlow.map { token ->
             val role = JwtHelper.extractClaim(token, "role")
@@ -129,22 +144,24 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState()
     }
 
-    /** Quick demo login — bypasses validation, uses hardcoded test credentials.
-     *  Falls back to offline JWT if server is unreachable. */
+    fun verifyLoginOtp(phone: String, otp: String) {
+        if (_state.value.loading) return
+        if (otp.length != 6) { _state.value = _state.value.copy(error = "Enter 6-digit OTP"); return }
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (val res = repo.verifyLoginOtp(phone, otp)) {
+                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = res.error.message)
+            }
+        }
+    }
+
+    /** Quick demo login — uses hardcoded test credentials. Fails with error if server unreachable. */
     fun demoLogin() {
         if (_state.value.loading) return
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             Log.d(TAG, "demoLogin invoked")
-
-            // Quick server reachability check (3s timeout) to avoid long waits
-            val serverReachable = repo.isServerReachable()
-            if (!serverReachable) {
-                Log.d(TAG, "demoLogin: server unreachable, using offline session")
-                repo.createOfflineDemoSession()
-                _state.value = AuthUiState(loading = false, success = true)
-                return@launch
-            }
 
             // Try real server credentials first
             for (credential in demoCredentialCandidates) {
@@ -171,32 +188,8 @@ class AuthViewModel @Inject constructor(
                 }
             }
 
-            // Try signup as fallback
-            val seed = (System.currentTimeMillis() % 1_000_000_000L).toString().padStart(9, '0')
-            val demoPhone = "9$seed"
-            val demoEmail = "android.demo.$seed@mhub.local"
-            val demoPassword = "DemoPass123!"
-
-            when (val signUpRes = repo.signUp(
-                fullName = "Android Demo User",
-                email = demoEmail,
-                phone = demoPhone,
-                password = demoPassword,
-            )) {
-                is ApiResult.Success -> {
-                    Log.d(TAG, "demoLogin auto-signup success for $demoEmail")
-                    _state.value = AuthUiState(loading = false, success = true)
-                    return@launch
-                }
-                is ApiResult.Failure -> {
-                    Log.w(TAG, "demoLogin signup also failed, using offline session: ${signUpRes.error.message}")
-                }
-            }
-
-            // Offline fallback: generate a local JWT so the user can browse the app
-            Log.d(TAG, "demoLogin creating offline demo session")
-            repo.createOfflineDemoSession()
-            _state.value = AuthUiState(loading = false, success = true)
+            // All credentials failed — show the actual error
+            _state.value = AuthUiState(loading = false, error = "Cannot connect to server. Please check your internet connection.")
         }
     }
 

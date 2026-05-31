@@ -195,7 +195,7 @@ fun CategoryHomeScreen(
             // ── Trending Products ───────────────────────────────────────────
             if (trending.isNotEmpty()) {
                 item(key = "trending_header") {
-                    SectionHeader(title = "🔥 Trending Now", onSeeAll = onOpenListing)
+                    SectionHeader(title = "� Trending Now", onSeeAll = onOpenListing)
                     Spacer(Modifier.height(8.dp))
                 }
                 item(key = "trending_row") {

@@ -41,12 +41,18 @@ interface MhubApi {
     @POST("api/auth/logout")
     suspend fun logout(): MessageResponse
 
+    @POST("api/auth/refresh-token")
+    suspend fun refreshToken(@Body body: RefreshTokenRequest): AuthResponse
+
     @GET("api/auth/me")
     suspend fun me(): User
 
     // ---- Auth extended (OTP/2FA/Aadhaar) ----
     @POST("api/auth/send-otp")
     suspend fun sendOtp(@Body body: SendOtpRequest): MessageResponse
+
+    @POST("api/auth/verify-otp")
+    suspend fun verifyOtp(@Body body: VerifyOtpRequest): AuthResponse
 
     @POST("api/auth/aadhaar/send-otp")
     suspend fun aadhaarSendOtp(@Body body: AadhaarSendOtpRequest): AadhaarOtpResponse
@@ -345,19 +351,21 @@ interface MhubApi {
     ): MessageResponse
 
     // ---- Feed / Social ----
+    // Server returns a raw JSON array — use List<FeedItem> directly.
     @GET("api/feed")
     suspend fun feed(
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20,
-    ): FeedResponse
+    ): List<FeedItem>
 
     @GET("api/feed/{id}")
     suspend fun feedDetail(@Path("id") id: String): FeedItem
 
+    // My-feed server also returns a raw array or {posts:[...]} — wrap defensively
     @GET("api/feed/my")
     suspend fun myFeed(
         @Query("page") page: Int = 1,
-    ): FeedResponse
+    ): List<FeedItem>
 
     @POST("api/feed")
     suspend fun createFeedPost(@Body body: CreateFeedRequest): IdResponse

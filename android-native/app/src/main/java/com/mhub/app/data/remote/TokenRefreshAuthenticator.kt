@@ -78,6 +78,9 @@ class TokenRefreshAuthenticator(
             val refreshToken = tokenStore.refreshTokenImmediate()
             if (refreshToken.isNullOrBlank()) {
                 AppLogger.authTokenRefresh(false)
+                // No refresh token available and we have a 401 — the session is unrecoverable.
+                // Clear the stale access token so isAuthenticated emits false and the app
+                // navigates to the login screen instead of silently failing on every API call.
                 tokenStore.clearImmediate()
                 lastRefreshResult = null
                 return null
@@ -127,10 +130,14 @@ class TokenRefreshAuthenticator(
             if (response.isSuccessful) {
                 val responseBody = response.body?.string() ?: return null
                 json.decodeFromString<RefreshResult>(responseBody)
-            } else {
-                // Server explicitly rejected refresh — clear tokens to force re-login
+            } else if (response.code == 401 || response.code == 403) {
+                // Server explicitly rejected the refresh token — clear tokens to force re-login
                 AppLogger.apiError(REFRESH_PATH, "Refresh rejected: HTTP ${response.code}")
                 tokenStore.clearImmediate()
+                null
+            } else {
+                // Server error (4xx other than 401/403, or 5xx) — transient, don't clear tokens
+                AppLogger.apiError(REFRESH_PATH, "Refresh failed: HTTP ${response.code}")
                 null
             }
         } catch (e: Exception) {

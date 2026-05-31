@@ -2495,7 +2495,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.saved_searches_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
-                    if (state.searches.isNotEmpty()) Text("${state.searches.size} searches Â· get notified on new matches", fontSize = 11.sp, color = Color(0xFF64748B))
+                    if (state.searches.isNotEmpty()) Text("${state.searches.size} searches · get notified on new matches", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
                 IconButton(onClick = { viewModel.toggleCreateForm() }, modifier = Modifier.size(36.dp)) {
                     Icon(if (state.showCreateForm) Icons.Filled.Close else Icons.Filled.Add, null, tint = Color(0xFF2563EB))
@@ -3047,16 +3047,20 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     .background(Brush.horizontalGradient(listOf(Color(0xFF16A34A), Color(0xFF059669), Color(0xFF0D9488)))),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("SALE VERIFICATION", fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White.copy(alpha = 0.7f))
+                    Text(stringResource(R.string.commerce_sale_verification_label), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White.copy(alpha = 0.7f))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
-                        Text("Sale Confirmation", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
+                        Text(stringResource(R.string.commerce_sale_confirmation_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
                     }
-                    Text("Confirm a sale with buyer OTP & transaction ID.", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                    Text(stringResource(R.string.commerce_sale_confirmation_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("ðŸ”’ Secure", "âœ“ Rewarded", "ðŸ“‹ Verified").forEach { badge ->
+                        listOf(
+                            stringResource(R.string.commerce_badge_secure),
+                            stringResource(R.string.commerce_badge_rewarded),
+                            stringResource(R.string.commerce_badge_verified),
+                        ).forEach { badge ->
                             Surface(shape = RoundedCornerShape(8.dp), color = Color.White.copy(alpha = 0.15f)) {
                                 Text(badge, fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                             }
@@ -3285,7 +3289,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                                 item.categoryName?.let { cat ->
                                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                         Text(cat, fontSize = 11.sp, color = Color(0xFF64748B))
-                                                        item.subcategoryName?.let { sub -> Text("Â· $sub", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                        item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = Color(0xFF64748B)) }
                                                     }
                                                 }
                                                 item.location?.let { Text("ðŸ“ $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
@@ -3589,8 +3593,9 @@ class SaleUndoneViewModel @Inject constructor(private val repo: TransactionsRepo
         val s = _state.value
         // Post ID validation (web parity: alphanumeric + dashes only)
         val sanitized = s.postId.replace(Regex("[^a-zA-Z0-9\\-]"), "")
-        if (sanitized.isBlank() || s.reason.isBlank()) { _state.value = s.copy(error = "Post ID and reason are required"); return }
-        if (s.reason == "other" && s.description.isBlank()) { _state.value = s.copy(error = "Description required for 'Other' reason"); return }
+        if (sanitized.isBlank()) { _state.value = s.copy(error = "Post ID is required"); return }
+        // Description required only when reason === "other" (web parity: SaleUndone.jsx)
+        if (s.reason == "other" && s.description.isBlank()) { _state.value = s.copy(error = "Please add a short note for this reason"); return }
         if (s.description.isNotBlank() && s.description.length < 20) { _state.value = s.copy(error = "Description must be at least 20 characters"); return }
         _state.value = s.copy(postId = sanitized, loading = true, error = null)
         viewModelScope.launch {
@@ -3779,6 +3784,11 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false },
                             ) {
+                                // Web parity: first option is empty (optional)
+                                DropdownMenuItem(
+                                    text = { Text("Select reason (optional)", color = Color(0xFF9CA3AF)) },
+                                    onClick = { viewModel.setReason(""); expanded = false },
+                                )
                                 viewModel.getReasons().forEach { r ->
                                     DropdownMenuItem(
                                         text = { Text(reasonLabels[r] ?: r.replace("_", " ").replaceFirstChar { it.uppercase() }) },
@@ -3788,13 +3798,22 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                             }
                         }
                     }
-                    // Description always shown (web parity â€” not just for 'other')
+                    // Web parity: description only required when reason == "other"
                     Column {
-                        MhubTextField(stringResource(R.string.commerce_field_description), state.description, viewModel::setDescription, maxLines = 5, minLines = 3)
+                        MhubTextField(
+                            label = if (state.reason == "other") "Description (required)" else "Description (optional)",
+                            value = state.description,
+                            onValueChange = viewModel::setDescription,
+                            maxLines = 5,
+                            minLines = 3,
+                        )
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            if (state.description.length < 20) Text("Minimum 20 characters required", fontSize = 11.sp, color = Color(0xFFEF4444))
-                            else Spacer(Modifier.weight(1f))
-                            Text("${state.description.length}/2000", fontSize = 11.sp, color = if (state.description.length < 20) Color(0xFFEF4444) else Color(0xFF94A3B8))
+                            if (state.reason == "other" && state.description.isNotBlank() && state.description.length < 20) {
+                                Text("Minimum 20 characters required", fontSize = 11.sp, color = Color(0xFFEF4444))
+                            } else {
+                                Spacer(Modifier.weight(1f))
+                            }
+                            Text("${state.description.length}/2000", fontSize = 11.sp, color = Color(0xFF94A3B8))
                         }
                     }
                     Button(onClick = { showConfirmDialog = true }, enabled = !state.loading,

@@ -1415,4 +1415,12 @@
     <string name="wishlist_empty">Your wishlist is empty.</string>
     <string name="plans_advanced">ਉੱਨਤ</string>
     <string name="plans_full">ਪੂਰਾ</string>
+    <string name="settings_show_less">ਘੱਟ ਦਿਖਾਓ</string>
+    <string name="settings_show_all_languages">ਸਾਰੀਆਂ 25 ਭਾਸ਼ਾਵਾਂ ਦਿਖਾਓ →</string>
+    <string name="commerce_sale_verification_label">ਵਿਕਰੀ ਤਸਦੀਕ</string>
+    <string name="commerce_sale_confirmation_title">ਵਿਕਰੀ ਪੁਸ਼ਟੀ</string>
+    <string name="commerce_sale_confirmation_subtitle">ਖਰੀਦਦਾਰ OTP ਅਤੇ ਟ੍ਰਾਂਜ਼ੈਕਸ਼ਨ ID ਨਾਲ ਵਿਕਰੀ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ।</string>
+    <string name="commerce_badge_secure">🔒 ਸੁਰੱਖਿਅਤ</string>
+    <string name="commerce_badge_rewarded">✓ ਇਨਾਮੀ</string>
+    <string name="commerce_badge_verified">📋 ਤਸਦੀਕ ਕੀਤਾ</string>
 </resources>

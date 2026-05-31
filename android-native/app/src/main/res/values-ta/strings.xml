@@ -1417,4 +1417,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">மேம்பட்ட</string>
     <string name="plans_full">முழு</string>
+    <string name="settings_show_less">குறைவாக காட்டு</string>
+    <string name="settings_show_all_languages">அனைத்து 25 மொழிகளையும் காட்டு →</string>
+    <string name="commerce_sale_verification_label">விற்பனை சரிபார்ப்பு</string>
+    <string name="commerce_sale_confirmation_title">விற்பனை உறுதிப்படுத்தல்</string>
+    <string name="commerce_sale_confirmation_subtitle">வாங்குபவர் OTP மற்றும் பரிவர்த்தனை ID உடன் விற்பனையை உறுதிப்படுத்தவும்.</string>
+    <string name="commerce_badge_secure">🔒 பாதுகாப்பானது</string>
+    <string name="commerce_badge_rewarded">✓ வெகுமதி</string>
+    <string name="commerce_badge_verified">📋 சரிபார்க்கப்பட்டது</string>
 </resources>

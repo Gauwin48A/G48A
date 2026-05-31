@@ -64,9 +64,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.Stable
 import javax.inject.Inject
+
+private val MOCK_FOR_YOU_POSTS: List<com.mhub.app.domain.model.Post> = listOf(
+    com.mhub.app.domain.model.Post(id = "fy_1", title = "iPhone 14 Pro Max 256GB", description = "Excellent condition, used for 6 months. Original box included. No scratches.", price = 82000.0, categoryName = "Electronics", condition = "Like New", city = "Mumbai", createdAt = "2024-01-15T10:00:00Z", likeCount = 45, viewCount = 890, sellerVerified = true),
+    com.mhub.app.domain.model.Post(id = "fy_2", title = "Royal Enfield Classic 350 2022", description = "Single owner, all service records available. Mileage: 12,000 km.", price = 165000.0, categoryName = "Vehicles", condition = "Good", city = "Bangalore", createdAt = "2024-01-14T09:00:00Z", likeCount = 78, viewCount = 1450),
+    com.mhub.app.domain.model.Post(id = "fy_3", title = "Wooden Study Table 4ft", description = "Solid wood table, 2 drawers, good for home office or kids study.", price = 4500.0, categoryName = "Furniture", condition = "Good", city = "Delhi", createdAt = "2024-01-13T14:00:00Z", likeCount = 23, viewCount = 340),
+    com.mhub.app.domain.model.Post(id = "fy_4", title = "HP Pavilion Laptop i5 11th Gen", description = "8GB RAM, 512GB SSD, Windows 11. Perfect for professionals and students.", price = 38000.0, categoryName = "Electronics", brand = "HP", condition = "Like New", city = "Hyderabad", createdAt = "2024-01-12T11:00:00Z", likeCount = 67, viewCount = 1200),
+    com.mhub.app.domain.model.Post(id = "fy_5", title = "Designer Saree Collection", description = "Set of 3 Banarasi silk sarees, worn once each for family events. Beautiful colors.", price = 8500.0, categoryName = "Fashion", condition = "Good", city = "Kolkata", createdAt = "2024-01-11T16:00:00Z", likeCount = 112, viewCount = 2300),
+    com.mhub.app.domain.model.Post(id = "fy_6", title = "Sony 43 inch 4K Smart TV", description = "2 year old, excellent picture quality. All smart features working. Original remote.", price = 22000.0, categoryName = "Electronics", brand = "Sony", condition = "Good", city = "Pune", createdAt = "2024-01-10T10:00:00Z", likeCount = 56, viewCount = 980),
+    com.mhub.app.domain.model.Post(id = "fy_7", title = "Honda Activa 6G 2023", description = "Only 5000 km driven. Insurance valid till 2025. All documents clear.", price = 68000.0, categoryName = "Vehicles", condition = "Like New", city = "Chennai", createdAt = "2024-01-09T13:00:00Z", likeCount = 89, viewCount = 1870),
+    com.mhub.app.domain.model.Post(id = "fy_8", title = "Yoga Mat Premium Anti-slip", description = "Thick 6mm NBR mat, perfect for home workouts. Used 3 times only.", price = 800.0, categoryName = "Others", condition = "Like New", city = "Ahmedabad", createdAt = "2024-01-08T08:00:00Z", likeCount = 34, viewCount = 560),
+)
 
 enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, POPULAR, TRENDING }
 enum class PageDensity { COMPACT, NORMAL, SPACIOUS }
@@ -169,7 +181,7 @@ class ForYouViewModel @Inject constructor(
         // Tier 3: general feed fallback
         return when (val f = postsRepo.feed(limit = 30)) {
             is ApiResult.Success -> f.data
-            is ApiResult.Failure -> emptyList()
+            is ApiResult.Failure -> MOCK_FOR_YOU_POSTS
         }
     }
 
@@ -265,7 +277,7 @@ fun ForYouScreen(
     var interestPostTitle by remember { mutableStateOf("") }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
-    var density by remember { mutableStateOf(PageDensity.NORMAL) }
+    var density by rememberSaveable { mutableStateOf(PageDensity.NORMAL) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var hiddenPostIds by remember { mutableStateOf(emptySet<String>()) }
 
@@ -437,10 +449,10 @@ fun ForYouScreen(
                                         Text("✨ AI Curated", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                     Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("📍 Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        Text("� Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                     Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("🔥 Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        Text("� Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                 }
                             }
@@ -477,7 +489,7 @@ fun ForYouScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "${displayed.size} items · ${categories.count { (catKey, catName) -> catKey == null || state.posts.any { p -> p.categoryName?.contains(catName, ignoreCase = true) == true } }} categories · 🟢 Live",
+                                "${displayed.size} items · ${categories.count { (catKey, catName) -> catKey == null || state.posts.any { p -> p.categoryName?.contains(catName, ignoreCase = true) == true } }} categories · � Live",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
@@ -485,14 +497,14 @@ fun ForYouScreen(
                             Box {
                                 val sortLabel = when (state.sortBy) {
                                     SortBy.RELEVANCE -> "✨ Relevance"
-                                    SortBy.PRICE_ASC -> "💰 Price ↑"
-                                    SortBy.PRICE_DESC -> "💰 Price ↓"
-                                    SortBy.NEWEST -> "🆕 Newest"
-                                    SortBy.POPULAR -> "🔥 Popular"
-                                    SortBy.TRENDING -> "📈 Trending"
+                                    SortBy.PRICE_ASC -> "� Price ↑"
+                                    SortBy.PRICE_DESC -> "� Price ↓"
+                                    SortBy.NEWEST -> "� Newest"
+                                    SortBy.POPULAR -> "� Popular"
+                                    SortBy.TRENDING -> "� Trending"
                                 }
                                 FilterChip(
-                                    selected = false,
+                                    selected = state.sortBy != SortBy.RELEVANCE,
                                     onClick = { sortMenuExpanded = true },
                                     label = { Text("Sort: $sortLabel", style = MaterialTheme.typography.labelSmall) },
                                     trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp)) }
@@ -500,11 +512,11 @@ fun ForYouScreen(
                                 DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
                                     listOf(
                                         SortBy.RELEVANCE to "✨ Relevance",
-                                        SortBy.PRICE_ASC to "💰 Price: Low to High",
-                                        SortBy.PRICE_DESC to "💰 Price: High to Low",
-                                        SortBy.NEWEST to "🆕 Newest First",
-                                        SortBy.POPULAR to "🔥 Most Popular",
-                                        SortBy.TRENDING to "📈 Trending",
+                                        SortBy.PRICE_ASC to "� Price: Low to High",
+                                        SortBy.PRICE_DESC to "� Price: High to Low",
+                                        SortBy.NEWEST to "� Newest First",
+                                        SortBy.POPULAR to "� Most Popular",
+                                        SortBy.TRENDING to "� Trending",
                                     ).forEach { (sort, label) ->
                                         DropdownMenuItem(
                                             text = { Text(label) },
@@ -790,7 +802,7 @@ fun ForYouScreen(
                     if (displayed.isNotEmpty()) {
                         item(key = "section_trending") {
                             AiSectionHeader(
-                                emoji = "📍",
+                                emoji = "�",
                                 title = "Trending Near You",
                                 subtitle = "Popular picks in your location",
                                 accentColor = Color(0xFF10B981),
@@ -806,7 +818,7 @@ fun ForYouScreen(
                         // Insert section headers at specific indices
                         if (index == 5 && displayed.size > 5) {
                             AiSectionHeader(
-                                emoji = "🆕",
+                                emoji = "�",
                                 title = "New Today",
                                 subtitle = "Just listed in the last 24 hours",
                                 accentColor = Color(0xFF6366F1),
@@ -815,7 +827,7 @@ fun ForYouScreen(
                         }
                         if (index == 10 && displayed.size > 10) {
                             AiSectionHeader(
-                                emoji = "🎯",
+                                emoji = "�",
                                 title = "Based on Your Browsing",
                                 subtitle = "AI-matched to your interests",
                                 accentColor = Color(0xFFF59E0B),

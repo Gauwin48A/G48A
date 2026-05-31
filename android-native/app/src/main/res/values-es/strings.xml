@@ -1438,4 +1438,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">Avanzado</string>
     <string name="plans_full">Completo</string>
+    <string name="settings_show_less">Mostrar menos</string>
+    <string name="settings_show_all_languages">Mostrar los 25 idiomas →</string>
+    <string name="commerce_sale_verification_label">Verificación de venta</string>
+    <string name="commerce_sale_confirmation_title">Confirmación de venta</string>
+    <string name="commerce_sale_confirmation_subtitle">Confirme una venta con el OTP del comprador e ID de transacción.</string>
+    <string name="commerce_badge_secure">🔒 Seguro</string>
+    <string name="commerce_badge_rewarded">✓ Recompensado</string>
+    <string name="commerce_badge_verified">📋 Verificado</string>
 </resources>

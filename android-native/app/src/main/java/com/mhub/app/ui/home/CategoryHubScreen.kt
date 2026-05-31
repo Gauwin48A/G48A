@@ -100,11 +100,11 @@ private data class AppDef(
 )
 
 private val APPS = listOf(
-    AppDef("electronics", "Electronics", "Phones, laptops & gadgets", "📱",
+    AppDef("electronics", "Electronics", "Phones, laptops & gadgets", "�",
         listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
     AppDef("fashion", "Fashion", "Clothing, shoes & accessories", "�",
         listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
-    AppDef("vehicles", "Vehicles", "Cars, bikes & spare parts", "🚗",
+    AppDef("vehicles", "Vehicles", "Cars, bikes & spare parts", "�",
         listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
     AppDef("others", "Others", "Home, services, jobs & more", "✨",
         listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
@@ -205,7 +205,7 @@ fun CategoryHubScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Welcome to MHub 👋", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("Welcome to MHub �", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                             Text(stringResource(R.string.hub_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
                         }
                         IconButton(onClick = onOpenNotifications) {
@@ -452,11 +452,11 @@ private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int, m
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            HubStat("🏪", if (totalListings > 0) formatCompact(totalListings) else "—", stringResource(R.string.hub_total_listings))
+            HubStat("�", if (totalListings > 0) formatCompact(totalListings) else "—", stringResource(R.string.hub_total_listings))
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("🔥", if (newToday > 0) "+$newToday" else "0", stringResource(R.string.hub_new_today))
+            HubStat("�", if (newToday > 0) "+$newToday" else "0", stringResource(R.string.hub_new_today))
             Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("📦", "$categoryCount", stringResource(R.string.categories))
+            HubStat("�", "$categoryCount", stringResource(R.string.categories))
         }
     }
 }
@@ -605,7 +605,7 @@ private fun PromoBanner(onOpenAllPosts: () -> Unit, modifier: Modifier = Modifie
                     modifier = Modifier.padding(bottom = 8.dp),
                 ) {
                     Text(
-                        "🔥  TRENDING NOW",
+                        "�  TRENDING NOW",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -636,7 +636,7 @@ private fun PromoBanner(onOpenAllPosts: () -> Unit, modifier: Modifier = Modifie
                     }
                 }
             }
-            Text("🛍️", fontSize = 64.sp, modifier = Modifier.padding(start = 8.dp))
+            Text("�️", fontSize = 64.sp, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
@@ -647,11 +647,11 @@ private data class QuickLink(val label: String, val emoji: String, val key: Stri
 
 private val QUICK_LINKS = listOf(
     QuickLink("Wishlist", "❤️", "wishlist", Color(0xFFEF4444)),
-    QuickLink("Offers", "🤝", "offers", Color(0xFF10B981)),
+    QuickLink("Offers", "�", "offers", Color(0xFF10B981)),
     QuickLink("Compare", "⚖️", "compare", Color(0xFF6366F1)),
-    QuickLink("Rewards", "🏆", "rewards", Color(0xFFF59E0B)),
-    QuickLink("Dashboard", "📊", "dashboard", Color(0xFF0EA5E9)),
-    QuickLink("Saved", "🔖", "saved", Color(0xFF8B5CF6)),
+    QuickLink("Rewards", "�", "rewards", Color(0xFFF59E0B)),
+    QuickLink("Dashboard", "�", "dashboard", Color(0xFF0EA5E9)),
+    QuickLink("Saved", "�", "saved", Color(0xFF8B5CF6)),
 )
 
 @Composable
@@ -703,14 +703,14 @@ private fun QuickLinksSection(
 
 private data class TrendingCat(val label: String, val emoji: String, val key: String, val bg: Color)
 private val TRENDING_CATS = listOf(
-    TrendingCat("Phones", "📱", "electronics", Color(0xFF3B82F6)),
-    TrendingCat("Cars", "🚗", "vehicles", Color(0xFF10B981)),
-    TrendingCat("Clothes", "👗", "fashion", Color(0xFFEC4899)),
-    TrendingCat("Laptops", "💻", "electronics", Color(0xFF8B5CF6)),
-    TrendingCat("Bikes", "🏍️", "vehicles", Color(0xFFEA580C)),
-    TrendingCat("Shoes", "👟", "fashion", Color(0xFFF59E0B)),
-    TrendingCat("Home", "🏠", "others", Color(0xFF0891B2)),
-    TrendingCat("Jobs", "💼", "others", Color(0xFF059669)),
+    TrendingCat("Phones", "�", "electronics", Color(0xFF3B82F6)),
+    TrendingCat("Cars", "�", "vehicles", Color(0xFF10B981)),
+    TrendingCat("Clothes", "�", "fashion", Color(0xFFEC4899)),
+    TrendingCat("Laptops", "�", "electronics", Color(0xFF8B5CF6)),
+    TrendingCat("Bikes", "�️", "vehicles", Color(0xFFEA580C)),
+    TrendingCat("Shoes", "�", "fashion", Color(0xFFF59E0B)),
+    TrendingCat("Home", "�", "others", Color(0xFF0891B2)),
+    TrendingCat("Jobs", "�", "others", Color(0xFF059669)),
 )
 
 @Composable
@@ -721,7 +721,7 @@ private fun TrendingCategoriesSection(onSelectApp: (String) -> Unit, modifier: M
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("🔥 Trending", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
+            Text("� Trending", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
             Text("See all →", fontSize = 12.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(10.dp))
@@ -752,10 +752,10 @@ private fun TrendingCategoriesSection(onSelectApp: (String) -> Unit, modifier: M
 @Composable
 private fun PlatformTrustStrip(modifier: Modifier = Modifier) {
     val trustItems = listOf(
-        Triple("🔒", "Secure", "Verified sellers"),
+        Triple("�", "Secure", "Verified sellers"),
         Triple("⚡", "Fast", "Quick listings"),
-        Triple("🌍", "Local", "Near you"),
-        Triple("💬", "Support", "24/7 help"),
+        Triple("�", "Local", "Near you"),
+        Triple("�", "Support", "24/7 help"),
     )
     Surface(
         shape = RoundedCornerShape(16.dp),

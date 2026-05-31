@@ -1415,4 +1415,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">ایڈوانسڈ</string>
     <string name="plans_full">مکمل</string>
+    <string name="settings_show_less">کم دکھائیں</string>
+    <string name="settings_show_all_languages">تمام 25 زبانیں دکھائیں →</string>
+    <string name="commerce_sale_verification_label">فروخت کی تصدیق</string>
+    <string name="commerce_sale_confirmation_title">فروخت کی تصدیق</string>
+    <string name="commerce_sale_confirmation_subtitle">خریدار OTP اور ٹرانزیکشن ID کے ساتھ فروخت کی تصدیق کریں۔</string>
+    <string name="commerce_badge_secure">🔒 محفوظ</string>
+    <string name="commerce_badge_rewarded">✓ انعام یافتہ</string>
+    <string name="commerce_badge_verified">📋 تصدیق شدہ</string>
 </resources>

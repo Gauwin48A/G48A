@@ -45,6 +45,9 @@ data class ForgotPasswordRequest(val identifier: String)
 data class ResetPasswordRequest(val token: String, val newPassword: String)
 
 @Serializable
+data class RefreshTokenRequest(val refreshToken: String)
+
+@Serializable
 data class CsrfTokenResponse(val csrfToken: String? = null)
 
 @Serializable
@@ -63,6 +66,13 @@ data class SendOtpRequest(
     val phone: String,
     val purpose: String = "sim_verification",
     val deviceId: String? = null,
+)
+
+@Serializable
+data class VerifyOtpRequest(
+    val phone: String,
+    val otp: String,
+    val purpose: String = "login",
 )
 
 @Serializable

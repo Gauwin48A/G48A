@@ -17,6 +17,7 @@ data class CategoryProductsState(
     val isLoading: Boolean = true,
     val products: List<MockDataProvider.MockProduct> = emptyList(),
     val error: String? = null,
+    val compareItems: List<MockDataProvider.MockProduct> = emptyList(),
 )
 
 @HiltViewModel
@@ -48,6 +49,22 @@ class CategoryAppViewModel @Inject constructor(
                 }
             }
         }
+    }
+    /** Toggle a product in the compare list (max 4 items). */
+    fun toggleCompare(product: MockDataProvider.MockProduct) {
+        val current = _state.value.compareItems
+        _state.value = _state.value.copy(
+            compareItems = if (current.any { it.id == product.id })
+                current.filter { it.id != product.id }
+            else if (current.size < 4)
+                current + product
+            else
+                current // already at max
+        )
+    }
+
+    fun clearCompare() {
+        _state.value = _state.value.copy(compareItems = emptyList())
     }
 }
 

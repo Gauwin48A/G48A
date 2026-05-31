@@ -479,7 +479,7 @@ fun PromoBadgeRow(
     ) {
         if (isHotDeal) {
             BadgeChip(
-                label = "🔥 Hot Deal",
+                label = "� Hot Deal",
                 brush = Brush.horizontalGradient(listOf(Color(0xFFFF5722), Color(0xFFFF9800))),
             )
         }
@@ -491,7 +491,7 @@ fun PromoBadgeRow(
         }
         if (isJustListed) {
             BadgeChip(
-                label = "🆕 Just Listed",
+                label = "� Just Listed",
                 brush = Brush.horizontalGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A))),
             )
         }
@@ -555,7 +555,7 @@ fun GreatDealsBanner(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "🔥",
+                        text = "�",
                         fontSize = 32.sp,
                     )
                     Text(

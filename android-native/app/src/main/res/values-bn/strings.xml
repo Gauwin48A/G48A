@@ -1423,4 +1423,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">উন্নত</string>
     <string name="plans_full">সম্পূর্ণ</string>
+    <string name="settings_show_less">কম দেখাও</string>
+    <string name="settings_show_all_languages">সব ২৫টি ভাষা দেখাও →</string>
+    <string name="commerce_sale_verification_label">বিক্রয় যাচাই</string>
+    <string name="commerce_sale_confirmation_title">বিক্রয় নিশ্চিতকরণ</string>
+    <string name="commerce_sale_confirmation_subtitle">ক্রেতার OTP এবং লেনদেন ID দিয়ে বিক্রয় নিশ্চিত করুন।</string>
+    <string name="commerce_badge_secure">🔒 নিরাপদ</string>
+    <string name="commerce_badge_rewarded">✓ পুরস্কৃত</string>
+    <string name="commerce_badge_verified">📋 যাচাইকৃত</string>
 </resources>

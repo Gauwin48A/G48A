@@ -317,7 +317,7 @@ fun LoginScreen(
                         }
                         Text(
                             text = stringResource(R.string.auth_mobile_help),
-                            color = helpText,
+                            color = if (mobile.isNotBlank() && !isValidMobile) Color(0xFFDC2626) else helpText,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 2.dp),
                         )
@@ -560,6 +560,28 @@ fun LoginScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+
+            // ── Preview App section ───────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+                Text("No account?", color = mutedText, fontSize = 12.sp)
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.material3.OutlinedButton(
+                onClick = onPreviewApp,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).height(44.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+            ) {
+                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp), tint = mutedText)
+                Spacer(Modifier.width(8.dp))
+                Text("Preview App (no sign-in required)", fontSize = 13.sp, color = mutedText)
+            }
         }
 
         // Settings IconButton (top-right) — preserved from previous behavior
@@ -650,9 +672,7 @@ fun LoginScreen(
                         Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = {
-                                // For now, treat OTP verification as success since the endpoint
-                                // varies per implementation. Full wire-up needs verify-otp endpoint.
-                                viewModel.signInWithEmail(mobileDigits, password)
+                                viewModel.verifyLoginOtp(state.otpPhone, otpCode)
                             },
                             enabled = otpCode.length == 6,
                             shape = RoundedCornerShape(12.dp),

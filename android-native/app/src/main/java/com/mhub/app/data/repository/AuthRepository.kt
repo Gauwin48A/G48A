@@ -15,9 +15,15 @@ import com.mhub.app.data.remote.dto.AadhaarVerifyOtpRequest
 import com.mhub.app.data.remote.dto.PanVerifyRequest
 import com.mhub.app.data.remote.dto.CompleteAadhaarSignupRequest
 import com.mhub.app.data.remote.dto.SendOtpRequest
+import com.mhub.app.data.remote.dto.RefreshTokenRequest
+import com.mhub.app.data.remote.dto.VerifyOtpRequest
 import com.mhub.app.data.remote.dto.AuthResponse
 import com.mhub.app.data.remote.dto.AadhaarOtpResponse
 import com.mhub.app.data.remote.dto.AadhaarVerifyResponse
+import com.mhub.app.data.local.db.PostDao
+import com.mhub.app.data.local.db.CategoryDao
+import com.mhub.app.data.local.db.WishlistItemDao
+import com.mhub.app.data.local.db.CartItemDao
 import com.mhub.app.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,9 +36,15 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val api: MhubApi,
     private val tokenStore: TokenStore,
+    private val postDao: PostDao,
+    private val categoryDao: CategoryDao,
+    private val wishlistItemDao: WishlistItemDao,
+    private val cartItemDao: CartItemDao,
 ) {
     val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() && !JwtHelper.isExpired(it) }
     val isCurrentlyAuthenticated: Boolean get() = tokenStore.isAuthenticated
+    /** True if a token string is stored, regardless of whether it is expired. */
+    val hasSession: Boolean get() = tokenStore.hasSession
     val accessTokenFlow: StateFlow<String?> = tokenStore.accessToken
 
     /** Exchanges a Google ID token for an app JWT. */
@@ -53,11 +65,14 @@ class AuthRepository @Inject constructor(
         res
     }
 
-    /** Verify OTP after login challenge. */
-    suspend fun verifyLoginOtp(phone: String, otp: String): ApiResult<User?> = safeApiCall {
-        // The OTP verify endpoint returns same AuthResponse
-        val res = api.sendOtp(SendOtpRequest(phone = phone, purpose = "sim_verification"))
-        null // OTP sent
+    /** Verify OTP after login challenge — calls POST /api/auth/verify-otp. */
+    suspend fun verifyLoginOtp(phone: String, otp: String): ApiResult<AuthResponse> = safeApiCall {
+        runCatching { api.csrfToken() }
+        val res = api.verifyOtp(VerifyOtpRequest(phone = phone, otp = otp))
+        if (res.token != null) {
+            tokenStore.save(res.token, res.refreshToken)
+        }
+        res
     }
 
     /** Complete OTP-based login after 2FA. */
@@ -78,7 +93,25 @@ class AuthRepository @Inject constructor(
     suspend fun logout(): ApiResult<Unit> = safeApiCall {
         runCatching { api.logout() }
         tokenStore.clear()
+        // Clear all user-specific Room DB caches so a different user won't see stale data
+        postDao.clearAll()
+        categoryDao.clearAll()
+        wishlistItemDao.clearAll()
+        cartItemDao.clearAll()
         Unit
+    }
+
+    /** Proactively refresh an expired access token using the stored refresh token. */
+    suspend fun tryRefreshToken(): Boolean {
+        val refreshToken = tokenStore.refreshTokenImmediate() ?: return false
+        return try {
+            val res = api.refreshToken(RefreshTokenRequest(refreshToken))
+            val newToken = res.token ?: return false
+            tokenStore.save(newToken, res.refreshToken)
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /** Request a password-reset link/email/SMS for the given identifier. */
@@ -129,21 +162,5 @@ class AuthRepository @Inject constructor(
         res.user
     }
 
-    /**
-     * Creates a local offline demo session with a self-generated JWT.
-     * Used when server is unreachable but the user needs to browse the app.
-     */
-    suspend fun createOfflineDemoSession() {
-        val nowSec = System.currentTimeMillis() / 1000
-        val expSec = nowSec + 86400 * 7 // 7 days
-        val header = android.util.Base64.encodeToString(
-            """{"alg":"HS256","typ":"JWT"}""".toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING,
-        )
-        val payload = android.util.Base64.encodeToString(
-            """{"userId":"demo-user-001","id":"demo-user-001","email":"demo@mhub.app","name":"Demo User","role":"user","iat":$nowSec,"exp":$expSec}""".toByteArray(),
-            android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING,
-        )
-        val fakeToken = "$header.$payload.offline-demo-signature"
-        tokenStore.save(fakeToken, null)
-    }
 }
+

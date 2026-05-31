@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -225,6 +226,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val localeManager = LocalLocaleManager.current
+    val context = LocalContext.current
     val baseUrl by viewModel.baseUrl.collectAsState()
     val saved by viewModel.saved.collectAsState()
     val saving by viewModel.saving.collectAsState()
@@ -342,6 +344,7 @@ fun SettingsScreen(
                                 onClick = {
                                     selectedLang = code
                                     localeManager.setLocale(code)
+                                    (context as? ComponentActivity)?.recreate()
                                 },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                             )
@@ -359,6 +362,7 @@ fun SettingsScreen(
                                     onClick = {
                                         selectedLang = code
                                         localeManager.setLocale(code)
+                                        (context as? ComponentActivity)?.recreate()
                                     },
                                     label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                                 )
@@ -366,7 +370,7 @@ fun SettingsScreen(
                         }
                     }
                     Text(
-                        if (showAll) "Show less" else "Show all 25 languages →",
+                        if (showAll) stringResource(R.string.settings_show_less) else stringResource(R.string.settings_show_all_languages),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,

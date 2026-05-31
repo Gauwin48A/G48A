@@ -1416,4 +1416,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">प्रगत</string>
     <string name="plans_full">पूर्ण</string>
+    <string name="settings_show_less">कमी दाखवा</string>
+    <string name="settings_show_all_languages">सर्व 25 भाषा दाखवा →</string>
+    <string name="commerce_sale_verification_label">विक्री सत्यापन</string>
+    <string name="commerce_sale_confirmation_title">विक्री पुष्टी</string>
+    <string name="commerce_sale_confirmation_subtitle">खरेदीदार OTP आणि व्यवहार ID सह विक्री पुष्टी करा.</string>
+    <string name="commerce_badge_secure">🔒 सुरक्षित</string>
+    <string name="commerce_badge_rewarded">✓ पुरस्कृत</string>
+    <string name="commerce_badge_verified">📋 सत्यापित</string>
 </resources>

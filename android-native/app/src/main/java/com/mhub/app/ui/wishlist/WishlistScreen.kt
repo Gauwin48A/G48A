@@ -105,6 +105,7 @@ data class WishlistState(
 class WishlistViewModel @Inject constructor(
     private val repo: WishlistRepository,
     private val cartRepo: CartRepository,
+    private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WishlistState())
@@ -182,6 +183,13 @@ class WishlistViewModel @Inject constructor(
             _state.value = _state.value.copy(selectedItems = emptySet(), isMultiSelectMode = false)
         }
     }
+
+    fun togglePriceAlert(postId: String, enable: Boolean) {
+        viewModelScope.launch {
+            if (enable) priceAlertsRepo.subscribe(postId)
+            else priceAlertsRepo.unsubscribe(postId)
+        }
+    }
 }
 
 private enum class WishlistSort(val label: String) {
@@ -202,7 +210,26 @@ fun WishlistScreen(
     var gridMode by remember { mutableStateOf(false) }
     var sortBy by remember { mutableStateOf(WishlistSort.SAVED) }
     var statusFilter by remember { mutableStateOf("all") } // all, active, sold, inactive
+    var removeConfirmId by remember { mutableStateOf<String?>(null) }
     val focusManager = LocalFocusManager.current
+
+    // Remove confirmation dialog
+    removeConfirmId?.let { idToRemove ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { removeConfirmId = null },
+            title = { Text("Remove from Wishlist") },
+            text = { Text("Are you sure you want to remove this item from your wishlist?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    viewModel.remove(idToRemove)
+                    removeConfirmId = null
+                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
+            },
+        )
+    }
 
     val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter) {
         state.items
@@ -418,7 +445,7 @@ fun WishlistScreen(
                                                     WishlistGridCard(
                                                         post = post,
                                                         onOpen = { onOpenPost(post.stableId) },
-                                                        onRemove = { viewModel.remove(post.stableId) },
+                                                        onRemove = { removeConfirmId = post.stableId },
                                                     )
                                                 }
                                             }
@@ -437,8 +464,9 @@ fun WishlistScreen(
                                         WishlistListCard(
                                             post = post,
                                             onOpen = { onOpenPost(post.stableId) },
-                                            onRemove = { viewModel.remove(post.stableId) },
+                                            onRemove = { removeConfirmId = post.stableId },
                                             onAddToCart = { viewModel.addToCart(post.stableId) },
+                                            onTogglePriceAlert = { enabled -> viewModel.togglePriceAlert(post.stableId, enabled) },
                                             isMultiSelectMode = state.isMultiSelectMode,
                                             isSelected = post.stableId in state.selectedItems,
                                             onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
@@ -461,6 +489,7 @@ private fun WishlistListCard(
     onOpen: () -> Unit,
     onRemove: () -> Unit,
     onAddToCart: () -> Unit = {},
+    onTogglePriceAlert: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     isMultiSelectMode: Boolean = false,
     isSelected: Boolean = false,
@@ -609,7 +638,11 @@ private fun WishlistListCard(
                         Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
                     }
                     IconButton(
-                        onClick = { priceAlertEnabled = !priceAlertEnabled },
+                        onClick = {
+                            val newValue = !priceAlertEnabled
+                            priceAlertEnabled = newValue
+                            onTogglePriceAlert(newValue)
+                        },
                         modifier = Modifier.size(32.dp),
                     ) {
                         Icon(
@@ -638,8 +671,8 @@ private fun WishlistGridCard(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Calculate price drop (mock data)
-    val priceDrop = if (post.price != null && post.price < 10000) 15 else null
+    // Price drop not available from API without price history endpoint
+    val priceDrop: Int? = null
 
     Card(
         onClick = onOpen,

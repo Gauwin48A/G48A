@@ -108,7 +108,7 @@ private val APP_GRADIENTS = mapOf(
     "others"      to listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5)),
 )
 private val APP_EMOJIS = mapOf(
-    "electronics" to "📱", "fashion" to "👗", "vehicles" to "🚗", "others" to "✨",
+    "electronics" to "�", "fashion" to "�", "vehicles" to "�", "others" to "✨",
 )
 
 /* ── UI State ─────────────────────────────────────────────────────────── */
@@ -216,7 +216,7 @@ fun CategoryDetailScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val gradients = APP_GRADIENTS[viewModel.categoryKey] ?: listOf(Color(0xFF3B82F6), Color(0xFF7C3AED))
-    val emoji = APP_EMOJIS[viewModel.categoryKey] ?: "🛒"
+    val emoji = APP_EMOJIS[viewModel.categoryKey] ?: "�"
     val title = viewModel.categoryKey.replaceFirstChar { it.uppercase() }
     var showSortSheet by remember { mutableStateOf(false) }
     val sortSheetState = rememberModalBottomSheetState()

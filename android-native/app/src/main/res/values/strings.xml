@@ -908,6 +908,8 @@
     <string name="settings_account_data">Account Data</string>
     <string name="settings_export_data">Export My Data</string>
     <string name="settings_export_desc">Download a copy of all your account data (GDPR compliant).</string>
+    <string name="settings_show_less">Show less</string>
+    <string name="settings_show_all_languages">Show all 25 languages →</string>
     <string name="settings_about">About</string>
 
     <!-- ChatScreen -->
@@ -1525,6 +1527,12 @@
     <string name="commerce_unknown_buyer">Unknown</string>
     <string name="commerce_initiate_sale">Initiate Sale</string>
     <string name="commerce_confirming">Confirming\u2026</string>
+    <string name="commerce_sale_verification_label">SALE VERIFICATION</string>
+    <string name="commerce_sale_confirmation_title">Sale Confirmation</string>
+    <string name="commerce_sale_confirmation_subtitle">Confirm a sale with buyer OTP &amp; transaction ID.</string>
+    <string name="commerce_badge_secure">&#x1F512; Secure</string>
+    <string name="commerce_badge_rewarded">&#x2713; Rewarded</string>
+    <string name="commerce_badge_verified">&#x1F4CB; Verified</string>
 
     <!-- Shared button labels -->
     <string name="btn_delete">Delete</string>

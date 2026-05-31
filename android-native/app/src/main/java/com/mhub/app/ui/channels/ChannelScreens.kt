@@ -620,7 +620,7 @@ fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDe
                         Box(Modifier.fillMaxWidth().height(140.dp).background(Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))), contentAlignment = Alignment.BottomStart) {
                             Column(Modifier.padding(16.dp)) {
                                 Text(c.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                c.location?.let { Text("📍 $it", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp) }
+                                c.location?.let { Text("� $it", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp) }
                             }
                         }
                     }

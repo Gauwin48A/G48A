@@ -78,6 +78,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -287,7 +288,7 @@ fun NotificationsScreen(
     val unreadCount = state.items.count { !it.isRead }
     var searchQuery by remember { mutableStateOf("") }
     var showUnreadOnly by remember { mutableStateOf(false) }
-    var selectedFilter by remember { mutableStateOf("All") }
+    var selectedFilter by rememberSaveable { mutableStateOf("All") }
     val focusManager = LocalFocusManager.current
 
     val filterOptions = listOf("All", "Offers", "Chat", "System")

@@ -1419,4 +1419,12 @@
     <string name="verification_title">Verification</string>
     <string name="plans_advanced">Avancé</string>
     <string name="plans_full">Complet</string>
+    <string name="settings_show_less">Afficher moins</string>
+    <string name="settings_show_all_languages">Afficher les 25 langues →</string>
+    <string name="commerce_sale_verification_label">Vérification de vente</string>
+    <string name="commerce_sale_confirmation_title">Confirmation de vente</string>
+    <string name="commerce_sale_confirmation_subtitle">Confirmez une vente avec l\'OTP de l\'acheteur et l\'ID de transaction.</string>
+    <string name="commerce_badge_secure">🔒 Sécurisé</string>
+    <string name="commerce_badge_rewarded">✓ Récompensé</string>
+    <string name="commerce_badge_verified">📋 Vérifié</string>
 </resources>

@@ -1433,4 +1433,12 @@
     <string name="sold_empty_subtitle">Items you\'ve sold will appear here</string>
     <string name="plans_advanced">उन्नत</string>
     <string name="plans_full">पूर्ण</string>
+    <string name="settings_show_less">कम दिखाएं</string>
+    <string name="settings_show_all_languages">सभी 25 भाषाएं दिखाएं →</string>
+    <string name="commerce_sale_verification_label">बिक्री सत्यापन</string>
+    <string name="commerce_sale_confirmation_title">बिक्री की पुष्टि</string>
+    <string name="commerce_sale_confirmation_subtitle">खरीदार OTP और लेनदेन ID के साथ बिक्री की पुष्टि करें।</string>
+    <string name="commerce_badge_secure">🔒 सुरक्षित</string>
+    <string name="commerce_badge_rewarded">✓ पुरस्कृत</string>
+    <string name="commerce_badge_verified">📋 सत्यापित</string>
 </resources>
