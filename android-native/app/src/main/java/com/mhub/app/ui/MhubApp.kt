@@ -627,6 +627,7 @@ fun MhubApp(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     onOpenCategory = { key -> navController.navigate(Routes.categoryDetail(key)) { launchSingleTop = true } },
+                    onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
                 )
             }
 

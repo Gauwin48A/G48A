@@ -265,17 +265,17 @@ fun MoreScreen(
         item {
             androidx.compose.material3.Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White),
+                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth().clickable { prefsExpanded = !prefsExpanded },
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.DarkMode, null, tint = Color(0xFF64748B), modifier = Modifier.size(20.dp))
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.DarkMode, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                         }
                         Spacer(Modifier.width(12.dp))
-                        Text("Appearance & Language", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
-                        Icon(if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = Color(0xFF64748B), modifier = Modifier.size(20.dp))
+                        Text("Appearance & Language", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                        Icon(if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
                     if (prefsExpanded) {
                         Spacer(Modifier.height(12.dp))
@@ -346,18 +346,18 @@ private fun MoreRowList(rows: List<MenuRow>) {
                         Icon(row.icon, null, tint = row.iconTint, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(row.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                        Text(row.subtitle, fontSize = 12.sp, color = Color(0xFF64748B))
+                        Text(row.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(row.subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (row.badge != null) {
                         Box(Modifier.size(20.dp).clip(CircleShape).background(Color(0xFFEF4444)), contentAlignment = Alignment.Center) {
                             Text(row.badge, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
-                        Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
                     }
                 }
-                if (idx < rows.size - 1) HorizontalDivider(modifier = Modifier.padding(start = 66.dp), color = Color(0xFFF8FAFC))
+                if (idx < rows.size - 1) HorizontalDivider(modifier = Modifier.padding(start = 66.dp), color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }

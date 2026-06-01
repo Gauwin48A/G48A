@@ -1992,3 +1992,106 @@ When user selects a category from Home:
 6. **Compose Multiplatform:** UI layer is Compose-only, enabling future iOS sharing
 7. **Analytics:** Firebase Analytics events defined at key user journeys
 8. **Performance:** Baseline Profile reduces cold start by ~30%
+
+---
+
+## Complete Platform Feature & Functionality Reference (June 2026)
+
+### Application Overview
+MHub is a **multi-category marketplace platform** serving 4 independent category ecosystems:
+- **Electronics** — Phones, Laptops, Tablets, Cameras, Audio, Gaming, Accessories
+- **Fashion** — Men's/Women's Clothing, Shoes, Bags, Watches, Jewellery
+- **Vehicles** — Cars, Motorcycles, Bicycles, Scooters, Trucks, Spare Parts
+- **Others** — Home & Furniture, Books, Sports, Health, Agriculture, Real Estate, Services
+
+Each category functions as an **independent mini-application** with its own AllPosts, Feed, MyFeed, ForYou, Centres, SaleDone/SaleUndone, Complaints, and Feedback. Users access a category from the Home page and navigate within that ecosystem.
+
+**Shared/Common modules** (across all categories): Profile, Rewards, KYC, Plans, Subscription Management, Settings.
+
+### Authentication & KYC Flow
+1. **Phone OTP Login** → basic account created
+2. **Aadhaar OTP Verification** (KYC) → enables selling/posting features
+3. **Plan Selection** → unlocks marketplace features based on tier
+4. **Posting** → user can create listings after KYC + active plan
+
+Guest users can browse AllPosts (limited to 5 posts) but cannot post, like, save, or interact.
+
+### Subscription Plans
+| Plan | Price | Period | Listings | Visibility | Boost Quota | Trial |
+|------|-------|--------|----------|------------|-------------|-------|
+| Basic | ₹500 | Per listing | 1 credit | 15 days | None | None |
+| Bronze | ₹850 | 3 months | 100 | 30 days | Coins/Pay only | None |
+| Silver ⭐ | ₹1,200 | 6 months | 200 | 30 days | 5+5+5 per 6mo | 7 days |
+| Premium 👑 | ₹1,500 | 12 months | Unlimited | 45 days | 5+5+5 per month | 14 days |
+
+**One plan unlocks ALL 4 categories.** Bronze one-time welcome claim for new users (KYC mandatory).
+
+### Coin Economy
+- **Earn:** Post listing (+1), First listing (+25), Daily login streak, Spin wheel, Scratch card, Sale completion, Reviews, Referrals
+- **Spend:** Boost posts (10-40 coins), Plan discounts (up to 30% Premium, 50% Basic)
+- **Referral chain:** 5-level payout when referred users become active
+
+### AllPosts Features (per category)
+- Search bar (title, description, subcategory, brand, model)
+- Filter pane: Location, Price Range, Date Range, Condition, Verified Only, Seller Type, Posted Within
+- Quick filter chips: Under ₹1000, ₹1k-5k, ₹5k-20k, Above ₹20k, Latest 5/10, Posted Today, Near Me, Verified Only
+- Sort: Newest, Price ↑/↓, Popular, Shuffle (auth-only)
+- Grid/List view toggle
+- Auto-refresh (30s polling)
+- Post card: Avatar, seller name, verified badge, price, title, description, image carousel, promo badges, subcategory/location chips, view/like/interested counts
+- Kebab menu: Share, Save, Promote (owner), Add to Cart, Compare, Report
+- Floating Compare Panel (≥2 items → "Compare Now")
+- Guest cap (5 posts + login banner)
+- Plan expiry/expired banners
+
+### PostDetail Features
+- Image carousel with zoom, tier badge, flash sale badge, negotiable badge
+- Price with original strikethrough + discount % + savings
+- Status badge (Active/Sold/Inactive/Expired)
+- Listing Details (ID, Updated, Expires, Pricing type, Availability, Warranty)
+- Key Details section (Condition, Accessories)
+- Safety at a Glance (3 emerald tiles)
+- Seller stats grid (Completed Sales, Response Rate, Member Since)
+- Negotiate section (10%/15%/20% quick offer buttons, live discount preview, >50% validation)
+- PostBoostPanel (owner): 3 buttons per boost tier (Use Plan / Use Coins / Pay)
+- Visit Seller's Farm Page → Centre detail
+- Similar posts carousel
+
+### Feed System (per category)
+- Social/news/knowledge sharing (NOT marketplace listings)
+- Text-focused cards with like/comment
+- Feed creation via "+" button (requires active plan)
+- My Feed: user's own feed posts only
+- Search + filter capabilities
+
+### Centre Pages (Premium feature)
+- One Centre per category per user (max 4 total)
+- Similar to Facebook Pages — branding, followers, engagement
+- Tabs: About, Listings, Reviews
+- Analytics dashboard (Premium users)
+- Follow/Unfollow functionality
+
+### SaleDone/SaleUndone
+- **SaleDone:** 2-way OTP confirmation (Seller initiates → Buyer provides OTP → Sale confirmed → Coins awarded)
+- **SaleUndone:** Repost with coin penalty, category filter
+
+### Rewards System
+- Tabs: Overview, Earn, Referrals, Activity
+- Daily check-in, Spin wheel, Scratch card
+- Impact dashboard + milestone progress bars
+- Weekly leaderboard
+- Referral tree visualization
+- Coin redemption for boosts
+
+### Dark Mode & Language
+- Full dark mode support across all screens (system/manual toggle)
+- Language switching: Telugu, English (default), Marathi, Bengali, Hindi, Urdu
+- Instant app-wide re-render on language/theme change
+
+### Navigation Architecture
+- Home → Category selector (4 tiles)
+- Per-category ecosystem: AllPosts, Feed, ForYou, MyFeed, MyHome, Centre
+- Bottom nav: Home, AllPosts, ForYou, Feed, Rewards, Profile
+- Hamburger menu: Plans, KYC, Complaints, Feedback, SaleDone, SaleUndone, Settings
+- Independent tab stacks, predictable back navigation
+- Category isolation: posts/feeds NEVER leak between categories

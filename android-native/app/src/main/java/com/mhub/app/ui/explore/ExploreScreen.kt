@@ -931,14 +931,23 @@ fun ExploreScreen(
                 }
 
                 // Posted within filter
+                var selectedPostedWithin by remember { mutableStateOf("any") }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("🕐 Posted Within", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("any" to "Any time", "today" to "Today", "3d" to "3 days", "7d" to "This week", "30d" to "This month").forEach { (key, label) ->
                             FilterChip(
-                                selected = false,
-                                onClick = { if (key == "today") viewModel.setQuickFilter("today") },
+                                selected = selectedPostedWithin == key,
+                                onClick = {
+                                    selectedPostedWithin = key
+                                    when (key) {
+                                        "today" -> viewModel.setQuickFilter("today")
+                                        "3d" -> viewModel.setQuickFilter("latest5")
+                                        "7d" -> viewModel.setQuickFilter("latest10")
+                                        else -> viewModel.setQuickFilter("")
+                                    }
+                                },
                                 label = { Text(label, fontSize = 11.sp) },
                                 shape = RoundedCornerShape(16.dp),
                             )
@@ -947,13 +956,20 @@ fun ExploreScreen(
                 }
 
                 // Seller type filter
+                var selectedSellerType by remember { mutableStateOf("all") }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("👤 Seller Type", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("all" to "All Sellers", "verified" to "✓ Verified Only", "top_rated" to "⭐ Top Rated").forEach { (key, label) ->
                             FilterChip(
-                                selected = false,
-                                onClick = { if (key == "verified") viewModel.setQuickFilter("verified") },
+                                selected = selectedSellerType == key,
+                                onClick = {
+                                    selectedSellerType = key
+                                    when (key) {
+                                        "verified" -> viewModel.setQuickFilter("verified")
+                                        else -> viewModel.setQuickFilter("")
+                                    }
+                                },
                                 label = { Text(label, fontSize = 11.sp) },
                                 shape = RoundedCornerShape(16.dp),
                             )

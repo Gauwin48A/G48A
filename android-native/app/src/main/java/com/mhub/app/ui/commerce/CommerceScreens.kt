@@ -782,9 +782,9 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                             }
                             Spacer(Modifier.height(12.dp))
-                            Text(stringResource(R.string.plans_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF0F172A))
+                            Text(stringResource(R.string.plans_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
                             Spacer(Modifier.height(4.dp))
-                            Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
+                            Text(stringResource(R.string.plans_subtitle), fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
                         }
                     }
                     // Trial-period banner — shows free launch promo info if still active

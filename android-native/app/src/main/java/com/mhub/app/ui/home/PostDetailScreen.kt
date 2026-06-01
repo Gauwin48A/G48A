@@ -2,6 +2,7 @@ package com.mhub.app.ui.home
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -388,10 +389,12 @@ fun PostDetailScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit = {},
     onOpenCategory: (String) -> Unit = {},
+    onOpenCentre: (String) -> Unit = {},
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     var showShareSheet by remember { mutableStateOf(false) }
     var showInterestModal by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
@@ -955,21 +958,21 @@ fun PostDetailScreen(
                             post.price?.let { basePrice ->
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D2818) else Color(0xFFF0FDF4)),
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.4f) else Color(0xFF86EFAC)),
                                 ) {
                                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Text("💬 Negotiate Price", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF166534))
-                                        Text("Offer a fair price to the seller", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4B7A5B))
+                                        Text("💬 Negotiate Price", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534))
+                                        Text("Offer a fair price to the seller", style = MaterialTheme.typography.bodySmall, color = if (isDark) Color(0xFF86EFAC) else Color(0xFF4B7A5B))
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             listOf(10 to "10%", 15 to "15%", 20 to "20%").forEach { (pct, label) ->
                                                 val discounted = basePrice * (100 - pct) / 100
                                                 OutlinedButton(
                                                     onClick = { viewModel.makeOffer(discounted) },
                                                     modifier = Modifier.weight(1f),
-                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF166534)),
-                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)),
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.5f) else Color(0xFF86EFAC)),
                                                 ) {
                                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                         Text("-$label", fontWeight = FontWeight.Bold, fontSize = 11.sp)
@@ -1064,19 +1067,19 @@ fun PostDetailScreen(
                                 // Delivery Estimate Card
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-                                    border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D1B2E) else Color(0xFFEFF6FF)),
+                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF1E3A5F) else Color(0xFFBFDBFE)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Default.LocalShipping, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("📦 Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                            Text("📦 Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
                                         }
-                                        Text("• Estimated delivery: 3-5 business days", fontSize = 12.sp, color = Color(0xFF1E3A8A))
-                                        Text("• Local meetup available in ${post.location ?: "your area"}", fontSize = 12.sp, color = Color(0xFF1E3A8A))
-                                        Text("• 7-day return policy on eligible items", fontSize = 12.sp, color = Color(0xFF1E3A8A))
+                                        Text("• Estimated delivery: 3-5 business days", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
+                                        Text("• Local meetup available in ${post.location ?: "your area"}", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
+                                        Text("• 7-day return policy on eligible items", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
                                     }
                                 }
 
@@ -1139,15 +1142,15 @@ fun PostDetailScreen(
                                 // Safety Tips
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
+                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7)),
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("⚠️ Safety Tips", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF92400E))
-                                        Text("• Meet in a public place for exchanges", fontSize = 12.sp, color = Color(0xFF78350F))
-                                        Text("• Inspect the item thoroughly before paying", fontSize = 12.sp, color = Color(0xFF78350F))
-                                        Text("• Don't share personal financial information", fontSize = 12.sp, color = Color(0xFF78350F))
-                                        Text("• Use MHub secure payment when possible", fontSize = 12.sp, color = Color(0xFF78350F))
+                                        Text("⚠️ Safety Tips", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
+                                        Text("• Meet in a public place for exchanges", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
+                                        Text("• Inspect the item thoroughly before paying", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
+                                        Text("• Don't share personal financial information", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
+                                        Text("• Use MHub secure payment when possible", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
                                     }
                                 }
 
@@ -1322,7 +1325,7 @@ fun PostDetailScreen(
                                     }
                                     // Visit Seller's Farm Page — web parity
                                     Surface(
-                                        onClick = { /* Navigate to seller centre */ },
+                                        onClick = { post.userId?.let { uid -> onOpenCentre(uid) } },
                                         shape = RoundedCornerShape(14.dp),
                                         color = Color(0xFF7C3AED),
                                         modifier = Modifier.fillMaxWidth(),
@@ -1347,12 +1350,12 @@ fun PostDetailScreen(
 
                     // Owner Insights card (visible when data loaded)
                     state.ownerInsights?.let { insights ->
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
                             Column(Modifier.padding(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Timeline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(R.string.detail_listing_insights), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                                    Text(stringResource(R.string.detail_listing_insights), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
                                 }
                                 Spacer(Modifier.height(10.dp))
                                 val viewsLabel = stringResource(R.string.detail_views)

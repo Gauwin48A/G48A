@@ -1,5 +1,5 @@
 # MHub Android — Complete Web App Feature Parity Plan
-> Last Updated: May 31, 2026 | Source of Truth: Web App http://localhost:8081/
+> Last Updated: June 1, 2026 | Source of Truth: Web App http://localhost:8081/
 > Generated from FULL source-code analysis of web app and Android codebase.
 
 ---
@@ -63,9 +63,17 @@
 - **MyHome:** missing "Undone" tab, "Promote" action surfaced, `/posts/mine/totals` count API (counts derived locally).
 - **SaleUndone:** Android enforces 20-char min description (server/web don't); missing category filter.
 - **KYC:** Android missing Aadhaar OTP flow (web `GetVerified.jsx`); Android has Selfie upload web lacks; benefits hardcoded vs web CMS-driven.
-- **Plans (TierSelection):** missing FAQ accordion (web `TierSelection.jsx`), premium visual polish (animate-pulse, custom shadows). Bronze one-time claim card ✅ added.
+- **Plans (TierSelection):** ✅ FAQ accordion added, ✅ Savings calculator added, ✅ Per-post cost badges added. Remaining: premium visual polish.
 - **Rewards:** missing Impact Dashboard + milestone progress bars; spin/scratch use disruptive ephemeral dialogs.
 - **Profile:** missing search Radius slider + discovery preferences; UX split (stats/settings) vs web tabs.
+
+### 🟢 FIXED THIS SESSION (June 1, 2026)
+- ✅ H1-H4: All HIGH endpoint issues resolved
+- ✅ Dark mode: HomeScreen, CategoryHubScreen, TierSelectionScreen, SocialScreens gradients all dark-mode-aware
+- ✅ Dark mode: MoreScreen card/text colors now use MaterialTheme.colorScheme
+- ✅ PostDetail: "Visit Seller's Farm Page" now navigates to Centre detail
+- ✅ ExploreScreen: "Posted Within" and "Seller Type" filters now track state and trigger viewmodel
+- ✅ Centre Listings tab: wired to CentreListingsViewModel with real post cards
 
 ---
 
@@ -268,19 +276,19 @@ Each category = its own independent marketplace mini-app. AllPosts, filters, sub
 ### 3.7 Listing Details Section (id="listing-details")
 | Feature | Web | Android | Status |
 |---|---|---|---|
-| Listing ID | ✅ | ❌ | 🔴 TODO |
-| Last Updated date | ✅ | ❌ | 🔴 TODO |
-| Expires On date | ✅ | ❌ | 🔴 TODO |
+| Listing ID | ✅ | ✅ | ✅ DONE |
+| Last Updated date | ✅ | ✅ | ✅ DONE |
+| Expires On date | ✅ | ✅ | ✅ DONE |
 | Status (Active/Sold/Expired) | ✅ | ✅ status badge | ✅ DONE |
 
 ### 3.8 Key Details Section (id="key-details")
 | Feature | Web | Android | Status |
 |---|---|---|---|
 | Condition | ✅ | ✅ in specs | ✅ DONE |
-| Pricing type (Negotiable / Fixed Price) | ✅ | ❌ | 🔴 TODO |
-| Availability | ✅ | ❌ | 🔴 TODO |
-| Warranty (if present) | ✅ | ❌ | 🔴 TODO |
-| Accessories (if present) | ✅ | ❌ | 🔴 TODO |
+| Pricing type (Negotiable / Fixed Price) | ✅ | ✅ | ✅ DONE |
+| Availability | ✅ | ✅ | ✅ DONE |
+| Warranty (if present) | ✅ | ✅ | ✅ DONE |
+| Accessories (if present) | ✅ | ❌ | 🟡 MINOR |
 
 ### 3.9 Trust & Safety Section
 | Feature | Web | Android | Status |
@@ -288,7 +296,7 @@ Each category = its own independent marketplace mini-app. AllPosts, filters, sub
 | Trust score badge (color-coded) | ✅ | ✅ | ✅ DONE |
 | **Safety at a Glance** (3 emerald tiles) | ✅ | ✅ ADDED | ✅ DONE |
 | Safety Tips amber box | ✅ | ✅ | ✅ DONE |
-| Seller verification / rating / completed sales / response rate / member since | ✅ 2-col grid | ❌ minimal | 🔴 TODO |
+| Seller verification / rating / completed sales / response rate / member since | ✅ 2-col grid | ✅ IMPLEMENTED | ✅ DONE |
 
 ### 3.10 Negotiate / Bargain Section (NON-OWNER ONLY)
 | Feature | Web | Android | Status |
@@ -309,7 +317,7 @@ Each category = its own independent marketplace mini-app. AllPosts, filters, sub
 | Avatar + name + trust badge | ✅ | ✅ | ✅ DONE |
 | Verified checkmark | ✅ | 🟡 | 🟡 PARTIAL |
 | Rating stars | ✅ | 🟡 partial | 🟡 PARTIAL |
-| Stats grid: completed sales / response rate / member since | ✅ | ❌ | 🔴 TODO |
+| Stats grid: completed sales / response rate / member since | ✅ | ✅ IMPLEMENTED | ✅ DONE |
 | "Visit Seller's Farm Page" (purple gradient) | ✅ → /centre/:sellerId | ✅ ADDED | ✅ DONE |
 | Call button | ✅ | ✅ | ✅ DONE |
 
@@ -462,28 +470,28 @@ Each category = its own independent marketplace mini-app. AllPosts, filters, sub
 19. Sort chips (Newest, Price↑, Price↓, Popular)
 
 ### 🔴 CRITICAL TODO (Blocking Feature Parity)
-1. **PostPromoBadges overlay on AllPost cards** — Sponsored/Boosted/Featured/Spotlight
-2. **Tier badge on PostDetail image** — Premium(amber)/Silver(gray)/Standard(green)
-3. **Flash Sale + Negotiable badges on PostDetail image**
-4. **Original price strikethrough + discount %** in PostDetail overview
-5. **BargainActions/Negotiate section** in PostDetail (non-owner)
-6. **Real PostBoostPanel** — 3 buttons per tier (Use Plan / Use Coins / Pay Direct)
-7. **Floating Compare Panel** in AllPosts (sticky bottom bar when ≥2 items)
-8. **Cart** functionality in AllPost card (Add to Cart / In Cart)
-9. **PostDetail Key Details** section (Listing ID, Expires, Warranty, Availability)
-10. **Seller stats grid** in PostDetail (Completed sales, Response rate, Member since)
+1. ~~**PostPromoBadges overlay on AllPost cards**~~ ✅ DONE
+2. ~~**Tier badge on PostDetail image**~~ ✅ DONE
+3. ~~**Flash Sale + Negotiable badges on PostDetail image**~~ ✅ DONE
+4. ~~**Original price strikethrough + discount %**~~ ✅ DONE
+5. ~~**BargainActions/Negotiate section**~~ ✅ DONE
+6. **Real PostBoostPanel** — 3 buttons per tier (Use Plan / Use Coins / Pay Direct) 🟡 PARTIAL (basic version exists)
+7. ~~**Floating Compare Panel**~~ ✅ DONE
+8. ~~**Cart**~~ ✅ DONE
+9. ~~**PostDetail Key Details**~~ ✅ DONE
+10. ~~**Seller stats grid**~~ ✅ DONE
 
 ### 🟡 MEDIUM TODO (Enhancement)
-11. Latest 5/10/Posted Today quick filters properly wired (not just opening search)
-12. Shuffle sort (auth-only)
-13. Live discount % preview in Offer dialog
-14. Offer validation >50% of original
-15. MyHome: Promote, Mark as Sold, Reactivate, Bulk select
-16. Trending section on Home
-17. For You / Feed / Deals / All tiles on Home
-18. Freshness line in PostDetail overview
-19. "Why trustworthy" panel in PostDetail (non-owner)
-20. Seller stats grid (completed sales, response rate, member since)
+11. ~~Latest 5/10/Posted Today quick filters properly wired~~ ✅ DONE
+12. ~~Shuffle sort (auth-only)~~ ✅ DONE
+13. ~~Live discount % preview in Offer dialog~~ ✅ DONE
+14. ~~Offer validation >50% of original~~ ✅ DONE
+15. ~~MyHome: Promote, Mark as Sold, Reactivate, Bulk select~~ ✅ DONE
+16. ~~Trending section on Home~~ ✅ DONE
+17. ~~For You / Feed / Deals / All tiles on Home~~ ✅ DONE
+18. ~~Freshness line in PostDetail overview~~ ✅ DONE
+19. ~~"Why trustworthy" panel in PostDetail (non-owner)~~ ✅ DONE
+20. ~~Seller stats grid (completed sales, response rate, member since)~~ ✅ DONE
 
 ---
 
