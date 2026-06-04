@@ -2095,3 +2095,126 @@ Guest users can browse AllPosts (limited to 5 posts) but cannot post, like, save
 - Hamburger menu: Plans, KYC, Complaints, Feedback, SaleDone, SaleUndone, Settings
 - Independent tab stacks, predictable back navigation
 - Category isolation: posts/feeds NEVER leak between categories
+
+---
+
+# BUSINESS & DEVELOPER DOCUMENTATION (Web-App Parity Reference)
+
+> The following sections document the full product behavior derived from the web app
+> (`http://localhost:8081/`) source (`client/src/`) and the MHub backend. They are the
+> authoritative reference for Android parity. Nothing above this line was removed.
+
+## Application Overview
+- **Business purpose:** MHub is a multi-category Indian marketplace + community platform. Each of the 4 categories (Electronics, Fashion, Vehicles, Others) behaves as an **independent mini-app** with its own AllPosts, Feed, MyFeed, ForYou, MyHome, SaleDone/Undone, Feedback, Complaints, subcategories and Centre pages.
+- **Categories:** Electronics 📱, Fashion 👗, Vehicles 🚗, Others 🏠. Selected from the Home/Welcome launcher. Switching ecosystem = return Home.
+- **User journeys:** Guest browse → Sign up → KYC → Claim Bronze welcome (one-time) / subscribe → Post listings → Sell → SaleDone (2-way) → earn coins → redeem on plans.
+- **Shared (global) modules:** Profile, Rewards, KYC, Plans, Subscription management, Settings, Notifications, Wishlist.
+- **Category-specific modules:** AllPosts, MyPosts/MyHome, Feed, MyFeed, ForYou, SaleDone, SaleUndone, Feedback, Complaints, Subcategories, Centre.
+
+## Authentication Flow
+1. Guest users browse AllPosts (capped at 5 posts) with a login banner.
+2. Protected actions (Interested, Offer, Like persist, Post, Rewards, Centre) trigger an auth prompt.
+3. JWT issued by backend, stored in `EncryptedSharedPreferences` (AES-256-GCM via `TokenStore`).
+4. Centralized auth state prevents duplicate login prompts and false session-timeouts.
+5. Selected language + theme persist across logout/login and app restart.
+
+## KYC Flow
+1. Triggered when a new user taps "+" (Sell) for the first time.
+2. If `kycStatus != "verified"` → redirect to KYC/Verification screen; posting blocked.
+3. KYC steps: identity (Aadhaar/PAN), selfie upload, submit → status `pending` → `verified`.
+4. KYC is **mandatory** to claim the Bronze welcome plan and to subscribe/post.
+
+## Subscription Flow
+1. After KYC, user lands on the Plans page (TierSelection).
+2. **Bronze one-time welcome claim** is offered to eligible new users (KYC-gated, `claimBronzePlan`).
+3. Tiers: Basic ₹500 / Bronze ₹850 / Silver ₹1,200 / Premium ₹1,500. One plan unlocks all 4 categories.
+4. Coin redemption at checkout: up to **30% off Premium**, **50% off Basic** (`maxSave` capped by coin balance).
+5. Active plan unlocks: posting, boosting/promotion, Feed publishing, Centre creation (Premium).
+
+## Plan Renewal Flow
+- On expiry the user is routed to Plans when attempting to post/publish.
+- Renewal re-activates posting, promotion and Feed publishing across all 4 categories.
+
+## Plan Expiry Flow
+- **Notifications:** 7 days, 3 days, 1 day before expiry (push + in-app + banner).
+- **Login popup:** shown after login / app open / on AllPosts when expiry is near.
+- **After expiry:** posting disabled, AllPosts publishing disabled, Feed publishing disabled, promotion disabled → redirect to Plans on attempt.
+
+## Free Launch Plan Logic
+- For the first **3 months** after launch, the system auto-assigns a free starter (Bronze-equivalent) plan to all users.
+- One-time claim. After the promotional window ends, the normal subscription process resumes.
+
+## Publishing Workflow ("+" button)
+1. Tap "+" (bottom nav FAB) → `SellFlowViewModel` evaluates eligibility.
+2. New user → KYC not done → KYC page.
+3. KYC done, no active plan → Plans page.
+4. Active plan → Sell page opens directly.
+5. Expired plan → Plans page (renew) before Sell becomes accessible.
+
+## Feed Module
+- Community **news / knowledge-sharing** (NOT marketplace listings) — Facebook-style text posts.
+- Create via "+" inside Feed (requires active plan + category selection). Published posts appear immediately in Feed and MyFeed.
+- **MyFeed:** only the current user's feed posts.
+- Search + filter bars scoped to feed semantics.
+
+## All Posts Module
+- All listings from all users **within the selected category only** (strict isolation).
+- Category/subcategory filtering, search (title/description/subcategory/brand), quick filters, sort, grid/list toggle, auto-refresh.
+- Post card + 3-dot menu: Compare, Save, Share, Report, View Seller, Promote (owner), Add to Cart.
+- Top navbar present (title, back, notifications, cart); **search + filter live BELOW the navbar**, then subcategory rail.
+
+## For You Module
+- Same layout/UI/features as AllPosts, but content is filtered by the user's **profile preferences** (e.g., Agriculture/Dairy/Poultry prioritized). Search and filters function identically.
+
+## My Posts / My Home Module
+- Only the logged-in user's listings for the active category.
+- Per-card: Edit, Delete, Mark as Sold, Reactivate, Renew, Promote, Share, view engagement stats, bulk select.
+
+## Rewards Module
+- Tabs: Overview, Earn, Referrals, Activity.
+- Earn: post (+1), first listing (+25), daily streak, spin wheel, scratch card, sale completion, reviews, referrals.
+- Impact dashboard + milestone progress bars + weekly leaderboard + referral tree.
+- Redeem coins for boosts and plan discounts.
+
+## Profile Module
+- Stats, settings, discovery preferences (categories used by ForYou), search radius, KYC status, language & theme controls. Tooltips/empty-states for first-time discoverability.
+
+## Notification System
+- Push (FCM) + in-app + banners. Plan-expiry reminders, offer/inquiry alerts, sale-confirmation prompts.
+
+## Localization System
+- Centralized `LocaleManager` + Android resource qualifiers. Languages: **English (default), Telugu, Hindi, Marathi, Bengali, Urdu** (+ Tamil and more).
+- Switch applies instantly app-wide (labels, menus, validation messages, categories/subcategories, demo data) via `AppCompatDelegate` locale + `localeVersion` emission that every screen subscribes to. Selection persists across restart/login.
+
+## Category-Based Architecture & Isolation Rules
+- Each category = independent ecosystem. `categoryKey` is threaded through every feed/foryou/myfeed/listing query and all mock fallbacks are filtered by category.
+- A post or feed created in one category **never** appears in another. Subcategory selection filters within the active category only.
+
+## SaleDone / SaleUndone Workflow
+- **SaleDone:** 2-way confirmation — seller initiates, buyer confirms (Transaction ID + OTP). On success → sale marked complete and **coins awarded** to both parties + referral chain.
+- **SaleUndone:** allows repost of a cancelled sale with a **coin penalty**.
+- Endpoints aligned to `/api/transactions/initiate|confirm|cancel|pending|undone`.
+
+## Centre Pages (Premium)
+- Premium users create **one Centre per category** (max 4 total) — Facebook-Pages style branding, followers, knowledge sharing, engagement and analytics. Enforced limit in `CreateChannelViewModel.submit()`.
+
+## Mobile Application Navigation Flow
+```
+Launch → Home/Welcome (4 category tiles only; no search/cart/notifications)
+  → Select category → Category mini-app shell (TopBar + bottom nav)
+     ├── AllPosts (search+filter below navbar → subcategory rail → cards)
+     ├── ForYou (AllPosts filtered by profile prefs)
+     ├── Feed / MyFeed (community posts + "+")
+     ├── MyHome (own listings management)
+     └── Centre (premium)
+  Bottom nav: Home · AllPosts · ForYou · Feed · Rewards · Profile
+  Drawer: Plans · KYC · Complaints · Feedback · SaleDone · SaleUndone · Settings
+```
+
+## User Lifecycle Journey
+Guest → Sign up → KYC → Bronze welcome claim / subscribe → Post & sell → SaleDone (2-way) → earn coins → redeem on renewal → (expiry reminders) → renew.
+
+## Future Scalability Considerations
+- Feature-first modular packages, repository pattern + Hilt DI, StateFlow-driven reactive UI.
+- Locale- and category-aware caching; centralized API layer (Retrofit + interceptors) ready for additional categories/languages without screen rewrites.
+- Baseline Profile + R8 full-mode for performance headroom; Crashlytics/Analytics opt-in for production observability.

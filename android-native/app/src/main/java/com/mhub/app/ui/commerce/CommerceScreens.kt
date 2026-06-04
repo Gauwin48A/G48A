@@ -792,7 +792,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         val isPromoActive = com.mhub.app.core.FreeLaunchPlan.isActive()
                         val daysLeft = com.mhub.app.core.FreeLaunchPlan.daysRemaining()
                         val promoEnd = com.mhub.app.core.FreeLaunchPlan.endDateLabel()
-                        Surface(shape = RoundedCornerShape(16.dp), color = if (isPromoActive) Color(0xFFECFDF5) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = if (isPromoActive) (if (isDark) Color(0xFF062010) else Color(0xFFECFDF5)) else (if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7)), modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Surface(shape = CircleShape, color = if (isPromoActive) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFFBBF24).copy(alpha = 0.3f), modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -801,11 +801,11 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 }
                                 Column(Modifier.weight(1f)) {
                                     if (isPromoActive) {
-                                        Text("🎉 Free Launch Offer Active!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF065F46))
-                                        Text("Post & sell FREE until $promoEnd ($daysLeft days left). No plan needed during the launch period!", fontSize = 12.sp, color = Color(0xFF047857))
+                                        Text("🎉 Free Launch Offer Active!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFF4ADE80) else Color(0xFF065F46))
+                                        Text("Post & sell FREE until $promoEnd ($daysLeft days left). No plan needed during the launch period!", fontSize = 12.sp, color = if (isDark) Color(0xFF86EFAC) else Color(0xFF047857))
                                     } else {
-                                        Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
-                                        Text(stringResource(R.string.plans_trial_subtitle), fontSize = 12.sp, color = Color(0xFF92400E))
+                                        Text(stringResource(R.string.plans_trial_title), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF78350F))
+                                        Text(stringResource(R.string.plans_trial_subtitle), fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
                                     }
                                 }
                                 Surface(shape = RoundedCornerShape(8.dp), color = if (isPromoActive) Color(0xFF059669) else Color(0xFFD97706)) {
@@ -819,7 +819,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         item(key = "bronze_claim") {
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = Color(0xFFFEF3C7),
+                                color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7),
                                 border = BorderStroke(1.5.dp, Color(0xFFB45309).copy(alpha = 0.4f)),
                                 modifier = Modifier.fillMaxWidth(),
                                 shadowElevation = 3.dp,
@@ -832,15 +832,15 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                             }
                                         }
                                         Column(Modifier.weight(1f)) {
-                                            Text("Welcome Offer — Bronze Plan FREE!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF78350F))
-                                            Text("One-time only • KYC verification required", fontSize = 12.sp, color = Color(0xFF92400E))
+                                            Text("Welcome Offer — Bronze Plan FREE!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF78350F))
+                                            Text("One-time only • KYC verification required", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
                                         }
                                     }
-                                    Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.7f), modifier = Modifier.fillMaxWidth()) {
+                                    Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF251A05) else Color.White.copy(alpha = 0.7f), modifier = Modifier.fillMaxWidth()) {
                                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text("What you get:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF78350F))
+                                            Text("What you get:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF78350F))
                                             listOf("✅ Up to 100 listings", "✅ 30-day visibility", "✅ Bronze seller badge", "✅ 3 photos per post", "✅ Basic analytics").forEach {
-                                                Text(it, fontSize = 11.sp, color = Color(0xFF92400E))
+                                                Text(it, fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
                                             }
                                         }
                                     }
@@ -869,7 +869,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         item(key = "active_sub") {
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = Color(0xFFEFF6FF),
+                                color = if (isDark) Color(0xFF0D1B2E) else Color(0xFFEFF6FF),
                                 border = BorderStroke(1.5.dp, Color(0xFF2563EB).copy(alpha = 0.4f)),
                                 modifier = Modifier.fillMaxWidth(),
                                 shadowElevation = 2.dp,
@@ -877,7 +877,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
-                                        Text("Active Plan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                        Text("Active Plan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
                                         Spacer(Modifier.weight(1f))
                                         Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF2563EB)) {
                                             Text("ACTIVE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
@@ -885,9 +885,9 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                     }
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column {
-                                            Text(sub.tier?.replaceFirstChar(Char::uppercase) ?: "Subscription", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                            Text(sub.tier?.replaceFirstChar(Char::uppercase) ?: "Subscription", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
                                             sub.expiresAt?.let { exp ->
-                                                Text("Expires: $exp", fontSize = 11.sp, color = Color(0xFF64748B))
+                                                Text("Expires: $exp", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                                             }
                                         }
                                         OutlinedButton(
@@ -929,7 +929,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         item(key = "coins_discount") {
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = Color(0xFFFFFBEB),
+                                color = if (isDark) Color(0xFF1C1408) else Color(0xFFFFFBEB),
                                 border = BorderStroke(1.dp, Color(0xFFFBBF24).copy(alpha = 0.5f)),
                                 modifier = Modifier.fillMaxWidth(),
                                 shadowElevation = 2.dp,
@@ -942,23 +942,23 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                             }
                                         }
                                         Column(Modifier.weight(1f)) {
-                                            Text("Use Coins for Discounts", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF78350F))
-                                            Text("You have ${state.coinBalance} coins (₹${state.coinBalance} value)", fontSize = 12.sp, color = Color(0xFF92400E))
+                                            Text("Use Coins for Discounts", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF78350F))
+                                            Text("You have ${state.coinBalance} coins (₹${state.coinBalance} value)", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
                                         }
                                     }
-                                    Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
+                                    Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF251A05) else Color.White, modifier = Modifier.fillMaxWidth()) {
                                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Text("Discount limits:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF374151))
+                                            Text("Discount limits:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF374151))
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("• Basic / Bronze:", fontSize = 11.sp, color = Color(0xFF6B7280), modifier = Modifier.width(120.dp))
+                                                Text("• Basic / Bronze:", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF6B7280), modifier = Modifier.width(120.dp))
                                                 Text("Up to 50% off", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
                                             }
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("• Silver / Premium:", fontSize = 11.sp, color = Color(0xFF6B7280), modifier = Modifier.width(120.dp))
+                                                Text("• Silver / Premium:", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF6B7280), modifier = Modifier.width(120.dp))
                                                 Text("Up to 30% off", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
                                             }
                                             Spacer(Modifier.height(4.dp))
-                                            Text("1 coin = ₹1 discount. Coins are applied automatically at checkout.", fontSize = 10.sp, color = Color(0xFF9CA3AF))
+                                            Text("1 coin = ₹1 discount. Coins are applied automatically at checkout.", fontSize = 10.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF9CA3AF))
                                         }
                                     }
                                 }
@@ -967,11 +967,11 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                     }
                     // Savings calculator
                     item(key = "savings_calc") {
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF0F172A) else Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Filled.Calculate, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
-                                    Text("Savings Calculator", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                    Text("Savings Calculator", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
                                 }
                                 Text("Cost per post if you list regularly:", fontSize = 12.sp, color = Color(0xFF64748B))
                                 val calcData = listOf(
@@ -3281,7 +3281,13 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val steps = listOf(stringResource(R.string.commerce_step_listing_live), stringResource(R.string.commerce_step_deal_agreed), stringResource(R.string.commerce_step_payment), stringResource(R.string.commerce_step_confirmation), stringResource(R.string.commerce_step_complete))
     var showTestingGuide by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFECFDF5), Color(0xFFF0FDF4))))) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val backgroundBrush = if (isDark) {
+        Brush.verticalGradient(listOf(Color(0xFF0D1B1E), Color(0xFF0A1412), Color(0xFF0D1B1E)))
+    } else {
+        Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFECFDF5), Color(0xFFF0FDF4)))
+    }
+    Box(Modifier.fillMaxSize().background(backgroundBrush)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.commerce_mark_sold), onBack)
             // Hero gradient card (web parity: mhub-hero-card "Sale Confirmation")

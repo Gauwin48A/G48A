@@ -720,11 +720,11 @@ fun PostDetailScreen(
                                 // Status badge: Active / Sold / Inactive / Expired
                                 post.status?.takeIf { it.isNotBlank() }?.let { status ->
                                     val (statusColor, statusBg, statusLabel) = when (status.lowercase()) {
-                                        "active" -> Triple(Color(0xFF22C55E), Color(0xFFDCFCE7), "Active")
-                                        "sold" -> Triple(Color(0xFFEF4444), Color(0xFFFEE2E2), "Sold")
-                                        "inactive" -> Triple(Color(0xFFF59E0B), Color(0xFFFEF3C7), "Inactive")
-                                        "expired" -> Triple(Color(0xFFEF4444), Color(0xFFFEE2E2), "Expired")
-                                        else -> Triple(Color(0xFF6B7280), Color(0xFFF3F4F6), status.replaceFirstChar(Char::uppercase))
+                                        "active" -> Triple(Color(0xFF22C55E), if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), "Active")
+                                        "sold" -> Triple(Color(0xFFEF4444), if (isDark) Color(0xFF2A0F0F) else Color(0xFFFEE2E2), "Sold")
+                                        "inactive" -> Triple(Color(0xFFF59E0B), if (isDark) Color(0xFF2A1F08) else Color(0xFFFEF3C7), "Inactive")
+                                        "expired" -> Triple(Color(0xFFEF4444), if (isDark) Color(0xFF2A0F0F) else Color(0xFFFEE2E2), "Expired")
+                                        else -> Triple(Color(0xFF6B7280), if (isDark) Color(0xFF1F2937) else Color(0xFFF3F4F6), status.replaceFirstChar(Char::uppercase))
                                     }
                                     Surface(shape = RoundedCornerShape(6.dp), color = statusBg, border = BorderStroke(1.dp, statusColor.copy(alpha = 0.4f))) {
                                         Text(statusLabel, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = statusColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
@@ -989,12 +989,12 @@ fun PostDetailScreen(
                         if (!isOwner) item(key = "sec_why_trust") {
                             Card(
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D1B2E) else Color(0xFFEFF6FF)),
+                                border = BorderStroke(1.dp, if (isDark) Color(0xFF1E3A5F) else Color(0xFFBFDBFE)),
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("🛡️ Why this listing is trustworthy", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E3A8A))
+                                    Text("🛡️ Why this listing is trustworthy", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         val trustItems = listOf(
                                             "✅" to "Verified Seller",
@@ -1008,7 +1008,7 @@ fun PostDetailScreen(
                                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                                             ) {
                                                 Text(emoji, fontSize = 22.sp)
-                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1E3A8A), textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 13.sp)
+                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A), textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 13.sp)
                                             }
                                         }
                                     }
@@ -1164,8 +1164,8 @@ fun PostDetailScreen(
                                     safetyItems.forEach { (emoji, label) ->
                                         Surface(
                                             shape = RoundedCornerShape(10.dp),
-                                            color = Color(0xFFECFDF5),
-                                            border = BorderStroke(1.dp, Color(0xFF6EE7B7)),
+                                            color = if (isDark) Color(0xFF062010) else Color(0xFFECFDF5),
+                                            border = BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.3f) else Color(0xFF6EE7B7)),
                                             modifier = Modifier.weight(1f),
                                         ) {
                                             Column(
@@ -1174,7 +1174,7 @@ fun PostDetailScreen(
                                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                                             ) {
                                                 Text(emoji, fontSize = 18.sp)
-                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF065F46), lineHeight = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF4ADE80) else Color(0xFF065F46), lineHeight = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                             }
                                         }
                                     }
@@ -1371,8 +1371,8 @@ fun PostDetailScreen(
                                     ).forEach { (emoji, value, label) ->
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(emoji, fontSize = 18.sp)
-                                            Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF92400E))
-                                            Text(label, fontSize = 11.sp, color = Color(0xFFB45309))
+                                            Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
+                                            Text(label, fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFFB45309))
                                         }
                                     }
                                 }
@@ -1388,7 +1388,7 @@ fun PostDetailScreen(
                             var showBoostPanel by remember { mutableStateOf(false) }
 
                             if (state.offerSent) {
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
                                 }
                             }

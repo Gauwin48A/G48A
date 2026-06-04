@@ -225,7 +225,7 @@ Each category = its own independent marketplace mini-app. AllPosts, filters, sub
 | Price (₹ formatted) | ✅ | ✅ | ✅ DONE |
 | **Original price strikethrough + discount % + "You save ₹N"** | ✅ (if original_price) | ✅ IMPLEMENTED | ✅ DONE |
 | Delivery/Meetup row (real API data) | ✅ | 🟡 hardcoded | 🟡 PARTIAL |
-| Return/Inspection row | ✅ | ❌ | 🔴 TODO |
+| Return/Inspection row | ✅ | ✅ | ✅ DONE |
 | Category + Condition + Location chips | ✅ | ✅ | ✅ DONE |
 | Summary stats (views, likes, shares, posted) | ✅ | ✅ | ✅ DONE |
 | Freshness "Updated X ago • Expires in N days" | ✅ | ✅ IMPLEMENTED | ✅ DONE |
@@ -582,8 +582,8 @@ fallbacks, so an empty screen at runtime points to a runtime/data issue, not mis
 | R1 | **Per-category isolation** | Ensure a post/feed in one category never shows in another. Pass `categoryKey` through every feed/foryou/myfeed query; filter mock fallbacks by category. | ✅ VERIFIED (already wired: ExploreScreen uses `LocalActiveCategoryKey`, ForYou uses profile prefs, ProductListing filters by category) |
 | R2 | **Plans page → 10/10** | Redesign plans screen (tier cards, feature matrix, savings, CTA). Add **Bronze one-time claim** for new users (KYC mandatory gate). Single plan unlocks all 4 categories. | ✅ DONE (per-post cost badges, savings calculator, FAQ section, loading states) |
 | R3 | **Coins → plan discounts** | Apply coins at checkout: up to **30%** off premium, **50%** off basic. Earn coins on sale-publish + referral chain. | ✅ DONE (coin balance from RewardsRepo, discount hints on cards, info card) |
-| R4 | **2-way Sale confirmation** | SaleDone requires BOTH seller + buyer confirm → coins credited. SaleUndone allows repost with coin penalty. Align endpoints (`/sales` vs `/transactions`, item H4). | TODO |
-| R5 | **Language + Dark mode end-to-end** | Switching locale/theme re-renders ALL screens incl. AllPosts data across all 4 categories. (LocaleManager already emits `localeVersion`; audit every screen subscribes.) | TODO |
+| R4 | **2-way Sale confirmation** | SaleDone requires BOTH seller + buyer confirm → coins credited. SaleUndone allows repost with coin penalty. Align endpoints (`/sales` vs `/transactions`, item H4). | ✅ DONE |
+| R5 | **Language + Dark mode end-to-end** | Switching locale/theme re-renders ALL screens incl. AllPosts data across all 4 categories. (LocaleManager already emits `localeVersion`; audit every screen subscribes.) | ✅ DONE |
 | R6 | **Search in feed / my-feed / for-you** | Add search + filter bars to Feed, My Feed; For-You = AllPosts filtered by profile preferences. | ✅ VERIFIED (already implemented with debounced search) |
 | R7 | **Filter pane upgrade** | AllPosts filter sheet: add Location, Price range, Date range (web parity). | ✅ DONE (Location added to both ExploreScreen + ProductListingScreen filter sheets; price+date already existed) |
 | R8 | **Home page cleanup** | Remove search bar / cart / notifications from home — keep only 4 category apps + welcome. | ✅ DONE |
