@@ -14,9 +14,9 @@ import { useTheme } from '@/context/ThemeContext';
 import api from '@/services/api';
 import { fetchUserPreferencesCached, clearUserPreferencesCache } from '@/services/preferencesService';
 import { getUserId, isAuthenticated } from '@/utils/authStorage';
-import { fetchAllSubcategories } from '@/services/subcategoriesService';
 import { buildActiveAppMatcher, normalizeCategoryText } from '@/utils/categoryModeFilters';
 import MiniCartPopover from '@/components/MiniCartPopover';
+import AllPostsEnhancements from '@/components/AllPostsEnhancements';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { readSavedPostIds, subscribeSavedPosts } from '@/utils/savedPosts';
 import { readUserCity } from '@/utils/locationCache';
@@ -90,6 +90,8 @@ const GreenNavbar = () => {
     { key: 'feedback', path: '/feedback', icon: FiStar, group: 'social' },
     { key: 'complaints', path: '/complaints', icon: FiFileText, group: 'social' },
     { key: 'profile', path: '/profile', icon: FiUser, group: 'account', requiresAuth: true },
+    { key: 'wallet', path: '/wallet', icon: FiStar, group: 'account', requiresAuth: true },
+    { key: 'price_alerts', path: '/price-alerts', icon: FiBell, group: 'account', requiresAuth: true },
     { key: 'rewards', path: '/rewards', icon: FiUserCheck, group: 'account', requiresAuth: true },
     { key: 'notifications', path: '/notifications', icon: FiBell, group: 'account', requiresAuth: true },
     { key: 'verification', path: '/verification', icon: FiUserCheck, group: 'account', requiresAuth: true },
@@ -101,10 +103,11 @@ const GreenNavbar = () => {
 
   const bottomNavLinks = [
     { key: 'home', path: '/category-hub', icon: <FiHome />, matchPaths: ['/category-hub', '/home', '/'] },
-    { key: 'all_posts', path: '/all-posts', icon: <FiSearch />, matchPaths: ['/all-posts', '/listings', '/search', '/nearby', '/for-you'] },
+    { key: 'all_posts', path: '/all-posts', icon: <FiSearch />, matchPaths: ['/all-posts', '/listings', '/search', '/nearby'] },
+    { key: 'for_you', path: '/for-you', icon: <FiStar />, matchPaths: ['/for-you'] },
     { key: 'sell', path: '/post-welcome', icon: <FiGrid />, matchPaths: ['/post-welcome', '/add-post', '/sell', '/post_add', '/edit-post'] },
-    { key: 'chat', path: '/chat', icon: <FiMessageCircle />, matchPaths: ['/chat', '/chats', '/channels'] },
-    { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile', '/rewards', '/notifications', '/dashboard'] },
+    { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
+    { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile', '/notifications', '/dashboard'] },
     { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
   ];
   const { toast } = useToast();
@@ -117,38 +120,6 @@ const GreenNavbar = () => {
     categories: categoryModeCategories,
   } = useCategoryMode();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
-  const [subcategories, setSubcategories] = useState([]);
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.search) count += 1;
-    if (filters.location) count += 1;
-    if (filters.minPrice || filters.maxPrice) count += 1;
-    if (filters.startDate || filters.endDate) count += 1;
-    if (
-      (filters.subcategory && filters.subcategory !== 'All') ||
-      (filters.category && filters.category !== 'All')
-    ) {
-      count += 1;
-    }
-    if (filters.sortBy) count += 1;
-    if (filters.condition) count += 1;
-    if (filters.verifiedOnly) count += 1;
-    return count;
-  }, [
-    filters.category,
-    filters.subcategory,
-    filters.condition,
-    filters.endDate,
-    filters.location,
-    filters.maxPrice,
-    filters.minPrice,
-    filters.search,
-    filters.sortBy,
-    filters.startDate,
-    filters.verifiedOnly,
-  ]);
-  const hasActiveFilters = activeFilterCount > 0;
   const { mode: themeMode, setThemeMode } = useTheme();
   const isNativePlatform =
     typeof window !== 'undefined' &&
@@ -163,32 +134,6 @@ const GreenNavbar = () => {
     const stored = localStorage.getItem('largeFont');
     return parseStoredBoolean(stored, false);
   });
-
-  useEffect(() => {
-    // Defer subcategory fetch until filter drawer is actually opened
-    if (!showFilter) return;
-    if (subcategories.length > 0) return; // already fetched
-    let cancelled = false;
-
-    const fetchSubcategoryOptions = async () => {
-      try {
-        const subcategoryData = await fetchAllSubcategories();
-        if (cancelled) return;
-        setSubcategories(Array.isArray(subcategoryData) ? subcategoryData : []);
-      } catch (err) {
-        if (cancelled) return;
-        if (import.meta.env.DEV) {
-          console.error('Failed to fetch subcategories:', err);
-        }
-        setSubcategories([]);
-      }
-    };
-    fetchSubcategoryOptions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [showFilter]);
 
   // Dark mode is now managed by ThemeContext
 
@@ -438,7 +383,6 @@ const GreenNavbar = () => {
 
   // Router location for path detection
   useEffect(() => {
-    setShowFilter(false);
     setMoreOpen(false);
   }, [routerLocation.pathname]);
   const activeAppMatcher = useMemo(
@@ -458,26 +402,7 @@ const GreenNavbar = () => {
     const id = match?.category_id || match?.id || null;
     return id != null ? String(id) : "";
   }, [activeCategory?.id, activeCategory?.name, categoryModeCategories]);
-  const scopedSubcategories = useMemo(() => {
-    const source = Array.isArray(subcategories) ? subcategories : [];
-    return source.filter((sub) => {
-      const subCategoryId = sub?.category_id != null ? String(sub.category_id) : "";
-      const subCategoryName = normalizeCategoryText(sub?.category_name || "");
-      if (activeCategoryId) {
-        return subCategoryId === activeCategoryId;
-      }
-      if (activeAppMatcher?.activeApp) {
-        if (subCategoryId && activeAppMatcher.categoryIds.has(subCategoryId)) {
-          return true;
-        }
-        if (subCategoryName && activeAppMatcher.categoryNames.has(subCategoryName)) {
-          return true;
-        }
-        return false;
-      }
-      return true;
-    });
-  }, [activeAppMatcher, activeCategoryId, subcategories]);
+
 
   // Check if currently on For You page
   const isForYouPage = normalizedPath === '/for-you';
@@ -669,16 +594,7 @@ const GreenNavbar = () => {
     moreOpenTimeRef.current = Date.now();
     setMoreOpen(true);
   }, []);
-  const scopedSubcategoryNames = useMemo(
-    () => new Set(scopedSubcategories.map((item) => normalizeCategoryText(item?.name || item?.title || ""))),
-    [scopedSubcategories],
-  );
-  const selectedScopedSubcategory =
-    filters.subcategory &&
-    filters.subcategory !== 'All' &&
-    scopedSubcategoryNames.has(normalizeCategoryText(filters.subcategory))
-      ? filters.subcategory
-      : '';
+
 
   return (
     <>
@@ -790,304 +706,40 @@ const GreenNavbar = () => {
                 )}
               </div>
 
-              {/* Filter Button */}
+              {/* Filter Button — Advanced Filter Panel */}
               {!hideFilterOnGate && (
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowFilter(true)}
-                    className={`mhub-nav-action inline-flex h-10 sm:h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-3.5 text-sm font-semibold backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters ? 'ring-2 ring-[color:var(--primary)] shadow-md' : ''}`}
-                    aria-label={`${t('filter', { defaultValue: 'Filter' })}${hasActiveFilters ? ` (${activeFilterCount})` : ''}`}
-                  >
-                    <FiFilter className="h-4 w-4" />
-                    <span className="hidden lg:inline">{t('filter', { defaultValue: 'Filter' })}</span>
-                    {hasActiveFilters && (
-                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[var(--primary)] text-white text-xs font-bold px-1.5">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                <AllPostsEnhancements
+                  filters={filters}
+                  setFilters={setFilters}
+                  onApply={(newFilters) => {
+                    // Sync preferences to DB if on For You page and logged in
+                    const isForYou = normalizedPath === '/for-you';
+                    const loggedIn = isAuthenticated(user);
+                    const userId = getUserId(user);
+                    if (isForYou && loggedIn && userId && newFilters.subcategory && newFilters.subcategory !== 'All') {
+                      api.post('/profile/preferences/update', {
+                        userId,
+                        location: newFilters.location,
+                        minPrice: newFilters.minPrice,
+                        maxPrice: newFilters.maxPrice,
+                        subcategories: [newFilters.subcategory],
+                      })
+                      .then(() => {
+                        clearUserPreferencesCache(userId);
+                        toast({
+                          title: t('preferences_updated', { defaultValue: 'Preferences Updated' }),
+                          description: t('for_you_synced', { defaultValue: 'Your For You feed preferences have been saved.' }),
+                        });
+                      })
+                      .catch(err => {
+                        if (import.meta.env.DEV) {
+                          console.error("Failed to sync preferences", err);
+                        }
+                      });
+                    }
+                  }}
+                />
               )}
-              {!hideFilterOnGate && showFilter && typeof document !== 'undefined'
-                ? createPortal(
-                    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-40">
-                      <div className="mhub-premium-surface rounded-2xl shadow-2xl border p-6 w-full max-w-sm mx-2 flex flex-col gap-3 relative animate-fadeIn">
-                        <button className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 dark:hover:text-yellow-400" onClick={() => setShowFilter(false)} aria-label={t('close', { defaultValue: 'Close filter' })}>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                        <h4 className="font-semibold text-blue-600 dark:text-yellow-300 mb-2">{t('filter_products', { defaultValue: 'Filter Products' })}</h4>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('location')}</label>
-                          <select
-                            className="mhub-input w-full px-2 py-1.5 text-sm"
-                            value={filters.location || ''}
-                            onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))}
-                          >
-                            <option value="">{t('any_location', { defaultValue: 'Any Location' })}</option>
-                            <option value="Delhi">Delhi</option>
-                            <option value="Mumbai">Mumbai</option>
-                            <option value="Bangalore">Bangalore</option>
-                            <option value="Chennai">Chennai</option>
-                            <option value="Kolkata">Kolkata</option>
-                            <option value="Hyderabad">Hyderabad</option>
-                          </select>
-                        </div>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price_range', { defaultValue: 'Price Range' })}</label>
-                          <div className="flex gap-2 items-center">
-                            <div className="flex-1">
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder={t('min_price_placeholder')}
-                                className="mhub-input w-full px-2 py-1.5 text-sm"
-                                value={filters.minPrice || ''}
-                                onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value, page: 1 }))}
-                              />
-                            </div>
-                            <span className="text-gray-400">to</span>
-                            <div className="flex-1">
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder={t('max_price_placeholder')}
-                                className="mhub-input w-full px-2 py-1.5 text-sm"
-                                value={filters.maxPrice || ''}
-                                onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value, page: 1 }))}
-                              />
-                            </div>
-                          </div>
-                          {/* Quick preset buttons */}
-                          <div className="flex gap-1 mt-2 flex-wrap">
-                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '', maxPrice: '500', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('under_500')}</button>
-                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '500', maxPrice: '2000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('500_to_2k')}</button>
-                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '2000', maxPrice: '10000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('2k_to_10k')}</button>
-                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '10000', maxPrice: '', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('above_10k')}</button>
-                          </div>
-                        </div>
-
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date_range', { defaultValue: 'Date Range' })}</label>
-                          {/* Quick Date Presets Dropdown */}
-                          <select
-                            className="mhub-input w-full px-2 py-1.5 text-sm mb-2"
-                            defaultValue=""
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const now = new Date();
-                              let startDate = '', endDate = now.toISOString().split('T')[0];
-
-                              if (val === 'today') {
-                                startDate = endDate;
-                              } else if (val === 'yesterday') {
-                                const yesterday = new Date(now);
-                                yesterday.setDate(yesterday.getDate() - 1);
-                                startDate = endDate = yesterday.toISOString().split('T')[0];
-                              } else if (val === '24h') {
-                                const past24h = new Date(now);
-                                past24h.setHours(past24h.getHours() - 24);
-                                startDate = past24h.toISOString().split('T')[0];
-                              } else if (val === '7d') {
-                                const past7d = new Date(now);
-                                past7d.setDate(past7d.getDate() - 7);
-                                startDate = past7d.toISOString().split('T')[0];
-                              } else if (val === '10d') {
-                                const past10d = new Date(now);
-                                past10d.setDate(past10d.getDate() - 10);
-                                startDate = past10d.toISOString().split('T')[0];
-                              } else if (val === '30d') {
-                                const past30d = new Date(now);
-                                past30d.setDate(past30d.getDate() - 30);
-                                startDate = past30d.toISOString().split('T')[0];
-                              } else if (val === 'custom') {
-                                // Keep existing dates or clear for custom selection
-                                return;
-                              } else {
-                                // "Any" - clear dates
-                                startDate = endDate = '';
-                              }
-                              setFilters(f => ({ ...f, startDate, endDate, page: 1 }));
-                            }}
-                          >
-                            <option value="">{t('any_time')}</option>
-                            <option value="today">{t('today')}</option>
-                            <option value="yesterday">{t('yesterday')}</option>
-                            <option value="24h">{t('last_24_hours')}</option>
-                            <option value="7d">{t('last_7_days')}</option>
-                            <option value="10d">{t('last_10_days')}</option>
-                            <option value="30d">{t('last_30_days')}</option>
-                            <option value="custom">{t('custom_range')}</option>
-                          </select>
-                          <div className="flex gap-2 items-center">
-                            <div className="flex-1">
-                              <input
-                                type="date"
-                                className="mhub-input w-full px-2 py-1.5 text-sm"
-                                value={filters.startDate || ''}
-                                onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value, page: 1 }))}
-                              />
-                            </div>
-                            <span className="text-gray-400">to</span>
-                            <div className="flex-1">
-                              <input
-                                type="date"
-                                className="mhub-input w-full px-2 py-1.5 text-sm"
-                                value={filters.endDate || ''}
-                                onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value, page: 1 }))}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('condition', { defaultValue: 'Condition' })}</label>
-                          <div className="flex flex-wrap gap-2">
-                            {['', 'new', 'like_new', 'good', 'fair'].map((cond) => (
-                              <button
-                                key={cond}
-                                type="button"
-                                onClick={() => setFilters(f => ({ ...f, condition: cond, page: 1 }))}
-                                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                                  (filters.condition || '') === cond
-                                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-yellow-400 dark:text-gray-900 dark:border-yellow-400'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600'
-                                }`}
-                              >
-                                {cond === '' ? (t('any', { defaultValue: 'Any' })) :
-                                 cond === 'new' ? (t('condition_new', { defaultValue: 'New' })) :
-                                 cond === 'like_new' ? (t('condition_like_new', { defaultValue: 'Like New' })) :
-                                 cond === 'good' ? (t('condition_good', { defaultValue: 'Good' })) :
-                                 (t('condition_fair', { defaultValue: 'Fair' }))}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* F-04: Verified sellers only */}
-                        <div className="mb-2 flex items-center gap-3">
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={!!filters.verifiedOnly}
-                            onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}
-                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.verifiedOnly ? 'bg-blue-600 dark:bg-yellow-400' : 'bg-gray-300 dark:bg-gray-600'}`}
-                          >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                          </button>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none cursor-pointer" onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}>
-                            <FiUserCheck className="inline w-3.5 h-3.5 mr-1 text-blue-600 dark:text-yellow-400" />
-                            {t('verified_sellers_only', { defaultValue: 'Verified sellers only' })}
-                          </label>
-                        </div>
-
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('sort_by')}</label>
-                          <select className="mhub-input w-full px-2 py-1.5 text-sm" value={filters.sortBy || ''} onChange={e => setFilters(f => ({ ...f, sortBy: e.target.value, page: 1 }))}>
-                            <option value="">{t('default', { defaultValue: 'Default' })}</option>
-                            <option value="price_asc">{t('price_low_high', { defaultValue: 'Price: Low to High' })}</option>
-                            <option value="price_desc">{t('price_high_low', { defaultValue: 'Price: High to Low' })}</option>
-                            <option value="date_desc">{t('newest_first', { defaultValue: 'Newest First' })}</option>
-                            <option value="date_asc">{t('oldest_first', { defaultValue: 'Oldest First' })}</option>
-                            {permissionGranted && <option value="distance">{t('sort_by_distance', { defaultValue: 'Nearest First' })}</option>}
-                          </select>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                            onClick={() => {
-                              setShowFilter(false);
-
-                              // Sync preferences to DB if on For You page and logged in
-                              const loggedIn = isAuthenticated(user);
-                              const userId = getUserId(user);
-
-                              if (normalizedPath === '/for-you' && loggedIn && userId) {
-                                const subcategoriesPayload =
-                                  selectedScopedSubcategory
-                                    ? [selectedScopedSubcategory]
-                                    : [];
-
-                                if (subcategoriesPayload.length > 0) {
-                                  api.post('/profile/preferences/update', {
-                                      userId,
-                                      location: filters.location,
-                                      minPrice: filters.minPrice,
-                                      maxPrice: filters.maxPrice,
-                                      subcategories: subcategoriesPayload
-                                    })
-                                  .then(() => {
-                                      clearUserPreferencesCache(userId);
-                                      toast({ title: t('preferences_updated', { defaultValue: 'Preferences Updated' }), description: t('for_you_synced', { defaultValue: 'Your For You feed preferences have been saved.' }) });
-                                  })
-                                  .catch(err => {
-                                    if (import.meta.env.DEV) {
-                                      console.error("Failed to sync preferences", err);
-                                    }
-                                  });
-                                }
-                              }
-
-                              // If on For You page, navigate with filters as URL params
-                              if (normalizedPath === '/for-you') {
-                                const params = new URLSearchParams();
-                                if (selectedScopedSubcategory) {
-                                  const normalized = String(selectedScopedSubcategory).trim().toLowerCase();
-                                  const match = scopedSubcategories.find((sub) => {
-                                    const id = String(sub.subcategory_id || sub.id || '').trim().toLowerCase();
-                                    const name = String(sub.name || sub.title || '').trim().toLowerCase();
-                                    return id === normalized || name === normalized;
-                                  });
-                                  const parentCategoryId = match?.category_id || null;
-                                  const subcategoryId = match?.subcategory_id || match?.id || null;
-                                  if (parentCategoryId) {
-                                    params.set('category_id', String(parentCategoryId));
-                                  }
-                                  if (subcategoryId) {
-                                    params.set('subcategory_id', String(subcategoryId));
-                                  } else {
-                                    params.set('subcategory', selectedScopedSubcategory);
-                                  }
-                                }
-                                if (filters.minPrice) params.set('minPrice', filters.minPrice);
-                                if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
-                                if (filters.location) params.set('location', filters.location);
-                                const queryString = params.toString();
-                                navigate(`/for-you${queryString ? '?' + queryString : ''}`);
-                              }
-                            }}
-                          >{t('apply', { defaultValue: 'Apply' })}</button>
-                          <button
-                            className="flex-1 bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-[var(--surface-2)] transition"
-                            onClick={() => {
-                              setFilters(f => ({
-                                ...f,
-                                location: '',
-                                minPrice: '',
-                                maxPrice: '',
-                                priceRange: '',
-                                startDate: '',
-                                endDate: '',
-                                category: 'All',
-                                subcategory: 'All',
-                                sortBy: '',
-                                condition: '',
-                                verifiedOnly: false,
-                                page: 1,
-                              }));
-                              setShowFilter(false);
-                              // Clear URL params if on For You page
-                              if (normalizedPath === '/for-you') {
-                                navigate('/for-you');
-                              }
-                            }}
-                          >{t('reset', { defaultValue: 'Clear' })}</button>
-                        </div>
-                      </div>
-                    </div>,
-                    document.body,
-                  )
-                : null}
             </div>
 
             {/* Icons */}

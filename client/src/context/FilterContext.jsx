@@ -19,6 +19,8 @@ export const DEFAULT_FILTERS = {
   startDate: "",
   endDate: "",
   verifiedOnly: false,
+  premiumOnly: false,
+  postType: "",
   page: 1,
 };
 

@@ -6,7 +6,7 @@ import LocalStorageBackend from "i18next-localstorage-backend";
 import HttpBackend from "i18next-http-backend";
 import en from "../locales/en.json";
 import { LANGUAGES, getLanguageByCode } from "../constants/languages";
-import { translateText } from "../utils/translateContent";
+import { translateText, clearTranslationCache } from "../utils/translateContent";
 
 // Bump when locale files change to invalidate i18next localStorage cache.
 const TRANSLATION_VERSION = "v1.0.20";
@@ -179,6 +179,13 @@ function applyLanguageSideEffects(language) {
     document.documentElement.dir = lang.dir;
     document.documentElement.lang = normalized;
   }
+
+  // ── CRITICAL: Clear ALL translation caches on language switch ──
+  // This ensures every word including post data gets re-translated.
+  // Without this, stale cached translations from the previous language
+  // would persist and the UI would show mixed-language content.
+  // clearTranslationCache() internally handles both in-memory and localStorage cache.
+  clearTranslationCache();
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("languageChanged"));

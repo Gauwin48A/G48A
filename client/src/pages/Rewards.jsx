@@ -54,8 +54,11 @@ import {
   RewardsOverview,
   RewardsRedeem,
   RewardsReferrals,
+  InteractiveSpinWheelModal,
+  ScratchCardModal,
 } from "@/components/rewards/RewardsSections";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
+import ReferralChainTree from "../components/referral/ReferralChainTree";
 
 const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
@@ -145,6 +148,8 @@ const RewardsPage = () => {
     [dailyCheckInLoading, setDailyCheckInLoading] = useState(!1),
     [spinLoading, setSpinLoading] = useState(!1),
     [scratchLoading, setScratchLoading] = useState(!1),
+    [showSpinModal, setShowSpinModal] = useState(!1),
+    [showScratchModal, setShowScratchModal] = useState(!1),
     [redeemDialogOpen, setRedeemDialogOpen] = useState(!1),
     [redeemDialogReward, setRedeemDialogReward] = useState(null),
     [redeemDialogPosts, setRedeemDialogPosts] = useState([]),
@@ -950,61 +955,11 @@ const RewardsPage = () => {
         setDailyCheckInLoading(!1);
       }
     },
-    handleSpinWheel = async () => {
-      if (spinLoading) return;
-      setSpinLoading(!0);
-      try {
-        const t = await api.post("/coins/spin");
-        if (Number.isFinite(Number(t?.newBalance))) {
-          applyCoinBalanceUpdate(t.newBalance, { source: "spin-wheel" });
-        }
-        fetchEngagement({ silent: !0 });
-        triggerRefresh();
-        toast({
-          title: tr("spin_won", "Spin complete!"),
-          description: tr("coins_earned", "You earned {{count}} coins", {
-            count: t?.reward ?? 0,
-          }),
-        });
-      } catch (t) {
-        toast({
-          title: tr("spin_failed", "Spin failed"),
-          description:
-            t?.response?.data?.error ||
-            tr("try_again", "Try again"),
-          variant: "destructive",
-        });
-      } finally {
-        setSpinLoading(!1);
-      }
+    handleSpinWheel = () => {
+      setShowSpinModal(!0);
     },
-    handleScratchCard = async () => {
-      if (scratchLoading) return;
-      setScratchLoading(!0);
-      try {
-        const t = await api.post("/coins/scratch");
-        if (Number.isFinite(Number(t?.newBalance))) {
-          applyCoinBalanceUpdate(t.newBalance, { source: "scratch-card" });
-        }
-        fetchEngagement({ silent: !0 });
-        triggerRefresh();
-        toast({
-          title: tr("scratch_won", "Scratch complete!"),
-          description: tr("coins_earned", "You earned {{count}} coins", {
-            count: t?.reward ?? 0,
-          }),
-        });
-      } catch (t) {
-        toast({
-          title: tr("scratch_failed", "Scratch failed"),
-          description:
-            t?.response?.data?.error ||
-            tr("try_again", "Try again"),
-          variant: "destructive",
-        });
-      } finally {
-        setScratchLoading(!1);
-      }
+    handleScratchCard = () => {
+      setShowScratchModal(!0);
     },
     handleClaimMilestone = async () => {
       if (!milestoneEligible) {
@@ -2255,35 +2210,18 @@ const RewardsPage = () => {
           ) : null}
 
           {activeTab === "referrals" ? (
-            <RewardsReferrals
-              referralCode={referralCode}
-              referralShareDisplay={referralShareDisplay}
-              referralGoal={referralGoal}
-              referralReward={referralReward}
-              shareDisabled={shareDisabled}
-              onCopyReferralCode={() =>
-                copyToClipboard(
-                  referralCode,
-                  tr("referral_code", "Referral code"),
-                )
-              }
-              onCopyReferralLink={copyReferralLink}
-              onShareWhatsApp={shareWhatsApp}
-              onShareTelegram={shareTelegram}
-              onShareSms={shareSms}
+            <ReferralChainTree
               dailySecretCode={rewardsUser?.dailySecretCode}
               secretCountdown={secretCountdown}
-              onCopySecretCode={() => copyToClipboard(rewardsUser?.dailySecretCode || "", tr("secret_code", "Secret code"))}
+              onCopySecretCode={() =>
+                copyToClipboard(
+                  rewardsUser?.dailySecretCode || "",
+                  tr("secret_code", "Secret code"),
+                )
+              }
               referralSteps={referralSteps}
               onShareReferral={shareReferral}
-              referralChain={referralChain}
-              directReferrals={directReferrals}
-              indirectReferrals={indirectReferrals}
-              referralTree={referralTree}
-              chainRules={chainRules}
               onBrowseListings={() => navigate("/all-posts")}
-              tr={tr}
-              tFunc={tFunc}
             />
           ) : null}
 
@@ -2444,6 +2382,28 @@ const RewardsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InteractiveSpinWheelModal
+        isOpen={showSpinModal}
+        onClose={() => setShowSpinModal(!1)}
+        onWin={(newBalance) => {
+          applyCoinBalanceUpdate(newBalance, { source: "spin-wheel" });
+          fetchEngagement({ silent: !0 });
+          triggerRefresh();
+        }}
+        tr={tr}
+      />
+
+      <ScratchCardModal
+        isOpen={showScratchModal}
+        onClose={() => setShowScratchModal(!1)}
+        onWin={(newBalance) => {
+          applyCoinBalanceUpdate(newBalance, { source: "scratch-card" });
+          fetchEngagement({ silent: !0 });
+          triggerRefresh();
+        }}
+        tr={tr}
+      />
 
       {showDiagnostics ? (
         <div className="max-w-[640px] mx-auto px-4 mb-3">

@@ -19,14 +19,21 @@ const {
   CATEGORY_GROUP_VALUES,
 } = require("../utils/categoryGroupSql");
 
-let logger;
-try {
-  logger = require("../utils/logger");
-} catch (e) {
-  logger = null;
-}
-const logError = logger && logger.error ? logger.error : console.error;
-const logInfo = logger && logger.info ? logger.info : console.log;
+const logger = require("../utils/logger");
+const logError = (msg, err) => {
+  if (err) {
+    logger.error(msg, typeof err === "string" ? { message: err } : err);
+  } else {
+    logger.error(msg);
+  }
+};
+const logInfo = (msg, data) => {
+  if (data) {
+    logger.info(msg, data);
+  } else {
+    logger.info(msg);
+  }
+};
 const DEBUG_CATEGORY_FLOW =
   process.env.NODE_ENV !== "production" &&
   ["1", "true", "yes", "on"].includes(
@@ -1498,12 +1505,14 @@ exports.getPostById = async (req, res) => {
         c.name AS category_name,
         sc.name AS subcategory_name,
         sc.name AS subcategory,
+        u.rating AS seller_rating,
         jsonb_build_object(
           'user_id', u.user_id,
           'username', u.username,
           'name', COALESCE(pr.full_name, u.username),
           'avatar_url', pr.avatar_url,
-          'verified', COALESCE(pr.verified, false)
+          'verified', COALESCE(pr.verified, false),
+          'rating', COALESCE(CAST(u.rating AS numeric(3,2)), 0)
         ) AS "user"
       FROM updated_post up
       LEFT JOIN users u ON up.user_id::text = u.user_id::text
@@ -1777,8 +1786,8 @@ exports.markAsSold = async (req, res) => {
       transactionId = txResult.rows[0]?.transaction_id;
     }
 
-    /* Manual rewards are currently disabled */
-    const allowManualRewards = false;
+    /* Manual rewards enabled — both seller and buyer earn coins on sale confirmation */
+    const allowManualRewards = true;
 
     if (transactionId && allowManualRewards) {
       const rewardReferenceId = String(transactionId);

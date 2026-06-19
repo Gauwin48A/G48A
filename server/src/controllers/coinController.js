@@ -161,21 +161,45 @@ async function ensureCoinSchema() {
         END;
       END IF;
     END $$;
-  `).catch(() => {});
-  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS source_user_id TEXT`).catch(() => {});
-  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS level INTEGER`).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (main table) skipped:", { message: err?.message, code: err?.code });
+  });
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS source_user_id TEXT`).catch((err) => {
+    logger.warn("[Coins] Schema migration (source_user_id) skipped:", { message: err?.message });
+  });
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS level INTEGER`).catch((err) => {
+    logger.warn("[Coins] Schema migration (level) skipped:", { message: err?.message });
+  });
   await runQuery(
     `ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb`
-  ).catch(() => {});
-  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_user ON coin_transactions(user_id, created_at DESC)`).catch(() => {});
-  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_reference ON coin_transactions(reference_id)`).catch(() => {});
-  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_source_user ON coin_transactions(source_user_id)`).catch(() => {});
-  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_level ON coin_transactions(level)`).catch(() => {});
-  await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins DECIMAL(10,2) DEFAULT 0`).catch(() => {});
+  ).catch((err) => {
+    logger.warn("[Coins] Schema migration (metadata) skipped:", { message: err?.message });
+  });
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_user ON coin_transactions(user_id, created_at DESC)`).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_coin_user) skipped:", { message: err?.message });
+  });
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_reference ON coin_transactions(reference_id)`).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_coin_reference) skipped:", { message: err?.message });
+  });
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_source_user ON coin_transactions(source_user_id)`).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_coin_source_user) skipped:", { message: err?.message });
+  });
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_level ON coin_transactions(level)`).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_coin_level) skipped:", { message: err?.message });
+  });
+  await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins DECIMAL(10,2) DEFAULT 0`).catch((err) => {
+    logger.warn("[Coins] Schema migration (users.coins) skipped:", { message: err?.message });
+  });
   // Expiry + FIFO columns
-  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`).catch(() => {});
-  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS remaining DECIMAL(10,2)`).catch(() => {});
-  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_fifo ON coin_transactions(user_id, created_at ASC) WHERE amount > 0 AND remaining > 0`).catch(() => {});
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`).catch((err) => {
+    logger.warn("[Coins] Schema migration (expires_at) skipped:", { message: err?.message });
+  });
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS remaining DECIMAL(10,2)`).catch((err) => {
+    logger.warn("[Coins] Schema migration (remaining) skipped:", { message: err?.message });
+  });
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_fifo ON coin_transactions(user_id, created_at ASC) WHERE amount > 0 AND remaining > 0`).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_coin_fifo) skipped:", { message: err?.message });
+  });
 }
 
 // Cached promise pattern — avoids race condition with boolean flag
@@ -197,7 +221,9 @@ async function ensureEngagementSchema() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
-  `).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (reward_daily_checkins) skipped:", { message: err?.message });
+  });
 
   await runQuery(`
     CREATE TABLE IF NOT EXISTS reward_spin_history (
@@ -208,7 +234,9 @@ async function ensureEngagementSchema() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE (user_id, spin_date)
     )
-  `).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (reward_spin_history) skipped:", { message: err?.message });
+  });
 
   await runQuery(`
     CREATE TABLE IF NOT EXISTS reward_scratch_claims (
@@ -219,7 +247,9 @@ async function ensureEngagementSchema() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE (user_id, referral_user_id)
     )
-  `).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (reward_scratch_claims) skipped:", { message: err?.message });
+  });
 
   await runQuery(`
     CREATE TABLE IF NOT EXISTS reward_redemptions (
@@ -232,15 +262,21 @@ async function ensureEngagementSchema() {
       status VARCHAR(20) DEFAULT 'redeemed',
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
-  `).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (reward_redemptions) skipped:", { message: err?.message });
+  });
 
   await runQuery(
     "CREATE INDEX IF NOT EXISTS idx_reward_redemptions_user ON reward_redemptions(user_id, created_at DESC)",
-  ).catch(() => {});
+  ).catch((err) => {
+    logger.warn("[Coins] Schema migration (idx_reward_redemptions_user) skipped:", { message: err?.message });
+  });
 
   await runQuery(
     "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS reward_badge VARCHAR(30)",
-  ).catch(() => {});
+  ).catch((err) => {
+    logger.warn("[Coins] Schema migration (profiles.reward_badge) skipped:", { message: err?.message });
+  });
 }
 
 let _engagementSchemaPromise = null;
@@ -508,7 +544,9 @@ async function applyPostBoost({ userId, postId, boostType, durationDays, source 
       starts_at TIMESTAMPTZ DEFAULT NOW(), expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
-  `).catch(() => {});
+  `).catch((err) => {
+    logger.warn("[Coins] Boost schema (post_boosts) skipped:", { message: err?.message });
+  });
 
   const BOOST_LEVELS = { boost: 1, featured: 2, spotlight: 3, top_search: 3 };
   const expiresAt = new Date();
@@ -523,7 +561,9 @@ async function applyPostBoost({ userId, postId, boostType, durationDays, source 
   await runQuery(
     `UPDATE posts SET boost_level = GREATEST(COALESCE(boost_level, 0), $1) WHERE post_id::text = $2`,
     [BOOST_LEVELS[boostType] || 1, postId],
-  ).catch(() => {});
+  ).catch((err) => {
+    logger.warn("[Coins] ApplyPostBoost level update (posts.boost_level) skipped:", { message: err?.message });
+  });
 
   return { expiresAt };
 }
@@ -699,7 +739,9 @@ exports.redeemCoins = async (req, res) => {
         starts_at TIMESTAMPTZ DEFAULT NOW(), expires_at TIMESTAMPTZ NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
-    `).catch(() => {});
+    `).catch((err) => {
+      logger.warn("[Coins] Redeem boost schema (post_boosts) skipped:", { message: err?.message });
+    });
 
     await runQuery(
       `INSERT INTO post_boosts (post_id, user_id, boost_type, source, expires_at)
@@ -710,7 +752,9 @@ exports.redeemCoins = async (req, res) => {
     await runQuery(
       `UPDATE posts SET boost_level = GREATEST(COALESCE(boost_level, 0), $1) WHERE post_id::text = $2`,
       [BOOST_LEVELS[redeemType], postId],
-    ).catch(() => {});
+    ).catch((err) => {
+      logger.warn("[Coins] Boost level update (posts.boost_level) skipped:", { message: err?.message });
+    });
 
     logger.info(`[Coins] User ${userId} redeemed ${cost} coins for ${redeemType} on post ${postId}`);
 
@@ -1152,7 +1196,9 @@ exports.redeemStoreReward = async (req, res) => {
       `INSERT INTO reward_redemptions (user_id, reward_type, post_id, cost, metadata)
        VALUES ($1, $2, $3, $4, $5)`,
       [userId, rewardType, postId, cost, fulfillment || null],
-    ).catch(() => {});
+    ).catch((err) => {
+      logger.warn("[Coins] Store redeem record (reward_redemptions) skipped:", { message: err?.message });
+    });
 
     res.json({
       success: true,

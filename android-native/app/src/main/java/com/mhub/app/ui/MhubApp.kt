@@ -157,7 +157,6 @@ import com.mhub.app.ui.social.FeedPostAddScreen
 import com.mhub.app.ui.social.MyFeedScreen
 import com.mhub.app.ui.social.PublicWallScreen
 import com.mhub.app.ui.social.ReviewsScreen
-import com.mhub.app.ui.home.CategoryDetailScreen
 import com.mhub.app.ui.theme.MhubTheme
 import com.mhub.app.ui.wishlist.WishlistScreen
 import com.mhub.app.core.ConnectivityObserver
@@ -282,14 +281,31 @@ fun MhubApp(
         // Double-back to exit on Home
         var backPressedOnce by remember { mutableStateOf(false) }
         BackHandler(enabled = true) {
+            if (showMoreDrawer) {
+                showMoreDrawer = false
+                return@BackHandler
+            }
+
             val currentRoute = navController.currentDestination?.route
-            if (currentRoute == Routes.HOME && !navController.popBackStack()) {
+            if (currentRoute == Routes.HOME) {
                 if (backPressedOnce) {
                     (context as? Activity)?.finish()
                 } else {
                     backPressedOnce = true
                     Toast.makeText(context, context.getString(R.string.msg_press_back_exit), Toast.LENGTH_SHORT).show()
                     exitScope.launch { kotlinx.coroutines.delay(2000); backPressedOnce = false }
+                }
+                return@BackHandler
+            }
+
+            if (!navController.popBackStack()) {
+                if (currentRoute?.startsWith("auth") == true) {
+                    (context as? Activity)?.finish()
+                } else {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             }
         }
@@ -443,7 +459,7 @@ fun MhubApp(
                                 },
                             )
                             activeCategoryKey = mapped
-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
+                            navController.navigate(Routes.categoryDetail(mapped)) { launchSingleTop = true }
                         },
                         onOpenAllPosts = {
                             navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
@@ -461,7 +477,7 @@ fun MhubApp(
                                 },
                             )
                             activeCategoryKey = safeKey
-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
+                            navController.navigate(Routes.categoryDetail(safeKey)) { launchSingleTop = true }
                         },
                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
@@ -830,11 +846,30 @@ fun MhubApp(
                 route = Routes.CATEGORY_DETAIL,
                 arguments = listOf(navArgument("categoryKey") { type = NavType.StringType }),
             ) { entry ->
-                val key = entry.arguments?.getString("categoryKey").orEmpty()
-                CategoryDetailScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                )
+                val key = entry.arguments?.getString("categoryKey").orEmpty().ifBlank { null }
+                LaunchedEffect(key) {
+                    activeCategoryKey = key
+                }
+                CompositionLocalProvider(LocalActiveCategoryKey provides key) {
+                    MainShell(
+                        navController = navController,
+                        selected = BottomTab.ALL_POSTS,
+                        currentThemeMode = themeMode,
+                        onSetThemeMode = { themeVm.setThemeMode(it) },
+                        showTopBar = false,
+                    ) {
+                        ExploreScreen(
+                            onOpenPost = { id ->
+                                navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
+                            },
+                            onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
+                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                        )
+                    }
+                }
             }
 
             composable(Routes.BOUGHT_POSTS) {
@@ -874,24 +909,28 @@ fun MhubApp(
             }
 
             composable(Routes.SALE_DONE) {
-                if (needsLogin) {
-                    com.mhub.app.ui.components.LoginPromptCard(
-                        onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                        onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                    )
-                } else {
-                    SaleDoneScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    if (needsLogin) {
+                        com.mhub.app.ui.components.LoginPromptCard(
+                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+                        )
+                    } else {
+                        SaleDoneScreen(onBack = { navController.popBackStack() })
+                    }
                 }
             }
 
             composable(Routes.SALE_UNDONE) {
-                if (needsLogin) {
-                    com.mhub.app.ui.components.LoginPromptCard(
-                        onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                        onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                    )
-                } else {
-                    SaleUndoneScreen(onBack = { navController.popBackStack() })
+                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                    if (needsLogin) {
+                        com.mhub.app.ui.components.LoginPromptCard(
+                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+                        )
+                    } else {
+                        SaleUndoneScreen(onBack = { navController.popBackStack() })
+                    }
                 }
             }
 

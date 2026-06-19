@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -801,7 +802,7 @@ export function LocationProvider({ children }) {
     country,
   };
 
-  const value = {
+  const value = useMemo(() => ({
     coords,
     latitude: coords?.latitude || null,
     longitude: coords?.longitude || null,
@@ -851,7 +852,40 @@ export function LocationProvider({ children }) {
     userSkipped,
     placeName,
     locationString: displayName || buildLocationString(currentLocation) || "Location not set",
-  };
+  }), [
+    coords,
+    city,
+    state,
+    country,
+    area,
+    village,
+    colony,
+    suburb,
+    locality,
+    district,
+    pincode,
+    street,
+    displayName,
+    provider,
+    lastUpdatedAt,
+    lastRefreshedAt,
+    isStaleLocation,
+    loading,
+    error,
+    permissionGranted,
+    permissionDenied,
+    accuracyTier,
+    requestLocation,
+    forceRefreshLocation,
+    verifyPreciseLocation,
+    retry,
+    skipForNow,
+    clearLocation,
+    setManualLocation,
+    userSkipped,
+    placeName,
+    currentLocation,
+  ]);
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 }

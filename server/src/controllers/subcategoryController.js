@@ -6,6 +6,31 @@ const { CATEGORY_GROUP_SQL } = require("../utils/categoryGroupSql");
 const SUBCATEGORY_CACHE_TTL_SECONDS =
   Number.parseInt(process.env.SUBCATEGORY_CACHE_TTL_SECONDS, 10) || 300;
 
+async function resolveCategoryId(rawCategoryId) {
+  if (rawCategoryId === undefined || rawCategoryId === null || rawCategoryId === "") {
+    return null;
+  }
+
+  const value = String(rawCategoryId).trim();
+  if (!value) return null;
+  if (/^\d+$/.test(value)) return value;
+
+  const result = await runQuery(
+    `
+      SELECT c.category_id
+      FROM categories c
+      WHERE LOWER(c.name) = LOWER($1)
+         OR LOWER(COALESCE(NULLIF(to_jsonb(c)->>'seo_slug', ''), '')) = LOWER($1)
+         OR LOWER((${CATEGORY_GROUP_SQL})) = LOWER($1)
+      ORDER BY c.category_id ASC
+      LIMIT 1
+    `,
+    [value],
+  );
+
+  return result.rows?.[0]?.category_id ? String(result.rows[0].category_id) : value;
+}
+
 /**
  * GET /api/subcategories
  * Fetch all subcategories, optionally filtered by category_id.
@@ -13,7 +38,9 @@ const SUBCATEGORY_CACHE_TTL_SECONDS =
  */
 exports.getSubcategories = async (req, res) => {
   try {
-    const categoryId = req.query.category_id || req.query.categoryId || null;
+    const categoryId = await resolveCategoryId(
+      req.params?.categoryId || req.query.category_id || req.query.categoryId || null,
+    );
     const cacheKey = categoryId
       ? `subcategories:cat:${categoryId}`
       : "subcategories:all";
@@ -49,7 +76,7 @@ exports.getSubcategories = async (req, res) => {
 
         if (categoryId) {
           params.push(categoryId);
-          query += ` AND s.category_id = $1`;
+          query += ` AND s.category_id::text = $1`;
         }
 
         query += ` ORDER BY s.display_order ASC, s.name ASC`;

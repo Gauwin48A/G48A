@@ -99,7 +99,7 @@ exports.getWishlist = async (req, res) => {
     const cursor = parseCursor(req.query.cursor);
 
     const params = [String(userId)];
-    const conditions = ["w.user_id = $1::uuid"];
+    const conditions = ["w.user_id::text = $1"];
 
     if (search) {
       params.push(`%${search}%`);
@@ -200,11 +200,11 @@ exports.getWishlist = async (req, res) => {
         c.name AS category_name,
         sc.name AS subcategory_name
       FROM wishlists w
-      JOIN posts p ON w.post_id = p.post_id
-      LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      JOIN posts p ON w.post_id::text = p.post_id::text
+      LEFT JOIN users u ON p.user_id::text = u.user_id::text
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ${conditions.join(" AND ")}
       ORDER BY ${sortConfig.clause}
       LIMIT $${params.length + 1}`,
@@ -254,7 +254,7 @@ exports.addToWishlist = async (req, res) => {
     }
 
     const existing = await runQuery(
-      "SELECT wishlist_id FROM wishlists WHERE user_id = $1::uuid AND post_id = $2::uuid",
+      "SELECT wishlist_id FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
       [String(userId), String(postId)],
     );
 
@@ -264,7 +264,7 @@ exports.addToWishlist = async (req, res) => {
 
     const result = await runQuery(
       `INSERT INTO wishlists (user_id, post_id, notes)
-       VALUES ($1::uuid, $2::uuid, $3)
+       VALUES ($1, $2, $3)
        RETURNING wishlist_id, user_id, post_id, notes, created_at`,
       [String(userId), String(postId), normalizedNotes],
     );
@@ -291,7 +291,7 @@ exports.removeFromWishlist = async (req, res) => {
     }
 
     await runQuery(
-      "DELETE FROM wishlists WHERE user_id = $1::uuid AND post_id = $2::uuid",
+      "DELETE FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
       [String(userId), String(postId)],
     );
 
@@ -317,7 +317,7 @@ exports.checkWishlist = async (req, res) => {
     }
 
     const result = await runQuery(
-      "SELECT wishlist_id FROM wishlists WHERE user_id = $1::uuid AND post_id = $2::uuid",
+      "SELECT wishlist_id FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
       [String(userId), String(postId)],
     );
 

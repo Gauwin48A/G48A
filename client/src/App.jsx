@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, startTransition } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet, useLocation as useRouterLocation } from "react-router-dom";
 import GreenNavbar from "./components/GreenNavbar.jsx";
+import AllPostsSubNav from "./components/AllPostsSubNav.jsx";
 import AuthShell from "./components/AuthShell.jsx";
 import PullToRefreshWrapper from "./components/PullToRefreshWrapper.jsx";
 import LocationGate from "./components/LocationGate.jsx";
@@ -192,6 +193,8 @@ const PaymentPage = lazyWithRetry(
 const OffersPage = lazyWithRetry(() => import("./pages/Offers.jsx"), "Offers");
 const ReviewsPage = lazyWithRetry(() => import("./pages/Reviews.jsx"), "Reviews");
 const AnalyticsPage = lazyWithRetry(() => import("./pages/Analytics.jsx"), "Analytics");
+const WalletPage = lazyWithRetry(() => import("./pages/Wallet.jsx"), "Wallet");
+const PriceAlertsPage = lazyWithRetry(() => import("./pages/PriceAlerts.jsx"), "PriceAlerts");
 const ChannelsListPage = lazyWithRetry(
   () => import("./pages/ChannelsListPage.jsx"),
   "ChannelsListPage",
@@ -318,6 +321,12 @@ function AppShell() {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const routerLocation = useRouterLocation();
+  const normalizedPath = (() => {
+    const raw = routerLocation.pathname || '/';
+    const trimmed = raw.replace(/\/+$/, '');
+    return trimmed === '' ? '/' : trimmed;
+  })();
   const isDev = import.meta.env.DEV;
 
   // Configure native status bar and mark native platform for CSS
@@ -399,6 +408,10 @@ function AppShell() {
           navigate("/chat");
         } else if (path.startsWith("orders") || path.startsWith("bought-posts")) {
           navigate("/bought-posts");
+        } else if (path.startsWith("wallet")) {
+          navigate("/wallet");
+        } else if (path.startsWith("price-alerts") || path.startsWith("pricealerts")) {
+          navigate("/price-alerts");
         } else if (path.startsWith("wishlist")) {
           navigate("/wishlist");
         } else if (path.startsWith("notifications")) {
@@ -456,6 +469,23 @@ function AppShell() {
     return () => { if (timer) clearTimeout(timer); };
   }, []);
 
+  // Listen for parity fallback events and show a toast
+  useEffect(() => {
+    const handler = (e) => {
+      const page = e.detail?.page || "page";
+      toast({
+        title: t("data_unavailable", { defaultValue: "Data temporarily unavailable" }),
+        description: t("parity_fallback_desc", {
+          defaultValue: `Could not load ${page} data. Showing what we have.`,
+        }),
+        variant: "default",
+        duration: 5000,
+      });
+    };
+    window.addEventListener("mhub:parity-fallback", handler);
+    return () => window.removeEventListener("mhub:parity-fallback", handler);
+  }, [toast, t]);
+
   useEffect(() => {
     const reloadLabel = t("reload", { defaultValue: "Reload" });
     return registerSoftReloadHandler((payload) => {
@@ -506,6 +536,34 @@ function AppShell() {
       ) : (
         <>
           <GreenNavbar />
+          {(normalizedPath === '/all-posts' ||
+            normalizedPath.startsWith('/all-posts/') ||
+            normalizedPath === '/listings' ||
+            normalizedPath.startsWith('/listings/') ||
+            normalizedPath === '/for-you' ||
+            normalizedPath.startsWith('/for-you/')
+          ) && (
+            <AllPostsSubNav
+              resultsCount={0}
+              activeFilterCount={(() => {
+                const params = new URLSearchParams(routerLocation.search);
+                let count = 0;
+                if (params.get('search')) count++;
+                if (params.get('location')) count++;
+                if (params.get('minPrice') || params.get('maxPrice')) count++;
+                if (params.get('startDate') || params.get('endDate')) count++;
+                if (params.get('category') && params.get('category') !== 'All') count++;
+                if (params.get('subcategory') && params.get('subcategory') !== 'All' && params.get('subcategory') !== '') count++;
+                if (params.get('latestWindow')) count++;
+                if (params.get('sortBy')) count++;
+                if (params.get('condition')) count++;
+                if (params.get('verifiedOnly')) count++;
+                return count;
+              })()}
+              onClearFilters={() => navigate('/all-posts')}
+              onToggleAutoRefresh={() => navigate(normalizedPath + '?_=' + Date.now(), { replace: true })}
+            />
+          )}
           <RouteTelemetry />
           <ScrollToTop />
           <SwipeBackProvider />
@@ -594,6 +652,8 @@ function AppShell() {
                   <Route path="/support-ticket-policy" element={<PageEnhancer config={PAGE_CONFIGS["support-ticket-policy"]}><SupportTicketPage /></PageEnhancer>} />
                   <Route path="/search" element={<PageEnhancer config={PAGE_CONFIGS["search"]}><SearchPage /></PageEnhancer>} />
                   <Route path="/analytics" element={<PageEnhancer config={PAGE_CONFIGS["analytics"]}><RequireAuth><AnalyticsPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/wallet" element={<PageEnhancer config={PAGE_CONFIGS["wallet"]}><RequireAuth><WalletPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/price-alerts" element={<PageEnhancer config={PAGE_CONFIGS["price-alerts"]}><RequireAuth><PriceAlertsPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/channels" element={<PageEnhancer config={PAGE_CONFIGS["channels"]}><ChannelsListPage /></PageEnhancer>} />
                   <Route path="/channels/create" element={<PageEnhancer config={PAGE_CONFIGS["channels-create"]}><RequireAuth><CreateChannelPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/channels/:id" element={<PageEnhancer config={PAGE_CONFIGS["channels-detail"]}><ChannelPage /></PageEnhancer>} />

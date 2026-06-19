@@ -166,12 +166,12 @@ const u = "recentSearches",
     if (tokens.length === 0) return !0;
     return tokens.every((token) => haystack.includes(token));
   },
-  se = () => {
+  SearchPage = () => {
     const { t: n } = K(),
       s = X(),
       [w] = G(),
       { density: densityValue, setDensity: setDensityValue } =
-        usePageDensity("mhub_search_density"), // eslint-disable-line react-hooks/rules-of-hooks
+        usePageDensity("mhub_search_density"),
       densityClass = densityValue === "compact" ? " mhub-compact" : "",
       { filters: a, setFilters: l } = V(),
       {
@@ -1552,5 +1552,5 @@ const u = "recentSearches",
       ),
     );
   };
-var he = se;
+var he = SearchPage;
 export { he as default };

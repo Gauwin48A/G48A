@@ -225,23 +225,39 @@ const applyPromoCode = async (code, tierName, pool) => {
   if (promo.validUntil && new Date() > promo.validUntil) return { valid: false, error: "Promo code has expired" };
   if (promo.tierOnly && promo.tierOnly !== tierName) return { valid: false, error: `This promo code is only valid for ${promo.tierOnly} tier` };
 
-  // Check usage limit — prefer DB for atomicity, fallback to in-memory
+  // Check usage limit — use atomic DB operation when available to prevent race conditions
   if (promo.maxUses !== null) {
-    let usedCount = promo.usedCount; // fallback
     if (pool) {
       try {
+        // Atomically increment and check in one operation
         const result = await pool.query(
-          "SELECT used_count FROM promo_usages WHERE code = $1",
-          [code.toUpperCase()],
+          `INSERT INTO promo_usages (code, used_count)
+           VALUES ($1, 1)
+           ON CONFLICT (code) DO UPDATE
+             SET used_count = promo_usages.used_count + 1
+           WHERE promo_usages.used_count < $2
+           RETURNING used_count`,
+          [code.toUpperCase(), promo.maxUses]
         );
-        if (result.rows.length > 0) {
-          usedCount = parseInt(result.rows[0].used_count, 10) || 0;
+        if (result.rows.length === 0) {
+          // Max uses already reached or race condition lost
+          return { valid: false, error: "Promo code usage limit reached" };
         }
-      } catch {
-        // Table may not exist — use in-memory fallback silently
+        // Successfully reserved a slot
+        promo.usedCount = parseInt(result.rows[0].used_count, 10);
+      } catch (dbErr) {
+        // Table may not exist (42P01) — fall through to in-memory check
+        // On other transient DB errors, also fall back (best-effort)
+        if (dbErr?.code === '42P01' || dbErr?.code === 'ECONNREFUSED') {
+          // Known recoverable errors: table missing or connection refused
+        } else if (promo.usedCount >= promo.maxUses) {
+          return { valid: false, error: "Promo code usage limit reached" };
+        }
       }
+    } else {
+      // No DB connection — use in-memory counter (not atomic across processes)
+      if (promo.usedCount >= promo.maxUses) return { valid: false, error: "Promo code usage limit reached" };
     }
-    if (usedCount >= promo.maxUses) return { valid: false, error: "Promo code usage limit reached" };
   }
 
   const rules = getTierRules(tierName);
@@ -253,22 +269,13 @@ const consumePromoCode = async (code, pool) => {
   const promo = PROMO_CODES[code?.toUpperCase()];
   if (!promo || promo.maxUses === null) return;
 
-  // Atomically increment in DB if available
-  if (pool) {
-    try {
-      await pool.query(
-        `INSERT INTO promo_usages (code, used_count) VALUES ($1, 1)
-         ON CONFLICT (code) DO UPDATE SET used_count = promo_usages.used_count + 1`,
-        [code.toUpperCase()],
-      );
-      return; // DB update succeeded — skip in-memory
-    } catch {
-      // Table may not exist — fall through to in-memory
-    }
+  // DB consumption is now handled atomically inside applyPromoCode.
+  // This function is a no-op when applyPromoCode was called with a pool,
+  // because the slot was already reserved during validation.
+  // Fallback: in-memory increment (only if applyPromoCode didn't use DB)
+  if (!pool) {
+    promo.usedCount++;
   }
-
-  // Fallback: in-memory increment
-  promo.usedCount++;
 };
 
 const getTrialExpiry = (tierName) => {

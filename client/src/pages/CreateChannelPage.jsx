@@ -48,6 +48,8 @@ const W = ({ variant = "channel" } = {}) => {
     }, [loc.search]),
     userTier = String(L?.current_plan || L?.tier || "").toLowerCase(),
     isPremium = ["premium", "pro", "business"].includes(userTier),
+    [trialButtonLoading, setTrialButtonLoading] = s(false),
+    [trialSuccess, setTrialSuccess] = s(false),
     [l, F] = s(""),
     [u, P] = s(""),
     [o, H] = s(""),
@@ -313,15 +315,50 @@ const W = ({ variant = "channel" } = {}) => {
               e.createElement(
                 "div",
                 { className: "space-y-3 pb-2" },
-                e.createElement(
-                  m,
-                  {
-                    onClick: () => n("/tier-selection"),
-                    className: "w-full min-h-[48px] gap-2 bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600/80",
-                  },
-                  e.createElement(Sparkles, { className: "w-4 h-4" }),
-                  a("upgrade_to_premium", { defaultValue: "Upgrade to Premium" }),
-                ),
+                !trialSuccess &&
+                  e.createElement(
+                    m,
+                    {
+                      onClick: async () => {
+                        if (trialButtonLoading) return;
+                        setTrialButtonLoading(true);
+                        try {
+                          const { default: api } = await import("@/services/api");
+                          await api.post("/subscriptions/trial", { planName: "premium" });
+                          setTrialSuccess(true);
+                          setTimeout(() => window.location.reload(), 1200);
+                        } catch {
+                          n("/tier-selection");
+                        } finally {
+                          setTrialButtonLoading(false);
+                        }
+                      },
+                      disabled: trialButtonLoading,
+                      className: "w-full min-h-[48px] gap-2 bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600/80",
+                    },
+                    e.createElement(Sparkles, { className: "w-4 h-4" }),
+                    trialButtonLoading
+                      ? a("activating_trial", { defaultValue: "Activating..." })
+                      : a("start_premium_trial", { defaultValue: "Start 1-Week Free Trial" }),
+                  ),
+                trialSuccess
+                  ? e.createElement(
+                      "div",
+                      { className: "text-center py-2" },
+                      e.createElement(
+                        "p",
+                        { className: "text-sm font-semibold text-emerald-600 dark:text-emerald-400" },
+                        a("trial_activated_refresh", { defaultValue: "Trial activated! Refreshing..." }),
+                      ),
+                    )
+                  : e.createElement(
+                      m,
+                      {
+                        onClick: () => n("/tier-selection"),
+                        className: "w-full min-h-[44px] bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600/80",
+                      },
+                      a("upgrade_to_premium", { defaultValue: "Upgrade to Premium" }),
+                    ),
                 e.createElement(
                   m,
                   {

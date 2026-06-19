@@ -845,6 +845,34 @@ const ChatPage = () => {
                       React.createElement(
                         "div",
                         { className: "p-4 border-t dark:border-t" },
+                        React.createElement(
+                          "div",
+                          {
+                            className: "flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none snap-x",
+                            style: { WebkitOverflowScrolling: "touch" }
+                          },
+                          [
+                            tr("qr_available", "Is this still available?"),
+                            tr("qr_negotiable", "Is price negotiable?"),
+                            tr("qr_condition", "What is the condition?"),
+                            tr("qr_meet", "Where can we meet?"),
+                            tr("qr_sold", "No, sorry, it is sold."),
+                            tr("qr_available_yes", "Yes, it is available.")
+                          ].map((replyText, idx) =>
+                            React.createElement(
+                              "button",
+                              {
+                                key: `qr-${idx}`,
+                                type: "button",
+                                onClick: () => {
+                                  setMessageInput(replyText);
+                                },
+                                className: "snap-start shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-205 border border-slate-200/60 dark:border-slate-700/50 transition-colors cursor-pointer"
+                              },
+                              replyText
+                            )
+                          )
+                        ),
                         sendError &&
                           React.createElement(
                             "div",
@@ -866,8 +894,8 @@ const ChatPage = () => {
                                 variant: "outline",
                                 className:
                                   "h-7 px-2 border-red-300 text-red-700 dark:border-red-600/40 dark:text-red-300",
-                                  onClick: handleSend,
-                                },
+                                onClick: handleSend,
+                              },
                               React.createElement(RotateCcw, {
                                 className: "w-4 h-4 mr-1",
                               }),

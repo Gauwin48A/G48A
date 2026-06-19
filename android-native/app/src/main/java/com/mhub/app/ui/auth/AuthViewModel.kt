@@ -162,6 +162,7 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             Log.d(TAG, "demoLogin invoked")
+            var lastError: String? = null
 
             // Try real server credentials first
             for (credential in demoCredentialCandidates) {
@@ -183,13 +184,17 @@ class AuthViewModel @Inject constructor(
                         return@launch
                     }
                     is ApiResult.Failure -> {
+                        lastError = res.error.message
                         Log.w(TAG, "demoLogin credential failed for ${credential.identifier}: ${res.error.message}")
                     }
                 }
             }
 
             // All credentials failed — show the actual error
-            _state.value = AuthUiState(loading = false, error = "Cannot connect to server. Please check your internet connection.")
+            _state.value = AuthUiState(
+                loading = false,
+                error = lastError ?: "Cannot connect to server. Please check your internet connection.",
+            )
         }
     }
 

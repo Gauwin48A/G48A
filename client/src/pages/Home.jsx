@@ -174,10 +174,10 @@ export default function Home() {
       <div style={{ background: 'var(--mp-color-surface)', padding: '12px 16px 16px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
           {[
-            { icon: '📱', label: 'Electronics', path: '/categories?cat=Electronics' },
-            { icon: '👗', label: 'Fashion', path: '/categories?cat=Fashion' },
-            { icon: '🚗', label: 'Vehicles', path: '/categories?cat=Vehicles' },
-            { icon: '🏠', label: 'Home', path: '/categories?cat=Others' },
+            { icon: '📱', label: 'Electronics', path: '/all-posts?category=Electronics' },
+            { icon: '👗', label: 'Fashion', path: '/all-posts?category=Fashion' },
+            { icon: '🚗', label: 'Vehicles', path: '/all-posts?category=Vehicles' },
+            { icon: '🏠', label: 'Home', path: '/all-posts?category=Others' },
             { icon: '⭐', label: 'For You', path: '/for-you' },
             { icon: '📰', label: 'Feed', path: '/feed' },
             { icon: '🏷️', label: 'Deals', path: '/all-posts' },

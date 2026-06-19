@@ -77,7 +77,7 @@ function collectImages(post) {
  *  categoryLabel   - optional category badge
  *  subcategoryLabel - optional subcategory badge
  */
-export default function MobilePostCard({
+const MobilePostCard = React.memo(function MobilePostCard({
   post,
   onClick,
   onLike,
@@ -190,4 +190,4 @@ export default function MobilePostCard({
     </article>
     </CardContextMenu>
   );
-}
+});

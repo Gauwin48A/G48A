@@ -80,8 +80,6 @@ import {
 import { getCurrentLocation as wt } from "@/services/locationService";
 import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
 import { normalizeTrustPayload, isComplaintRiskState } from "@/hooks/useTrustScore";
-import { isParityOfflineAuthMode } from "@/utils/parityMode";
-import { buildParityProfileFallback } from "@/utils/parityFallbackData";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 
 const PREFERENCE_RADIUS_STORAGE_KEY = "profile_preferences_radius_km";
@@ -2653,7 +2651,115 @@ const ProfilePage = () => {
                     ),
                   ),
                 ),
-              
+              e.createElement("div", {
+                className:
+                  "my-4 h-px bg-slate-200/80 dark:bg-slate-900/80",
+              }),
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
+                },
+                e.createElement(
+                  "div",
+                  { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center gap-3" },
+                    e.createElement(
+                      "span",
+                      {
+                        className:
+                          "flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300",
+                      },
+                      e.createElement(st, { className: "w-5 h-5" }),
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "p",
+                        {
+                          className:
+                            "text-xs font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-300",
+                        },
+                        tr("invite_friends", "Invite friends"),
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "text-sm text-slate-600 dark:text-slate-200" },
+                        tr(
+                          "share_referral_code_desc",
+                          "Share your code to build your network and earn coins.",
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement("div", {
+                  className: "my-4 h-px bg-slate-200/80 dark:bg-slate-900/80",
+                }),
+                e.createElement(
+                  "div",
+                  { className: "flex flex-col sm:flex-row items-center justify-between gap-4" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center gap-2 bg-slate-50 dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto" },
+                    e.createElement("span", { className: "text-xs font-mono text-slate-500" }, tr("your_code", "Your Code: ")),
+                    e.createElement("span", { className: "text-sm font-bold font-mono text-slate-800 dark:text-slate-100" }, y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode || tr("not_available", "N/A")),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center gap-2 w-full sm:w-auto justify-end" },
+                    e.createElement(
+                      d,
+                      {
+                        size: "sm",
+                        className: "bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 dark:bg-indigo-700/40 dark:hover:bg-indigo-700/40",
+                        onClick: () => {
+                          const code = y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode;
+                          if (!code) return;
+                          navigator.clipboard.writeText(code);
+                          u({
+                            title: tr("copied", "Copied"),
+                            description: tr("referral_code_copied", "Referral code copied to clipboard"),
+                          });
+                        },
+                        disabled: !(y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode),
+                      },
+                      e.createElement(Re, { className: "w-4 h-4 mr-1.5" }),
+                      tr("copy", "Copy"),
+                    ),
+                    e.createElement(
+                      d,
+                      {
+                        size: "sm",
+                        variant: "outline",
+                        className: "border-slate-200 rounded-xl px-4 dark:border-slate-700",
+                        onClick: () => {
+                          const code = y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode;
+                          if (!code) return;
+                          const shareUrl = `${window.location.origin}/signup?ref=${code}`;
+                          navigator.share
+                            ? navigator.share({
+                                title: tr("join_mhub", "Join MHub!"),
+                                text: tr("use_my_referral_code", "Use my referral code"),
+                                url: shareUrl,
+                              })
+                            : (navigator.clipboard.writeText(shareUrl),
+                              u({
+                                title: tr("copied", "Copied!"),
+                                description: tr("referral_link_copied", "Referral link copied to clipboard"),
+                              }));
+                        },
+                        disabled: !(y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode),
+                      },
+                      tr("share", "Share"),
+                    ),
+                  ),
+                ),
+              ),
         je === "personal" &&
           e.createElement(
             _,

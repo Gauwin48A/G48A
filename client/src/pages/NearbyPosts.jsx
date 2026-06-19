@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   MapPin,
   Navigation,
@@ -23,6 +23,9 @@ import {
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 25, 50, 100];
 
@@ -208,14 +211,19 @@ export default function NearbyPosts() {
     posts.length > 0 &&
     displayPosts.length === 0;
 
-  const markerPositions = useMemo(
-    () =>
-      displayPosts.map((_, idx) => ({
-        top: 18 + (idx * 17) % 60,
-        left: 10 + (idx * 29) % 70,
-      })),
-    [displayPosts],
-  );
+  // Fix Leaflet default icon (broken in bundlers) — use local icons from public/img/
+  const iconFixed = useRef(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && !iconFixed.current) {
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl:  "/img/marker-icon-2x.png",
+        iconUrl:        "/img/marker-icon.png",
+        shadowUrl:      "/img/marker-shadow.png",
+      });
+      iconFixed.current = true;
+    }
+  }, []);
 
   return (
     <div className={`min-h-screen mhub-premium-page nav-clearance bg-gray-50 dark:bg-gray-950 ${densityClass}`}>
@@ -364,22 +372,8 @@ export default function NearbyPosts() {
 
         {hasError && !loading && (
           <div className="space-y-4">
-            {/* Map placeholder illustration */}
+            {/* Error state map — centered pin with location notice */}
             <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-950/30 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-700/40" style={{ height: 200 }}>
-              <svg viewBox="0 0 640 200" className="absolute inset-0 w-full h-full opacity-40 dark:opacity-20" aria-hidden="true">
-                <rect x="0" y="0" width="640" height="200" fill="#d1fae5" />
-                {/* Grid lines */}
-                {[40,80,120,160,200,240,280,320,360,400,440,480,520,560,600].map(x => <line key={x} x1={x} y1="0" x2={x} y2="200" stroke="#6ee7b7" strokeWidth="1" />)}
-                {[40,80,120,160].map(y => <line key={y} x1="0" y1={y} x2="640" y2={y} stroke="#6ee7b7" strokeWidth="1" />)}
-                {/* Roads */}
-                <path d="M0 100 Q160 80 320 100 Q480 120 640 100" stroke="#a7f3d0" strokeWidth="12" fill="none" strokeLinecap="round" />
-                <path d="M200 0 Q210 100 220 200" stroke="#a7f3d0" strokeWidth="8" fill="none" strokeLinecap="round" />
-                <path d="M420 0 Q430 100 440 200" stroke="#a7f3d0" strokeWidth="8" fill="none" strokeLinecap="round" />
-                {/* Pins */}
-                <circle cx="160" cy="95" r="10" fill="#10b981" />
-                <circle cx="310" cy="105" r="8" fill="#059669" />
-                <circle cx="450" cy="90" r="12" fill="#10b981" />
-              </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <MapPin className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{tr("map_unavailable", "Map unavailable offline")}</span>
@@ -532,35 +526,42 @@ export default function NearbyPosts() {
               <div
                 className={`order-1 lg:order-2 ${showMap ? "block" : "hidden"} lg:block`}
               >
-                <div className="relative h-[320px] lg:h-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 overflow-hidden dark:border-emerald-600/40 dark:bg-gradient-to-br">
-                  <div
-                    className="absolute inset-0 opacity-40"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 1px 1px, rgba(16,185,129,0.35) 1px, transparent 0)",
-                    }}
-                  />
-                  <div className="absolute top-4 left-4 rounded-xl bg-white/90 px-3 py-2 text-xs shadow dark:bg-slate-900/90">
-                    <p className="font-semibold text-emerald-700 dark:text-emerald-300">{t("your_area") || "Your area"}</p>
-                    <p className="text-emerald-600 dark:text-emerald-300">{t("nearby_preview") || "Nearby preview"}</p>
-                  </div>
-                  {markerPositions.slice(0, 6).map((pos, idx) => (
-                    <div
-                      key={`marker-${idx}`}
-                      className="absolute"
-                      style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
-                    >
-                      <div className="h-3 w-3 rounded-full bg-emerald-600 shadow dark:bg-emerald-700/40" />
-                      <div className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-                        {displayPosts[idx]?.price
-                          ? `Rs ${Number(displayPosts[idx].price).toLocaleString("en-IN")}`
-                          : t("listing") || "Listing"}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="absolute bottom-4 left-4 text-xs text-emerald-700 dark:text-emerald-300">
-                    {t("map_preview_note") || "Map preview (approximate)"}
-                  </div>
+                <div className="relative min-h-[320px] lg:min-h-full rounded-2xl overflow-hidden border border-emerald-200 dark:border-emerald-600/40">
+                  <MapContainer
+                    center={[latitude, longitude]}
+                    zoom={13}
+                    className="w-full h-full min-h-[320px] lg:min-h-[calc(100vh-320px)] z-0"
+                    scrollWheelZoom={true}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {displayPosts.map((post) => {
+                      const lat = parseFloat(post.latitude || post.lat);
+                      const lng = parseFloat(post.longitude || post.lng || post.lon);
+                      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+                      return (
+                        <Marker key={post.post_id} position={[lat, lng]}>
+                          <Popup>
+                            <div className="min-w-[160px]">
+                              <p className="font-semibold text-sm mb-1">{post.title}</p>
+                              <p className="text-green-600 font-bold">₹{Number(post.price).toLocaleString("en-IN")}</p>
+                              {post.distance_text && (
+                                <p className="text-xs text-gray-500 mt-1">{post.distance_text}</p>
+                              )}
+                              <button
+                                className="mt-2 text-xs text-blue-600 hover:underline"
+                                onClick={() => navigate(`/post/${post.post_id}`)}
+                              >
+                                View listing
+                              </button>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      );
+                    })}
+                  </MapContainer>
                 </div>
               </div>
             </div>

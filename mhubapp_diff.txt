@@ -1,0 +1,588 @@
+diff --git a/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt b/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
+index 37b5f478..c01bc185 100644
+--- a/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
++++ b/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
+@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Forum
+ import androidx.compose.material.icons.outlined.GridView
+ import androidx.compose.material.icons.outlined.Search
+ import androidx.compose.material.icons.outlined.Home
++import androidx.compose.material.icons.outlined.AddCircle
+ import androidx.compose.material.icons.outlined.AutoAwesome
+ import androidx.compose.material.icons.outlined.Menu
+ import androidx.compose.material.icons.outlined.Person
+@@ -138,6 +139,9 @@ import com.mhub.app.ui.legal.PrivacyScreen
+ import com.mhub.app.ui.legal.RefundScreen
+ import com.mhub.app.ui.legal.SupportPolicyScreen
+ import com.mhub.app.ui.legal.TermsScreen
++import com.mhub.app.ui.legal.AboutScreen
++import com.mhub.app.ui.legal.ContactScreen
++import com.mhub.app.ui.legal.FaqScreen
+ import com.mhub.app.ui.more.MoreScreen
+ import com.mhub.app.ui.navigation.Routes
+ import com.mhub.app.core.AppLogger
+@@ -243,6 +247,11 @@ class SellFlowViewModel @Inject constructor(
+     }
+ }
+ 
++class LocaleContextWrapper(base: android.content.Context, private val configContext: android.content.Context) : android.content.ContextWrapper(base) {
++    override fun getResources(): android.content.res.Resources = configContext.resources
++    override fun getAssets(): android.content.res.AssetManager = configContext.assets
++}
++
+ @Composable
+ fun MhubApp(
+     onReady: () -> Unit = {},
+@@ -253,8 +262,23 @@ fun MhubApp(
+ ) {
+     val themeVm: AppThemeViewModel = hiltViewModel()
+     val themeMode by themeVm.themeMode.collectAsState()
+-    MhubTheme(themeMode = themeMode) {
+-        val navController = rememberNavController()
++    val currentLocaleState = localeManager?.currentLocale?.collectAsState()
++    val currentLocale = currentLocaleState?.value ?: java.util.Locale.getDefault()
++    val context = androidx.compose.ui.platform.LocalContext.current
++    val localeContext = remember(currentLocale) {
++        val config = android.content.res.Configuration(context.resources.configuration).apply {
++            setLocale(currentLocale)
++        }
++        val configContext = context.createConfigurationContext(config)
++        LocaleContextWrapper(context, configContext)
++    }
++
++    CompositionLocalProvider(
++        androidx.compose.ui.platform.LocalContext provides localeContext,
++        androidx.compose.ui.platform.LocalConfiguration provides localeContext.resources.configuration
++    ) {
++        MhubTheme(themeMode = themeMode) {
++            val navController = rememberNavController()
+ 
+         // Navigation diagnostics
+         DisposableEffect(navController) {
+@@ -443,10 +467,10 @@ fun MhubApp(
+                                 },
+                             )
+                             activeCategoryKey = mapped
+-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
++                            navController.navigate(Routes.ALL_POSTS + "?showBack=true") { launchSingleTop = true }
+                         },
+                         onOpenAllPosts = {
+-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
++                            navController.navigate(Routes.ALL_POSTS + "?showBack=true") { launchSingleTop = true }
+                         },
+                         onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                         onSelectApp = { key ->
+@@ -461,7 +485,7 @@ fun MhubApp(
+                                 },
+                             )
+                             activeCategoryKey = safeKey
+-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
++                            navController.navigate(Routes.ALL_POSTS + "?showBack=true") { launchSingleTop = true }
+                         },
+                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+@@ -471,13 +495,20 @@ fun MhubApp(
+                     }
+                 }
+ 
+-                composable(Routes.ALL_POSTS) {
++                composable(
++                    route = "main/all-posts?showBack={showBack}",
++                    arguments = listOf(navArgument("showBack") { type = NavType.BoolType; defaultValue = false })
++                ) { entry ->
++                    val showBack = entry.arguments?.getBoolean("showBack") ?: false
+                     MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
+                         ExploreScreen(
++                            onBack = if (showBack) { { navController.popBackStack() } } else null,
+                             onOpenPost = { id ->
+                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
+                             },
+-                            onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
++                            onOpenSearch = {
++                                navController.navigate("${Routes.SEARCH}?category=${activeCategoryKey ?: ""}") { launchSingleTop = true }
++                            },
+                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
+                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                             onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+@@ -487,9 +518,9 @@ fun MhubApp(
+                 }
+ 
+                 composable(Routes.FOR_YOU) {
+-                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
++                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
+                         com.mhub.app.ui.foryou.ForYouScreen(
+-                            onBack = { navController.popBackStack() },
++                            onBack = null,
+                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                             isGuest = guestBrowsing && !isAuthenticated,
+                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -597,7 +628,7 @@ fun MhubApp(
+                 }
+ 
+                 composable(Routes.NOTIFICATIONS) {
+-                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
++                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                         if (needsLogin) {
+                             com.mhub.app.ui.components.LoginPromptCard(
+                                 onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -612,7 +643,7 @@ fun MhubApp(
+                 }
+ 
+                 composable(Routes.WISHLIST) {
+-                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
++                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                         WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } })
+                     }
+                 }
+@@ -632,15 +663,20 @@ fun MhubApp(
+             }
+ 
+             composable(
+-                route = "${Routes.SEARCH}?query={query}",
+-                arguments = listOf(androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true }),
++                route = "${Routes.SEARCH}?query={query}&category={category}",
++                arguments = listOf(
++                    androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true },
++                    androidx.navigation.navArgument("category") { defaultValue = ""; nullable = true }
++                ),
+             ) { backStack ->
+                 val prefillQuery = backStack.arguments?.getString("query") ?: ""
++                val prefillCategory = backStack.arguments?.getString("category") ?: ""
+                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     SearchScreen(
+                         onBack = { navController.popBackStack() },
+                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                         prefillQuery = prefillQuery,
++                        prefillCategory = prefillCategory,
+                     )
+                 }
+             }
+@@ -675,7 +711,7 @@ fun MhubApp(
+ 
+             composable(Routes.CREATE_POST) {
+                 if (needsLogin) {
+-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                    MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                             onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+@@ -690,7 +726,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.MY_POSTS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -749,7 +785,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.CHAT) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.CHAT, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -763,14 +799,14 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.SETTINGS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     SettingsScreen(onBack = { navController.popBackStack() }, onLogout = { navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } })
+                 }
+             }
+ 
+             // ?? Commerce ??
+             composable(Routes.POST_WELCOME) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -795,7 +831,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.TIER_SELECTION) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -808,7 +844,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.NEARBY) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     NearbyScreen(
+                         onBack = { navController.popBackStack() },
+                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+@@ -838,7 +874,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.BOUGHT_POSTS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -854,7 +890,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.SOLD_POSTS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -896,7 +932,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.OFFERS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -913,13 +949,13 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.CART) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     CartScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+ 
+             composable(Routes.RECENTLY_VIEWED) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     RecentlyViewedScreen(
+                         onBack = { navController.popBackStack() },
+                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+@@ -928,13 +964,13 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.SAVED_SEARCHES) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     SavedSearchesScreen(onBack = { navController.popBackStack() }, onRunSearch = { q -> navController.navigate("search?query=${q}") })
+                 }
+             }
+ 
+             composable(Routes.COMPARE) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     CompareScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+@@ -949,7 +985,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.MY_FEED) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     MyFeedScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+@@ -959,19 +995,19 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.PUBLIC_WALL) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     PublicWallScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+ 
+             composable(Routes.COMPLAINTS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     ComplaintsScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+ 
+             composable(Routes.FEEDBACK) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     FeedbackScreen(onBack = { navController.popBackStack() })
+                 }
+             }
+@@ -986,7 +1022,7 @@ fun MhubApp(
+ 
+             // ?? Account ??
+             composable(Routes.DASHBOARD) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -999,7 +1035,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.SECURITY) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -1012,7 +1048,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.ACCOUNT_DELETE) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -1025,7 +1061,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.VERIFICATION) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -1038,7 +1074,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.ANALYTICS) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     if (needsLogin) {
+                         com.mhub.app.ui.components.LoginPromptCard(
+                             onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+@@ -1052,7 +1088,7 @@ fun MhubApp(
+ 
+             // ?? Channels ??
+             composable(Routes.CHANNELS) {
+-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     ChannelsListScreen(
+                         onBack = { navController.popBackStack() },
+                         onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) { launchSingleTop = true } },
+@@ -1074,7 +1110,7 @@ fun MhubApp(
+             }
+ 
+             composable(Routes.CENTRE_LIST) {
+-                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
++                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
+                     CentreListScreen(
+                         onBack = { navController.popBackStack() },
+                         onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
+@@ -1120,6 +1156,18 @@ fun MhubApp(
+                 SupportPolicyScreen(onBack = { navController.popBackStack() })
+             }
+ 
++            composable(Routes.ABOUT_US) {
++                AboutScreen(onBack = { navController.popBackStack() })
++            }
++
++            composable(Routes.CONTACT_US) {
++                ContactScreen(onBack = { navController.popBackStack() })
++            }
++
++            composable(Routes.FAQ) {
++                FaqScreen(onBack = { navController.popBackStack() })
++            }
++
+             composable(Routes.ADMIN_PANEL) {
+                 AdminPanelScreen(onBack = { navController.popBackStack() })
+             }
+@@ -1233,7 +1281,7 @@ fun MhubApp(
+                         onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
+                         onOpenCart = { drawerNav(Routes.CART) },
+                         onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
+-                        onOpenCentre = { drawerNav(Routes.CHANNELS) },
++                        onOpenCentre = { drawerNav(Routes.CENTRE_LIST) },
+                         onOpenCategoryMode = { drawerNav(Routes.CATEGORY_MODE) },
+                         onOpenSavedSearches = { drawerNav(Routes.SAVED_SEARCHES) },
+                         onOpenRecentlyViewed = { drawerNav(Routes.RECENTLY_VIEWED) },
+@@ -1254,6 +1302,12 @@ fun MhubApp(
+                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
+                         onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                         onLanguageChange = { code -> localeManager?.setLocale(code) },
++                        onOpenAboutUs = { drawerNav(Routes.ABOUT_US) },
++                        onOpenContactUs = { drawerNav(Routes.CONTACT_US) },
++                        onOpenFaq = { drawerNav(Routes.FAQ) },
++                        onOpenChannels = { drawerNav(Routes.CHANNELS) },
++                        onOpenActivityHub = { drawerNav(Routes.ACTIVITY_HUB) },
++                        onOpenAnalytics = { drawerNav(Routes.ANALYTICS) },
+                         isAdmin = isAdmin,
+                         isLoggedIn = isAuthenticated,
+                         currentThemeMode = themeMode,
+@@ -1261,11 +1315,11 @@ fun MhubApp(
+                     )
+                 }
+             }
+-        }
+-
+-        } // close CompositionLocalProvider
+-    }
+-}
++        } // close NavHost/Column
++    } // close CompositionLocalProvider for activeCategoryKey
++} // close MhubTheme
++} // close CompositionLocalProvider for localeContext
++} // close MhubApp
+ 
+ /**
+  * CompositionLocal exposing the currently-active category key (e.g. "electronics") from MhubApp
+@@ -1284,10 +1338,10 @@ enum class BottomTab(
+     val iconFilled: ImageVector,
+ ) {
+     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
+-    ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.Search, Icons.Filled.Search),
+-    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.AutoAwesome, Icons.Filled.AutoAwesome),
+-    FEED(Routes.FEED, R.string.nav_feed, Icons.Outlined.Forum, Icons.Filled.Forum),
+-    REWARDS(Routes.REWARDS, R.string.nav_rewards, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
++    ALL_POSTS(Routes.ALL_POSTS, R.string.nav_explore, Icons.Outlined.GridView, Icons.Filled.GridView),
++    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.Explore, Icons.Filled.Explore),
++    FEED(Routes.FEED, R.string.nav_feed, Icons.AutoMirrored.Outlined.Article, Icons.AutoMirrored.Filled.Article),
++    REWARDS(Routes.REWARDS, R.string.nav_rewards_tab, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
+     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
+ }
+ 
+@@ -1320,6 +1374,8 @@ fun MainShell(
+                 if (showBottomBar) {
+                 val liveActiveCategoryKey = LocalActiveCategoryKey.current ?: activeCategoryKey
+                 val openMore = LocalOnOpenMore.current
++                val authViewModel: com.mhub.app.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
++                val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+                 val navigateToTab: (BottomTab) -> Unit = { tab ->
+                     val targetRoute = tab.route
+                     if (tab == BottomTab.HOME) {
+@@ -1350,7 +1406,11 @@ fun MainShell(
+                             .navigationBarsPadding(),
+                         verticalAlignment = Alignment.CenterVertically,
+                     ) {
+-                        // LEFT: Home | All Posts | For You
++                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
++                        val notifState by notifVm.state.collectAsState()
++                        val unreadNotifCount = notifState.items.count { !it.isRead }
++
++                        // Left tabs: Home, All Posts, For You
+                         listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
+                             BottomNavTabItem(
+                                 tab = tab,
+@@ -1359,63 +1419,48 @@ fun MainShell(
+                                 onClick = { navigateToTab(tab) },
+                             )
+                         }
+-                        // CENTER: Sell FAB
++
++                        // Center Sell FAB
+                         Box(
+-                            modifier = Modifier.size(52.dp),
++                            modifier = Modifier
++                                .weight(1.2f)
++                                .fillMaxHeight(),
+                             contentAlignment = Alignment.Center,
+                         ) {
+-                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
+-                            val authGate = LocalAuthGate.current
+-                            val authVm: com.mhub.app.ui.auth.AuthViewModel = hiltViewModel()
+-                            val isAuthed by authVm.isAuthenticated.collectAsState()
+                             val sellScope = rememberCoroutineScope()
++                            val sellVm: SellFlowViewModel = hiltViewModel()
+                             FloatingActionButton(
+                                 onClick = {
+-                                    if (!isAuthed) {
+-                                        authGate()
++                                    if (!isAuthenticated) {
++                                        navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
+                                     } else {
+                                         sellScope.launch {
+-                                            val dest = sellFlowVm.resolveDestination()
++                                            val dest = sellVm.resolveDestination()
+                                             navController.navigate(dest) { launchSingleTop = true }
+                                         }
+                                     }
+                                 },
++                                shape = CircleShape,
+                                 containerColor = MaterialTheme.colorScheme.primary,
+                                 contentColor = Color.White,
+-                                modifier = Modifier.size(44.dp),
+-                                elevation = FloatingActionButtonDefaults.elevation(
+-                                    defaultElevation = 4.dp,
+-                                    pressedElevation = 8.dp,
+-                                ),
++                                modifier = Modifier.size(48.dp),
++                                elevation = FloatingActionButtonDefaults.elevation(4.dp),
+                             ) {
+-                                Icon(
+-                                    Icons.Filled.AddCircle,
+-                                    contentDescription = stringResource(R.string.nav_sell),
+-                                    modifier = Modifier.size(22.dp),
+-                                )
++                                Icon(Icons.Default.Add, contentDescription = "Sell", modifier = Modifier.size(24.dp))
+                             }
+                         }
+-                        // RIGHT: Feed | Rewards | Profile
+-                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+-                        val notifState by notifVm.state.collectAsState()
+-                        val unreadNotifCount = notifState.items.count { !it.isRead }
+-                        val wishlistVm: com.mhub.app.ui.wishlist.WishlistViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+-                        val wishlistState by wishlistVm.state.collectAsState()
+-                        val wishlistCount = wishlistState.items.size
++
++                        // Right tabs: Feed, Rewards, Profile
+                         listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                             BottomNavTabItem(
+                                 tab = tab,
+                                 isSelected = tab == selected,
+-                                badgeCount = when (tab) {
+-                                    BottomTab.FEED -> unreadNotifCount
+-                                    BottomTab.REWARDS -> wishlistCount.coerceAtMost(99)
+-                                    else -> 0
+-                                },
+                                 modifier = Modifier.weight(1f),
+                                 onClick = { navigateToTab(tab) },
+                             )
+                         }
+-                        // MORE
++
++                        // Far Right: More tab GridView icon
+                         Column(
+                             modifier = Modifier
+                                 .weight(1f)
+@@ -1428,17 +1473,30 @@ fun MainShell(
+                             horizontalAlignment = Alignment.CenterHorizontally,
+                             verticalArrangement = Arrangement.Center,
+                         ) {
+-                            Icon(
+-                                Icons.Filled.GridView,
+-                                contentDescription = null,
+-                                modifier = Modifier.size(24.dp),
+-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+-                            )
++                            BadgedBox(
++                                badge = {
++                                    if (unreadNotifCount > 0) {
++                                        Badge(containerColor = MaterialTheme.colorScheme.error) {
++                                            Text(
++                                                if (unreadNotifCount > 99) "99+" else "$unreadNotifCount",
++                                                style = MaterialTheme.typography.labelSmall,
++                                                color = MaterialTheme.colorScheme.onError,
++                                            )
++                                        }
++                                    }
++                                }
++                            ) {
++                                Icon(
++                                    imageVector = Icons.Outlined.GridView,
++                                    contentDescription = null,
++                                    modifier = Modifier.size(24.dp),
++                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                                )
++                            }
+                             Text(
+                                 text = stringResource(R.string.nav_more),
+                                 style = MaterialTheme.typography.labelSmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                fontWeight = FontWeight.Normal,
+                             )
+                         }
+                     }

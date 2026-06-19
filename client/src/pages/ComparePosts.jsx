@@ -125,10 +125,18 @@ export default function ComparePosts() {
   const navigate = useNavigate();
   const [removedIds, setRemovedIds] = useState(new Set());
 
-  const allItems = useMemo(
-    () => (Array.isArray(location.state?.compareItems) ? location.state.compareItems : []),
-    [location.state],
-  );
+  const allItems = useMemo(() => {
+    const fromState = Array.isArray(location.state?.compareItems) ? location.state.compareItems : null;
+    if (fromState) return fromState;
+    try {
+      const stored = sessionStorage.getItem("compareItems");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [location.state]);
 
   const items = useMemo(
     () => allItems.filter((item) => !removedIds.has(getItemId(item))),
@@ -141,6 +149,7 @@ export default function ComparePosts() {
 
   const clearAll = useCallback(() => {
     setRemovedIds(new Set(allItems.map((item) => getItemId(item))));
+    try { sessionStorage.removeItem("compareItems"); } catch {}
   }, [allItems]);
 
   const commonSubcategory = useMemo(() => {

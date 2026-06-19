@@ -26,9 +26,15 @@ function ensureBoostSchema() {
           expires_at TIMESTAMPTZ NOT NULL,
           created_at TIMESTAMPTZ DEFAULT NOW()
         )
-      `).catch(() => {});
-      await runQuery(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS boost_level INT DEFAULT 0`).catch(() => {});
-      await runQuery(`CREATE INDEX IF NOT EXISTS idx_post_boosts_active ON post_boosts(post_id, status) WHERE status = 'active'`).catch(() => {});
+      `).catch((err) => {
+        logger.warn("[Boost] Schema init (post_boosts) skipped:", { message: err?.message });
+      });
+      await runQuery(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS boost_level INT DEFAULT 0`).catch((err) => {
+        logger.warn("[Boost] Schema init (posts.boost_level) skipped:", { message: err?.message });
+      });
+      await runQuery(`CREATE INDEX IF NOT EXISTS idx_post_boosts_active ON post_boosts(post_id, status) WHERE status = 'active'`).catch((err) => {
+        logger.warn("[Boost] Schema init (idx_post_boosts_active) skipped:", { message: err?.message });
+      });
     })();
   }
   return _schemaInitialized;

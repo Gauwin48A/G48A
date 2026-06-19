@@ -21,8 +21,10 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  X,
   Zap,
 } from "lucide-react";
+import api from "../../lib/api";
 import UpsellBanner from "@/components/UpsellBanner";
 import { getInitials } from "@/lib/userDisplay";
 
@@ -2923,26 +2925,107 @@ export function RewardsLeaderboard({
               )}
 
               {referralLeaderboard.length ? (
-                <div className="space-y-2">
-                  {referralLeaderboard.slice(0, 3).map((entry, index) => (
-                    <div
-                      key={entry.user_id || entry.id || index}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-indigo-50 text-indigo-600">
-                          #{index + 1}
-                        </Badge>
-                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                          {entry.full_name || entry.username || tr("user", "User")}
-                        </span>
+                <div className="flex flex-col gap-4">
+                  {/* Graphical Podium for Top 3 */}
+                  <div className="flex items-end justify-center gap-2 pt-6 pb-2 px-1 bg-gradient-to-t from-slate-50/50 to-transparent dark:from-slate-950/10 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    {/* #2 Column (Left) */}
+                    {referralLeaderboard[1] ? (
+                      <div className="flex flex-col items-center flex-1 max-w-[100px] group">
+                        <div className="relative mb-2">
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold flex items-center justify-center text-xs ring-2 ring-slate-400 select-none shadow-md">
+                            {getInitials(referralLeaderboard[1].full_name || referralLeaderboard[1].username || "U")}
+                          </div>
+                          <Badge className="absolute -bottom-1 -right-1 bg-slate-400 text-white border-none w-5 h-5 flex items-center justify-center p-0 text-[10px] font-black rounded-full shadow">
+                            2
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-gradient-to-t from-slate-200/80 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-t-xl border border-b-0 border-slate-200 dark:border-slate-700 pt-3 pb-2 px-1 flex flex-col items-center justify-center shadow-[0_-4px_10px_rgba(0,0,0,0.03)] h-20 sm:h-24">
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 truncate w-full text-center px-1">
+                            {referralLeaderboard[1].full_name || referralLeaderboard[1].username || tr("user", "User")}
+                          </span>
+                          <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 mt-0.5">
+                            {referralLeaderboard[1].referral_count ?? referralLeaderboard[1].referralCount ?? 0}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-300">
-                        {entry.referral_count ?? entry.referralCount ?? 0}{" "}
-                        {tr("referrals", "referrals")}
+                    ) : (
+                      <div className="flex-1 max-w-[100px] h-20 sm:h-24" />
+                    )}
+
+                    {/* #1 Column (Center) */}
+                    {referralLeaderboard[0] ? (
+                      <div className="flex flex-col items-center flex-1 max-w-[110px] z-10 group">
+                        <div className="relative mb-1 flex flex-col items-center">
+                          <Crown className="w-4 h-4 text-yellow-500 fill-current animate-bounce duration-1000 mb-0.5" />
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-yellow-400 text-yellow-950 font-black flex items-center justify-center text-sm ring-4 ring-yellow-400/30 select-none shadow-lg">
+                            {getInitials(referralLeaderboard[0].full_name || referralLeaderboard[0].username || "U")}
+                          </div>
+                          <Badge className="absolute bottom-0 bg-yellow-500 text-yellow-950 border-none w-5 h-5 flex items-center justify-center p-0 text-[10px] font-black rounded-full shadow">
+                            1
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-gradient-to-t from-yellow-100/80 to-yellow-50 dark:from-yellow-950/20 dark:to-yellow-900/10 rounded-t-xl border border-b-0 border-yellow-300 dark:border-yellow-800/60 pt-4 pb-3 px-1 flex flex-col items-center justify-center shadow-[0_-6px_15px_rgba(0,0,0,0.06)] h-28 sm:h-32">
+                          <span className="text-[11px] sm:text-xs font-black text-yellow-850 dark:text-yellow-400 truncate w-full text-center px-1">
+                            {referralLeaderboard[0].full_name || referralLeaderboard[0].username || tr("user", "User")}
+                          </span>
+                          <span className="text-[10px] sm:text-[11px] font-black text-yellow-600 dark:text-yellow-500 mt-0.5">
+                            {referralLeaderboard[0].referral_count ?? referralLeaderboard[0].referralCount ?? 0}
+                          </span>
+                        </div>
                       </div>
+                    ) : (
+                      <div className="flex-1 max-w-[110px] h-28 sm:h-32" />
+                    )}
+
+                    {/* #3 Column (Right) */}
+                    {referralLeaderboard[2] ? (
+                      <div className="flex flex-col items-center flex-1 max-w-[100px] group">
+                        <div className="relative mb-2">
+                          <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-full bg-amber-600/10 text-amber-800 dark:text-amber-300 font-bold flex items-center justify-center text-xs ring-2 ring-amber-600/20 select-none shadow-md">
+                            {getInitials(referralLeaderboard[2].full_name || referralLeaderboard[2].username || "U")}
+                          </div>
+                          <Badge className="absolute -bottom-1 -right-1 bg-amber-700 text-white border-none w-5 h-5 flex items-center justify-center p-0 text-[10px] font-black rounded-full shadow">
+                            3
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-gradient-to-t from-amber-100/30 to-amber-50/10 dark:from-amber-950/10 dark:to-amber-900/5 rounded-t-xl border border-b-0 border-amber-200 dark:border-amber-900/40 pt-3 pb-2 px-1 flex flex-col items-center justify-center shadow-[0_-4px_10px_rgba(0,0,0,0.03)] h-16 sm:h-20">
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-850 dark:text-amber-300 truncate w-full text-center px-1">
+                            {referralLeaderboard[2].full_name || referralLeaderboard[2].username || tr("user", "User")}
+                          </span>
+                          <span className="text-[9px] sm:text-[10px] font-black text-amber-700 dark:text-amber-400 mt-0.5">
+                            {referralLeaderboard[2].referral_count ?? referralLeaderboard[2].referralCount ?? 0}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 max-w-[100px] h-16 sm:h-20" />
+                    )}
+                  </div>
+
+                  {/* Positions 4 and below */}
+                  {referralLeaderboard.length > 3 && (
+                    <div className="space-y-2">
+                      {referralLeaderboard.slice(3).map((entry, index) => (
+                        <div
+                          key={entry.user_id || entry.id || index}
+                          className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900 px-3 py-2 transition-all"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 font-bold">
+                              #{index + 4}
+                            </Badge>
+                            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                              {entry.full_name || entry.username || tr("user", "User")}
+                            </span>
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300">
+                            {entry.referral_count ?? entry.referralCount ?? 0}{" "}
+                            {tr("referrals", "referrals")}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-slate-500 dark:text-slate-300">
@@ -3075,6 +3158,511 @@ export function RewardsLeaderboard({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Confetti helper
+function triggerConfetti(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return () => {};
+  const ctx = canvas.getContext("2d");
+  
+  const resizeCanvas = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  let particles = [];
+  const colors = ["#f59e0b", "#3b82f6", "#10b981", "#ec4899", "#8b5cf6", "#ef4444"];
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 4 + 3,
+      d: Math.random() * canvas.height,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      tilt: Math.random() * 10 - 5,
+      tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+      tiltAngle: 0
+    });
+  }
+
+  let animationId;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
+    particles.forEach((p) => {
+      p.tiltAngle += p.tiltAngleIncremental;
+      p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+      p.x += Math.sin(p.tiltAngle);
+      p.tilt = Math.sin(p.tiltAngle - p.r / 2) * 5;
+      if (p.y <= canvas.height) active = true;
+      ctx.beginPath();
+      ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+      ctx.stroke();
+    });
+    if (active) {
+      animationId = requestAnimationFrame(draw);
+    }
+  }
+  draw();
+  return () => {
+    window.removeEventListener("resize", resizeCanvas);
+    if (animationId) cancelAnimationFrame(animationId);
+  };
+}
+
+export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
+  const [isSpinning, setIsSpinning] = React.useState(false);
+  const [spinLoading, setSpinLoading] = React.useState(false);
+  const [reward, setReward] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [rotation, setRotation] = React.useState(0);
+  const [showWinScreen, setShowWinScreen] = React.useState(false);
+  const confettiCleanupRef = React.useRef(null);
+
+  const segments = [5, 10, 20, 30, 50, 100];
+
+  const handleStartSpin = async () => {
+    if (isSpinning || spinLoading) return;
+    setSpinLoading(true);
+    setError(null);
+    try {
+      const res = await api.post("/coins/spin");
+      const prize = res?.reward ?? 0;
+      const newBalance = res?.newBalance ?? 0;
+      
+      const prizeIndex = segments.indexOf(prize);
+      const targetIdx = prizeIndex >= 0 ? prizeIndex : 0;
+      
+      // Calculate stopping angle
+      const rotations = 6;
+      const anglePerSegment = 360 / segments.length;
+      const targetAngle = 360 - (targetIdx * anglePerSegment + anglePerSegment / 2);
+      const finalRotation = 360 * rotations + targetAngle;
+      
+      setReward(prize);
+      setIsSpinning(true);
+      setSpinLoading(false);
+      setRotation(finalRotation);
+
+      setTimeout(() => {
+        setIsSpinning(false);
+        setShowWinScreen(true);
+        onWin(newBalance, prize);
+        
+        // Start confetti
+        setTimeout(() => {
+          confettiCleanupRef.current = triggerConfetti("spin-confetti-canvas");
+        }, 100);
+      }, 4100);
+
+    } catch (err) {
+      setSpinLoading(false);
+      setError(err?.response?.data?.error || tr("spin_failed", "Spin failed. Please try again."));
+    }
+  };
+
+  const handleClose = () => {
+    if (isSpinning) return;
+    if (confettiCleanupRef.current) {
+      confettiCleanupRef.current();
+      confettiCleanupRef.current = null;
+    }
+    setIsSpinning(false);
+    setShowWinScreen(false);
+    setReward(null);
+    setRotation(0);
+    setError(null);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <canvas id="spin-confetti-canvas" className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
+      
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+        {!isSpinning && (
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+
+        {!showWinScreen ? (
+          <div className="flex flex-col items-center">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+              {tr("daily_spin_wheel", "Daily Spin Wheel")}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              {tr("spin_wheel_tagline", "Try your luck to win free coins daily!")}
+            </p>
+
+            {/* Pointer indicator */}
+            <div className="relative w-64 h-64 flex items-center justify-center mb-6">
+              <div className="absolute -top-3 z-20 text-indigo-600 dark:text-indigo-400 animate-bounce">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21l-8-14h16z" />
+                </svg>
+              </div>
+
+              {/* Wheel graphics */}
+              <div
+                className="w-full h-full rounded-full border-4 border-slate-900 dark:border-slate-800 overflow-hidden shadow-xl relative"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: isSpinning ? "transform 4s cubic-bezier(0.15, 0.85, 0.3, 1)" : "none",
+                }}
+              >
+                {/* Visual Segments using SVG */}
+                <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
+                  {segments.map((val, idx) => {
+                    const angle = 60;
+                    const startAngle = idx * angle;
+                    const endAngle = startAngle + angle;
+                    const radStart = (startAngle * Math.PI) / 180;
+                    const radEnd = (endAngle * Math.PI) / 180;
+                    const x1 = 100 + 100 * Math.cos(radStart);
+                    const y1 = 100 + 100 * Math.sin(radStart);
+                    const x2 = 100 + 100 * Math.cos(radEnd);
+                    const y2 = 100 + 100 * Math.sin(radEnd);
+                    
+                    const d = `M 100 100 L ${x1} ${y1} A 100 100 0 0 1 ${x2} ${y2} Z`;
+                    const colors = [
+                      "#6366f1", // indigo-500
+                      "#10b981", // emerald-500
+                      "#f59e0b", // amber-500
+                      "#a855f7", // purple-500
+                      "#f43f5e", // rose-500
+                      "#0ea5e9"  // sky-500
+                    ];
+                    
+                    const textAngle = startAngle + angle / 2;
+                    const radText = (textAngle * Math.PI) / 180;
+                    const tx = 100 + 60 * Math.cos(radText);
+                    const ty = 100 + 60 * Math.sin(radText);
+
+                    return (
+                      <g key={idx}>
+                        <path d={d} fill={colors[idx]} stroke="#1e293b" strokeWidth="1" />
+                        <text
+                          x={tx}
+                          y={ty}
+                          fill="white"
+                          fontSize="12"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          transform={`rotate(${textAngle + 90}, ${tx}, ${ty})`}
+                        >
+                          {val}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900 border-2 border-white dark:border-slate-700 shadow" />
+              </div>
+
+              <button
+                disabled={isSpinning || spinLoading}
+                onClick={handleStartSpin}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-slate-900 text-white font-black text-xs border-4 border-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-85 shadow-lg flex items-center justify-center uppercase tracking-wider dark:border-slate-700"
+              >
+                {spinLoading ? "..." : tr("spin", "SPIN")}
+              </button>
+            </div>
+
+            {error && (
+              <p className="text-xs text-rose-500 font-medium mt-2 mb-2 bg-rose-50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/30">
+                {error}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-4">
+            <div className="w-20 h-20 bg-amber-100 dark:bg-amber-950/40 rounded-full flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-900/30 shadow-lg animate-bounce">
+              <Trophy className="w-10 h-10 text-amber-500" />
+            </div>
+            <h4 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
+              {tr("congrats", "Congratulations!")}
+            </h4>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              {tr("spin_wheel_win_msg", "You won {{count}} coins from the daily spin!", { count: reward })}
+            </p>
+            <Button
+              onClick={handleClose}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-indigo-500/20"
+            >
+              {tr("claim_rewards", "Claim Reward")}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ScratchCardModal({ isOpen, onClose, onWin, tr }) {
+  const [scratchLoading, setScratchLoading] = React.useState(false);
+  const [reward, setReward] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [showWinScreen, setShowWinScreen] = React.useState(false);
+  const [canvasCleared, setCanvasCleared] = React.useState(false);
+  const [apiResolved, setApiResolved] = React.useState(false);
+  const canvasRef = React.useRef(null);
+  const confettiCleanupRef = React.useRef(null);
+  const stateRef = React.useRef({ isDrawing: false, rewardVal: null, resolved: false, loading: false });
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    
+    setReward(null);
+    setError(null);
+    setShowWinScreen(false);
+    setCanvasCleared(false);
+    setApiResolved(false);
+    stateRef.current = { isDrawing: false, rewardVal: null, resolved: false, loading: false };
+
+    const fetchScratchReward = async () => {
+      stateRef.current.loading = true;
+      setScratchLoading(true);
+      try {
+        const res = await api.post("/coins/scratch");
+        const prize = res?.reward ?? 0;
+        const newBalance = res?.newBalance ?? 0;
+        
+        setReward(prize);
+        setApiResolved(true);
+        setScratchLoading(false);
+        stateRef.current.rewardVal = prize;
+        stateRef.current.resolved = true;
+        stateRef.current.loading = false;
+        stateRef.current.newBalance = newBalance;
+      } catch (err) {
+        setScratchLoading(false);
+        stateRef.current.loading = false;
+        setError(err?.response?.data?.error || tr("scratch_failed", "Failed to load scratch card."));
+      }
+    };
+    
+    fetchScratchReward();
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen || scratchLoading || error || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.fillStyle = "#cbd5e1";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = 4;
+    for (let i = 0; i < width; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + 20, height);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "bold 18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(tr("scratch_here", "SCRATCH HERE"), width / 2, height / 2);
+
+    const startScratch = (e) => {
+      if (!stateRef.current.resolved) return;
+      stateRef.current.isDrawing = true;
+      scratch(e);
+    };
+
+    const stopScratch = () => {
+      stateRef.current.isDrawing = false;
+      checkScratchPercentage();
+    };
+
+    const scratch = (e) => {
+      if (!stateRef.current.isDrawing || !canvasRef.current) return;
+      
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+      
+      if (!clientX || !clientY) return;
+
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, 22, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const checkScratchPercentage = () => {
+      if (!canvasRef.current) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imgData.data;
+      let cleared = 0;
+      
+      for (let i = 3; i < pixels.length; i += 16) {
+        if (pixels[i] === 0) cleared++;
+      }
+      
+      const totalSamples = pixels.length / 16;
+      const percent = cleared / totalSamples;
+
+      if (percent > 0.45 && !stateRef.current.clearedTriggered) {
+        stateRef.current.clearedTriggered = true;
+        setCanvasCleared(true);
+        
+        setTimeout(() => {
+          setShowWinScreen(true);
+          onWin(stateRef.current.newBalance, stateRef.current.rewardVal);
+          
+          setTimeout(() => {
+            confettiCleanupRef.current = triggerConfetti("scratch-confetti-canvas");
+          }, 100);
+        }, 300);
+      }
+    };
+
+    canvas.addEventListener("mousedown", startScratch);
+    canvas.addEventListener("mousemove", scratch);
+    canvas.addEventListener("mouseup", stopScratch);
+    canvas.addEventListener("mouseleave", stopScratch);
+
+    canvas.addEventListener("touchstart", startScratch);
+    canvas.addEventListener("touchmove", scratch);
+    canvas.addEventListener("touchend", stopScratch);
+
+    return () => {
+      canvas.removeEventListener("mousedown", startScratch);
+      canvas.removeEventListener("mousemove", scratch);
+      canvas.removeEventListener("mouseup", stopScratch);
+      canvas.removeEventListener("mouseleave", stopScratch);
+      canvas.removeEventListener("touchstart", startScratch);
+      canvas.removeEventListener("touchmove", scratch);
+      canvas.removeEventListener("touchend", stopScratch);
+    };
+  }, [isOpen, scratchLoading, error]);
+
+  const handleClose = () => {
+    if (confettiCleanupRef.current) {
+      confettiCleanupRef.current();
+      confettiCleanupRef.current = null;
+    }
+    setShowWinScreen(false);
+    setCanvasCleared(false);
+    setReward(null);
+    setError(null);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <canvas id="scratch-confetti-canvas" className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
+
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-xs w-full p-6 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {!showWinScreen ? (
+          <div className="flex flex-col items-center">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 flex items-center gap-1.5">
+              <Gift className="w-5 h-5 text-indigo-500" />
+              {tr("scratch_card", "Scratch Card")}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
+              {tr("scratch_desc", "Scratch card to reveal your reward amount!")}
+            </p>
+
+            <div className="relative w-64 h-64 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-50 dark:bg-slate-950/60 flex items-center justify-center select-none">
+              {apiResolved && (
+                <div className="flex flex-col items-center animate-pulse">
+                  <div className="w-16 h-16 bg-amber-100 dark:bg-amber-950/40 rounded-full flex items-center justify-center mb-2">
+                    <Trophy className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <span className="text-3xl font-black text-amber-600 dark:text-amber-400">
+                    +{reward}
+                  </span>
+                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                    {tr("coins", "coins")}
+                  </span>
+                </div>
+              )}
+
+              {scratchLoading && (
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2" />
+                  <span className="text-xs text-slate-400 font-semibold">{tr("loading", "Loading...")}</span>
+                </div>
+              )}
+
+              {!scratchLoading && !error && (
+                <canvas
+                  ref={canvasRef}
+                  width="256"
+                  height="256"
+                  className={`absolute inset-0 w-full h-full cursor-crosshair transition-opacity duration-500 ${canvasCleared ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+                />
+              )}
+            </div>
+
+            {error && (
+              <p className="text-xs text-rose-500 font-medium mt-3 bg-rose-50 dark:bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/30">
+                {error}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-4">
+            <div className="w-20 h-20 bg-amber-100 dark:bg-amber-950/40 rounded-full flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-900/30 shadow-lg animate-bounce">
+              <Trophy className="w-10 h-10 text-amber-500" />
+            </div>
+            <h4 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
+              {tr("congrats", "Congratulations!")}
+            </h4>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              {tr("scratch_win_msg", "You won {{count}} coins from the scratch card!", { count: reward })}
+            </p>
+            <Button
+              onClick={handleClose}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-indigo-500/20"
+            >
+              {tr("claim_rewards", "Claim Reward")}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

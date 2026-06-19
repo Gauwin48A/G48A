@@ -211,15 +211,16 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={[
-        "relative overflow-hidden rounded-3xl text-left transition-all duration-300 focus:outline-none",
+        "relative overflow-hidden rounded-3xl text-left transition-all duration-300 focus:outline-none group tile-active-bounce",
         "bg-gradient-to-br", app.gradient,
         isActive ? `ring-4 ${app.ringColor} ring-offset-2 ring-offset-slate-50 dark:ring-offset-gray-950` : "",
-        hovered ? `shadow-2xl ${app.shadowColor}` : "shadow-lg",
+        hovered ? `shadow-2xl ${app.shadowColor} tile-hovered` : "shadow-lg",
       ].join(" ")}
       style={{ transition: "transform 0.15s ease, box-shadow 0.3s ease" }}
       aria-pressed={isActive}
       aria-label={t('enter_app', { label: app.label, defaultValue: `Enter ${app.label} app` })}
     >
+      <span className="tile-shine-overlay" />
       {/* Decorative blobs */}
       <span className="pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-2xl dark:bg-slate-900/10" />
       <span className="pointer-events-none absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/8 blur-xl dark:bg-slate-900/8" />
@@ -438,6 +439,35 @@ export default function CategoryHub() {
 
   return (
     <div className="min-h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-x-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 pb-20">
+      <style>{`
+        @keyframes tile-shine {
+          0% { transform: translateX(-150%) skewX(-15deg); }
+          50% { transform: translateX(150%) skewX(-15deg); }
+          100% { transform: translateX(150%) skewX(-15deg); }
+        }
+        .tile-shine-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+          transform: translateX(-150%) skewX(-15deg);
+          pointer-events: none;
+          z-index: 5;
+        }
+        .tile-hovered .tile-shine-overlay {
+          animation: tile-shine 2s infinite;
+        }
+        .tile-active-bounce {
+          transform-origin: center;
+          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease !important;
+        }
+        .tile-active-bounce:active {
+          transform: scale(0.96) !important;
+          transition: transform 0.1s ease !important;
+        }
+      `}</style>
       {/* Full-screen gradient aurora background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div

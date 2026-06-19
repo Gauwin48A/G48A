@@ -261,8 +261,8 @@ const reviewVerification = async (req, res) => {
 };
 
 /**
- * Run auto-validation on a verification document (mock/stub).
- * Returns a simulated confidence score and extracted data.
+ * Run auto-validation on a verification document.
+ * Returns an error stating this feature requires a third-party KYC provider.
  * @param {import("express").Request} req
  * @param {import("express").Response} res
  * @returns {Promise<void>}
@@ -276,24 +276,11 @@ const autoValidateDocument = async (req, res) => {
   }
 
   try {
-    logger.info(`[Admin] Auto-validating document ${id}...`);
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const mockResult = {
-      confidence: 0.92,
-      extracted_data: {
-        id_type: "AADHAAR",
-        id_number: "**** **** 4321",
-        name_match: true,
-        dob_match: true,
-        expiry_valid: true,
-      },
-      issues: [],
-      recommendation: "APPROVE",
-    };
-
-    res.json(mockResult);
+    logger.info(`[Admin] Auto-validation requested for document ${id} — feature requires a third-party KYC provider.`);
+    return res.status(501).json({
+      error: "Auto-validation is not available",
+      message: "Automated document validation requires integration with a third-party KYC provider. Please review documents manually or integrate a KYC service.",
+    });
   } catch (error) {
     logger.error("[Admin] Auto-validate error:", error);
     res.status(500).json({ error: "Auto-validation failed" });

@@ -96,7 +96,7 @@ object NetworkModule {
             .addInterceptor(AuthInterceptor(tokenStore))
             .addInterceptor(localeInterceptor)
             .addInterceptor(RetryInterceptor())
-            .addInterceptor(SecurityHeadersInterceptor(cookieJar))
+            .addInterceptor(SecurityHeadersInterceptor(cookieJar, context))
             .addInterceptor(logging)
             .addNetworkInterceptor(cacheInterceptor)
             .build()

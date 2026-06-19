@@ -26,6 +26,7 @@ import {
   Star,
   Home,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { navigateBack } from "@/utils/navigation";
@@ -78,7 +79,7 @@ const SaleDone = () => {
       `Receipt ID: ${receipt.receiptId || receipt.transactionId || "-"}`,
       `Transaction ID: ${receipt.transactionId || sale.transactionId || "-"}`,
       `Amount: ${formatCurrency(receipt.amount, receipt.currency || "INR")}`,
-      `Completed At: ${receipt.completedAt || sale.completedAt || "�"}`,
+      `Completed At: ${receipt.completedAt || sale.completedAt || "-"}`,
       `Item: ${item.title || "-"}`,
       `Buyer: ${buyer.name || buyer.username || "-"}`,
     ].join("\n");
@@ -547,7 +548,7 @@ const SaleDone = () => {
                 </div>
               </div>
 
-              <div className="text-lg sm:text-2xl md:text-3xl mb-2">??</div>
+              <div className="text-lg sm:text-2xl md:text-3xl mb-2">🎉</div>
               <h2 className="text-lg sm:text-2xl md:text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-3 dark:bg-clip-text dark:text-transparent">
                 {t("sale_confirmed") || "Sale Confirmed!"}
               </h2>
@@ -619,7 +620,7 @@ const SaleDone = () => {
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                             {saleItem.category_name || tr("category", "Category")}
-                            {saleItem.subcategory_name ? ` � ${saleItem.subcategory_name}` : ""}
+                            {saleItem.subcategory_name ? ` • ${saleItem.subcategory_name}` : ""}
                           </p>
                           <p className="text-sm text-slate-900 dark:text-slate-100 mt-1">
                             {tr("agreed_price", "Agreed")}: {formatCurrency(saleItem.agreed_price || completedSale.agreedPrice)}
@@ -812,7 +813,7 @@ const SaleDone = () => {
                 </p>
                 <div className="space-y-2">
                   {[
-                    { icon: Home, text: tr("next_view_sold", "View your post in My Home ? Sold tab") },
+                    { icon: Home, text: tr("next_view_sold", "View your post in My Home → Sold tab") },
                     { icon: Star, text: tr("next_leave_review", "Leave a review for the buyer") },
                     { icon: TrendingUp, text: tr("next_list_more", "List more items to grow your sales") },
                   ].map(({ icon: Icon, text }, i) => (
@@ -847,6 +848,16 @@ const SaleDone = () => {
                 >
                   <Star className="w-4 h-4 mr-2" />
                   {tr("leave_feedback", "Leave Feedback")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigate(`/complaints?postId=${encodeURIComponent(saleItem?.post_id || "")}&sellerId=${encodeURIComponent(completedSale?.seller?.id || "")}`)
+                  }
+                  className="border-2 border-red-400 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl px-8 py-3 font-semibold dark:border-red-500/40 dark:hover:bg-red-950/20"
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  {tr("file_complaint", "File Complaint")}
                 </Button>
                 <Button
                   className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl px-8 py-3 font-semibold shadow-lg dark:bg-gradient-to-r"
@@ -957,20 +968,20 @@ const SaleDone = () => {
                 <Info className="w-4 h-4 shrink-0" />
                 {tr(
                   "testing_guide_title",
-                  "How to test this page � click to expand",
+                  "How to test this page — click to expand",
                 )}
               </summary>
               <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-200">
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step1_title", "Step 1 � Find your Post ID")}
+                    {tr("sale_test_step1_title", "Step 1 — Find your Post ID")}
                   </p>
                   <p>
                     {tr("sale_test_step1_prefix", "Go to")}{" "}
                     <strong>{tr("my_home", "My Home")}</strong>{" "}
                     {tr(
                       "sale_test_step1_middle",
-                      "? tap any of your active listings ? the URL ends in",
+                      "— tap any of your active listings — the URL ends in",
                     )}{" "}
                     <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded dark:bg-blue-950/20">
                       /post/&#123;post_id&#125;
@@ -982,7 +993,7 @@ const SaleDone = () => {
                   <p className="font-bold">
                     {tr(
                       "sale_test_step2_title",
-                      "Step 2 � Find the Buyer's User ID",
+                      "Step 2 — Find the Buyer's User ID",
                     )}
                   </p>
                   <p>
@@ -990,7 +1001,7 @@ const SaleDone = () => {
                     <strong>
                       {tr(
                         "profile_settings_account_info",
-                        "Profile ? Settings ? Account Info",
+                        "Profile — Settings — Account Info",
                       )}
                     </strong>{" "}
                     {tr(
@@ -1001,7 +1012,7 @@ const SaleDone = () => {
                 </div>
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step3_title", "Step 3 � Seller initiates")}
+                    {tr("sale_test_step3_title", "Step 3 — Seller initiates")}
                   </p>
                   <p>
                     {tr(
@@ -1011,13 +1022,13 @@ const SaleDone = () => {
                     <strong>{tr("initiate_sale", "Initiate Sale")}</strong>.{" "}
                     {tr(
                       "sale_test_step3_suffix",
-                      "A Transaction ID and OTP will appear � share both with the buyer.",
+                      "A Transaction ID and OTP will appear — share both with the buyer.",
                     )}
                   </p>
                 </div>
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step4_title", "Step 4 � Buyer confirms")}
+                    {tr("sale_test_step4_title", "Step 4 — Buyer confirms")}
                   </p>
                   <p>
                     {tr(

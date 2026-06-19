@@ -2,18 +2,19 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { FaArrowLeft, FaNewspaper } from "react-icons/fa";
 import { hasAuthSession } from "@/utils/authStorage";
 import api from "@/services/api";
 
 const DESCRIPTION_MIN_LENGTH = 5;
-const DESCRIPTION_MAX_LENGTH = 500;
+const DESCRIPTION_MAX_LENGTH = 2000;
 
 const PostAdd = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -67,9 +68,11 @@ const PostAdd = () => {
       });
       navigate("/feed");
     } catch (submitError) {
-      setError(
-        submitError.message || t("publish_failed") || "Failed to publish post",
-      );
+      const serverMsg = submitError?.response?.data?.error || submitError?.response?.data?.message;
+      const errorMessage = serverMsg || (submitError?.response?.status >= 500
+        ? "Server error. Please try again."
+        : submitError?.message || "Failed to publish post");
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

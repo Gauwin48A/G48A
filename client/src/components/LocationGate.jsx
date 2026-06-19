@@ -77,7 +77,7 @@ function LocationGate({ children }) {
 
   // Routes where the floating accuracy badge should be hidden because it
   // overlaps the primary CTA (auth/onboarding flows have no bottom-nav).
-  const routerLoc = (() => { try { return useRouterLocation(); } catch { return { pathname: "" }; } })();
+  const routerLoc = useRouterLocation();
   const HIDE_BADGE_ROUTES = [
     "/login",
     "/signup",

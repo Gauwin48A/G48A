@@ -86,7 +86,7 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
               Under Review
             </Badge>
           ) : null}
-          <Badge variant="outline" className="text-xs">{t("text_post")}</Badge>
+          <Badge variant="outline" className="text-xs">{t("text_post", "Text Post")}</Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -102,7 +102,7 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
             className="h-8 px-3 bg-blue-600 text-white rounded text-xs sm:h-8 sm:text-xs md:text-sm font-medium hover:bg-blue-700"
             onClick={handleViewDetails}
           >
-            {t("view_details")}
+            {t("view_details", "View Details")}
           </button>
         </div>
       </CardContent>

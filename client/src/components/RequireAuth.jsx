@@ -8,7 +8,7 @@ import {
   CreditCard, MessageSquare, HelpCircle, ShieldCheck, MapPin, Lock,
   PlusCircle, Tag, Edit3, Sparkles, Package, ShoppingBag, Rss,
   BarChart3, Clock, FileText, Trash2, Eye, Search, Bookmark,
-  Fingerprint, HandCoins, Undo2, Star,
+  HandCoins, Undo2, Star,
 } from "lucide-react";
 
 const normalizeRole = (value) =>
@@ -447,7 +447,7 @@ const AUTH_GATE_CONTENT = {
     title: "Sign in to verify your Identity",
     description: "Complete Aadhaar verification to unlock trusted seller status.",
     highlights: ["Aadhaar verification", "Trust badge", "Full access"],
-    icon: Fingerprint,
+    icon: ShieldCheck,
     tone: "default",
     backgroundClass:
       "from-orange-50 via-amber-50 to-yellow-100 dark:from-slate-950 dark:via-orange-950/25 dark:to-slate-950",

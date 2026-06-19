@@ -14,6 +14,7 @@ const {
 } = require("../utils/parseHelpers");
 const cacheService = require("../services/cacheService");
 const logger = require("../utils/logger");
+const { triggerRatingRecalculation } = require("../services/ratingService");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -467,6 +468,9 @@ const createReview = async (req, res) => {
     );
 
     invalidateReviewsCache(revieweeId);
+
+    // Fire-and-forget rating recalculation to update users.rating
+    triggerRatingRecalculation(revieweeId);
 
     return res.status(201).json({
       message: "Review submitted successfully",

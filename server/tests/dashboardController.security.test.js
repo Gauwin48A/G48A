@@ -22,7 +22,13 @@ function loadControllerWithQueryMock(queryImpl) {
     clearPattern: jest.fn()
   };
 
-  jest.doMock('../src/config/db', () => ({ query }));
+  const dbHelpersMock = {
+    runQuery: query,
+    getAuthUserId: (req) => req.user?.userId || req.user?.id || req.user?.user_id || null,
+    parseOptionalString: (v) => (v === undefined || v === null ? null : String(v).trim()) || null,
+  };
+
+  jest.doMock('../src/utils/dbHelpers', () => dbHelpersMock);
   jest.doMock('../src/utils/logger', () => logger);
   jest.doMock('../src/services/cacheService', () => cacheService);
 

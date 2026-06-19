@@ -378,45 +378,62 @@ async function getUsersSubscriptionIdColumn() {
  */
 async function ensurePaymentsExtendedSchema() {
   if (!paymentsExtendedSchemaPromise) {
-    paymentsExtendedSchemaPromise = (async () => {
-      await runQuery(
-        `ALTER TABLE payments
+    paymentsExtendedSchemaPromise = (async () => {      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS purchase_type TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (purchase_type) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS boost_type TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (boost_type) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS post_id TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (post_id) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS metadata JSONB`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (metadata) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS payment_provider TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (payment_provider) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS provider_order_id TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (provider_order_id) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS provider_payment_id TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `ALTER TABLE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (provider_payment_id) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        ALTER TABLE payments
          ADD COLUMN IF NOT EXISTS provider_signature TEXT`
-      ).catch(() => {});
-      await runQuery(
-        `UPDATE payments
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (provider_signature) skipped:", { message: err?.message });
+      });
+      await runQuery(`
+        UPDATE payments
          SET purchase_type = $1
          WHERE purchase_type IS NULL`,
         [PURCHASE_TYPES.SUBSCRIPTION]
-      ).catch(() => {});
+      ).catch((err) => {
+        logger.warn("[Payment] Schema ext (purchase_type backfill) skipped:", { message: err?.message });
+      });
     })().catch((error) => {
       logger.warn("[Payment] Failed to extend payments schema", {
         message: error.message,
@@ -444,17 +461,22 @@ async function ensureBoostSchema() {
           starts_at TIMESTAMPTZ DEFAULT NOW(),
           expires_at TIMESTAMPTZ NOT NULL,
           created_at TIMESTAMPTZ DEFAULT NOW()
-        )`
-      ).catch(() => {});
+        )`        ).catch((err) => {
+          logger.warn("[Payment] Boost schema (post_boosts) skipped:", { message: err?.message });
+        });
       await runQuery(
         `ALTER TABLE posts
          ADD COLUMN IF NOT EXISTS boost_level INT DEFAULT 0`
-      ).catch(() => {});
+      ).catch((err) => {
+        logger.warn("[Payment] Boost schema (posts.boost_level) skipped:", { message: err?.message });
+      });
       await runQuery(
         `CREATE INDEX IF NOT EXISTS idx_post_boosts_active
          ON post_boosts(post_id, status)
          WHERE status = 'active'`
-      ).catch(() => {});
+      ).catch((err) => {
+        logger.warn("[Payment] Boost schema (idx_post_boosts_active) skipped:", { message: err?.message });
+      });
     })().catch((error) => {
       logger.warn("[Payment] Failed to ensure boost schema", {
         message: error.message,
@@ -1117,7 +1139,7 @@ exports.validatePromoCode = async (req, res) => {
       return res.status(400).json({ error: "code and plan_type required" });
     }
 
-    const result = applyPromoCode(code, plan_type);
+    const result = await applyPromoCode(code, plan_type, pool);
     if (!result.valid) {
       return res.status(400).json({ error: result.error });
     }

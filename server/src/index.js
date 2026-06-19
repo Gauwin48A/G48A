@@ -116,6 +116,7 @@ const auditRoutes = require("./routes/audit.js");
 const dailyCodeRoutes = require("./routes/dailycode.js");
 const loginAuditRoutes = require("./routes/loginAudit.js");
 const saleUndoneRoutes = require("./routes/saleundone.js");
+const ratingsRoutes = require("./routes/ratings.js");
 const { setNotificationSocket } = require("./services/notificationEmitter");
 
 /* ─────────────────────────────────────────────────────────
@@ -709,6 +710,7 @@ const apiRouteMounts = [
   ["/api/dailycode", dailyCodeRoutes],
   ["/api/login-audit", loginAuditRoutes],
   ["/api/saleundone", saleUndoneRoutes],
+  ["/api/ratings", ratingsRoutes],
   ["/api/trust", require("./routes/trust.js")],
 ];
 

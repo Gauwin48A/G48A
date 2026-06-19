@@ -44,6 +44,7 @@ import {
   Copy as dt,
   AlertTriangle as xe,
   RefreshCw as he,
+  MessageSquare,
 } from "lucide-react";
 import { useToast as gt } from "@/hooks/use-toast";
 import { useAuth as mt } from "@/context/AuthContext";
@@ -158,6 +159,8 @@ const MyHomePage = () => {
     [markSoldLoading, setMarkSoldLoading] = n(!1),
     [postTotals, setPostTotals] = n(null),
     [, setSavedPosts] = n(() => getSavedPostsMap()),
+    [activePostForActions, setActivePostForActions] = n(null),
+    [actionSheetOpen, setActionSheetOpen] = n(!1),
     b = Ge(),
     routeLoc = wt(),
     { toast: d } = gt(),
@@ -203,7 +206,7 @@ const MyHomePage = () => {
     E = Ae.language || "en",
     F = ut(_e),
     H = ct(),
-    Pe = Boolean(_authIsAuthenticated ?? _e ?? F ?? H),
+    Pe = Boolean(_authIsAuthenticated || _e || F || H),
     resolveMessage = Ze(
       (t) => {
         if (!t) return "";
@@ -335,7 +338,7 @@ const MyHomePage = () => {
         t = !0;
       }
     );
-  }, [H, F, ye, categoryModeCategoryId]);
+  }, [H, F, ye, categoryModeCategoryId, Pe]);
   ie(() => {
     if (!Pe || !F) return;
     let cancelled = !1;
@@ -1494,7 +1497,7 @@ const MyHomePage = () => {
                       e.createElement(
                         "div",
                         { className: "text-6xl mb-4" },
-                        "[]",
+                        p === "active" ? "\uD83D\uDCE6" : "[]",
                       ),
                       e.createElement(
                         "h3",
@@ -1502,16 +1505,20 @@ const MyHomePage = () => {
                           className:
                             "text-xl font-bold text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200",
                         },
-                        hasCategoryMode && categoryModeCategory?.name
-                          ? `No ${categoryModeCategory.name} listings yet`
-                          : l("no_posts"),
+                        p === "active"
+                          ? tr("no_active_listings_yet", "No Active Listings Yet")
+                          : hasCategoryMode && categoryModeCategory?.name
+                            ? `No ${categoryModeCategory.name} listings yet`
+                            : l("no_posts"),
                       ),
                       e.createElement(
                         "p",
                         { className: "text-gray-500 dark:text-gray-400 mb-4 dark:text-gray-300" },
-                        hasCategoryMode && categoryModeCategory?.name
-                          ? `Listings are filtered to ${categoryModeCategory.name}. Switch category to see more.`
-                          : l("start_selling"),
+                        p === "active"
+                          ? tr("list_first_item_desc", "Get started by posting your first item for sale today!")
+                          : hasCategoryMode && categoryModeCategory?.name
+                            ? `Listings are filtered to ${categoryModeCategory.name}. Switch category to see more.`
+                            : l("start_selling"),
                       ),
                       e.createElement(
                         "div",
@@ -1527,7 +1534,9 @@ const MyHomePage = () => {
                             onClick: () => b("/post-welcome"),
                           },
                           e.createElement(ce, { className: "w-5 h-5 mr-2" }),
-                          l("create_new_listing"),
+                          p === "active"
+                            ? tr("list_your_first_item", "List Your First Item")
+                            : l("create_new_listing"),
                         ),
                         hasCategoryMode &&
                           categoryModeCategory?.name &&
@@ -1594,68 +1603,21 @@ const MyHomePage = () => {
                               "div",
                               { className: "absolute top-3 right-3" },
                               e.createElement(
-                                bt,
-                                null,
-                                e.createElement(
-                                  ht,
-                                  { asChild: !0 },
-                                  e.createElement(
-                                    g,
-                                    {
-                                      variant: "ghost",
-                                      size: "sm",
-                                      className:
-                                        "bg-gray-800/80 hover:bg-gray-700 shadow-lg rounded-full h-9 w-9 p-0 z-50 dark:bg-gray-700/80 dark:hover:bg-gray-700",
-                                    },
-                                    e.createElement(lt, {
-                                      className: "h-4 w-4 text-white dark:text-white",
-                                    }),
-                                  ),
-                                ),
-                                e.createElement(
-                                  xt,
-                                  {
-                                    align: "end",
-                                    className:
-                                      "w-48 mhub-premium-surface shadow-lg border rounded-xl dark:border",
+                                g,
+                                {
+                                  variant: "ghost",
+                                  size: "sm",
+                                  className:
+                                    "bg-gray-800/80 hover:bg-gray-700 shadow-lg rounded-full h-9 w-9 p-0 z-50 dark:bg-gray-700/80 dark:hover:bg-gray-700",
+                                  onClick: (evt) => {
+                                    evt.stopPropagation();
+                                    setActivePostForActions(t);
+                                    setActionSheetOpen(true);
                                   },
-                                  e.createElement(
-                                    V,
-                                    { onClick: () => Le(t) },
-                                    e.createElement(Ke, {
-                                      className: "w-4 h-4 mr-2",
-                                    }),
-                                    l("edit_post"),
-                                  ),
-                                  isOwnerPost &&
-                                    e.createElement(
-                                      V,
-                                      {
-                                        onClick: () =>
-                                          openPromote(
-                                            t.postId || t.post_id || t.id,
-                                            t.title || t.post_title || "",
-                                          ),
-                                      },
-                                      e.createElement(nt, {
-                                        className: "w-4 h-4 mr-2",
-                                      }),
-                                      l("promote") || "Promote",
-                                    ),
-                                  !s &&
-                                    e.createElement(
-                                      V,
-                                      {
-                                        onClick: () =>
-                                          ae(t.postId || t.post_id || t.id),
-                                        className: "text-red-600 dark:text-red-300",
-                                      },
-                                      e.createElement(Z, {
-                                        className: "w-4 h-4 mr-2",
-                                      }),
-                                      l("delete"),
-                                    ),
-                                ),
+                                },
+                                e.createElement(lt, {
+                                  className: "h-4 w-4 text-white dark:text-white",
+                                }),
                               ),
                             ),
                           ),
@@ -1758,32 +1720,35 @@ const MyHomePage = () => {
                                 "div",
                                 {
                                   className:
-                                    "flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-3 dark:text-gray-300",
+                                    "grid grid-cols-3 gap-1 py-2 px-1 bg-slate-50 dark:bg-slate-900/40 rounded-xl mb-3 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300",
                                 },
                                 e.createElement(
-                                  "span",
-                                  { className: "inline-flex items-center gap-1" },
+                                  "div",
+                                  { className: "flex flex-col items-center justify-center p-1 border-r border-slate-150 dark:border-slate-800" },
                                   e.createElement(Xe, {
-                                    className: "w-3.5 h-3.5",
+                                    className: "w-4 h-4 mb-1 text-blue-500",
                                   }),
-                                  Number(t.views_count || t.views || 0),
+                                  e.createElement("span", { className: "font-bold text-slate-800 dark:text-slate-155" }, Number(t.views_count || t.views || 0)),
+                                  e.createElement("span", { className: "text-[9px] text-slate-400 font-medium tracking-tight uppercase" }, tr("views", "Views"))
                                 ),
                                 e.createElement(
-                                  "span",
-                                  { className: "inline-flex items-center gap-1" },
+                                  "div",
+                                  { className: "flex flex-col items-center justify-center p-1 border-r border-slate-155 dark:border-slate-800" },
                                   e.createElement(qe, {
-                                    className: "w-3.5 h-3.5",
+                                    className: "w-4 h-4 mb-1 text-red-500",
                                   }),
-                                  Number(t.likes || t.likes_count || 0),
+                                  e.createElement("span", { className: "font-bold text-slate-800 dark:text-slate-155" }, Number(t.likes || t.likes_count || 0)),
+                                  e.createElement("span", { className: "text-[9px] text-slate-400 font-medium tracking-tight uppercase" }, tr("saves", "Saves"))
                                 ),
                                 e.createElement(
-                                  "span",
-                                  { className: "inline-flex items-center gap-1" },
-                                  e.createElement(st, {
-                                    className: "w-3.5 h-3.5",
+                                  "div",
+                                  { className: "flex flex-col items-center justify-center p-1" },
+                                  e.createElement(MessageSquare, {
+                                    className: "w-4 h-4 mb-1 text-green-500",
                                   }),
-                                  Number(t.shares || 0),
-                                ),
+                                  e.createElement("span", { className: "font-bold text-slate-800 dark:text-slate-155" }, Number(t.chats_count || t.chats || 0)),
+                                  e.createElement("span", { className: "text-[9px] text-slate-400 font-medium tracking-tight uppercase" }, tr("chats", "Chats"))
+                                )
                               ),
                             e.createElement(
                               "div",
@@ -2099,6 +2064,120 @@ const MyHomePage = () => {
               postId: promotePostId,
               postTitle: promotePostTitle,
             }),
+            activePostForActions &&
+              e.createElement(
+                "div",
+                {
+                  className: `fixed inset-0 z-[100] transition-opacity duration-300 ${actionSheetOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`,
+                },
+                e.createElement("div", {
+                  className: "absolute inset-0 bg-black/60 backdrop-blur-sm",
+                  onClick: () => {
+                    setActionSheetOpen(false);
+                    setTimeout(() => setActivePostForActions(null), 300);
+                  },
+                }),
+                e.createElement(
+                  "div",
+                  {
+                    className: `fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl p-6 transition-transform duration-300 transform z-[110] ${actionSheetOpen ? "translate-y-0" : "translate-y-full"}`,
+                  },
+                  e.createElement("div", {
+                    className: "w-12 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full mx-auto mb-6",
+                  }),
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-slate-800" },
+                    e.createElement("img", {
+                      src: Ie(activePostForActions),
+                      className: "w-12 h-12 rounded-xl object-cover",
+                    }),
+                    e.createElement(
+                      "div",
+                      { className: "flex-1 min-w-0" },
+                      e.createElement(
+                        "h4",
+                        { className: "font-bold text-slate-900 dark:text-slate-100 truncate text-left" },
+                        activePostForActions.title,
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "text-xs text-slate-500 dark:text-slate-400 mt-0.5 text-left" },
+                        "INR ",
+                        activePostForActions.price?.toLocaleString(),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "space-y-3" },
+                    e.createElement(
+                      g,
+                      {
+                        variant: "outline",
+                        className: "w-full justify-start text-left h-12 rounded-xl border-gray-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 gap-3 font-semibold",
+                        onClick: () => {
+                          setActionSheetOpen(false);
+                          setTimeout(() => {
+                            Le(activePostForActions);
+                            setActivePostForActions(null);
+                          }, 200);
+                        },
+                      },
+                      e.createElement(Ke, { className: "w-5 h-5 text-blue-500" }),
+                      l("edit_post"),
+                    ),
+                    activePostForActions && isPostOwnedByUser(activePostForActions, F) &&
+                      e.createElement(
+                        g,
+                        {
+                          variant: "outline",
+                          className: "w-full justify-start text-left h-12 rounded-xl border-gray-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 gap-3 font-semibold",
+                          onClick: () => {
+                            setActionSheetOpen(false);
+                            setTimeout(() => {
+                              openPromote(
+                                activePostForActions.postId || activePostForActions.post_id || activePostForActions.id,
+                                activePostForActions.title || "",
+                              );
+                              setActivePostForActions(null);
+                            }, 200);
+                          },
+                        },
+                        e.createElement(nt, { className: "w-5 h-5 text-amber-500" }),
+                        l("promote") || "Promote",
+                      ),
+                    e.createElement(
+                      g,
+                      {
+                        variant: "outline",
+                        className: "w-full justify-start text-left h-12 rounded-xl border-red-100 hover:bg-red-50 dark:border-red-950/40 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 gap-3 font-semibold",
+                        onClick: () => {
+                          setActionSheetOpen(false);
+                          setTimeout(() => {
+                            ae(activePostForActions.postId || activePostForActions.post_id || activePostForActions.id);
+                            setActivePostForActions(null);
+                          }, 200);
+                        },
+                      },
+                      e.createElement(Z, { className: "w-5 h-5 text-red-500" }),
+                      l("delete"),
+                    ),
+                  ),
+                  e.createElement(
+                    g,
+                    {
+                      variant: "ghost",
+                      className: "w-full h-12 mt-4 rounded-xl text-slate-500 dark:text-slate-400 font-bold hover:bg-gray-100 dark:hover:bg-slate-800",
+                      onClick: () => {
+                        setActionSheetOpen(false);
+                        setTimeout(() => setActivePostForActions(null), 300);
+                      },
+                    },
+                    l("cancel"),
+                  ),
+                ),
+              ),
           )
       : e.createElement(
           "div",

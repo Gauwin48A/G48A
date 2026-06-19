@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.kapt")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
@@ -137,6 +138,19 @@ android {
         checkDependencies = true
         warningsAsErrors = false
     }
+
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    exclude(
+        "**/ui/channels/CentreScreens.kt",
+        "**/ui/commerce/CommerceCommon.kt",
+        "**/ui/commerce/*Screen.kt",
+        "**/ui/components/PostCardComponents.kt",
+        "**/ui/explore/ExploreScreenPaging.kt",
+        "**/ui/explore/ExploreViewModel.kt",
+        "**/ui/foryou/ForYouViewModel.kt",
+    )
 }
 
 dependencies {
@@ -166,9 +180,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.4")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Hilt DI
+    // Hilt DI (uses kapt to avoid KSP file-generation conflict with internal shaded Room processor)
     implementation("com.google.dagger:hilt-android:2.52")
-    ksp("com.google.dagger:hilt-compiler:2.52")
+    kapt("com.google.dagger:hilt-compiler:2.52")
 
     // Networking: Retrofit + OkHttp + kotlinx-serialization
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -185,6 +199,13 @@ dependencies {
 
     // Security-crypto for EncryptedSharedPreferences (token storage)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Location (GPS / FusedLocationProvider) — web parity
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Paging 3 — web parity pagination for post feed
+    implementation("androidx.paging:paging-runtime-ktx:3.3.4")
+    implementation("androidx.paging:paging-compose:3.3.4")
 
     // Image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
@@ -203,10 +224,10 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
 
-    // Room — offline cache
+    // Room — offline cache (uses kapt to avoid KSP conflict with Hilt)
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // CameraX + ML Kit Barcode Scanning
     implementation("androidx.camera:camera-core:1.4.1")

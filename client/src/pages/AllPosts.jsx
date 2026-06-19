@@ -4182,7 +4182,7 @@ const ve = 5,
               "button",
               {
                 type: "button",
-                onClick: () => y("/compare", { state: { compareItems: compareItems } }),
+                onClick: () => { try { sessionStorage.setItem('compareItems', JSON.stringify(compareItems)); } catch {} y('/compare', { state: { compareItems: compareItems } }); },
                 className:
                   "px-3 py-1.5 bg-white text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-50 transition",
               },

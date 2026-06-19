@@ -353,7 +353,14 @@ function RewardRulesCard() {
   );
 }
 
-export default function ReferralChainTree() {
+export default function ReferralChainTree({
+  dailySecretCode,
+  secretCountdown,
+  onCopySecretCode,
+  referralSteps,
+  onShareReferral,
+  onBrowseListings,
+}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const tr = (key, fallback) => t(key, { defaultValue: fallback });
@@ -431,6 +438,18 @@ export default function ReferralChainTree() {
     });
   };
 
+  const shareWhatsApp = () => {
+    if (!shareUrl) return;
+    const text = encodeURIComponent(`Join MHub with my referral link and earn bonus coins! ${shareUrl}`);
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  };
+
+  const shareTelegram = () => {
+    if (!shareUrl) return;
+    const text = encodeURIComponent("Join MHub with my referral link and earn bonus coins!");
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${text}`, "_blank", "noopener,noreferrer");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -461,38 +480,85 @@ export default function ReferralChainTree() {
       {/* Share CTA */}
       {referralCode && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 text-white">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold flex items-center gap-2">
-                <Share2 className="h-4 w-4" />
-                {tr("grow_network", "Grow Your Network")}
-              </h3>
-              <p className="text-xs opacity-80 mt-1">
-                {tr("share_earn", "Share your referral code and earn up to 100 coins for every active user in your chain!")}
-              </p>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  {tr("grow_network", "Grow Your Network")}
+                </h3>
+                <p className="text-xs opacity-80 mt-1">
+                  {tr("share_earn", "Share your referral code and earn up to 100 coins for every active user in your chain!")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <code className="text-xs bg-white/20 px-3 py-1.5 rounded-lg font-mono">
+                  {referralCode}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3 w-3" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" /> Copy
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <code className="text-xs bg-white/20 px-3 py-1.5 rounded-lg font-mono">
-                {referralCode}
-              </code>
+            
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-xs">
+              <span className="opacity-75">{tr("quick_share", "Quick Share:")}</span>
               <button
-                onClick={handleCopy}
-                className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
+                onClick={shareWhatsApp}
+                className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
               >
-                {copied ? (
-                  <>
-                    <Check className="h-3 w-3" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" /> Copy
-                  </>
-                )}
+                WhatsApp
+              </button>
+              <button
+                onClick={shareTelegram}
+                className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
+              >
+                Telegram
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {dailySecretCode ? (
+        <div className="rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/20 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-amber-700 dark:text-amber-200">
+              {tr("daily_secret_code", "Daily secret code")}
+            </p>
+            <button
+              type="button"
+              className="text-xs text-amber-700 border border-amber-200 bg-white/90 hover:bg-white rounded-full px-3 py-1 flex items-center gap-1 dark:text-amber-200 dark:border-amber-700/60 dark:bg-amber-900/30 dark:hover:bg-amber-900/40 font-semibold"
+              onClick={onCopySecretCode}
+            >
+              <Copy className="w-3.5 h-3.5" />
+              {tr("copy", "Copy")}
+            </button>
+          </div>
+          <p className="referral-code-box mt-2 text-xl font-black text-amber-700 dark:text-amber-200">
+            {dailySecretCode}
+          </p>
+          <div className="mt-1 flex items-center gap-1.5 text-amber-600/90 dark:text-amber-200/80">
+            <Clock className="w-3.5 h-3.5" />
+            <span className="text-xs">
+              {secretCountdown
+                ? `${tr("expires_in", "Expires in")} ${secretCountdown}`
+                : tr("expires_in_12h_30m", "Expires soon")}
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       {/* Stats */}
       {stats && <ChainStats stats={stats} statusSummary={statusSummary} />}
@@ -502,6 +568,48 @@ export default function ReferralChainTree() {
 
       {/* Reward Rules */}
       <RewardRulesCard />
+
+      {referralSteps && referralSteps.length > 0 && (
+        <div className="bg-white dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            {tr("referral_playbook", "Referral Playbook")}
+          </h3>
+          <div className="space-y-3">
+            {referralSteps.map((step, index) => (
+              <div
+                key={step.key}
+                className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-slate-50/50 dark:bg-slate-900/10 px-3 py-2"
+              >
+                <div className="relative flex flex-col items-center self-stretch">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold mt-0.5">
+                    {index + 1}
+                  </span>
+                  {index < referralSteps.length - 1 ? (
+                    <span className="absolute top-6 bottom-1 w-px bg-gray-200 dark:bg-gray-700" />
+                  ) : null}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                    {step.title}
+                  </p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    {step.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="w-full mt-2 py-2 px-3 border border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center justify-center gap-1.5 transition-colors"
+              onClick={onShareReferral}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              {tr("share_referral_to_start", "Share referral to start")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tree */}
       <div>

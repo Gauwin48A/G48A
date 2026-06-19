@@ -1,0 +1,416 @@
+diff --git a/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt b/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
+index 7b6a241d..10ccfd8e 100644
+--- a/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
++++ b/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
+@@ -1,5 +1,8 @@
+ package com.mhub.app.ui.explore
+ 
++import androidx.compose.material.icons.filled.LightMode
++import androidx.compose.material.icons.filled.DarkMode
++import androidx.compose.material.icons.filled.Language
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+@@ -38,6 +41,7 @@ import androidx.compose.material.icons.filled.Search
+ import androidx.compose.material.icons.filled.TrendingUp
+ import androidx.compose.material.icons.outlined.FavoriteBorder
+ import androidx.compose.material.icons.automirrored.filled.ArrowForward
++import androidx.compose.material.icons.automirrored.filled.ArrowBack
+ import androidx.compose.material.icons.automirrored.filled.ViewList
+ import androidx.compose.material.icons.automirrored.outlined.Chat
+ import androidx.compose.material.icons.automirrored.filled.TrendingUp
+@@ -248,19 +252,26 @@ class ExploreViewModel @Inject constructor(
+     private val categoriesRepo: CategoriesRepository,
+     private val tiersRepo: com.mhub.app.data.repository.TiersRepository,
+     private val localeManager: com.mhub.app.core.LocaleManager,
++    private val prefs: com.mhub.app.data.local.AppPreferences,
+ ) : ViewModel() {
+     private val _state = MutableStateFlow(ExploreState())
+     val state: StateFlow<ExploreState> = _state.asStateFlow()
+ 
++    val themeMode: kotlinx.coroutines.flow.Flow<com.mhub.app.data.local.ThemeMode> = prefs.themeMode
++
++    fun setThemeMode(mode: com.mhub.app.data.local.ThemeMode) {
++        viewModelScope.launch { prefs.setThemeMode(mode) }
++    }
++
+     private var searchJob: Job? = null
+-    private var lastLocaleVersion = 0L
++    private var lastLocaleVersion = localeManager.localeVersion.value
+ 
+     init {
+         loadPosts(reset = true)
+         checkPlanExpiry()
+         viewModelScope.launch {
+             localeManager.localeVersion.collect { version ->
+-                if (version > lastLocaleVersion && lastLocaleVersion > 0L) loadPosts(reset = true)
++                if (version > lastLocaleVersion) loadPosts(reset = true)
+                 lastLocaleVersion = version
+             }
+         }
+@@ -367,46 +378,48 @@ class ExploreViewModel @Inject constructor(
+         viewModelScope.launch {
+             val condition = _state.value.filterCondition.takeIf { it != "any" }
+             val subcategory = _state.value.filterSubcategory
+-            when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
+-                is ApiResult.Success -> {
+-                    val newPosts = result.data
+-                    // BUG-001 fix: if API returns success with 0 posts on reset, fall back to mocks
+-                    val s = _state.value
+-                    val mockFallback = if (reset && newPosts.isEmpty()) {
+-                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter {
+-                            it.category.equals(s.ecosystemKey, ignoreCase = true)
+-                        } else MOCK_EXPLORE_POSTS
+-                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+-                        if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
+-                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+-                    } else emptyList()
+-                    val finalPosts = applyQuickFilter(when {
+-                        mockFallback.isNotEmpty() -> mockFallback
+-                        reset -> newPosts
+-                        else -> _state.value.posts + newPosts
+-                    })
+-                    _state.value = _state.value.copy(
+-                        loadingPosts = false, loadingMore = false,
+-                        posts = finalPosts,
+-                        page = currentPage + 1,
+-                        hasMore = newPosts.size >= 20 && mockFallback.isEmpty(),
+-                    )
+-                }
+-                is ApiResult.Failure -> {
+-                    // Fall back to mock data so the screen is never empty
+-                    val s = _state.value
+-                    val mockFallback = if (reset && s.posts.isEmpty()) {
+-                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter { it.category == s.ecosystemKey } else MOCK_EXPLORE_POSTS
+-                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+-                        if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
+-                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+-                    } else emptyList()
+-                    val finalPosts = applyQuickFilter(if (mockFallback.isNotEmpty()) mockFallback else s.posts)
+-                    _state.value = s.copy(
+-                        loadingPosts = false, loadingMore = false,
+-                        posts = finalPosts,
+-                        hasMore = false,
+-                    )
++            postsRepo.feedFlow(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory).collect { result ->
++                when (result) {
++                    is ApiResult.Success -> {
++                        val newPosts = result.data
++                        // BUG-001 fix: if API returns success with 0 posts on reset, fall back to mocks
++                        val s = _state.value
++                        val mockFallback = if (reset && newPosts.isEmpty()) {
++                            var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter {
++                                it.category.equals(s.ecosystemKey, ignoreCase = true)
++                            } else MOCK_EXPLORE_POSTS
++                            if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
++                            if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
++                            list.ifEmpty { MOCK_EXPLORE_POSTS }
++                        } else emptyList()
++                        val finalPosts = applyQuickFilter(when {
++                            mockFallback.isNotEmpty() -> mockFallback
++                            reset -> newPosts
++                            else -> _state.value.posts + newPosts
++                        })
++                        _state.value = _state.value.copy(
++                            loadingPosts = false, loadingMore = false,
++                            posts = finalPosts,
++                            page = currentPage + 1,
++                            hasMore = newPosts.size >= 20 && mockFallback.isEmpty(),
++                        )
++                    }
++                    is ApiResult.Failure -> {
++                        // Fall back to mock data so the screen is never empty
++                        val s = _state.value
++                        val mockFallback = if (reset && s.posts.isEmpty()) {
++                            var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter { it.category == s.ecosystemKey } else MOCK_EXPLORE_POSTS
++                            if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
++                            if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
++                            list.ifEmpty { MOCK_EXPLORE_POSTS }
++                        } else emptyList()
++                        val finalPosts = applyQuickFilter(if (mockFallback.isNotEmpty()) mockFallback else s.posts)
++                        _state.value = s.copy(
++                            loadingPosts = false, loadingMore = false,
++                            posts = finalPosts,
++                            hasMore = false,
++                        )
++                    }
+                 }
+             }
+         }
+@@ -561,6 +574,7 @@ private fun categoryEmoji(name: String): String {
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun ExploreScreen(
++    onBack: (() -> Unit)? = null,
+     onOpenPost: (String) -> Unit,
+     onOpenSearch: () -> Unit,
+     onOpenCategories: () -> Unit,
+@@ -609,27 +623,82 @@ fun ExploreScreen(
+         topBar = {
+             TopAppBar(
+                 title = {
+-                    Column(verticalArrangement = Arrangement.Center) {
+-                        Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+-                        if (ecosystemLabel != null) {
+-                            Text(ecosystemLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
++                    Column {
++                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++                            Text(stringResource(R.string.nav_explore), fontWeight = FontWeight.Bold)
++                            Surface(
++                                shape = RoundedCornerShape(6.dp),
++                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
++                            ) {
++                                Text(
++                                    stringResource(R.string.explore_marketplace),
++                                    fontSize = 10.sp,
++                                    fontWeight = FontWeight.Medium,
++                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
++                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
++                                )
++                            }
++                        }
++                        Text(
++                            ecosystemLabel ?: stringResource(R.string.explore_subtitle),
++                            style = MaterialTheme.typography.labelSmall,
++                            color = MaterialTheme.colorScheme.onSurfaceVariant
++                        )
++                    }
++                },
++                navigationIcon = {
++                    if (onBack != null) {
++                        IconButton(onClick = onBack) {
++                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                         }
+                     }
+                 },
+                 actions = {
+-                    // Cart icon with badge
+-                    BadgedBox(badge = {
+-                        val cartCount = state.cartItems.size
+-                        if (cartCount > 0) Badge { Text("$cartCount") }
++                    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
++                    val currentThemeMode by viewModel.themeMode.collectAsState(initial = com.mhub.app.data.local.ThemeMode.SYSTEM)
++                    val useDarkTheme = when (currentThemeMode) {
++                        com.mhub.app.data.local.ThemeMode.LIGHT -> false
++                        com.mhub.app.data.local.ThemeMode.DARK -> true
++                        com.mhub.app.data.local.ThemeMode.SYSTEM -> isSystemDark
++                    }
++                    IconButton(onClick = {
++                        val nextMode = if (useDarkTheme) com.mhub.app.data.local.ThemeMode.LIGHT else com.mhub.app.data.local.ThemeMode.DARK
++                        viewModel.setThemeMode(nextMode)
+                     }) {
+-                        IconButton(onClick = onOpenCart) {
+-                            Icon(Icons.Outlined.ShoppingCart, contentDescription = "Cart")
+-                        }
++                        Icon(
++                            imageVector = if (useDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
++                            contentDescription = "Toggle Theme"
++                        )
+                     }
+-                    // Notifications bell
+-                    BadgedBox(badge = { Badge() }) {
+-                        IconButton(onClick = onOpenNotifications) {
+-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
++
++                    val localeManager = com.mhub.app.core.LocalLocaleManager.current
++                    var showLangMenu by remember { mutableStateOf(false) }
++                    IconButton(onClick = { showLangMenu = true }) {
++                        Icon(Icons.Default.Language, contentDescription = "Change Language")
++                    }
++                    androidx.compose.material3.DropdownMenu(
++                        expanded = showLangMenu,
++                        onDismissRequest = { showLangMenu = false }
++                    ) {
++                        listOf(
++                            "en" to "English",
++                            "hi" to "??????",
++                            "es" to "Espa?ol",
++                            "fr" to "Fran?ais",
++                            "bn" to "?????",
++                            "ta" to "?????",
++                            "te" to "??????",
++                            "kn" to "?????",
++                            "mr" to "?????",
++                            "gu" to "???????"
++                        ).forEach { (code, name) ->
++                            androidx.compose.material3.DropdownMenuItem(
++                                text = { Text(name) },
++                                onClick = {
++                                    showLangMenu = false
++                                    localeManager.setLocale(code)
++                                }
++                            )
+                         }
+                     }
+                 },
+@@ -639,50 +708,6 @@ fun ExploreScreen(
+         containerColor = MaterialTheme.colorScheme.background,
+     ) { padding ->
+         Column(Modifier.fillMaxSize().padding(padding)) {
+-            // Search bar + Filter button ? always visible below TopAppBar
+-            Row(
+-                modifier = Modifier
+-                    .fillMaxWidth()
+-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+-                verticalAlignment = Alignment.CenterVertically,
+-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+-            ) {
+-                OutlinedTextField(
+-                    value = state.searchQuery,
+-                    onValueChange = viewModel::onQueryChange,
+-                    singleLine = true,
+-                    placeholder = { Text("Search listings?", style = MaterialTheme.typography.bodyMedium) },
+-                    leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+-                    trailingIcon = {
+-                        if (state.searchQuery.isNotBlank()) {
+-                            IconButton(onClick = { viewModel.clearSearch(); focusManager.clearFocus() }) {
+-                                Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
+-                            }
+-                        }
+-                    },
+-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+-                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+-                    shape = RoundedCornerShape(12.dp),
+-                    modifier = Modifier.weight(1f).height(48.dp),
+-                    textStyle = MaterialTheme.typography.bodyMedium,
+-                )
+-                // Filter button with active badge
+-                BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
+-                    FilledIconButton(
+-                        onClick = {
+-                            draftCondition = state.filterCondition
+-                            draftSubcategory = state.filterSubcategory
+-                            showFilterSheet = true
+-                        },
+-                        modifier = Modifier.size(48.dp),
+-                        shape = RoundedCornerShape(12.dp),
+-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+-                    ) {
+-                        Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
+-                    }
+-                }
+-            }
+-
+             Box(Modifier.fillMaxSize()) {
+             PullToRefreshBox(
+                 isRefreshing = state.refreshing,
+@@ -703,6 +728,11 @@ fun ExploreScreen(
+                     onToggleAutoRefresh = viewModel::toggleAutoRefresh,
+                     onLoadMore = viewModel::loadMore,
+                     onOpenSearch = onOpenSearch,
++                    onOpenFilters = {
++                        draftCondition = state.filterCondition
++                        draftSubcategory = state.filterSubcategory
++                        showFilterSheet = true
++                    },
+                     onSelectSubcategory = { sub ->
+                         viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+                     },
+@@ -1233,6 +1263,7 @@ private fun AllPostsBrowse(
+     onToggleAutoRefresh: () -> Unit = {},
+     onLoadMore: () -> Unit,
+     onOpenSearch: () -> Unit,
++    onOpenFilters: () -> Unit,
+     onSelectSubcategory: (String) -> Unit = {},
+     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
+     onSetPriceRange: (Float, Float) -> Unit = { _, _ -> },
+@@ -1255,6 +1286,89 @@ private fun AllPostsBrowse(
+ 
+     Box(Modifier.fillMaxSize()) {
+     LazyColumn(state = listState, contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 100.dp)) {
++        // Hero gradient section
++        item(key = "explore_hero") {
++            val ecosystemKey = LocalActiveCategoryKey.current
++            val ecosystemLabel = when (ecosystemKey) {
++                "electronics" -> "?? Electronics"
++                "fashion" -> "?? Fashion"
++                "vehicles" -> "?? Vehicles"
++                "others" -> "? Others"
++                else -> null
++            }
++            Box(
++                modifier = Modifier.fillMaxWidth()
++                    .background(Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF4F46E5), Color(0xFF7C3AED)))),
++            ) {
++                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
++                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++                        Icon(Icons.Default.AutoAwesome, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(22.dp))
++                        Text(stringResource(R.string.nav_explore), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color.White)
++                    }
++                    Text(ecosystemLabel ?: stringResource(R.string.explore_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
++                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
++                        Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
++                            Text("? Marketplace", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
++                        }
++                        Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
++                            Text("?? Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
++                        }
++                        Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
++                            Text("?? Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
++                        }
++                    }
++                }
++            }
++        }
++
++        // Search row + Filter button
++        item(key = "explore_search_row") {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(horizontal = 12.dp, vertical = 8.dp),
++                verticalAlignment = Alignment.CenterVertically,
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++            ) {
++                Box(
++                    modifier = Modifier.weight(1f)
++                ) {
++                    OutlinedTextField(
++                        value = state.searchQuery,
++                        onValueChange = {},
++                        singleLine = true,
++                        placeholder = { Text(stringResource(R.string.explore_search_hint), style = MaterialTheme.typography.bodyMedium) },
++                        leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
++                        readOnly = true,
++                        enabled = false,
++                        shape = RoundedCornerShape(12.dp),
++                        modifier = Modifier.fillMaxWidth().height(48.dp),
++                        colors = OutlinedTextFieldDefaults.colors(
++                            disabledBorderColor = MaterialTheme.colorScheme.outline,
++                            disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
++                            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
++                        ),
++                        textStyle = MaterialTheme.typography.bodyMedium,
++                    )
++                    Box(
++                        modifier = Modifier
++                            .matchParentSize()
++                            .clickable { onOpenSearch() }
++                    )
++                }
++                BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
++                    FilledIconButton(
++                        onClick = onOpenFilters,
++                        modifier = Modifier.size(48.dp),
++                        shape = RoundedCornerShape(12.dp),
++                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
++                    ) {
++                        Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
++                    }
++                }
++            }
++        }
++
+         if (state.searchQuery.isNotBlank()) {
+             if (state.isSearching) {
+                 item(key = "search_loading") {
+@@ -1273,8 +1387,7 @@ private fun AllPostsBrowse(
+                     AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                 }
+             }
+-            return@LazyColumn
+-        }
++        } else {
+ 
+         // Sticky sort + subcategory chips (don't scroll away)
+         stickyHeader(key = "sticky_filters") {

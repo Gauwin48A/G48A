@@ -288,6 +288,8 @@ const te = 12,
         }
       }),
       [savedPosts, setSavedPosts] = c(() => getSavedPostsMap()),
+      [animatingLikes, setAnimatingLikes] = c(new Set()),
+      [animatingSaves, setAnimatingSaves] = c(new Set()),
       [shareDialogOpen, setShareDialogOpen] = c(!1),
       [shareDialogUrl, setShareDialogUrl] = c(""),
       [promotePostId, setPromotePostId] = c(null),
@@ -683,6 +685,18 @@ const te = 12,
       handleLike = A((t) => {
         const a = getPostId(t);
         if (!a) return;
+        setAnimatingLikes((prev) => {
+          const next = new Set(prev);
+          next.add(a);
+          return next;
+        });
+        setTimeout(() => {
+          setAnimatingLikes((prev) => {
+            const next = new Set(prev);
+            next.delete(a);
+            return next;
+          });
+        }, 300);
         setLikedById((s) => {
           const next = !s[a];
           setLikeCounts((u) => ({
@@ -709,6 +723,18 @@ const te = 12,
             setLoginPromptOpen(!0);
             return;
           }
+          setAnimatingSaves((prev) => {
+            const next = new Set(prev);
+            next.add(a);
+            return next;
+          });
+          setTimeout(() => {
+            setAnimatingSaves((prev) => {
+              const next = new Set(prev);
+              next.delete(a);
+              return next;
+            });
+          }, 300);
           const s = !!savedPosts[a],
             u = !s;
           setSavedPosts((l) => ({ ...l, [a]: u }));
@@ -1143,7 +1169,7 @@ const te = 12,
         return `\u20B9${a.toLocaleString("en-IN")}`;
       }
     };
-    return !re && !y
+    return e.createElement(e.Fragment, null, e.createElement("style", null, `@keyframes heart-pop { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } } .heart-pop-active { animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }`), !re && !y
       ? e.createElement(
           "div",
           {
@@ -2436,11 +2462,11 @@ const te = 12,
                                   },
                                   likedById[a]
                                     ? e.createElement(He, {
-                                        className: "w-4 h-4 text-red-500 dark:text-red-300",
+                                        className: `w-4 h-4 text-red-500 dark:text-red-300 ${animatingLikes.has(a) ? "heart-pop-active" : ""}`,
                                       })
                                     : e.createElement(qe, {
                                         className:
-                                          "w-4 h-4 text-black dark:text-slate-100",
+                                          `w-4 h-4 text-black dark:text-slate-100 ${animatingLikes.has(a) ? "heart-pop-active" : ""}`,
                                       }),
                                   e.createElement(
                                     "span",
@@ -2476,9 +2502,11 @@ const te = 12,
                                   },
                                   savedPosts[a]
                                     ? e.createElement(Po, {
-                                        className: "w-4 h-4 text-blue-600 dark:text-blue-300",
+                                        className: `w-4 h-4 text-blue-600 dark:text-blue-300 ${animatingSaves.has(a) ? "heart-pop-active" : ""}`,
                                       })
-                                    : e.createElement(Ro, { className: "w-4 h-4" }),
+                                    : e.createElement(Ro, {
+                                        className: `w-4 h-4 ${animatingSaves.has(a) ? "heart-pop-active" : ""}`,
+                                      }),
                                   e.createElement(
                                     "span",
                                     { className: "sr-only" },
@@ -2664,7 +2692,7 @@ const te = 12,
           ),
           )
         )
-        ;
+        );
   };
 var Ve = Ee;
 export { Ve as default };

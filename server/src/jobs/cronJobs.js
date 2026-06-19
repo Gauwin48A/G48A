@@ -88,7 +88,7 @@ const NOTIFICATION_BATCH_SIZE =
 /**
  * Insert notifications in batches using `jsonb_to_recordset`.
  *
- * @param {Array<{user_id: number, title: string, message: string, type: string, reference_id: number|null}>} notifications
+ * @param {Array<{user_id: number, title: string, message: string, type: string, post_id: number|null}>} notifications
  * @returns {Promise<number>} Total number of rows inserted.
  */
 async function insertNotifications(notifications) {
@@ -101,14 +101,14 @@ async function insertNotifications(notifications) {
   for (let i = 0; i < notifications.length; i += NOTIFICATION_BATCH_SIZE) {
     const batch = notifications.slice(i, i + NOTIFICATION_BATCH_SIZE);
     const result = await pool.query(
-      `INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
-             SELECT n.user_id, n.title, n.message, n.type, n.reference_id, NOW()
+      `INSERT INTO notifications (user_id, title, message, type, post_id, created_at)
+             SELECT n.user_id, n.title, n.message, n.type, n.post_id, NOW()
              FROM jsonb_to_recordset($1::jsonb) AS n(
                 user_id bigint,
                 title text,
                 message text,
                 type text,
-                reference_id bigint
+                post_id bigint
              )`,
       [JSON.stringify(batch)]
     );
@@ -156,7 +156,7 @@ const expireOldPosts = async () => {
           title: "Post Expired",
           message: `Your post "${post.title || "Untitled"}" has expired based on your ${tierName} tier visibility. Upgrade your tier for longer visibility or repost to make it active again.`,
           type: "post_expired",
-          reference_id: post.post_id,
+          post_id: post.post_id,
         };
       });
 
@@ -185,7 +185,7 @@ const expireOldPosts = async () => {
         title: "Post Expired",
         message: `Your post "${post.title || "Untitled"}" has expired after 30 days. Upgrade to Premium for 45-day visibility!`,
         type: "post_expired",
-        reference_id: post.post_id,
+        post_id: post.post_id,
       }));
 
       await insertNotifications(legacyNotifications);
@@ -221,7 +221,7 @@ const sendExpiryWarnings = async () => {
                     EXTRACT(DAY FROM (p.expires_at - NOW())) AS days_left
                  FROM posts p
                  JOIN users u ON p.user_id = u.user_id
-                 LEFT JOIN notifications n ON n.reference_id = p.post_id
+                 LEFT JOIN notifications n ON n.post_id = p.post_id
                     AND n.type = 'expiry_warning'
                     AND n.created_at > NOW() - INTERVAL '20 hours'
                  WHERE p.status = 'active'
@@ -246,7 +246,7 @@ const sendExpiryWarnings = async () => {
             title: "Post Expiring Soon",
             message: `Your post "${post.title || "Untitled"}" expires in ${daysLeft} day${daysLeft > 1 ? "s" : ""} (${tierName} tier). Renew or upgrade for extended visibility!`,
             type: "expiry_warning",
-            reference_id: post.post_id,
+            post_id: post.post_id,
           };
         });
 
@@ -338,7 +338,7 @@ const expireOldTransactions = async () => {
           message:
             "The pending sale has expired. Your item is back on the market.",
           type: "sale_expired",
-          reference_id: null,
+          post_id: null,
         }));
 
       await insertNotifications(notifications);

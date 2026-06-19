@@ -308,38 +308,8 @@ fun CategoryHubScreen(
                         )
                     }
                 }
-                // ── Promo banner ───────────────────────────────────────
-                item(key = "promo") {
-                    Spacer(Modifier.height(20.dp))
-                    PromoBanner(
-                        onOpenAllPosts = onOpenAllPosts,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
-                // ── Quick links ────────────────────────────────────────
-                item(key = "quicklinks") {
-                    Spacer(Modifier.height(16.dp))
-                    QuickLinksSection(
-                        onOpenAllPosts = onOpenAllPosts,
-                        onSelectApp = onSelectApp,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                // ── Trending Categories pills ──────────────────────────
-                item(key = "trending_cats") {
-                    Spacer(Modifier.height(16.dp))
-                    TrendingCategoriesSection(
-                        onSelectApp = onSelectApp,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                // ── Platform Trust strip ──────────────────────────────
-                item(key = "trust") {
-                    Spacer(Modifier.height(12.dp))
-                    PlatformTrustStrip(modifier = Modifier.padding(horizontal = 16.dp))
-                    Spacer(Modifier.height(16.dp))
+                item(key = "bottom_spacer") {
+                    Spacer(Modifier.height(24.dp))
                 }
             }
         }

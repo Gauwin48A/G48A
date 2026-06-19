@@ -23,10 +23,10 @@ exports.getSaleUndone = async (req, res) => {
         created_at,
         updated_at
       FROM posts
-      WHERE status = 'undone'
+      WHERE status = 'undone' AND user_id = $1
       ORDER BY COALESCE(updated_at, created_at) DESC
       LIMIT 500
-    `);
+    `, [String(userId)]);
     res.json(result.rows);
   } catch (err) {
     logger.error('Error fetching saleundone posts:', err);

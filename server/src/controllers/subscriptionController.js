@@ -321,7 +321,7 @@ exports.activateTrial = async (req, res) => {
   const userId = getAuthUserId(req);
   if (!userId) return res.status(401).json({ error: "Authentication required" });
 
-  const { planName } = req.body;
+  const { planName, purpose } = req.body;
   const normalizedPlan = String(planName || "").toLowerCase();
 
   if (normalizedPlan !== "silver" && normalizedPlan !== "premium") {
@@ -359,7 +359,8 @@ exports.activateTrial = async (req, res) => {
 
     // Calculate trial expiry
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + tierRules.trialDays);
+    const trialDays = purpose === "centre" ? 7 : tierRules.trialDays;
+    expiresAt.setDate(expiresAt.getDate() + trialDays);
 
     // Create trial subscription
     const insertResult = await client.query(
@@ -380,18 +381,18 @@ exports.activateTrial = async (req, res) => {
 
     await client.query("COMMIT");
 
-    logger.info(`[SUBSCRIPTION] User ${userId} activated ${tierRules.trialDays}-day trial for ${normalizedPlan}`);
+    logger.info(`[SUBSCRIPTION] User ${userId} activated ${trialDays}-day trial for ${normalizedPlan}`);
 
     res.status(201).json({
       success: true,
-      message: `${tierRules.trialDays}-day free trial activated for ${tierRules.name}`,
+      message: `${trialDays}-day free trial activated for ${tierRules.name}`,
       subscription: {
         id: subscriptionId,
         planName: normalizedPlan,
         expiresAt,
         isActive: true,
         isTrial: true,
-        trialDays: tierRules.trialDays,
+        trialDays,
         features: tierRules.features,
       },
     });

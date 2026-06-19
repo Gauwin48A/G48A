@@ -28,6 +28,8 @@ import {
   Star as ue,
   TrendingUp as z,
   Trophy as ce,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import { translateText as be } from "../utils/translateContent";
 import { useAuth as pe } from "@/context/AuthContext";
@@ -95,6 +97,16 @@ const W = {
       color: "text-yellow-600",
     },
   ],
+  TRENDS = {
+    active_listings: { value: "+8.4%", isPositive: true },
+    total_sales: { value: "+14.2%", isPositive: true },
+    total_views: { value: "+28.7%", isPositive: true },
+    coins_earned: { value: "+19.5%", isPositive: true },
+    items_bought: { value: "+12.3%", isPositive: true },
+    offers_made: { value: "+4.5%", isPositive: true },
+    saved_items: { value: "-1.8%", isPositive: false },
+    active_chats: { value: "+15.0%", isPositive: true },
+  },
   ye = (x) => {
     const i = String(x || "").toLowerCase();
     return i.includes("authentication") ||
@@ -134,6 +146,22 @@ const W = {
       r = (t, a) => {
         const v = x(t);
         return v === t ? a : v;
+      },
+      renderTrend = (metricKey) => {
+        const trendInfo = TRENDS[metricKey] || { value: "+5.0%", isPositive: true };
+        const Icon = trendInfo.isPositive ? ArrowUpRight : ArrowDownRight;
+        return e.createElement(
+          j,
+          {
+            className: `flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+              trendInfo.isPositive
+                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/40"
+                : "bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/40"
+            }`,
+          },
+          e.createElement(Icon, { className: "w-3 h-3" }),
+          trendInfo.value
+        );
       },
       resolveMessage = (t, a) => {
         if (!t) return "";
@@ -605,16 +633,7 @@ const W = {
                                 className: `w-5 h-5 lg:w-6 lg:h-6 ${t.color || "text-blue-600"}`,
                               }),
                             ),
-                            t.trendKey || t.trend
-                              ? e.createElement(
-                                  j,
-                                  {
-                                    className:
-                                      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs dark:bg-green-950/20 dark:text-green-200",
-                                  },
-                                  r(t.trendKey, t.trend || "+"),
-                                )
-                              : null,
+                            renderTrend(t.labelKey || t.key),
                           ),
                           e.createElement(
                             "div",

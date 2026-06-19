@@ -19,6 +19,8 @@ import {
   AlertCircle,
   Loader2,
   Smartphone,
+  FlaskConical,
+  Zap,
 } from "lucide-react";
 import { getDeviceId } from "@/utils/device";
 import { useLocation as useLocationContext } from "@/context/LocationContext";
@@ -29,12 +31,21 @@ import api from "@/services/api";
 const INVALID_LOGIN_MESSAGE_FALLBACK =
   "Invalid mobile number or password. Please try again.";
 
+// ── Demo credentials for testing ────────────────────────────
+// Single demo account for quick testing without real credentials.
+// Clicking the demo button auto-fills credentials and logs in instantly.
+const DEMO_ACCOUNT = {
+  label: "Demo Test Account",
+  mobile: "9999999999",
+  password: "Demo@123456",
+};
+
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const routeLocation = useRouterLocation();
   const { toast } = useToast();
-  const { login, refreshAuth } = useAuth();
+  const { login, refreshAuth, setUser } = useAuth();
   const {
     requestLocation,
     latitude,
@@ -203,6 +214,94 @@ export default function Login() {
     }
   };
 
+  // ── Single-click Demo Login ───────────────────────────────
+  // Auto-fills credentials from DEMO_ACCOUNT and logs in directly.
+  // This bypasses the manual form, making it a true one-click experience.
+  // If the backend is unavailable, creates a local mock session so the user
+  // can still explore the full platform immediately.
+  const handleDemoLogin = async () => {
+    setErrorMessage("");
+    setLoading(true);
+    try {
+      // Auto-fill the form for visual feedback
+      setForm({ mobile: DEMO_ACCOUNT.mobile, password: DEMO_ACCOUNT.password });
+
+      const deviceId = getDeviceId();
+      const body = {
+        identifier: DEMO_ACCOUNT.mobile,
+        password: DEMO_ACCOUNT.password,
+        deviceId: deviceId || 'demo-device',
+        _demoLogin: true,
+      };
+
+      const result = await login(body);
+
+      if (result?.success) {
+        await refreshAuth();
+        toast({
+          title: t("demo_login_successful") || "Demo Login Successful",
+          description: t("demo_welcome_msg") || "Welcome! Exploring the full platform in demo mode.",
+          variant: "success",
+          duration: 2500,
+        });
+        navigate(getReturnPath(), { replace: true });
+        return;
+      }
+
+      // ── Local fallback: create a mock session so login works everywhere ──
+      const demoUser = {
+        id: "demo-user-001",
+        name: "Demo User",
+        phone: "9999999999",
+        email: "demo@mhub.app",
+        role: "user",
+        tier: "basic",
+        current_plan: "basic",
+        rewards_rank: "Bronze",
+      };
+      setUser(demoUser);
+      localStorage.setItem("authSession", "true");
+      localStorage.setItem("userId", "demo-user-001");
+      localStorage.setItem("user_id", "demo-user-001");
+      localStorage.setItem("user", JSON.stringify(demoUser));
+
+      toast({
+        title: t("demo_login_successful") || "Demo Mode Active",
+        description: t("demo_welcome_msg") || "Signed in as Demo User. Explore the full platform!",
+        variant: "success",
+        duration: 3000,
+      });
+      navigate(getReturnPath(), { replace: true });
+    } catch (err) {
+      // ── Local fallback on errors too ──
+      const demoUser = {
+        id: "demo-user-001",
+        name: "Demo User",
+        phone: "9999999999",
+        email: "demo@mhub.app",
+        role: "user",
+        tier: "basic",
+        current_plan: "basic",
+        rewards_rank: "Bronze",
+      };
+      setUser(demoUser);
+      localStorage.setItem("authSession", "true");
+      localStorage.setItem("userId", "demo-user-001");
+      localStorage.setItem("user_id", "demo-user-001");
+      localStorage.setItem("user", JSON.stringify(demoUser));
+
+      toast({
+        title: "Demo Mode Active",
+        description: "Backend unavailable — signed in locally as Demo User.",
+        variant: "success",
+        duration: 3000,
+      });
+      navigate(getReturnPath(), { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -336,6 +435,89 @@ export default function Login() {
           </CardHeader>
 
           <CardContent className="p-5 sm:p-8">
+            {/* ── 🔥 PROMINENT DEMO LOGIN SECTION ── */}
+            {!showOtpChallenge && (
+              <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-indigo-50 to-violet-50 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-violet-950/30 border-2 border-purple-200 dark:border-purple-700/40 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/20">
+                {/* Badge */}
+                <div className="flex items-center justify-center mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm">
+                    <Zap className="w-3 h-3" />
+                    Quick Test Access
+                  </span>
+                </div>
+
+                {/* Credentials display */}
+                <div className="text-center mb-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    No account needed — one click to explore
+                  </p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/70 dark:bg-gray-800/60 rounded-lg text-xs font-mono text-gray-600 dark:text-gray-300 border border-purple-200/50 dark:border-purple-700/30">
+                    <Phone className="w-3 h-3 text-purple-500" />
+                    <span className="font-semibold">{DEMO_ACCOUNT.mobile}</span>
+                    <span className="text-gray-300 dark:text-gray-600">|</span>
+                    <span className="text-gray-400 dark:text-gray-500">••••••••</span>
+                    <span className="font-semibold">{DEMO_ACCOUNT.password.slice(0, 4)}••••</span>
+                  </div>
+                </div>
+
+                {/* Main Demo Button - very prominent */}
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleDemoLogin}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-lg shadow-xl transition-all duration-200
+                    bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-600
+                    hover:from-purple-700 hover:via-indigo-700 hover:to-violet-700
+                    hover:shadow-2xl hover:shadow-purple-400/40
+                    active:scale-[0.98]
+                    text-white
+                    border-2 border-purple-400/30
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
+                    animate-[pulse-shadow_2s_ease-in-out_infinite]"
+                  style={{
+                    boxShadow: "0 4px 20px rgba(124, 58, 237, 0.35), 0 0 40px rgba(99, 102, 241, 0.15)",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span>{t("demo_logging_in", { defaultValue: "Logging in..." })}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FlaskConical className="w-6 h-6" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-bold text-lg">
+                          {t("demo_login_button", { defaultValue: "Demo Login — Instant Access" })}
+                        </span>
+                        <span className="text-xs font-normal opacity-75">
+                          {t("demo_login_sub", { defaultValue: "Explore the full platform" })}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[11px] text-center text-gray-400 dark:text-gray-500 mt-2">
+                  {t("demo_login_disclaimer", { defaultValue: "No real data needed. Can be removed when deploying to production." })}
+                </p>
+              </div>
+            )}
+
+            {/* ── Divider ── */}
+            {!showOtpChallenge && (
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white dark:bg-gray-800 px-3 text-gray-400 dark:text-gray-500 font-medium">
+                    {t("or_sign_in_manually", { defaultValue: "or sign in manually" })}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <Label htmlFor="mobile" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 dark:text-gray-200">

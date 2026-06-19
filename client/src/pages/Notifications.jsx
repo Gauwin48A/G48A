@@ -820,27 +820,41 @@ const NotificationsPage = () => {
   const getDateGroupLabel = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return "This Week";
-    if (diffDays < 30) return "This Month";
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const compareDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (compareDate.getTime() === today.getTime()) return "Today";
+    if (compareDate.getTime() === yesterday.getTime()) return "Yesterday";
     return "Older";
   };
 
   const groupedNotifications = useMemo(() => {
-    const groups = [];
-    const seen = new Set();
+    const groupsMap = {
+      Today: [],
+      Yesterday: [],
+      Older: []
+    };
+    
     filteredNotifications.forEach((item) => {
       const label = getDateGroupLabel(item.created_at);
-      if (!seen.has(label)) {
-        seen.add(label);
-        groups.push({ label, items: [] });
+      if (groupsMap[label]) {
+        groupsMap[label].push(item);
+      } else {
+        groupsMap.Older.push(item);
       }
-      groups[groups.length - 1].items.push(item);
     });
-    return groups;
-  }, [filteredNotifications]);
+    
+    const orderedLabels = ["Today", "Yesterday", "Older"];
+    return orderedLabels
+      .filter((label) => groupsMap[label].length > 0)
+      .map((label) => ({
+        label: t(label.toLowerCase(), { defaultValue: label }),
+        items: groupsMap[label],
+      }));
+  }, [filteredNotifications, t]);
 
   const groupCounts = useMemo(() => {
     const counts = new Map();

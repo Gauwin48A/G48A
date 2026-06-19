@@ -409,9 +409,12 @@ function GlobalContentTranslator() {
     rootNodeRef.current =
       document.querySelector('[data-translation-root="true"]') ||
       document.querySelector('main.app-main') ||
-      document.getElementById('root');
-    // Intentionally do NOT fall back to document.body — watching the entire body
-    // would trigger MutationObserver on navbar, tooltips, modals and flood the main thread.
+      document.getElementById('root') ||
+      document.body;
+    // Note: We now fall back to document.body to ensure ALL dynamic content
+    // including modals, drawers, toasts, and dynamically injected elements
+    // are translated. We debounce aggressively (120ms) and use idle-callback
+    // scheduling to keep the main thread responsive.
     const translationRoot = rootNodeRef.current;
     const pendingRoots = pendingRootsRef.current;
     if (!translationRoot) {

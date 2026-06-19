@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
+const { transactionLimiter } = require("../middleware/rateLimiter");
 const priceAlertsController = require("../controllers/priceAlertsController");
 
 /**
@@ -19,8 +20,8 @@ function requireAdminRole(req, res, next) {
   return next();
 }
 
-/** @route POST /subscribe - Subscribe to price alerts for a post */
-router.post("/subscribe", protect, priceAlertsController.subscribeAlert);
+/** @route POST /subscribe - Subscribe to price alerts for a post (rate limited) */
+router.post("/subscribe", protect, transactionLimiter, priceAlertsController.subscribeAlert);
 
 /** @route GET / - Get all active price alerts for the authenticated user */
 router.get("/", protect, priceAlertsController.getAlerts);

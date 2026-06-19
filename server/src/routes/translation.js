@@ -3,22 +3,15 @@ const router = express.Router();
 const translationController = require("../controllers/translationController");
 const { protect } = require("../middleware/auth");
 
-// All translation routes require authentication
-router.use(protect);
-
-/** @route POST /process-translations - Trigger translation processing for posts */
-router.post("/process-translations", translationController.processTranslations);
-
-/** @route GET /status/:postId - Get translation status for a specific post */
-router.get("/status/:postId", translationController.getTranslationStatus);
-
-/** @route GET /stats - Get overall translation queue statistics */
-router.get("/stats", translationController.getQueueStats);
-
-/** @route POST /translate - On-demand translation proxy */
+// On-demand translation endpoints are available without authentication so that ALL users
+// (including guests) can translate content when they switch language. This is critical
+// for the "every word including data must change" language feature requirement.
 router.post("/translate", translationController.translateOnDemand);
-
-/** @route POST /batch - Batch on-demand translation */
 router.post("/batch", translationController.translateBatchOnDemand);
+
+// Admin/batch processing endpoints still require authentication
+router.post("/process-translations", protect, translationController.processTranslations);
+router.get("/status/:postId", protect, translationController.getTranslationStatus);
+router.get("/stats", protect, translationController.getQueueStats);
 
 module.exports = router;

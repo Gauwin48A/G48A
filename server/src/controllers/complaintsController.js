@@ -10,6 +10,10 @@ const { runQuery, getAuthUserId, pool } = require("../utils/dbHelpers");
 const { parseOptionalString, parsePositiveInt } = require("../utils/parseHelpers");
 const { computeTrustScore } = require("../services/trustScoreService");
 const { setUserRiskState } = require("../services/riskStateService");
+const {
+  applyComplaintRatingPenalty,
+  triggerRatingRecalculation,
+} = require("../services/ratingService");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -766,10 +770,39 @@ exports.createComplaint = async (req, res) => {
         }
       }
 
+      // Apply rating penalty to seller (fire-and-forget after response)
+      if (hasSeller && seller_id) {
+        const complaintId = String(complaintRow?.complaint_id || "");
+        setImmediate(async () => {
+          try {
+            await applyComplaintRatingPenalty(seller_id, normalizedSeverity, {
+              complaintId: complaintId || undefined,
+            });
+          } catch (ratingErr) {
+            logger.warn("[Complaints] Failed to apply rating penalty:", ratingErr.message);
+          }
+        });
+      }
+
+      // Emit real-time notification via socket.io
+      const io = req.app?.get("io");
+      if (io && seller_id) {
+        io.to(String(seller_id)).emit("complaint_filed", {
+          complaintId: complaintRow?.complaint_id,
+          postId: post_id,
+          severity: normalizedSeverity,
+          buyerId: effectiveBuyerId,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
       res.status(201).json({
         message: "Complaint submitted successfully",
         complaint: mapComplaintForResponse(complaintRow),
         riskAction,
+        ratingPenalty: hasSeller
+          ? { severity: normalizedSeverity, penalty: COMPLAINT_SEVERITY_SCORE[normalizedSeverity] || 2 }
+          : null,
       });
   } catch (err) {
     logger.error("Error creating complaint:", err);

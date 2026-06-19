@@ -151,6 +151,8 @@ export const PAGE_CONFIGS = {
   "dashboard": { name: "dashboard", skeleton: "dashboard", backToTop: true },
   "profile": { name: "profile", skeleton: "dashboard", fab: { icon: <PenLine className="w-5 h-5" />, label: "Edit", to: "/profile" } },
   "my-home": { name: "my-home", skeleton: "dashboard" },
+  "wallet": { name: "wallet", skeleton: "dashboard", backToTop: true },
+  "price-alerts": { name: "price-alerts", skeleton: "list", emptyType: "search", backToTop: true },
   "analytics": { name: "analytics", skeleton: "dashboard", backToTop: true },
   "activity": { name: "activity", skeleton: "list", backToTop: true },
   "notifications": { name: "notifications", skeleton: "list", emptyType: "notifications", backToTop: true, cta: { label: "Mark All Read", icon: CheckCheck } },
