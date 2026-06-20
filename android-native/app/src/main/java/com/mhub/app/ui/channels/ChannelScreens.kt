@@ -554,19 +554,77 @@ fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, on
     }
 }
 
-data class CreateCentreUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val name: String = "", val description: String = "", val location: String = "", val contactEmail: String = "", val contactPhone: String = "")
+data class CreateCentreUiState(
+    val loading: Boolean = false,
+    val checkingAccess: Boolean = true,
+    val canCreateCentre: Boolean = false,
+    val trialAvailable: Boolean = false,
+    val accessLabel: String = "",
+    val error: String? = null,
+    val success: Boolean = false,
+    val name: String = "",
+    val description: String = "",
+    val location: String = "",
+    val contactEmail: String = "",
+    val contactPhone: String = "",
+)
 
 @HiltViewModel
-class CreateCentreViewModel @Inject constructor(private val repo: CentresRepository) : ViewModel() {
+class CreateCentreViewModel @Inject constructor(
+    private val repo: CentresRepository,
+    private val tiersRepo: TiersRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(CreateCentreUiState())
     val state: StateFlow<CreateCentreUiState> = _state.asStateFlow()
+    init { checkAccess() }
     fun setName(v: String) { _state.value = _state.value.copy(name = v) }
     fun setDescription(v: String) { _state.value = _state.value.copy(description = v) }
     fun setLocation(v: String) { _state.value = _state.value.copy(location = v) }
     fun setContactEmail(v: String) { _state.value = _state.value.copy(contactEmail = v) }
     fun setContactPhone(v: String) { _state.value = _state.value.copy(contactPhone = v) }
+
+    private fun checkAccess() {
+        viewModelScope.launch {
+            when (val result = tiersRepo.mySubscription()) {
+                is ApiResult.Success -> {
+                    val subscription = result.data.subscription
+                    val tier = subscription?.tier.orEmpty()
+                    val status = subscription?.status.orEmpty()
+                    val active = result.data.active && !status.equals("expired", ignoreCase = true)
+                    val premium = active && tier.contains("premium", ignoreCase = true)
+                    val trial = active && (tier.contains("trial", ignoreCase = true) || tier.equals("trial_week", ignoreCase = true))
+                    _state.value = _state.value.copy(
+                        checkingAccess = false,
+                        canCreateCentre = premium || trial,
+                        trialAvailable = !premium && !trial,
+                        accessLabel = if (trial) "1-week trial active" else if (premium) "Premium active" else "",
+                    )
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    checkingAccess = false,
+                    canCreateCentre = false,
+                    trialAvailable = true,
+                )
+            }
+        }
+    }
+
+    fun activateTrial() {
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (tiersRepo.activateTrial()) {
+                is ApiResult.Success -> checkAccess()
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "Unable to activate the trial right now")
+            }
+        }
+    }
+
     fun submit() {
         val s = _state.value
+        if (!s.canCreateCentre) {
+            _state.value = s.copy(error = "Premium or an active 1-week trial is required to create a centre")
+            return
+        }
         if (s.name.isBlank()) { _state.value = s.copy(error = "Centre name is required"); return }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
@@ -580,7 +638,11 @@ class CreateCentreViewModel @Inject constructor(private val repo: CentresReposit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateCentreScreen(onBack: () -> Unit, viewModel: CreateCentreViewModel = hiltViewModel()) {
+fun CreateCentreScreen(
+    onBack: () -> Unit,
+    onNavigateToPremium: () -> Unit = {},
+    viewModel: CreateCentreViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.success) { if (state.success) onBack() }
     Scaffold(topBar = { TopBar("Create Centre", onBack) }) { padding ->
@@ -594,24 +656,58 @@ fun CreateCentreScreen(onBack: () -> Unit, viewModel: CreateCentreViewModel = hi
                     }
                 }
             }
-            CField("Centre Name *", state.name, viewModel::setName, "e.g. Andheri Electronics Market")
-            CField("Description (optional)", state.description, viewModel::setDescription, "What does this centre sell?", maxLines = 3, minLines = 2)
-            CField("Location", state.location, viewModel::setLocation, "City, Area")
-            CField("Contact Email (optional)", state.contactEmail, viewModel::setContactEmail, "centre@example.com")
-            CField("Contact Phone (optional)", state.contactPhone, viewModel::setContactPhone, "+91 XXXXX XXXXX")
-
-            // Logo placeholder
-            Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("Add Centre Logo (optional)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when {
+                state.checkingAccess -> {
+                    Card(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            Text("Checking centre access…", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
-            }
+                !state.canCreateCentre -> {
+                    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(42.dp))
+                            Text("Premium Feature", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                            Text("Centre creation is available for Premium users or during the 1-week trial.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            if (state.trialAvailable) {
+                                Button(onClick = { viewModel.activateTrial() }, enabled = !state.loading, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                                    Text(if (state.loading) "Starting trial…" else "Start 1-Week Free Trial", fontWeight = FontWeight.Bold)
+                                }
+                                TextButton(onClick = onNavigateToPremium) { Text("View Plans") }
+                            } else {
+                                Button(onClick = onNavigateToPremium, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                                    Text("Upgrade to Premium", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)), modifier = Modifier.fillMaxWidth()) {
+                        Text(state.accessLabel.ifBlank { "Centre access active" }, modifier = Modifier.padding(12.dp), color = Color(0xFF047857), fontWeight = FontWeight.SemiBold)
+                    }
+                    CField("Centre Name *", state.name, viewModel::setName, "e.g. Andheri Electronics Market")
+                    CField("Description (optional)", state.description, viewModel::setDescription, "What does this centre sell?", maxLines = 3, minLines = 2)
+                    CField("Location", state.location, viewModel::setLocation, "City, Area")
+                    CField("Contact Email (optional)", state.contactEmail, viewModel::setContactEmail, "centre@example.com")
+                    CField("Contact Phone (optional)", state.contactPhone, viewModel::setContactPhone, "+91 XXXXX XXXXX")
 
-            Button(onClick = { viewModel.submit() }, enabled = !state.loading && state.name.isNotBlank(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                if (state.loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                else Text("Create Centre", fontWeight = FontWeight.SemiBold)
+                    // Logo placeholder
+                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Filled.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text("Add Centre Logo (optional)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+
+                    Button(onClick = { viewModel.submit() }, enabled = !state.loading && state.name.isNotBlank(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        if (state.loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        else Text("Create Centre", fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
         }
     }

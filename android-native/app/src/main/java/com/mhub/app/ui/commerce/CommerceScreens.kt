@@ -1546,7 +1546,7 @@ class SoldPostsViewModel @Inject constructor(private val repo: PostsRepository) 
             _state.value = PostListUiState(loading = true)
             when (val r = repo.sold()) {
                 is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
-                is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
+                is ApiResult.Failure -> _state.value = PostListUiState(loading = false, posts = _state.value.posts)
             }
         }
     }
@@ -1562,7 +1562,7 @@ class BoughtPostsViewModel @Inject constructor(private val repo: PostsRepository
             _state.value = PostListUiState(loading = true)
             when (val r = repo.bought()) {
                 is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
-                is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
+                is ApiResult.Failure -> _state.value = PostListUiState(loading = false, posts = _state.value.posts)
             }
         }
     }

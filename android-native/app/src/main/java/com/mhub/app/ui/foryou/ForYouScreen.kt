@@ -44,6 +44,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.SponsoredRepository
 import com.mhub.app.data.repository.RecommendationsRepository
 import com.mhub.app.data.repository.PostsRepository
+import com.mhub.app.data.repository.CartRepository
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.ProfileRepository
 import com.mhub.app.domain.model.Post
@@ -80,7 +81,7 @@ private val MOCK_FOR_YOU_POSTS: List<com.mhub.app.domain.model.Post> = listOf(
     com.mhub.app.domain.model.Post(id = "fy_8", title = "Yoga Mat Premium Anti-slip", description = "Thick 6mm NBR mat, perfect for home workouts. Used 3 times only.", price = 800.0, categoryName = "Others", condition = "Like New", city = "Ahmedabad", createdAt = "2024-01-08T08:00:00Z", likeCount = 34, viewCount = 560),
 )
 
-enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, POPULAR, TRENDING }
+enum class SortBy { RELEVANCE, PRICE_ASC, PRICE_DESC, NEWEST, OLDEST, POPULAR, TRENDING, MOST_VIEWED, FEATURED_FIRST, PREMIUM_FIRST }
 enum class PageDensity { COMPACT, NORMAL, SPACIOUS }
 
 @Stable
@@ -95,6 +96,8 @@ data class ForYouState(
     val sortAscending: Boolean = true,
     val currentPage: Int = 1,
     val hasMorePosts: Boolean = true,
+    val compareItems: Set<String> = emptySet(),
+    val cartItems: Set<String> = emptySet(),
     /** Loaded from API: null key = "All" */
     val categories: List<Pair<String?, String>> = listOf(null to "All"),
 )
@@ -104,6 +107,7 @@ class ForYouViewModel @Inject constructor(
     private val sponsoredRepo: SponsoredRepository,
     private val recommendationsRepo: RecommendationsRepository,
     private val postsRepo: PostsRepository,
+    private val cartRepo: CartRepository,
     private val categoriesRepo: CategoriesRepository,
     private val profileRepo: ProfileRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
@@ -117,6 +121,7 @@ class ForYouViewModel @Inject constructor(
     init {
         load()
         loadCategories()
+        loadCart()
         viewModelScope.launch {
             localeManager.localeVersion.collect { version ->
                 if (version > lastLocaleVersion && lastLocaleVersion > 0L) { load() }
@@ -248,15 +253,62 @@ class ForYouViewModel @Inject constructor(
             postsRepo.toggleWishlist(postId)
         }
     }
+
+    fun toggleCompare(postId: String) {
+        val current = _state.value.compareItems.toMutableSet()
+        if (current.contains(postId)) current.remove(postId) else if (current.size < 4) current.add(postId)
+        _state.value = _state.value.copy(compareItems = current)
+        viewModelScope.launch {
+            if (postId in current) postsRepo.addToCompare(postId) else postsRepo.removeFromCompare(postId)
+        }
+    }
+
+    fun addToCompare(postId: String) {
+        viewModelScope.launch { postsRepo.addToCompare(postId) }
+    }
+
+    fun clearCompare() {
+        _state.value = _state.value.copy(compareItems = emptySet())
+        viewModelScope.launch { postsRepo.clearCompare() }
+    }
+
+    fun toggleCart(postId: String) {
+        val removing = postId in _state.value.cartItems
+        val updated = _state.value.cartItems.toMutableSet().apply {
+            if (removing) remove(postId) else add(postId)
+        }
+        _state.value = _state.value.copy(cartItems = updated)
+        viewModelScope.launch {
+            val result = if (removing) cartRepo.remove(postId) else cartRepo.add(postId)
+            if (result is ApiResult.Failure) {
+                val rollback = _state.value.cartItems.toMutableSet().apply {
+                    if (removing) add(postId) else remove(postId)
+                }
+                _state.value = _state.value.copy(cartItems = rollback)
+            }
+        }
+    }
+
+    private fun loadCart() {
+        viewModelScope.launch {
+            when (val result = cartRepo.get()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    cartItems = result.data.items.mapNotNull { it.postId }.toSet(),
+                )
+                is ApiResult.Failure -> Unit
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForYouScreen(
-    onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     isGuest: Boolean = false,
     onNavigateToLogin: () -> Unit = {},
+    onOpenCompare: () -> Unit = {},
+    onOpenCart: () -> Unit = {},
     viewModel: ForYouViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -280,6 +332,7 @@ fun ForYouScreen(
     var density by rememberSaveable { mutableStateOf(PageDensity.NORMAL) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var hiddenPostIds by remember { mutableStateOf(emptySet<String>()) }
+    var isGridView by rememberSaveable { mutableStateOf(false) }
 
     if (showShareSheet) {
         ShareLinkBottomSheet(title = sharePostTitle, postId = sharePostId, onDismiss = { showShareSheet = false })
@@ -346,8 +399,12 @@ fun ForYouScreen(
                     SortBy.PRICE_ASC -> list.sortedBy { it.price ?: Double.MAX_VALUE }
                     SortBy.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
                     SortBy.NEWEST -> list.sortedByDescending { it.createdAt ?: "" }
-                    SortBy.POPULAR -> list.sortedByDescending { it.viewCount ?: 0 }
+                    SortBy.OLDEST -> list.sortedBy { it.createdAt ?: "" }
+                    SortBy.POPULAR -> list.sortedByDescending { (it.likeCount ?: 0) + (it.interestedBuyers ?: 0) * 2 }
                     SortBy.TRENDING -> list.sortedByDescending { (it.viewCount ?: 0) + (it.interestedBuyers ?: 0) * 10 }
+                    SortBy.MOST_VIEWED -> list.sortedByDescending { it.viewCount ?: 0 }
+                    SortBy.FEATURED_FIRST -> list.sortedBy { if (it.promoLabel == "featured") 0 else 1 }
+                    SortBy.PREMIUM_FIRST -> list.sortedBy { if (it.tier == "premium") 0 else 1 }
                 }
                 if (state.sortAscending) sorted else sorted.reversed()
             }
@@ -378,8 +435,7 @@ fun ForYouScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.Bold)
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -393,11 +449,14 @@ fun ForYouScreen(
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                 )
                             }
-                        }
                         Text(stringResource(R.string.foryou_subtitle), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = {
+                    IconButton(onClick = { isGridView = !isGridView }) {
+                        Icon(if (isGridView) Icons.Default.ViewList else Icons.Default.GridOn, contentDescription = if (isGridView) "List" else "Grid")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
@@ -430,7 +489,7 @@ fun ForYouScreen(
                 else -> LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp),
+                    contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 80.dp),
                 ) {
                     // Hero gradient section (web parity: AllPostsFeedHeader)
                     item(key = "for_you_hero") {
@@ -500,8 +559,12 @@ fun ForYouScreen(
                                     SortBy.PRICE_ASC -> "💰 Price ↑"
                                     SortBy.PRICE_DESC -> "💰 Price ↓"
                                     SortBy.NEWEST -> "🕒 Newest"
+                                    SortBy.OLDEST -> "🔄 Oldest"
                                     SortBy.POPULAR -> "👁 Popular"
                                     SortBy.TRENDING -> "🔥 Trending"
+                                    SortBy.MOST_VIEWED -> "👁 Most Viewed"
+                                    SortBy.FEATURED_FIRST -> "⭐ Featured First"
+                                    SortBy.PREMIUM_FIRST -> "💎 Premium First"
                                 }
                                 FilterChip(
                                     selected = state.sortBy != SortBy.RELEVANCE,
@@ -515,8 +578,12 @@ fun ForYouScreen(
                                         SortBy.PRICE_ASC to "🔥 Price: Low to High",
                                         SortBy.PRICE_DESC to "🔥 Price: High to Low",
                                         SortBy.NEWEST to "🕒 Newest First",
+                                        SortBy.OLDEST to "🔄 Oldest First",
                                         SortBy.POPULAR to "👁 Most Popular",
                                         SortBy.TRENDING to "🔥 Trending",
+                                        SortBy.MOST_VIEWED to "👁 Most Viewed",
+                                        SortBy.FEATURED_FIRST to "⭐ Featured First",
+                                        SortBy.PREMIUM_FIRST to "💎 Premium First",
                                     ).forEach { (sort, label) ->
                                         DropdownMenuItem(
                                             text = { Text(label) },
@@ -1000,6 +1067,22 @@ fun ForYouScreen(
                                                     onClick = { hiddenPostIds = hiddenPostIds + post.stableId; showNotInterestedMenu = false },
                                                     leadingIcon = { Icon(Icons.Default.ThumbDown, null, modifier = Modifier.size(16.dp), tint = Color(0xFF64748B)) },
                                                 )
+                                            }
+                                        }
+                                        // Compare pill
+                                        val isCompared = state.compareItems.contains(post.stableId)
+                                        Surface(shape = RoundedCornerShape(20.dp), color = if (isCompared) Color(0xFF8B5CF6).copy(alpha = 0.12f) else Color(0xFFF1F5F9), modifier = Modifier.clickable { viewModel.toggleCompare(post.stableId) }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(if (isCompared) Icons.Default.Compare else Icons.Outlined.Compare, null, tint = if (isCompared) Color(0xFF8B5CF6) else Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                Text(if (isCompared) "Added" else "Compare", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isCompared) Color(0xFF8B5CF6) else Color(0xFF64748B))
+                                            }
+                                        }
+                                        // Cart pill
+                                        val isInCart = state.cartItems.contains(post.stableId)
+                                        Surface(shape = RoundedCornerShape(20.dp), color = if (isInCart) Color(0xFF059669).copy(alpha = 0.12f) else Color(0xFFF1F5F9), modifier = Modifier.clickable { viewModel.toggleCart(post.stableId) }) {
+                                            Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(if (isInCart) Icons.Default.ShoppingCart else Icons.Outlined.ShoppingCart, null, tint = if (isInCart) Color(0xFF059669) else Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                                                Text(if (isInCart) "In Cart" else "Cart", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isInCart) Color(0xFF059669) else Color(0xFF64748B))
                                             }
                                         }
                                         Spacer(Modifier.weight(1f))

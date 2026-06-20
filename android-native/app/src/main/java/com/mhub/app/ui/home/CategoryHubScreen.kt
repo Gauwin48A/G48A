@@ -210,18 +210,6 @@ fun CategoryHubScreen(
             }
 
             // ── Stats row ──────────────────────────────────────────────
-            if (!state.loading) {
-                item(key = "stats") {
-                    Spacer(Modifier.height(12.dp))
-                    HubStatsRow(
-                        totalListings = totalListings,
-                        newToday = newToday,
-                        categoryCount = state.categories.size,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    )
-                }
-            }
-
             // ── Error banner ───────────────────────────────────────────
             if (state.error != null && !state.loading) {
                 item(key = "error") {

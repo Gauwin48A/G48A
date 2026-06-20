@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
@@ -44,6 +45,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
@@ -380,11 +382,11 @@ class ExploreViewModel @Inject constructor(
                         if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
                         list.ifEmpty { MOCK_EXPLORE_POSTS }
                     } else emptyList()
-                    val finalPosts = applyQuickFilter(when {
+                    val finalPosts = applyQuickFilter(applySort(when {
                         mockFallback.isNotEmpty() -> mockFallback
                         reset -> newPosts
                         else -> _state.value.posts + newPosts
-                    })
+                    }))
                     _state.value = _state.value.copy(
                         loadingPosts = false, loadingMore = false,
                         posts = finalPosts,
@@ -401,7 +403,7 @@ class ExploreViewModel @Inject constructor(
                         if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
                         list.ifEmpty { MOCK_EXPLORE_POSTS }
                     } else emptyList()
-                    val finalPosts = applyQuickFilter(if (mockFallback.isNotEmpty()) mockFallback else s.posts)
+                    val finalPosts = applyQuickFilter(applySort(if (mockFallback.isNotEmpty()) mockFallback else s.posts))
                     _state.value = s.copy(
                         loadingPosts = false, loadingMore = false,
                         posts = finalPosts,
@@ -436,7 +438,23 @@ class ExploreViewModel @Inject constructor(
             "nearme" -> posts.filter { it.sellerVerified == true } // approximation: show verified sellers nearby
             "verified" -> posts.filter { it.sellerVerified == true }
             "shuffle" -> posts.shuffled()
+            "trending" -> posts.sortedByDescending { (it.viewCount ?: 0) + (it.likeCount ?: 0) * 3 }
+            "top_rated" -> posts.sortedByDescending { (it.completedSales ?: 0) * 10 + (it.responseRate ?: 0) + (it.likeCount ?: 0) * 2 }
+            "offers" -> posts.filter { it.originalPrice != null || it.isNegotiable == true || it.promoLabel?.contains("offer", ignoreCase = true) == true }
             else -> posts
+        }
+    }
+
+    private fun applySort(posts: List<Post>): List<Post> {
+        return when (_state.value.sortBy) {
+            "oldest" -> posts.sortedBy { it.createdAt ?: "" }
+            "popular" -> posts.sortedByDescending { (it.likeCount ?: 0) + (it.interestedBuyers ?: 0) * 2 + (it.viewCount ?: 0) }
+            "most_viewed" -> posts.sortedByDescending { it.viewCount ?: 0 }
+            "price_asc" -> posts.sortedBy { it.price ?: Double.MAX_VALUE }
+            "price_desc" -> posts.sortedByDescending { it.price ?: 0.0 }
+            "featured_first" -> posts.sortedBy { if (it.promoLabel?.contains("featured", ignoreCase = true) == true || it.isPromoted == true) 0 else 1 }
+            "premium_first" -> posts.sortedBy { if (it.isPremium == true || it.tier?.contains("premium", ignoreCase = true) == true) 0 else 1 }
+            else -> posts.sortedByDescending { it.createdAt ?: "" }
         }
     }
 
@@ -458,7 +476,13 @@ class ExploreViewModel @Inject constructor(
                         "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
                         "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
                         "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
-                        else -> emptyList()
+                        else -> listOf(
+            "Phones", "Laptops", "Cameras", "Audio", "Gaming",
+            "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
+            "Cars", "Motorcycles", "Bicycles",
+            "Home & Furniture", "Books", "Sports", "Health & Beauty",
+            "Agriculture", "Real Estate", "Services",
+        )
                     }
                     _state.value = _state.value.copy(subcategories = fallback)
                 }
@@ -484,19 +508,46 @@ class ExploreViewModel @Inject constructor(
 
     fun toggleCompare(postId: String) {
         val current = _state.value.compareItems.toMutableSet()
-        if (current.contains(postId)) current.remove(postId) else if (current.size < 4) current.add(postId)
+        if (current.contains(postId)) {
+            current.remove(postId)
+            SharedExploreStore.removeCompare(postId)
+            viewModelScope.launch { postsRepo.removeFromCompare(postId) }
+        } else if (current.size < 4) {
+            current.add(postId)
+            // Save full Post to shared store so CompareScreen works without backend
+            _state.value.posts.find { it.stableId == postId }?.let { SharedExploreStore.addCompare(it) }
+            viewModelScope.launch { postsRepo.addToCompare(postId) }
+        }
         _state.value = _state.value.copy(compareItems = current)
     }
 
     fun toggleCart(postId: String) {
         val current = _state.value.cartItems.toMutableSet()
-        if (current.contains(postId)) current.remove(postId) else current.add(postId)
+        if (current.contains(postId)) {
+            current.remove(postId)
+            SharedExploreStore.removeCart(postId)
+        } else {
+            current.add(postId)
+            // Save full Post to shared store so CartScreen works without backend
+            _state.value.posts.find { it.stableId == postId }?.let { SharedExploreStore.addCart(it) }
+        }
         _state.value = _state.value.copy(cartItems = current)
     }
 
     fun clearCompare() {
         _state.value = _state.value.copy(compareItems = emptySet())
+        SharedExploreStore.clearCompare()
         viewModelScope.launch { postsRepo.clearCompare() }
+    }
+
+    fun openCompare(onReady: () -> Unit) {
+        val selectedIds = _state.value.compareItems.toList()
+        if (selectedIds.size < 2) return
+        viewModelScope.launch {
+            postsRepo.clearCompare()
+            selectedIds.forEach { postsRepo.addToCompare(it) }
+            onReady()
+        }
     }
 
     fun onQueryChange(query: String) {
@@ -509,10 +560,47 @@ class ExploreViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             delay(300)
             _state.value = _state.value.copy(isSearching = true)
+            val localResults = localSearchResults(query)
             when (val result = postsRepo.feed(query = query)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(isSearching = false, searchResults = result.data)
-                is ApiResult.Failure -> _state.value = _state.value.copy(isSearching = false)
+                is ApiResult.Success -> {
+                    val merged = (result.data + localResults).distinctBy { it.stableId }
+                    _state.value = _state.value.copy(isSearching = false, searchResults = merged)
+                }
+                is ApiResult.Failure -> _state.value = _state.value.copy(isSearching = false, searchResults = localResults)
             }
+        }
+    }
+
+    private fun localSearchResults(query: String): List<Post> {
+        val terms = query.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (terms.isEmpty()) return emptyList()
+        val pool = (_state.value.posts + MOCK_EXPLORE_POSTS).distinctBy { it.stableId }
+        return pool.filter { post ->
+            val haystack = listOfNotNull(
+                post.title,
+                post.description,
+                post.category,
+                post.categoryName,
+                post.subcategory,
+                post.subcategoryName,
+                post.brand,
+                post.model,
+                post.sellerName,
+                post.userName,
+                post.userHandle,
+                post.location,
+                post.city,
+                post.state,
+                post.condition,
+                post.status,
+                post.tags?.joinToString(" "),
+                post.hashtags?.joinToString(" "),
+                post.promoLabel,
+                post.tier,
+                post.pricingType,
+                post.availability,
+            ).joinToString(" ").lowercase()
+            terms.all { haystack.contains(it) }
         }
     }
 
@@ -567,6 +655,8 @@ fun ExploreScreen(
     onOpenCompare: () -> Unit = {},
     onOpenCart: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    onOpenRecentlyViewed: () -> Unit = {},
+    onOpenWishlist: () -> Unit = {},
     onAddPost: () -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
@@ -594,7 +684,7 @@ fun ExploreScreen(
         ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
         ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
         ecosystemKey == "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
-        else -> emptyList()
+        else -> listOf("Phones", "Laptops", "Cameras", "Audio", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Bicycles", "Home & Furniture", "Books", "Sports", "Health & Beauty", "Agriculture", "Real Estate", "Services")
     }
 
     // Draft filter state for the bottom sheet
@@ -611,26 +701,11 @@ fun ExploreScreen(
                 title = {
                     Column(verticalArrangement = Arrangement.Center) {
                         Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                        if (ecosystemLabel != null) {
-                            Text(ecosystemLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                },
-                actions = {
-                    // Cart icon with badge
-                    BadgedBox(badge = {
-                        val cartCount = state.cartItems.size
-                        if (cartCount > 0) Badge { Text("$cartCount") }
-                    }) {
-                        IconButton(onClick = onOpenCart) {
-                            Icon(Icons.Outlined.ShoppingCart, contentDescription = "Cart")
-                        }
-                    }
-                    // Notifications bell
-                    BadgedBox(badge = { Badge() }) {
-                        IconButton(onClick = onOpenNotifications) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
-                        }
+                        Text(
+                            ecosystemLabel ?: "Browse marketplace listings",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -714,38 +789,7 @@ fun ExploreScreen(
                     onSetPriceRange = viewModel::setFilterPrice,
                 )
             }
-            // Free launch plan promo banner
-            if (com.mhub.app.core.FreeLaunchPlan.isActive()) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFECFDF5),
-                    shadowElevation = 4.dp,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text("🎉", fontSize = 18.sp)
-                        Column(Modifier.weight(1f)) {
-                            Text("Free Launch Offer", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF065F46))
-                            Text(
-                                "Post & sell FREE until ${com.mhub.app.core.FreeLaunchPlan.endDateLabel()} — ${com.mhub.app.core.FreeLaunchPlan.daysRemaining()} days left!",
-                                fontSize = 11.sp, color = Color(0xFF047857), lineHeight = 15.sp,
-                            )
-                        }
-                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF059669)) {
-                            Text("FREE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                        }
-                    }
-                }
-            }
+
             // Plan expiry / expired banner
             if (state.showPlanExpiryBanner) {
                 val bannerColor = if (state.planExpired) Color(0xFFDC2626) else Color(0xFFF59E0B)
@@ -836,10 +880,7 @@ fun ExploreScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = viewModel::clearCompare) { Text("Clear") }
                             Button(
-                                onClick = {
-                                    state.compareItems.forEach { viewModel.addToCompare(it) }
-                                    onOpenCompare()
-                                },
+                                onClick = { viewModel.openCompare(onOpenCompare) },
                                 enabled = state.compareItems.size >= 2,
                             ) { Text("Compare (${state.compareItems.size})") }
                         }
@@ -873,11 +914,16 @@ fun ExploreScreen(
                         Icon(Icons.Default.Tune, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                         Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
-                    if (state.hasActiveFilters) {
-                        TextButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
-                            Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Clear All", style = MaterialTheme.typography.labelMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (state.hasActiveFilters) {
+                            TextButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
+                                Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Clear All", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        IconButton(onClick = { showFilterSheet = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close filters")
                         }
                     }
                 }
@@ -1015,6 +1061,13 @@ fun ExploreScreen(
                 // Apply / Reset buttons row
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
+                        onClick = { showFilterSheet = false },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                    }
+                    OutlinedButton(
                         onClick = { viewModel.clearFilters(); showFilterSheet = false },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
@@ -1028,7 +1081,7 @@ fun ExploreScreen(
                             viewModel.setFilterPrice(draftPriceRange.start, draftPriceRange.endInclusive)
                             showFilterSheet = false
                         },
-                        modifier = Modifier.weight(2f).height(48.dp),
+                        modifier = Modifier.weight(1.5f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                     ) {
                         Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
@@ -1217,7 +1270,7 @@ private fun GreatDealsBanner(onShopNow: () -> Unit) {
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun AllPostsBrowse(
     state: ExploreState,
@@ -1238,8 +1291,10 @@ private fun AllPostsBrowse(
     onSetPriceRange: (Float, Float) -> Unit = { _, _ -> },
 ) {
     val sortOptions = listOf(
-        "newest" to "Newest", "popular" to "Popular",
-        "price_asc" to "Price ↑", "price_desc" to "Price ↓",
+        "newest" to "🕒 Newest", "oldest" to "🔄 Oldest",
+        "popular" to "🔥 Most Popular", "most_viewed" to "👁 Most Viewed",
+        "price_asc" to "💰 Price ↑", "price_desc" to "💰 Price ↓",
+        "featured_first" to "⭐ Featured First", "premium_first" to "💎 Premium First",
     )
     var isGridView by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -1297,14 +1352,19 @@ private fun AllPostsBrowse(
                         }
                     }
                     if (ecosystemSubcategories.isNotEmpty()) {
-                        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 6.dp)) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             items(ecosystemSubcategories.size) { idx ->
                                 val sub = ecosystemSubcategories[idx]
                                 val isSelected = state.filterSubcategory == sub
                                 FilterChip(
                                     selected = isSelected,
                                     onClick = { onSelectSubcategory(sub) },
-                                    label = { Text(sub, style = MaterialTheme.typography.labelMedium) },
+                                    label = { Text(sub, style = MaterialTheme.typography.labelSmall) },
                                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface),
                                     border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant, enabled = true, selected = isSelected),
                                     shape = RoundedCornerShape(20.dp),
@@ -1320,7 +1380,30 @@ private fun AllPostsBrowse(
             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
                 items(quickFilters.size) { idx ->
                     val f = quickFilters[idx]
-                    FilterChip(selected = false, onClick = { onOpenSearch() }, label = { Text(stringResource(f.labelRes), style = MaterialTheme.typography.labelMedium) }, leadingIcon = { Icon(f.icon, null, modifier = Modifier.size(16.dp), tint = Color(0xFF2563EB)) }, colors = FilterChipDefaults.filterChipColors(containerColor = Color.White), border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFE2E8F0), enabled = true, selected = false), shape = RoundedCornerShape(20.dp))
+                    val isQuickActive = when (f.labelRes) {
+                        R.string.explore_filter_new -> state.sortBy == "newest"
+                        R.string.explore_filter_trending -> state.sortBy == "popular"
+                        R.string.explore_filter_top_rated -> state.quickFilter == "top_rated"
+                        R.string.explore_filter_offers -> state.quickFilter == "offers"
+                        else -> false
+                    }
+                    FilterChip(
+                        selected = isQuickActive,
+                        onClick = {
+                            when (f.labelRes) {
+                                R.string.explore_filter_new -> onSetSort("newest")
+                                R.string.explore_filter_trending -> onSetSort("popular")
+                                R.string.explore_filter_top_rated -> onSetQuickFilter("top_rated")
+                                R.string.explore_filter_offers -> onSetQuickFilter("offers")
+                                else -> onOpenSearch()
+                            }
+                        },
+                        label = { Text(stringResource(f.labelRes), style = MaterialTheme.typography.labelMedium) },
+                        leadingIcon = { Icon(f.icon, null, modifier = Modifier.size(16.dp), tint = if (isQuickActive) Color.White else Color(0xFF2563EB)) },
+                        colors = FilterChipDefaults.filterChipColors(containerColor = if (isQuickActive) Color(0xFF2563EB) else Color.White, selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                        border = FilterChipDefaults.filterChipBorder(borderColor = if (isQuickActive) Color(0xFF2563EB) else Color(0xFFE2E8F0), enabled = true, selected = isQuickActive),
+                        shape = RoundedCornerShape(20.dp),
+                    )
                 }
                 val priceRanges = listOf(
                     Triple(R.string.explore_price_under_1k, 0f, 1000f),

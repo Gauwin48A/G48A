@@ -143,13 +143,13 @@ class MyPostsViewModel @Inject constructor(
             when {
                 result == null -> _state.value = _state.value.copy(
                     loading = false, refreshing = false,
-                    error = "Loading timed out. Please check your connection and try again.",
+                    error = null,
                 )
                 result is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false, refreshing = false, items = result.data,
                 )
                 result is ApiResult.Failure -> _state.value = _state.value.copy(
-                    loading = false, refreshing = false, error = result.error.message,
+                    loading = false, refreshing = false, error = null,
                 )
             }
             // Load bought items separately (non-blocking)

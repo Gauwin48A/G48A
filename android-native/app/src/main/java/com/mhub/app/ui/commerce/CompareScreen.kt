@@ -74,13 +74,22 @@ class CompareViewModel @Inject constructor(private val repo: PostsRepository) : 
         _state.value = _state.value.copy(loading = true)
         when (val r = repo.compareList()) {
             is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
-            is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
+            is ApiResult.Failure -> {
+                // Fall back to shared store when API fails (no backend)
+                val shared = com.mhub.app.ui.explore.SharedExploreStore.comparePosts.toList()
+                if (shared.isNotEmpty()) {
+                    _state.value = PostListUiState(loading = false, posts = shared)
+                } else {
+                    _state.value = PostListUiState(loading = false, error = r.error.message)
+                }
+            }
         }
     } }
     fun removePost(postId: String) {
         // Optimistic remove
         val prev = _state.value.posts
         _state.value = _state.value.copy(posts = prev.filter { it.stableId != postId })
+        com.mhub.app.ui.explore.SharedExploreStore.removeCompare(postId)
         viewModelScope.launch {
             val result = repo.removeFromCompare(postId)
             if (result is ApiResult.Failure) {
@@ -91,6 +100,7 @@ class CompareViewModel @Inject constructor(private val repo: PostsRepository) : 
     fun clearAll() {
         val prev = _state.value.posts
         _state.value = _state.value.copy(posts = emptyList())
+        com.mhub.app.ui.explore.SharedExploreStore.clearCompare()
         viewModelScope.launch {
             val result = repo.clearCompare()
             if (result is ApiResult.Failure) _state.value = _state.value.copy(posts = prev)

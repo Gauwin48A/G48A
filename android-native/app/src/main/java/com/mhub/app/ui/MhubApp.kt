@@ -1,4 +1,4 @@
-package com.mhub.app.ui
+﻿package com.mhub.app.ui
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -193,9 +193,9 @@ class AppThemeViewModel @Inject constructor(
 
 /**
  * Resolves the correct destination for the + (Sell) FAB:
- *   1. KYC not approved → Routes.KYC
- *   2. No active subscription → Routes.TIER_SELECTION
- *   3. Everything OK → Routes.POST_WELCOME
+ *   1. KYC not approved â†’ Routes.KYC
+ *   2. No active subscription â†’ Routes.TIER_SELECTION
+ *   3. Everything OK â†’ Routes.POST_WELCOME
  */
 @HiltViewModel
 class SellFlowViewModel @Inject constructor(
@@ -302,7 +302,7 @@ fun MhubApp(
                 if (currentRoute?.startsWith("auth") == true) {
                     (context as? Activity)?.finish()
                 } else {
-                    navController.navigate(Routes.HOME) {
+                    navController.navigate(Routes.ALL_POSTS) {
                         popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                         launchSingleTop = true
                     }
@@ -383,7 +383,7 @@ fun MhubApp(
             popEnterTransition = { MhubMotion.pagePopEnter },
             popExitTransition = { MhubMotion.pagePopExit },
         ) {
-            // ── Auth Graph ──
+            // â”€â”€ Auth Graph â”€â”€
             navigation(startDestination = Routes.LOGIN, route = Routes.AUTH_GRAPH) {
                 composable(Routes.LOGIN) {
                     LoginScreen(
@@ -439,7 +439,7 @@ fun MhubApp(
                 }
             }
 
-            // ── Main Graph (Bottom Nav) ──
+            // â”€â”€ Main Graph (Bottom Nav) â”€â”€
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
                     MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false, showBottomBar = false) {
@@ -488,7 +488,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.ALL_POSTS) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         ExploreScreen(
                             onOpenPost = { id ->
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
@@ -498,17 +498,20 @@ fun MhubApp(
                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
                             onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                         )
                     }
-                }
+                    }
 
                 composable(Routes.FOR_YOU) {
                     MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         com.mhub.app.ui.foryou.ForYouScreen(
-                            onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -634,7 +637,7 @@ fun MhubApp(
                 }
             }
 
-            // ── Full-Screen Routes ──
+            // â”€â”€ Full-Screen Routes â”€â”€
             composable(
                 route = Routes.POST_DETAIL,
                 arguments = listOf(navArgument("postId") { type = NavType.StringType }),
@@ -784,7 +787,7 @@ fun MhubApp(
                 }
             }
 
-            // ── Commerce ──
+            // â”€â”€ Commerce â”€â”€
             composable(Routes.POST_WELCOME) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     if (needsLogin) {
@@ -856,7 +859,7 @@ fun MhubApp(
                         selected = BottomTab.ALL_POSTS,
                         currentThemeMode = themeMode,
                         onSetThemeMode = { themeVm.setThemeMode(it) },
-                        showTopBar = false,
+                        showTopBar = true,
                     ) {
                         ExploreScreen(
                             onOpenPost = { id ->
@@ -867,9 +870,11 @@ fun MhubApp(
                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
                             onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                         )
                     }
-                }
+                    }
             }
 
             composable(Routes.BOUGHT_POSTS) {
@@ -978,7 +983,7 @@ fun MhubApp(
                 }
             }
 
-            // ── Social ──
+            // â”€â”€ Social â”€â”€
             composable(
                 route = Routes.FEED_DETAIL,
                 arguments = listOf(navArgument("feedId") { type = NavType.StringType }),
@@ -1023,7 +1028,7 @@ fun MhubApp(
                 ReviewsScreen(userId = userId, onBack = { navController.popBackStack() })
             }
 
-            // ── Account ──
+            // â”€â”€ Account â”€â”€
             composable(Routes.DASHBOARD) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     if (needsLogin) {
@@ -1089,7 +1094,7 @@ fun MhubApp(
                 }
             }
 
-            // ── Channels ──
+            // â”€â”€ Channels â”€â”€
             composable(Routes.CHANNELS) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     ChannelsListScreen(
@@ -1123,7 +1128,10 @@ fun MhubApp(
             }
 
             composable(Routes.CENTRE_CREATE) {
-                CreateCentreScreen(onBack = { navController.popBackStack() })
+                CreateCentreScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToPremium = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
+                )
             }
 
             composable(
@@ -1142,7 +1150,7 @@ fun MhubApp(
                 CentreListingsScreen(centreId = centreId, onBack = { navController.popBackStack() })
             }
 
-            // ── Legal ──
+            // â”€â”€ Legal â”€â”€
             composable(Routes.TERMS) {
                 TermsScreen(onBack = { navController.popBackStack() })
             }
@@ -1171,7 +1179,7 @@ fun MhubApp(
                 InviteScreen(code = code, onBack = { navController.popBackStack() })
             }
 
-            // ── New screens ──
+            // â”€â”€ New screens â”€â”€
             composable(Routes.ACTIVITY_HUB) {
                 LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.ACTIVITY_HUB) { inclusive = true } } }
             }
@@ -1197,7 +1205,7 @@ fun MhubApp(
         }
         }
 
-        // ── Auth Gate Popup (app-level overlay) ─────────────────────────
+        // â”€â”€ Auth Gate Popup (app-level overlay) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         com.mhub.app.core.AuthGatePopup(
             visible = showAuthGate,
             onSignIn = { showAuthGate = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
@@ -1205,7 +1213,7 @@ fun MhubApp(
             onDismiss = { showAuthGate = false },
         )
 
-        // ── More Drawer Overlay (app-level) ──────────────────────────────
+        // â”€â”€ More Drawer Overlay (app-level) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         androidx.compose.animation.AnimatedVisibility(
             visible = showMoreDrawer,
             enter = androidx.compose.animation.slideInHorizontally(
@@ -1240,12 +1248,23 @@ fun MhubApp(
                 ) {
                     // Helper: navigate from More drawer — pops to main graph so back navigation
                     // always returns to the tab you were on (no stuck states).
-                    // NOTE: restoreState intentionally omitted to avoid restoring stale composable state.
+                    // Navigates directly to the target route with popUpTo MAIN_GRAPH,
+                    // so pressing back goes to the last active tab.
                     val drawerNav: (String) -> Unit = { route ->
                         showMoreDrawer = false
-                        navController.navigate(route) {
-                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                            launchSingleTop = true
+                        if (route == Routes.ALL_POSTS) {
+                            navController.navigate(Routes.ALL_POSTS) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            navController.navigate(Routes.ALL_POSTS) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                            navController.navigate(route) {
+                                launchSingleTop = true
+                            }
                         }
                     }
                     MoreScreen(
@@ -1310,7 +1329,7 @@ fun MhubApp(
  * CompositionLocal exposing the currently-active category key (e.g. "electronics") from MhubApp
  * down to all composables. Ensures MainShell's bottom-bar navigation logic always sees the
  * latest category context regardless of which route composed it. Without this, navigating
- * Profile → AllPosts loses category context and shows an empty feed.
+ * Profile â†’ AllPosts loses category context and shows an empty feed.
  */
 val LocalActiveCategoryKey = staticCompositionLocalOf<String?> { null }
 val LocalOnOpenMore = staticCompositionLocalOf<() -> Unit> { {} }
@@ -1336,7 +1355,7 @@ fun MainShell(
     selected: BottomTab,
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onSetThemeMode: (ThemeMode) -> Unit = {},
-    showTopBar: Boolean = false,
+    showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
     activeCategoryKey: String? = null,
     onOpenMore: () -> Unit = {},
@@ -1348,31 +1367,27 @@ fun MainShell(
                 if (showTopBar) {
                 MhubTopBar(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                    onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                     onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                    onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                    onLocation = { navController.navigate(Routes.NEARBY) { launchSingleTop = true } },
+                    onToggleTheme = {
+                        val modes = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK)
+                        val nextIdx = (modes.indexOf(currentThemeMode) + 1) % modes.size
+                        onSetThemeMode(modes[nextIdx])
+                    },
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                 )
                 }
             },
             bottomBar = {
                 if (showBottomBar) {
-                val liveActiveCategoryKey = LocalActiveCategoryKey.current ?: activeCategoryKey
                 val openMore = LocalOnOpenMore.current
                 val navigateToTab: (BottomTab) -> Unit = { tab ->
-                    val targetRoute = tab.route
-                    if (tab == BottomTab.HOME) {
-                        navController.navigate(Routes.HOME) {
-                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    } else {
-                        // Always navigate — even if already on the same route —
-                        // so the screen reopens cleanly from drawer or any stuck state.
-                        navController.navigate(targetRoute) {
-                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                            launchSingleTop = true
-                        }
+                    navController.navigate(tab.route) {
+                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                        launchSingleTop = true
                     }
                 }
                 Surface(
@@ -1389,7 +1404,6 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // LEFT: Home | All Posts | For You
                         listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
@@ -1398,7 +1412,6 @@ fun MainShell(
                                 onClick = { navigateToTab(tab) },
                             )
                         }
-                        // CENTER: Sell FAB
                         Box(
                             modifier = Modifier.size(52.dp),
                             contentAlignment = Alignment.Center,
@@ -1414,8 +1427,8 @@ fun MainShell(
                                         authGate()
                                     } else {
                                         sellScope.launch {
-                                            val dest = sellFlowVm.resolveDestination()
-                                            navController.navigate(dest) { launchSingleTop = true }
+                                            val destination = sellFlowVm.resolveDestination()
+                                            navController.navigate(destination) { launchSingleTop = true }
                                         }
                                     }
                                 },
@@ -1434,27 +1447,14 @@ fun MainShell(
                                 )
                             }
                         }
-                        // RIGHT: Feed | Rewards | Profile
-                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-                        val notifState by notifVm.state.collectAsState()
-                        val unreadNotifCount = notifState.items.count { !it.isRead }
-                        val wishlistVm: com.mhub.app.ui.wishlist.WishlistViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-                        val wishlistState by wishlistVm.state.collectAsState()
-                        val wishlistCount = wishlistState.items.size
-                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                        listOf(BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
-                                badgeCount = when (tab) {
-                                    BottomTab.FEED -> unreadNotifCount
-                                    BottomTab.REWARDS -> wishlistCount.coerceAtMost(99)
-                                    else -> 0
-                                },
                                 modifier = Modifier.weight(1f),
                                 onClick = { navigateToTab(tab) },
                             )
                         }
-                        // MORE
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -1468,7 +1468,7 @@ fun MainShell(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Icon(
-                                Icons.Filled.GridView,
+                                Icons.Filled.Menu,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1555,13 +1555,13 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
             navController.navigate("${Routes.POST_DETAIL}/$id")
         }
         "chat", "messages" -> {
-            // Note: "chat/{id}" route not registered — navigate to chat list
+            // Note: "chat/{id}" route not registered â€” navigate to chat list
             navController.navigate(Routes.CHAT) { launchSingleTop = true }
         }
         "search" -> navController.navigate(Routes.SEARCH) { launchSingleTop = true }
         "create-post", "sell" -> navController.navigate(Routes.CREATE_POST) { launchSingleTop = true }
         "profile" -> {
-            // Note: "profile/{id}" route not registered — navigate to own profile
+            // Note: "profile/{id}" route not registered â€” navigate to own profile
             navController.navigate(Routes.PROFILE) { launchSingleTop = true }
         }
         "wishlist", "saved" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }

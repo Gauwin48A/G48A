@@ -83,7 +83,7 @@ class CentreListViewModel @Inject constructor(
         viewModelScope.launch {
             when (val r = channelsRepo.list()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, centres = r.data)
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = null)
             }
         }
     }

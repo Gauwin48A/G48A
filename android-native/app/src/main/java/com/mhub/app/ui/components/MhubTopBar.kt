@@ -17,11 +17,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.NotificationsNone
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -79,17 +80,19 @@ class TopBarViewModel @Inject constructor(
 @Composable
 fun MhubTopBar(
     onSearch: () -> Unit,
-    onNotifications: () -> Unit,
-    onCart: () -> Unit,
     onWishlist: () -> Unit = {},
     onRecentlyViewed: () -> Unit = {},
+    onLanguage: () -> Unit = {},
+    onLocation: () -> Unit = {},
+    onToggleTheme: () -> Unit = {},
+    onNotifications: () -> Unit = {},
+    onCart: () -> Unit = {},
     onFilter: () -> Unit = {},
     activeFilterCount: Int = 0,
+    unreadNotifCount: Int = 0,
+    cartItemCount: Int = 0,
     modifier: Modifier = Modifier,
-    viewModel: TopBarViewModel = hiltViewModel(),
 ) {
-    val unread by viewModel.unreadCount.collectAsState()
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -138,28 +141,23 @@ fun MhubTopBar(
             // Actions row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Notifications with badge
-                IconButton(onClick = {
-                    viewModel.refresh()
-                    onNotifications()
-                }) {
-                    BadgedBox(
-                        badge = {
-                            if (unread > 0) {
-                                Badge(
-                                    containerColor = Color(0xFFEF4444),
-                                    contentColor = Color.White,
-                                ) {
-                                    Text(
-                                        if (unread > 9) "9+" else unread.toString(),
-                                        fontSize = 9.sp,
-                                    )
-                                }
-                            }
-                        },
-                    ) {
+                BadgedBox(badge = { if (unreadNotifCount > 0) Badge(containerColor = Color(0xFFEF4444)) { Text(if (unreadNotifCount > 99) "99+" else "$unreadNotifCount", color = Color.White, fontSize = 9.sp) } }) {
+                    IconButton(onClick = onNotifications) {
                         Icon(
-                            Icons.Default.NotificationsNone,
-                            contentDescription = stringResource(R.string.topbar_notifications),
+                            Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color.White.copy(alpha = 0.92f),
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+
+                // Cart with badge
+                BadgedBox(badge = { if (cartItemCount > 0) Badge(containerColor = Color(0xFF10B981)) { Text(if (cartItemCount > 99) "99+" else "$cartItemCount", color = Color.White, fontSize = 9.sp) } }) {
+                    IconButton(onClick = onCart) {
+                        Icon(
+                            Icons.Default.ShoppingCart,
+                            contentDescription = "Cart",
                             tint = Color.White.copy(alpha = 0.92f),
                             modifier = Modifier.size(22.dp),
                         )
@@ -186,11 +184,31 @@ fun MhubTopBar(
                     )
                 }
 
-                // Cart
-                IconButton(onClick = onCart) {
+                // Language selector
+                IconButton(onClick = onLanguage) {
                     Icon(
-                        Icons.Default.ShoppingCart,
-                        contentDescription = stringResource(R.string.topbar_cart),
+                        Icons.Default.Language,
+                        contentDescription = "Language",
+                        tint = Color.White.copy(alpha = 0.92f),
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+
+                // Location filter
+                IconButton(onClick = onLocation) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = "Location",
+                        tint = Color.White.copy(alpha = 0.92f),
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+
+                // Dark/Light theme toggle
+                IconButton(onClick = onToggleTheme) {
+                    Icon(
+                        Icons.Outlined.DarkMode,
+                        contentDescription = "Theme",
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )

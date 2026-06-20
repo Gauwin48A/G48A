@@ -78,9 +78,26 @@ class CartViewModel @Inject constructor(
         load()
         viewModelScope.launch {
             repo.cartFlow.collect { items ->
+                val cartItems = items.toMutableList()
+                // Fall back to shared store when cartFlow is empty but items exist locally
+                if (items.isEmpty()) {
+                    val shared = com.mhub.app.ui.explore.SharedExploreStore.cartPosts
+                    if (shared.isNotEmpty()) {
+                        cartItems.addAll(shared.map { post ->
+                            com.mhub.app.data.remote.dto.CartItem(
+                                postId = post.stableId,
+                                title = post.displayTitle,
+                                price = post.price,
+                                imageUrl = post.primaryImage,
+                                sellerName = post.sellerName ?: post.userName ?: post.location,
+                                quantity = 1,
+                            )
+                        }.filter { it.postId !in items.mapNotNull { it.postId } })
+                    }
+                }
                 _state.value = _state.value.copy(
-                    items = items,
-                    total = items.sumOf { (it.price ?: 0.0) * it.quantity },
+                    items = cartItems,
+                    total = cartItems.sumOf { (it.price ?: 0.0) * it.quantity },
                     loading = false
                 )
             }
