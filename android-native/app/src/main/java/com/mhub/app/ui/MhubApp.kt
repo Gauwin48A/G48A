@@ -344,22 +344,31 @@ fun MhubApp(
             }
         }
 
-        // When user explicitly logs out (token cleared), redirect to auth
-        // But allow guest browsing mode and don't react to transient auth state changes
+        // ── Graceful Session Degradation ──────────────────────────────────
+        // When the token is cleared involuntarily (e.g., refresh token expired on server),
+        // transition to guest browsing mode instead of force-redirecting to login.
+        // This ensures the user can continue browsing the marketplace without interruption.
+        // Only a user-initiated logout (tapping "Logout") should redirect to the auth graph.
         var wasAuthenticated by remember { mutableStateOf(isAuthenticated) }
+        var userInitiatedLogout by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(isAuthenticated) {
-            if (!isAuthenticated && wasAuthenticated && !guestBrowsing) {
-                // Wait briefly to allow TokenRefreshAuthenticator to complete
-                // a token refresh before forcing the user to the login screen.
-                kotlinx.coroutines.delay(2000)
-                // Re-check: if still unauthenticated AND no session, force re-login
-                if (!authViewModel.isAuthenticated.value && !authViewModel.hasSession) {
-                    val currentRoute = navController.currentDestination?.route
-                    if (currentRoute != null && !currentRoute.startsWith("auth")) {
-                        navController.navigate(Routes.AUTH_GRAPH) {
-                            popUpTo(0) { inclusive = true }
-                        }
+            if (!isAuthenticated && wasAuthenticated) {
+                if (userInitiatedLogout) {
+                    // User tapped Logout — redirect to auth graph
+                    navController.navigate(Routes.AUTH_GRAPH) {
+                        popUpTo(0) { inclusive = true }
                     }
+                    userInitiatedLogout = false
+                } else if (!guestBrowsing && !authViewModel.hasSession) {
+                    // Session involuntarily cleared (refresh expired, server rejected) —
+                    // degrade gracefully to guest browsing mode instead of force-login.
+                    // Show a non-intrusive toast so the user knows, but let them continue.
+                    guestBrowsing = true
+                    Toast.makeText(
+                        context,
+                        "Session expired. Sign in to access all features.",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 }
             }
             wasAuthenticated = isAuthenticated
@@ -578,6 +587,7 @@ fun MhubApp(
                     MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                         ProfileScreen(
                             onSignedOut = {
+                                userInitiatedLogout = true
                                 authViewModel.logout()
                                 navController.navigate(Routes.AUTH_GRAPH) {
                                     popUpTo(0) { inclusive = true }
@@ -852,6 +862,11 @@ fun MhubApp(
                 val key = entry.arguments?.getString("categoryKey").orEmpty().ifBlank { null }
                 LaunchedEffect(key) {
                     activeCategoryKey = key
+                    // Proactively refresh token when entering a category, so API calls
+                    // below don't trigger a 401 → TokenRefreshAuthenticator cascade.
+                    if (authViewModel.hasSession && !authViewModel.isAuthenticated.value) {
+                        authViewModel.tryRefreshToken()
+                    }
                 }
                 CompositionLocalProvider(LocalActiveCategoryKey provides key) {
                     MainShell(
@@ -859,22 +874,26 @@ fun MhubApp(
                         selected = BottomTab.ALL_POSTS,
                         currentThemeMode = themeMode,
                         onSetThemeMode = { themeVm.setThemeMode(it) },
-                        showTopBar = true,
+                        showTopBar = false,
+                        showBottomBar = true,
                     ) {
-                        ExploreScreen(
-                            onOpenPost = { id ->
-                                navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
-                            },
+                        val catKey = key ?: "others"
+                        com.mhub.app.ui.categoryapp.CategoryAppShell(
+                            categoryKey = catKey,
+                            useExternalBottomNav = true,
+                            onBackToLauncher = { navController.popBackStack() },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
-                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
-                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                            onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
+                            onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                            onOpenHelp = { navController.navigate(Routes.SUPPORT_POLICY) { launchSingleTop = true } },
+                            onSwitchCategory = { cat -> navController.navigate(Routes.categoryDetail(cat)) { launchSingleTop = true } },
+                            onOpenPostDetail = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                            onOpenFeed = { navController.navigate(Routes.FEED) { launchSingleTop = true } },
+                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
                         )
                     }
-                    }
+                }
             }
 
             composable(Routes.BOUGHT_POSTS) {
@@ -1310,7 +1329,12 @@ fun MhubApp(
                         onOpenSubcategories = { drawerNav(Routes.SUBCATEGORIES) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
-                        onLogout = { showMoreDrawer = false; authViewModel.logout(); navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                        onLogout = {
+                            showMoreDrawer = false
+                            userInitiatedLogout = true
+                            authViewModel.logout()
+                            navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
+                        },
                         onLanguageChange = { code -> localeManager?.setLocale(code) },
                         isAdmin = isAdmin,
                         isLoggedIn = isAuthenticated,

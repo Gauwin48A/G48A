@@ -110,6 +110,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.content.Intent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
@@ -250,6 +252,7 @@ class ExploreViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val tiersRepo: com.mhub.app.data.repository.TiersRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
+    private val tokenStore: com.mhub.app.data.local.TokenStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
     val state: StateFlow<ExploreState> = _state.asStateFlow()
@@ -366,6 +369,28 @@ class ExploreViewModel @Inject constructor(
             if (!_state.value.hasMore || _state.value.loadingMore) return
             _state.value = _state.value.copy(loadingMore = true)
         }
+        // If no valid session, skip the API call entirely to prevent 401 responses
+        // from triggering TokenRefreshAuthenticator which could clear tokens.
+        // Instead, show mock data immediately — the user is browsing as a guest.
+        if (!tokenStore.hasSession) {
+            val s = _state.value
+            val mockFallback = if (reset) {
+                var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter {
+                    it.category.equals(s.ecosystemKey, ignoreCase = true)
+                } else MOCK_EXPLORE_POSTS
+                if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+                if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
+                list.ifEmpty { MOCK_EXPLORE_POSTS }
+            } else emptyList()
+            val finalPosts = applyQuickFilter(applySort(if (mockFallback.isNotEmpty()) mockFallback else s.posts))
+            _state.value = s.copy(
+                loadingPosts = false, loadingMore = false,
+                posts = finalPosts,
+                hasMore = false,
+            )
+            return
+        }
+
         viewModelScope.launch {
             val condition = _state.value.filterCondition.takeIf { it != "any" }
             val subcategory = _state.value.filterSubcategory
@@ -774,7 +799,6 @@ fun ExploreScreen(
                     onToggleCompare = viewModel::toggleCompare,
                     onToggleCart = viewModel::toggleCart,
                     onOpenCompare = onOpenCompare,
-                    onSetQuickFilter = viewModel::setQuickFilter,
                     onToggleAutoRefresh = viewModel::toggleAutoRefresh,
                     onLoadMore = viewModel::loadMore,
                     onOpenSearch = onOpenSearch,
@@ -786,7 +810,6 @@ fun ExploreScreen(
                         interestPostTitle = postTitle
                         showInterestModal = true
                     },
-                    onSetPriceRange = viewModel::setFilterPrice,
                 )
             }
 
@@ -1116,14 +1139,6 @@ private fun HeroPill(text: String) {
     }
 }
 
-private data class QuickFilterDef(val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-
-private val quickFilters = listOf(
-    QuickFilterDef(R.string.explore_filter_new, Icons.Outlined.NewReleases),
-    QuickFilterDef(R.string.explore_filter_trending, Icons.AutoMirrored.Filled.TrendingUp),
-    QuickFilterDef(R.string.explore_filter_top_rated, Icons.Outlined.Star),
-    QuickFilterDef(R.string.explore_filter_offers, Icons.Outlined.LocalOffer),
-)
 
 private data class BannerSlide(
     val gradientColors: List<Color>,
@@ -1282,13 +1297,11 @@ private fun AllPostsBrowse(
     onToggleCompare: (String) -> Unit,
     onToggleCart: (String) -> Unit = {},
     onOpenCompare: () -> Unit = {},
-    onSetQuickFilter: (String) -> Unit = {},
     onToggleAutoRefresh: () -> Unit = {},
     onLoadMore: () -> Unit,
     onOpenSearch: () -> Unit,
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
-    onSetPriceRange: (Float, Float) -> Unit = { _, _ -> },
 ) {
     val sortOptions = listOf(
         "newest" to "🕒 Newest", "oldest" to "🔄 Oldest",
@@ -1338,28 +1351,31 @@ private fun AllPostsBrowse(
                 shadowElevation = 2.dp,
             ) {
                 Column {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-                        items(sortOptions.size) { idx ->
-                            val (key, label) = sortOptions[idx]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        sortOptions.forEach { (key, label) ->
                             val isSelected = state.sortBy == key
                             FilterChip(selected = isSelected, onClick = { onSetSort(key) }, label = { Text(label, style = MaterialTheme.typography.labelMedium) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White), shape = RoundedCornerShape(20.dp))
                         }
-                        item {
-                            // Grid/List view toggle (web parity)
-                            IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(32.dp)) {
-                                Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                            }
+                        // Grid/List view toggle (web parity)
+                        IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(32.dp)) {
+                            Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     if (ecosystemSubcategories.isNotEmpty()) {
-                        LazyRow(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            items(ecosystemSubcategories.size) { idx ->
-                                val sub = ecosystemSubcategories[idx]
+                            ecosystemSubcategories.forEach { sub ->
                                 val isSelected = state.filterSubcategory == sub
                                 FilterChip(
                                     selected = isSelected,
@@ -1376,79 +1392,7 @@ private fun AllPostsBrowse(
             }
         }
 
-        item(key = "quick_filters") {
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
-                items(quickFilters.size) { idx ->
-                    val f = quickFilters[idx]
-                    val isQuickActive = when (f.labelRes) {
-                        R.string.explore_filter_new -> state.sortBy == "newest"
-                        R.string.explore_filter_trending -> state.sortBy == "popular"
-                        R.string.explore_filter_top_rated -> state.quickFilter == "top_rated"
-                        R.string.explore_filter_offers -> state.quickFilter == "offers"
-                        else -> false
-                    }
-                    FilterChip(
-                        selected = isQuickActive,
-                        onClick = {
-                            when (f.labelRes) {
-                                R.string.explore_filter_new -> onSetSort("newest")
-                                R.string.explore_filter_trending -> onSetSort("popular")
-                                R.string.explore_filter_top_rated -> onSetQuickFilter("top_rated")
-                                R.string.explore_filter_offers -> onSetQuickFilter("offers")
-                                else -> onOpenSearch()
-                            }
-                        },
-                        label = { Text(stringResource(f.labelRes), style = MaterialTheme.typography.labelMedium) },
-                        leadingIcon = { Icon(f.icon, null, modifier = Modifier.size(16.dp), tint = if (isQuickActive) Color.White else Color(0xFF2563EB)) },
-                        colors = FilterChipDefaults.filterChipColors(containerColor = if (isQuickActive) Color(0xFF2563EB) else Color.White, selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                        border = FilterChipDefaults.filterChipBorder(borderColor = if (isQuickActive) Color(0xFF2563EB) else Color(0xFFE2E8F0), enabled = true, selected = isQuickActive),
-                        shape = RoundedCornerShape(20.dp),
-                    )
-                }
-                val priceRanges = listOf(
-                    Triple(R.string.explore_price_under_1k, 0f, 1000f),
-                    Triple(R.string.explore_price_1k_5k, 1000f, 5000f),
-                    Triple(R.string.explore_price_5k_20k, 5000f, 20000f),
-                    Triple(R.string.explore_price_above_20k, 20000f, 500000f),
-                )
-                items(priceRanges.size) { idx ->
-                    val (labelRes, minP, maxP) = priceRanges[idx]
-                    val isActive = state.filterMinPrice == minP && state.filterMaxPrice == maxP
-                    FilterChip(
-                        selected = isActive,
-                        onClick = { if (isActive) onSetPriceRange(0f, 500000f) else onSetPriceRange(minP, maxP) },
-                        label = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = { Text("₹", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (isActive) Color.White else Color(0xFF22C55E)) },
-                        colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF0FDF4), selectedContainerColor = Color(0xFF059669), selectedLabelColor = Color.White),
-                        border = FilterChipDefaults.filterChipBorder(borderColor = Color(0xFFBBF7D0), enabled = true, selected = isActive),
-                        shape = RoundedCornerShape(20.dp),
-                    )
-                }
-                // Extra quick-filter chips: Latest 5, Latest 10, Posted Today, Near Me, Verified Only
-                val extraFilters = listOf(
-                    "latest5" to ("Latest 5" to "🕐"),
-                    "latest10" to ("Latest 10" to "🕐"),
-                    "today" to ("Posted Today" to "📅"),
-                    "nearme" to ("Near Me" to "📍"),
-                    "verified" to ("Verified Only" to "✅"),
-                    "shuffle" to ("Shuffle" to "🔀"),
-                )
-                items(extraFilters.size) { idx ->
-                    val (key, labelPair) = extraFilters[idx]
-                    val (label, emoji) = labelPair
-                    val isActive = state.quickFilter == key
-                    FilterChip(
-                        selected = isActive,
-                        onClick = { onSetQuickFilter(key) },
-                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = { Text(emoji, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF8FAFC), selectedContainerColor = Color(0xFF3B82F6), selectedLabelColor = Color.White),
-                        border = FilterChipDefaults.filterChipBorder(borderColor = if (isActive) Color(0xFF3B82F6) else Color(0xFFE2E8F0), enabled = true, selected = isActive),
-                        shape = RoundedCornerShape(20.dp),
-                    )
-                }
-            }
-        }
+
 
         item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
 

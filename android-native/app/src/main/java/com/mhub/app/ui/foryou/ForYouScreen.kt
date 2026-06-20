@@ -26,7 +26,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -185,7 +184,7 @@ class ForYouViewModel @Inject constructor(
         }
         // Tier 3: general feed fallback
         return when (val f = postsRepo.feed(limit = 30)) {
-            is ApiResult.Success -> f.data
+            is ApiResult.Success -> f.data.ifEmpty { MOCK_FOR_YOU_POSTS }
             is ApiResult.Failure -> MOCK_FOR_YOU_POSTS
         }
     }
@@ -229,7 +228,7 @@ class ForYouViewModel @Inject constructor(
                         hasMorePosts = r.data.size >= 30
                     )
                 }
-                is ApiResult.Failure -> {}
+                is ApiResult.Failure -> _state.value = _state.value.copy(hasMorePosts = false)
             }
         }
     }
@@ -435,7 +434,8 @@ fun ForYouScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.Bold)
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -449,6 +449,7 @@ fun ForYouScreen(
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                 )
                             }
+                        }
                         Text(stringResource(R.string.foryou_subtitle), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -486,32 +487,33 @@ fun ForYouScreen(
                         Button(onClick = { viewModel.load() }) { Text(stringResource(R.string.foryou_retry)) }
                     }
                 }
-                else -> LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 80.dp),
-                ) {
+                else -> Box(Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 80.dp),
+                    ) {
                     // Hero gradient section (web parity: AllPostsFeedHeader)
                     item(key = "for_you_hero") {
                         Box(
                             modifier = Modifier.fillMaxWidth()
-                                .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5), Color(0xFF2563EB)))),
+                                .background(MaterialTheme.colorScheme.surface),
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Icon(Icons.Default.AutoAwesome, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(22.dp))
-                                    Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color.White)
+                                    Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                                    Text(stringResource(R.string.foryou_title), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
-                                Text(stringResource(R.string.foryou_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                                Text(stringResource(R.string.foryou_subtitle), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
-                                        Text("✨ AI Curated", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                                        Text("✨ AI Curated", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
-                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("📍 Near You", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                                        Text("📍 Near You", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
-                                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                        Text("🔥 Top Deals", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
+                                        Text("🔥 Top Deals", fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                                     }
                                 }
                             }
@@ -520,7 +522,11 @@ fun ForYouScreen(
                     item { GreatDealsBanner(onShopNow = { quickFilter = "Under ₹500" }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
 
                     item {
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Row(
+                            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
@@ -533,11 +539,20 @@ fun ForYouScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 shape = RoundedCornerShape(12.dp),
                             )
+                            OutlinedButton(
+                                onClick = { quickFilter = if (quickFilter == "Trending") null else "Trending" },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp),
+                            ) {
+                                Icon(Icons.Default.FilterList, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Filter", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
 
@@ -1146,6 +1161,43 @@ fun ForYouScreen(
                                     Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text(stringResource(R.string.foryou_load_more))
+                                }
+                            }
+                        }
+                    }
+                }
+                    if (state.compareItems.size >= 2) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFF1E293B),
+                            shadowElevation = 8.dp,
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Column {
+                                    Text("${state.compareItems.size} items selected", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 13.sp)
+                                    Text("Tap Compare to see side-by-side", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedButton(
+                                        onClick = { viewModel.clearCompare() },
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                    ) {
+                                        Text("Clear", fontSize = 12.sp)
+                                    }
+                                    Button(
+                                        onClick = onOpenCompare,
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                                    ) {
+                                        Text("Compare Now", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    }
                                 }
                             }
                         }

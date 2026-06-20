@@ -17,7 +17,13 @@ class AuthInterceptor(
         val builder = original.newBuilder()
             .header("Accept", "application/json")
             .header("X-Client-Platform", "android-native")
-        if (!token.isNullOrBlank() && original.header("Authorization") == null) {
+        // CRITICAL: Do NOT add the (potentially expired) access token to the refresh endpoint.
+        // The refresh endpoint must be called WITHOUT an Authorization header so the server
+        // can validate the refresh token from the request body alone.
+        // If we add an expired access token here, the server may reject the refresh request,
+        // causing token refresh to fail and forcing the user to re-login.
+        val isRefreshEndpoint = original.url.encodedPath.contains("refresh-token")
+        if (!token.isNullOrBlank() && original.header("Authorization") == null && !isRefreshEndpoint) {
             builder.header("Authorization", "Bearer $token")
         }
         return chain.proceed(builder.build())

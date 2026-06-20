@@ -191,10 +191,16 @@ class AuthViewModel @Inject constructor(
             }
 
             // All credentials failed — show the actual error
-            _state.value = AuthUiState(
-                loading = false,
-                error = lastError ?: "Cannot connect to server. Please check your internet connection.",
-            )
+            if (com.mhub.app.BuildConfig.DEBUG) {
+                Log.w(TAG, "demoLogin falling back to local demo session: $lastError")
+                repo.startLocalDemoSession()
+                _state.value = AuthUiState(loading = false, success = true)
+            } else {
+                _state.value = AuthUiState(
+                    loading = false,
+                    error = lastError ?: "Cannot connect to server. Please check your internet connection.",
+                )
+            }
         }
     }
 
@@ -315,5 +321,14 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch { repo.logout() }
+    }
+
+    /**
+     * Proactively refresh the access token if it is expired.
+     * Safe to call from any screen (e.g., before navigation to content screens).
+     * Returns immediately; the actual refresh runs in the background.
+     */
+    fun tryRefreshToken() {
+        viewModelScope.launch { repo.tryRefreshToken() }
     }
 }

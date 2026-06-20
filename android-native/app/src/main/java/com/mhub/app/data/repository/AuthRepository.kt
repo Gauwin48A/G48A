@@ -1,5 +1,6 @@
 package com.mhub.app.data.repository
 
+import android.util.Base64
 import com.mhub.app.core.ApiResult
 import com.mhub.app.core.JwtHelper
 import com.mhub.app.core.safeApiCall
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeout
+import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,11 +43,30 @@ class AuthRepository @Inject constructor(
     private val wishlistItemDao: WishlistItemDao,
     private val cartItemDao: CartItemDao,
 ) {
-    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() && !JwtHelper.isExpired(it) }
+    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() && !JwtHelper.isExpired(it, bufferSeconds = 10) }
     val isCurrentlyAuthenticated: Boolean get() = tokenStore.isAuthenticated
     /** True if a token string is stored, regardless of whether it is expired. */
     val hasSession: Boolean get() = tokenStore.hasSession
     val accessTokenFlow: StateFlow<String?> = tokenStore.accessToken
+
+    suspend fun startLocalDemoSession() {
+        val nowSec = System.currentTimeMillis() / 1000
+        val header = JSONObject()
+            .put("alg", "none")
+            .put("typ", "JWT")
+            .toString()
+        val payload = JSONObject()
+            .put("sub", "demo_user")
+            .put("id", "demo_user")
+            .put("userId", "demo_user")
+            .put("role", "user")
+            .put("name", "Demo User")
+            .put("email", "demo@mhub.local")
+            .put("exp", nowSec + 30L * 24 * 60 * 60)
+            .toString()
+        val token = "${header.toBase64Url()}.${payload.toBase64Url()}.demo"
+        tokenStore.save(token, "local-demo-refresh-token")
+    }
 
     /** Exchanges a Google ID token for an app JWT. */
     suspend fun signInWithGoogle(idToken: String): ApiResult<User?> = safeApiCall {
@@ -101,8 +122,14 @@ class AuthRepository @Inject constructor(
         Unit
     }
 
-    /** Proactively refresh an expired access token using the stored refresh token. */
+    /** Proactively refresh an expired access token using the stored refresh token.
+     *  Retries once on failure with a 2-second delay to handle transient server/network issues.
+     *  Uses the latest refresh token on retry to avoid stale-token race conditions with the
+     *  TokenRefreshAuthenticator (which runs on the OkHttp thread pool). */
     suspend fun tryRefreshToken(): Boolean {
+        // Short-circuit: token is already valid (within 10s buffer)
+        if (isCurrentlyAuthenticated) return true
+
         val refreshToken = tokenStore.refreshTokenImmediate() ?: return false
         return try {
             val res = api.refreshToken(RefreshTokenRequest(refreshToken))
@@ -110,7 +137,21 @@ class AuthRepository @Inject constructor(
             tokenStore.save(newToken, res.refreshToken)
             true
         } catch (_: Exception) {
-            false
+            // Check if another thread (TokenRefreshAuthenticator) already refreshed
+            if (isCurrentlyAuthenticated) return true
+
+            // Retry once — use LATEST refresh token to avoid races with authenticator
+            try {
+                kotlinx.coroutines.delay(2000)
+                // Re-read refresh token — may have changed if authenticator succeeded
+                val latestRefresh = tokenStore.refreshTokenImmediate() ?: return false
+                val res = api.refreshToken(RefreshTokenRequest(latestRefresh))
+                val newToken = res.token ?: return false
+                tokenStore.save(newToken, res.refreshToken)
+                true
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 
@@ -163,4 +204,7 @@ class AuthRepository @Inject constructor(
     }
 
 }
+
+private fun String.toBase64Url(): String =
+    Base64.encodeToString(toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
 
