@@ -83,9 +83,9 @@ fun PostCard(
     var localLikeCount by remember { mutableStateOf(post.likeCount ?: 0) }
     var showFullDesc by remember { mutableStateOf(showFullDescription) }
     var showMoreMenu by remember { mutableStateOf(false) }
-    val heartScale by animateFloatAsState(
-        targetValue = if (localLiked || isWishlisted) 1.15f else 1f,
-        animationSpec = tween(200), label = "heartScale")
+    val saveScale by animateFloatAsState(
+        targetValue = if (isWishlisted) 1.15f else 1f,
+        animationSpec = tween(200), label = "saveScale")
 
     Card(onClick = onClick, shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -143,14 +143,14 @@ fun PostCard(
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(
                     top = if (topLeftBadge != null) 36.dp else if (post.originalPrice != null && post.price != null && post.originalPrice!! > post.price!!) 32.dp else 8.dp, start = 8.dp))
 
-                // Wishlist heart
+                // Wishlist save
                 if (onToggleWishlist != null) {
-                    val heartColor by animateColorAsState(targetValue = if (isWishlisted) Color(0xFFEF4444) else Color.White,
-                        animationSpec = tween(200), label = "heartColor")
+                    val saveColor by animateColorAsState(targetValue = if (isWishlisted) Color(0xFF6366F1) else Color.White,
+                        animationSpec = tween(200), label = "saveColor")
                     Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).size(36.dp), shape = CircleShape, color = Color.Black.copy(alpha = 0.3f)) {
                         IconButton(onClick = { onToggleWishlist() }, modifier = Modifier.fillMaxSize()) {
-                            Icon(if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = null, tint = heartColor, modifier = Modifier.size(18.dp).scale(heartScale))
+                            Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = null, tint = saveColor, modifier = Modifier.size(18.dp).scale(saveScale))
                         }
                     }
                 }
@@ -407,8 +407,8 @@ fun PostCardCompact(
                     }
                 }
                 if (onToggleWishlist != null) {
-                    val heartColor by animateColorAsState(targetValue = if (isWishlisted) Color(0xFFEF4444) else Color.White, animationSpec = tween(200), label = "compactHeartColor")
-                    Icon(if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, contentDescription = null, tint = heartColor, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp).clickable { onToggleWishlist() })
+                    val saveColor by animateColorAsState(targetValue = if (isWishlisted) Color(0xFF6366F1) else Color.White, animationSpec = tween(200), label = "compactSaveColor")
+                    Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = null, tint = saveColor, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp).clickable { onToggleWishlist() })
                 }
             }
             Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

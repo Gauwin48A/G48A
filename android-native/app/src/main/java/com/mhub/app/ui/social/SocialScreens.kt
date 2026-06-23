@@ -28,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import android.net.Uri
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -590,21 +592,50 @@ fun MyFeedScreen(onBack: () -> Unit, viewModel: MyFeedViewModel = hiltViewModel(
 // ──────────────────────────────────────────────────────────────────────────────
 // FeedPostAddScreen
 // ──────────────────────────────────────────────────────────────────────────────
-data class FeedPostAddUiState(val loading: Boolean = false, val error: String? = null, val success: Boolean = false, val title: String = "", val content: String = "")
+data class FeedPostAddUiState(
+    val loading: Boolean = false,
+    val uploading: Boolean = false,
+    val error: String? = null,
+    val success: Boolean = false,
+    val title: String = "",
+    val content: String = "",
+    val imageUris: List<Uri> = emptyList(),
+)
 
 @HiltViewModel
-class FeedPostAddViewModel @Inject constructor(private val repo: SocialRepository) : ViewModel() {
+class FeedPostAddViewModel @Inject constructor(
+    private val repo: SocialRepository,
+    private val uploadRepo: UploadRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(FeedPostAddUiState())
     val state: StateFlow<FeedPostAddUiState> = _state.asStateFlow()
     fun setTitle(v: String) { if (v.length <= 200) _state.value = _state.value.copy(title = v) }
     fun setContent(v: String) { if (v.length <= 500) _state.value = _state.value.copy(content = v) }
-    fun submit() {
+    fun setImages(uris: List<Uri>) { _state.value = _state.value.copy(imageUris = uris) }
+    fun submit(bytesProvider: ((Uri) -> Pair<ByteArray, String>?)? = null) {
         val s = _state.value
         if (s.content.length < 5) { _state.value = s.copy(error = "Content must be at least 5 characters"); return }
         _state.value = s.copy(loading = true, error = null)
         val desc = if (s.title.isNotBlank()) "${s.title}\n\n${s.content}" else s.content
         viewModelScope.launch {
-            when (val r = repo.createPost(CreateFeedRequest(content = desc))) {
+            // Upload images first if any
+            val uploadedUrls = mutableListOf<String>()
+            if (s.imageUris.isNotEmpty()) {
+                _state.value = _state.value.copy(uploading = true)
+                for (uri in s.imageUris) {
+                    val data = bytesProvider?.invoke(uri) ?: continue
+                    val (bytes, mime) = data
+                    when (val result = uploadRepo.uploadPostImage(bytes, mime)) {
+                        is ApiResult.Success -> uploadedUrls.add(result.data)
+                        is ApiResult.Failure -> {
+                            _state.value = s.copy(loading = false, uploading = false, error = "Image upload failed: ${result.error.message}")
+                            return@launch
+                        }
+                    }
+                }
+                _state.value = _state.value.copy(uploading = false)
+            }
+            when (val r = repo.createPost(CreateFeedRequest(content = desc, images = uploadedUrls))) {
                 is ApiResult.Success -> _state.value = FeedPostAddUiState(success = true)
                 is ApiResult.Failure -> _state.value = s.copy(loading = false, error = r.error.message)
             }
@@ -616,6 +647,7 @@ class FeedPostAddViewModel @Inject constructor(private val repo: SocialRepositor
 fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.success) { if (state.success) onBack() }
+    val context = LocalContext.current
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             Row(
@@ -631,9 +663,28 @@ fun FeedPostAddScreen(onBack: () -> Unit, viewModel: FeedPostAddViewModel = hilt
                 Text(stringResource(R.string.social_new_post), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                 Spacer(Modifier.weight(1f))
                 Button(
-                    onClick = { viewModel.submit() }, enabled = !state.loading && state.content.length >= 5,
+                    onClick = {
+                        viewModel.submit { uri ->
+                            runCatching {
+                                val resolver = context.contentResolver
+                                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                                    ?: return@runCatching null
+                                val mime = resolver.getType(uri) ?: "image/jpeg"
+                                bytes to mime
+                            }.getOrNull()
+                        }
+                    },
+                    enabled = !state.loading && !state.uploading && state.content.length >= 5,
                     shape = RoundedCornerShape(20.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                ) { Text(if (state.loading) "Posting…" else "Post", fontWeight = FontWeight.SemiBold) }
+                ) {
+                    if (state.loading || state.uploading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (state.uploading) "Uploading…" else "Posting…", fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text("Post", fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }

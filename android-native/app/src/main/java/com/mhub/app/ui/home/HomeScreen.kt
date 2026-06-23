@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -54,6 +57,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.foundation.layout.WindowInsets
@@ -140,6 +144,7 @@ import kotlin.math.min
 private enum class SortOption(val label: String) {
     NEWEST("New"),
     POPULAR("Popular"),
+    MOST_VIEWED("Most Viewed"),
     PRICE_ASC("Price low-high"),
     PRICE_DESC("Price high-low"),
 }
@@ -594,7 +599,7 @@ private fun QuickAccessRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         QuickAccessChip(Icons.Default.ShoppingCart, "Cart", accentColor, Modifier.weight(1f), onOpenCart)
-        QuickAccessChip(Icons.Default.FavoriteBorder, "Wishlist", accentColor, Modifier.weight(1f), onOpenWishlist)
+        QuickAccessChip(Icons.Outlined.BookmarkBorder, "Wishlist", accentColor, Modifier.weight(1f), onOpenWishlist)
         QuickAccessChip(Icons.Default.History, "Recent", accentColor, Modifier.weight(1f), onOpenRecentlyViewed)
     }
 }
@@ -963,7 +968,8 @@ fun HomeScreen(
             .let { list ->
                 when (sortBy) {
                     SortOption.NEWEST -> list
-                    SortOption.POPULAR -> list.sortedByDescending { it.viewCount ?: 0 }
+                    SortOption.POPULAR -> list.sortedByDescending { (it.likeCount ?: 0) + (it.viewCount ?: 0) * 2 }
+                    SortOption.MOST_VIEWED -> list.sortedByDescending { it.viewCount ?: 0 }
                     SortOption.PRICE_ASC -> list.sortedBy { it.price ?: Double.MAX_VALUE }
                     SortOption.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
                 }
@@ -1565,6 +1571,36 @@ fun HomeScreen(
                         }
                     }
 
+                    // Sort chips — all visible with FlowRow wrapping
+                    item {
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            SortOption.entries.forEach { option ->
+                                FilterChip(
+                                    selected = sortBy == option,
+                                    onClick = { sortBy = option },
+                                    label = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
+                                    leadingIcon = when (option) {
+                                        SortOption.POPULAR -> ({ Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(12.dp)) })
+                                        SortOption.NEWEST -> ({ Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, modifier = Modifier.size(12.dp)) })
+                                        SortOption.MOST_VIEWED -> ({ Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(12.dp)) })
+                                        else -> null
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
                     // Subcategory chips (category app) or category chips (all-posts)
                     if (categoryTheme != null && state.subcategories.isNotEmpty()) {
                         item {
@@ -1583,30 +1619,6 @@ fun HomeScreen(
                         }
                     }
 
-                    item {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                        ) {
-                            items(SortOption.entries, key = { it.name }) { option ->
-                                FilterChip(
-                                    selected = sortBy == option,
-                                    onClick = { sortBy = option },
-                                    label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
-                                    leadingIcon = when (option) {
-                                        SortOption.POPULAR -> ({ Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(14.dp)) })
-                                        SortOption.NEWEST -> ({ Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, modifier = Modifier.size(14.dp)) })
-                                        else -> null
-                                    },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                                    ),
-                                )
-                            }
-                        }
-                    }
 
                     // Quick filter chips (web parity: price tiers + time + location)
                     item {
@@ -2032,9 +2044,9 @@ fun ListPostCard(
                 post.price?.let { price ->
                     Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
                 }
-                val heartColor by animateColorAsState(if (wishlisted) Color(0xFFEF4444) else Color.White, label = "wishlist")
+                val saveColor by animateColorAsState(if (wishlisted) Color(0xFF6366F1) else Color.White, label = "save")
                 IconButton(onClick = { wishlisted = !wishlisted }, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape)) {
-                    Icon(imageVector = if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = heartColor, modifier = Modifier.size(18.dp))
+                    Icon(imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Wishlist", tint = saveColor, modifier = Modifier.size(18.dp))
                 }
                 // Promo badges overlay
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
@@ -2121,9 +2133,9 @@ fun GridPostCard(
                 post.price?.let { price ->
                     Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
-                val heartColor by animateColorAsState(if (wishlisted) Color(0xFFEF4444) else Color.White, label = "wishlist")
+                val saveColor by animateColorAsState(if (wishlisted) Color(0xFF6366F1) else Color.White, label = "save")
                 Box(modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable { wishlisted = !wishlisted }, contentAlignment = Alignment.Center) {
-                    Icon(imageVector = if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = heartColor, modifier = Modifier.size(14.dp))
+                    Icon(imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Wishlist", tint = saveColor, modifier = Modifier.size(14.dp))
                 }
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(6.dp))
             }

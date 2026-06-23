@@ -33,9 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
@@ -44,8 +44,8 @@ import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Visibility
@@ -432,9 +432,9 @@ fun PostDetailScreen(
                     ) {
                         Icon(
                             imageVector = if (state.wishlisted) {
-                                Icons.Filled.Favorite
+                                Icons.Filled.Bookmark
                             } else {
-                                Icons.Outlined.FavoriteBorder
+                                Icons.Outlined.BookmarkBorder
                             },
                             contentDescription = null,
                         )

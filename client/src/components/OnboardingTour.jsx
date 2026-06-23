@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Search,
-  Heart,
+  Bookmark,
   ShoppingBag,
   MessageCircle,
   ArrowRight,
@@ -29,11 +29,11 @@ const STEPS = [
     descFallback: "Browse categories, search by keyword, or explore nearby listings. Find exactly what you need.",
   },
   {
-    icon: Heart,
+    icon: Bookmark,
     titleKey: "onboarding_wishlist",
     titleFallback: "Save Favorites",
     descKey: "onboarding_wishlist_desc",
-    descFallback: "Tap the heart icon on any listing to save it to your wishlist for later.",
+    descFallback: "Tap the save icon on any listing to add it to your wishlist for later.",
   },
   {
     icon: ShoppingBag,

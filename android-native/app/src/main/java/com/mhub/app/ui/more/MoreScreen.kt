@@ -42,7 +42,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EmojiEvents
-import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
@@ -174,7 +174,7 @@ fun MoreScreen(
         MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
         MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
         MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
-        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.Favorite, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
+        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.BookmarkBorder, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
     )
 
     // ── SOCIAL section: 4 items — Feed removed (already in bottom navbar), Chat/MyReviews/MyOffers removed per user request

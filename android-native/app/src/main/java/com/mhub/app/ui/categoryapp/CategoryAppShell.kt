@@ -20,15 +20,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
@@ -412,7 +412,7 @@ private fun CategoryBottomNavBar(
         TabItem(CategoryTab.HOME,       "Home",       Icons.Filled.Home,         Icons.Outlined.Home),
         TabItem(CategoryTab.CATEGORIES, "Categories", Icons.Filled.Category,     Icons.Outlined.Category),
         TabItem(CategoryTab.CART,       "Cart",       Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
-        TabItem(CategoryTab.WISHLIST,   "Wishlist",   Icons.Filled.FavoriteBorder, Icons.Outlined.FavoriteBorder),
+        TabItem(CategoryTab.WISHLIST,   "Wishlist",   Icons.Filled.Bookmark,     Icons.Outlined.BookmarkBorder),
         TabItem(CategoryTab.PROFILE,    "Profile",    Icons.Filled.Person,       Icons.Outlined.Person),
     )
 

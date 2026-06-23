@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import {
-  Heart,
+  Bookmark,
   Trash2,
   Star,
   Image as ImageIcon,
@@ -594,7 +594,7 @@ const Wishlist = () => {
           <div className="relative w-20 h-20 mx-auto mb-6">
             <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 rounded-full blur-xl opacity-60 dark:bg-gradient-to-br" />
             <div className="relative w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-pink-500/30 rotate-6 dark:bg-gradient-to-br">
-              <Heart className="w-10 h-10 text-white -rotate-6 dark:text-white" fill="white" />
+              <Bookmark className="w-10 h-10 text-white -rotate-6 dark:text-white" fill="white" />
             </div>
           </div>
 
@@ -653,7 +653,7 @@ const Wishlist = () => {
                   <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
                 </button>
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/80">
-                  <Heart className="w-3.5 h-3.5" fill="white" />
+                  <Bookmark className="w-3.5 h-3.5" fill="white" />
                   {displayItems.length}{" "}
                   {displayItems.length === 1
                     ? t("saved_item") || "saved item"
@@ -672,7 +672,7 @@ const Wishlist = () => {
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
-                  <Heart className="w-5 h-5 text-white dark:text-white" fill="white" />
+                  <Bookmark className="w-5 h-5 text-white dark:text-white" fill="white" />
                 </div>
                 <h1 className="text-[clamp(20px,2.1vw,28px)] leading-[1.1] font-bold text-white dark:text-white">
                   {t("my_wishlist") || "My Wishlist"}
@@ -691,7 +691,7 @@ const Wishlist = () => {
       <div className="relative z-10 max-w-[640px] mx-auto px-4 pt-3 pb-0.5 sm:px-6 lg:px-8 page-shell page-pad">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-sm shadow-pink-500/20 dark:bg-gradient-to-br">
-            <Heart className="w-3.5 h-3.5 text-white fill-white shrink-0 dark:text-white" />
+            <Bookmark className="w-3.5 h-3.5 text-white fill-white shrink-0 dark:text-white" />
           </div>
           <p className="text-sm font-medium text-gray-600 dark:text-gray-200">
             {hasCategoryMode && categoryModeCategory?.name
@@ -735,7 +735,7 @@ const Wishlist = () => {
         {error && (
           <div className="mt-3 mhub-premium-surface rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-3 shadow-sm dark:border-red-600/40">
             <div className="w-9 h-9 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Heart className="w-4 h-4 text-red-400 dark:text-red-200" />
+              <Bookmark className="w-4 h-4 text-red-400 dark:text-red-200" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{t("wishlist_load_error") || "Couldn't load your wishlist"}</p>
@@ -909,7 +909,7 @@ const Wishlist = () => {
         ) : displayItems.length === 0 && !error ? (
           /* ── empty state — premium redesign ── */
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            {/* Premium heart illustration */}
+            {/* Premium save illustration */}
             <div className="relative w-36 h-36 mx-auto mb-8">
               {/* Ambient glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 dark:from-pink-500/20 dark:to-purple-500/20 rounded-full blur-2xl opacity-60 dark:bg-gradient-to-br" />
@@ -920,7 +920,7 @@ const Wishlist = () => {
               {/* Icon container */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-xl shadow-pink-500/30 transition-transform hover:scale-105 duration-500 dark:bg-gradient-to-br">
-                  <Heart className="w-9 h-9 text-white dark:text-white" fill="white" />
+                  <Bookmark className="w-9 h-9 text-white dark:text-white" fill="white" />
                 </div>
               </div>
               {/* Floating dots with bounce */}
@@ -938,7 +938,7 @@ const Wishlist = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center max-w-[280px] leading-relaxed">
               {isFilteredEmpty
                 ? "Switch category or save items in this marketplace."
-                : t("start_saving") || "Tap the heart icon on any listing to add it here."}
+                : t("start_saving") || "Tap the save icon on any listing to add it here."}
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">
               <Button

@@ -3,7 +3,7 @@ import {
   Search,
   Package,
   MessageSquare,
-  Heart,
+  Bookmark,
   ShoppingBag,
   MapPin,
   Bell,
@@ -15,7 +15,7 @@ const iconMap = {
   search: Search,
   posts: Package,
   messages: MessageSquare,
-  wishlist: Heart,
+  wishlist: Bookmark,
   cart: ShoppingBag,
   location: MapPin,
   notifications: Bell,
@@ -38,7 +38,7 @@ const defaults = {
   },
   wishlist: {
     title: "Wishlist is empty",
-    message: "Save items you love by tapping the heart icon.",
+    message: "Save items you like by tapping the save icon.",
   },
   cart: {
     title: "Your cart is empty",

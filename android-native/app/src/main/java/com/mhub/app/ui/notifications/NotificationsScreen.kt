@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -262,7 +263,9 @@ private fun notifStyle(type: String?): NotifIconStyle {
             NotifIconStyle(Icons.AutoMirrored.Filled.Chat, Color(0xFF2563EB), Color(0xFFE8F0FF))
         t.contains("gift") || t.contains("promo") || t.contains("reward") ->
             NotifIconStyle(Icons.Default.Campaign, Color(0xFF7C3AED), Color(0xFFF0E8FF))
-        t.contains("heart") || t.contains("like") || t.contains("wishlist") ->
+        t.contains("wishlist") || t.contains("saved") ->
+            NotifIconStyle(Icons.Default.Bookmark, Color(0xFF6366F1), Color(0xFFF5F3FF))
+        t.contains("heart") || t.contains("like") ->
             NotifIconStyle(Icons.Default.Favorite, Color(0xFFDB2777), Color(0xFFFFE8F5))
         t.contains("star") || t.contains("subscription") || t.contains("tier") ->
             NotifIconStyle(Icons.Default.Star, Color(0xFFD97706), Color(0xFFFFF8E0))

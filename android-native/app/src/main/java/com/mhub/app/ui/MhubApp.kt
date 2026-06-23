@@ -519,8 +519,13 @@ fun MhubApp(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
+                            onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
                             onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                         )
                     }
                 }

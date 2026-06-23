@@ -24,9 +24,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -411,9 +411,9 @@ fun WishlistScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AppEmptyState(
-                                    icon = Icons.Default.Favorite,
+                                    icon = Icons.Default.Bookmark,
                                     title = "Nothing saved yet",
-                                    subtitle = "Tap the heart icon on listings to save them here.",
+                                    subtitle = "Tap the save icon on listings to add them here.",
                                 )
                             }
                             filteredItems.isEmpty() -> Box(

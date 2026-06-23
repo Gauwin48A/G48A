@@ -1444,11 +1444,9 @@ private fun PreferencesTab(
     onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit = { _, _, _ -> },
 ) {
     var location by remember { mutableStateOf(initialLocation) }
-    var selectedRadius by remember { mutableIntStateOf(25) }
     var minPrice by remember { mutableStateOf(initialMinPrice) }
     var maxPrice by remember { mutableStateOf(initialMaxPrice) }
     var pageDensity by remember { mutableStateOf("comfortable") }
-    val radii = listOf(5, 10, 25, 50)
 
     Column(
         modifier = Modifier
@@ -1469,29 +1467,6 @@ private fun PreferencesTab(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                 )
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.profile_search_radius), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        radii.forEach { r ->
-                            val isSelected = selectedRadius == r
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.weight(1f).clickable { selectedRadius = r },
-                            ) {
-                                Text(
-                                    "${r}km",
-                                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                )
-                            }
-                        }
-                    }
-                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(

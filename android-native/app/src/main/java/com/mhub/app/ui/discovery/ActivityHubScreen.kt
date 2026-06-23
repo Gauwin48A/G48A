@@ -72,9 +72,9 @@ private val ACTIVITY_ITEMS = listOf(
         key = "wishlist",
         label = "Wishlist",
         description = "Items you have saved",
-        icon = Icons.Default.Favorite,
-        tint = Color(0xFFDC2626),
-        bgColor = Color(0xFFFEF2F2),
+        icon = Icons.Default.Bookmark,
+        tint = Color(0xFF6366F1),
+        bgColor = Color(0xFFF5F3FF),
     ),
     ActivityItem(
         key = "cart",

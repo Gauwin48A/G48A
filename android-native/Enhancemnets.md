@@ -1,445 +1,841 @@
-• The top navigation bar is missing on the All Posts page. Add a proper header similar to the web application, including relevant actions and navigation options.
+I have reorganized and rephrased the entire document into a structured page-wise implementation document. Each section includes:
 
-• Subcategories on the All Posts page need significant UI/UX improvements. They should be displayed in a more interactive, visually appealing, user-friendly, and easily discoverable manner.
-
-• When the hamburger menu is opened and the user navigates to any page, the back button is not functioning correctly. Review and fix the navigation flow across all hamburger menu pages.
-
-• Centre creation should be restricted to Premium users only. Non-Premium users should see a clear Premium Subscription prompt or upgrade screen when attempting to access this feature.
-
-• New users should receive a 7-day trial period during which they can create and use Centres. Once the trial expires, Centre creation should be locked and require an active Premium subscription.
-
-• The complete Centre Creation workflow is currently unclear. Review and document the end-to-end process, user eligibility checks, subscription validation, trial handling, creation flow, and access restrictions.
-
-• The My Feed module requires a complete functional review. The current behavior, data flow, and content visibility logic are unclear and need validation.
-
-• The Feed Post Publishing page is incomplete and not functioning correctly. Users are currently unable to successfully publish feed posts.
-
-• Review and fix the entire Feed Post publishing workflow, including form validation, media uploads, draft handling, API integration, error handling, submission process, and successful post creation confirmation.
-
-• Ensure that users can create, edit, save, preview, publish, and manage feed posts without errors, matching the expected behavior available in the web application.
-• Similar to the Feed module, the All Posts publishing workflow is not functioning correctly. Users are encountering errors during the final submission and publishing stage after completing all required steps.
-
-• Review and fix the complete All Posts creation and publishing process, including validation, media uploads, API integration, draft handling, submission workflow, error handling, and successful post publication.
-
-• The Feed page displays unexpected placeholders such as "[TE]" in various locations, especially when accessing the three-dot (More Options) menu on posts.
-
-• Investigate the root cause of all "[TE]" text occurrences, which may be related to missing translations, localization keys, UI rendering issues, or incomplete implementations. Replace them with proper labels and user-friendly text throughout the application.
-
-• The Compare functionality on the All Posts page is not working as expected. When users select two or more posts and click Compare, the comparison view either fails to load or does not function correctly.
-
-• Review and rebuild the Compare feature to match the web application experience, ensuring accurate side-by-side comparison of selected posts.
-
-• The search functionality on the All Posts page is not working effectively. Searches should return relevant results based on:
-
-* Post Title
-* Description
-* Category
-* Subcategory
-* Tags
-* Seller Information
-* Location
-* Other searchable metadata
-
-• Build a comprehensive filtering system on the All Posts page with useful and user-friendly filters such as:
-
-* Category
-* Subcategory
-* Location
-* Language
-* Price Range
-* Seller Type
-* Featured Posts
-* Premium Posts
-* Boosted Posts
-* Recently Added Posts
-* Other relevant business filters
-
-• Implement a robust Sort By functionality with options such as:
-
-* Latest
-* Oldest
-* Most Popular
-* Price Low to High
-* Price High to Low
-* Most Viewed
-* Featured First
-* Premium First
-
-• The All Posts page experiences multiple performance issues, including:
-
-* Slow loading of posts
-* Delayed pagination/infinite scrolling
-* Posts appearing very late when scrolling
-* Unexpected application freezes or crashes
-* Performance degradation during heavy usage
-
-• Conduct a complete performance audit of the application and optimize rendering, pagination, API calls, caching, image loading, and memory management to ensure a smooth experience even under high user loads.
-
-• The All Posts page should include a top navigation bar similar to the For You page, containing:
-
-* Notifications
-* Cart
-* Recently Viewed
-* Saved/Wishlist
-
-• Compare the Android application against the web application and identify all missing, partially implemented, or non-functional features.
-
-• Ensure full feature parity with the web platform, including:
-
-* Compare Functionality
-* Boosted Posts
-* Featured Posts
-* Premium Posts
-* Advanced Post Management
-* Promotion Features
-* User Engagement Features
-* Any additional functionality available on the web platform
-
-• The For You page currently contains a back button that appears unnecessary and is incorrectly navigating users to the Cart page.
-
-• Review and fix all navigation issues on the For You page and determine whether the back button should be removed entirely.
-
-• The My Home page is experiencing loading failures and is not functioning reliably.
-
-• Investigate and resolve the "Can't Reach MHub Services" issue affecting:
-
-* My Home
-* Bought Posts
-* Sold Posts
-* Other dependent screens
-
-• The Sale Done (Confirm Sale) and Sale Undone pages should maintain consistent navigation behavior with the rest of the application.
-
-• Add the bottom navigation bar to Sale Done and Sale Undone pages.
-
-• All pages accessed through the hamburger menu should either:
-
-* Not display a back button, or
-* Redirect users to the All Posts page when the back button is pressed
-
-• Ensure every application page (except the landing/home screen where intentionally excluded) includes a consistent bottom navigation bar.
-
-• The language switching functionality is currently incomplete and unreliable.
-
-• Language selection should translate the entire application experience, including:
-
-* Categories
-* Subcategories
-* Labels
-* Menus
-* Buttons
-* Post Data
-* Screen Content
-* User Interface Elements
-
-• The language-switching experience should match the responsiveness and completeness of the web application.
-
-• Several pages, including All Posts and related modules, suffer from slow loading times and require long-term performance optimization.
-
-• After resolving all critical issues, perform a complete feature-by-feature comparison against the web application to ensure full parity.
-
-• On the All Posts page, clicking a post should open a detailed post view similar to the web application.
-
-• The detailed post view should include:
-
-* Complete Post Information
-* Featured Post Options
-* Boost Post Options
-* Premium Promotion Options
-* Related Posts
-* Featured Recommendations
-* Boosted Recommendations
-* Premium Post Recommendations
-
-• The search functionality on the My Home page is not working correctly and requires investigation and fixes.
-
-• In the Profile section, edit references/options are displayed, but the actual profile information is not visible.
-
-• The Profile page should:
-
-* Display complete user information
-* Provide clear edit options
-* Allow users to update and save profile information successfully
-* Maintain consistency with the web application experience
-### Rewards Module
-
-• The Rewards page is missing several features and functionalities currently available in the web application. Conduct a detailed feature parity review and implement all missing capabilities.
-
-• The Referral Chain Rewards system appears to be incomplete or missing. Users should be able to clearly view:
-
-* Direct Referrals (Level 1)
-* Indirect Referrals (Level 2, Level 3, etc.)
-* Referral Hierarchy Structure
-* Referral-Based Earnings
-* Referral Growth Metrics
-
-• Review the Spin Wheel and Daily Secret Code features:
-
-* Verify whether rewards are actually claimable.
-* Confirm whether rewards are dynamically generated or statically configured.
-* Ensure daily refresh and reward distribution work correctly.
-* Identify and fix any partially implemented or non-functional reward features.
-
-• Conduct a complete audit of the Rewards module to identify all half-implemented, missing, or non-functional features.
-
-• The Rewards Activity page is currently underdeveloped and requires significant UI/UX improvements.
-
-• The Rewards Activity page should clearly display:
-
-* Reward History
-* Referral Earnings
-* Bonus History
-* Daily Reward Claims
-* Spin History
-* Transaction Activity
-
-• The Tier Progression section is currently unclear and may confuse users.
-
-• Redesign Tier Progression to clearly explain:
-
-* Current Tier
-* Next Tier
-* Benefits of Each Tier
-* Progress Required to Reach the Next Tier
-
-• The Impact Dashboard and Success Rate metrics are unclear and lack proper explanations.
-
-• Add user-friendly descriptions, tooltips, or help sections to explain:
-
-* Impact Score
-* Success Rate
-* Reward Calculations
-* Tier Benefits
-
-• Review the Rewards module against the web application and restore all missing features to achieve full feature parity.
-
----
-
-### All Posts Page
-
-• The filter panel does not provide a Close button after opening. Add a visible and intuitive Close/Cancel option.
-
-• The All Posts search functionality is not working as expected.
-
-• Search should return results based on:
-
-* Title
-* Description
-* Category
-* Subcategory
-* Tags
-* Seller Information
-* Location
-* Other searchable metadata
-
-• Search behavior should match the web application experience.
-
-• The action button currently displays "View" instead of "View Details".
-
-• Update the button label to "View Details" for improved clarity and consistency.
-
-• The All Posts page is missing several important UI elements:
-
-* Quick Filters
-* Subcategory Filters
-* Complete Header Section
-* Enhanced Navigation Controls
-
-• Compare the All Posts implementation with the web application and restore all missing features.
-
----
-
-### Performance & Scalability
-
-• The following pages are experiencing slow loading and performance issues:
-
-* All Posts
-* My Posts
-* Feed
-* For You
-
-• Conduct a full performance review and optimize:
-
-* API Calls
-* Pagination
-* Infinite Scrolling
-* Image Loading
-* Data Rendering
-* Memory Usage
-* Network Requests
-
-• The application should be optimized to support large-scale growth and high user volumes without performance degradation.
-
-• Investigate excessive rendering occurring on the All Posts page and resolve any unnecessary re-renders or resource-intensive operations.
-
----
-
-### For You Page
-
-• Each post should provide quick-action options such as:
-
-* Add to Cart
-* Save
-* Share
-* Compare
-* Other relevant actions
-
-• Review the header layout and reduce excessive header height for a cleaner and more efficient user experience.
-
-• The notification icon next to the language selector appears unnecessary and may be removed if it does not provide meaningful value.
-
----
-
-### Recently Viewed
-
-• The Recently Viewed page is not functioning correctly.
-
-• Any content viewed by the user should automatically appear in Recently Viewed, including:
-
-* Posts
-* Feed Posts
-* Product Listings
-* Other Supported Content Types
-
-• Ensure recently viewed history is accurately tracked and displayed.
-
----
-
-### Cart & Wishlist
-
-• Items added to the cart are not consistently appearing on the Cart page.
-
-• Review and fix:
-
-* Add to Cart Functionality
-* Cart Synchronization
-* Cart Persistence
-* Cart API Integration
-
-• The Wishlist page is experiencing loading issues and requires investigation and fixes.
-
-• Validate all Wishlist-related functionality and ensure it works consistently.
-
-• Remove the My Offers page entirely if it is no longer required by business requirements.
-
----
-
-### Profile Module
-
-• Referral codes should be automatically generated for every user.
-
-• Referral codes should be:
-
-* Unique
-* Dynamic
-* Available immediately after registration
-
-• The Account section should use expandable/collapsible sections rather than displaying all content simultaneously.
-
-• The Personal Information section should:
-
-* Display existing profile data
-* Provide Edit functionality
-* Allow users to update and save information successfully
-
-• The Preferences section is not functioning correctly and requires improvements.
-
-• Preferences should:
-
-* Display currently selected values
-* Allow users to edit selections
-* Save changes correctly
-* Reflect updates throughout the application
-
-• Remove the Search Radius setting if it is not required.
-
-• Replace location selection with searchable dropdowns for:
-
-* Country
-* State
-* District
-* City (if applicable)
-
-• Add search functionality inside dropdowns to improve usability and user experience.
-
----
-
-### Navigation & Layout Consistency
-
-• Remove the Search icon from the top navigation bar across all pages if it is not required.
-
-• The Sale Done page is missing a Back button. Add appropriate navigation support.
-
-• The Home page should remain a clean landing screen and should not display:
-
-* Top Navigation Bar
-* Bottom Navigation Bar
-* Jump Back Controls
-
-• The Home page should only display:
-
-* Welcome Section
-* Four Category Icons
-
-• Each category should function as an independent marketplace/module while sharing the same platform capabilities.
-
-• Selecting a category should navigate users directly to the corresponding All Posts page.
-
-• All internal application pages should display a consistent bottom navigation bar containing:
-
-* All Posts
-* For You
-* Rewards
-* Profile
-* More (Hamburger Menu)
-
-• Maintain consistent navigation behavior across the entire application.
-
----
-
-### Application Audit & Feature Parity Review
-
-• Conduct a comprehensive platform-wide audit to identify:
+* Current Issues / Bugs
 
 * Missing Features
-* Half-Implemented Features
-* Non-Functional Features
-* UI Inconsistencies
-* Navigation Issues
-* Performance Bottlenecks
 
-• Compare every mobile application screen against the web application and document:
+* UI/UX Improvements
 
-* Missing Functionality
-* Missing UI Components
-* Missing Business Logic
-* Missing User Flows
+* Functional Requirements
 
-• Provide ratings for each screen covering:
+* Detailed Implementation Plan
 
-* UI/UX Quality
-* Functional Completeness
-* Performance
-* User Experience
-* Feature Parity with Web Application
+### 1. Home / Landing Page
 
-• Create a prioritized implementation roadmap to achieve full web-to-mobile feature parity and production readiness.
+### Current Issues
 
----
+* Home page currently contains unnecessary navigation elements.
 
-### Web Application Feature Parity
+* Top navigation bar appears where it should not.
 
-• Compare the Rewards module against the web application and restore all missing functionality.
+* Bottom navigation bar appears where it should not.
 
-• Compare the All Posts page against the web application and restore:
+* Jump-back controls are visible unnecessarily.
+
+### Required Behavior
+
+* Home page should remain a clean landing screen.
+
+* Display only:
+
+  * Welcome Section
+
+  * Four Category Icons
+
+* Each category should behave as an independent marketplace/module.
+
+* Clicking a category should navigate directly to the corresponding All Posts page.
+
+### UI/UX Improvements
+
+* Use large, visually distinct category cards.
+
+* Add category icons and short descriptions.
+
+* Optimize spacing for mobile usability.
+
+### Implementation Plan
+
+1. Remove top navbar from Home page.
+
+2. Remove bottom navbar from Home page.
+
+3. Remove jump-back controls.
+
+4. Redesign Home page layout.
+
+5. Implement category-based navigation routing.
+
+6. Test navigation to all marketplace modules.
+
+### 2. All Posts Page
+
+### Current Issues / Bugs
+
+* Top navigation bar missing.
+
+* Subcategories have poor UI/UX.
+
+* Search not functioning correctly.
+
+* Compare feature not working.
+
+* Filter panel lacks Close button.
+
+* Posts load slowly.
+
+* Infinite scrolling is delayed.
+
+* App freezes during heavy usage.
+
+* Detailed post view missing.
+
+* Action button shows "View" instead of "View Details".
+
+### Missing Features
 
 * Quick Filters
+
 * Subcategory Filters
-* Header Components
-* Search Features
-* Compare Functionality
+
+* Advanced Filters
+
+* Sort By options
+
 * Featured Posts
+
 * Premium Posts
+
 * Boosted Posts
 
-• Ensure the mobile application provides the same level of functionality, usability, and user experience currently available in the web platform.
+* Recently Viewed
+
+* Saved/Wishlist
+
+* Cart
+
+* Notifications
+
+### Required Search Behavior
+
+Search must work on:
+
+* Title
+
+* Description
+
+* Category
+
+* Subcategory
+
+* Tags
+
+* Seller Information
+
+* Location
+
+* Other metadata
+
+### Required Filters
+
+* Category
+
+* Subcategory
+
+* Location
+
+* Language
+
+* Price Range
+
+* Seller Type
+
+* Featured Posts
+
+* Premium Posts
+
+* Boosted Posts
+
+* Recently Added
+
+### Required Sorting
+
+* Latest
+
+* Oldest
+
+* Most Popular
+
+* Price Low to High
+
+* Price High to Low
+
+* Most Viewed
+
+* Featured First
+
+* Premium First
+
+### Detailed Post View Requirements
+
+* Complete post information
+
+* Featured options
+
+* Boost options
+
+* Premium promotion options
+
+* Related posts
+
+* Featured recommendations
+
+* Boosted recommendations
+
+* Premium recommendations
+
+### Implementation Plan
+
+1. Add top navigation bar.
+
+2. Redesign subcategory section.
+
+3. Implement full-text search.
+
+4. Build advanced filter system.
+
+5. Add sorting functionality.
+
+6. Rebuild Compare feature.
+
+7. Add Close button to filters.
+
+8. Implement detailed post page.
+
+9. Add wishlist, cart, and notification icons.
+
+10. Optimize pagination and infinite scroll.
+
+11. Optimize image loading and caching.
+
+12. Ensure parity with web application.
+
+### 3. Feed / My Feed Module
+
+### Current Issues / Bugs
+
+* Feed functionality unclear.
+
+* Publishing page incomplete.
+
+* Users cannot publish posts.
+
+* Bottom navbar missing Feed tab.
+
+* "[TE]" placeholders appear in UI.
+
+### Required Features
+
+* Create Feed Post
+
+* Edit Feed Post
+
+* Save Draft
+
+* Preview Post
+
+* Publish Post
+
+* Delete Post
+
+* Manage Feed Posts
+
+### Publishing Workflow
+
+1. Open Add Feed page via + button.
+
+2. Enter post details.
+
+3. Upload media.
+
+4. Validate fields.
+
+5. Save draft if needed.
+
+6. Preview post.
+
+7. Publish via API.
+
+8. Show success confirmation.
+
+### Implementation Plan
+
+1. Add Feed tab to bottom navbar.
+
+2. Create Add Feed page.
+
+3. Implement media upload support.
+
+4. Add draft management.
+
+5. Integrate publishing APIs.
+
+6. Add error handling and retry logic.
+
+7. Remove all "[TE]" placeholders.
+
+8. Test complete Feed workflow.
+
+### 4. Add Post / Seller Posting Module
+
+### Current Issues
+
+* Seller posting workflow is incomplete.
+
+* Final submission fails.
+
+* Validation is unreliable.
+
+### Required Features
+
+* Create post
+
+* Edit post
+
+* Save draft
+
+* Upload images/videos
+
+* Preview listing
+
+* Publish listing
+
+* Manage existing listings
+
+### Implementation Plan
+
+1. Rebuild Add Post page.
+
+2. Implement multi-step form.
+
+3. Add validation rules.
+
+4. Integrate media upload APIs.
+
+5. Add draft saving.
+
+6. Implement publish API.
+
+7. Add success and failure states.
+
+8. Match web application behavior.
+
+### 5. Rewards Module
+
+### Current Issues / Bugs
+
+* Many web features missing.
+
+* Referral chain incomplete.
+
+* Spin Wheel may be static.
+
+* Daily Secret Code unclear.
+
+* Rewards Activity underdeveloped.
+
+* Tier Progression confusing.
+
+* Impact Dashboard unclear.
+
+### Required Features
+
+### Referral System
+
+* Level 1 referrals
+
+* Level 2 referrals
+
+* Level 3 referrals
+
+* Referral earnings
+
+* Growth metrics
+
+### Rewards Activity
+
+* Reward history
+
+* Referral earnings
+
+* Bonus history
+
+* Daily claims
+
+* Spin history
+
+* Transactions
+
+### Tier Progression
+
+* Current tier
+
+* Next tier
+
+* Benefits
+
+* Progress required
+
+### Implementation Plan
+
+1. Audit all web rewards features.
+
+2. Implement referral hierarchy.
+
+3. Make rewards dynamic per user.
+
+4. Implement real-time reward calculations.
+
+5. Redesign Rewards Activity page.
+
+6. Redesign Tier Progression.
+
+7. Add tooltips and explanations.
+
+8. Test reward distribution flows.
+
+### 6. For You Page
+
+### Current Issues
+
+* Page design is vague.
+
+* Back button navigates incorrectly.
+
+* Header is oversized.
+
+* Missing quick actions.
+
+### Required Features
+
+* Add to Cart
+
+* Save
+
+* Share
+
+* Compare
+
+* Other quick actions
+
+### UI/UX Improvements
+
+* Use same styling as All Posts.
+
+* Reduce header height.
+
+* Remove unnecessary notification icon if unused.
+
+### Implementation Plan
+
+1. Rebuild page using All Posts design system.
+
+2. Remove incorrect back navigation.
+
+3. Add quick-action buttons.
+
+4. Optimize card layout.
+
+5. Test navigation behavior.
+
+### 7. Cart & Wishlist
+
+### Current Issues
+
+* Cart items disappear.
+
+* Wishlist loading fails.
+
+* Wrong heart icon shown in top navbar.
+
+### Required Changes
+
+* Use proper Wishlist/Save icon instead of heart.
+
+* Ensure cart persistence.
+
+* Ensure wishlist synchronization.
+
+* Remove My Offers page if not required.
+
+### Implementation Plan
+
+1. Fix cart API integration.
+
+2. Implement local persistence.
+
+3. Fix wishlist loading issues.
+
+4. Replace top navbar icon.
+
+5. Remove deprecated pages.
+
+### 8. Recently Viewed
+
+### Current Issues
+
+* Recently Viewed page not working.
+
+* Viewed content is not tracked.
+
+### Required Features
+
+* Track viewed posts.
+
+* Track feed posts.
+
+* Track product listings.
+
+* Display history chronologically.
+
+### Implementation Plan
+
+1. Implement view tracking service.
+
+2. Store recent items locally/server-side.
+
+3. Build Recently Viewed page UI.
+
+4. Add clear history option.
+
+### 9. Profile Module
+
+### Current Issues
+
+* Profile information not visible.
+
+* Edit button beside Share/Verify KYC is unnecessary.
+
+* Preferences page not working.
+
+* Location selection is difficult.
+
+* Referral codes missing.
+
+### Required Features
+
+### Personal Information
+
+* Display existing data.
+
+* Show empty fields as N/A.
+
+* Allow editing and saving.
+
+### Preferences
+
+* Display selected values.
+
+* Allow updates.
+
+* Save changes successfully.
+
+### Location Selection
+
+* Country dropdown with search.
+
+* State dropdown with search.
+
+* District dropdown with search.
+
+* City dropdown with search.
+
+### Implementation Plan
+
+1. Remove unnecessary edit button.
+
+2. Redesign Profile page sections.
+
+3. Add expandable/collapsible sections.
+
+4. Implement searchable dropdowns.
+
+5. Auto-generate referral codes.
+
+6. Test profile update APIs.
+
+### 10. Navigation & Layout Consistency
+
+### Current Issues
+
+* Hamburger menu close button fails.
+
+* Back navigation inconsistent.
+
+* Some pages lack bottom navbar.
+
+* Sale Done page missing back button.
+
+### Required Navigation Rules
+
+* All internal pages should show bottom navbar.
+
+* Bottom navbar should contain:
+
+  * All Posts
+
+  * Feed
+
+  * For You
+
+  * Rewards
+
+  * Profile
+
+  * More
+
+* Hamburger menu pages should either:
+
+  * Not show back button, or
+
+  * Redirect to All Posts.
+
+### Implementation Plan
+
+1. Fix hamburger close button.
+
+2. Standardize back navigation behavior.
+
+3. Add bottom navbar to all internal pages.
+
+4. Add back button to Sale Done page.
+
+5. Test navigation across entire app.
+
+### 11. Language Switching
+
+### Current Issues
+
+* Translations are incomplete.
+
+* UI does not update consistently.
+
+### Required Coverage
+
+* Categories
+
+* Subcategories
+
+* Labels
+
+* Menus
+
+* Buttons
+
+* Post data
+
+* Screen content
+
+* UI elements
+
+### Implementation Plan
+
+1. Audit all localization keys.
+
+2. Replace hardcoded text.
+
+3. Implement dynamic language reload.
+
+4. Test all supported languages.
+
+### 12. Premium & Centre Management
+
+### Current Issues
+
+* Centre creation eligibility unclear.
+
+* Trial logic missing.
+
+* Premium checks inconsistent.
+
+### Required Business Rules
+
+* Premium users can create Centres.
+
+* New users receive 7-day trial.
+
+* After trial, Centre creation is locked.
+
+* Non-premium users see upgrade prompt.
+
+### Implementation Plan
+
+1. Implement trial tracking.
+
+2. Implement subscription validation.
+
+3. Add upgrade screen.
+
+4. Document complete Centre workflow.
+
+5. Test trial expiry scenarios.
+
+### 13. Performance & Scalability
+
+### Affected Pages
+
+* All Posts
+
+* Feed
+
+* My Posts
+
+* For You
+
+* My Home
+
+* Wishlist
+
+### Required Optimizations
+
+* API call optimization
+
+* Pagination optimization
+
+* Infinite scroll optimization
+
+* Image lazy loading
+
+* Data caching
+
+* Memory management
+
+* Network request batching
+
+* Render optimization
+
+### Implementation Plan
+
+1. Conduct performance profiling.
+
+2. Identify expensive renders.
+
+3. Implement lazy loading.
+
+4. Add caching layer.
+
+5. Optimize API payloads.
+
+6. Test under high user load.
+
+### 14. Platform-Wide Audit & Web Parity
+
+### Audit Scope
+
+* Missing features
+
+* Half-implemented features
+
+* Non-functional features
+
+* UI inconsistencies
+
+* Navigation issues
+
+* Performance bottlenecks
+
+### Required Deliverables
+
+* Screen-by-screen comparison with web app.
+
+* Feature parity report.
+
+* UI/UX rating for each screen.
+
+* Functional completeness rating.
+
+* Performance rating.
+
+* Prioritized implementation roadmap.
+
+### Final Implementation Roadmap
+
+### Phase 1 – Critical Bugs
+
+1. Navigation fixes
+
+2. Hamburger close button
+
+3. Back button issues
+
+4. Feed publishing fix
+
+5. All Posts publishing fix
+
+6. Cart/Wishlist synchronization
+
+7. Profile data visibility
+
+### Phase 2 – Core Features
+
+1. Search
+
+2. Filters
+
+3. Sorting
+
+4. Compare
+
+5. Detailed Post View
+
+6. Recently Viewed
+
+7. Referral System
+
+8. Premium Trial System
+
+### Phase 3 – UI/UX Rebuild
+
+1. All Posts redesign
+
+2. For You redesign
+
+3. Rewards redesign
+
+4. Profile redesign
+
+5. Subcategory redesign
+
+### Phase 4 – Performance
+
+1. API optimization
+
+2. Caching
+
+3. Image optimization
+
+4. Pagination tuning
+
+5. Memory optimization
+
+### Phase 5 – Web Parity & QA
+
+1. Feature parity audit
+
+2. Regression testing
+
+3. Load testing
+
+4. Localization testing
+
+5. Production readiness review
+
+Expected Outcome
+
+After implementing the above roadmap, the Android application will achieve:
+
+* Full feature parity with the web application
+
+* Stable publishing workflows
+
+* Consistent navigation
+
+* Scalable performance
+
+* Complete rewards ecosystem
+
+* Reliable profile management
+
+* Advanced search and filtering
+
+* Production-ready user experience

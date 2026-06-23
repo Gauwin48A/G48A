@@ -20,7 +20,7 @@ import {
   Sparkles,
   ShoppingBag,
   Newspaper,
-  Heart,
+  Bookmark,
   Search,
   Bell,
   Home,
@@ -388,9 +388,9 @@ const RecentlyViewed = () => {
       },
       wishlist: {
         label: t("wishlist") || "Wishlist",
-        icon: Heart,
+        icon: Bookmark,
         badgeClass:
-          "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-300 border border-pink-200/60 dark:border-pink-500/20",
+          "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/20",
       },
       search: {
         label: t("search") || "Search",
@@ -449,8 +449,8 @@ const RecentlyViewed = () => {
       {
         id: "wishlist",
         label: t("wishlist") || "Wishlist",
-        icon: Heart,
-        color: "from-pink-500 to-rose-600",
+        icon: Bookmark,
+        color: "from-indigo-500 to-violet-600",
       },
       {
         id: "search",

@@ -31,14 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -562,7 +562,7 @@ fun PostGridCard(
                     )
                 }
 
-                // Wishlist heart
+                // Wishlist save
                 var wishlisted by remember { mutableStateOf(false) }
                 Box(
                     modifier = Modifier
@@ -575,9 +575,9 @@ fun PostGridCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        if (wishlisted) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
                         contentDescription = "Wishlist",
-                        tint = if (wishlisted) Color(0xFFEF4444) else Color.White,
+                        tint = if (wishlisted) Color(0xFF6366F1) else Color.White,
                         modifier = Modifier.size(14.dp),
                     )
                 }

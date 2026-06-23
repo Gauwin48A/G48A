@@ -520,7 +520,7 @@ private fun PromoBanner(onOpenAllPosts: () -> Unit, modifier: Modifier = Modifie
 private data class QuickLink(val label: String, val emoji: String, val key: String, val color: Color)
 
 private val QUICK_LINKS = listOf(
-    QuickLink("Wishlist", "❤️", "wishlist", Color(0xFFEF4444)),
+    QuickLink("Wishlist", "\uD83D\uDD16", "wishlist", Color(0xFF6366F1)),
     QuickLink("Offers", "🎁", "offers", Color(0xFF10B981)),
     QuickLink("Compare", "⚖️", "compare", Color(0xFF6366F1)),
     QuickLink("Rewards", "🪙", "rewards", Color(0xFFF59E0B)),

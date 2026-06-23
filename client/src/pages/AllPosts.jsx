@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  FaHeart as He,
-  FaRegHeart as qe,
+  FaBookmark as He,
+  FaRegBookmark as qe,
   FaEye as Qe,
   FaHandHoldingHeart as Ye,
   FaArrowRight as Bo,
@@ -452,11 +452,15 @@ const ve = 5,
         clearCategory: clearCategoryMode,
         clearSubcategory: clearSubcategoryMode,
       } = Zt(),
+      isForYouPath = useMemo(
+        () => (Z.pathname || "").replace(/\/+$/, "").startsWith("/for-you"),
+        [Z.pathname],
+      ),
       isForYouMode = useMemo(() => {
         const params = new URLSearchParams(Z.search);
-        return params.get("mode") === "for-you";
-      }, [Z.search]),
-      basePath = "/all-posts",
+        return isForYouPath || params.get("mode") === "for-you";
+      }, [Z.search, isForYouPath]),
+      basePath = isForYouMode ? "/for-you" : "/all-posts",
       returnTo = useMemo(() => `${Z.pathname}${Z.search}`, [Z.pathname, Z.search]),
       subcategoryCandidatesByName = useMemo(() => {
         const map = {};
@@ -765,8 +769,8 @@ const ve = 5,
       // a React re-render, effects may fire with the OLD Z.pathname before the
       // component re-renders — checking window.location catches this.
       const livePathname = typeof window !== 'undefined' ? window.location.pathname : Z.pathname;
-      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings')) return;
-      const effectiveBasePath = '/all-posts';
+      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings') && !livePathname.startsWith('/for-you')) return;
+      const effectiveBasePath = isForYouMode ? '/for-you' : '/all-posts';
       const params = new URLSearchParams(Z.search);
       const currentGroup =
         params.get("category_group") || params.get("categoryGroup") || params.get("group") || "";
@@ -801,6 +805,7 @@ const ve = 5,
       }
     }, [
       basePath,
+      isForYouMode,
       categoryModeLoading,
       hasCategoryMode,
       Z.pathname,
@@ -816,8 +821,8 @@ const ve = 5,
       // a React re-render, effects may fire with the OLD Z.pathname before the
       // component re-renders — checking window.location catches this.
       const livePathname = typeof window !== 'undefined' ? window.location.pathname : Z.pathname;
-      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings')) return;
-      const effectiveBasePath = '/all-posts';
+      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings') && !livePathname.startsWith('/for-you')) return;
+      const effectiveBasePath = isForYouMode ? '/for-you' : '/all-posts';
       const nextCategory = categoryModeCategory?.name || "";
       const normalizedCategory = nextCategory && nextCategory !== "All" ? nextCategory : "";
       const normalizedActiveApp = activeApp ? String(activeApp).trim().toLowerCase() : "";
@@ -937,9 +942,7 @@ const ve = 5,
       m,
       subcategoryIdByName,
     ]);
-    const [ae, Se] = useState({}),
-      [Ae, se] = useState({}),
-      [De, oe] = useState({}),
+    const [De, oe] = useState({}),
       [ne, M] = useState(""),
       [Ie, le] = useState(!1),
       [G, ie] = useState(null),
@@ -1822,6 +1825,9 @@ const ve = 5,
                     : t.sortBy === "date_asc"
                       ? (e.append("sortBy", "created_at"),
                         e.append("sortOrder", "asc"))
+                      : t.sortBy === "views_desc"
+                        ? (e.append("sortBy", "views"),
+                          e.append("sortOrder", "desc"))
                       : latestWindow
                         ? (e.append("sortBy", "created_at"),
                           e.append("sortOrder", "desc"))
@@ -1974,14 +1980,11 @@ const ve = 5,
               requestAnimationFrame(restoreScroll);
               setTimeout(restoreScroll, 350);
             }
-            const _ = {},
-              Vt = {};
+            const Vt = {};
             Array.isArray(safeTranslatedSeed) &&
               safeTranslatedSeed.forEach((d) => {
-                (_[d.post_id || d.id] = d.likes || 0),
-                  (Vt[d.post_id || d.id] = d.views_count || d.views || 0);
+                Vt[d.post_id || d.id] = d.views_count || d.views || 0;
               }),
-              se((d) => ({ ...d, ..._ })),
               oe((d) => ({ ...d, ...Vt })),
               ee(latestWindow ? !1 : p.length === requestLimit),
               setLastLiveSyncAt(Date.now());
@@ -2348,6 +2351,14 @@ const ve = 5,
         });
         return n;
       }
+      if (sortKey === "views_desc") {
+        n.sort((a, i) => {
+          const p = a.stats?.views ?? a.views ?? a.view_count ?? a.viewCount ?? 0;
+          const F = i.stats?.views ?? i.views ?? i.view_count ?? i.viewCount ?? 0;
+          return F - p;
+        });
+        return n;
+      }
       return o;
     }, [
         f,
@@ -2543,15 +2554,7 @@ const ve = 5,
         ),
         [f, W],
       );
-    const Me = async (e) => {
-        const a = ae[e];
-        Se((o) => ({ ...o, [e]: !o[e] })),
-          se((o) => ({ ...o, [e]: (o[e] || 0) + (a ? -1 : 1) }));
-        try {
-          await A.post(`/posts/${e}/like`);
-        } catch {}
-      },
-      handleSharePost = async (e) => {
+    const handleSharePost = async (e) => {
         const a = I(e);
         if (!a) return;
         const o = `${window.location.origin}/post/${a}`;
@@ -2913,7 +2916,8 @@ const ve = 5,
       "div",
       {
           className:
-            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`,
+            `mhub-page-allposts ${isForYouMode ? "mhub-page-foryou" : ""} mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`,
+          "data-feed-mode": isForYouMode ? "for-you" : "all-posts",
       },
       showModeBanner &&
         React.createElement(
@@ -3070,34 +3074,6 @@ const ve = 5,
           ref: secondaryStickyRef,
           style: { top: `${secondaryStickyTop}px` },
         },
-        React.createElement(AllPostsCategoryBar, {
-          categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
-            ? appScopedCategoryList.map((c) => ({
-                id: c?.category_id || c?.id || c?.name,
-                name: c?.name || "",
-                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
-                display_order: c?.display_order ?? 0,
-              }))
-            : (Array.isArray(categoryList) ? categoryList : []).map((c) => ({
-                id: c?.category_id || c?.id || c?.name,
-                name: c?.name || "",
-                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
-              })),
-          activeCategory: activeCategoryBarLabel,
-          onSelectAll: handleCategoryBarSelectAll,
-          onSelectCategory: handleCategoryBarSelect,
-          subcategories: showSubcategoryRail ? allPostsSubcategoryBarList : [],
-          activeSubcategory: activeSubcategoryLabel || "All",
-          onSelectAllSubcategories: Ee,
-          onSelectSubcategory: handleSubcategoryBarSelect,
-          translate: tr,
-          icons: Le,
-          iconResolver: (name) => Le[name] || "\uD83D\uDCE6",
-          subcategoryIconResolver: () => "\uD83C\uDFF7\uFE0F",
-          maxWidthClass: pageMaxWidthClass,
-          compact: !0,
-          showCategoryCounts: !1,
-        }),
         C && React.createElement(
           "div",
           { className: "w-full mhub-allposts-filters" },
@@ -3170,45 +3146,6 @@ const ve = 5,
                     autoRefreshEnabled
                       ? tr("live_updates_on", "Live")
                       : tr("live_updates_off", "Live"),
-                  ),
-                ),
-                React.createElement(
-                  "div",
-                  {
-                    className:
-                      "quick-filters-sort inline-flex items-center gap-1.5 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
-                  },
-                  React.createElement(
-                    "span",
-                    { className: "px-1.5 text-xs uppercase tracking-wide" },
-                    tr("sort", "Sort"),
-                  ),
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => b({ sortBy: "date_desc", latestWindow: "" }),
-                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "date_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
-                    },
-                    tr("newest", "Newest"),
-                  ),
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => b({ sortBy: "price_asc", latestWindow: "" }),
-                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "price_asc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
-                    },
-                    tr("price_low", "Price \u2191"),
-                  ),
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => b({ sortBy: "price_desc", latestWindow: "" }),
-                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "price_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
-                    },
-                    tr("price_high", "Price \u2193"),
                   ),
                 ),
                 React.createElement(PageDensityToggle, {
@@ -3288,6 +3225,35 @@ const ve = 5,
               ),
           ),
         ),
+        React.createElement(AllPostsCategoryBar, {
+          categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
+            ? appScopedCategoryList.map((c) => ({
+                id: c?.category_id || c?.id || c?.name,
+                name: c?.name || "",
+                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
+                display_order: c?.display_order ?? 0,
+              }))
+            : (Array.isArray(categoryList) ? categoryList : []).map((c) => ({
+                id: c?.category_id || c?.id || c?.name,
+                name: c?.name || "",
+                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
+              })),
+          activeCategory: activeCategoryBarLabel,
+          onSelectAll: handleCategoryBarSelectAll,
+          onSelectCategory: handleCategoryBarSelect,
+          subcategories: showSubcategoryRail ? allPostsSubcategoryBarList : [],
+          activeSubcategory: activeSubcategoryLabel || "All",
+          onSelectAllSubcategories: Ee,
+          onSelectSubcategory: handleSubcategoryBarSelect,
+          translate: tr,
+          icons: Le,
+          iconResolver: (name) => Le[name] || "\uD83D\uDCE6",
+          subcategoryIconResolver: () => "\uD83C\uDFF7\uFE0F",
+          maxWidthClass: pageMaxWidthClass,
+          compact: !0,
+          showCategoryCounts: !1,
+        })
+,
       ),
       dealsBannerNode,
         React.createElement(
@@ -3687,6 +3653,20 @@ const ve = 5,
                             },
                             title,
                           ),
+                          e.rating || e.seller_rating || (e.user && e.user.rating) ? React.createElement(
+                            "div",
+                            { className: "flex items-center gap-1.5 mt-2" },
+                            React.createElement(
+                              "span",
+                              { className: "text-amber-400 text-sm" },
+                              "★",
+                            ),
+                            React.createElement(
+                              "span",
+                              { className: "text-xs font-semibold text-slate-600 dark:text-slate-300" },
+                              Number(e.rating || e.seller_rating || (e.user && e.user.rating) || 0).toFixed(1),
+                            ),
+                          ) : null,
                           React.createElement(
                             "div",
                             {
@@ -3981,13 +3961,20 @@ const ve = 5,
                           React.createElement(
                             "button",
                               {
+                                type: "button",
                                 className:
-                                  "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[13px] font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
-                                onClick: () => Me(a),
+                                  `shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[13px] font-semibold focus:outline-none dark:bg-[var(--chip-bg)] ${savedPosts[a] ? "text-indigo-600 dark:text-indigo-300" : ""}`,
+                                onClick: () => toggleSave(a),
+                                "aria-label": savedPosts[a]
+                                  ? s("saved", { defaultValue: "Saved" })
+                                  : s("save", { defaultValue: "Save" }),
+                                title: savedPosts[a]
+                                  ? s("saved", { defaultValue: "Saved" })
+                                  : s("save", { defaultValue: "Save" }),
                               },
-                              ae[a]
+                              savedPosts[a]
                                 ? React.createElement(He, {
-                                    className: "w-4 h-4 text-red-500 dark:text-red-300",
+                                    className: "w-4 h-4 text-indigo-500 dark:text-indigo-300",
                                   })
                                 : React.createElement(qe, {
                                     className:
@@ -3996,12 +3983,9 @@ const ve = 5,
                               React.createElement(
                                 "span",
                                 { className: "hidden sm:inline" },
-                                s("like", { defaultValue: "Like" }),
-                              ),
-                              React.createElement(
-                                "span",
-                                { className: "text-xs" },
-                                Ae[a] || 0,
+                                savedPosts[a]
+                                  ? s("saved", { defaultValue: "Saved" })
+                                  : s("save", { defaultValue: "Save" }),
                               ),
                             ),
                             React.createElement(
@@ -4310,6 +4294,3 @@ const ve = 5,
   };
 var Nt = AllPosts;
 export { Nt as default };
-
-
-

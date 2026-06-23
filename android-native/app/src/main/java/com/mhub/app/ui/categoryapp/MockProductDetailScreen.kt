@@ -29,13 +29,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -779,9 +779,9 @@ private fun ProductDetailBottomBar(
                 },
             ) {
                 Icon(
-                    if (isWishlisted) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    if (isWishlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                     contentDescription = null,
-                    tint = if (isWishlisted) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurface,
+                    tint = if (isWishlisted) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurface,
                 )
             }
             if (product.inStock) {

@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ShoppingCart, Heart, Clock, Search, Rss, Star,
+  ShoppingCart, Clock, Search, Rss, Star,
   Package, TrendingUp, BarChart3, Bookmark, MessageSquare,
   FileText,
 } from "lucide-react";
 
 const CONFIGS = {
   wishlist: {
-    icon: Heart,
+    icon: Bookmark,
     iconColor: "text-rose-500",
     bgGradient: "from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20",
     title: "Your wishlist is empty",

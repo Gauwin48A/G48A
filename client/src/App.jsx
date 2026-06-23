@@ -560,7 +560,7 @@ function AppShell() {
                 if (params.get('verifiedOnly')) count++;
                 return count;
               })()}
-              onClearFilters={() => navigate('/all-posts')}
+              onClearFilters={() => navigate(normalizedPath.startsWith('/for-you') ? '/for-you?mode=for-you' : '/all-posts')}
               onToggleAutoRefresh={() => navigate(normalizedPath + '?_=' + Date.now(), { replace: true })}
             />
           )}

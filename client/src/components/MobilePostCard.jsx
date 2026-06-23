@@ -1,7 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
 import {
-  FaHeart,
-  FaRegHeart,
   FaShare,
   FaEye,
   FaHandHoldingHeart,
@@ -160,7 +158,7 @@ const MobilePostCard = React.memo(function MobilePostCard({
             {imageList.length}
           </span>
         )}
-        {/* Wishlist heart */}
+        {/* Wishlist save */}
         <button
           type="button"
           className="mhub-grid-card-heart"
@@ -168,8 +166,8 @@ const MobilePostCard = React.memo(function MobilePostCard({
           aria-label={isSaved ? t("saved", "Saved") : t("save", "Save")}
         >
           {isSaved
-            ? <FaHeart className="w-4 h-4 text-red-500" />
-            : <FaRegHeart className="w-4 h-4" />
+            ? <FaBookmark className="w-4 h-4 text-indigo-500" />
+            : <FaRegBookmark className="w-4 h-4" />
           }
         </button>
       </div>

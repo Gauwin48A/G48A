@@ -13,7 +13,7 @@ import {
   Trash2,
   Info,
   Tag,
-  Heart,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -388,7 +388,7 @@ const Cart = () => {
                   className="border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 rounded-xl px-6 h-12 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-200 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950"
                 >
                   <Link to="/wishlist">
-                    <Heart className="w-4 h-4 mr-2" />
+                    <Bookmark className="w-4 h-4 mr-2" />
                     {t("my_wishlist") || "My Wishlist"}
                   </Link>
                 </Button>

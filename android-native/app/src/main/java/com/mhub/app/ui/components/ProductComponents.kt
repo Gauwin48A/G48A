@@ -20,10 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -187,9 +187,9 @@ fun EnhancedProductCard(
                         },
                 ) {
                     Icon(
-                        imageVector = if (isWishlisted) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        imageVector = if (isWishlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                         contentDescription = null,
-                        tint = if (isWishlisted) Color(0xFFE53935) else Color.White,
+                        tint = if (isWishlisted) Color(0xFF6366F1) else Color.White,
                         modifier = Modifier.size(20.dp),
                     )
                 }

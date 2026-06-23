@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,8 +66,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -110,8 +110,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.content.Intent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
@@ -216,6 +214,7 @@ private val MOCK_EXPLORE_POSTS = listOf(
 
 data class ExploreState(
     val ecosystemKey: String? = null,
+    val forYouMode: Boolean = false,
     val sortBy: String = "newest",
     val filterCondition: String = "any",  // "any" | "new" | "used"
     val filterSubcategory: String? = null,
@@ -248,6 +247,7 @@ data class ExploreState(
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val postsRepo: PostsRepository,
+    private val recommendationsRepo: RecommendationsRepository,
     private val wishlistRepo: WishlistRepository,
     private val categoriesRepo: CategoriesRepository,
     private val tiersRepo: com.mhub.app.data.repository.TiersRepository,
@@ -273,6 +273,18 @@ class ExploreViewModel @Inject constructor(
 
     fun dismissPlanBanner() {
         _state.value = _state.value.copy(showPlanExpiryBanner = false)
+    }
+
+    fun setForYouMode(enabled: Boolean) {
+        if (_state.value.forYouMode == enabled) return
+        _state.value = _state.value.copy(
+            forYouMode = enabled,
+            quickFilter = null,
+            searchQuery = "",
+            searchResults = emptyList(),
+            isSearching = false,
+        )
+        loadPosts(reset = true)
     }
 
     private fun checkPlanExpiry() {
@@ -394,6 +406,44 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             val condition = _state.value.filterCondition.takeIf { it != "any" }
             val subcategory = _state.value.filterSubcategory
+            if (_state.value.forYouMode && reset) {
+                val s = _state.value
+                val minPrice = s.filterMinPrice.takeIf { it > 0f }?.toDouble()
+                val maxPrice = s.filterMaxPrice.takeIf { it < 500000f }?.toDouble()
+                val recommended = when (val result = recommendationsRepo.forYou(
+                    search = s.searchQuery.takeIf { it.isNotBlank() },
+                    categoryId = categoryKey,
+                    minPrice = minPrice,
+                    maxPrice = maxPrice,
+                )) {
+                    is ApiResult.Success -> result.data
+                    is ApiResult.Failure -> emptyList()
+                }
+                val fallback = if (recommended.isEmpty()) {
+                    when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
+                        is ApiResult.Success -> result.data
+                        is ApiResult.Failure -> {
+                            var list = if (categoryKey != null) MOCK_EXPLORE_POSTS.filter {
+                                it.category.equals(categoryKey, ignoreCase = true)
+                            } else MOCK_EXPLORE_POSTS
+                            if (!subcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
+                            if (condition != null) list = list.filter { it.condition?.lowercase() == condition }
+                            list.ifEmpty { MOCK_EXPLORE_POSTS.shuffled() }
+                        }
+                    }
+                } else {
+                    recommended
+                }
+                _state.value = _state.value.copy(
+                    loadingPosts = false,
+                    loadingMore = false,
+                    posts = applyQuickFilter(applySort(fallback)),
+                    page = 2,
+                    hasMore = false,
+                    errorMessage = null,
+                )
+                return@launch
+            }
             when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
                     val newPosts = result.data
@@ -649,7 +699,22 @@ class ExploreViewModel @Inject constructor(
     }
 }
 
-// Map category name → emoji for visual richness
+// Map subcategory name → emoji for visual richness
+private fun subcategoryEmoji(name: String): String {
+    return when (name) {
+        "Phones" -> "📱"; "Laptops" -> "💻"; "Tablets" -> "📟"; "Cameras" -> "📷"
+        "Audio" -> "🎧"; "Gaming" -> "🎮"; "Accessories" -> "🔌"
+        "Men's Clothing" -> "👔"; "Women's Clothing" -> "👗"; "Shoes" -> "👟"
+        "Bags" -> "👜"; "Watches" -> "⌚"; "Jewellery" -> "💍"
+        "Cars" -> "🚗"; "Motorcycles" -> "🏍️"; "Bicycles" -> "🚲"
+        "Trucks" -> "🚛"; "Spare Parts" -> "🔧"
+        "Home & Furniture" -> "🏠"; "Books" -> "📚"; "Sports" -> "⚽"
+        "Health & Beauty" -> "💄"; "Toys" -> "🧸"; "Services" -> "💼"
+        "Agriculture" -> "🌾"; "Real Estate" -> "🏘️"
+        else -> "📦"
+    }
+}
+
 private fun categoryEmoji(name: String): String {
     val n = name.lowercase()
     return when {
@@ -683,6 +748,10 @@ fun ExploreScreen(
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
     onAddPost: () -> Unit = {},
+    onLanguage: () -> Unit = {},
+    onLocation: () -> Unit = {},
+    onToggleTheme: () -> Unit = {},
+    forYouMode: Boolean = false,
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -696,13 +765,6 @@ fun ExploreScreen(
 
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
-    val ecosystemLabel = when (ecosystemKey) {
-        "electronics" -> "💻 Electronics"
-        "fashion" -> "👗 Fashion"
-        "vehicles" -> "🚗 Vehicles"
-        "others" -> "✨ Others"
-        else -> null
-    }
     val ecosystemSubcategories: List<String> = when {
         state.subcategories.isNotEmpty() -> state.subcategories
         ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
@@ -717,23 +779,23 @@ fun ExploreScreen(
     var draftSubcategory by remember(showFilterSheet) { mutableStateOf(state.filterSubcategory) }
     var draftPriceRange by remember(showFilterSheet) { mutableStateOf(state.filterMinPrice..state.filterMaxPrice) }
 
-    // Sync ecosystem into ViewModel whenever it changes
+    // Sync route mode and ecosystem into ViewModel whenever they change
+    LaunchedEffect(forYouMode) { viewModel.setForYouMode(forYouMode) }
     LaunchedEffect(ecosystemKey) { viewModel.setEcosystem(ecosystemKey) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column(verticalArrangement = Arrangement.Center) {
-                        Text("All Posts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                        Text(
-                            ecosystemLabel ?: "Browse marketplace listings",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+            com.mhub.app.ui.components.MhubTopBar(
+                onSearch = onOpenSearch,
+                onWishlist = onOpenWishlist,
+                onRecentlyViewed = onOpenRecentlyViewed,
+                onLanguage = onLanguage,
+                onLocation = onLocation,
+                onToggleTheme = onToggleTheme,
+                onNotifications = onOpenNotifications,
+                onCart = onOpenCart,
+                onFilter = { showFilterSheet = true },
+                activeFilterCount = if (state.hasActiveFilters) 1 else 0,
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -1351,38 +1413,69 @@ private fun AllPostsBrowse(
                 shadowElevation = 2.dp,
             ) {
                 Column {
+                    // Grid/List toggle only
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        sortOptions.forEach { (key, label) ->
-                            val isSelected = state.sortBy == key
-                            FilterChip(selected = isSelected, onClick = { onSetSort(key) }, label = { Text(label, style = MaterialTheme.typography.labelMedium) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White), shape = RoundedCornerShape(20.dp))
-                        }
-                        // Grid/List view toggle (web parity)
-                        IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(32.dp)) {
-                            Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(28.dp)) {
+                            Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     if (ecosystemSubcategories.isNotEmpty()) {
+                        // Subcategories section header
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Categories",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            )
+                        }
+                        // Subcategory chips in a wrapping FlowRow
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             ecosystemSubcategories.forEach { sub ->
                                 val isSelected = state.filterSubcategory == sub
+                                val emoji = subcategoryEmoji(sub)
                                 FilterChip(
                                     selected = isSelected,
                                     onClick = { onSelectSubcategory(sub) },
-                                    label = { Text(sub, style = MaterialTheme.typography.labelSmall) },
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.secondary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface),
-                                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant, enabled = true, selected = isSelected),
+                                    label = {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text(emoji, fontSize = 12.sp)
+                                            Text(sub, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    border = if (isSelected) null else FilterChipDefaults.filterChipBorder(
+                                        borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                        enabled = true,
+                                        selected = false,
+                                    ),
                                     shape = RoundedCornerShape(20.dp),
                                 )
                             }
@@ -1432,12 +1525,12 @@ private fun AllPostsBrowse(
                                                 Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
                                             }
                                         }
-                                        // Wishlist icon overlay (top-right)
+                                        // Wishlist save overlay (top-right)
                                         val isWished = wishlisted.contains(post.stableId)
                                         Icon(
-                                            if (isWished) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                            if (isWished) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
                                             contentDescription = null,
-                                            tint = if (isWished) Color(0xFFEF4444) else androidx.compose.ui.graphics.Color.White,
+                                            tint = if (isWished) Color(0xFF6366F1) else androidx.compose.ui.graphics.Color.White,
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
                                                 .padding(8.dp)
@@ -1566,7 +1659,7 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun AllPostCard(
+fun AllPostCard(
     post: Post,
     onClick: () -> Unit,
     isWishlisted: Boolean = false,
@@ -1980,7 +2073,7 @@ private fun TrendingCard(
                         )
                     }
                 }
-                // Heart + Compare overlay (top-end)
+                // Save + Compare overlay (top-end)
                 Row(
                     modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -1993,9 +2086,9 @@ private fun TrendingCard(
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                             Icon(
-                                if (isWishlisted) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                if (isWishlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                                 contentDescription = null,
-                                tint = if (isWishlisted) Color(0xFFEF4444) else Color.White,
+                                tint = if (isWishlisted) Color(0xFF6366F1) else Color.White,
                                 modifier = Modifier.size(14.dp),
                             )
                         }

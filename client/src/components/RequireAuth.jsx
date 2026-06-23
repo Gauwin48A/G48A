@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { PageAuthGateState } from "@/components/page-state/PageStateBlocks";
 import {
-  Gift, UserCircle, LayoutDashboard, Bell, ShoppingCart, Heart,
+  Gift, UserCircle, LayoutDashboard, Bell, ShoppingCart,
   CreditCard, MessageSquare, HelpCircle, ShieldCheck, MapPin, Lock,
   PlusCircle, Tag, Edit3, Sparkles, Package, ShoppingBag, Rss,
   BarChart3, Clock, FileText, Trash2, Eye, Search, Bookmark,
@@ -125,7 +125,7 @@ const AUTH_GATE_CONTENT = {
     title: "Sign in to view your Wishlist",
     description: "Save favorites and get notified when prices change.",
     highlights: ["Save favorites", "Deal alerts", "One-tap checkout"],
-    icon: Heart,
+    icon: Bookmark,
     benefits: [
       { label: "Save Items", hint: "Bookmark for later" },
       { label: "Price Watch", hint: "Alert on price drops" },
