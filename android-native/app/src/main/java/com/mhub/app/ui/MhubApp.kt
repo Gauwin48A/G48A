@@ -123,7 +123,6 @@ import com.mhub.app.ui.commerce.SaleUndoneScreen
 import com.mhub.app.ui.commerce.SavedSearchesScreen
 import com.mhub.app.ui.commerce.SoldPostsScreen
 import com.mhub.app.ui.commerce.TierSelectionScreen
-import com.mhub.app.ui.discovery.NearbyScreen
 import com.mhub.app.ui.explore.ExploreScreen
 import com.mhub.app.ui.feed.FeedScreen
 import com.mhub.app.ui.home.CategoryHubScreen
@@ -840,15 +839,6 @@ fun MhubApp(
                 }
             }
 
-            composable(Routes.NEARBY) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                    NearbyScreen(
-                        onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                    )
-                }
-            }
-
             composable(Routes.SCANNER) {
                 com.mhub.app.ui.scanner.ScannerScreen(
                     onBack = { navController.popBackStack() },
@@ -1279,7 +1269,6 @@ fun MhubApp(
                         onOpenForYou = { drawerNav(Routes.FOR_YOU) },
                         onOpenRewards = { drawerNav(Routes.REWARDS) },
                         onOpenOffers = { drawerNav(Routes.OFFERS) },
-                        onOpenNearby = { drawerNav(Routes.NEARBY) },
                         onOpenDashboard = { drawerNav(Routes.DASHBOARD) },
                         onOpenBought = { drawerNav(Routes.BOUGHT_POSTS) },
                         onOpenSold = { drawerNav(Routes.SOLD_POSTS) },
@@ -1374,7 +1363,7 @@ fun MainShell(
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                     onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                     onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                    onLocation = { navController.navigate(Routes.NEARBY) { launchSingleTop = true } },
+                    currentThemeMode = currentThemeMode,
                     onToggleTheme = {
                         val modes = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK)
                         val nextIdx = (modes.indexOf(currentThemeMode) + 1) % modes.size

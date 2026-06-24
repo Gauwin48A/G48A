@@ -17,7 +17,6 @@ fun ForYouScreen(
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
     onLanguage: () -> Unit = {},
-    onLocation: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
 ) {
     ExploreScreen(
@@ -30,7 +29,6 @@ fun ForYouScreen(
         onOpenRecentlyViewed = onOpenRecentlyViewed,
         onOpenWishlist = onOpenWishlist,
         onLanguage = onLanguage,
-        onLocation = onLocation,
         onToggleTheme = onToggleTheme,
         forYouMode = true,
     )

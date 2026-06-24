@@ -19,10 +19,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
+import com.mhub.app.data.local.ThemeMode
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -83,7 +84,7 @@ fun MhubTopBar(
     onWishlist: () -> Unit = {},
     onRecentlyViewed: () -> Unit = {},
     onLanguage: () -> Unit = {},
-    onLocation: () -> Unit = {},
+    currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     onNotifications: () -> Unit = {},
     onCart: () -> Unit = {},
@@ -194,21 +195,11 @@ fun MhubTopBar(
                     )
                 }
 
-                // Location filter
-                IconButton(onClick = onLocation) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = "Location",
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
                 // Dark/Light theme toggle
                 IconButton(onClick = onToggleTheme) {
                     Icon(
-                        Icons.Outlined.DarkMode,
-                        contentDescription = "Theme",
+                        if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                        contentDescription = if (currentThemeMode == ThemeMode.DARK) "Switch to light mode" else "Switch to dark mode",
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),
                     )

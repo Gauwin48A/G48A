@@ -118,6 +118,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -143,6 +144,7 @@ data class PostDetailState(
     val currentPlan: String? = null,   // "basic" | "bronze" | "silver" | "premium"
     val coinBalance: Int = 0,
     val boostMessage: String? = null,
+    val compareError: String? = null,
 )
 
 data class OwnerInsights(
@@ -383,12 +385,30 @@ class PostDetailViewModel @Inject constructor(
 
     fun toggleCompare() {
         val newValue = !_state.value.inCompareList
-        _state.value = _state.value.copy(inCompareList = newValue)
-        // Save/remove from shared store so CompareScreen works without backend
         if (newValue) {
-            _state.value.post?.let { SharedExploreStore.addCompare(it) }
+            // Subcategory match check: only allow comparing similar products
+            val post = _state.value.post
+            val existingPosts = SharedExploreStore.comparePosts
+            if (existingPosts.isNotEmpty() && post != null) {
+                val firstSubcategory = existingPosts.first().subcategory
+                if (firstSubcategory != null && post.subcategory != null &&
+                    !firstSubcategory.equals(post.subcategory, ignoreCase = true)
+                ) {
+                    _state.value = _state.value.copy(
+                        compareError = "Can only compare similar products (${firstSubcategory})"
+                    )
+                    viewModelScope.launch {
+                        delay(3000)
+                        _state.value = _state.value.copy(compareError = null)
+                    }
+                    return
+                }
+            }
+            _state.value = _state.value.copy(inCompareList = true)
+            post?.let { SharedExploreStore.addCompare(it) }
             viewModelScope.launch { repo.addToCompare(postId) }
         } else {
+            _state.value = _state.value.copy(inCompareList = false)
             SharedExploreStore.removeCompare(postId)
             viewModelScope.launch { repo.removeFromCompare(postId) }
         }
@@ -1407,6 +1427,15 @@ fun PostDetailScreen(
                             var offerAmount by remember { mutableStateOf("") }
                             var showBoostPanel by remember { mutableStateOf(false) }
 
+                            // Compare error banner
+                            if (state.compareError != null) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2).copy(alpha = 0.95f), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                                    Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.Compare, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                                        Text(state.compareError ?: "", color = Color(0xFFDC2626), fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
                             if (state.offerSent) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))

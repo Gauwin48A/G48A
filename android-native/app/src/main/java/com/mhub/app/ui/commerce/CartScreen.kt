@@ -525,46 +525,178 @@ fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
 
 @Composable
 private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int) -> Unit, onSaveForLater: () -> Unit = {}) {
-    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-        Column {
-            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (item.imageUrl != null) {
-                    AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
-                } else {
-                    Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(24.dp))
+    val initial = (item.sellerName?.firstOrNull() ?: 'S').uppercaseChar().toString()
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            // ── Image with price overlay ──
+            if (item.imageUrl != null) {
+                Box(Modifier.fillMaxWidth().height(180.dp)) {
+                    AsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                    )
+                    // Price badge — bottom-left (like AllPostCard)
+                    item.price?.let { price ->
+                        Surface(
+                            Modifier.align(Alignment.BottomStart).padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                        ) {
+                            Column(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                                Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White)
+                                Text("Qty: ${item.quantity}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            }
+                        }
+                    }
+                    // Quantity badge — top-right
+                    Surface(
+                        Modifier.align(Alignment.TopEnd).padding(8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF2563EB),
+                    ) {
+                        Text("×${item.quantity}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                     }
                 }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(item.title ?: "Item", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                    if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 14.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
-                    if (item.sellerName != null) Text(item.sellerName, fontSize = 12.sp, color = Color(0xFF64748B))
-                    // Qty controls
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity - 1) }) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("−", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
-                        }
-                        Text("${item.quantity}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 12.dp))
-                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9), modifier = Modifier.size(28.dp).clickable { onQtyChange(item.quantity + 1) }) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) { Text("+", fontWeight = FontWeight.Bold, color = Color(0xFF374151)) }
-                        }
+            } else {
+                // Placeholder when no image
+                Box(
+                    Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("No image available", fontSize = 12.sp, color = Color(0xFF94A3B8))
                     }
-                }
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444))
                 }
             }
-            // Save for later
-            TextButton(
-                onClick = onSaveForLater,
-                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+
+            // ── Seller row (like AllPostCard author row) ──
+            if (item.sellerName != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                    }
+                    Column {
+                        Text(
+                            text = item.sellerName,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Filled.Store, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                            Text("Seller", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+
+            // ── Title ──
+            Text(
+                text = item.title ?: "Item",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            // ── Price row ──
+            if (item.price != null) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "₹${"%,.0f".format(item.price)}",
+                        fontSize = 20.sp,
+                        color = Color(0xFF2563EB),
+                        fontWeight = FontWeight.Bold,
+                    )
+                    val lineTotal = item.price * item.quantity
+                    if (item.quantity > 1) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "×${item.quantity} = ₹${"%,.0f".format(lineTotal)}",
+                            fontSize = 13.sp,
+                            color = Color(0xFF64748B),
+                        )
+                    }
+                }
+            }
+
+            // ── Quantity controls row ──
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.Bookmark, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(stringResource(R.string.commerce_save_for_later), fontSize = 12.sp, color = Color(0xFF2563EB))
+                // Qty controls
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Quantity: ", fontSize = 12.sp, color = Color(0xFF64748B))
+                    Spacer(Modifier.width(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.size(32.dp).clickable(enabled = item.quantity > 1) { onQtyChange(item.quantity - 1) },
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text("−", fontWeight = FontWeight.Bold, color = if (item.quantity > 1) Color(0xFF374151) else Color(0xFFCBD5E1))
+                        }
+                    }
+                    Text("${item.quantity}", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 14.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.size(32.dp).clickable(enabled = item.quantity < 10) { onQtyChange(item.quantity + 1) },
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text("+", fontWeight = FontWeight.Bold, color = if (item.quantity < 10) Color(0xFF374151) else Color(0xFFCBD5E1))
+                        }
+                    }
+                }
+            }
+
+            // ── Action buttons row ──
+            HorizontalDivider(color = Color(0xFFF1F5F9))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Save for later
+                TextButton(
+                    onClick = onSaveForLater,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Icon(Icons.Filled.BookmarkBorder, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.commerce_save_for_later), fontSize = 12.sp, color = Color(0xFF2563EB))
+                }
+                // Delete
+                TextButton(
+                    onClick = onRemove,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
+                ) {
+                    Icon(Icons.Filled.Delete, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.btn_remove), fontSize = 12.sp)
+                }
             }
         }
     }
@@ -572,26 +704,50 @@ private fun CartItemCard(item: CartItem, onRemove: () -> Unit, onQtyChange: (Int
 
 @Composable
 private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove: () -> Unit) {
-    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFF8FAFC), shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (item.imageUrl != null) {
                 AsyncImage(model = item.imageUrl, contentDescription = null, contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(50.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
+                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)))
             } else {
-                Box(Modifier.size(50.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(20.dp))
+                Box(Modifier.size(64.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(24.dp))
                 }
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(item.title ?: "Item", fontSize = 13.sp, color = Color(0xFF374151), maxLines = 1)
-                if (item.price != null) Text("₹${item.price.toLong()}", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                Text(item.title ?: "Item", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B), maxLines = 2)
+                Spacer(Modifier.height(4.dp))
+                if (item.price != null) {
+                    Text("₹${"%,.0f".format(item.price)}", fontSize = 16.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                }
+                if (item.sellerName != null) {
+                    Text(item.sellerName, fontSize = 11.sp, color = Color(0xFF94A3B8))
+                }
             }
-            TextButton(onClick = onMoveToCart, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-                Text(stringResource(R.string.commerce_move_to_cart), fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
-            }
-            IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
-                Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(
+                    onClick = onMoveToCart,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Icon(Icons.Filled.Add, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.commerce_move_to_cart), fontSize = 11.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                }
+                TextButton(
+                    onClick = onRemove,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF94A3B8)),
+                ) {
+                    Icon(Icons.Filled.Close, null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("Remove", fontSize = 10.sp)
+                }
             }
         }
     }

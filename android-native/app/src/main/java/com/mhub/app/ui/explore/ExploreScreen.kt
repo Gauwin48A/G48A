@@ -236,7 +236,7 @@ data class ExploreState(
     val refreshing: Boolean = false,
     val subcategories: List<String> = emptyList(),
     // Quick filter state
-    val quickFilter: String? = null, // "latest5" | "latest10" | "today" | "nearme" | "verified"
+    val quickFilter: String? = null, // "latest5" | "latest10" | "today" | "verified"
     val autoRefresh: Boolean = false,
     // Plan expiry banner state
     val showPlanExpiryBanner: Boolean = false,
@@ -512,7 +512,6 @@ class ExploreViewModel @Inject constructor(
             "latest5" -> posts.sortedByDescending { it.createdAt ?: "" }.take(5)
             "latest10" -> posts.sortedByDescending { it.createdAt ?: "" }.take(10)
             "today" -> posts.filter { it.createdAt?.startsWith(todayStr) == true }.ifEmpty { posts.take(5) }
-            "nearme" -> posts.filter { it.sellerVerified == true } // approximation: show verified sellers nearby
             "verified" -> posts.filter { it.sellerVerified == true }
             "shuffle" -> posts.shuffled()
             "trending" -> posts.sortedByDescending { (it.viewCount ?: 0) + (it.likeCount ?: 0) * 3 }
@@ -623,9 +622,29 @@ class ExploreViewModel @Inject constructor(
             SharedExploreStore.removeCompare(postId)
             viewModelScope.launch { postsRepo.removeFromCompare(postId) }
         } else if (current.size < 4) {
+            // Subcategory match check: only allow comparing similar products
+            val newPost = findActionPost(postId)
+            if (newPost != null) {
+                val existingPosts = SharedExploreStore.comparePosts
+                if (existingPosts.isNotEmpty()) {
+                    val firstSubcategory = existingPosts.first().subcategory
+                    if (firstSubcategory != null && newPost.subcategory != null &&
+                        !firstSubcategory.equals(newPost.subcategory, ignoreCase = true)
+                    ) {
+                        _state.value = _state.value.copy(
+                            errorMessage = "Can only compare similar products (${firstSubcategory})"
+                        )
+                        viewModelScope.launch {
+                            delay(3000)
+                            _state.value = _state.value.copy(errorMessage = null)
+                        }
+                        return
+                    }
+                }
+            }
             current.add(postId)
             // Save full Post to shared store so CompareScreen works without backend
-            findActionPost(postId)?.let { SharedExploreStore.addCompare(it) }
+            newPost?.let { SharedExploreStore.addCompare(it) }
             viewModelScope.launch { postsRepo.addToCompare(postId) }
         } else {
             // Max 4 reached - show limit banner
@@ -808,7 +827,6 @@ fun ExploreScreen(
     onOpenWishlist: () -> Unit = {},
     onAddPost: () -> Unit = {},
     onLanguage: () -> Unit = {},
-    onLocation: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
     forYouMode: Boolean = false,
     viewModel: ExploreViewModel = hiltViewModel(),
@@ -849,7 +867,6 @@ fun ExploreScreen(
                 onWishlist = onOpenWishlist,
                 onRecentlyViewed = onOpenRecentlyViewed,
                 onLanguage = onLanguage,
-                onLocation = onLocation,
                 onToggleTheme = onToggleTheme,
                 onNotifications = onOpenNotifications,
                 onCart = onOpenCart,
