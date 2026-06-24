@@ -504,11 +504,14 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val prefs by viewModel.prefsLoaded.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val darkTheme = isSystemInDarkTheme()
     val heroGradient = Brush.horizontalGradient(
         if (darkTheme) profileHeroGradientDark else profileHeroGradientLight,
     )
+
+    LaunchedEffect(Unit) { viewModel.loadPreferences() }
 
     Scaffold(
         topBar = {
@@ -885,16 +888,6 @@ fun ProfileScreen(
                                         Text(stringResource(R.string.profile_verify_kyc), style = MaterialTheme.typography.labelMedium)
                                     }
                                 }
-                                OutlinedButton(
-                                    onClick = { showEditDialog = true },
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.height(36.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                                ) {
-                                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.profile_edit), style = MaterialTheme.typography.labelMedium)
-                                }
                             } else {
                                 if (state.isFollowing) {
                                     OutlinedButton(
@@ -949,6 +942,13 @@ fun ProfileScreen(
                                         onClick = { viewModel.shareProfile(context); showMoreMenu = false },
                                         leadingIcon = { Icon(Icons.Default.Share, null) },
                                     )
+                                    if (state.isOwnProfile) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.profile_edit_profile)) },
+                                            onClick = { showEditDialog = true; showMoreMenu = false },
+                                            leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -966,6 +966,14 @@ fun ProfileScreen(
                         }
 
                         if (selectedTab == 0) {
+                        ProfileOverviewSections(
+                            user = user,
+                            preferences = prefs,
+                            referralCode = profileReferralCode(state.referralCode, user),
+                            onEditPersonal = { showEditDialog = true },
+                            onOpenPreferences = { selectedTab = 2 },
+                        )
+
                         // ─── Marketplace Pulse ────────────────────────────────
                         Card(
                             shape = RoundedCornerShape(20.dp),
@@ -1305,9 +1313,7 @@ fun ProfileScreen(
 
                         // ─── Tab 2: Preferences ───────────────────────────────
                         if (selectedTab == 2) {
-                            val prefs by viewModel.prefsLoaded.collectAsState()
                             val prefsSaving by viewModel.prefsSaving.collectAsState()
-                            LaunchedEffect(Unit) { viewModel.loadPreferences() }
                             PreferencesTab(
                                 onOpenCategoryMode = {},
                                 initialLocation = prefs?.location ?: "",
@@ -1346,6 +1352,163 @@ fun ProfileScreen(
 }
 
 // ── Tab composables ───────────────────────────────────────────────────────────
+
+@Composable
+private fun ProfileOverviewSections(
+    user: User?,
+    preferences: com.mhub.app.data.remote.dto.PreferencesResponse?,
+    referralCode: String,
+    onEditPersonal: () -> Unit,
+    onOpenPreferences: () -> Unit,
+) {
+    val locationParts = remember(preferences?.location) { parseProfileLocation(preferences?.location) }
+    val clipboardManager = LocalClipboardManager.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ProfileExpandableSection(
+            title = stringResource(R.string.profile_personal_info),
+            subtitle = stringResource(R.string.profile_overview_personal_subtitle),
+            actionLabel = stringResource(R.string.profile_edit),
+            onAction = onEditPersonal,
+            defaultExpanded = true,
+        ) {
+            ProfileInfoRow(stringResource(R.string.profile_full_name), user?.displayName)
+            ProfileInfoRow(stringResource(R.string.profile_email), user?.email)
+            ProfileInfoRow(stringResource(R.string.profile_phone), user?.phone)
+            ProfileInfoRow(stringResource(R.string.profile_bio_optional), user?.bio)
+            ProfileInfoRow(stringResource(R.string.profile_current_plan), tierLabel(user?.currentPlan))
+            ProfileInfoRow(stringResource(R.string.profile_verification_status), user?.kycStatus?.replaceFirstChar { it.uppercase() })
+        }
+
+        ProfileExpandableSection(
+            title = stringResource(R.string.profile_tab_preferences),
+            subtitle = stringResource(R.string.profile_overview_preferences_subtitle),
+            actionLabel = stringResource(R.string.profile_update),
+            onAction = onOpenPreferences,
+        ) {
+            ProfileInfoRow(stringResource(R.string.profile_location), preferences?.location)
+            ProfileInfoRow(stringResource(R.string.profile_price_range), profilePriceRange(preferences?.minPrice, preferences?.maxPrice))
+            ProfileInfoRow(stringResource(R.string.profile_selected_categories), preferences?.categories?.joinToString())
+        }
+
+        ProfileExpandableSection(
+            title = stringResource(R.string.profile_location_selection),
+            subtitle = stringResource(R.string.profile_overview_location_subtitle),
+        ) {
+            ProfileInfoRow(stringResource(R.string.profile_country), locationParts.country)
+            ProfileInfoRow(stringResource(R.string.profile_state), locationParts.state)
+            ProfileInfoRow(stringResource(R.string.profile_district), locationParts.district)
+            ProfileInfoRow(stringResource(R.string.profile_city), locationParts.city)
+        }
+
+        ProfileExpandableSection(
+            title = stringResource(R.string.profile_referral_code),
+            subtitle = stringResource(R.string.profile_overview_referral_subtitle),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = referralCode,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { clipboardManager.setText(AnnotatedString(referralCode)) }) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.profile_copy_referral), tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileExpandableSection(
+    title: String,
+    subtitle: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    defaultExpanded: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(defaultExpanded) }
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (expanded && actionLabel != null && onAction != null) {
+                    TextButton(onClick = onAction) {
+                        Text(actionLabel, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
+                )
+            }
+            if (expanded) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    content()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileInfoRow(label: String, value: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.9f),
+        )
+        Text(
+            text = profileDisplayValue(value),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1.1f),
+        )
+    }
+}
 
 @Composable
 private fun PersonalInfoTab(
@@ -1393,8 +1556,8 @@ private fun PersonalInfoTab(
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { if (it.length <= 200) bio = it },
-                    label = { Text("Bio") },
-                    placeholder = { Text("Tell buyers about yourself…") },
+                    label = { Text(stringResource(R.string.profile_bio)) },
+                    placeholder = { Text(stringResource(R.string.profile_bio_hint)) },
                     minLines = 3,
                     maxLines = 5,
                     supportingText = { Text("${bio.length}/200") },
@@ -1443,7 +1606,11 @@ private fun PreferencesTab(
     saving: Boolean = false,
     onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit = { _, _, _ -> },
 ) {
-    var location by remember { mutableStateOf(initialLocation) }
+    val initialParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
+    var country by remember(initialLocation) { mutableStateOf(initialParts.country) }
+    var state by remember(initialLocation) { mutableStateOf(initialParts.state) }
+    var district by remember(initialLocation) { mutableStateOf(initialParts.district) }
+    var city by remember(initialLocation) { mutableStateOf(initialParts.city) }
     var minPrice by remember { mutableStateOf(initialMinPrice) }
     var maxPrice by remember { mutableStateOf(initialMaxPrice) }
     var pageDensity by remember { mutableStateOf("comfortable") }
@@ -1458,14 +1625,48 @@ private fun PreferencesTab(
 
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text(stringResource(R.string.profile_location)) },
-                    placeholder = { Text(stringResource(R.string.profile_location_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                SearchableChoiceField(
+                    label = stringResource(R.string.profile_country),
+                    value = country,
+                    placeholder = stringResource(R.string.profile_select_country),
+                    options = profileCountryOptions,
+                    onSelected = {
+                        country = it
+                        state = ""
+                        district = ""
+                        city = ""
+                    },
+                )
+                SearchableChoiceField(
+                    label = stringResource(R.string.profile_state),
+                    value = state,
+                    placeholder = stringResource(R.string.profile_select_state),
+                    options = profileStatesFor(country),
+                    enabled = country.isNotBlank(),
+                    onSelected = {
+                        state = it
+                        district = ""
+                        city = ""
+                    },
+                )
+                SearchableChoiceField(
+                    label = stringResource(R.string.profile_district),
+                    value = district,
+                    placeholder = stringResource(R.string.profile_select_district),
+                    options = profileDistrictsFor(state),
+                    enabled = state.isNotBlank(),
+                    onSelected = {
+                        district = it
+                        city = ""
+                    },
+                )
+                SearchableChoiceField(
+                    label = stringResource(R.string.profile_city),
+                    value = city,
+                    placeholder = stringResource(R.string.profile_select_city),
+                    options = profileCitiesFor(district),
+                    enabled = district.isNotBlank(),
+                    onSelected = { city = it },
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1490,7 +1691,7 @@ private fun PreferencesTab(
                 }
 
                 Button(
-                    onClick = { onSave(location, minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
+                    onClick = { onSave(composeProfileLocation(country, state, district, city), minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
                     enabled = !saving,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -1543,6 +1744,109 @@ private fun PreferencesTab(
         }
 
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun SearchableChoiceField(
+    label: String,
+    value: String,
+    placeholder: String,
+    options: List<String>,
+    enabled: Boolean = true,
+    onSelected: (String) -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var query by remember(showDialog) { mutableStateOf("") }
+    val filteredOptions = remember(query, options) {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) options else options.filter { it.contains(normalizedQuery, ignoreCase = true) }
+    }
+
+    OutlinedTextField(
+        value = profileDisplayValue(value),
+        onValueChange = {},
+        readOnly = true,
+        enabled = enabled,
+        label = { Text(label) },
+        placeholder = { Text(placeholder) },
+        trailingIcon = {
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.graphicsLayer { rotationZ = 90f },
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled) { showDialog = true },
+        shape = RoundedCornerShape(12.dp),
+    )
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(label, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.profile_search_dropdown)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        if (filteredOptions.isEmpty()) {
+                            Text(
+                                stringResource(R.string.profile_no_matches),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp),
+                            )
+                        } else {
+                            filteredOptions.forEach { option ->
+                                TextButton(
+                                    onClick = {
+                                        onSelected(option)
+                                        showDialog = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        option,
+                                        textAlign = TextAlign.Start,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onSelected("")
+                        showDialog = false
+                    },
+                ) {
+                    Text(stringResource(R.string.profile_clear_selection))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text(stringResource(R.string.profile_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -1817,6 +2121,110 @@ private fun AvatarWithRing(initial: Char, completionPercent: Int, size: Dp) {
             )
         }
     }
+}
+
+private data class ProfileLocationParts(
+    val country: String = "",
+    val state: String = "",
+    val district: String = "",
+    val city: String = "",
+)
+
+private val profileCountryOptions = listOf(
+    "India",
+    "United States",
+    "United Kingdom",
+    "Canada",
+    "Australia",
+    "United Arab Emirates",
+    "Singapore",
+)
+
+private val profileStateOptions = mapOf(
+    "India" to listOf("Andhra Pradesh", "Delhi", "Gujarat", "Karnataka", "Kerala", "Maharashtra", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal"),
+    "United States" to listOf("California", "Florida", "New York", "Texas", "Washington"),
+    "United Kingdom" to listOf("England", "Scotland", "Wales", "Northern Ireland"),
+    "Canada" to listOf("Alberta", "British Columbia", "Ontario", "Quebec"),
+    "Australia" to listOf("New South Wales", "Queensland", "Victoria", "Western Australia"),
+    "United Arab Emirates" to listOf("Abu Dhabi", "Dubai", "Sharjah"),
+    "Singapore" to listOf("Central", "East", "North", "North-East", "West"),
+)
+
+private val profileDistrictOptions = mapOf(
+    "Karnataka" to listOf("Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Mangaluru"),
+    "Maharashtra" to listOf("Mumbai", "Pune", "Nagpur", "Nashik"),
+    "Telangana" to listOf("Hyderabad", "Rangareddy", "Medchal", "Warangal"),
+    "Tamil Nadu" to listOf("Chennai", "Coimbatore", "Madurai", "Salem"),
+    "Delhi" to listOf("Central Delhi", "East Delhi", "New Delhi", "South Delhi", "West Delhi"),
+    "California" to listOf("Los Angeles", "San Diego", "San Francisco", "Santa Clara"),
+    "Texas" to listOf("Austin", "Dallas", "Houston", "Travis"),
+    "England" to listOf("Greater London", "Greater Manchester", "West Midlands"),
+    "Ontario" to listOf("Toronto", "Ottawa", "Peel", "York"),
+    "Dubai" to listOf("Dubai"),
+    "Central" to listOf("Central Area"),
+)
+
+private val profileCityOptions = mapOf(
+    "Bengaluru Urban" to listOf("Bengaluru", "Yelahanka", "Whitefield", "Electronic City"),
+    "Mumbai" to listOf("Mumbai", "Andheri", "Bandra", "Dadar"),
+    "Pune" to listOf("Pune", "Hinjewadi", "Kharadi", "Wakad"),
+    "Hyderabad" to listOf("Hyderabad", "Gachibowli", "Secunderabad", "Madhapur"),
+    "Chennai" to listOf("Chennai", "Tambaram", "T Nagar", "Velachery"),
+    "Central Delhi" to listOf("Connaught Place", "Karol Bagh", "Paharganj"),
+    "Los Angeles" to listOf("Los Angeles", "Santa Monica", "Pasadena"),
+    "San Francisco" to listOf("San Francisco", "Daly City", "Oakland"),
+    "Austin" to listOf("Austin", "Round Rock", "Cedar Park"),
+    "Greater London" to listOf("London", "Croydon", "Wembley"),
+    "Toronto" to listOf("Toronto", "North York", "Scarborough"),
+    "Dubai" to listOf("Dubai", "Deira", "Jumeirah"),
+    "Central Area" to listOf("Downtown Core", "Orchard", "Rochor"),
+)
+
+private fun profileStatesFor(country: String): List<String> = profileStateOptions[country].orEmpty()
+
+private fun profileDistrictsFor(state: String): List<String> = profileDistrictOptions[state].orEmpty()
+
+private fun profileCitiesFor(district: String): List<String> = profileCityOptions[district].orEmpty()
+
+private fun parseProfileLocation(raw: String?): ProfileLocationParts {
+    val parts = raw.orEmpty().split(",").map { it.trim() }.filter { it.isNotBlank() }
+    return when {
+        parts.size >= 4 -> ProfileLocationParts(country = parts[3], state = parts[2], district = parts[1], city = parts[0])
+        parts.size == 3 -> ProfileLocationParts(country = parts[2], state = parts[1], city = parts[0])
+        parts.size == 2 -> ProfileLocationParts(state = parts[1], city = parts[0])
+        parts.size == 1 -> ProfileLocationParts(city = parts[0])
+        else -> ProfileLocationParts()
+    }
+}
+
+private fun composeProfileLocation(country: String, state: String, district: String, city: String): String {
+    return listOf(city, district, state, country)
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .joinToString(", ")
+}
+
+private fun profileDisplayValue(value: String?): String = value?.trim()?.takeIf { it.isNotBlank() } ?: "N/A"
+
+private fun profilePriceRange(minPrice: Int?, maxPrice: Int?): String {
+    return when {
+        minPrice != null && maxPrice != null -> "Rs.$minPrice - Rs.$maxPrice"
+        minPrice != null -> "From Rs.$minPrice"
+        maxPrice != null -> "Up to Rs.$maxPrice"
+        else -> ""
+    }
+}
+
+private fun profileReferralCode(explicitCode: String?, user: User?): String {
+    explicitCode?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+    user?.rewardsRank?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+    val suffix = user?.stableId
+        ?.filter { it.isLetterOrDigit() }
+        ?.takeLast(6)
+        ?.uppercase()
+        ?.takeIf { it.isNotBlank() }
+        ?: "USER"
+    return "MHUB$suffix"
 }
 
 private fun profileCompletion(user: User?): Int {

@@ -147,9 +147,9 @@ fun ProductListingScreen(
 
     if (allProducts.isEmpty()) {
         PageEmptyState(
-            title = "No products found",
-            message = "This category has no products yet. Please try another category.",
-            ctaLabel = "Go Back",
+            title = stringResource(R.string.cat_no_products),
+            message = stringResource(R.string.cat_try_filters),
+            ctaLabel = stringResource(R.string.auth_back),
             onCta = onBack,
         )
         return
@@ -253,7 +253,7 @@ fun ProductListingScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 singleLine = true,
-                placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
+                placeholder = { Text(stringResource(R.string.explore_search_placeholder), style = MaterialTheme.typography.bodyMedium) },
                 leadingIcon = { Icon(Icons.Filled.Search, null, modifier = Modifier.size(20.dp)) },
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
@@ -286,13 +286,13 @@ fun ProductListingScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "🎉 Great Deals",
+                                stringResource(R.string.cat_great_deals),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                             Text(
-                                "Shop verified products at best prices",
+                                stringResource(R.string.cat_deals_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                             )
@@ -318,7 +318,7 @@ fun ProductListingScreen(
                     FilterChip(
                         selected = selectedSubcatId == null,
                         onClick = { selectedSubcatId = null },
-                        label = { Text("All", style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(stringResource(R.string.home_all), style = MaterialTheme.typography.labelSmall) },
                     )
                     subcategories.forEach { subcat ->
                         FilterChip(
@@ -342,22 +342,22 @@ fun ProductListingScreen(
                 FilterChip(
                     selected = conditionFilter == null,
                     onClick = { conditionFilter = null },
-                    label = { Text("All", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text(stringResource(R.string.home_all), style = MaterialTheme.typography.labelSmall) },
                 )
                 FilterChip(
                     selected = conditionFilter == "new",
                     onClick = { conditionFilter = if (conditionFilter == "new") null else "new" },
-                    label = { Text("New", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text(stringResource(R.string.filter_condition_new), style = MaterialTheme.typography.labelSmall) },
                 )
                 FilterChip(
                     selected = conditionFilter == "used",
                     onClick = { conditionFilter = if (conditionFilter == "used") null else "used" },
-                    label = { Text("Used", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text(stringResource(R.string.filter_condition_used), style = MaterialTheme.typography.labelSmall) },
                 )
                 FilterChip(
                     selected = verifiedOnly,
                     onClick = { verifiedOnly = !verifiedOnly },
-                    label = { Text("✓ Verified", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text(stringResource(R.string.home_verified_only_label), style = MaterialTheme.typography.labelSmall) },
                 )
             }
 
@@ -393,7 +393,7 @@ fun ProductListingScreen(
                 // Filter button
                 AssistChip(
                     onClick = { showFilterSheet = true },
-                    label = { Text("Filter", style = MaterialTheme.typography.labelMedium) },
+                    label = { Text(stringResource(R.string.filter), style = MaterialTheme.typography.labelMedium) },
                     leadingIcon = {
                         Icon(Icons.Filled.FilterList, contentDescription = null, modifier = Modifier.size(16.dp))
                     },
@@ -423,7 +423,7 @@ fun ProductListingScreen(
 
                 // Product count
                 Text(
-                    text = "Showing ${filteredProducts.size} of ${subcatProducts.size}",
+                    text = stringResource(R.string.cat_showing_count, filteredProducts.size, subcatProducts.size),
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
@@ -496,11 +496,11 @@ fun ProductListingScreen(
                             Text("📦", style = MaterialTheme.typography.displayMedium)
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "No products found",
+                                stringResource(R.string.cat_no_products),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             )
                             Text(
-                                "Try adjusting your filters",
+                                stringResource(R.string.cat_try_filters),
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),
@@ -512,7 +512,7 @@ fun ProductListingScreen(
                                 minRating = 0f
                                 inStockOnly = false
                             }) {
-                                Text("Clear Filters")
+                                Text(stringResource(R.string.product_clear_filters))
                             }
                         }
                     }
@@ -557,7 +557,7 @@ fun ProductListingScreen(
                                             modifier = Modifier.size(16.dp),
                                         )
                                         Text(
-                                            "Compare",
+                                            stringResource(R.string.product_compare),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = if (isInCompare) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                         )
@@ -583,16 +583,16 @@ fun ProductListingScreen(
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Compare (${compareItems.size}/4)",
+                            stringResource(R.string.product_compare_count, compareItems.size),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(onClick = { viewModel.clearCompare() }) { Text("Clear") }
+                        TextButton(onClick = { viewModel.clearCompare() }) { Text(stringResource(R.string.compare_clear_all)) }
                         if (compareItems.size >= 2) {
                             ElevatedButton(onClick = { showCompareDialog = true }) {
                                 Icon(Icons.Filled.Compare, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Compare Now")
+                                Text(stringResource(R.string.home_compare_now))
                             }
                         }
                     }
@@ -654,18 +654,18 @@ fun ProductListingScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Filters", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.filter_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                         TextButton(onClick = {
                             priceRange = 0f..maxPrice
                             selectedBrands.clear()
                             minRating = 0f
                             inStockOnly = false
-                        }) { Text("Clear All") }
+                        }) { Text(stringResource(R.string.compare_clear_all)) }
                     }
 
                     // Price range
                     Column {
-                        Text("Price Range", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.explore_filter_price_range), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "₹${priceRange.start.toInt()} – ₹${priceRange.endInclusive.toInt()}",
@@ -684,7 +684,7 @@ fun ProductListingScreen(
                     // Brands
                     if (brands.isNotEmpty()) {
                         Column {
-                            Text("Brands", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                            Text(stringResource(R.string.product_brands), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                             Spacer(Modifier.height(4.dp))
                             brands.forEach { brand ->
                                 Row(
@@ -713,7 +713,7 @@ fun ProductListingScreen(
 
                     // Min Rating
                     Column {
-                        Text("Minimum Rating: ${minRating.toInt()}★", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.product_min_rating, minRating.toInt()), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Slider(
                             value = minRating,
                             onValueChange = { minRating = it },
@@ -729,7 +729,7 @@ fun ProductListingScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("In Stock Only", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.product_in_stock_only), style = MaterialTheme.typography.bodyMedium)
                         Switch(
                             checked = inStockOnly,
                             onCheckedChange = { inStockOnly = it },
@@ -739,13 +739,13 @@ fun ProductListingScreen(
 
                     // Location filter
                     Column {
-                        Text("Location", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.filter_location), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(Modifier.height(4.dp))
                         var locationQuery by remember { mutableStateOf("") }
                         OutlinedTextField(
                             value = locationQuery,
                             onValueChange = { locationQuery = it },
-                            placeholder = { Text("City or area…") },
+                            placeholder = { Text(stringResource(R.string.product_city_or_area)) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
@@ -754,10 +754,15 @@ fun ProductListingScreen(
 
                     // Condition filter
                     Column {
-                        Text("Condition", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.filter_condition), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(Modifier.height(4.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("All" to null, "New" to "new", "Used" to "used").forEach { (label, value) ->
+                            val conditionOptions = listOf(
+                                stringResource(R.string.home_all) to null as String?,
+                                stringResource(R.string.filter_condition_new) to "new",
+                                stringResource(R.string.filter_condition_used) to "used"
+                            )
+                            conditionOptions.forEach { (label, value) ->
                                 FilterChip(
                                     selected = conditionFilter == value,
                                     onClick = { conditionFilter = value },
@@ -771,7 +776,7 @@ fun ProductListingScreen(
                         onClick = { showFilterSheet = false },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
-                        Text("Apply Filters (${filteredProducts.size} results)")
+                        Text(stringResource(R.string.product_apply_filters, filteredProducts.size))
                     }
                 }
             }
@@ -809,7 +814,7 @@ private fun CompareProductsDialog(
                     Icon(Icons.Filled.Compare, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Compare Products",
+                        stringResource(R.string.product_compare_dialog_title),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.weight(1f),
@@ -819,7 +824,13 @@ private fun CompareProductsDialog(
                     }
                 }
                 // Table
-                val attrs = listOf("Price", "Brand", "Condition", "Rating", "In Stock", "Delivery")
+                val priceLabel = stringResource(R.string.compare_price_label)
+                val brandLabel = stringResource(R.string.compare_brand_label)
+                val conditionLabel = stringResource(R.string.compare_condition_label)
+                val ratingLabel = stringResource(R.string.profile_rating)
+                val inStockLabel = stringResource(R.string.commerce_in_stock)
+                val deliveryLabel = stringResource(R.string.commerce_delivery_by).substringBefore(" %")
+                val attrs = listOf(priceLabel, brandLabel, conditionLabel, ratingLabel, inStockLabel, deliveryLabel)
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     // Product headers row
                     item {
@@ -852,13 +863,13 @@ private fun CompareProductsDialog(
                             )
                             products.forEach { p ->
                                 val value = when (attr) {
-                                    "Price"     -> "₹${p.price.toInt()}"
-                                    "Brand"     -> p.brand.ifBlank { "—" }
-                                    "Condition" -> p.condition
-                                    "Rating"    -> "%.1f ★".format(p.rating)
-                                    "In Stock"  -> if (p.inStock) "✓ Yes" else "✗ No"
-                                    "Delivery"  -> "${p.deliveryDays} days"
-                                    else        -> "—"
+                                    priceLabel     -> "₹${p.price.toInt()}"
+                                    brandLabel     -> p.brand.ifBlank { "—" }
+                                    conditionLabel -> p.condition
+                                    ratingLabel    -> "%.1f ★".format(p.rating)
+                                    inStockLabel   -> if (p.inStock) stringResource(R.string.product_yes) else stringResource(R.string.product_no)
+                                    deliveryLabel  -> stringResource(R.string.product_delivery_days, p.deliveryDays)
+                                    else           -> "—"
                                 }
                                 Text(
                                     value,

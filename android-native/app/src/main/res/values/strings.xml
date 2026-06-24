@@ -880,7 +880,7 @@
     <string name="home_reset_filters">Reset Filters</string>
     <string name="home_retry">Retry</string>
     <string name="home_promoted">Promoted</string>
-    <string name="home_search_hint">Search listings, categories…</string>
+
     <string name="home_verified_only">Verified only</string>
     <string name="home_in_category">in %s</string>
     <string name="home_unlock_listings">Unlock more listings</string>
@@ -1588,6 +1588,27 @@
     <string name="commerce_badge_rewarded">&#x2713; Rewarded</string>
     <string name="commerce_badge_verified">&#x1F4CB; Verified</string>
 
+    <!-- ProductListingScreen -->
+    <string name="product_clear_filters">Clear Filters</string>
+    <string name="product_brands">Brands</string>
+    <string name="product_min_rating">Minimum Rating: %d★</string>
+    <string name="product_in_stock_only">In Stock Only</string>
+    <string name="product_city_or_area">City or area…</string>
+    <string name="product_apply_filters">Apply Filters (%d results)</string>
+    <string name="product_compare">Compare</string>
+    <string name="product_compare_count">Compare (%1$d/4)</string>
+    <string name="product_compare_dialog_title">Compare Products</string>
+    <string name="product_yes">✓ Yes</string>
+    <string name="product_no">✗ No</string>
+    <string name="product_delivery_days">%d days</string>
+
+    <!-- HomeScreen -->
+    <string name="home_quick_access">Quick Access</string>
+    <string name="home_trending_now">Trending Now</string>
+    <string name="home_no_results">No results</string>
+    <string name="home_based_on_browsing">Based on your browsing</string>
+
+
     <!-- Shared button labels -->
     <string name="btn_delete">Delete</string>
     <string name="btn_cancel">Cancel</string>
@@ -1619,6 +1640,29 @@
     <string name="profile_search_prefs">Search Preferences</string>
     <string name="profile_location">Location</string>
     <string name="profile_location_hint">Enter your city or area</string>
+    <string name="profile_country">Country</string>
+    <string name="profile_state">State</string>
+    <string name="profile_district">District</string>
+    <string name="profile_city">City</string>
+    <string name="profile_select_country">Select country</string>
+    <string name="profile_select_state">Select state</string>
+    <string name="profile_select_district">Select district</string>
+    <string name="profile_select_city">Select city</string>
+    <string name="profile_search_dropdown">Search</string>
+    <string name="profile_no_matches">No matches</string>
+    <string name="profile_clear_selection">Clear selection</string>
+    <string name="profile_cancel">Cancel</string>
+    <string name="profile_update">Update</string>
+    <string name="profile_verification_status">Verification Status</string>
+    <string name="profile_price_range">Price Range</string>
+    <string name="profile_selected_categories">Selected Categories</string>
+    <string name="profile_location_selection">Location Selection</string>
+    <string name="profile_referral_code">Referral Code</string>
+    <string name="profile_copy_referral">Copy referral code</string>
+    <string name="profile_overview_personal_subtitle">Existing account data with empty fields shown as N/A</string>
+    <string name="profile_overview_preferences_subtitle">Saved marketplace preference values</string>
+    <string name="profile_overview_location_subtitle">Saved searchable location breakdown</string>
+    <string name="profile_overview_referral_subtitle">Shareable invite code for rewards</string>
     <string name="profile_search_radius">Search Radius</string>
     <string name="profile_min_price">Min Price (₹)</string>
     <string name="profile_max_price">Max Price (₹)</string>
