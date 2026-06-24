@@ -413,6 +413,54 @@
     <string name="plans_advanced">Advanced</string>
     <string name="plans_full">Full</string>
 
+    <!-- ExploreScreen specific strings (extracted from hardcoded text) -->
+    <string name="explore_search_placeholder">Search listings...</string>
+    <string name="explore_no_results_title">No results found</string>
+    <string name="explore_no_results_subtitle">Try different keywords</string>
+    <string name="explore_no_listings_title">No listings found</string>
+    <string name="explore_no_listings_subtitle">Try a different category or filter</string>
+    <string name="explore_sort_newest">Newest</string>
+    <string name="explore_sort_oldest">Oldest</string>
+    <string name="explore_sort_popular">Most popular</string>
+    <string name="explore_sort_most_viewed">Most viewed</string>
+    <string name="explore_sort_price_asc">Price low-high</string>
+    <string name="explore_sort_price_desc">Price high-low</string>
+    <string name="explore_sort_featured_first">Featured first</string>
+    <string name="explore_sort_premium_first">Premium first</string>
+    <string name="explore_sort_view_label">Sort &amp; view</string>
+    <string name="explore_categories_label">Categories</string>
+    <string name="explore_filters_title">Filters</string>
+    <string name="explore_filter_clear_all">Clear All</string>
+    <string name="explore_filter_apply">Apply Filters</string>
+    <string name="explore_filter_reset">Reset</string>
+    <string name="explore_filter_cancel">Cancel</string>
+    <string name="explore_filter_price_range">Price Range</string>
+    <string name="explore_filter_condition">Condition</string>
+    <string name="explore_filter_posted_within">Posted Within</string>
+    <string name="explore_filter_seller_type">Seller Type</string>
+    <string name="explore_filter_location">Location</string>
+    <string name="explore_filter_subcategory">Subcategory</string>
+    <string name="explore_refine_for_you">Refine For You</string>
+    <string name="explore_items_selected">%d items selected</string>
+    <string name="explore_compare_clear">Clear</string>
+    <string name="explore_compare_max">Maximum 4 items can be compared</string>
+
+    <!-- ForYou specific strings (extracted from hardcoded text) -->
+    <string name="foryou_header_title">For You</string>
+    <string name="foryou_header_subtitle">Personalized marketplace picks ranked from activity, filters, and fresh listing signals.</string>
+    <string name="foryou_ai_badge">AI curated</string>
+    <string name="foryou_browse_action">Browse</string>
+    <string name="foryou_shuffle_action">Shuffle</string>
+    <string name="foryou_live_action">Live</string>
+    <string name="foryou_compare_action">Compare %d</string>
+    <string name="foryou_metric_matched">Matched</string>
+    <string name="foryou_metric_categories">Categories</string>
+    <string name="foryou_metric_filters">Filters</string>
+    <string name="foryou_chip_today">Posted Today</string>
+    <string name="foryou_chip_latest10">Latest 10</string>
+    <string name="foryou_chip_trending">Trending</string>
+    <string name="foryou_chip_more_filters">More filters</string>
+
     <!-- Compare -->
     <string name="compare_title">Compare Listings</string>
     <string name="compare_nothing">Nothing to compare</string>

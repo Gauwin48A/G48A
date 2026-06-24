@@ -102,15 +102,17 @@ object Routes {
     fun invite(code: String): String = "invite/$code"
 
     // New screens
-    const val ACTIVITY_HUB = "activity"
     const val CATEGORY_MODE = "category-mode"
     const val AADHAAR_VERIFY = "aadhaar-verify"
     const val GET_VERIFIED = "get-verified"
     const val NOTIFICATION_PREFS = "notification-prefs"
-    const val DAILY_CODE = "daily-code"
-    const val REFERRAL_TREE = "referral-tree"
-    const val CHAT_LIST = "chat-list"
     const val SCANNER = "scanner"
+
+    // Deep-link-only routes (no dedicated screen, but routing is handled)
+    const val PROFILE_USER = "profile/{userId}"
+    fun profileForUser(userId: String): String = "profile/$userId"
+    const val CHAT_CONVERSATION = "chat/{conversationId}"
+    fun chatConversation(id: String): String = "chat/$id"
 
     // ── Category App Shell routes (prefixed with category key) ──────────────
     const val CATEGORY_HOME       = "cat/{catKey}/home"

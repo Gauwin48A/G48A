@@ -111,7 +111,6 @@ import com.mhub.app.ui.channels.CreateCentreScreen
 import com.mhub.app.ui.channels.CreateChannelScreen
 import com.mhub.app.ui.chat.ChatScreen
 import com.mhub.app.ui.commerce.BoughtPostsScreen
-import com.mhub.app.ui.commerce.BuyerViewScreen
 import com.mhub.app.ui.commerce.CartScreen
 import com.mhub.app.ui.commerce.CompareScreen
 import com.mhub.app.ui.commerce.EditPostScreen
@@ -277,6 +276,33 @@ fun MhubApp(
         val context = LocalContext.current
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
         val exitScope = rememberCoroutineScope()
+
+        fun normalizeMarketplaceCategoryKey(raw: String?): String {
+            val value = raw?.lowercase()?.trim().orEmpty()
+            return when {
+                value in setOf("electronics", "fashion", "vehicles", "others") -> value
+                value.contains("electron") || value.contains("phone") || value.contains("laptop") ||
+                    value.contains("camera") || value.contains("audio") || value.contains("gadget") -> "electronics"
+                value.contains("fashion") || value.contains("cloth") || value.contains("apparel") ||
+                    value.contains("shoe") || value.contains("bag") || value.contains("watch") -> "fashion"
+                value.contains("vehicle") || value.contains("car") || value.contains("bike") ||
+                    value.contains("motor") || value.contains("cycle") || value.contains("truck") ||
+                    value.contains("scooter") || value.contains("spare") -> "vehicles"
+                else -> "others"
+            }
+        }
+
+        fun openAllPosts(categoryKey: String? = null) {
+            activeCategoryKey = categoryKey
+            navController.navigate(Routes.ALL_POSTS) {
+                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                launchSingleTop = true
+            }
+        }
+
+        fun openCategoryInAllPosts(rawCategoryKey: String?) {
+            openAllPosts(normalizeMarketplaceCategoryKey(rawCategoryKey))
+        }
 
         // Double-back to exit on Home
         var backPressedOnce by remember { mutableStateOf(false) }
@@ -454,12 +480,7 @@ fun MhubApp(
                     MainShell(navController = navController, selected = BottomTab.HOME, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false, showBottomBar = false) {
                     CategoryHubScreen(
                         onOpenCategory = { category ->
-                            val mapped = when ((category.categoryGroup ?: category.name ?: "").lowercase()) {
-                                "electronics" -> "electronics"
-                                "fashion" -> "fashion"
-                                "vehicles" -> "vehicles"
-                                else -> "others"
-                            }
+                            val mapped = normalizeMarketplaceCategoryKey(category.categoryGroup ?: category.name)
                             analytics.logEvent(
                                 "launcher_enter_category",
                                 Bundle().apply {
@@ -467,17 +488,14 @@ fun MhubApp(
                                     putString("entry_type", "mapped_category")
                                 },
                             )
-                            activeCategoryKey = mapped
-                            navController.navigate(Routes.categoryDetail(mapped)) { launchSingleTop = true }
+                            openAllPosts(mapped)
                         },
                         onOpenAllPosts = {
-                            navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
+                            openAllPosts(null)
                         },
                         onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                         onSelectApp = { key ->
-                            val safeKey = key.lowercase().let {
-                                if (it in setOf("electronics", "fashion", "vehicles", "others")) it else "electronics"
-                            }
+                            val safeKey = normalizeMarketplaceCategoryKey(key)
                             analytics.logEvent(
                                 "launcher_enter_category",
                                 Bundle().apply {
@@ -485,8 +503,7 @@ fun MhubApp(
                                     putString("entry_type", "direct_card")
                                 },
                             )
-                            activeCategoryKey = safeKey
-                            navController.navigate(Routes.categoryDetail(safeKey)) { launchSingleTop = true }
+                            openAllPosts(safeKey)
                         },
                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
@@ -653,14 +670,14 @@ fun MhubApp(
             }
 
             // â”€â”€ Full-Screen Routes â”€â”€
-            composable(
-                route = Routes.POST_DETAIL,
-                arguments = listOf(navArgument("postId") { type = NavType.StringType }),
-            ) {
-                PostDetailScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                    onOpenCategory = { key -> navController.navigate(Routes.categoryDetail(key)) { launchSingleTop = true } },
+                composable(
+                    route = Routes.POST_DETAIL,
+                    arguments = listOf(navArgument("postId") { type = NavType.StringType }),
+                ) {
+                    PostDetailScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                    onOpenCategory = { key -> openCategoryInAllPosts(key) },
                     onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
                 )
             }
@@ -684,15 +701,7 @@ fun MhubApp(
                     CategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onCategoryClick = { _, name ->
-                            val key = name.lowercase().trim().let { n ->
-                                when {
-                                    n.contains("electron") -> "electronics"
-                                    n.contains("fashion") || n.contains("cloth") -> "fashion"
-                                    n.contains("vehicle") || n.contains("car") || n.contains("bike") -> "vehicles"
-                                    else -> "others"
-                                }
-                            }
-                            navController.navigate(Routes.categoryDetail(key)) { launchSingleTop = true }
+                            openCategoryInAllPosts(name)
                         },
                     )
                 }
@@ -702,7 +711,7 @@ fun MhubApp(
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     com.mhub.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenCategory = { catKey -> navController.navigate(Routes.categoryDetail(catKey)) { launchSingleTop = true } },
+                        onOpenCategory = { catKey -> openCategoryInAllPosts(catKey) },
                     )
                 }
             }
@@ -759,22 +768,12 @@ fun MhubApp(
                 com.mhub.app.ui.notifications.NotificationPrefsScreen(onBack = { navController.popBackStack() })
             }
 
-            composable(Routes.DAILY_CODE) {
-                LaunchedEffect(Unit) { navController.navigate(Routes.REWARDS) { popUpTo(Routes.DAILY_CODE) { inclusive = true } } }
-            }
-
-            composable(Routes.REFERRAL_TREE) {
-                LaunchedEffect(Unit) { navController.navigate(Routes.REWARDS) { popUpTo(Routes.REFERRAL_TREE) { inclusive = true } } }
-            }
-
             composable(Routes.CATEGORY_MODE) {
                 com.mhub.app.ui.home.CategoryModeScreen(
                     onBack = { navController.popBackStack() },
                     onSelectApp = { appKey ->
                         if (appKey.isNotBlank()) {
-                            navController.navigate(Routes.categoryDetail(appKey)) {
-                                popUpTo(Routes.CATEGORY_MODE) { inclusive = true }
-                            }
+                            openCategoryInAllPosts(appKey)
                         } else {
                             navController.popBackStack()
                         }
@@ -933,9 +932,7 @@ fun MhubApp(
                 }
             }
 
-            composable(Routes.BUYER_VIEW) {
-                LaunchedEffect(Unit) { navController.navigate(Routes.BOUGHT_POSTS) { popUpTo(Routes.BUYER_VIEW) { inclusive = true } } }
-            }
+
 
             composable(Routes.SALE_DONE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
@@ -1203,30 +1200,7 @@ fun MhubApp(
                 InviteScreen(code = code, onBack = { navController.popBackStack() })
             }
 
-            // â”€â”€ New screens â”€â”€
-            composable(Routes.ACTIVITY_HUB) {
-                LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.ACTIVITY_HUB) { inclusive = true } } }
-            }
-
-            // EDIT_PROFILE is handled inline in ProfileScreen's edit dialog
-            composable(Routes.EDIT_PROFILE) {
-                // Redirect to Profile screen where edit is inline
-                LaunchedEffect(Unit) {
-                    navController.navigate(Routes.PROFILE) {
-                        popUpTo(Routes.EDIT_PROFILE) { inclusive = true }
-                    }
-                }
-            }
-
-            // CHAT_LIST is an alias for CHAT
-            composable(Routes.CHAT_LIST) {
-                LaunchedEffect(Unit) {
-                    navController.navigate(Routes.CHAT) {
-                        popUpTo(Routes.CHAT_LIST) { inclusive = true }
-                    }
-                }
-            }
-        }
+        } // end NavHost
         }
 
         // â”€â”€ Auth Gate Popup (app-level overlay) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1433,8 +1407,8 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Home + Browse tabs
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FEED).forEach { tab ->
+                        // Left cluster: Home, Browse, For You
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1442,34 +1416,46 @@ fun MainShell(
                                 onClick = { navigateToTab(tab) },
                             )
                         }
-                        // + Sell button — prominent center action
-                        Column(
+                        // + Sell button — prominent center action with flow resolution
+                        val sellFlowVm: SellFlowViewModel = hiltViewModel()
+                        val authGate = LocalAuthGate.current
+                        val authVm: AuthViewModel = hiltViewModel()
+                        val isAuthed by authVm.isAuthenticated.collectAsState()
+                        val sellScope = rememberCoroutineScope()
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight()
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    onClick = { navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
-                                ),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Filled.AddCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(26.dp),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                text = stringResource(R.string.nav_sell),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                            )
+                            FloatingActionButton(
+                                onClick = {
+                                    if (!isAuthed) {
+                                        authGate()
+                                    } else {
+                                        sellScope.launch {
+                                            val destination = sellFlowVm.resolveDestination()
+                                            navController.navigate(destination) { launchSingleTop = true }
+                                        }
+                                    }
+                                },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(44.dp),
+                                elevation = FloatingActionButtonDefaults.elevation(
+                                    defaultElevation = 4.dp,
+                                    pressedElevation = 8.dp,
+                                ),
+                            ) {
+                                Icon(
+                                    Icons.Filled.AddCircle,
+                                    contentDescription = stringResource(R.string.nav_sell),
+                                    modifier = Modifier.size(26.dp),
+                                )
+                            }
                         }
-                        // Account tabs
-                        listOf(BottomTab.FOR_YOU, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                        // Right cluster: Feed, Rewards, Profile, More
+                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1477,7 +1463,7 @@ fun MainShell(
                                 onClick = { navigateToTab(tab) },
                             )
                         }
-                        // More menu
+                        // More menu button
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -1492,7 +1478,7 @@ fun MainShell(
                         ) {
                             Icon(
                                 Icons.Filled.Menu,
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.nav_more),
                                 modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1578,14 +1564,22 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
             navController.navigate("${Routes.POST_DETAIL}/$id")
         }
         "chat", "messages" -> {
-            // Note: "chat/{id}" route not registered â€” navigate to chat list
-            navController.navigate(Routes.CHAT) { launchSingleTop = true }
+            val conversationId = segments.getOrNull(1)
+            if (conversationId != null) {
+                navController.navigate(Routes.chatConversation(conversationId)) { launchSingleTop = true }
+            } else {
+                navController.navigate(Routes.CHAT) { launchSingleTop = true }
+            }
         }
         "search" -> navController.navigate(Routes.SEARCH) { launchSingleTop = true }
         "create-post", "sell" -> navController.navigate(Routes.CREATE_POST) { launchSingleTop = true }
         "profile" -> {
-            // Note: "profile/{id}" route not registered â€” navigate to own profile
-            navController.navigate(Routes.PROFILE) { launchSingleTop = true }
+            val userId = segments.getOrNull(1)
+            if (userId != null) {
+                navController.navigate(Routes.profileForUser(userId)) { launchSingleTop = true }
+            } else {
+                navController.navigate(Routes.PROFILE) { launchSingleTop = true }
+            }
         }
         "wishlist", "saved" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
         "cart" -> navController.navigate(Routes.CART) { launchSingleTop = true }

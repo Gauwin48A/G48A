@@ -416,12 +416,12 @@ class ExploreViewModel @Inject constructor(
                     minPrice = minPrice,
                     maxPrice = maxPrice,
                 )) {
-                    is ApiResult.Success -> result.data
+                    is ApiResult.Success -> filterForEcosystem(result.data, categoryKey)
                     is ApiResult.Failure -> emptyList()
                 }
                 val fallback = if (recommended.isEmpty()) {
                     when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
-                        is ApiResult.Success -> result.data
+                        is ApiResult.Success -> filterForEcosystem(result.data, categoryKey)
                         is ApiResult.Failure -> {
                             var list = if (categoryKey != null) MOCK_EXPLORE_POSTS.filter {
                                 it.category.equals(categoryKey, ignoreCase = true)
@@ -446,7 +446,7 @@ class ExploreViewModel @Inject constructor(
             }
             when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
-                    val newPosts = result.data
+                    val newPosts = filterForEcosystem(result.data, categoryKey)
                     // BUG-001 fix: if API returns success with 0 posts on reset, fall back to mocks
                     val s = _state.value
                     val mockFallback = if (reset && newPosts.isEmpty()) {
@@ -533,6 +533,33 @@ class ExploreViewModel @Inject constructor(
         }
     }
 
+    private fun filterForEcosystem(posts: List<Post>, categoryKey: String?): List<Post> {
+        val normalizedKey = normalizeBroadCategory(categoryKey) ?: return posts
+        return posts.filter { post ->
+            listOf(post.category, post.categoryId, post.categoryName).any {
+                normalizeBroadCategory(it) == normalizedKey
+            }
+        }
+    }
+
+    private fun normalizeBroadCategory(raw: String?): String? {
+        val value = raw?.lowercase()?.trim().orEmpty()
+        if (value.isBlank()) return null
+        return when {
+            value in setOf("electronics", "fashion", "vehicles", "others") -> value
+            value.contains("electron") || value.contains("phone") || value.contains("laptop") ||
+                value.contains("camera") || value.contains("audio") || value.contains("gadget") ||
+                value.contains("gaming") || value.contains("tablet") -> "electronics"
+            value.contains("fashion") || value.contains("cloth") || value.contains("apparel") ||
+                value.contains("shoe") || value.contains("bag") || value.contains("watch") ||
+                value.contains("jewel") -> "fashion"
+            value.contains("vehicle") || value.contains("car") || value.contains("bike") ||
+                value.contains("motor") || value.contains("cycle") || value.contains("truck") ||
+                value.contains("scooter") || value.contains("spare") || value.contains("auto") -> "vehicles"
+            else -> "others"
+        }
+    }
+
     private fun loadSubcategories(key: String?) {
         if (key == null) {
             _state.value = _state.value.copy(subcategories = emptyList())
@@ -592,6 +619,13 @@ class ExploreViewModel @Inject constructor(
             // Save full Post to shared store so CompareScreen works without backend
             _state.value.posts.find { it.stableId == postId }?.let { SharedExploreStore.addCompare(it) }
             viewModelScope.launch { postsRepo.addToCompare(postId) }
+        } else {
+            // Max 4 reached - show limit banner
+            _state.value = _state.value.copy(errorMessage = "Maximum 4 items can be compared")
+            viewModelScope.launch {
+                delay(3000)
+                _state.value = _state.value.copy(errorMessage = null)
+            }
         }
         _state.value = _state.value.copy(compareItems = current)
     }
@@ -819,7 +853,7 @@ fun ExploreScreen(
                     value = state.searchQuery,
                     onValueChange = viewModel::onQueryChange,
                     singleLine = true,
-                    placeholder = { Text("Search listings...", style = MaterialTheme.typography.bodyMedium) },
+                    placeholder = { Text(stringResource(R.string.explore_search_placeholder), style = MaterialTheme.typography.bodyMedium) },
                     leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
                     trailingIcon = {
                         if (state.searchQuery.isNotBlank()) {
@@ -1013,14 +1047,14 @@ fun ExploreScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.Tune, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                        Text("Filters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.explore_filters_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (state.hasActiveFilters) {
                             TextButton(onClick = { viewModel.clearFilters(); showFilterSheet = false }) {
                                 Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Clear All", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.explore_filter_clear_all), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         IconButton(onClick = { showFilterSheet = false }) {
@@ -1166,14 +1200,14 @@ fun ExploreScreen(
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.explore_filter_cancel), fontWeight = FontWeight.SemiBold)
                     }
                     OutlinedButton(
                         onClick = { viewModel.clearFilters(); showFilterSheet = false },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Reset", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.explore_filter_reset), fontWeight = FontWeight.SemiBold)
                     }
                     Button(
                         onClick = {
@@ -1187,7 +1221,7 @@ fun ExploreScreen(
                     ) {
                         Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Apply Filters", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.explore_filter_apply), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -1417,7 +1451,7 @@ private fun AllPostsBrowse(
             } else if (state.searchResults.isEmpty()) {
                 item(key = "search_empty") {
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = "No results found", subtitle = "Try different keywords")
+                        AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = stringResource(R.string.explore_no_results_title), subtitle = stringResource(R.string.explore_no_results_subtitle))
                     }
                 }
             } else {
@@ -1467,7 +1501,7 @@ private fun AllPostsBrowse(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Sort & view",
+                                stringResource(R.string.explore_sort_view_label),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1578,7 +1612,7 @@ private fun AllPostsBrowse(
         } else if (!state.loadingPosts && state.posts.isEmpty()) {
             item(key = "empty") {
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = "No listings found", subtitle = "Try a different category or filter")
+                    AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = stringResource(R.string.explore_no_listings_title), subtitle = stringResource(R.string.explore_no_listings_subtitle))
                 }
             }
         } else {

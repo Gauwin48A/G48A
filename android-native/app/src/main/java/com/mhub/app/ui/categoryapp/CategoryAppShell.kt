@@ -169,7 +169,7 @@ fun CategoryAppShell(
     val effectiveCartBadgeCount = maxOf(cartBadgeCount, roomCartCount)
 
     fun routeForTab(tab: CategoryTab): String = when (tab) {
-        CategoryTab.HOME -> Routes.categoryListing(categoryKey)
+        CategoryTab.HOME -> Routes.categoryHome(categoryKey)
         CategoryTab.CATEGORIES -> Routes.categorySubcats(categoryKey)
         CategoryTab.CART -> Routes.categoryCart(categoryKey)
         CategoryTab.WISHLIST -> Routes.categoryWishlist(categoryKey)
@@ -208,7 +208,7 @@ fun CategoryAppShell(
                         viewModel.persistTab(categoryKey, tab)
                         val route = routeForTab(tab)
                         innerNav.navigate(route) {
-                            popUpTo(Routes.categoryListing(categoryKey)) { saveState = true }
+                            popUpTo(Routes.categoryHome(categoryKey)) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -230,7 +230,7 @@ fun CategoryAppShell(
             } else innerPadding
             NavHost(
                 navController = innerNav,
-                startDestination = Routes.categoryListing(categoryKey),
+                startDestination = Routes.categoryHome(categoryKey),
                 enterTransition = { fadeIn(tween(220)) },
                 exitTransition = { fadeOut(tween(180)) },
                 modifier = Modifier.padding(effectivePadding),
