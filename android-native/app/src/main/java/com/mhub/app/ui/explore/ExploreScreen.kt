@@ -694,6 +694,12 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch { postsRepo.toggleWishlist(postId) }
     }
 
+    fun recordViewed(postId: String) {
+        viewModelScope.launch {
+            runCatching { postsRepo.trackViewed(postId) }
+        }
+    }
+
     fun addToCompare(postId: String) {
         viewModelScope.launch { postsRepo.addToCompare(postId) }
     }
@@ -813,7 +819,7 @@ fun ExploreScreen(
                     value = state.searchQuery,
                     onValueChange = viewModel::onQueryChange,
                     singleLine = true,
-                    placeholder = { Text("Search listings…", style = MaterialTheme.typography.bodyMedium) },
+                    placeholder = { Text("Search listings...", style = MaterialTheme.typography.bodyMedium) },
                     leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
                     trailingIcon = {
                         if (state.searchQuery.isNotBlank()) {
@@ -855,15 +861,25 @@ fun ExploreScreen(
                     state = state,
                     wishlisted = wishlistedSet,
                     ecosystemSubcategories = ecosystemSubcategories,
-                    onOpenPost = onOpenPost,
+                    onOpenPost = { id ->
+                        viewModel.recordViewed(id)
+                        onOpenPost(id)
+                    },
                     onToggleWishlist = viewModel::toggleWishlist,
                     onSetSort = viewModel::setSortBy,
+                    onSetQuickFilter = viewModel::setQuickFilter,
                     onToggleCompare = viewModel::toggleCompare,
                     onToggleCart = viewModel::toggleCart,
                     onOpenCompare = onOpenCompare,
                     onToggleAutoRefresh = viewModel::toggleAutoRefresh,
                     onLoadMore = viewModel::loadMore,
                     onOpenSearch = onOpenSearch,
+                    onOpenFilters = {
+                        draftCondition = state.filterCondition
+                        draftSubcategory = state.filterSubcategory
+                        draftPriceRange = state.filterMinPrice..state.filterMaxPrice
+                        showFilterSheet = true
+                    },
                     onSelectSubcategory = { sub ->
                         viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
                     },
@@ -1356,20 +1372,26 @@ private fun AllPostsBrowse(
     onOpenPost: (String) -> Unit,
     onToggleWishlist: (String) -> Unit,
     onSetSort: (String) -> Unit,
+    onSetQuickFilter: (String?) -> Unit = {},
     onToggleCompare: (String) -> Unit,
     onToggleCart: (String) -> Unit = {},
     onOpenCompare: () -> Unit = {},
     onToggleAutoRefresh: () -> Unit = {},
     onLoadMore: () -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenFilters: () -> Unit = {},
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
 ) {
     val sortOptions = listOf(
-        "newest" to "🕒 Newest", "oldest" to "🔄 Oldest",
-        "popular" to "🔥 Most Popular", "most_viewed" to "👁 Most Viewed",
-        "price_asc" to "💰 Price ↑", "price_desc" to "💰 Price ↓",
-        "featured_first" to "⭐ Featured First", "premium_first" to "💎 Premium First",
+        "newest" to "Newest",
+        "oldest" to "Oldest",
+        "popular" to "Most popular",
+        "most_viewed" to "Most viewed",
+        "price_asc" to "Price low-high",
+        "price_desc" to "Price high-low",
+        "featured_first" to "Featured first",
+        "premium_first" to "Premium first",
     )
     var isGridView by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -1406,6 +1428,21 @@ private fun AllPostsBrowse(
             return@LazyColumn
         }
 
+        if (state.forYouMode) {
+            item(key = "for_you_header") {
+                ForYouBrowseHeader(
+                    resultCount = state.posts.size,
+                    categoryCount = ecosystemSubcategories.size,
+                    hasActiveFilters = state.hasActiveFilters,
+                    autoRefresh = state.autoRefresh,
+                    compareCount = state.compareItems.size,
+                    onToggleAutoRefresh = onToggleAutoRefresh,
+                    onShuffle = { onSetQuickFilter("shuffle") },
+                    onOpenCompare = onOpenCompare,
+                )
+            }
+        }
+
         // Sticky sort + subcategory chips (don't scroll away)
         stickyHeader(key = "sticky_filters") {
             Surface(
@@ -1413,16 +1450,57 @@ private fun AllPostsBrowse(
                 shadowElevation = 2.dp,
             ) {
                 Column {
-                    // Grid/List toggle only
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(28.dp)) {
-                            Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    if (state.forYouMode) {
+                        ForYouRefineToolbar(
+                            activeQuickFilter = state.quickFilter,
+                            isGridView = isGridView,
+                            onSetQuickFilter = onSetQuickFilter,
+                            onOpenFilters = onOpenFilters,
+                            onToggleGrid = { isGridView = !isGridView },
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Sort & view",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(28.dp)) {
+                                Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(sortOptions.size, key = { sortOptions[it].first }) { idx ->
+                                val (key, label) = sortOptions[idx]
+                                val selected = state.sortBy == key
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = { onSetSort(key) },
+                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                    leadingIcon = if (selected) {
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    shape = RoundedCornerShape(20.dp),
+                                )
+                            }
                         }
                     }
                     if (ecosystemSubcategories.isNotEmpty()) {
@@ -1487,7 +1565,9 @@ private fun AllPostsBrowse(
 
 
 
-        item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
+        if (!state.forYouMode) {
+            item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
+        }
 
         if (state.loadingPosts && state.posts.isEmpty()) {
             items(6, key = { "shimmer_$it" }) { i ->
@@ -1619,6 +1699,233 @@ private fun AllPostsBrowse(
     } // end Box
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ForYouBrowseHeader(
+    resultCount: Int,
+    categoryCount: Int,
+    hasActiveFilters: Boolean,
+    autoRefresh: Boolean,
+    compareCount: Int,
+    onToggleAutoRefresh: () -> Unit,
+    onShuffle: () -> Unit,
+    onOpenCompare: () -> Unit,
+) {
+    val heroShape = RoundedCornerShape(22.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clip(heroShape)
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFF2563EB),
+                        Color(0xFF4F46E5),
+                        Color(0xFF14B8A6),
+                    ),
+                ),
+            ),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White.copy(alpha = 0.88f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
+                        Text("AI curated", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "For You",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                    )
+                    Text(
+                        "Personalized marketplace picks ranked from activity, filters, and fresh listing signals.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.82f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ForYouMetricTile(
+                    value = resultCount.toString(),
+                    label = "Matched",
+                    modifier = Modifier.weight(1f),
+                )
+                ForYouMetricTile(
+                    value = categoryCount.coerceAtLeast(0).toString(),
+                    label = "Categories",
+                    modifier = Modifier.weight(1f),
+                )
+                ForYouMetricTile(
+                    value = if (hasActiveFilters) "1" else "0",
+                    label = "Filters",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ForYouHeroAction("Browse", Icons.Default.Visibility, onClick = {})
+                ForYouHeroAction("Shuffle", Icons.Default.AutoAwesome, onClick = onShuffle)
+                ForYouHeroAction(
+                    if (autoRefresh) "Live on" else "Live",
+                    Icons.Default.AutoAwesome,
+                    selected = autoRefresh,
+                    onClick = onToggleAutoRefresh,
+                )
+                if (compareCount > 0) {
+                    ForYouHeroAction(
+                        "Compare $compareCount",
+                        Icons.Default.Compare,
+                        selected = true,
+                        onClick = { if (compareCount >= 2) onOpenCompare() },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ForYouMetricTile(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White.copy(alpha = 0.78f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.38f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
+            Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+        }
+    }
+}
+
+@Composable
+private fun ForYouHeroAction(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = if (selected) Color(0xFF1D4ED8) else Color.White.copy(alpha = 0.92f),
+        onClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(icon, null, modifier = Modifier.size(15.dp), tint = if (selected) Color.White else Color(0xFF4F46E5))
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else Color(0xFF334155))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ForYouRefineToolbar(
+    activeQuickFilter: String?,
+    isGridView: Boolean,
+    onSetQuickFilter: (String?) -> Unit,
+    onOpenFilters: () -> Unit,
+    onToggleGrid: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "Refine For You",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            IconButton(onClick = onToggleGrid, modifier = Modifier.size(34.dp)) {
+                Icon(
+                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                    contentDescription = "Toggle layout",
+                    modifier = Modifier.size(19.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ForYouRefineChip("Posted Today", activeQuickFilter == "today") { onSetQuickFilter("today") }
+            ForYouRefineChip("Latest 10", activeQuickFilter == "latest10") { onSetQuickFilter("latest10") }
+            ForYouRefineChip("Trending", activeQuickFilter == "trending") { onSetQuickFilter("trending") }
+            ForYouRefineChip("More filters", false, onOpenFilters)
+        }
+    }
+}
+
+@Composable
+private fun ForYouRefineChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold) },
+        leadingIcon = if (selected) {
+            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+        } else null,
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        shape = RoundedCornerShape(20.dp),
+    )
+}
 @Composable
 private fun CategoryCard(
     category: Category,

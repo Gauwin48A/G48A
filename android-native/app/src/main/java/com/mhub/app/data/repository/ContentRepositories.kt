@@ -145,6 +145,9 @@ class PostsRepository @Inject constructor(
     }
 
     suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().allItems }
+    suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
+        api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit
+    }
     suspend fun deleteRecentlyViewed(postId: String): ApiResult<Unit> = safeApiCall { api.deleteRecentlyViewed(postId); Unit }
     suspend fun clearRecentlyViewed(): ApiResult<Unit> = safeApiCall { api.clearRecentlyViewed(); Unit }
 

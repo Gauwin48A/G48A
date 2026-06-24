@@ -16,12 +16,12 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -164,10 +164,10 @@ fun MhubTopBar(
                     }
                 }
 
-                // Wishlist (bookmark icon)
+                // Wishlist save
                 IconButton(onClick = onWishlist) {
                     Icon(
-                        Icons.Outlined.BookmarkBorder,
+                        Icons.Default.BookmarkAdd,
                         contentDescription = stringResource(R.string.topbar_wishlist),
                         tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(22.dp),

@@ -497,7 +497,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.ALL_POSTS) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
                         ExploreScreen(
                             onOpenPost = { id ->
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
@@ -514,7 +514,7 @@ fun MhubApp(
                     }
 
                 composable(Routes.FOR_YOU) {
-                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             isGuest = guestBrowsing && !isAuthenticated,
@@ -1433,7 +1433,8 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
+                        // Home + Browse tabs
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FEED).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1441,42 +1442,34 @@ fun MainShell(
                                 onClick = { navigateToTab(tab) },
                             )
                         }
-                        Box(
-                            modifier = Modifier.size(52.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
-                            val authGate = LocalAuthGate.current
-                            val authVm: com.mhub.app.ui.auth.AuthViewModel = hiltViewModel()
-                            val isAuthed by authVm.isAuthenticated.collectAsState()
-                            val sellScope = rememberCoroutineScope()
-                            FloatingActionButton(
-                                onClick = {
-                                    if (!isAuthed) {
-                                        authGate()
-                                    } else {
-                                        sellScope.launch {
-                                            val destination = sellFlowVm.resolveDestination()
-                                            navController.navigate(destination) { launchSingleTop = true }
-                                        }
-                                    }
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = Color.White,
-                                modifier = Modifier.size(44.dp),
-                                elevation = FloatingActionButtonDefaults.elevation(
-                                    defaultElevation = 4.dp,
-                                    pressedElevation = 8.dp,
+                        // + Sell button — prominent center action
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    onClick = { navController.navigate(Routes.POST_WELCOME) { launchSingleTop = true } },
                                 ),
-                            ) {
-                                Icon(
-                                    Icons.Filled.AddCircle,
-                                    contentDescription = stringResource(R.string.nav_sell),
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.AddCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(26.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = stringResource(R.string.nav_sell),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
                         }
-                        listOf(BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                        // Account tabs
+                        listOf(BottomTab.FOR_YOU, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1484,6 +1477,7 @@ fun MainShell(
                                 onClick = { navigateToTab(tab) },
                             )
                         }
+                        // More menu
                         Column(
                             modifier = Modifier
                                 .weight(1f)

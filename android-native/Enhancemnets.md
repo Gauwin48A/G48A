@@ -45,6 +45,7 @@ I have reorganized and rephrased the entire document into a structured page-wise
 * Optimize spacing for mobile usability.
 
 ### Implementation Plan
+if had then:
 
 1. Remove top navbar from Home page.
 
@@ -62,7 +63,7 @@ I have reorganized and rephrased the entire document into a structured page-wise
 
 ### Current Issues / Bugs
 
-* Top navigation bar missing.
+
 
 * Subcategories have poor UI/UX.
 
@@ -186,7 +187,7 @@ Search must work on:
 
 ### Implementation Plan
 
-1. Add top navigation bar.
+1.in top navbar we had heart icon  which indicates  wishlist page so that is confusing with like symbol so for wishlist i.e. saving we had other icon which is save symbol which we had in instagram as well like that we need to have.
 
 2. Redesign subcategory section.
 
@@ -428,7 +429,7 @@ Search must work on:
 
 ### Implementation Plan
 
-1. Rebuild page using All Posts design system.
+1. Rebuild page using All Posts design system.completely rebuild for-you page  based on referring to allposts page.
 
 2. Remove incorrect back navigation.
 

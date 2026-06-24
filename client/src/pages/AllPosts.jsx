@@ -2765,7 +2765,7 @@ const ve = 5,
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
         window.matchMedia("(max-width: 767px)").matches,
-      quickFilterMax = isNarrowQuickFilterViewport ? 0 : 4,
+      quickFilterMax = isForYouMode ? 2 : isNarrowQuickFilterViewport ? 0 : 4,
       quickFilterChips = [
         {
           key: "posted-today",
@@ -2840,7 +2840,343 @@ const ve = 5,
           className:
             "border-dashed border-slate-300 text-slate-600 bg-[var(--surface-1)] hover:bg-[var(--surface-2)] dark:border-slate-600 dark:text-slate-200 dark:border-dashed dark:bg-[var(--surface-1)] dark:hover:bg-[var(--surface-2)]",
         },
-          ],
+      ],
+      forYouHeroNode = isForYouMode
+        ? React.createElement(
+            "section",
+            {
+              className: "w-full mhub-allposts-hero mhub-foryou-redesign-hero",
+              "data-density": "extra",
+            },
+            React.createElement(
+              "div",
+              { className: `w-full ${pageMaxWidthClass} mx-auto px-3 sm:px-4 pt-3` },
+              React.createElement(
+                "div",
+                {
+                  className:
+                    "mhub-allposts-hero-card overflow-hidden border border-indigo-100/80 bg-gradient-to-br from-white via-indigo-50/70 to-sky-50/80 p-0 shadow-sm dark:border-indigo-500/20 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/30",
+                },
+                React.createElement(
+                  "div",
+                  { className: "px-4 py-4 sm:px-5 sm:py-5" },
+                  React.createElement(
+                    "div",
+                    { className: "flex items-start justify-between gap-3" },
+                    React.createElement(
+                      "div",
+                      { className: "min-w-0" },
+                      React.createElement(
+                        "div",
+                        {
+                          className:
+                            "mb-2 flex flex-wrap items-center gap-2",
+                        },
+                        React.createElement(
+                          "span",
+                          {
+                            className:
+                              "inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white/85 px-2.5 py-1 text-xs font-bold text-indigo-700 shadow-sm dark:border-indigo-500/30 dark:bg-white/10 dark:text-indigo-200",
+                          },
+                          React.createElement(zo, { className: "h-3.5 w-3.5" }),
+                          tr("ai_curated", "AI curated"),
+                        ),
+                        React.createElement(
+                          "h1",
+                          {
+                            className:
+                              "text-2xl font-black tracking-tight text-slate-950 sm:text-3xl dark:text-white",
+                          },
+                          tr("for_you", "For You"),
+                        ),
+                      ),
+                      React.createElement(
+                        "p",
+                        {
+                          className:
+                            "mt-1 max-w-xl text-sm font-medium leading-5 text-slate-600 dark:text-slate-300",
+                        },
+                        tr(
+                          "for_you_refined_subtitle",
+                          "Personalized listings ranked from your activity, filters, location, and fresh marketplace signals.",
+                        ),
+                      ),
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => y("/all-posts"),
+                        className:
+                          "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-white/10 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/15",
+                      },
+                      tr("all_posts", "All Posts"),
+                      React.createElement(Bo, { className: "h-3.5 w-3.5" }),
+                    ),
+                  ),
+                  React.createElement(
+                    "div",
+                    {
+                      className:
+                        "mhub-foryou-hero-stats mt-4 grid grid-cols-3 keep-cols gap-2 text-center sm:max-w-lg",
+                    },
+                    [
+                      {
+                        key: "items",
+                        label: tr("matched_items", "Matched"),
+                        value: Number.isFinite(resultsCount) ? resultsCount : 0,
+                      },
+                      {
+                        key: "categories",
+                        label: tr("categories", "Categories"),
+                        value: allPostsCategoryFallback.length || 0,
+                      },
+                      {
+                        key: "filters",
+                        label: tr("filters", "Filters"),
+                        value: activeFiltersCount,
+                      },
+                    ].map((stat) =>
+                      React.createElement(
+                        "div",
+                        {
+                          key: stat.key,
+                          className:
+                            "rounded-2xl border border-white/70 bg-white/80 px-2 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/10",
+                        },
+                        React.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-base font-black text-slate-950 dark:text-white",
+                          },
+                          stat.value,
+                        ),
+                        React.createElement(
+                          "div",
+                          {
+                            className:
+                              "mt-0.5 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
+                          },
+                          stat.label,
+                        ),
+                      ),
+                    ),
+                  ),
+                  React.createElement(
+                    "div",
+                    { className: "mt-4 flex flex-wrap items-center gap-2" },
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => {
+                          const e = document.getElementById("all-posts-feed");
+                          e?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        },
+                        className:
+                          "inline-flex h-10 items-center gap-1.5 rounded-full bg-blue-600 px-3.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700",
+                      },
+                      React.createElement(Qe, { className: "h-3.5 w-3.5" }),
+                      tr("browse", "Browse"),
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => {
+                          if (!C) {
+                            setLoginPromptOpen(!0);
+                            return;
+                          }
+                          setShuffleSeed(Date.now());
+                        },
+                        disabled: C && !canShuffle,
+                        className:
+                          "inline-flex h-10 items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3.5 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-500/30 dark:bg-white/10 dark:text-indigo-200 dark:hover:bg-white/15",
+                      },
+                      React.createElement(zo, { className: "h-3.5 w-3.5" }),
+                      tr("shuffle", "Shuffle"),
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => setAutoRefreshEnabled((e) => !e),
+                        "aria-pressed": autoRefreshEnabled,
+                        className: `inline-flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold shadow-sm transition ${
+                          autoRefreshEnabled
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                        }`,
+                      },
+                      React.createElement(zo, {
+                        className: `h-3.5 w-3.5 ${autoRefreshEnabled ? "animate-spin" : ""}`,
+                      }),
+                      autoRefreshEnabled
+                        ? tr("live_on", "Live on")
+                        : tr("live", "Live"),
+                    ),
+                    ue &&
+                      React.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: Y,
+                          className:
+                            "inline-flex h-10 items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200",
+                        },
+                        React.createElement(Jo, { className: "h-3.5 w-3.5" }),
+                        tr("clear_filters", "Clear filters"),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+          )
+        : null,
+      toolbarQuickFiltersNode = React.createElement(
+        "div",
+        { className: "w-full mhub-allposts-filters" },
+        React.createElement(
+          AllPostsQuickFilters,
+          {
+            title: isForYouMode
+              ? tr("refine_for_you", "Refine For You")
+              : tr("quick_filters", "Quick filters"),
+            variant: isForYouMode ? "forYou" : "default",
+            compact: !0,
+            inline: !0,
+            inlineWrap: isForYouMode ? !0 : !1,
+            hideTitle: !isForYouMode,
+            showDivider: !1,
+            chips: quickFiltersChips,
+            maxWidthClass: pageMaxWidthClass,
+            headerRight: React.createElement(
+              "div",
+              {
+                className: `quick-filters-actions ${
+                  isForYouMode ? "hidden sm:flex" : "flex"
+                } flex-wrap items-center gap-2`,
+              },
+              React.createElement(
+                "div",
+                {
+                  className:
+                    "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-1 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
+                },
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: "mhub-allposts-action-btn",
+                    onClick: () => {
+                      const e = document.getElementById("all-posts-feed");
+                      e?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    },
+                  },
+                  React.createElement(Qe, { className: "w-4 h-4" }),
+                  tr("browse", "Browse"),
+                ),
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: "mhub-allposts-action-btn",
+                    onClick: () => {
+                      if (!C) {
+                        setLoginPromptOpen(!0);
+                        return;
+                      }
+                      setShuffleSeed(Date.now());
+                    },
+                    disabled: C && !canShuffle,
+                  },
+                  React.createElement(zo, { className: "w-4 h-4" }),
+                  tr("shuffle", "Shuffle"),
+                ),
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: `mhub-allposts-action-btn ${
+                      autoRefreshEnabled ? "is-active" : ""
+                    }`,
+                    onClick: () => setAutoRefreshEnabled((e) => !e),
+                  },
+                  React.createElement(zo, { className: "w-4 h-4" }),
+                  autoRefreshEnabled
+                    ? tr("live_updates_on", "Live")
+                    : tr("live_updates_off", "Live"),
+                ),
+              ),
+              React.createElement(PageDensityToggle, {
+                value: density,
+                onChange: setDensity,
+                label: tr("view", "View"),
+                className: "hidden sm:inline-flex ml-1",
+              }),
+              activeFiltersCount > 0 &&
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className:
+                      "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors",
+                    onClick: Y,
+                  },
+                  tr("clear_all_filters", "Clear all filters"),
+                ),
+            ),
+          },
+          activeSubcategoryLabel !== "All" &&
+            React.createElement(
+              "div",
+              { className: "flex flex-wrap items-center gap-2.5" },
+              React.createElement(
+                "span",
+                {
+                  className:
+                    "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-600/40 dark:bg-indigo-900/30 dark:text-indigo-200",
+                },
+                `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
+              ),
+              React.createElement(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => {
+                    clearSubcategoryMode();
+                    b({ subcategory: "All" });
+                  },
+                  className:
+                    "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                },
+                tr("show_all_in_category", "Show all in category"),
+              ),
+            ),
+          ge.length > 0 &&
+            React.createElement(
+              "div",
+              { className: "flex flex-wrap items-center gap-2.5" },
+              ge.map((e) =>
+                React.createElement(
+                  "button",
+                  {
+                    key: e.key,
+                    type: "button",
+                    onClick: () => Te(e.key),
+                    className:
+                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                    title: tr("remove_filter", "Remove filter"),
+                  },
+                  React.createElement("span", null, e.label),
+                  React.createElement(Jo, { className: "w-4 h-4 font-semibold" }),
+                ),
+              ),
+            ),
+        ),
+      ),
       contentTopOffset = 0,
       feedHeaderCompact = !showModeBanner,
       showFeedTitle = showModeBanner,
@@ -2978,7 +3314,9 @@ const ve = 5,
             ),
           ),
         ),
+      forYouHeroNode,
       !showModeBanner &&
+        !isForYouMode &&
         React.createElement(
           "section",
           {
@@ -3074,157 +3412,7 @@ const ve = 5,
           ref: secondaryStickyRef,
           style: { top: `${secondaryStickyTop}px` },
         },
-        C && React.createElement(
-          "div",
-          { className: "w-full mhub-allposts-filters" },
-          React.createElement(
-            AllPostsQuickFilters,
-            {
-              title: tr("quick_filters", "Quick filters"),
-              variant: "default",
-              compact: !0,
-              inline: !0,
-              inlineWrap: !1,
-              hideTitle: !0,
-              showDivider: !1,
-              chips: quickFiltersChips,
-              maxWidthClass: pageMaxWidthClass,
-              headerRight: React.createElement(
-                "div",
-                { className: "quick-filters-actions flex flex-wrap items-center gap-2" },
-                React.createElement(
-                  "div",
-                  {
-                    className:
-                      "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-1 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
-                  },
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      className: "mhub-allposts-action-btn",
-                      onClick: () => {
-                        const e = document.getElementById("all-posts-feed");
-                        e?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        });
-                      },
-                    },
-                    React.createElement(Bo, { className: "w-4 h-4" }),
-                    tr("browse", "Browse"),
-                  ),
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      className: "mhub-allposts-action-btn",
-                      onClick: () => {
-                        if (!C) {
-                          setLoginPromptOpen(!0);
-                          return;
-                        }
-                        setShuffleSeed(Date.now());
-                        if (typeof window !== "undefined") {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }
-                      },
-                    },
-                    React.createElement(zo, { className: "w-4 h-4" }),
-                    tr("shuffle_feed", "Shuffle"),
-                  ),
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      className: `mhub-allposts-action-btn ${
-                        autoRefreshEnabled ? "is-active" : ""
-                      }`,
-                      onClick: () => setAutoRefreshEnabled((e) => !e),
-                    },
-                    React.createElement(zo, { className: "w-4 h-4" }),
-                    autoRefreshEnabled
-                      ? tr("live_updates_on", "Live")
-                      : tr("live_updates_off", "Live"),
-                  ),
-                ),
-                React.createElement(PageDensityToggle, {
-                  value: density,
-                  onChange: setDensity,
-                  label: tr("view", "View"),
-                  className: "hidden sm:inline-flex ml-1",
-                }),
-                activeFiltersCount > 0 &&
-                  React.createElement(
-                    "button",
-                    {
-                      type: "button",
-                      className:
-                        "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors",
-                      onClick: Y,
-                    },
-                    tr("clear_all_filters", "Clear all filters"),
-                  ),
-              ),
-            },
-            activeSubcategoryLabel !== "All" &&
-              React.createElement(
-                "div",
-                { className: "flex flex-wrap items-center gap-2.5" },
-                React.createElement(
-                  "span",
-                  {
-                    className:
-                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-600/40 dark:bg-indigo-900/30 dark:text-indigo-200",
-                  },
-                  `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
-                ),
-                React.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => {
-                      clearSubcategoryMode();
-                      b({ subcategory: "All" });
-                    },
-                    className:
-                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
-                  },
-                  tr("show_all_in_category", "Show all in category"),
-                ),
-                React.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => y(browseOtherSubcategoriesPath),
-                    className:
-                      "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-sky-200 bg-sky-50 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-600/40 dark:bg-sky-900/30 dark:text-slate-200 dark:hover:bg-sky-950/20",
-                  },
-                  tr("browse_other_subcategories", "Browse other subcategories"),
-                ),
-              ),
-            ge.length > 0 &&
-              React.createElement(
-                "div",
-                { className: "flex flex-wrap items-center gap-2.5" },
-                ge.map((e) =>
-                  React.createElement(
-                    "button",
-                    {
-                      key: e.key,
-                      type: "button",
-                      onClick: () => Te(e.key),
-                      className:
-                        "inline-flex items-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
-                      title: tr("remove_filter", "Remove filter"),
-                    },
-                    React.createElement("span", null, e.label),
-                    React.createElement(Jo, { className: "w-4 h-4 font-semibold" }),
-                  ),
-                ),
-              ),
-          ),
-        ),
+        toolbarQuickFiltersNode,
         React.createElement(AllPostsCategoryBar, {
           categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
             ? appScopedCategoryList.map((c) => ({

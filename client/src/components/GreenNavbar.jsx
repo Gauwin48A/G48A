@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiGrid, FiUserCheck, FiMapPin, FiBell, FiSave, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useCategoryMode } from '@/context/CategoryModeContext';
 import { useLocation } from '@/context/LocationContext';
@@ -78,7 +78,7 @@ const GreenNavbar = () => {
     { key: 'subcategories', path: '/subcategories', icon: FiGrid, group: 'trade' },
     { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
     { key: 'saved_searches', path: '/saved-searches', icon: FiSearch, group: 'trade', requiresAuth: true },
-    { key: 'wishlist', path: '/wishlist', icon: FiBookmark, group: 'trade', requiresAuth: true },
+    { key: 'wishlist', path: '/wishlist', icon: FiSave, group: 'trade', requiresAuth: true },
     { key: 'recently_viewed', path: '/recently-viewed', icon: FiClock, group: 'trade' },
     { key: 'cart', path: '/cart', icon: FiShoppingCart, group: 'trade', requiresAuth: true },
     { key: 'compare', path: '/compare', icon: FiCheck, group: 'trade' },
@@ -102,10 +102,9 @@ const GreenNavbar = () => {
   ];
 
   const bottomNavLinks = [
-    { key: 'home', path: '/category-hub', icon: <FiHome />, matchPaths: ['/category-hub', '/home', '/'] },
     { key: 'all_posts', path: '/all-posts', icon: <FiSearch />, matchPaths: ['/all-posts', '/listings', '/search', '/nearby'] },
+    { key: 'feed', path: '/feed', icon: <FiFileText />, matchPaths: ['/feed', '/my-feed', '/public-wall'] },
     { key: 'for_you', path: '/for-you', icon: <FiStar />, matchPaths: ['/for-you'] },
-    { key: 'sell', path: '/post-welcome', icon: <FiGrid />, matchPaths: ['/post-welcome', '/add-post', '/sell', '/post_add', '/edit-post'] },
     { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
     { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile', '/notifications', '/dashboard'] },
     { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
@@ -579,10 +578,7 @@ const GreenNavbar = () => {
     });
   };
 
-  // Show all bottom nav links matching the web app: Home, All Posts, For You | +Sell | Feed, Rewards, Profile, More
-  const visibleBottomNavLinks = bottomNavLinks.filter((link) => link.key !== '+Sell');
-  const bottomNavLeftLinks = visibleBottomNavLinks.slice(0, 3);
-  const bottomNavRightLinks = visibleBottomNavLinks.slice(3);
+  // Bottom nav mirrors the app roadmap: All Posts, Feed, For You, Rewards, Profile, More.
   // Track when More drawer was last opened to prevent ghost-click immediate close on Android WebView
   const moreOpenTimeRef = useRef(0);
   // Dedicated handler for More button — always opens (never toggles) to prevent double-fire closing
@@ -777,10 +773,10 @@ const GreenNavbar = () => {
                     {t('notifications')}
                   </span>
                 </Link>
-                {/* Wishlist Bookmark */}
+                {/* Wishlist save */}
                 <Link to="/wishlist" aria-label={t('wishlist', { defaultValue: 'Wishlist' })} className="relative group">
                   <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
-                    <FiBookmark className="w-5 h-5" />
+                    <FiSave className="w-5 h-5" />
                   </span>
                   {isLoggedIn && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1088,7 +1084,6 @@ const GreenNavbar = () => {
       {!isAuthPage && !hideChromeOnHub && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-around items-center px-1 py-0 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>
         {bottomNavLinks.map((link) => {
           const isActive = isBottomNavLinkActive(link);
-          const isSellTab = link.key === 'sell';
           const isMoreTab = link.key === 'more';
 
           return (
@@ -1105,24 +1100,15 @@ const GreenNavbar = () => {
                 }
               }}
               style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[52px] px-2 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''} ${isSellTab ? 'mhub-bottom-nav-sell' : ''}`}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[52px] px-2 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
-              {isSellTab ? (
-                <span className="mhub-bottom-nav-sell-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </span>
-              ) : (
-                <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
-                  {link.icon}
-                </span>
-              )}
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '12px' }}>
-                {t(link.key, { defaultValue: link.key === 'sell' ? 'Sell' : isMoreTab ? 'More' : link.key })}
+              <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
+                {link.icon}
               </span>
-              {isActive && !isSellTab && <span className="mhub-bottom-nav-indicator" />}
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '12px' }}>
+                {t(link.key, { defaultValue: isMoreTab ? 'More' : link.key })}
+              </span>
+              {isActive && <span className="mhub-bottom-nav-indicator" />}
             </button>
           );
         })}

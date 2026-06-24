@@ -881,6 +881,16 @@ main[role="main"] {
     gap: 8px !important;
   }
 
+  .mhub-foryou-redesign-hero .mhub-foryou-hero-stats.grid.grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .mhub-foryou-redesign-hero .mhub-foryou-hero-stats > div {
+    border-radius: 14px !important;
+    padding: 10px 4px !important;
+  }
+
   /* Profile stats row - ensure readability */
   .grid.grid-cols-3 .text-center {
     padding: 10px 8px !important;
