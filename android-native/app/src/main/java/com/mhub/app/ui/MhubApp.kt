@@ -986,8 +986,9 @@ fun MhubApp(
             composable(Routes.RECENTLY_VIEWED) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                     RecentlyViewedScreen(
-                        onBack = { navController.popBackStack() },
-                        onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                        { navController.popBackStack() },
+                        { id: String -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                        { id: String -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
                     )
                 }
             }

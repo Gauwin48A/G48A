@@ -1607,7 +1607,8 @@
     <string name="home_trending_now">Trending Now</string>
     <string name="home_no_results">No results</string>
     <string name="home_based_on_browsing">Based on your browsing</string>
-
+    <string name="home_inr_price">INR %s</string>
+    <string name="home_search_hint">Search listings, categories…</string>
 
     <!-- Shared button labels -->
     <string name="btn_delete">Delete</string>
@@ -1653,6 +1654,7 @@
     <string name="profile_clear_selection">Clear selection</string>
     <string name="profile_cancel">Cancel</string>
     <string name="profile_update">Update</string>
+    <string name="profile_update_preferences">Update Preferences</string>
     <string name="profile_verification_status">Verification Status</string>
     <string name="profile_price_range">Price Range</string>
     <string name="profile_selected_categories">Selected Categories</string>

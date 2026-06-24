@@ -52,6 +52,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -73,12 +74,14 @@ class RecentlyViewedViewModel @Inject constructor(
     private val _state = MutableStateFlow(RecentlyViewedUiState())
     val state: StateFlow<RecentlyViewedUiState> = _state.asStateFlow()
     private var lastLocaleVersion = 0L
+    private var remoteRecentPosts: List<Post> = emptyList()
 
     init {
+        syncRecentlyViewed(loading = SharedExploreStore.recentlyViewedPosts.isEmpty())
         load()
         viewModelScope.launch {
-            repo.recentlyViewedFlow.collect { posts ->
-                _state.value = _state.value.copy(posts = posts, loading = false)
+            SharedExploreStore.recentlyViewedFlow.collect {
+                syncRecentlyViewed(loading = false)
             }
         }
         viewModelScope.launch {
@@ -89,19 +92,46 @@ class RecentlyViewedViewModel @Inject constructor(
         }
     }
 
+    private fun syncRecentlyViewed(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedPosts = (SharedExploreStore.recentlyViewedPosts + remoteRecentPosts)
+            .distinctBy { it.stableId }
+            .take(50)
+        _state.value = _state.value.copy(
+            loading = loading,
+            posts = mergedPosts,
+            error = if (mergedPosts.isEmpty()) error else null,
+        )
+    }
+
     fun load() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true)
-            repo.recentlyViewed()
+            _state.value = _state.value.copy(
+                loading = _state.value.posts.isEmpty() && SharedExploreStore.recentlyViewedPosts.isEmpty(),
+                error = null,
+            )
+            when (val result = repo.recentlyViewed()) {
+                is ApiResult.Success -> {
+                    remoteRecentPosts = result.data
+                    syncRecentlyViewed(loading = false)
+                }
+                is ApiResult.Failure -> {
+                    syncRecentlyViewed(loading = false, error = result.error.message)
+                }
+            }
         }
     }
 
     fun clearAll() {
-        _state.value = _state.value.copy(posts = emptyList())
+        remoteRecentPosts = emptyList()
+        SharedExploreStore.clearRecentlyViewed()
+        syncRecentlyViewed(loading = false)
         viewModelScope.launch { repo.clearRecentlyViewed() }
     }
 
     fun removePost(id: String) {
+        remoteRecentPosts = remoteRecentPosts.filterNot { it.stableId == id }
+        SharedExploreStore.removeRecentlyViewed(id)
+        syncRecentlyViewed(loading = false)
         viewModelScope.launch { repo.deleteRecentlyViewed(id) }
     }
 }

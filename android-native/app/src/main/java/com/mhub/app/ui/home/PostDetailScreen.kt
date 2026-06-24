@@ -103,6 +103,7 @@ import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.TrustScoreResponse
+import com.mhub.app.data.repository.CartRepository
 import com.mhub.app.data.repository.OffersRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.SocialRepository
@@ -112,6 +113,7 @@ import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.PromoBadgeRow
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -162,6 +164,7 @@ class PostDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repo: PostsRepository,
     private val wishlistRepo: WishlistRepository,
+    private val cartRepo: CartRepository,
     private val trustRepo: TrustRepository,
     private val offersRepo: OffersRepository,
     private val socialRepo: SocialRepository,
@@ -193,6 +196,7 @@ class PostDetailViewModel @Inject constructor(
             when (val result = repo.detail(postId)) {
                 is ApiResult.Success -> {
                     _state.value = PostDetailState(loading = false, post = result.data)
+                    SharedExploreStore.addRecentlyViewed(result.data)
                     // Track view + recently viewed
                     launch { runCatching { socialRepo.viewPost(postId) } }
                     launch { runCatching { socialRepo.trackViewed(postId) } }
@@ -290,6 +294,7 @@ class PostDetailViewModel @Inject constructor(
                         post = mockPost,
                         error = null,
                     )
+                    SharedExploreStore.addRecentlyViewed(mockPost)
                 }
             }
         }
@@ -303,9 +308,12 @@ class PostDetailViewModel @Inject constructor(
         viewModelScope.launch {
             if (current.wishlisted) {
                 wishlistRepo.remove(postId)
+                SharedExploreStore.removeWishlist(postId)
                 _state.value = _state.value.copy(wishlisted = false, wishlistLoading = false)
             } else {
                 wishlistRepo.add(postId)
+                // Save full Post to shared store so WishlistScreen works without backend
+                _state.value.post?.let { SharedExploreStore.addWishlist(it) }
                 _state.value = _state.value.copy(wishlisted = true, wishlistLoading = false)
             }
         }
@@ -374,12 +382,24 @@ class PostDetailViewModel @Inject constructor(
     fun clearBoostMessage() { _state.value = _state.value.copy(boostMessage = null) }
 
     fun toggleCompare() {
-        _state.value = _state.value.copy(inCompareList = !_state.value.inCompareList)
+        val newValue = !_state.value.inCompareList
+        _state.value = _state.value.copy(inCompareList = newValue)
+        // Save/remove from shared store so CompareScreen works without backend
+        if (newValue) {
+            _state.value.post?.let { SharedExploreStore.addCompare(it) }
+            viewModelScope.launch { repo.addToCompare(postId) }
+        } else {
+            SharedExploreStore.removeCompare(postId)
+            viewModelScope.launch { repo.removeFromCompare(postId) }
+        }
     }
 
     fun addToCart() {
         if (_state.value.inCart) return
         _state.value = _state.value.copy(inCart = true)
+        // Save to shared store so CartScreen works without backend
+        _state.value.post?.let { SharedExploreStore.addCart(it) }
+        viewModelScope.launch { cartRepo.add(postId) }
     }
 }
 

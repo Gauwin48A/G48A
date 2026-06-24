@@ -51,6 +51,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -1969,49 +1970,96 @@ data class CartUiState(
 class CartViewModel @Inject constructor(private val repo: CartRepository) : ViewModel() {
     private val _state = MutableStateFlow(CartUiState())
     val state: StateFlow<CartUiState> = _state.asStateFlow()
-    init { load() }
-    fun load() {
+    private var remoteCartItems: List<CartItem> = emptyList()
+
+    init {
+        syncCartItems(loading = SharedExploreStore.cartPosts.isEmpty())
+        load()
         viewModelScope.launch {
-            when (val r = repo.get()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, items = r.data.items, total = r.data.total)
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+            SharedExploreStore.cartFlow.collect {
+                syncCartItems(loading = false)
             }
         }
     }
-    fun remove(postId: String) { viewModelScope.launch { repo.remove(postId); load() } }
-    fun removeWithUndo(postId: String) {
-        val item = _state.value.items.find { it.postId == postId } ?: return
+
+    private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedItems = mergeCartItems(remoteCartItems, SharedExploreStore.cartPosts)
         _state.value = _state.value.copy(
-            items = _state.value.items.filter { it.postId != postId },
-            pendingUndoItem = item,
+            loading = loading,
+            items = mergedItems,
+            total = mergedItems.cartTotal(),
+            error = if (mergedItems.isEmpty()) error else null,
         )
     }
+
+    fun load() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                loading = _state.value.items.isEmpty() && SharedExploreStore.cartPosts.isEmpty(),
+                error = null,
+            )
+            when (val r = repo.get()) {
+                is ApiResult.Success -> {
+                    remoteCartItems = r.data.items
+                    syncCartItems(loading = false)
+                }
+                is ApiResult.Failure -> syncCartItems(loading = false, error = r.error.message)
+            }
+        }
+    }
+
+    private fun removeLocalCartItem(postId: String) {
+        remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        SharedExploreStore.removeCart(postId)
+        syncCartItems(loading = false)
+    }
+
+    fun remove(postId: String) {
+        removeLocalCartItem(postId)
+        viewModelScope.launch { repo.remove(postId) }
+    }
+
+    fun removeWithUndo(postId: String) {
+        val item = _state.value.items.find { it.matchesPostId(postId) } ?: return
+        removeLocalCartItem(postId)
+        _state.value = _state.value.copy(pendingUndoItem = item)
+    }
+
     fun undoRemove() {
         val item = _state.value.pendingUndoItem ?: return
-        _state.value = _state.value.copy(
-            items = listOf(item) + _state.value.items,
-            pendingUndoItem = null,
-        )
+        SharedExploreStore.addCart(item.toPost())
+        _state.value = _state.value.copy(pendingUndoItem = null)
+        syncCartItems(loading = false)
     }
+
     fun commitRemove() {
         val item = _state.value.pendingUndoItem ?: return
         _state.value = _state.value.copy(pendingUndoItem = null)
         viewModelScope.launch { repo.remove(item.postId ?: "") }
     }
+
     fun saveForLater(postId: String) {
-        val item = _state.value.items.find { it.postId == postId } ?: return
+        val item = _state.value.items.find { it.matchesPostId(postId) } ?: return
+        remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        SharedExploreStore.removeCart(postId)
         _state.value = _state.value.copy(
-            items = _state.value.items.filter { it.postId != postId },
+            items = _state.value.items.filterNot { it.matchesPostId(postId) },
             savedForLater = _state.value.savedForLater + item,
         )
+        syncCartItems(loading = false)
+        viewModelScope.launch { repo.remove(postId) }
     }
+
     fun moveToCart(postId: String) {
-        val item = _state.value.savedForLater.find { it.postId == postId } ?: return
+        val item = _state.value.savedForLater.find { it.matchesPostId(postId) } ?: return
+        SharedExploreStore.addCart(item.toPost())
         _state.value = _state.value.copy(
-            savedForLater = _state.value.savedForLater.filter { it.postId != postId },
-            items = _state.value.items + item,
+            savedForLater = _state.value.savedForLater.filterNot { it.matchesPostId(postId) },
         )
+        syncCartItems(loading = false)
+        viewModelScope.launch { repo.add(postId) }
     }
+
     fun updateQty(postId: String, qty: Int) {
         if (qty < 1 || qty > 10) return
         viewModelScope.launch { repo.updateQty(postId, qty); load() }
@@ -2044,15 +2092,53 @@ class CartViewModel @Inject constructor(private val repo: CartRepository) : View
     }
     fun bulkRemove() {
         val ids = _state.value.selectedIds
-        _state.value = _state.value.copy(items = _state.value.items.filter { (it.postId ?: "") !in ids }, selectedIds = emptySet())
+        ids.forEach { removeLocalCartItem(it) }
+        _state.value = _state.value.copy(selectedIds = emptySet())
         viewModelScope.launch { ids.forEach { repo.remove(it) } }
     }
     fun bulkSaveForLater() {
         val ids = _state.value.selectedIds
         val (toSave, keep) = _state.value.items.partition { (it.postId ?: "") in ids }
+        remoteCartItems = remoteCartItems.filterNot { (it.postId ?: it.id ?: it.stableId) in ids }
+        ids.forEach { SharedExploreStore.removeCart(it) }
         _state.value = _state.value.copy(items = keep, savedForLater = _state.value.savedForLater + toSave, selectedIds = emptySet())
+        syncCartItems(loading = false)
     }
 }
+
+private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
+    postId = stableId,
+    title = displayTitle,
+    price = price,
+    currency = currency,
+    imageUrl = primaryImage,
+    sellerName = sellerName ?: userName ?: location,
+    quantity = quantity,
+)
+
+private fun CartItem.toPost(): Post = Post(
+    id = postId ?: id ?: stableId,
+    title = title,
+    price = price,
+    currency = currency,
+    imageUrl = imageUrl,
+    sellerName = sellerName,
+)
+
+private fun CartItem.matchesPostId(postId: String): Boolean =
+    this.postId == postId || id == postId || stableId == postId
+
+private fun mergeCartItems(remoteItems: List<CartItem>, localPosts: List<Post>): List<CartItem> {
+    val remoteIds = remoteItems.map { it.postId ?: it.id ?: it.stableId }.toSet()
+    val localItems = localPosts
+        .filterNot { post ->
+            listOfNotNull(post.stableId, post.postId, post.id).any { it in remoteIds }
+        }
+        .map { it.toCartItem() }
+    return remoteItems + localItems
+}
+
+private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.quantity }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -2409,20 +2495,52 @@ data class RecentlyViewedUiState(val loading: Boolean = true, val posts: List<Po
 class RecentlyViewedViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
     private val _state = MutableStateFlow(RecentlyViewedUiState())
     val state: StateFlow<RecentlyViewedUiState> = _state.asStateFlow()
-    init { load() }
+    private var remoteRecentPosts: List<Post> = emptyList()
+
+    init {
+        syncRecentlyViewed(loading = SharedExploreStore.recentlyViewedPosts.isEmpty())
+        load()
+        viewModelScope.launch {
+            SharedExploreStore.recentlyViewedFlow.collect {
+                syncRecentlyViewed(loading = false)
+            }
+        }
+    }
+
+    private fun syncRecentlyViewed(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedPosts = (SharedExploreStore.recentlyViewedPosts + remoteRecentPosts)
+            .distinctBy { it.stableId }
+            .take(50)
+        _state.value = _state.value.copy(
+            loading = loading,
+            posts = mergedPosts,
+            error = if (mergedPosts.isEmpty()) error else null,
+        )
+    }
+
     fun load() { viewModelScope.launch {
-        _state.value = RecentlyViewedUiState(loading = true)
+        _state.value = _state.value.copy(
+            loading = _state.value.posts.isEmpty() && SharedExploreStore.recentlyViewedPosts.isEmpty(),
+            error = null,
+        )
         when (val r = repo.recentlyViewed()) {
-            is ApiResult.Success -> _state.value = RecentlyViewedUiState(loading = false, posts = r.data)
-            is ApiResult.Failure -> _state.value = RecentlyViewedUiState(loading = false, error = r.error.message)
+            is ApiResult.Success -> {
+                remoteRecentPosts = r.data
+                syncRecentlyViewed(loading = false)
+            }
+            is ApiResult.Failure -> syncRecentlyViewed(loading = false, error = r.error.message)
         }
     } }
     fun clearAll() {
-        _state.value = _state.value.copy(posts = emptyList())
+        remoteRecentPosts = emptyList()
+        SharedExploreStore.clearRecentlyViewed()
+        syncRecentlyViewed(loading = false)
         viewModelScope.launch { repo.clearRecentlyViewed() }
     }
     fun removePost(id: String) {
-        _state.value = _state.value.copy(posts = _state.value.posts.filter { it.stableId != id })
+        remoteRecentPosts = remoteRecentPosts.filterNot { it.stableId == id }
+        SharedExploreStore.removeRecentlyViewed(id)
+        syncRecentlyViewed(loading = false)
         viewModelScope.launch { repo.deleteRecentlyViewed(id) }
     }
 }
@@ -2459,18 +2577,25 @@ private fun dayGroup(isoDate: String?): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: RecentlyViewedViewModel = hiltViewModel()) {
+fun RecentlyViewedScreen(
+    onBack: () -> Unit,
+    onOpenPost: (String) -> Unit = {},
+    onOpenFeed: (String) -> Unit = {},
+    viewModel: RecentlyViewedViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsState()
     var isGrid by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var statusFilter by remember { mutableStateOf("All") }
     var bulkSelect by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
-    val statusOptions = listOf("All", "Available", "Sold", "Promoted")
+    val statusOptions = listOf("All", "Posts", "Feed", "Available", "Sold", "Promoted")
     val displayed = remember(state.posts, search, statusFilter) {
         state.posts
             .filter { if (search.isBlank()) true else it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
             .filter { post -> when (statusFilter) {
+                "Posts" -> post.status != "feed"
+                "Feed" -> post.status == "feed"
                 "Available" -> post.status?.lowercase()?.let { it != "sold" } ?: true
                 "Sold" -> post.status?.lowercase() == "sold"
                 "Promoted" -> post.isPromoted == true
@@ -2566,7 +2691,9 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                                 },
                                 modifier = Modifier.clip(RoundedCornerShape(14.dp)),
                             ) {
-                                Surface(modifier = Modifier.clickable { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+                                Surface(modifier = Modifier.clickable {
+                                    if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId)
+                                }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
                                     Column {
                                         Box(Modifier.fillMaxWidth().height(110.dp)) {
                                             if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
@@ -2609,7 +2736,9 @@ fun RecentlyViewedScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, 
                                     },
                                 ) {
                                     Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                        RecentlyViewedListItem(post) { onOpenPost(post.stableId) }
+                                        RecentlyViewedListItem(post) {
+                                            if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId)
+                                        }
                                     }
                                 }
                             }
@@ -2884,31 +3013,56 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
 class CompareViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
     private val _state = MutableStateFlow(PostListUiState())
     val state: StateFlow<PostListUiState> = _state.asStateFlow()
-    init { load() }
-    fun load() { viewModelScope.launch {
-        _state.value = _state.value.copy(loading = true)
-        when (val r = repo.compareList()) {
-            is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
-            is ApiResult.Failure -> _state.value = PostListUiState(loading = false, error = r.error.message)
-        }
-    } }
-    fun removePost(postId: String) {
-        // Optimistic remove
-        val prev = _state.value.posts
-        _state.value = _state.value.copy(posts = prev.filter { it.stableId != postId })
+    private var remoteComparePosts: List<Post> = emptyList()
+
+    init {
+        syncCompare(loading = SharedExploreStore.comparePosts.isEmpty())
+        load()
         viewModelScope.launch {
-            val result = repo.removeFromCompare(postId)
-            if (result is ApiResult.Failure) {
-                _state.value = _state.value.copy(posts = prev)
+            SharedExploreStore.compareFlow.collect {
+                syncCompare(loading = false)
             }
         }
     }
-    fun clearAll() {
-        val prev = _state.value.posts
-        _state.value = _state.value.copy(posts = emptyList())
+
+    private fun syncCompare(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedPosts = (remoteComparePosts + SharedExploreStore.comparePosts)
+            .distinctBy { it.stableId }
+            .take(4)
+        _state.value = PostListUiState(
+            loading = loading,
+            posts = mergedPosts,
+            error = if (mergedPosts.isEmpty()) error else null,
+        )
+    }
+
+    fun load() { viewModelScope.launch {
+        _state.value = _state.value.copy(
+            loading = _state.value.posts.isEmpty() && SharedExploreStore.comparePosts.isEmpty(),
+            error = null,
+        )
+        when (val r = repo.compareList()) {
+            is ApiResult.Success -> {
+                remoteComparePosts = r.data
+                syncCompare(loading = false)
+            }
+            is ApiResult.Failure -> syncCompare(loading = false, error = r.error.message)
+        }
+    } }
+    fun removePost(postId: String) {
+        remoteComparePosts = remoteComparePosts.filterNot { it.stableId == postId }
+        SharedExploreStore.removeCompare(postId)
+        syncCompare(loading = false)
         viewModelScope.launch {
-            val result = repo.clearCompare()
-            if (result is ApiResult.Failure) _state.value = _state.value.copy(posts = prev)
+            repo.removeFromCompare(postId)
+        }
+    }
+    fun clearAll() {
+        remoteComparePosts = emptyList()
+        SharedExploreStore.clearCompare()
+        syncCompare(loading = false)
+        viewModelScope.launch {
+            repo.clearCompare()
         }
     }
 }

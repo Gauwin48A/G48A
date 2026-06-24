@@ -93,6 +93,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.repository.CartRepository
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.RecommendationsRepository
@@ -249,6 +250,7 @@ class ExploreViewModel @Inject constructor(
     private val postsRepo: PostsRepository,
     private val recommendationsRepo: RecommendationsRepository,
     private val wishlistRepo: WishlistRepository,
+    private val cartRepo: CartRepository,
     private val categoriesRepo: CategoriesRepository,
     private val tiersRepo: com.mhub.app.data.repository.TiersRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
@@ -608,6 +610,12 @@ class ExploreViewModel @Inject constructor(
 
     fun loadMore() = loadPosts(reset = false)
 
+    private fun findActionPost(postId: String): Post? {
+        val current = _state.value
+        return (current.posts + current.searchResults + MOCK_EXPLORE_POSTS)
+            .firstOrNull { it.stableId == postId }
+    }
+
     fun toggleCompare(postId: String) {
         val current = _state.value.compareItems.toMutableSet()
         if (current.contains(postId)) {
@@ -617,7 +625,7 @@ class ExploreViewModel @Inject constructor(
         } else if (current.size < 4) {
             current.add(postId)
             // Save full Post to shared store so CompareScreen works without backend
-            _state.value.posts.find { it.stableId == postId }?.let { SharedExploreStore.addCompare(it) }
+            findActionPost(postId)?.let { SharedExploreStore.addCompare(it) }
             viewModelScope.launch { postsRepo.addToCompare(postId) }
         } else {
             // Max 4 reached - show limit banner
@@ -635,10 +643,12 @@ class ExploreViewModel @Inject constructor(
         if (current.contains(postId)) {
             current.remove(postId)
             SharedExploreStore.removeCart(postId)
+            viewModelScope.launch { cartRepo.remove(postId) }
         } else {
             current.add(postId)
             // Save full Post to shared store so CartScreen works without backend
-            _state.value.posts.find { it.stableId == postId }?.let { SharedExploreStore.addCart(it) }
+            findActionPost(postId)?.let { SharedExploreStore.addCart(it) }
+            viewModelScope.launch { cartRepo.add(postId) }
         }
         _state.value = _state.value.copy(cartItems = current)
     }
@@ -723,7 +733,14 @@ class ExploreViewModel @Inject constructor(
 
     fun toggleWishlist(postId: String) {
         val current = _wishlisted.value.toMutableSet()
-        if (current.contains(postId)) current.remove(postId) else current.add(postId)
+        if (current.contains(postId)) {
+            current.remove(postId)
+            SharedExploreStore.removeWishlist(postId)
+        } else {
+            current.add(postId)
+            // Save full Post to shared store so WishlistScreen works without backend
+            findActionPost(postId)?.let { SharedExploreStore.addWishlist(it) }
+        }
         _wishlisted.value = current
         viewModelScope.launch { postsRepo.toggleWishlist(postId) }
     }
@@ -732,6 +749,8 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { postsRepo.trackViewed(postId) }
         }
+        // Save to recently viewed shared store so RecentlyViewedScreen works without backend
+        findActionPost(postId)?.let { SharedExploreStore.addRecentlyViewed(it) }
     }
 
     fun addToCompare(postId: String) {

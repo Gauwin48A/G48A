@@ -52,6 +52,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -69,41 +70,58 @@ import javax.inject.Inject
 class CompareViewModel @Inject constructor(private val repo: PostsRepository) : ViewModel() {
     private val _state = MutableStateFlow(PostListUiState())
     val state: StateFlow<PostListUiState> = _state.asStateFlow()
-    init { load() }
+    private var remoteComparePosts: List<Post> = emptyList()
+
+    init {
+        syncCompare(loading = SharedExploreStore.comparePosts.isEmpty())
+        load()
+        viewModelScope.launch {
+            SharedExploreStore.compareFlow.collect {
+                syncCompare(loading = false)
+            }
+        }
+    }
+
+    private fun syncCompare(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedPosts = (remoteComparePosts + SharedExploreStore.comparePosts)
+            .distinctBy { it.stableId }
+            .take(4)
+        _state.value = PostListUiState(
+            loading = loading,
+            posts = mergedPosts,
+            error = if (mergedPosts.isEmpty()) error else null,
+        )
+    }
+
     fun load() { viewModelScope.launch {
-        _state.value = _state.value.copy(loading = true)
+        _state.value = _state.value.copy(
+            loading = _state.value.posts.isEmpty() && SharedExploreStore.comparePosts.isEmpty(),
+            error = null,
+        )
         when (val r = repo.compareList()) {
-            is ApiResult.Success -> _state.value = PostListUiState(loading = false, posts = r.data)
+            is ApiResult.Success -> {
+                remoteComparePosts = r.data
+                syncCompare(loading = false)
+            }
             is ApiResult.Failure -> {
-                // Fall back to shared store when API fails (no backend)
-                val shared = com.mhub.app.ui.explore.SharedExploreStore.comparePosts.toList()
-                if (shared.isNotEmpty()) {
-                    _state.value = PostListUiState(loading = false, posts = shared)
-                } else {
-                    _state.value = PostListUiState(loading = false, error = r.error.message)
-                }
+                syncCompare(loading = false, error = r.error.message)
             }
         }
     } }
     fun removePost(postId: String) {
-        // Optimistic remove
-        val prev = _state.value.posts
-        _state.value = _state.value.copy(posts = prev.filter { it.stableId != postId })
-        com.mhub.app.ui.explore.SharedExploreStore.removeCompare(postId)
+        remoteComparePosts = remoteComparePosts.filterNot { it.stableId == postId }
+        SharedExploreStore.removeCompare(postId)
+        syncCompare(loading = false)
         viewModelScope.launch {
-            val result = repo.removeFromCompare(postId)
-            if (result is ApiResult.Failure) {
-                _state.value = _state.value.copy(posts = prev)
-            }
+            repo.removeFromCompare(postId)
         }
     }
     fun clearAll() {
-        val prev = _state.value.posts
-        _state.value = _state.value.copy(posts = emptyList())
-        com.mhub.app.ui.explore.SharedExploreStore.clearCompare()
+        remoteComparePosts = emptyList()
+        SharedExploreStore.clearCompare()
+        syncCompare(loading = false)
         viewModelScope.launch {
-            val result = repo.clearCompare()
-            if (result is ApiResult.Failure) _state.value = _state.value.copy(posts = prev)
+            repo.clearCompare()
         }
     }
 }

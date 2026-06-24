@@ -100,6 +100,7 @@ import com.mhub.app.data.remote.dto.FeedItem
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ListShimmer
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -172,14 +173,24 @@ class FeedViewModel @Inject constructor(
             } ?: ApiResult.Failure(com.mhub.app.core.ApiError.Timeout)
             when (result) {
                 is ApiResult.Success -> {
-                    val items = sortFeedItems(result.data, _state.value.sortOption)
-                    _state.value = _state.value.copy(
-                        loading = false,
-                        refreshing = false,
-                        feedItems = items,
-                        currentPage = 1,
-                        hasMore = result.data.size >= 20,
-                    )
+                    // KEY FIX: If API returns success but empty, fall back to mock data
+                    val items = result.data
+                    if (items.isNotEmpty()) {
+                        _state.value = _state.value.copy(
+                            loading = false,
+                            refreshing = false,
+                            feedItems = sortFeedItems(items, _state.value.sortOption),
+                            currentPage = 1,
+                            hasMore = items.size >= 20,
+                        )
+                    } else {
+                        _state.value = _state.value.copy(
+                            loading = false,
+                            refreshing = false,
+                            feedItems = MOCK_FEED_ITEMS,
+                            error = null,
+                        )
+                    }
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
@@ -249,6 +260,14 @@ class FeedViewModel @Inject constructor(
         val newBookmarked = if (itemId in current.bookmarkedIds) current.bookmarkedIds - itemId else current.bookmarkedIds + itemId
         _state.value = current.copy(bookmarkedIds = newBookmarked)
         viewModelScope.launch { runCatching { socialRepo.bookmarkPost(itemId) } }
+    }
+
+    fun recordViewed(item: FeedItem) {
+        SharedExploreStore.addRecentlyViewedFeed(item)
+        viewModelScope.launch {
+            runCatching { socialRepo.viewPost(item.stableId) }
+            runCatching { socialRepo.trackViewed(item.stableId) }
+        }
     }
 }
 
@@ -499,7 +518,10 @@ fun FeedScreen(
                             items(filteredPosts, key = { it.stableId }) { post ->
                                 FeedCard(
                                     post = post,
-                                    onOpenPost = { onOpenPost(post.stableId) },
+                                    onOpenPost = {
+                                        viewModel.recordViewed(post)
+                                        onOpenPost(post.stableId)
+                                    },
                                     onOpenProfile = onOpenProfile,
                                     density = state.density,
                                     isBookmarked = post.stableId in state.bookmarkedIds,

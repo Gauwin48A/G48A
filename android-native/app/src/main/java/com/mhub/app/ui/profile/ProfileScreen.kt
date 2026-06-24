@@ -1306,8 +1306,7 @@ fun ProfileScreen(
                         if (selectedTab == 1) {
                             PersonalInfoTab(
                                 user = user,
-                                saving = state.editSaving,
-                                onSave = { name, phone, bio -> viewModel.updateProfile(name, phone, bio) {} },
+                                onEdit = { showEditDialog = true },
                             )
                         }
 
@@ -1319,6 +1318,7 @@ fun ProfileScreen(
                                 initialLocation = prefs?.location ?: "",
                                 initialMinPrice = prefs?.minPrice?.toString() ?: "",
                                 initialMaxPrice = prefs?.maxPrice?.toString() ?: "",
+                                selectedCategories = prefs?.categories.orEmpty(),
                                 saving = prefsSaving,
                                 onSave = { loc, min, max -> viewModel.savePreferences(loc, min, max) },
                             )
@@ -1513,13 +1513,8 @@ private fun ProfileInfoRow(label: String, value: String?) {
 @Composable
 private fun PersonalInfoTab(
     user: com.mhub.app.domain.model.User?,
-    saving: Boolean,
-    onSave: (String?, String?, String?) -> Unit,
+    onEdit: () -> Unit,
 ) {
-    var fullName by remember(user?.fullName) { mutableStateOf(user?.fullName ?: "") }
-    var phone by remember(user?.phone) { mutableStateOf(user?.phone ?: "") }
-    var bio by remember { mutableStateOf("") }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1529,66 +1524,23 @@ private fun PersonalInfoTab(
         Text(stringResource(R.string.profile_personal_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                OutlinedTextField(
-                    value = fullName,
-                    onValueChange = { fullName = it },
-                    label = { Text(stringResource(R.string.profile_full_name)) },
-                    placeholder = { Text(stringResource(R.string.profile_name_hint)) },
-                    singleLine = true,
-                    isError = fullName.isNotBlank() && fullName.length < 2,
-                    supportingText = if (fullName.isNotBlank() && fullName.length < 2) {{ Text(stringResource(R.string.profile_name_min)) }} else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                )
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { if (it.length <= 10) phone = it.filter { c -> c.isDigit() } },
-                    label = { Text(stringResource(R.string.profile_phone)) },
-                    placeholder = { Text(stringResource(R.string.profile_phone_hint)) },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    singleLine = true,
-                    isError = phone.isNotBlank() && phone.length != 10,
-                    supportingText = { Text("${phone.length}/10 digits") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                )
-                OutlinedTextField(
-                    value = bio,
-                    onValueChange = { if (it.length <= 200) bio = it },
-                    label = { Text(stringResource(R.string.profile_bio)) },
-                    placeholder = { Text(stringResource(R.string.profile_bio_hint)) },
-                    minLines = 3,
-                    maxLines = 5,
-                    supportingText = { Text("${bio.length}/200") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                )
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProfileInfoRow(stringResource(R.string.profile_full_name), user?.displayName)
+                ProfileInfoRow(stringResource(R.string.profile_phone), user?.phone)
+                ProfileInfoRow(stringResource(R.string.profile_email), user?.email)
+                ProfileInfoRow(stringResource(R.string.profile_bio), user?.bio)
+                ProfileInfoRow(stringResource(R.string.profile_user_id), user?.stableId)
+                ProfileInfoRow(stringResource(R.string.profile_current_plan), tierLabel(user?.currentPlan))
+
                 Button(
-                    onClick = { onSave(fullName.ifBlank { null }, phone.ifBlank { null }, bio.ifBlank { null }) },
-                    enabled = !saving && (fullName.isBlank() || fullName.length >= 2) && (phone.isBlank() || phone.length == 10),
+                    onClick = onEdit,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                 ) {
-                    Text(if (saving) stringResource(R.string.commerce_saving) else stringResource(R.string.commerce_save_changes), fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-
-        // Email (read-only)
-        if (!user?.email.isNullOrBlank()) {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
-                    Column {
-                        Text(stringResource(R.string.profile_email), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(user!!.email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
-                        Text(stringResource(R.string.profile_verified), style = MaterialTheme.typography.labelSmall, color = Color(0xFF10B981), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.SemiBold)
-                    }
+                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.profile_edit_profile), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1603,17 +1555,14 @@ private fun PreferencesTab(
     initialLocation: String = "",
     initialMinPrice: String = "",
     initialMaxPrice: String = "",
+    selectedCategories: List<String> = emptyList(),
     saving: Boolean = false,
     onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit = { _, _, _ -> },
 ) {
-    val initialParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
-    var country by remember(initialLocation) { mutableStateOf(initialParts.country) }
-    var state by remember(initialLocation) { mutableStateOf(initialParts.state) }
-    var district by remember(initialLocation) { mutableStateOf(initialParts.district) }
-    var city by remember(initialLocation) { mutableStateOf(initialParts.city) }
-    var minPrice by remember { mutableStateOf(initialMinPrice) }
-    var maxPrice by remember { mutableStateOf(initialMaxPrice) }
-    var pageDensity by remember { mutableStateOf("comfortable") }
+    val locationParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
+    val minPriceValue = initialMinPrice.toIntOrNull()
+    val maxPriceValue = initialMaxPrice.toIntOrNull()
+    var showEditor by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -1624,7 +1573,90 @@ private fun PreferencesTab(
         Text(stringResource(R.string.profile_search_prefs), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProfileInfoRow(stringResource(R.string.profile_location), initialLocation)
+                ProfileInfoRow(stringResource(R.string.profile_country), locationParts.country)
+                ProfileInfoRow(stringResource(R.string.profile_state), locationParts.state)
+                ProfileInfoRow(stringResource(R.string.profile_district), locationParts.district)
+                ProfileInfoRow(stringResource(R.string.profile_city), locationParts.city)
+                ProfileInfoRow(stringResource(R.string.profile_price_range), profilePriceRange(minPriceValue, maxPriceValue))
+                ProfileInfoRow(stringResource(R.string.profile_selected_categories), selectedCategories.joinToString())
+                ProfileInfoRow(stringResource(R.string.profile_page_density), "Comfortable")
+                Button(
+                    onClick = { showEditor = true },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                ) {
+                    Icon(Icons.Default.Settings, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+
+        // Category Mode link
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = Color(0xFFEFF6FF),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCategoryMode),
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("🏪", fontSize = 22.sp)
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
+                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
+                }
+                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+
+    if (showEditor) {
+        PreferencesEditDialog(
+            initialLocation = initialLocation,
+            initialMinPrice = initialMinPrice,
+            initialMaxPrice = initialMaxPrice,
+            saving = saving,
+            onDismiss = { showEditor = false },
+            onSave = { loc, min, max ->
+                onSave(loc, min, max)
+                showEditor = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun PreferencesEditDialog(
+    initialLocation: String,
+    initialMinPrice: String,
+    initialMaxPrice: String,
+    saving: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit,
+) {
+    val initialParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
+    var country by remember(initialLocation) { mutableStateOf(initialParts.country) }
+    var state by remember(initialLocation) { mutableStateOf(initialParts.state) }
+    var district by remember(initialLocation) { mutableStateOf(initialParts.district) }
+    var city by remember(initialLocation) { mutableStateOf(initialParts.city) }
+    var minPrice by remember(initialMinPrice) { mutableStateOf(initialMinPrice) }
+    var maxPrice by remember(initialMaxPrice) { mutableStateOf(initialMaxPrice) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .height(460.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SearchableChoiceField(
                     label = stringResource(R.string.profile_country),
                     value = country,
@@ -1668,7 +1700,6 @@ private fun PreferencesTab(
                     enabled = district.isNotBlank(),
                     onSelected = { city = it },
                 )
-
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = minPrice,
@@ -1689,62 +1720,26 @@ private fun PreferencesTab(
                         shape = RoundedCornerShape(12.dp),
                     )
                 }
-
-                Button(
-                    onClick = { onSave(composeProfileLocation(country, state, district, city), minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
-                    enabled = !saving,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                ) {
-                    if (saving) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                    } else {
-                        Text(stringResource(R.string.profile_save_prefs), fontWeight = FontWeight.SemiBold)
-                    }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(composeProfileLocation(country, state, district, city), minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
+                enabled = !saving,
+            ) {
+                if (saving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.profile_save_prefs))
                 }
             }
-        }
-
-        // Category Mode link
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = Color(0xFFEFF6FF),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCategoryMode),
-        ) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("🏪", fontSize = 22.sp)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
-                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
-                }
-                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.profile_cancel))
             }
-        }
-
-        // Page-density selector (web-parity: Profile.jsx densityPreference C8)
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(R.string.profile_page_density), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                Text(stringResource(R.string.profile_page_density_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("compact" to "Compact", "comfortable" to "Comfortable", "spacious" to "Spacious").forEach { (mode, label) ->
-                        val sel = pageDensity == mode
-                        Surface(
-                            modifier = Modifier.weight(1f).clickable { pageDensity = mode },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (sel) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Text(label, style = MaterialTheme.typography.labelSmall, color = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth())
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
+        },
+    )
 }
 
 @Composable

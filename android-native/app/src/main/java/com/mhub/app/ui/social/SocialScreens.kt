@@ -42,6 +42,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.ui.components.ListShimmer
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -148,6 +149,7 @@ class FeedDetailViewModel @Inject constructor(private val repo: SocialRepository
             val mock = MOCK_FEED_MAP[id]
             if (mock != null) {
                 _state.value = FeedDetailUiState(loading = false, item = mock, liked = false, likeCount = mock.likeCount)
+                SharedExploreStore.addRecentlyViewedFeed(mock)
                 return
             }
         }
@@ -157,6 +159,7 @@ class FeedDetailViewModel @Inject constructor(private val repo: SocialRepository
             when (result) {
                 is ApiResult.Success -> {
                     _state.value = FeedDetailUiState(loading = false, item = result.data, liked = result.data.isLiked, likeCount = result.data.likeCount)
+                    SharedExploreStore.addRecentlyViewedFeed(result.data)
                     runCatching { repo.viewPost(id); repo.trackViewed(id) }
                 }
                 is ApiResult.Failure -> _state.value = FeedDetailUiState(loading = false, error = result.error.message)

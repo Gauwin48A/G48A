@@ -85,6 +85,7 @@ import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ListShimmer
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -108,18 +109,43 @@ class WishlistViewModel @Inject constructor(
     private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
+    private fun findPostById(postId: String): Post? {
+        return _state.value.items.find { it.stableId == postId }
+            ?: SharedExploreStore.wishlistPosts.find { it.stableId == postId }
+    }
     private val _state = MutableStateFlow(WishlistState())
     val state: StateFlow<WishlistState> = _state.asStateFlow()
     private var lastLocaleVersion = 0L
+    private var remoteWishlistItems: List<Post> = emptyList()
 
     init {
         load()
+        viewModelScope.launch {
+            SharedExploreStore.wishlistFlow.collect {
+                syncWishlist(loading = false)
+            }
+        }
         viewModelScope.launch {
             localeManager.localeVersion.collect { version ->
                 if (version > lastLocaleVersion && lastLocaleVersion > 0L) { load() }
                 lastLocaleVersion = version
             }
         }
+    }
+
+    private fun syncWishlist(
+        loading: Boolean = _state.value.loading,
+        refreshing: Boolean = false,
+        error: String? = null,
+    ) {
+        val mergedItems = (remoteWishlistItems + SharedExploreStore.wishlistPosts)
+            .distinctBy { it.stableId }
+        _state.value = _state.value.copy(
+            loading = loading,
+            refreshing = refreshing,
+            items = mergedItems,
+            error = if (mergedItems.isEmpty()) error else null,
+        )
     }
 
     fun load() {
@@ -130,24 +156,23 @@ class WishlistViewModel @Inject constructor(
         )
         viewModelScope.launch {
             when (val result = repo.list()) {
-                is ApiResult.Success -> _state.value = WishlistState(
-                    loading = false,
-                    refreshing = false,
-                    items = result.data,
-                )
-                is ApiResult.Failure -> _state.value = WishlistState(
-                    loading = false,
-                    refreshing = false,
-                    error = result.error.message,
-                )
+                is ApiResult.Success -> {
+                    remoteWishlistItems = result.data
+                    syncWishlist(loading = false)
+                }
+                is ApiResult.Failure -> {
+                    syncWishlist(loading = false, error = result.error.message)
+                }
             }
         }
     }
 
     fun remove(postId: String) {
+        remoteWishlistItems = remoteWishlistItems.filterNot { it.stableId == postId }
+        SharedExploreStore.removeWishlist(postId)
+        syncWishlist(loading = false)
         viewModelScope.launch {
             repo.remove(postId)
-            _state.value = _state.value.copy(items = _state.value.items.filter { it.stableId != postId })
         }
     }
     
@@ -174,10 +199,14 @@ class WishlistViewModel @Inject constructor(
     }
     
     fun addToCart(postId: String) {
+        findPostById(postId)?.let { SharedExploreStore.addCart(it) }
         viewModelScope.launch { cartRepo.add(postId) }
     }
 
     fun bulkAddToCart() {
+        _state.value.selectedItems.forEach { postId ->
+            findPostById(postId)?.let { SharedExploreStore.addCart(it) }
+        }
         viewModelScope.launch {
             _state.value.selectedItems.forEach { postId -> cartRepo.add(postId) }
             _state.value = _state.value.copy(selectedItems = emptySet(), isMultiSelectMode = false)

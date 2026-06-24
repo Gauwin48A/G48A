@@ -52,6 +52,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -73,33 +74,14 @@ class CartViewModel @Inject constructor(
     private val _state = MutableStateFlow(CartUiState())
     val state: StateFlow<CartUiState> = _state.asStateFlow()
     private var lastLocaleVersion = 0L
+    private var remoteCartItems: List<CartItem> = emptyList()
 
     init {
+        syncCartItems(loading = SharedExploreStore.cartPosts.isEmpty())
         load()
         viewModelScope.launch {
-            repo.cartFlow.collect { items ->
-                val cartItems = items.toMutableList()
-                // Fall back to shared store when cartFlow is empty but items exist locally
-                if (items.isEmpty()) {
-                    val shared = com.mhub.app.ui.explore.SharedExploreStore.cartPosts
-                    if (shared.isNotEmpty()) {
-                        cartItems.addAll(shared.map { post ->
-                            com.mhub.app.data.remote.dto.CartItem(
-                                postId = post.stableId,
-                                title = post.displayTitle,
-                                price = post.price,
-                                imageUrl = post.primaryImage,
-                                sellerName = post.sellerName ?: post.userName ?: post.location,
-                                quantity = 1,
-                            )
-                        }.filter { it.postId !in items.mapNotNull { it.postId } })
-                    }
-                }
-                _state.value = _state.value.copy(
-                    items = cartItems,
-                    total = cartItems.sumOf { (it.price ?: 0.0) * it.quantity },
-                    loading = false
-                )
+            SharedExploreStore.cartFlow.collect {
+                syncCartItems(loading = false)
             }
         }
         viewModelScope.launch {
@@ -110,29 +92,56 @@ class CartViewModel @Inject constructor(
         }
     }
 
+    private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
+        val mergedItems = mergeCartItems(remoteCartItems, SharedExploreStore.cartPosts)
+        _state.value = _state.value.copy(
+            loading = loading,
+            items = mergedItems,
+            total = mergedItems.cartTotal(),
+            error = if (mergedItems.isEmpty()) error else null,
+        )
+    }
+
     fun load() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true)
-            repo.get()
+            _state.value = _state.value.copy(
+                loading = _state.value.items.isEmpty() && SharedExploreStore.cartPosts.isEmpty(),
+                error = null,
+            )
+            when (val result = repo.get()) {
+                is ApiResult.Success -> {
+                    remoteCartItems = result.data.items
+                    syncCartItems(loading = false)
+                }
+                is ApiResult.Failure -> {
+                    syncCartItems(loading = false, error = result.error.message)
+                }
+            }
         }
     }
 
-    fun remove(postId: String) { viewModelScope.launch { repo.remove(postId) } }
+    private fun removeLocalCartItem(postId: String) {
+        remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        SharedExploreStore.removeCart(postId)
+        syncCartItems(loading = false)
+    }
+
+    fun remove(postId: String) {
+        removeLocalCartItem(postId)
+        viewModelScope.launch { repo.remove(postId) }
+    }
     
     fun removeWithUndo(postId: String) {
-        val item = _state.value.items.find { it.postId == postId } ?: return
-        _state.value = _state.value.copy(
-            items = _state.value.items.filter { it.postId != postId },
-            pendingUndoItem = item,
-        )
+        val item = _state.value.items.find { it.matchesPostId(postId) } ?: return
+        removeLocalCartItem(postId)
+        _state.value = _state.value.copy(pendingUndoItem = item)
     }
 
     fun undoRemove() {
         val item = _state.value.pendingUndoItem ?: return
-        _state.value = _state.value.copy(
-            items = listOf(item) + _state.value.items,
-            pendingUndoItem = null,
-        )
+        SharedExploreStore.addCart(item.toPost())
+        _state.value = _state.value.copy(pendingUndoItem = null)
+        syncCartItems(loading = false)
     }
 
     fun commitRemove() {
@@ -142,20 +151,24 @@ class CartViewModel @Inject constructor(
     }
 
     fun saveForLater(postId: String) {
-        val item = _state.value.items.find { it.postId == postId } ?: return
+        val item = _state.value.items.find { it.matchesPostId(postId) } ?: return
+        remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        SharedExploreStore.removeCart(postId)
         _state.value = _state.value.copy(
-            items = _state.value.items.filter { it.postId != postId },
+            items = _state.value.items.filterNot { it.matchesPostId(postId) },
             savedForLater = _state.value.savedForLater + item,
         )
+        syncCartItems(loading = false)
         viewModelScope.launch { repo.remove(postId) }
     }
 
     fun moveToCart(postId: String) {
-        val item = _state.value.savedForLater.find { it.postId == postId } ?: return
+        val item = _state.value.savedForLater.find { it.matchesPostId(postId) } ?: return
+        SharedExploreStore.addCart(item.toPost())
         _state.value = _state.value.copy(
-            savedForLater = _state.value.savedForLater.filter { it.postId != postId },
-            items = _state.value.items + item,
+            savedForLater = _state.value.savedForLater.filterNot { it.matchesPostId(postId) },
         )
+        syncCartItems(loading = false)
         viewModelScope.launch { repo.add(postId) }
     }
 
@@ -191,15 +204,53 @@ class CartViewModel @Inject constructor(
     }
     fun bulkRemove() {
         val ids = _state.value.selectedIds
-        _state.value = _state.value.copy(items = _state.value.items.filter { (it.postId ?: "") !in ids }, selectedIds = emptySet())
+        ids.forEach { removeLocalCartItem(it) }
+        _state.value = _state.value.copy(selectedIds = emptySet())
         viewModelScope.launch { ids.forEach { repo.remove(it) } }
     }
     fun bulkSaveForLater() {
         val ids = _state.value.selectedIds
         val (toSave, keep) = _state.value.items.partition { (it.postId ?: "") in ids }
+        remoteCartItems = remoteCartItems.filterNot { (it.postId ?: it.id ?: it.stableId) in ids }
+        ids.forEach { SharedExploreStore.removeCart(it) }
         _state.value = _state.value.copy(items = keep, savedForLater = _state.value.savedForLater + toSave, selectedIds = emptySet())
+        syncCartItems(loading = false)
     }
 }
+
+private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
+    postId = stableId,
+    title = displayTitle,
+    price = price,
+    currency = currency,
+    imageUrl = primaryImage,
+    sellerName = sellerName ?: userName ?: location,
+    quantity = quantity,
+)
+
+private fun CartItem.toPost(): Post = Post(
+    id = postId ?: id ?: stableId,
+    title = title,
+    price = price,
+    currency = currency,
+    imageUrl = imageUrl,
+    sellerName = sellerName,
+)
+
+private fun CartItem.matchesPostId(postId: String): Boolean =
+    this.postId == postId || id == postId || stableId == postId
+
+private fun mergeCartItems(remoteItems: List<CartItem>, localPosts: List<Post>): List<CartItem> {
+    val remoteIds = remoteItems.map { it.postId ?: it.id ?: it.stableId }.toSet()
+    val localItems = localPosts
+        .filterNot { post ->
+            listOfNotNull(post.stableId, post.postId, post.id).any { it in remoteIds }
+        }
+        .map { it.toCartItem() }
+    return remoteItems + localItems
+}
+
+private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.quantity }
 
 @OptIn(ExperimentalMaterial3Api::class)
 
