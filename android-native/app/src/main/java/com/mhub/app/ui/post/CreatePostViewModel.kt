@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.userFacingMessage
 import com.mhub.app.data.remote.dto.CreatePostRequest
 import com.mhub.app.data.repository.AuthRepository
 import com.mhub.app.data.repository.CategoriesRepository
@@ -85,7 +86,7 @@ class CreatePostViewModel @Inject constructor(
     private fun loadCategories() = viewModelScope.launch {
         when (val r = categoriesRepo.all()) {
             is ApiResult.Success -> _state.value = _state.value.copy(categories = r.data)
-            is ApiResult.Failure -> _state.value = _state.value.copy(error = r.error.message)
+            is ApiResult.Failure -> _state.value = _state.value.copy(error = r.error.userFacingMessage("load listing categories"))
         }
     }
 
@@ -156,7 +157,7 @@ class CreatePostViewModel @Inject constructor(
                 when (val r = uploadRepo.uploadPostImage(bytes, mime)) {
                     is ApiResult.Success -> urls += r.data
                     is ApiResult.Failure -> {
-                        _state.value = _state.value.copy(uploading = false, error = r.error.message)
+                        _state.value = _state.value.copy(uploading = false, error = r.error.userFacingMessage("upload your listing photo"))
                         return@launch
                     }
                 }
@@ -180,7 +181,7 @@ class CreatePostViewModel @Inject constructor(
             )
             when (val r = postsRepo.create(req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(submitting = false, success = true)
-                is ApiResult.Failure -> _state.value = _state.value.copy(submitting = false, error = r.error.message)
+                is ApiResult.Failure -> _state.value = _state.value.copy(submitting = false, error = r.error.userFacingMessage("publish this listing"))
             }
         }
     }

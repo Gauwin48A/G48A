@@ -1005,6 +1005,8 @@ data class CreateFeedRequest(
     @SerialName("description") val content: String,
     @SerialName("post_id") val postId: String? = null,
     val images: List<String> = emptyList(),
+    @SerialName("source") val source: String = "feed", // "feed" | "marketplace" — helps server route correctly
+    @SerialName("type") val type: String = "text", // "text" | "image" | "link" — content type hint
 )
 
 // -------- Reviews --------

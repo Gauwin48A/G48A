@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DarkMode
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.outlined.LightMode
 import com.mhub.app.data.local.ThemeMode
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -139,70 +145,74 @@ fun MhubTopBar(
                 )
             }
 
-            // Actions row
+            // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Notifications with badge
+                // Notifications with badge (high-value: badge shows unread count)
                 BadgedBox(badge = { if (unreadNotifCount > 0) Badge(containerColor = Color(0xFFEF4444)) { Text(if (unreadNotifCount > 99) "99+" else "$unreadNotifCount", color = Color.White, fontSize = 9.sp) } }) {
-                    IconButton(onClick = onNotifications) {
+                    IconButton(onClick = onNotifications, modifier = Modifier.size(36.dp)) {
                         Icon(
                             Icons.Default.Notifications,
                             contentDescription = "Notifications",
                             tint = Color.White.copy(alpha = 0.92f),
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
 
-                // Cart with badge
+                // Cart with badge (high-value: shows item count)
                 BadgedBox(badge = { if (cartItemCount > 0) Badge(containerColor = Color(0xFF10B981)) { Text(if (cartItemCount > 99) "99+" else "$cartItemCount", color = Color.White, fontSize = 9.sp) } }) {
-                    IconButton(onClick = onCart) {
+                    IconButton(onClick = onCart, modifier = Modifier.size(36.dp)) {
                         Icon(
                             Icons.Default.ShoppingCart,
                             contentDescription = "Cart",
                             tint = Color.White.copy(alpha = 0.92f),
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
 
-                // Wishlist save
-                IconButton(onClick = onWishlist) {
-                    Icon(
-                        Icons.Default.BookmarkAdd,
-                        contentDescription = stringResource(R.string.topbar_wishlist),
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
-                // Recently Viewed (matches web's clock icon)
-                IconButton(onClick = onRecentlyViewed) {
-                    Icon(
-                        Icons.Default.History,
-                        contentDescription = "Recently Viewed",
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
-                // Language selector
-                IconButton(onClick = onLanguage) {
-                    Icon(
-                        Icons.Default.Language,
-                        contentDescription = "Language",
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
-                // Dark/Light theme toggle
-                IconButton(onClick = onToggleTheme) {
-                    Icon(
-                        if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                        contentDescription = if (currentThemeMode == ThemeMode.DARK) "Switch to light mode" else "Switch to dark mode",
-                        tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(22.dp),
-                    )
+                // Overflow menu: Wishlist, Dark Mode, Recently Viewed, Language
+                var showOverflow by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { showOverflow = true }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "More options",
+                            tint = Color.White.copy(alpha = 0.92f),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showOverflow,
+                        onDismissRequest = { showOverflow = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.topbar_wishlist)) },
+                            leadingIcon = { Icon(Icons.Default.BookmarkAdd, null, modifier = Modifier.size(18.dp)) },
+                            onClick = { showOverflow = false; onWishlist() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (currentThemeMode == ThemeMode.DARK) "Light Mode" else "Dark Mode") },
+                            leadingIcon = {
+                                Icon(
+                                    if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                    null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                            onClick = { showOverflow = false; onToggleTheme() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.more_recently_viewed)) },
+                            leadingIcon = { Icon(Icons.Default.History, null, modifier = Modifier.size(18.dp)) },
+                            onClick = { showOverflow = false; onRecentlyViewed() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.more_language)) },
+                            leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
+                            onClick = { showOverflow = false; onLanguage() },
+                        )
+                    }
                 }
             }
         }

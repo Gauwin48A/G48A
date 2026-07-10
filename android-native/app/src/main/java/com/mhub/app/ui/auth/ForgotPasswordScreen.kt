@@ -125,16 +125,17 @@ fun ForgotPasswordScreen(
     var identifier by rememberSaveable { mutableStateOf("") }
     @Suppress("UNUSED_VARIABLE") val scope = rememberCoroutineScope()
 
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     val pageGradient = Brush.verticalGradient(
-        listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)),
+        if (darkTheme) listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2540)) else listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)),
     )
     val brandGradient = Brush.horizontalGradient(
-        listOf(Color(0xFF3B82F6), Color(0xFF2563EB)), // blue-500 → blue-600
+        if (darkTheme) listOf(Color(0xFF1E3A5F), Color(0xFF2563EB)) else listOf(Color(0xFF3B82F6), Color(0xFF2563EB)), // blue-500 → blue-600
     )
-    val mutedText = Color(0xFF6B7280)
-    val labelText = Color(0xFF374151)
-    val borderColor = Color(0xFFE5E7EB)
-    val linkColor = Color(0xFF2563EB)
+    val mutedText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
+    val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
+    val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
+    val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
 
     Box(
         modifier = Modifier
@@ -181,7 +182,7 @@ fun ForgotPasswordScreen(
                     .widthIn(max = 460.dp)
                     .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                color = Color.White,
+                color = if (darkTheme) Color(0xFF1E293B) else Color.White,
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Header gradient
@@ -245,8 +246,8 @@ fun ForgotPasswordScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(
-                                        if (isSuccess) Color(0xFFECFDF5) // green-50
-                                        else Color(0xFFFFFBEB),          // amber-50
+                                        if (isSuccess) if (darkTheme) Color(0xFF064E3B) else Color(0xFFECFDF5)
+                                        else if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB),
                                     )
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.Top,
@@ -258,13 +259,13 @@ fun ForgotPasswordScreen(
                                         Icons.Filled.WarningAmber
                                     },
                                     contentDescription = null,
-                                    tint = if (isSuccess) Color(0xFF047857) else Color(0xFFB45309),
+                                    tint = if (isSuccess) if (darkTheme) Color(0xFF34D399) else Color(0xFF047857) else if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309),
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = msg,
-                                    color = if (isSuccess) Color(0xFF065F46) else Color(0xFF92400E),
+                                    color = if (isSuccess) if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF065F46) else if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E),
                                     fontSize = 12.sp,
                                 )
                             }
@@ -274,20 +275,20 @@ fun ForgotPasswordScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFFFFBEB))
+                                    .background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB))
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.Top,
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.WarningAmber,
                                     contentDescription = null,
-                                    tint = Color(0xFFB45309),
+                                    tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309),
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = msg,
-                                    color = Color(0xFF92400E),
+                                    color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E),
                                     fontSize = 12.sp,
                                 )
                             }
@@ -338,10 +339,10 @@ fun ForgotPasswordScreen(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF3B82F6),
+                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6),
                                     unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
+                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                    unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()

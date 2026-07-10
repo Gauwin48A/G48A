@@ -337,13 +337,6 @@ interface MhubApi {
         @Query("limit") limit: Int = 20,
     ): PostsResponse
 
-    @GET("api/posts/nearby")
-    suspend fun nearbyPosts(
-        @Query("lat") lat: Double,
-        @Query("lng") lng: Double,
-        @Query("radius") radius: Int = 10,
-    ): PostsResponse
-
     @PATCH("api/posts/{id}")
     suspend fun updatePost(
         @Path("id") id: String,

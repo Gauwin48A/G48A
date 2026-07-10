@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Compare
@@ -93,6 +94,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.local.ThemeMode
 import com.mhub.app.data.repository.CartRepository
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
@@ -114,13 +116,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
@@ -135,6 +140,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -264,8 +270,13 @@ class ExploreViewModel @Inject constructor(
 
     init {
         loadPosts(reset = true)
-        checkPlanExpiry()
+        // Defer non-critical startup work so loadPosts() isn't competing for network bandwidth
         viewModelScope.launch {
+            delay(1500L)
+            checkPlanExpiry()
+        }
+        viewModelScope.launch {
+            delay(2000L)
             localeManager.localeVersion.collect { version ->
                 if (version > lastLocaleVersion && lastLocaleVersion > 0L) loadPosts(reset = true)
                 lastLocaleVersion = version
@@ -359,7 +370,15 @@ class ExploreViewModel @Inject constructor(
     fun toggleAutoRefresh() {
         val newVal = !_state.value.autoRefresh
         _state.value = _state.value.copy(autoRefresh = newVal)
-        if (newVal) startAutoRefresh() else autoRefreshJob?.cancel()
+        if (newVal) startAutoRefresh() else {
+            autoRefreshJob?.cancel()
+            autoRefreshJob = null
+        }
+    }
+
+    companion object {
+        /** Max posts kept in memory to prevent unbounded growth. Beyond this, oldest pages are dropped. */
+        private const val MAX_CACHED_POSTS = 200
     }
 
     private var autoRefreshJob: Job? = null
@@ -378,7 +397,14 @@ class ExploreViewModel @Inject constructor(
         val categoryKey = _state.value.ecosystemKey
         val sort = _state.value.sortBy
         if (reset) {
-            _state.value = _state.value.copy(loadingPosts = true, posts = emptyList(), page = 1, hasMore = true)
+            // Keep existing posts visible while loading (optimistic UI) — no flash to empty state
+            // Only clear if this is a genuine first-load or filter change via setEcosystem()
+            val keepPosts = _state.value.posts.isNotEmpty() && _state.value.ecosystemKey == categoryKey
+            _state.value = _state.value.copy(
+                loadingPosts = !keepPosts,
+                posts = if (keepPosts) _state.value.posts else emptyList(),
+                page = 1, hasMore = true,
+            )
         } else {
             if (!_state.value.hasMore || _state.value.loadingMore) return
             _state.value = _state.value.copy(loadingMore = true)
@@ -462,7 +488,7 @@ class ExploreViewModel @Inject constructor(
                     val finalPosts = applyQuickFilter(applySort(when {
                         mockFallback.isNotEmpty() -> mockFallback
                         reset -> newPosts
-                        else -> _state.value.posts + newPosts
+                        else -> (_state.value.posts + newPosts).take(MAX_CACHED_POSTS)
                     }))
                     _state.value = _state.value.copy(
                         loadingPosts = false, loadingMore = false,
@@ -820,6 +846,8 @@ fun ExploreScreen(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
+    onOpenHome: () -> Unit = {},
+    onOpenForYou: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
     onOpenCart: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -827,6 +855,7 @@ fun ExploreScreen(
     onOpenWishlist: () -> Unit = {},
     onAddPost: () -> Unit = {},
     onLanguage: () -> Unit = {},
+    currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     forYouMode: Boolean = false,
     viewModel: ExploreViewModel = hiltViewModel(),
@@ -839,7 +868,6 @@ fun ExploreScreen(
     var showInterestModal by remember { mutableStateOf(false) }
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
-
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
@@ -872,6 +900,7 @@ fun ExploreScreen(
                 onCart = onOpenCart,
                 onFilter = { showFilterSheet = true },
                 activeFilterCount = if (state.hasActiveFilters) 1 else 0,
+                currentThemeMode = currentThemeMode,
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -917,6 +946,81 @@ fun ExploreScreen(
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                     ) {
                         Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            // ─── Quick Actions: My Home & For You (always visible, outside scroll) ───
+            if (!state.forYouMode && state.searchQuery.isBlank()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        // My Home button
+                        Surface(
+                            onClick = onOpenHome,
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF10B981).copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f)),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Default.Home,
+                                    contentDescription = null,
+                                    tint = Color(0xFF10B981),
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "🏠 My Home",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF10B981),
+                                )
+                            }
+                        }
+                        // For You button
+                        Surface(
+                            onClick = onOpenForYou,
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF8B5CF6).copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f)),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = Color(0xFF8B5CF6),
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "✨ For You",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF8B5CF6),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1203,7 +1307,7 @@ fun ExploreScreen(
                         onValueChange = { draftLocation = it },
                         placeholder = { Text("City or area…") },
                         singleLine = true,
-                        leadingIcon = { Icon(Icons.Filled.LocationOn, null, modifier = Modifier.size(18.dp)) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp)) },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -1471,12 +1575,23 @@ private fun AllPostsBrowse(
             last >= listState.layoutInfo.totalItemsCount - 3
         }
     }
-    LaunchedEffect(shouldLoadMore) {
+    // Key on both shouldLoadMore and loadingMore so loadMore fires again
+    // after each page finishes loading
+    LaunchedEffect(shouldLoadMore, state.loadingMore) {
         if (shouldLoadMore && state.hasMore && !state.loadingMore && !state.loadingPosts && state.posts.isNotEmpty()) onLoadMore()
     }
 
+    val showScrollToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 5
+        }
+    }
+
     Box(Modifier.fillMaxSize()) {
-    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 100.dp)) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 100.dp),
+        ) {
         if (state.searchQuery.isNotBlank()) {
             if (state.isSearching) {
                 item(key = "search_loading") {
@@ -1766,6 +1881,20 @@ private fun AllPostsBrowse(
             }
         }
     }
+    // Scroll-to-top FAB — appears when scrolled past 5 items
+    if (showScrollToTop) {
+        val coroutineScope = rememberCoroutineScope()
+        FloatingActionButton(
+            onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 96.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ) {
+            Icon(Icons.Default.ArrowUpward, contentDescription = "Scroll to top", modifier = Modifier.size(20.dp))
+        }
+    }
     } // end Box
 }
 
@@ -2053,6 +2182,7 @@ fun AllPostCard(
     var showFullDescription by remember { mutableStateOf(false) }
     var localLiked by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var showPostMenu by remember { mutableStateOf(false) }
 
     Card(
         onClick = onClick,
@@ -2379,6 +2509,64 @@ fun AllPostCard(
                 }
             }
         }
+    }
+    // Post action dialog — uses AlertDialog instead of DropdownMenu for reliable touch handling
+    if (showPostMenu) {
+        
+
+
+AlertDialog(
+            onDismissRequest = { showPostMenu = false },
+            title = { Text("Post Actions", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Surface(onClick = { showPostMenu = false; onToggleCompare() }, shape = RoundedCornerShape(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Default.Compare, null, modifier = Modifier.size(20.dp))
+                            Column { Text(if (isCompared) "Remove from Compare" else "Compare", fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                    Surface(onClick = { showPostMenu = false; onToggleWishlist() }, shape = RoundedCornerShape(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, modifier = Modifier.size(20.dp), tint = if (isWishlisted) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurface)
+                            Column { Text(if (isWishlisted) "Remove from Wishlist" else "Save to Wishlist", fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                    Surface(onClick = {
+                        showPostMenu = false
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out " + post.displayTitle + " on MHub!") }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                    }, shape = RoundedCornerShape(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Outlined.Share, null, modifier = Modifier.size(20.dp))
+                            Column { Text("Share", fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                    Surface(onClick = { showPostMenu = false; onToggleCart() }, shape = RoundedCornerShape(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(if (isInCart) Icons.Default.RemoveShoppingCart else Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(20.dp), tint = if (isInCart) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurface)
+                            Column { Text(if (isInCart) "Remove from Cart" else "Add to Cart", fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                    if (isOwner) {
+                        Surface(onClick = { showPostMenu = false; onPromote() }, shape = RoundedCornerShape(12.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(20.dp), tint = Color(0xFFF59E0B))
+                                Column { Text("Promote", fontWeight = FontWeight.Medium) }
+                            }
+                        }
+                    }
+                    Surface(onClick = { showPostMenu = false }, shape = RoundedCornerShape(12.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Outlined.Flag, null, modifier = Modifier.size(20.dp))
+                            Column { Text("Report", fontWeight = FontWeight.Medium) }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showPostMenu = false }) { Text("Cancel") } },
+            shape = RoundedCornerShape(22.dp),
+        )
     }
 }
 

@@ -134,9 +134,11 @@ fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewMod
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.compare_title), onBack)
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
                 state.posts.isEmpty() -> EmptyState(
-                    icon = { Icon(Icons.Filled.Compare, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                    icon = { Icon(Icons.Filled.Compare, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(64.dp)) },
                     title = stringResource(R.string.compare_nothing), subtitle = stringResource(R.string.compare_add_hint),
                 )
                 else -> {
@@ -147,12 +149,12 @@ fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewMod
                             Surface(
                                 onClick = { viewModel.clearAll() },
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFFEF2F2),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                             ) {
                                 Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFDC2626), modifier = Modifier.size(14.dp))
-                                    Text(stringResource(R.string.compare_clear_all), fontSize = 12.sp, color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
+                                    Icon(Icons.Default.DeleteForever, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
+                                    Text(stringResource(R.string.compare_clear_all), fontSize = 12.sp, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -160,38 +162,38 @@ fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewMod
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             posts.forEach { post ->
                                 Box(Modifier.width(200.dp)) {
-                                    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
+                                    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
                                         Column(Modifier.padding(10.dp)) {
                                             if (post.primaryImage != null) {
                                                 AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop,
                                                     modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)))
                                             } else {
-                                                Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                                                    Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1))
+                                                Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                                                 }
                                             }
-                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
+                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
+                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                     // Remove X button
                                     Surface(
                                         onClick = { viewModel.removePost(post.stableId) },
                                         shape = CircleShape,
-                                        color = Color(0xFFDC2626),
+                                        color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp),
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                            Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(14.dp))
                                         }
                                     }
                                 }
                             }
                         }
                         // Dynamic comparison table
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                             Column(Modifier.padding(16.dp)) {
-                                Text(stringResource(R.string.compare_comparison), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                                Text(stringResource(R.string.compare_comparison), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                                 Spacer(Modifier.height(12.dp))
                                 // Build dynamic specs: include any field that has a non-null value across all posts
                                 val allSpecs = listOf(
@@ -213,11 +215,11 @@ fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewMod
                                 )
                                 val visibleSpecs = allSpecs.filter { (_, getter) -> posts.any { getter(it) != "—" } }
                                 visibleSpecs.forEach { (label, getter) ->
-                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                                        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF64748B), modifier = Modifier.width(90.dp))
+                                        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(90.dp))
                                         posts.forEach { post ->
-                                            Text(getter(post), fontSize = 12.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                            Text(getter(post), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }

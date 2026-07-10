@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -112,24 +113,32 @@ fun LoginScreen(
         if (state.success) onSignedIn()
     }
 
-    // ── Web-aligned palette (light theme reference) ─────────────────────
+    // ── Theme-aware palette ───────────────────────────────────
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     val pageGradient = Brush.verticalGradient(
-        listOf(
+        if (darkTheme) listOf(
+            Color(0xFF0F1422),
+            Color(0xFF161D2D),
+            Color(0xFF1A2540),
+        ) else listOf(
             Color(0xFFF0F9FF), // sky-50
             Color(0xFFEFF6FF), // blue-50
             Color(0xFFE0E7FF), // indigo-100
         ),
     )
     val brandGradient = Brush.horizontalGradient(
-        listOf(Color(0xFF0EA5E9), Color(0xFF2563EB)), // sky-500 → blue-600
+        if (darkTheme) listOf(
+            Color(0xFF1E3A5F),
+            Color(0xFF2563EB),
+        ) else listOf(Color(0xFF0EA5E9), Color(0xFF2563EB)),
     )
-    val mutedText = Color(0xFF6B7280)        // gray-500/600
-    val labelText = Color(0xFF374151)        // gray-700
-    val helpText = Color(0xFF6B7280)
-    val borderColor = Color(0xFFE5E7EB)      // gray-200
-    val prefixBg = Color(0xFFF3F4F6)         // gray-100
-    val prefixText = Color(0xFF6B7280)
-    val linkColor = Color(0xFF2563EB)        // blue-600
+    val mutedText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
+    val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
+    val helpText = mutedText
+    val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
+    val prefixBg = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF3F4F6)
+    val prefixText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
+    val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
 
     Box(
         modifier = Modifier
@@ -194,7 +203,7 @@ fun LoginScreen(
                 text = stringResource(R.string.auth_welcome_back),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827), // gray-900
+                color = if (darkTheme) Color(0xFFF1F5F9) else Color(0xFF111827),
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(4.dp))
@@ -214,7 +223,7 @@ fun LoginScreen(
                     .widthIn(max = 460.dp)
                     .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                color = Color.White,
+                color = if (darkTheme) Color(0xFF1E293B) else Color.White,
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Card header (gradient)
@@ -235,7 +244,7 @@ fun LoginScreen(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = stringResource(R.string.auth_aadhaar_hint),
-                                color = Color(0xFFE0F2FE), // sky-100
+                                color = if (darkTheme) Color(0xFFBFDBFE) else Color(0xFFE0F2FE),
                                 fontSize = 13.sp,
                                 textAlign = TextAlign.Center,
                             )
@@ -295,7 +304,7 @@ fun LoginScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.auth_mobile_placeholder),
-                                        color = Color(0xFFD1D5DB),
+                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB),
                                     )
                                 },
                                 singleLine = true,
@@ -305,10 +314,10 @@ fun LoginScreen(
                                     bottomEnd = 12.dp,
                                 ),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF0EA5E9),
+                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
                                     unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
+                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                    unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -317,7 +326,7 @@ fun LoginScreen(
                         }
                         Text(
                             text = stringResource(R.string.auth_mobile_help),
-                            color = if (mobile.isNotBlank() && !isValidMobile) Color(0xFFDC2626) else helpText,
+                            color = if (mobile.isNotBlank() && !isValidMobile) (if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626)) else helpText,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 2.dp),
                         )
@@ -336,10 +345,9 @@ fun LoginScreen(
                                 if (state.error != null) viewModel.clearError()
                             },
                             placeholder = {
-                                Text(
-                                    stringResource(R.string.auth_password_placeholder),
-                                    color = Color(0xFFD1D5DB),
-                                )
+                                Text(                                        stringResource(R.string.auth_password_placeholder),
+                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB),
+                                    )
                             },
                             singleLine = true,
                             visualTransformation = if (passwordVisible) {
@@ -347,7 +355,13 @@ fun LoginScreen(
                             } else {
                                 PasswordVisualTransformation()
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                if (canSubmit) {
+                                    viewModel.clearError()
+                                    viewModel.signInWithEmail(mobileDigits, password)
+                                }
+                            }),
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(
@@ -364,16 +378,15 @@ fun LoginScreen(
                                 }
                             },
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF0EA5E9),
-                                unfocusedBorderColor = borderColor,
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                        )
+                            colors = OutlinedTextFieldDefaults.colors(                            focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
+                            unfocusedBorderColor = borderColor,
+                            focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                            unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                    )
 
                         // Sign-up + Forgot password row
                         Row(
@@ -425,20 +438,20 @@ fun LoginScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFFFFBEB)) // amber-50
+                                    .background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB))
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.Top,
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.WarningAmber,
                                     contentDescription = null,
-                                    tint = Color(0xFFB45309), // amber-700
+                                    tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309),
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = msg,
-                                    color = Color(0xFF92400E), // amber-800
+                                    color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E),
                                     fontSize = 12.sp,
                                 )
                             }
@@ -449,8 +462,7 @@ fun LoginScreen(
                             onClick = {
                                 viewModel.clearError()
                                 viewModel.signInWithEmail(mobileDigits, password)
-                            },
-                            enabled = canSubmit,
+                            },                                enabled = canSubmit,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Transparent,
@@ -467,11 +479,11 @@ fun LoginScreen(
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(
                                         if (canSubmit) brandGradient else Brush.horizontalGradient(
-                                            listOf(Color(0xFFCBD5E1), Color(0xFFCBD5E1)),
+                                            listOf(if (darkTheme) Color(0xFF334155) else Color(0xFFCBD5E1), if (darkTheme) Color(0xFF334155) else Color(0xFFCBD5E1)),
                                         ),
                                     ),
                                 contentAlignment = Alignment.Center,
-                            ) {
+            ) {
                                 if (state.loading) {
                                     CircularProgressIndicator(
                                         color = Color.White,
@@ -576,7 +588,7 @@ fun LoginScreen(
                 onClick = onPreviewApp,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).height(44.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)),
             ) {
                 Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp), tint = mutedText)
                 Spacer(Modifier.width(8.dp))
@@ -631,7 +643,7 @@ fun LoginScreen(
             ) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
+                    color = if (darkTheme) Color(0xFF1E293B) else Color.White,
                     shadowElevation = 16.dp,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 ) {
@@ -639,25 +651,25 @@ fun LoginScreen(
                         Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Icon(Icons.Default.Shield, null, tint = Color(0xFF2563EB), modifier = Modifier.size(48.dp))
+                        Icon(Icons.Default.Shield, null, tint = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(48.dp))
                         Spacer(Modifier.height(12.dp))
-                        Text("Verification Required", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF111827))
+                        Text("Verification Required", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = if (darkTheme) Color(0xFFF1F5F9) else Color(0xFF111827))
                         Spacer(Modifier.height(4.dp))
                         Text("Enter the 6-digit code sent to your device", fontSize = 13.sp, color = mutedText, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(16.dp))
                         OutlinedTextField(
                             value = otpCode,
                             onValueChange = { otpCode = it.filter(Char::isDigit).take(6) },
-                            placeholder = { Text("Enter 6-digit OTP", color = Color(0xFFD1D5DB)) },
+                            placeholder = { Text("Enter 6-digit OTP", color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF0EA5E9),
+                                focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
                                 unfocusedBorderColor = borderColor,
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                             ),
                         )
                         Spacer(Modifier.height(8.dp))
@@ -674,12 +686,16 @@ fun LoginScreen(
                             onClick = {
                                 viewModel.verifyLoginOtp(state.otpPhone, otpCode)
                             },
-                            enabled = otpCode.length == 6,
+                            enabled = otpCode.length == 6 && !state.loading,
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                            colors = ButtonDefaults.buttonColors(containerColor = if (darkTheme) Color(0xFF2563EB) else Color(0xFF2563EB)),
                             modifier = Modifier.fillMaxWidth().height(48.dp),
                         ) {
-                            Text("Verify", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            if (state.loading) {
+                                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                            } else {
+                                Text("Verify", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                         Spacer(Modifier.height(8.dp))
                         TextButton(onClick = { viewModel.cancelOtp() }) {

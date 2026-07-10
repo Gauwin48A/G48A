@@ -151,7 +151,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 stringResource(R.string.my_posts_label),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF1E293B),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
             
@@ -160,12 +160,12 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 value = search,
                 onValueChange = { search = it },
                 placeholder = { Text("Search your listings...") },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF64748B)) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Default.Close, null) } },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
+                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface)
             )
 
             // Status filter tabs
@@ -176,19 +176,19 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                         onClick = { viewModel.setStatusFilter(key) },
                         label = { Text(label, fontSize = 11.sp) },
                         shape = RoundedCornerShape(20.dp),
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
                     )
                 }
             }
             // Sort dropdown
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.commerce_sort_by), fontSize = 13.sp, color = Color(0xFF64748B))
+                Text(stringResource(R.string.commerce_sort_by), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
                 Box {
                     Surface(
                         onClick = { expanded = true },
                         shape = RoundedCornerShape(10.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                         border = ButtonDefaults.outlinedButtonBorder(enabled = true),
                     ) {
                         Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -200,9 +200,9 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                                     "title" -> stringResource(R.string.commerce_sort_title)
                                     else -> stringResource(R.string.commerce_sort_date)
                                 },
-                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB),
+                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
                             )
-                            Icon(Icons.Filled.ArrowDropDown, null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -219,15 +219,15 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                 modifier = Modifier.fillMaxSize()
             ) {
                 when {
-                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
                     filtered.isEmpty() -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
                         EmptyState(
-                            icon = { Icon(Icons.Filled.PostAdd, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                            icon = { Icon(Icons.Filled.PostAdd, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(64.dp)) },
                             title = stringResource(R.string.commerce_no_posts), subtitle = stringResource(R.string.commerce_no_posts_desc),
                         )
                     }
                     else -> LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { Text(stringResource(R.string.commerce_posts_count, filtered.size), fontSize = 13.sp, color = Color(0xFF64748B)) }
+                        item { Text(stringResource(R.string.commerce_posts_count, filtered.size), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(filtered, key = { it.stableId }) { post ->
                             MyPostCard(
                                 post = post,
@@ -254,7 +254,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
             confirmButton = {
                 Button(
                     onClick = { viewModel.deletePost(state.showDeleteDialog!!) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = { TextButton(onClick = { viewModel.showDeleteDialog(null) }) { Text(stringResource(R.string.action_cancel)) } },
@@ -273,14 +273,14 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
                         Triple("Pro Boost", "₹99", "7 days featured • 5x visibility • Priority badge"),
                         Triple("Premium Boost", "₹199", "14 days featured • 10x visibility • Homepage placement"),
                     ).forEach { (tier, price, desc) ->
-                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(tier, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                    Text(tier, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                                     Spacer(Modifier.weight(1f))
-                                    Text(price, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2563EB))
+                                    Text(price, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                                 }
-                                Text(desc, fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text(desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -304,45 +304,45 @@ private fun MyPostCard(
     isMenuOpen: Boolean,
     onMenuDismiss: () -> Unit,
 ) {
-    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 if (post.primaryImage != null) {
                     AsyncImage(
                         model = post.primaryImage, contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
+                        modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
                     )
                 } else {
-                    Box(Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(28.dp))
+                    Box(Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
                     }
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                    if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                    Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
+                    if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         post.status?.let { s -> StatusChip(s) }
                     }
                     // Metrics
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Visibility, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                            Icon(Icons.Filled.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("${post.views ?: 0}", fontSize = 11.sp, color = Color(0xFF64748B))
+                            Text("${post.views ?: 0}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Favorite, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                            Icon(Icons.Filled.Favorite, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("${post.likes ?: 0}", fontSize = 11.sp, color = Color(0xFF64748B))
+                            Text("${post.likes ?: 0}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
                 // Menu button
                 Box {
                     IconButton(onClick = onMenu, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Filled.MoreVert, null, tint = Color(0xFF64748B))
+                        Icon(Icons.Filled.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     DropdownMenu(expanded = isMenuOpen, onDismissRequest = onMenuDismiss) {
                         DropdownMenuItem(
@@ -356,8 +356,8 @@ private fun MyPostCard(
                             onClick = { onPromote(); onMenuDismiss() },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.btn_delete), color = Color(0xFFEF4444)) },
-                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = Color(0xFFEF4444)) },
+                            text = { Text(stringResource(R.string.btn_delete), color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                             onClick = { onDelete(); onMenuDismiss() },
                         )
                     }

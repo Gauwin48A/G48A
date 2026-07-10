@@ -115,11 +115,11 @@ fun OffersScreen(onBack: () -> Unit, viewModel: OffersViewModel = hiltViewModel(
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 steps.forEachIndexed { i, label ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(24.dp).clip(CircleShape).background(if (i == 0) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
+                        Box(Modifier.size(24.dp).clip(CircleShape).background(if (i == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center) {
-                            Text("${i + 1}", fontSize = 10.sp, color = if (i == 0) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                            Text("${i + 1}", fontSize = 10.sp, color = if (i == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)
                         }
-                        Text(label, fontSize = 8.sp, color = Color(0xFF64748B), maxLines = 1)
+                        Text(label, fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }
                 }
             }
@@ -132,20 +132,20 @@ fun OffersScreen(onBack: () -> Unit, viewModel: OffersViewModel = hiltViewModel(
             // Search + status filters
             OutlinedTextField(value = state.search, onValueChange = { viewModel.setSearch(it) },
                 placeholder = { Text(stringResource(R.string.commerce_search_name)) },
-                leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true, shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant, focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 statusFilters.forEach { (key, label) ->
                     FilterChip(selected = state.statusFilter == key, onClick = { viewModel.setStatusFilter(key) },
                         label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary))
                 }
             }
-            if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+            if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
             else if (offers.isEmpty()) EmptyState(
-                icon = { Icon(Icons.Filled.LocalOffer, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                icon = { Icon(Icons.Filled.LocalOffer, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(64.dp)) },
                 title = "No offers", subtitle = "Offers will appear here",
             )
             else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -195,7 +195,7 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
         ((offer.originalPrice - offer.amount) / offer.originalPrice * 100).toInt()
     } else 0
 
-    Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (offer.postImage != null) {
@@ -204,7 +204,7 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                     Spacer(Modifier.width(12.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(offer.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                    Text(offer.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("₹${offer.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
                         if (offer.originalPrice > 0) {
@@ -220,7 +220,7 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                             }
                         }
                     }
-                    Text(if (isReceived) "From: ${offer.buyerName ?: "Buyer"}" else "To: ${offer.sellerName ?: "Seller"}", fontSize = 12.sp, color = Color(0xFF64748B))
+                    Text(if (isReceived) "From: ${offer.buyerName ?: "Buyer"}" else "To: ${offer.sellerName ?: "Seller"}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     // Expiry countdown with urgency badge
                     if (expiryLabel != null) {
@@ -250,7 +250,7 @@ private fun OfferCard(offer: Offer, isReceived: Boolean, onAccept: () -> Unit, o
                         OutlinedTextField(value = counterPrice, onValueChange = { counterPrice = it }, singleLine = true,
                             placeholder = { Text(stringResource(R.string.commerce_counter_price)) }, shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant, focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface))
                         Button(onClick = { counterPrice.toDoubleOrNull()?.let { onCounter(it); showCounter = false } },
                             shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                             contentPadding = PaddingValues(horizontal = 12.dp)) { Text(stringResource(R.string.btn_send)) }

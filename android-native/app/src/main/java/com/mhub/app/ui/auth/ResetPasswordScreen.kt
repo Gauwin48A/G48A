@@ -98,11 +98,12 @@ fun ResetPasswordScreen(
     var showPw by rememberSaveable { mutableStateOf(false) }
     var showConfirm by rememberSaveable { mutableStateOf(false) }
 
-    val pageGradient = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
-    val brandGradient = Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))
-    val linkColor = Color(0xFF2563EB)
-    val labelText = Color(0xFF374151)
-    val borderColor = Color(0xFFE5E7EB)
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val pageGradient = Brush.verticalGradient(if (darkTheme) listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2540)) else listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+    val brandGradient = Brush.horizontalGradient(if (darkTheme) listOf(Color(0xFF1E3A5F), Color(0xFF2563EB)) else listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))
+    val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
+    val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
+    val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
 
     Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
         Column(
@@ -123,7 +124,7 @@ fun ResetPasswordScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp)
                     .shadow(16.dp, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp), color = Color.White,
+                shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White,
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Column(
@@ -158,19 +159,24 @@ fun ResetPasswordScreen(
                         state.error?.let { msg ->
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFFFFBEB)).padding(12.dp),
+                                    .background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB)).padding(12.dp),
                                 verticalAlignment = Alignment.Top,
                             ) {
-                                Icon(Icons.Filled.WarningAmber, null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.WarningAmber, null, tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309), modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(msg, color = Color(0xFF92400E), fontSize = 12.sp)
+                                Text(msg, color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E), fontSize = 12.sp)
                             }
                         }
                         if (state.success) {
                             Text(
                                 "Your password has been reset successfully.",
-                                color = Color(0xFF6B7280), fontSize = 14.sp,
+                                color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280), fontSize = 14.sp,
                             )
+                            // Auto-redirect after 3 seconds
+                            LaunchedEffect(Unit) {
+                                kotlinx.coroutines.delay(3000)
+                                onGoToLogin()
+                            }
                             GradientButton("Go to Login", brandGradient, true) { onGoToLogin() }
                         } else {
                             // Password requirements derived from password value
@@ -193,8 +199,8 @@ fun ResetPasswordScreen(
                                     }
                                 },
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
+                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                             )
@@ -202,10 +208,10 @@ fun ResetPasswordScreen(
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
-                                    color = Color(0xFFF8FAFC),
+                                    color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF8FAFC),
                                 ) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Password requirements", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+                                        Text("Password requirements", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF64748B))
                                         PasswordReqRow("12+ characters", isLong)
                                         PasswordReqRow("Uppercase letter (A-Z)", hasUpper)
                                         PasswordReqRow("Lowercase letter (a-z)", hasLower)
@@ -226,8 +232,8 @@ fun ResetPasswordScreen(
                                     }
                                 },
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
+                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                             )

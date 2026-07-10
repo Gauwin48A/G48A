@@ -1514,9 +1514,9 @@ fun PostDetailScreen(
                                         // Tier cards: (tier, title, desc, minPlanRank, coinCost, price)
                                         data class BoostTier(val tier: String, val title: String, val desc: String, val minRank: Int, val coins: Int, val price: String, val freeQuota: Int)
                                         listOf(
-                                            BoostTier("basic", "⚡ Boost · 7 days", "More views in category feed", 1, 10, "₹49", if (planRank >= 3) 999 else if (planRank >= 2) 5 else 0),
-                                            BoostTier("featured", "⭐ Featured · 14 days", "Highlighted badge + top of results", 2, 20, "₹99", if (planRank >= 3) 999 else if (planRank >= 2) 2 else 0),
-                                            BoostTier("spotlight", "🌟 Spotlight · 30 days", "Home page showcase + all badges", 3, 40, "₹199", if (planRank >= 3) 999 else 0),
+                                            BoostTier("basic", "⚡ Boost · 7 days", "More views in category feed", 1, 50, "₹49", if (planRank >= 3) 999 else if (planRank >= 2) 5 else 0),
+                                            BoostTier("featured", "⭐ Featured · 14 days", "Highlighted badge + top of results", 2, 100, "₹99", if (planRank >= 3) 999 else if (planRank >= 2) 2 else 0),
+                                            BoostTier("spotlight", "🌟 Spotlight · 30 days", "Home page showcase + all badges", 3, 200, "₹199", if (planRank >= 3) 999 else 0),
                                         ).forEach { t ->
                                             val hasPlanQuota = t.freeQuota > 0
                                             val canAffordCoins = state.coinBalance >= t.coins

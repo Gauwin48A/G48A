@@ -110,22 +110,22 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 steps.forEachIndexed { i, label ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(if (i <= state.step) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
+                        Box(Modifier.size(28.dp).clip(CircleShape).background(if (i <= state.step) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center) {
-                            if (i < state.step) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            else Text("${i + 1}", fontSize = 11.sp, color = if (i <= state.step) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                            if (i < state.step) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                            else Text("${i + 1}", fontSize = 11.sp, color = if (i <= state.step) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)
                         }
-                        Text(label, fontSize = 9.sp, color = Color(0xFF64748B), maxLines = 1)
+                        Text(label, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }
                 }
             }
             if (state.loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
             } else {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
+                    state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
                     if (state.success) {
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFF0FDF4), modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(56.dp))
                                 Spacer(Modifier.height(12.dp))

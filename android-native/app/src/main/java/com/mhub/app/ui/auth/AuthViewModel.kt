@@ -131,11 +131,13 @@ class AuthViewModel @Inject constructor(
     }
 
     fun sendOtp() {
+        if (_state.value.loading) return
         val phone = _state.value.otpPhone
         if (phone.isBlank()) return
+        _state.value = _state.value.copy(loading = true)
         viewModelScope.launch {
-            repo.sendLoginOtp(phone)
-            _state.value = _state.value.copy(otpCountdown = 120)
+            runCatching { repo.sendLoginOtp(phone) }
+            _state.value = _state.value.copy(loading = false, otpCountdown = 120)
             startOtpCountdown()
         }
     }
@@ -255,9 +257,9 @@ class AuthViewModel @Inject constructor(
         if (!pan.matches(Regex("[A-Z]{5}[0-9]{4}[A-Z]"))) { _state.value = _state.value.copy(error = "Invalid PAN format (e.g. ABCDE1234F)"); return }
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (repo.panVerify(token, pan)) {
+            when (val res = repo.panVerify(token, pan)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, signupStep = 4, panVerified = true)
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "PAN verification failed")
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = res.error.message)
             }
         }
     }
@@ -273,9 +275,9 @@ class AuthViewModel @Inject constructor(
         if (password != confirmPassword) { _state.value = _state.value.copy(error = "Passwords don't match"); return }
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (repo.completeAadhaarSignup(token, password, pan, referral)) {
+            when (val res = repo.completeAadhaarSignup(token, password, pan, referral)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, success = true)
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "Signup failed")
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = res.error.message)
             }
         }
     }
@@ -284,40 +286,11 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState(signupStep = 1)
     }
 
-    fun signUp(fullName: String, email: String, phone: String, password: String) {
-        if (_state.value.loading) return
-        if (fullName.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
-            _state.value = AuthUiState(error = "All fields are required")
-            return
-        }
-        if (!InputValidators.isValidFullName(fullName)) {
-            _state.value = AuthUiState(error = "Enter a full name (2-60 characters)")
-            return
-        }
-        if (!InputValidators.isValidEmail(email)) {
-            _state.value = AuthUiState(error = "Enter a valid email address")
-            return
-        }
-        if (!InputValidators.isValidPhone(phone)) {
-            _state.value = AuthUiState(error = "Enter a valid 10-digit phone number")
-            return
-        }
-        if (!InputValidators.isStrongPassword(password)) {
-            _state.value = AuthUiState(error = "Password must be at least 8 characters")
-            return
-        }
-        _state.value = AuthUiState(loading = true)
-        viewModelScope.launch {
-            when (val res = repo.signUp(fullName, email, phone, password)) {
-                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
-                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
-            }
-        }
-    }
+    // signUp removed — SignUpScreen uses the Aadhaar 4-step flow instead
 
-    fun onGoogleError(message: String) {
-        _state.value = AuthUiState(loading = false, error = message)
-    }
+
+    // onGoogleError removed — Google sign-in errors are handled via setError()
+
 
     fun logout() {
         viewModelScope.launch { repo.logout() }

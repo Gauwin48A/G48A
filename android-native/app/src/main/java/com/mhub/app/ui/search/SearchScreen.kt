@@ -858,7 +858,7 @@ private fun SearchResultCard(post: Post, onClick: () -> Unit, onZoom: (String) -
                     onClick = { wishlisted = !wishlisted },
                     modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(32.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape),
                 ) {
-                    Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, tint = if (wishlisted) Color(0xFF6366F1) else Color.White, modifier = Modifier.size(16.dp))
+                    Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, tint = if (wishlisted) MaterialTheme.colorScheme.primary else Color.White, modifier = Modifier.size(16.dp))
                 }
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }

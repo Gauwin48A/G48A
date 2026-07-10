@@ -53,14 +53,24 @@ class CategoryAppViewModel @Inject constructor(
     /** Toggle a product in the compare list (max 4 items). */
     fun toggleCompare(product: MockDataProvider.MockProduct) {
         val current = _state.value.compareItems
-        _state.value = _state.value.copy(
-            compareItems = if (current.any { it.id == product.id })
-                current.filter { it.id != product.id }
-            else if (current.size < 4)
-                current + product
-            else
-                current // already at max
-        )
+        if (current.any { it.id == product.id }) {
+            // Remove existing
+            _state.value = _state.value.copy(
+                compareItems = current.filter { it.id != product.id }
+            )
+        } else if (current.size < 4) {
+            // Subcategory match check: only allow comparing same type of products
+            if (current.isNotEmpty() && product.subcategory.isNotBlank()) {
+                val firstSub = current.first().subcategory
+                if (firstSub.isNotBlank() && !firstSub.equals(product.subcategory, ignoreCase = true)) {
+                    return // silently reject — same-type comparison only
+                }
+            }
+            _state.value = _state.value.copy(
+                compareItems = current + product
+            )
+        }
+        // else already at max — no action needed
     }
 
     fun clearCompare() {

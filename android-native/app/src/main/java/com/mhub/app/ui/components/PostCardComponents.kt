@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mhub.app.domain.model.Post
-import com.mhub.app.core.TranslatedText
+
 
 private val PillDefaultBg = Color(0xFFF1F5F9)
 private val PillLikeBg = Color(0xFFFEF2F2)
@@ -218,32 +218,32 @@ fun PostCard(
                         DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
                             if (onShare != null) {
                                 DropdownMenuItem(
-                                    text = { TranslatedText("Share", fontSize = 13.sp) },
+                                    text = { Text("Share", fontSize = 13.sp) },
                                     leadingIcon = { Icon(Icons.Outlined.Share, null, modifier = Modifier.size(16.dp)) },
                                     onClick = { showMoreMenu = false; onShare() })
                             }
                             if (onToggleCompare != null) {
                                 DropdownMenuItem(
-                                    text = { TranslatedText(if (isCompared) "Remove from Compare" else "Compare", fontSize = 13.sp) },
+                                    text = { Text(if (isCompared) "Remove from Compare" else "Compare", fontSize = 13.sp) },
                                     leadingIcon = { Icon(Icons.Default.Compare, null, modifier = Modifier.size(16.dp)) },
                                     onClick = { showMoreMenu = false; onToggleCompare() })
                             }
                             if (onToggleCart != null) {
                                 DropdownMenuItem(
-                                    text = { TranslatedText(if (isInCart) "Remove from Cart" else "Add to Cart", fontSize = 13.sp) },
+                                    text = { Text(if (isInCart) "Remove from Cart" else "Add to Cart", fontSize = 13.sp) },
                                     leadingIcon = { Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(16.dp)) },
                                     onClick = { showMoreMenu = false; onToggleCart() })
                             }
                             if (onHidePost != null) {
                                 DropdownMenuItem(
-                                    text = { TranslatedText("Not interested", fontSize = 13.sp) },
+                                    text = { Text("Not interested", fontSize = 13.sp) },
                                     leadingIcon = { Icon(Icons.Default.ThumbDown, null, modifier = Modifier.size(16.dp)) },
                                     onClick = { showMoreMenu = false; onHidePost() })
                             }
                             if (extraMenuItems != null) { extraMenuItems() }
                             if (isOwner && onPromote != null) {
                                 DropdownMenuItem(
-                                    text = { TranslatedText("Promote", fontSize = 13.sp) },
+                                    text = { Text("Promote", fontSize = 13.sp) },
                                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(16.dp)) },
                                     onClick = { showMoreMenu = false; onPromote() })
                             }
@@ -252,8 +252,7 @@ fun PostCard(
                 }
 
                 // Title
-                val locale = com.mhub.app.core.LocalLocaleManager.current.currentLanguageCode
-                TranslatedText(text = post.getTranslatedTitle(locale), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp, style = MaterialTheme.typography.bodyLarge)
+                Text(text = post.displayTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp, style = MaterialTheme.typography.bodyLarge)
 
                 // Price
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -284,7 +283,7 @@ fun PostCard(
                     post.location?.let { loc ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            TranslatedText(text = loc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(text = loc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     post.viewCount?.let { views ->
@@ -319,14 +318,14 @@ fun PostCard(
                 if (!post.description.isNullOrBlank()) {
                     val descText = post.description
                     if (showFullDesc || descText.length <= 80) {
-                        TranslatedText(text = descText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp, maxLines = if (showFullDesc) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
+                        Text(text = descText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp, maxLines = if (showFullDesc) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
                         if (descText.length > 80 && !showFullDesc) {
                             TextButton(onClick = { showFullDesc = true }, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(28.dp)) {
                                 Text("Read more", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     } else {
-                        TranslatedText(text = descText.take(80) + "\u2026", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
+                        Text(text = descText.take(80) + "\u2026", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
                         TextButton(onClick = { showFullDesc = true }, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(28.dp)) {
                             Text("Read more", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
@@ -359,7 +358,7 @@ fun PostCard(
                                 Row(Modifier.clickable { onToggleCompare() }.padding(horizontal = 8.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Checkbox(checked = isCompared, onCheckedChange = { onToggleCompare() }, modifier = Modifier.size(20.dp), colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary))
-                                    TranslatedText("Compare", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Compare", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                             if (showCart && onToggleCart != null) {
@@ -412,8 +411,7 @@ fun PostCardCompact(
                 }
             }
             Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                val locale = com.mhub.app.core.LocalLocaleManager.current.currentLanguageCode
-                Text(post.getTranslatedTitle(locale), maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                Text(post.displayTitle, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                 post.price?.let { Text(formatPrice(it), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary) }
                 post.location?.let { loc ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -444,7 +442,7 @@ private fun ActionPill(
         Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
             if (labelTranslatable) {
-                TranslatedText(text = label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = tint, maxLines = 1)
+                Text(text = label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = tint, maxLines = 1)
             } else {
                 Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = tint, maxLines = 1)
             }

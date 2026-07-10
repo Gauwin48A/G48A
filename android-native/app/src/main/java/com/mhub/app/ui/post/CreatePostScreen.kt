@@ -373,7 +373,12 @@ fun CreatePostScreen(
                 }
                 AppTextField(
                     value = description,
-                    onValueChange = { if (it.length <= 1000) description = it },
+                    onValueChange = {
+                        if (it.length <= 1000) {
+                            description = it
+                            viewModel.clearError()
+                        }
+                    },
                     label = stringResource(R.string.post_description_hint),
                     singleLine = false,
                     imeAction = ImeAction.Next,

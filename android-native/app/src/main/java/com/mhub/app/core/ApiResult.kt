@@ -10,12 +10,21 @@ sealed interface ApiResult<out T> {
 }
 
 sealed class ApiError(open val message: String) {
-    object Network : ApiError("Can't reach MHub services. Check your internet or API URL in Settings.")
+    object Network : ApiError("Can't reach MHub services. Check your internet connection and try again.")
     object Timeout : ApiError("Server took too long to respond. Please try again.")
     object Unauthorized : ApiError("Authentication required. Please sign in.")
     object Forbidden : ApiError("You don't have permission to access this resource.")
     data class Http(val code: Int, override val message: String) : ApiError(message)
     data class Unknown(override val message: String) : ApiError(message)
+}
+
+fun ApiError.userFacingMessage(action: String = "complete this request"): String = when (this) {
+    ApiError.Network -> "Couldn't $action because MHub services are unreachable. Your work is still on this screen; check your connection and try again."
+    ApiError.Timeout -> "Couldn't $action because MHub took too long to respond. Please try again."
+    ApiError.Unauthorized -> "Please sign in again to $action."
+    ApiError.Forbidden -> "You don't have permission to $action."
+    is ApiError.Http -> message.ifBlank { "MHub couldn't $action. Please try again." }
+    is ApiError.Unknown -> "Couldn't $action. Please try again."
 }
 
 inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {

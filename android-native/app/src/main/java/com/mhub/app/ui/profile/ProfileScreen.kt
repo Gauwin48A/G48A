@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -40,6 +43,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Security
@@ -51,16 +55,22 @@ import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.LinearProgressIndicator
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Button
@@ -114,6 +124,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.mhub.app.R
@@ -122,6 +134,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiError
 import com.mhub.app.core.ApiResult
+import com.mhub.app.core.userFacingMessage
 import com.mhub.app.data.remote.dto.ProfileUpdateRequest
 import com.mhub.app.data.repository.AuthRepository
 import com.mhub.app.data.repository.DashboardRepository
@@ -133,6 +146,8 @@ import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ErrorBanner
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -154,6 +169,7 @@ data class ProfileState(
     val referralCode: String? = null,
     val editSaving: Boolean = false,
     val editResult: String? = null,
+    val editError: String? = null,
     val followersCount: Int = 0,
     val followingCount: Int = 0,
     val isFollowing: Boolean = false,
@@ -188,54 +204,122 @@ class ProfileViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProfileState())
     val state: StateFlow<ProfileState> = _state.asStateFlow()
 
+    /** In-memory cache: preserves last known good state across config changes / re-navigation. */
+    private var cachedProfile: ProfileState? = null
+
     init { load() }
 
+    /**
+     * Load profile data with:
+     * - Instant display of cached data (no loading spinner if we have it)
+     * - Parallel execution of stats, referral code, and trust score
+     * - Automatic retry for transient failures (backed by RetryInterceptor)
+     */
     fun load() {
-        // Prevent redundant loads if data is fresh
         val current = _state.value
+        // Prevent redundant loads if data is fresh
         if (current.user != null && System.currentTimeMillis() - current.lastLoadTimeMs < 30_000L) return
 
-        _state.value = ProfileState(loading = true)
+        // Show cached data instantly — no full-screen spinner if we already have data
+        if (cachedProfile?.user != null && current.user == null) {
+            _state.value = cachedProfile!!.copy(loading = false, refreshing = true)
+        } else if (current.user == null) {
+            _state.value = ProfileState(loading = true)
+        }
+
         viewModelScope.launch {
-            when (val result = repo.me()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loading = false, user = result.data, lastLoadTimeMs = System.currentTimeMillis(),
-                )
+            val meResult = repo.me()
+            when (meResult) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        loading = false, refreshing = false, user = meResult.data,
+                        lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                    )
+                }
                 is ApiResult.Failure -> {
-                    val isUnauth = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
+                    val isUnauth = meResult.error is ApiError.Unauthorized || meResult.error is ApiError.Forbidden
                     if (isUnauth) {
-                        // Retry once before declaring session expired (avoids false positives)
+                        // Retry once before declaring session expired
                         when (val retry = repo.me()) {
                             is ApiResult.Success -> _state.value = _state.value.copy(
-                                loading = false, user = retry.data, lastLoadTimeMs = System.currentTimeMillis(),
+                                loading = false, refreshing = false, user = retry.data,
+                                lastLoadTimeMs = System.currentTimeMillis(), error = null,
                             )
-                            is ApiResult.Failure -> _state.value = _state.value.copy(
-                                loading = false,
-                                isSessionExpired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden,
-                                error = retry.error.message,
-                            )
+                            is ApiResult.Failure -> {
+                                val expired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden
+                                // If we have cached data, keep showing it and don't show full-screen error
+                                if (cachedProfile?.user != null) {
+                                    _state.value = _state.value.copy(
+                                        loading = false, refreshing = false,
+                                        error = if (expired) null else retry.error.userFacingMessage("refresh your profile"),
+                                        isSessionExpired = expired,
+                                    )
+                                } else {
+                                    _state.value = _state.value.copy(
+                                        loading = false, refreshing = false,
+                                        isSessionExpired = expired,
+                                        error = retry.error.userFacingMessage("load your profile"),
+                                    )
+                                }
+                            }
                         }
                     } else {
-                        _state.value = _state.value.copy(loading = false, error = result.error.message)
+                        // Network/server error but we have cached data — show it with a banner
+                        if (cachedProfile?.user != null) {
+                            _state.value = _state.value.copy(
+                                loading = false, refreshing = false,
+                                error = meResult.error.userFacingMessage("refresh your profile"),
+                            )
+                        } else {
+                            _state.value = _state.value.copy(
+                                loading = false, refreshing = false,
+                                error = meResult.error.userFacingMessage("load your profile"),
+                            )
+                        }
                     }
                 }
             }
-            loadStats()
-            loadReferralCode()
-            loadTrustScore()
+            // Fire stats, referral code, and trust score concurrently
+            coroutineScope {
+                val statsDeferred = async { loadStats() }
+                val referralDeferred = async { loadReferralCode() }
+                val trustDeferred = async { loadTrustScore() }
+                statsDeferred.await()
+                referralDeferred.await()
+                trustDeferred.await()
+            }
+            // Cache the successful state for instant display next time
+            val s = _state.value
+            if (s.user != null && s.error == null) {
+                cachedProfile = s
+            }
         }
     }
 
     fun refresh() {
         _state.value = _state.value.copy(refreshing = true)
         viewModelScope.launch {
-            when (val result = repo.me()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(refreshing = false, user = result.data)
-                is ApiResult.Failure -> _state.value = _state.value.copy(refreshing = false, error = result.error.message)
+            val meResult = repo.me()
+            when (meResult) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    refreshing = false, user = meResult.data,
+                    lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    refreshing = false,
+                    error = meResult.error.userFacingMessage("refresh your profile"),
+                )
             }
-            loadStats()
-            loadReferralCode()
-            loadTrustScore()
+            // Parallel secondary loads
+            coroutineScope {
+                val statsDef = async { loadStats() }
+                val referralDef = async { loadReferralCode() }
+                val trustDef = async { loadTrustScore() }
+                statsDef.await(); referralDef.await(); trustDef.await()
+            }
+            // Update cache
+            val s = _state.value
+            if (s.user != null && s.error == null) cachedProfile = s
         }
     }
 
@@ -261,11 +345,11 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun updateProfile(fullName: String?, phone: String?, bio: String?, onDone: () -> Unit) {
-        _state.value = _state.value.copy(editSaving = true)
+        _state.value = _state.value.copy(editSaving = true, editError = null, editResult = null)
         viewModelScope.launch {
-            when (rewardsRepo.updateProfile(ProfileUpdateRequest(fullName = fullName, phone = phone, bio = bio))) {
+            when (val result = rewardsRepo.updateProfile(ProfileUpdateRequest(fullName = fullName, phone = phone, bio = bio))) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(editSaving = false, editResult = "Profile updated!")
+                    _state.value = _state.value.copy(editSaving = false, editResult = "Profile updated!", editError = null)
                     // Refresh user data
                     when (val result = repo.me()) {
                         is ApiResult.Success -> _state.value = _state.value.copy(user = result.data)
@@ -273,12 +357,15 @@ class ProfileViewModel @Inject constructor(
                     }
                     onDone()
                 }
-                is ApiResult.Failure -> _state.value = _state.value.copy(editSaving = false, editResult = "Failed to update")
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    editSaving = false,
+                    editError = result.error.userFacingMessage("save your profile"),
+                )
             }
         }
     }
 
-    fun clearEditResult() { _state.value = _state.value.copy(editResult = null) }
+    fun clearEditResult() { _state.value = _state.value.copy(editResult = null, editError = null) }
 
     fun updateSocialLinks(links: Map<String, String>) {
         // Optimistic update — persist via profile update endpoint
@@ -583,7 +670,11 @@ fun ProfileScreen(
                         EditProfileDialog(
                             user = user,
                             saving = state.editSaving,
-                            onDismiss = { showEditDialog = false },
+                            saveError = state.editError,
+                            onDismiss = {
+                                showEditDialog = false
+                                viewModel.clearEditResult()
+                            },
                             onSave = { name: String?, phone: String?, bio: String? ->
                                 viewModel.updateProfile(name, phone, bio) { showEditDialog = false }
                             },
@@ -606,6 +697,12 @@ fun ProfileScreen(
                             .verticalScroll(rememberScrollState()),
                     ) {
                         ErrorBanner(message = state.error)
+                        state.editResult?.let { msg ->
+                            ProfileFeedbackBanner(
+                                message = msg,
+                                isError = msg.contains("failed", ignoreCase = true),
+                            )
+                        }
 
                         // ─── Cover Image Section ────────────────────────────────
                         Box(
@@ -840,10 +937,10 @@ fun ProfileScreen(
                             if (roleLabel != null) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFF6366F1).copy(alpha = 0.12f),
-                                    border = BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.5f)),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                                 ) {
-                                    Text(roleLabel, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                    Text(roleLabel, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                             state.responseTimeMinutes?.let { rt ->
@@ -2667,72 +2764,252 @@ private fun UserIdSection(userId: String) {
 }
 
 @Composable
+private fun ProfileFeedbackBanner(message: String, isError: Boolean) {
+    val bg = if (isError) MaterialTheme.colorScheme.errorContainer else Color(0xFFDCFCE7)
+    val fg = if (isError) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF166534)
+    Surface(shape = RoundedCornerShape(14.dp), color = bg, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(if (isError) Icons.Default.ErrorOutline else Icons.Default.CheckCircle, contentDescription = null, tint = fg, modifier = Modifier.size(18.dp))
+            Text(message, style = MaterialTheme.typography.bodySmall, color = fg, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
 private fun EditProfileDialog(
     user: User?,
     saving: Boolean,
+    saveError: String?,
     onDismiss: () -> Unit,
     onSave: (name: String?, phone: String?, bio: String?) -> Unit,
 ) {
-    var name by remember { mutableStateOf(user?.displayName ?: "") }
-    var phone by remember { mutableStateOf(user?.phone ?: "") }
-    var bio by remember { mutableStateOf("") }
+    val initialName = user?.displayName.orEmpty()
+    val initialPhone = user?.phone.orEmpty()
+    val initialBio = user?.bio.orEmpty()
+    var name by remember(user?.id, initialName) { mutableStateOf(initialName) }
+    var phone by remember(user?.id, initialPhone) { mutableStateOf(initialPhone) }
+    var bio by remember(user?.id, initialBio) { mutableStateOf(initialBio) }
     val bioMaxLen = 160
-    val nameError = if (name.isNotBlank() && name.length < 2) "Name must be at least 2 characters"
+    val trimmedName = name.trim()
+    val trimmedPhone = phone.trim()
+    val trimmedBio = bio.trim()
+    val nameError = if (trimmedName.isNotBlank() && trimmedName.length < 2) "Name must be at least 2 characters"
         else if (name.length > 60) "Name too long"
         else null
+    val phoneError = if (trimmedPhone.length > 20) "Phone is too long" else null
+    val hasChanges = trimmedName != initialName.trim() || trimmedPhone != initialPhone.trim() || trimmedBio != initialBio.trim()
+    val canSave = !saving && hasChanges && nameError == null && phoneError == null
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.profile_edit_profile), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.profile_full_name)) },
-                    singleLine = true,
-                    isError = nameError != null,
-                    supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall) } },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
-                    label = { Text(stringResource(R.string.profile_phone_short)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Column {
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .imePadding()
+                .navigationBarsPadding(),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            ) {
+                // Gradient header with avatar preview
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA855F7)))
+                        )
+                        .padding(20.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                (user?.displayName?.firstOrNull() ?: '?').uppercaseChar().toString(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
+                                color = Color.White,
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Edit Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Update your personal details", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+                        }
+                        IconButton(onClick = onDismiss, enabled = !saving) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.9f))
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 500.dp)
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    saveError?.let { message ->
+                        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Default.ErrorOutline, null, tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(18.dp))
+                                Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
+                        }
+                    }
+
+                    // Full Name field with icon
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Full Name") },
+                        placeholder = { Text("Add your full name") },
+                        leadingIcon = { Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp)) },
+                        singleLine = true,
+                        enabled = !saving,
+                        isError = nameError != null,
+                        supportingText = {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(nameError ?: "2-60 characters", style = MaterialTheme.typography.labelSmall, color = if (nameError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(name.length.toString() + "/60", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // Phone field with icon
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it.take(20) },
+                        label = { Text("Phone Number") },
+                        placeholder = { Text("Add phone number") },
+                        leadingIcon = { Icon(Icons.Filled.Phone, null, modifier = Modifier.size(18.dp)) },
+                        singleLine = true,
+                        enabled = !saving,
+                        isError = phoneError != null,
+                        supportingText = phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall) } },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // Bio field with icon
                     OutlinedTextField(
                         value = bio,
                         onValueChange = { if (it.length <= bioMaxLen) bio = it },
-                        label = { Text(stringResource(R.string.profile_bio_optional)) },
-                        maxLines = 3,
+                        label = { Text("Bio (optional)") },
+                        placeholder = { Text("Short intro, interests, or selling style") },
+                        leadingIcon = { Icon(Icons.Filled.Info, null, modifier = Modifier.size(18.dp)) },
+                        enabled = !saving,
+                        maxLines = 4,
+                        minLines = 3,
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth(),
                         supportingText = {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 Text(
-                                    "${bio.length}/$bioMaxLen",
+                                    bio.length.toString() + "/" + bioMaxLen.toString(),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (bio.length > bioMaxLen * 0.9) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         },
                     )
+
+                    // Profile completeness indicator
+                    val completeness = listOf(
+                        trimmedName.isNotBlank() to "Name added",
+                        trimmedPhone.isNotBlank() to "Phone added",
+                        trimmedBio.isNotBlank() to "Bio added",
+                    )
+                    val completedCount = completeness.count { it.first }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Profile Completeness", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                Spacer(Modifier.weight(1f))
+                                Text(completedCount.toString() + "/3", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            LinearProgressIndicator(
+                                progress = { completedCount / 3f },
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            completeness.forEach { (done, label) ->
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(
+                                        if (done) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                                        null,
+                                        tint = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                    Text(label, fontSize = 11.sp, color = if (done) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            enabled = !saving,
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = {
+                                onSave(
+                                    trimmedName.ifBlank { null },
+                                    trimmedPhone.ifBlank { null },
+                                    trimmedBio.ifBlank { null },
+                                )
+                            },
+                            enabled = canSave,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF6366F1),
+                            ),
+                        ) {
+                            if (saving) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text(if (saving) "Saving..." else "Save Changes", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(name.ifBlank { null }, phone.ifBlank { null }, bio.ifBlank { null }) },
-                enabled = !saving && nameError == null,
-            ) { Text(if (saving) stringResource(R.string.commerce_saving) else stringResource(R.string.btn_save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
-    )
+        }
+    }
 }
 
-/* ── Social Links Edit Dialog (web-parity: EditProfile.jsx socialLinks) ── */
 @Composable
 private fun SocialLinksEditDialog(
     initial: Map<String, String>,

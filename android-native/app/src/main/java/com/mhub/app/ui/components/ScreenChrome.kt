@@ -162,7 +162,7 @@ fun AppErrorState(
         if (isNetworkIssue) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Tip: Verify API URL in Settings and ensure server is reachable.",
+                text = "Check your connection, then try again.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

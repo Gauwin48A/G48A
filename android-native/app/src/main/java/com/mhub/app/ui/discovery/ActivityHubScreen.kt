@@ -59,15 +59,7 @@ private val ACTIVITY_ITEMS = listOf(
         bgColor = Color(0xFFFFFBEB),
         requiresAuth = true,
     ),
-    ActivityItem(
-        key = "nearby",
-        label = "Nearby Listings",
-        description = "Discover listings in your area",
-        icon = Icons.Default.LocationOn,
-        tint = Color(0xFF059669),
-        bgColor = Color(0xFFECFDF5),
-        requiresAuth = false,
-    ),
+
     ActivityItem(
         key = "wishlist",
         label = "Wishlist",
@@ -138,7 +130,7 @@ fun ActivityHubScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Activity Hub", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                     Text(
-                        "Quick access to your conversations, offers, reviews, and nearby listings.",
+                        "Quick access to your conversations, offers, reviews, and activity.",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 13.sp,
                     )

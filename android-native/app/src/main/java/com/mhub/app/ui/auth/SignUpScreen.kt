@@ -1,6 +1,5 @@
 package com.mhub.app.ui.auth
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -50,12 +49,13 @@ fun SignUpScreen(
     LaunchedEffect(state.success) { if (state.success) onSignedUp() }
     LaunchedEffect(Unit) { viewModel.resetSignupStep() }
 
-    val pageGradient = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
-    val brandGradient = Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF2563EB)))
-    val linkColor = Color(0xFF2563EB)
-    val labelText = Color(0xFF374151)
-    val mutedText = Color(0xFF6B7280)
-    val borderColor = Color(0xFFE5E7EB)
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val pageGradient = Brush.verticalGradient(if (darkTheme) listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2540)) else listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+    val brandGradient = Brush.horizontalGradient(if (darkTheme) listOf(Color(0xFF1E3A5F), Color(0xFF2563EB)) else listOf(Color(0xFF0EA5E9), Color(0xFF2563EB)))
+    val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
+    val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
+    val mutedText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
+    val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
     val step = state.signupStep
 
     Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
@@ -86,7 +86,7 @@ fun SignUpScreen(
 
             Surface(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp), color = Color.White,
+                shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White,
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Box(Modifier.fillMaxWidth().background(brandGradient).padding(vertical = 22.dp), contentAlignment = Alignment.Center) {
@@ -101,10 +101,10 @@ fun SignUpScreen(
                     }
                     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         state.error?.let { msg ->
-                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFFBEB)).padding(12.dp), verticalAlignment = Alignment.Top) {
-                                Icon(Icons.Filled.WarningAmber, null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
+                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB)).padding(12.dp), verticalAlignment = Alignment.Top) {
+                                Icon(Icons.Filled.WarningAmber, null, tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309), modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(msg, color = Color(0xFF92400E), fontSize = 12.sp)
+                                Text(msg, color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E), fontSize = 12.sp)
                             }
                         }
                         when (step) {
@@ -115,13 +115,13 @@ fun SignUpScreen(
                                     placeholder = { Text("Enter 12-digit Aadhaar", color = Color(0xFFD1D5DB)) },
                                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp),
-                                    colors = suTfColors(borderColor),
+                                    colors = suTfColors(borderColor, darkTheme),
                                     trailingIcon = { if (aadhaar.length == 12) Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E)) },
                                     supportingText = { Text("${aadhaar.length}/12", fontSize = 11.sp, color = if (aadhaar.length == 12) Color(0xFF22C55E) else mutedText) }
                                 )
                                 Text("Mobile Number", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Box(Modifier.height(52.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF3F4F6)).padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
+                                    Box(Modifier.height(52.dp).clip(RoundedCornerShape(12.dp)).background(if (darkTheme) Color(0xFF1E293B) else Color(0xFFF3F4F6)).padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                                         Text("+91", color = labelText, fontWeight = FontWeight.SemiBold)
                                     }
                                     OutlinedTextField(
@@ -129,7 +129,7 @@ fun SignUpScreen(
                                         placeholder = { Text("9876543210", color = Color(0xFFD1D5DB)) },
                                         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                         shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(52.dp),
-                                        colors = suTfColors(borderColor),
+                                        colors = suTfColors(borderColor, darkTheme),
                                     )
                                 }
                                 Text("Enter the mobile number linked to your Aadhaar", fontSize = 12.sp, color = mutedText)
@@ -162,7 +162,7 @@ fun SignUpScreen(
                                     placeholder = { Text("Enter 6-digit OTP", color = Color(0xFFD1D5DB)) },
                                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp),
-                                    colors = suTfColors(borderColor),
+                                    colors = suTfColors(borderColor, darkTheme),
                                     supportingText = { Text("${otp.length}/6", fontSize = 11.sp, color = if (otp.length == 6) Color(0xFF22C55E) else mutedText) }
                                 )
                                 SuGradientButton("Verify OTP", enabled = otp.length == 6 && !state.loading, loading = state.loading, gradient = brandGradient) {
@@ -181,7 +181,7 @@ fun SignUpScreen(
                                     value = pan, onValueChange = { pan = it.uppercase().take(10) },
                                     placeholder = { Text("ABCDE1234F", color = Color(0xFFD1D5DB)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )
                                 Text("Format: 5 letters + 4 digits + 1 letter", fontSize = 11.sp, color = mutedText)
                                 SuGradientButton("Verify PAN", enabled = pan.matches(Regex("[A-Z]{5}[0-9]{4}[A-Z]")) && !state.loading, loading = state.loading, gradient = brandGradient) {
@@ -198,7 +198,7 @@ fun SignUpScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text("Create Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 // Password requirements checklist
-                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF9FAFB), modifier = Modifier.fillMaxWidth()) {
+                                Surface(shape = RoundedCornerShape(10.dp), color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF9FAFB), modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Requirements:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelText)
                                         val reqs = listOf(
@@ -224,7 +224,7 @@ fun SignUpScreen(
                                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                     trailingIcon = { IconButton(onClick = { passwordVisible = !passwordVisible }) { Icon(if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = mutedText) } },
-                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )
                                 val strength = when {
                                     password.length >= 16 && password.any { it.isDigit() } && password.any { !it.isLetterOrDigit() } -> Triple("Strong", Color(0xFF22C55E), 1f)
@@ -248,14 +248,14 @@ fun SignUpScreen(
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
                                     visualTransformation = PasswordVisualTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )
                                 Text("Referral Code (optional)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 OutlinedTextField(
                                     value = referralCode, onValueChange = { referralCode = it.take(20) },
                                     placeholder = { Text("Enter referral code", color = Color(0xFFD1D5DB)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor),
+                                    modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 SuGradientButton("Create Account", enabled = password.length >= 12 && password == confirmPassword && !state.loading, loading = state.loading, gradient = brandGradient) {
@@ -292,7 +292,7 @@ private fun SuGradientButton(text: String, enabled: Boolean, loading: Boolean, g
 }
 
 @Composable
-private fun suTfColors(borderColor: Color) = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
-    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+private fun suTfColors(borderColor: Color, darkTheme: Boolean) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
+    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
 )

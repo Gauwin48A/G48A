@@ -144,12 +144,6 @@ android {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     exclude(
         "**/ui/channels/CentreScreens.kt",
-        "**/ui/commerce/CommerceCommon.kt",
-        "**/ui/commerce/*Screen.kt",
-        "**/ui/components/PostCardComponents.kt",
-        "**/ui/explore/ExploreScreenPaging.kt",
-        "**/ui/explore/ExploreViewModel.kt",
-        "**/ui/foryou/ForYouViewModel.kt",
     )
 }
 

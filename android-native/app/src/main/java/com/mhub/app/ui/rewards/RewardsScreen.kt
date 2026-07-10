@@ -119,6 +119,8 @@ import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.PrimaryButton
 import com.mhub.app.ui.components.SecondaryButton
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -273,52 +275,55 @@ class RewardsViewModel @Inject constructor(
             error = null,
         )
         viewModelScope.launch {
+            // Load overview first (critical for fallback logic); secondary data fires concurrently
             when (val result = rewardsRepository.overview()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loading = false, refreshing = false, rewards = result.data,
-                )
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        loading = false, refreshing = false, rewards = result.data,
+                    )
+                    loadSecondaryData()
+                }
                 is ApiResult.Failure -> {
                     if (result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden) {
-                        // Retry once before showing auth gate (avoids false positives from token refresh races)
-                        kotlinx.coroutines.delay(800) // Wait for token refresh to complete
+                        // Retry once before showing auth gate
+                        kotlinx.coroutines.delay(800)
                         when (val retry = rewardsRepository.overview()) {
-                            is ApiResult.Success -> _state.value = _state.value.copy(
-                                loading = false, refreshing = false, rewards = retry.data,
-                            )
-                            is ApiResult.Failure -> {
-                                // Only show auth gate if token is truly gone (not just a refresh race)
-                                if ((retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden) && !tokenStore.hasSession) {
-                                    showFallbackRewards()
-                                } else if (retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden) {
-                                    // Token exists but server rejects — likely expired, show error not login gate
-                                    showFallbackRewards()
-                                } else {
-                                    showFallbackRewards()
-                                }
+                            is ApiResult.Success -> {
+                                _state.value = _state.value.copy(
+                                    loading = false, refreshing = false, rewards = retry.data,
+                                )
+                                loadSecondaryData()
                             }
+                            is ApiResult.Failure -> showFallbackRewards()
                         }
                     } else {
                         showFallbackRewards()
                     }
                 }
             }
-            // Load engagement status
-            when (val eng = rewardsRepository.engagementStatus()) {
+        }
+    }
+
+    /** Fire engagement, coin history, and leaderboard concurrently. */
+    private suspend fun loadSecondaryData() {
+        coroutineScope {
+            val engDef = async { rewardsRepository.engagementStatus() }
+            val histDef = async { rewardsRepository.coinHistory() }
+            val lbDef  = async { rewardsRepository.referralLeaderboard() }
+            when (val eng = engDef.await()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(engagement = eng.data)
-                is ApiResult.Failure -> if (_state.value.rewards != null) showFallbackRewards()
+                is ApiResult.Failure -> { }
             }
-            // Load coin history
-            when (val hist = rewardsRepository.coinHistory()) {
+            when (val hist = histDef.await()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(coinHistory = hist.data.history)
-                is ApiResult.Failure -> if (_state.value.rewards != null) showFallbackRewards()
+                is ApiResult.Failure -> { }
             }
-            // Load leaderboard
-            when (val lb = rewardsRepository.referralLeaderboard()) {
+            when (val lb = lbDef.await()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     leaderboard = lb.data.leaderboard,
                     myLeaderboardPosition = lb.data.myPosition,
                 )
-                is ApiResult.Failure -> if (_state.value.rewards != null) showFallbackRewards()
+                is ApiResult.Failure -> { }
             }
         }
     }
@@ -616,7 +621,7 @@ fun RewardsScreen(
                                 Text(stringResource(R.string.rewards_impact_dashboard), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     ImpactCard("Total Points", (user.totalCoins + user.chainEarnedPoints).toString(), "\uD83C\uDFC6", Color(0xFFF59E0B), Modifier.weight(1f))
-                                    ImpactCard("Chain Depth", rewards.referralChain.size.toString(), "\uD83D\uDD17", Color(0xFF6366F1), Modifier.weight(1f))
+                                    ImpactCard("Chain Depth", rewards.referralChain.size.toString(), "\uD83D\uDD17", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     ImpactCard("Active Referrals", user.directReferrals.toString(), "\uD83D\uDC65", Color(0xFF10B981), Modifier.weight(1f))
@@ -664,12 +669,12 @@ fun RewardsScreen(
                             val weekProgress = engagement?.dailyCheckIn?.weekProgress ?: emptyList()
                             val todayReward = engagement?.dailyCheckIn?.todayReward ?: 5
 
-                            AccentTopCard(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF111827) else Color(0xFFF8FAFF)) {
+                            AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF111827) else Color(0xFFF8FAFF)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Text(stringResource(R.string.rewards_daily_actions), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFFA5B4FC) else Color(0xFF4F46E5), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
-                                        Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFF6366F1).copy(alpha = 0.12f)) {
-                                            Text("\uD83D\uDD25 $streak day streak", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                        Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
+                                            Text("\uD83D\uDD25 $streak day streak", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                     // 7-day calendar
@@ -683,12 +688,12 @@ fun RewardsScreen(
                                                 Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Box(
                                                     modifier = Modifier.size(32.dp).clip(CircleShape)
-                                                        .background(when { isCompleted -> Color(0xFF6366F1); isToday -> Color(0xFF6366F1).copy(alpha = 0.15f); else -> if (darkTheme) Color(0xFF1F2937) else Color(0xFFF1F5F9) })
-                                                        .then(if (isToday && !isCompleted) Modifier.border(2.dp, Color(0xFF6366F1).copy(alpha = 0.5f), CircleShape) else Modifier),
+                                                        .background(when { isCompleted -> MaterialTheme.colorScheme.primary; isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f); else -> if (darkTheme) Color(0xFF1F2937) else Color(0xFFF1F5F9) })
+                                                        .then(if (isToday && !isCompleted) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape) else Modifier),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     if (isCompleted) Text("\u2713", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
-                                                    else Text("${index + 1}", style = MaterialTheme.typography.labelSmall, color = if (isToday) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    else Text("${index + 1}", style = MaterialTheme.typography.labelSmall, color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
                                             }
                                         }
@@ -812,7 +817,7 @@ fun RewardsScreen(
 
                         // ─── Quick Share (proper deep links) ─────────────
                         if (selectedTab == 2) item {
-                            AccentTopCard(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF111827) else Color(0xFFF8FAFF)) {
+                            AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF111827) else Color(0xFFF8FAFF)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(stringResource(R.string.rewards_quick_share), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFFA5B4FC) else Color(0xFF4F46E5), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
                                     Text(stringResource(R.string.rewards_share_code), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -832,7 +837,7 @@ fun RewardsScreen(
                                             }
                                         }
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                            OutlinedButton(onClick = { clipboardManager.setText(AnnotatedString(inviteText)) }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
+                                            OutlinedButton(onClick = { clipboardManager.setText(AnnotatedString(inviteText)) }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
                                                 Text("\uD83D\uDD17", style = MaterialTheme.typography.labelMedium); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.rewards_copy_link), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
                                             }
                                             OutlinedButton(onClick = {
@@ -852,7 +857,7 @@ fun RewardsScreen(
                             Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(stringResource(R.string.rewards_challenge_board), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    EarnPlaybookRow("👥", "Invite Friends", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), Color(0xFF6366F1))
+                                    EarnPlaybookRow("👥", "Invite Friends", "+10 coins", (stats.referralsCount / 10f).coerceIn(0f, 1f), MaterialTheme.colorScheme.primary)
                                     EarnPlaybookRow("📅", "Daily Visit", "+2 coins", (user.visitStreak / 7f).coerceIn(0f, 1f), Color(0xFF10B981))
                                     EarnPlaybookRow("✍️", "Create Post", "+5 coins", (stats.postsCount / 10f).coerceIn(0f, 1f), Color(0xFF0EA5E9))
                                     EarnPlaybookRow("📤", "Share Post", "+3 coins", (stats.sharesCount / 10f).coerceIn(0f, 1f), Color(0xFF8B5CF6))
@@ -884,7 +889,7 @@ fun RewardsScreen(
                                     // Premium items
                                     if (redeemFilter == "All" || redeemFilter == "Premium") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🚀", "Listing Boost", 100, user.totalCoins >= 100, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("🚀", "Listing Boost", 100, user.totalCoins >= 100, MaterialTheme.colorScheme.primary, darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
                                             RedeemCard("⭐", "Featured Badge", 200, user.totalCoins >= 200, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
                                             RedeemCard("⭐", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
                                         }
@@ -899,7 +904,7 @@ fun RewardsScreen(
                                     // Accessories
                                     if (redeemFilter == "All" || redeemFilter == "Accessories") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🎨", "Custom Theme", 150, user.totalCoins >= 150, Color(0xFF6366F1), darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
+                                            RedeemCard("🎨", "Custom Theme", 150, user.totalCoins >= 150, MaterialTheme.colorScheme.primary, darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
                                             RedeemCard("🏷️", "Badge Pack", 80, user.totalCoins >= 80, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badges" }
                                         }
                                     }
@@ -942,10 +947,10 @@ fun RewardsScreen(
                                                 val sel = historyFilter == key
                                                 Surface(
                                                     shape = RoundedCornerShape(999.dp),
-                                                    color = if (sel) Color(0xFF6366F1) else Color(0xFF6366F1).copy(alpha = 0.1f),
+                                                    color = if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                                     onClick = { historyFilter = key },
                                                 ) {
-                                                    Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = if (sel) Color.White else Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                                    Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = if (sel) Color.White else MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                                 }
                                             }
                                         }
@@ -989,7 +994,7 @@ fun RewardsScreen(
                                                 val medal = when (index) { 0 -> "\uD83E\uDD47"; 1 -> "\uD83E\uDD48"; 2 -> "\uD83E\uDD49"; else -> "${index + 1}" }
                                                 Text(medal, style = MaterialTheme.typography.titleMedium)
                                                 Text(entry.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                                Text("${entry.referrals} refs", style = MaterialTheme.typography.labelMedium, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
+                                                Text("${entry.referrals} refs", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                             }
                                         }
                                     }
@@ -1024,8 +1029,8 @@ fun RewardsScreen(
                                         rewards.referralChain.take(5).forEachIndexed { index, node ->
                                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.width(20.dp)) {
-                                                    if (index > 0) Box(modifier = Modifier.width(2.dp).height(20.dp).offset(y = (-14).dp).background(Brush.verticalGradient(listOf(Color(0xFF6366F1).copy(alpha = 0.45f), Color(0xFF6366F1).copy(alpha = 0.08f)))))
-                                                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF6366F1), Color(0xFF22D3EE)))))
+                                                    if (index > 0) Box(modifier = Modifier.width(2.dp).height(20.dp).offset(y = (-14).dp).background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)))))
+                                                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, Color(0xFF22D3EE)))))
                                                 }
                                                 Text(node.name ?: "User", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                                                 Text("+${max(node.coins, 0)} coins", style = MaterialTheme.typography.labelLarge, color = Color(0xFF059669), fontWeight = FontWeight.SemiBold)

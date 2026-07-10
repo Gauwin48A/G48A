@@ -1,4 +1,4 @@
-package com.mhub.app.ui.home
+﻿package com.mhub.app.ui.home
 
 import com.mhub.app.R
 import androidx.compose.animation.AnimatedVisibility
@@ -91,7 +91,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -331,7 +330,7 @@ private fun FilterBottomSheet(
     }
 }
 
-/* ── Compare Dialog: side-by-side comparison ─────────────────────────── */
+/* â”€â”€ Compare Dialog: side-by-side comparison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @Composable
 private fun CompareDialog(
@@ -365,7 +364,7 @@ private fun CompareDialog(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.allposts_price), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
-                            Text(post.price?.let { "₹${"%,.0f".format(it)}" } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Text(post.price?.let { "â‚¹${"%,.0f".format(it)}" } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                     HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -418,7 +417,7 @@ private fun CompareDialog(
     )
 }
 
-/* ── Promote Dialog: post boost options ──────────────────────────────── */
+/* â”€â”€ Promote Dialog: post boost options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @Composable
 private fun PromoteDialog(
@@ -439,7 +438,7 @@ private fun PromoteDialog(
                 Text(stringResource(R.string.promote_boost_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(4.dp))
 
-                listOf("Basic" to "₹49", "Featured" to "₹99", "Spotlight" to "₹199").forEach { (tier, price) ->
+                listOf("Basic" to "â‚¹49", "Featured" to "â‚¹99", "Spotlight" to "â‚¹199").forEach { (tier, price) ->
                     Surface(
                         onClick = { selectedTier = tier },
                         shape = RoundedCornerShape(12.dp),
@@ -506,7 +505,7 @@ private fun PromoteDialog(
     )
 }
 
-/* ── Category theme data ──────────────────────────────────────────────── */
+/* â”€â”€ Category theme data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 private data class CategoryTheme(
     val key: String,
@@ -517,17 +516,17 @@ private data class CategoryTheme(
 )
 
 private val CATEGORY_THEMES = mapOf(
-    "electronics" to CategoryTheme("electronics", "Electronics", "💻", "Phones, laptops & gadgets",
+    "electronics" to CategoryTheme("electronics", "Electronics", "ðŸ’»", "Phones, laptops & gadgets",
         listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
-    "fashion" to CategoryTheme("fashion", "Fashion", "👗", "Clothing, shoes & accessories",
+    "fashion" to CategoryTheme("fashion", "Fashion", "ðŸ‘—", "Clothing, shoes & accessories",
         listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
-    "vehicles" to CategoryTheme("vehicles", "Vehicles", "🚗", "Cars, bikes & spare parts",
+    "vehicles" to CategoryTheme("vehicles", "Vehicles", "ðŸš—", "Cars, bikes & spare parts",
         listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
-    "others" to CategoryTheme("others", "Others", "✨", "Home, services, jobs & more",
+    "others" to CategoryTheme("others", "Others", "âœ¨", "Home, services, jobs & more",
         listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
 )
 
-/* ── Hero banner for active category ──────────────────────────────────── */
+/* â”€â”€ Hero banner for active category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @Composable
 private fun CategoryHeroBanner(
@@ -584,7 +583,7 @@ private fun CategoryHeroBanner(
     }
 }
 
-/* ── Quick-access row (Cart / Wishlist / Recently Viewed) ─────────────── */
+/* â”€â”€ Quick-access row (Cart / Wishlist / Recently Viewed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @Composable
 private fun QuickAccessRow(
@@ -630,7 +629,7 @@ private fun QuickAccessChip(
     }
 }
 
-/* ── Subcategory strip (shown when a category app is active) ──────────── */
+/* â”€â”€ Subcategory strip (shown when a category app is active) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @Composable
 private fun SubcategoryStrip(
@@ -710,7 +709,7 @@ private fun SubcategoryStrip(
     }
 }
 
-/* ── Heroic banner for AllPosts (web parity: AllPosts.jsx hero section) ── */
+/* â”€â”€ Heroic banner for AllPosts (web parity: AllPosts.jsx hero section) â”€â”€ */
 
 @Composable
 private fun AllPostsHeroBanner(
@@ -750,7 +749,7 @@ private fun AllPostsHeroBanner(
                     color = Color.White.copy(alpha = 0.18f),
                 ) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("💻", fontSize = 14.sp)
+                        Text("ðŸ’»", fontSize = 14.sp)
                         Spacer(Modifier.width(4.dp))
                         Text(
                             stringResource(R.string.allposts_items_count, listingsCount),
@@ -949,10 +948,10 @@ fun HomeScreen(
             }
             .let { list ->
                 when (quickFilter) {
-                    "Under ₹1K" -> list.filter { (it.price ?: Double.MAX_VALUE) < 1000.0 }
-                    "₹500–₹2K" -> list.filter { val p = it.price ?: return@filter false; p in 500.0..2000.0 }
-                    "₹2K–₹10K" -> list.filter { val p = it.price ?: return@filter false; p in 2000.0..10000.0 }
-                    "Above ₹10K" -> list.filter { (it.price ?: 0.0) > 10000.0 }
+                    "Under â‚¹1K" -> list.filter { (it.price ?: Double.MAX_VALUE) < 1000.0 }
+                    "â‚¹500â€“â‚¹2K" -> list.filter { val p = it.price ?: return@filter false; p in 500.0..2000.0 }
+                    "â‚¹2Kâ€“â‚¹10K" -> list.filter { val p = it.price ?: return@filter false; p in 2000.0..10000.0 }
+                    "Above â‚¹10K" -> list.filter { (it.price ?: 0.0) > 10000.0 }
                     "Latest 5" -> list.take(5)
                     "Latest 10" -> list.take(10)
                     "Posted Today" -> list.filter {
@@ -1235,13 +1234,13 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        // ── Auto-advancing promotional carousel ──
+                        // â”€â”€ Auto-advancing promotional carousel â”€â”€
                         item(key = "promo_carousel") {
                             val promoSlides = remember {
                                 listOf(
-                                    Triple("🎁 Great Deals", "Up to 70% off today", Color(0xFF2563EB)),
-                                    Triple("✨ New Arrivals", "Fresh listings every hour", Color(0xFF7C3AED)),
-                                    Triple("📍 Near You", "Discover local sellers", Color(0xFF059669)),
+                                    Triple("ðŸŽ Great Deals", "Up to 70% off today", Color(0xFF2563EB)),
+                                    Triple("âœ¨ New Arrivals", "Fresh listings every hour", Color(0xFF7C3AED)),
+                                    Triple("ðŸ“ Near You", "Discover local sellers", Color(0xFF059669)),
                                 )
                             }
                             val bannerPagerState = rememberPagerState { promoSlides.size }
@@ -1302,7 +1301,7 @@ fun HomeScreen(
                                 }
                             }
                         }
-                        // ── Heroic banner (web parity: AllPosts.jsx hero section) ──
+                        // â”€â”€ Heroic banner (web parity: AllPosts.jsx hero section) â”€â”€
                         item {
                             AllPostsHeroBanner(
                                 listingsCount = state.posts.size,
@@ -1313,20 +1312,20 @@ fun HomeScreen(
                         // Great Deals promotional banner
                         item {
                             com.mhub.app.ui.components.GreatDealsBanner(
-                                onShopNow = { quickFilter = "Under ₹500" },
+                                onShopNow = { quickFilter = "Under â‚¹500" },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             )
                         }
-                        // ── Utility Tiles: For You / Feed / Deals / All (web parity) ──
+                        // â”€â”€ Utility Tiles: For You / Feed / Deals / All (web parity) â”€â”€
                         item(key = "utility_tiles") {
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     listOf(
-                                        Triple("⭐", "For You", onOpenForYou),
-                                        Triple("📰", "Feed", onOpenFeed),
-                                        Triple("🏷️", "Deals", onOpenExplore),
-                                        Triple("📂", "All", onOpenCategories),
+                                        Triple("â­", "For You", onOpenForYou),
+                                        Triple("ðŸ“°", "Feed", onOpenFeed),
+                                        Triple("ðŸ·ï¸", "Deals", onOpenExplore),
+                                        Triple("ðŸ“‚", "All", onOpenCategories),
                                     ).forEach { (emoji, label, onClick) ->
                                         Surface(
                                             onClick = onClick,
@@ -1347,7 +1346,7 @@ fun HomeScreen(
                                 }
                             }
                         }
-                        // ── Trending Section (2-col, 8 posts — web parity) ──
+                        // â”€â”€ Trending Section (2-col, 8 posts â€” web parity) â”€â”€
                         val trendingPosts = state.posts.sortedByDescending { it.viewCount ?: 0 }.take(8)
                         if (trendingPosts.isNotEmpty()) {
                             item(key = "trending_header") {
@@ -1388,13 +1387,13 @@ fun HomeScreen(
                                                             color = Color(0xFFEF4444),
                                                             modifier = Modifier.align(Alignment.TopStart),
                                                         ) {
-                                                            Text("🔥 HOT", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                            Text("ðŸ”¥ HOT", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                                         }
                                                     }
                                                 }
                                                 Column(Modifier.padding(8.dp)) {
                                                     Text(post.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                                                    post.price?.let { Text("₹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
+                                                    post.price?.let { Text("â‚¹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
                                                     Text("${post.viewCount ?: 0} views", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
                                             }
@@ -1455,7 +1454,7 @@ fun HomeScreen(
                                                     }
                                                     Column(Modifier.padding(8.dp)) {
                                                         Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = Color(0xFF1E293B))
-                                                        if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF2563EB))
+                                                        if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF2563EB))
                                                     }
                                                 }
                                             }
@@ -1547,7 +1546,7 @@ fun HomeScreen(
                                         InputChip(
                                             selected = true,
                                             onClick = { filters = filters.copy(minPrice = 0f, maxPrice = 100000f) },
-                                            label = { Text("₹${"%,.0f".format(filters.minPrice)}-₹${"%,.0f".format(filters.maxPrice)}", style = MaterialTheme.typography.labelSmall) },
+                                            label = { Text("â‚¹${"%,.0f".format(filters.minPrice)}-â‚¹${"%,.0f".format(filters.maxPrice)}", style = MaterialTheme.typography.labelSmall) },
                                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
                                         )
                                     }
@@ -1571,7 +1570,7 @@ fun HomeScreen(
                         }
                     }
 
-                    // Sort chips — all visible with FlowRow wrapping
+                    // Sort chips â€” all visible with FlowRow wrapping
                     item {
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
@@ -1629,10 +1628,10 @@ fun HomeScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
                             ) {
                                 val priceFilters = listOf(
-                                    "Under ₹1K" to Icons.Default.LocalOffer,
-                                    "₹500–₹2K" to Icons.Default.LocalOffer,
-                                    "₹2K–₹10K" to Icons.Default.LocalOffer,
-                                    "Above ₹10K" to Icons.Default.LocalOffer,
+                                    "Under â‚¹1K" to Icons.Default.LocalOffer,
+                                    "â‚¹500â€“â‚¹2K" to Icons.Default.LocalOffer,
+                                    "â‚¹2Kâ€“â‚¹10K" to Icons.Default.LocalOffer,
+                                    "Above â‚¹10K" to Icons.Default.LocalOffer,
                                 )
                                 items(priceFilters, key = { it.first }) { (label, icon) ->
                                     FilterChip(
@@ -1657,7 +1656,7 @@ fun HomeScreen(
                                     "Latest 5" to Icons.AutoMirrored.Filled.Sort,
                                     "Latest 10" to Icons.AutoMirrored.Filled.Sort,
                                     "Posted Today" to Icons.Default.NewReleases,
-                                    "Near Me" to Icons.Default.LocationOn,
+                                    "Near Me" to Icons.Default.Search,
                                 )
                                 items(moreFilters, key = { it.first }) { (label, icon) ->
                                     FilterChip(
@@ -1695,7 +1694,7 @@ fun HomeScreen(
                             ) {
                                 AppEmptyState(icon = Icons.Outlined.Inventory2, title = "No results", subtitle = "Try a different filter or search term.")
                                 androidx.compose.material3.OutlinedButton(onClick = {
-                                    // clearing state is handled by the parent — just scroll user down to filter button
+                                    // clearing state is handled by the parent â€” just scroll user down to filter button
                                 }) {
                                     Icon(Icons.Default.Tune, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
@@ -1736,7 +1735,15 @@ fun HomeScreen(
                                 onCompare = {
                                     if (compareItems.none { it.stableId == post.stableId }) {
                                         if (compareItems.size < 4) {
-                                            compareItems = compareItems + post
+                                            // Subcategory match check: only allow comparing same type of products
+                                            val canAdd = compareItems.isEmpty() || {
+                                                val firstSub = compareItems.first().subcategory
+                                                firstSub == null || post.subcategory == null ||
+                                                firstSub.equals(post.subcategory, ignoreCase = true)
+                                            }()
+                                            if (canAdd) {
+                                                compareItems = compareItems + post
+                                            }
                                         }
                                     } else {
                                         compareItems = compareItems.filter { it.stableId != post.stableId }
@@ -1827,7 +1834,7 @@ fun HomeScreen(
                                                 )
                                                 Column(Modifier.padding(8.dp)) {
                                                     Text(post.displayTitle, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                                                    post.price?.let { Text("₹$it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                                                    post.price?.let { Text("â‚¹$it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
                                                 }
                                             }
                                         }

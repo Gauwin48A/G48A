@@ -1,19 +1,11 @@
 package com.mhub.app.ui.post
 
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -22,54 +14,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ImageNotSupported
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,7 +37,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.R
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.repository.BoostRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
@@ -123,9 +73,13 @@ data class MyPostsState(
 @HiltViewModel
 class MyPostsViewModel @Inject constructor(
     private val repo: PostsRepository,
+    private val boostRepo: BoostRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MyPostsState())
     val state: StateFlow<MyPostsState> = _state.asStateFlow()
+
+    private val _promoteResult = MutableStateFlow<String?>(null)
+    val promoteResult: StateFlow<String?> = _promoteResult.asStateFlow()
 
     init {
         load()
@@ -138,7 +92,6 @@ class MyPostsViewModel @Inject constructor(
             error = null,
         )
         viewModelScope.launch {
-            // Web parity: 12-second loading timeout (MyHome.jsx LOADING_TIMEOUT_MS = 12000)
             val result = withTimeoutOrNull(12_000L) { repo.mine() }
             when {
                 result == null -> _state.value = _state.value.copy(
@@ -152,7 +105,6 @@ class MyPostsViewModel @Inject constructor(
                     loading = false, refreshing = false, error = null,
                 )
             }
-            // Load bought items separately (non-blocking)
             when (val bought = repo.bought()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(boughtItems = bought.data)
                 is ApiResult.Failure -> {}
@@ -160,28 +112,41 @@ class MyPostsViewModel @Inject constructor(
         }
     }
 
+    fun promotePost(postId: String, tier: String, duration: Int, coinCost: Int) {
+        viewModelScope.launch {
+            when (val result = boostRepo.boost(postId, tier, duration)) {
+                is ApiResult.Success -> _promoteResult.value = "✅ Boosted! $coinCost coins spent. Lasts ${duration / 24} day(s)."
+                is ApiResult.Failure -> _promoteResult.value = "❌ ${result.error.message}. Check your coin balance."
+            }
+        }
+    }
+
+    fun clearPromoteResult() { _promoteResult.value = null }
+
     fun setStatusFilter(f: String?) { _state.value = _state.value.copy(statusFilter = f) }
     fun setSortBy(sort: String) { _state.value = _state.value.copy(sortBy = sort) }
     fun toggleSortOrder() { _state.value = _state.value.copy(sortAscending = !_state.value.sortAscending) }
     fun showMarkSold(post: Post?) { _state.value = _state.value.copy(markSoldTarget = post) }
-    fun confirmMarkSold() {
+    fun confirmMarkSold(onResult: (Boolean) -> Unit = {}) {
         val post = _state.value.markSoldTarget ?: return
         _state.value = _state.value.copy(markSoldLoading = true)
         viewModelScope.launch {
-            runCatching { repo.markSold(post.stableId) }
+            val result = runCatching { repo.markSold(post.stableId) }
             _state.value = _state.value.copy(markSoldLoading = false, markSoldTarget = null)
             load()
+            onResult(result.isSuccess)
         }
     }
 
     fun showRenew(post: Post?) { _state.value = _state.value.copy(renewTarget = post) }
-    fun confirmRenew() {
+    fun confirmRenew(onResult: (Boolean) -> Unit = {}) {
         val post = _state.value.renewTarget ?: return
         _state.value = _state.value.copy(renewLoading = true)
         viewModelScope.launch {
-            runCatching { repo.renew(post.stableId) }
+            val result = runCatching { repo.renew(post.stableId) }
             _state.value = _state.value.copy(renewLoading = false, renewTarget = null)
             load()
+            onResult(result.isSuccess)
         }
     }
 
@@ -203,10 +168,12 @@ class MyPostsViewModel @Inject constructor(
         return if (s.sortAscending) list else list.reversed()
     }
 
-    fun delete(id: String) {
+    fun delete(id: String, onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            repo.delete(id)
-            load()
+            when (val result = repo.delete(id)) {
+                is ApiResult.Success -> { load(); onResult(true) }
+                is ApiResult.Failure -> { load(); onResult(false) }
+            }
         }
     }
 
@@ -217,18 +184,26 @@ class MyPostsViewModel @Inject constructor(
     }
     fun selectAll() { _state.value = _state.value.copy(selectedIds = _state.value.items.map { it.stableId }.toSet()) }
     fun clearSelection() { _state.value = _state.value.copy(selectedIds = emptySet()) }
-    fun bulkDelete() {
+    fun bulkDelete(onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            _state.value.selectedIds.forEach { id -> runCatching { repo.delete(id) } }
+            var allSuccess = true
+            _state.value.selectedIds.forEach { id ->
+                if (runCatching { repo.delete(id) }.isFailure) allSuccess = false
+            }
             _state.value = _state.value.copy(bulkMode = false, selectedIds = emptySet())
             load()
+            onResult(allSuccess)
         }
     }
-    fun bulkMarkSold() {
+    fun bulkMarkSold(onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            _state.value.selectedIds.forEach { id -> runCatching { repo.markSold(id) } }
+            var allSuccess = true
+            _state.value.selectedIds.forEach { id ->
+                if (runCatching { repo.markSold(id) }.isFailure) allSuccess = false
+            }
             _state.value = _state.value.copy(bulkMode = false, selectedIds = emptySet())
             load()
+            onResult(allSuccess)
         }
     }
 }
@@ -247,26 +222,31 @@ fun MyPostsScreen(
     var promoteTarget by remember { mutableStateOf<Post?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var showPostActionsSheet by remember { mutableStateOf(false) }
+    var actionPost by remember { mutableStateOf<Post?>(null) }
 
-    // Bulk delete confirmation dialog
+    // ── Bulk delete confirmation dialog ──
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
             title = { Text("Delete ${state.selectedIds.size} listing${if (state.selectedIds.size != 1) "s" else ""}?", fontWeight = FontWeight.Bold) },
             text = { Text("This will permanently delete ${state.selectedIds.size} listing(s). This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = { viewModel.bulkDelete(); showBulkDeleteDialog = false }) {
+                TextButton(onClick = {
+                    viewModel.bulkDelete { success ->
+                        Toast.makeText(context, if (success) "Deleted successfully" else "Failed to delete some items", Toast.LENGTH_SHORT).show()
+                    }
+                    showBulkDeleteDialog = false
+                }) {
                     Text("Delete All", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            dismissButton = { TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
         )
     }
 
-    // Mark as Sold confirmation dialog (web parity)
+    // ── Mark as Sold confirmation dialog ──
     if (state.markSoldTarget != null) {
         AlertDialog(
             onDismissRequest = { viewModel.showMarkSold(null) },
@@ -280,51 +260,108 @@ fun MyPostsScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.confirmMarkSold() },
+                    onClick = {
+                        viewModel.confirmMarkSold { success ->
+                            Toast.makeText(context, if (success) "Marked as sold" else "Failed to mark as sold", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     enabled = !state.markSoldLoading,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
                 ) { Text(if (state.markSoldLoading) "Processing…" else "Yes, Mark Sold") }
             },
-            dismissButton = {
-                TextButton(onClick = { viewModel.showMarkSold(null) }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            dismissButton = { TextButton(onClick = { viewModel.showMarkSold(null) }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
         )
     }
 
-    // Promote dialog (web parity: MyHome.jsx promote modal)
+    // ── Promote dialog ──
     promoteTarget?.let { post ->
+        var selectedTier by remember(promoteTarget) { mutableStateOf(0) }
+        // Clear previous result when dialog opens for a new post
+        LaunchedEffect(promoteTarget) { viewModel.clearPromoteResult() }
+        val tiers = listOf(
+            TierOption("⚡ Boost", 50, Color(0xFF059669), Color(0xFF10B981), "basic", 168),
+            TierOption("⭐ Featured", 100, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 336),
+            TierOption("🌟 Spotlight", 200, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
+        )
         AlertDialog(
-            onDismissRequest = { promoteTarget = null },
+            onDismissRequest = {
+                promoteTarget = null
+                viewModel.clearPromoteResult()
+            },
             title = { Text("🚀 Promote Listing", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = Color(0xFF374151))
                     Spacer(Modifier.height(2.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
-                            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("🪙 50", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF059669))
-                                Text("24 hours", fontSize = 12.sp, color = Color(0xFF064E3B))
-                                Text("Standard boost", fontSize = 10.sp, color = Color(0xFF6B7280))
+
+                    // Boost education hint
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFEFF6FF)) {
+                        Text("💡 Higher tiers = more visibility. Spend coins to boost your listing!",
+                            fontSize = 11.sp, color = Color(0xFF1E40AF),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+                    }
+
+                    // 3 tier cards - selectable
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tiers.forEachIndexed { idx, opt ->
+                            val isSelected = selectedTier == idx
+                            Surface(
+                                onClick = { selectedTier = idx },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) opt.color1.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = if (isSelected) BorderStroke(1.5.dp, opt.color1) else null,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Column(
+                                    Modifier.padding(10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
+                                    Text(opt.label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = opt.color1)
+                                    Text("🪙 ${opt.coinCost}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = opt.color2)
+                                    Text("${opt.durationHours / 24} days", fontSize = 11.sp, color = Color(0xFF6B7280))
+                                    if (isSelected) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = opt.color1) {
+                                            Text("✓ Selected", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                }
                             }
                         }
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
-                            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("🪙 150", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB45309))
-                                Text("7 days", fontSize = 12.sp, color = Color(0xFF78350F))
-                                Text("Featured boost", fontSize = 10.sp, color = Color(0xFF6B7280))
-                            }
+                    }
+
+                    // Promote result message
+                    val promoteResult by viewModel.promoteResult.collectAsState()
+                    promoteResult?.let { msg ->
+                        Surface(shape = RoundedCornerShape(10.dp), color = if (msg.startsWith("✅")) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)) {
+                            Text(msg, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                color = if (msg.startsWith("✅")) Color(0xFF065F46) else Color(0xFF991B1B))
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { promoteTarget = null }) { Text("Promote", color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold) } },
-            dismissButton = { TextButton(onClick = { promoteTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
-            shape = RoundedCornerShape(22.dp),
+            confirmButton = {
+                val selected = tiers[selectedTier]
+                Button(
+                    onClick = {
+                        viewModel.promotePost(post.stableId, selected.apiTier, selected.durationHours, selected.coinCost)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                ) {
+                    Text("Pay 🪙${selected.coinCost} & Promote", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = { TextButton(onClick = {
+                promoteTarget = null
+                viewModel.clearPromoteResult()
+            }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 
+    // ── Delete confirmation dialog ──
     if (deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
@@ -332,22 +369,20 @@ fun MyPostsScreen(
             text = { Text(stringResource(R.string.action_confirm_delete)) },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.delete(deleteTarget?.stableId.orEmpty())
+                    viewModel.delete(deleteTarget?.stableId.orEmpty()) { success ->
+                        Toast.makeText(context, if (success) "Deleted" else "Failed to delete", Toast.LENGTH_SHORT).show()
+                    }
                     deleteTarget = null
                 }) {
                     Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
         )
     }
 
-    // Renew listing confirmation dialog
+    // ── Renew listing confirmation dialog ──
     if (state.renewTarget != null) {
         AlertDialog(
             onDismissRequest = { viewModel.showRenew(null) },
@@ -355,27 +390,27 @@ fun MyPostsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Re-activate \"${state.renewTarget!!.displayTitle}\"?")
-                    Text(
-                        "The listing will be set back to Active and appear in search results.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text("The listing will be set back to Active and appear in search results.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.confirmRenew() },
+                    onClick = {
+                        viewModel.confirmRenew { success ->
+                            Toast.makeText(context, if (success) "Listing renewed" else "Failed to renew listing", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     enabled = !state.renewLoading,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                 ) { Text(if (state.renewLoading) "Renewing…" else "Yes, Renew") }
             },
-            dismissButton = {
-                TextButton(onClick = { viewModel.showRenew(null) }) { Text(stringResource(R.string.action_cancel)) }
-            },
+            dismissButton = { TextButton(onClick = { viewModel.showRenew(null) }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
         )
     }
 
+    // ── Main Scaffold ──
     Scaffold(
         topBar = {
             if (state.bulkMode) {
@@ -413,14 +448,13 @@ fun MyPostsScreen(
         val activeCount = allItems.count { it.status?.lowercase() == "active" }
         val soldCount = allItems.count { it.status?.lowercase() == "sold" }
 
-        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.load(refresh = true) },
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when {
                 state.loading -> PostGridShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp))
-
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
                         title = "Unable to load your listings",
@@ -429,17 +463,15 @@ fun MyPostsScreen(
                         retryLabel = "Retry listings",
                     )
                 }
-
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
-                        // ── Hero Stats Section (web parity: profile-hero-bg sky→blue→violet + rewards-stat-card) ────
+                        // ── Hero Stats Section ──
                         item {
                             Column {
-                                // Hero: sky→blue→violet gradient (profile-hero-bg)
                                 Box(
                                     Modifier.fillMaxWidth().background(
                                         Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF3B82F6), Color(0xFF7C3AED)))
@@ -456,7 +488,6 @@ fun MyPostsScreen(
                                         }
                                     }
                                 }
-                                // Stat cards: rewards-stat-card style (white bg + top accent gradient bar)
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -467,12 +498,7 @@ fun MyPostsScreen(
                                         Triple("$soldCount", "Sold", listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))),
                                         Triple("${state.boughtItems.size}", "Bought", listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
                                     ).forEach { (value, label, accent) ->
-                                        Surface(
-                                            shape = RoundedCornerShape(16.dp),
-                                            color = Color.White,
-                                            shadowElevation = 4.dp,
-                                            modifier = Modifier.weight(1f),
-                                        ) {
+                                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f)) {
                                             Column {
                                                 Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(accent)))
                                                 Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -486,67 +512,86 @@ fun MyPostsScreen(
                             }
                         }
 
-                        // ── Search ─────────────────────────────────────────────────
+                        // ── Boost Education Banner ──
+                        item {
+                            var showBoostInfo by remember { mutableStateOf(true) }
+                            if (showBoostInfo) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFFFEFCE8),
+                                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                ) {
+                                    Column(Modifier.padding(12.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                            Text("📈 Boost Your Listings", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
+                                            IconButton(onClick = { showBoostInfo = false }, modifier = Modifier.size(22.dp)) {
+                                                Icon(Icons.Default.Close, null, tint = Color(0xFF92400E), modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Get more buyers by spending 🪙 coins!", fontSize = 11.sp, color = Color(0xFFA16207))
+                                        Spacer(Modifier.height(8.dp))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                            listOf(
+                                                Triple("⚡ Boost", "50 coins", "7 days • Green badge"),
+                                                Triple("⭐ Featured", "100 coins", "14 days • Purple badge"),
+                                                Triple("🌟 Spotlight", "200 coins", "30 days • Gold badge"),
+                                            ).forEach { (title, cost, desc) ->
+                                                Surface(shape = RoundedCornerShape(10.dp), color = Color.White, modifier = Modifier.weight(1f)) {
+                                                    Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                        Text(title, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF1F2937))
+                                                        Text(cost, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, color = Color(0xFF059669))
+                                                        Text(desc, fontSize = 9.sp, color = Color(0xFF6B7280), lineHeight = 12.sp)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.height(6.dp))
+                                        Text("Tap ⋮ on any listing → Promote to get started!", fontSize = 10.sp, color = Color(0xFFA16207), fontWeight = FontWeight.Medium)
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Search ──
                         item {
                             OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
+                                value = searchQuery, onValueChange = { searchQuery = it },
                                 placeholder = { Text("Search by title or location…") },
                                 leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                ),
+                                singleLine = true, shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outline),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                             )
                         }
 
-                        // ── Status filter chips (web parity: All/Active/Sold/Bought) ─────────────────────────────────
+                        // ── Status filter chips ──
                         item {
                             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val boughtCount = state.boughtItems.size
                                 val draftCount = allItems.count { it.status?.lowercase() == "draft" }
                                 val filters = listOf(null to "All (${allItems.size})", "active" to "Active ($activeCount)", "sold" to "Sold ($soldCount)", "bought" to "Bought ($boughtCount)", "draft" to "Drafts ($draftCount)")
                                 items(filters, key = { it.first ?: "all" }) { (key, label) ->
-                                    FilterChip(
-                                        selected = state.statusFilter == key,
-                                        onClick = { viewModel.setStatusFilter(key) },
-                                        label = { Text(label) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        ),
-                                    )
+                                    FilterChip(selected = state.statusFilter == key, onClick = { viewModel.setStatusFilter(key) }, label = { Text(label) },
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary))
                                 }
                             }
                             Spacer(Modifier.height(4.dp))
                         }
 
-                        // ── Sort controls (web parity: sort by date/price/views/likes/title + asc/desc) ─────────────
+                        // ── Sort controls ──
                         item {
                             var sortMenuExpanded by remember { mutableStateOf(false) }
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Sort:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Box {
-                                    Surface(
-                                        onClick = { sortMenuExpanded = true },
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                    ) {
+                                    Surface(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                when (state.sortBy) {
-                                                    "price" -> "Price"; "views" -> "Views"; "likes" -> "Likes"; "title" -> "Title"; else -> "Date"
-                                                },
-                                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                                            )
+                                            Text(when (state.sortBy) { "price" -> "Price"; "views" -> "Views"; "likes" -> "Likes"; "title" -> "Title"; else -> "Date" },
+                                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                             Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp))
                                         }
                                     }
@@ -557,22 +602,61 @@ fun MyPostsScreen(
                                     }
                                 }
                                 IconButton(onClick = { viewModel.toggleSortOrder() }, modifier = Modifier.size(32.dp)) {
-                                    Icon(
-                                        if (state.sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary,
-                                    )
+                                    Icon(if (state.sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
 
                         if (allItems.isEmpty()) {
+                            // ── Onboarding for new users ──
+                            item {
+                                var showOnboarding by rememberSaveable { mutableStateOf(true) }
+                                if (showOnboarding) {
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color(0xFFF0F9FF),
+                                        border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                                    ) {
+                                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Text("🚀", fontSize = 20.sp)
+                                                    Text("Welcome to MHub!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
+                                                }
+                                                IconButton(onClick = { showOnboarding = false }, modifier = Modifier.size(24.dp)) {
+                                                    Icon(Icons.Default.Close, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                                                }
+                                            }
+                                            Text("Here's how to get started:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
+                                            listOf(
+                                                "📸 Tap + to create your first listing",
+                                                "🪙 Earn coins daily → check-in, spin & scratch",
+                                                "⚡ Boost listings with coins for more buyers",
+                                                "💬 Chat with buyers & close deals fast",
+                                            ).forEach { tip ->
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Text("•", fontSize = 14.sp, color = Color(0xFF0284C7))
+                                                    Text(tip, fontSize = 12.sp, color = Color(0xFF0F172A))
+                                                }
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                OutlinedButton(
+                                                    onClick = { showOnboarding = false },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    modifier = Modifier.weight(1f),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF64748B)),
+                                                ) { Text("Got it!", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             item {
                                 Box(Modifier.fillMaxWidth().padding(64.dp), contentAlignment = Alignment.Center) {
-                                    AppEmptyState(
-                                        icon = Icons.Outlined.ImageNotSupported,
-                                        title = stringResource(R.string.my_posts_empty),
-                                        subtitle = "Use the + button to create your first listing.",
-                                    )
+                                    AppEmptyState(icon = Icons.Outlined.ImageNotSupported, title = stringResource(R.string.my_posts_empty), subtitle = "Use the + button to create your first listing.")
                                 }
                             }
                         } else if (filtered.isEmpty()) {
@@ -592,18 +676,11 @@ fun MyPostsScreen(
                                     colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
+                                    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                         if (state.bulkMode) {
                                             Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
                                         }
-                                        Box(
-                                            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
+                                        Box(modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                                             if (post.primaryImage != null) {
                                                 AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                             } else {
@@ -611,127 +688,132 @@ fun MyPostsScreen(
                                             }
                                         }
                                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(
-                                                text = post.displayTitle, style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                                            )
+                                            Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                             post.price?.let {
                                                 Text(text = "₹${"%,.0f".format(it)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                             }
                                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                                                 post.status?.let { s ->
-                                                    val (bg, fg) = when (s.lowercase()) {
-                                                        "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
-                                                        "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary
-                                                        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                                                    }
+                                                    val (bg, fg) = when (s.lowercase()) { "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary; "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary; else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant }
                                                     Surface(shape = RoundedCornerShape(8.dp), color = bg) {
                                                         Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                                     }
                                                 }
-                                                post.viewCount?.let { v ->
-                                                    Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
-                                                    Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
-                                                post.likeCount?.let { l ->
-                                                    Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp))
-                                                    Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
+                                                post.viewCount?.let { v -> Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                post.likeCount?.let { l -> Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp)); Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                             }
                                             // 7-day sparkline
                                             post.viewCount?.let { totalViews ->
                                                 val sparkData = remember(post.stableId) {
-                                                    val seed = post.stableId.hashCode().toLong()
-                                                    val rng = java.util.Random(seed)
+                                                    val seed = post.stableId.hashCode().toLong(); val rng = java.util.Random(seed)
                                                     List(7) { i -> (totalViews / 7 * (0.5 + rng.nextDouble())).toFloat().coerceAtLeast(0f) }
                                                 }
                                                 val maxVal = sparkData.maxOrNull()?.coerceAtLeast(1f) ?: 1f
                                                 val lineColor = MaterialTheme.colorScheme.primary
-                                                Canvas(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth(0.6f)
-                                                        .height(28.dp)
-                                                        .padding(vertical = 4.dp),
-                                                ) {
+                                                Canvas(modifier = Modifier.fillMaxWidth(0.6f).height(28.dp).padding(vertical = 4.dp)) {
                                                     val step = size.width / (sparkData.size - 1).coerceAtLeast(1)
                                                     for (i in 0 until sparkData.size - 1) {
-                                                        val x1 = i * step
-                                                        val y1 = size.height - (sparkData[i] / maxVal * size.height)
-                                                        val x2 = (i + 1) * step
-                                                        val y2 = size.height - (sparkData[i + 1] / maxVal * size.height)
-                                                        drawLine(
-                                                            color = lineColor,
-                                                            start = androidx.compose.ui.geometry.Offset(x1, y1),
-                                                            end = androidx.compose.ui.geometry.Offset(x2, y2),
-                                                            strokeWidth = 3f,
-                                                            cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                                        )
+                                                        val x1 = i * step; val y1 = size.height - (sparkData[i] / maxVal * size.height)
+                                                        val x2 = (i + 1) * step; val y2 = size.height - (sparkData[i + 1] / maxVal * size.height)
+                                                        drawLine(color = lineColor, start = androidx.compose.ui.geometry.Offset(x1, y1), end = androidx.compose.ui.geometry.Offset(x2, y2), strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
                                                     }
                                                 }
                                             }
                                         }
-                                        // Post actions dropdown (web parity: Edit/Mark Sold/Share/Promote/Delete)
-                                        var cardMenuExpanded by remember { mutableStateOf(false) }
-                                        Box {
-                                            IconButton(onClick = { cardMenuExpanded = true }, modifier = Modifier.size(34.dp)) {
-                                                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                                            }
-                                            DropdownMenu(expanded = cardMenuExpanded, onDismissRequest = { cardMenuExpanded = false }) {
-                                                DropdownMenuItem(
-                                                    text = { Text("Edit") },
-                                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
-                                                    onClick = { onOpenPost(post.stableId); cardMenuExpanded = false },
-                                                )
-                                                if (post.status?.lowercase() == "active") {
-                                                    DropdownMenuItem(
-                                                        text = { Text("Mark as Sold") },
-                                                        leadingIcon = { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E)) },
-                                                        onClick = { viewModel.showMarkSold(post); cardMenuExpanded = false },
-                                                    )
-                                                }
-                                                // Renew option — for sold, expired, or draft listings
-                                                if (post.status?.lowercase() in listOf("sold", "expired", "draft", "inactive")) {
-                                                    DropdownMenuItem(
-                                                        text = { Text("Renew Listing", color = Color(0xFF2563EB)) },
-                                                        leadingIcon = { Icon(Icons.Default.Autorenew, null, tint = Color(0xFF2563EB)) },
-                                                        onClick = { viewModel.showRenew(post); cardMenuExpanded = false },
-                                                    )
-                                                }
-                                                DropdownMenuItem(
-                                                    text = { Text("Share") },
-                                                    leadingIcon = { Icon(Icons.Default.Share, null) },
-                                                    onClick = {
-                                                        cardMenuExpanded = false
-                                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                                            type = "text/plain"
-                                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${post.displayTitle} on MHub!")
-                                                        }
-                                                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
-                                                    },
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text("Promote") },
-                                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null) },
-                                                    onClick = {
-                                                        cardMenuExpanded = false
-                                                        promoteTarget = post
-                                                    },
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
-                                                    leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                                    onClick = { deleteTarget = post; cardMenuExpanded = false },
-                                                )
-                                            }
+                                        // 3-dot icon opens ModalBottomSheet (reliable touch handling, no DropdownMenu popup issues)
+                                        IconButton(onClick = { actionPost = post; showPostActionsSheet = true }, modifier = Modifier.size(34.dp)) {
+                                            Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                                         }
                                     }
-                                    androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    // ═══ Post Actions Bottom Sheet (ModalBottomSheet is more reliable than DropdownMenu) ═══
+    if (showPostActionsSheet && actionPost != null) {
+        val p = actionPost!!
+        ModalBottomSheet(
+            onDismissRequest = { showPostActionsSheet = false; actionPost = null },
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
+            ) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MoreVert, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Listing Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+                HorizontalDivider(modifier = Modifier.padding(bottom = 4.dp))
+
+                PostActionItem(icon = Icons.Default.Edit, label = "Edit Listing", subtitle = "Update details, price & photos") {
+                    onOpenPost(p.stableId); showPostActionsSheet = false; actionPost = null
+                }
+                if (p.status?.lowercase() == "active") {
+                    PostActionItem(icon = Icons.Default.CheckCircle, label = "Mark as Sold", subtitle = "Move this listing to Sold", tint = Color(0xFF22C55E)) {
+                        viewModel.showMarkSold(p); showPostActionsSheet = false; actionPost = null
+                    }
+                }
+                if (p.status?.lowercase() in listOf("sold", "expired", "draft", "inactive")) {
+                    PostActionItem(icon = Icons.Default.Autorenew, label = "Renew Listing", subtitle = "Re-activate this listing", tint = Color(0xFF2563EB)) {
+                        viewModel.showRenew(p); showPostActionsSheet = false; actionPost = null
+                    }
+                }
+                PostActionItem(icon = Icons.Default.Share, label = "Share Listing", subtitle = "Send to friends & social media") {
+                    showPostActionsSheet = false; actionPost = null
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${p.displayTitle} on MHub!")
+                    }
+                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+                }
+                PostActionItem(icon = Icons.AutoMirrored.Filled.TrendingUp, label = "Promote Listing", subtitle = "Boost visibility with coins") {
+                    promoteTarget = p; showPostActionsSheet = false; actionPost = null
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                PostActionItem(icon = Icons.Default.Delete, label = stringResource(R.string.action_delete), subtitle = "Permanently remove this listing", tint = MaterialTheme.colorScheme.error) {
+                    deleteTarget = p; showPostActionsSheet = false; actionPost = null
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+private data class TierOption(
+    val label: String,
+    val coinCost: Int,
+    val color1: Color,
+    val color2: Color,
+    val apiTier: String,
+    val durationHours: Int,
+)
+
+@Composable
+private fun PostActionItem(
+    icon: ImageVector,
+    label: String,
+    subtitle: String,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(tint.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -747,4 +829,3 @@ private fun StatMiniCard(label: String, value: String, icon: ImageVector, iconCo
         }
     }
 }
-

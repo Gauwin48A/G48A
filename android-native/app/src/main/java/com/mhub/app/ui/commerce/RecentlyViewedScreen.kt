@@ -1,61 +1,93 @@
 package com.mhub.app.ui.commerce
 
-import android.content.Intent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.ViewList
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
-import com.mhub.app.R
-import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.core.ApiResult
-import com.mhub.app.data.remote.dto.*
-import com.mhub.app.data.repository.*
+import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Post
-import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.ListShimmer
 import com.mhub.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -65,6 +97,15 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
+
+data class RecentlyViewedUiState(
+    val loading: Boolean = true,
+    val refreshing: Boolean = false,
+    val posts: List<Post> = emptyList(),
+    val error: String? = null,
+    val selectedItems: Set<String> = emptySet(),
+    val isMultiSelectMode: Boolean = false,
+)
 
 @HiltViewModel
 class RecentlyViewedViewModel @Inject constructor(
@@ -92,23 +133,29 @@ class RecentlyViewedViewModel @Inject constructor(
         }
     }
 
-    private fun syncRecentlyViewed(loading: Boolean = _state.value.loading, error: String? = null) {
+    private fun syncRecentlyViewed(
+        loading: Boolean = _state.value.loading,
+        refreshing: Boolean = false,
+        error: String? = null,
+    ) {
         val mergedPosts = (SharedExploreStore.recentlyViewedPosts + remoteRecentPosts)
             .distinctBy { it.stableId }
             .take(50)
         _state.value = _state.value.copy(
             loading = loading,
+            refreshing = refreshing,
             posts = mergedPosts,
             error = if (mergedPosts.isEmpty()) error else null,
         )
     }
 
     fun load() {
+        _state.value = _state.value.copy(
+            loading = _state.value.posts.isEmpty(),
+            refreshing = _state.value.posts.isNotEmpty(),
+            error = null,
+        )
         viewModelScope.launch {
-            _state.value = _state.value.copy(
-                loading = _state.value.posts.isEmpty() && SharedExploreStore.recentlyViewedPosts.isEmpty(),
-                error = null,
-            )
             when (val result = repo.recentlyViewed()) {
                 is ApiResult.Success -> {
                     remoteRecentPosts = result.data
@@ -121,6 +168,13 @@ class RecentlyViewedViewModel @Inject constructor(
         }
     }
 
+    fun remove(postId: String) {
+        remoteRecentPosts = remoteRecentPosts.filterNot { it.stableId == postId }
+        SharedExploreStore.removeRecentlyViewed(postId)
+        syncRecentlyViewed(loading = false)
+        viewModelScope.launch { repo.deleteRecentlyViewed(postId) }
+    }
+
     fun clearAll() {
         remoteRecentPosts = emptyList()
         SharedExploreStore.clearRecentlyViewed()
@@ -128,13 +182,41 @@ class RecentlyViewedViewModel @Inject constructor(
         viewModelScope.launch { repo.clearRecentlyViewed() }
     }
 
-    fun removePost(id: String) {
-        remoteRecentPosts = remoteRecentPosts.filterNot { it.stableId == id }
-        SharedExploreStore.removeRecentlyViewed(id)
-        syncRecentlyViewed(loading = false)
-        viewModelScope.launch { repo.deleteRecentlyViewed(id) }
+    fun toggleMultiSelect() {
+        _state.value = _state.value.copy(
+            isMultiSelectMode = !_state.value.isMultiSelectMode,
+            selectedItems = if (!_state.value.isMultiSelectMode) emptySet() else _state.value.selectedItems,
+        )
+    }
+
+    fun toggleItemSelection(postId: String) {
+        val current = _state.value.selectedItems
+        _state.value = _state.value.copy(
+            selectedItems = if (postId in current) current - postId else current + postId,
+        )
+    }
+
+    fun selectAll() {
+        _state.value = _state.value.copy(selectedItems = _state.value.posts.map { it.stableId }.toSet())
+    }
+
+    fun clearSelection() {
+        _state.value = _state.value.copy(selectedItems = emptySet())
+    }
+
+    fun bulkRemove() {
+        _state.value.selectedItems.forEach { postId ->
+            remoteRecentPosts = remoteRecentPosts.filterNot { it.stableId == postId }
+            SharedExploreStore.removeRecentlyViewed(postId)
+        }
+        viewModelScope.launch {
+            _state.value.selectedItems.forEach { postId -> repo.deleteRecentlyViewed(postId) }
+            _state.value = _state.value.copy(selectedItems = emptySet(), isMultiSelectMode = false)
+        }
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
 
 private fun timeSinceLabel(isoDate: String?): String {
     if (isoDate == null) return ""
@@ -166,8 +248,17 @@ private fun dayGroup(isoDate: String?): String {
     } catch (_: Exception) { "Earlier" }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class RecentlyViewedSort(val label: String) {
+    RECENT("Recent"),
+    PRICE_ASC("Price ↑"),
+    PRICE_DESC("Price ↓"),
+}
 
+// ──────────────────────────────────────────────────────────────────────────────
+// RecentlyViewedScreen — redesigned to match WishlistScreen styling
+// ──────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecentlyViewedScreen(
     onBack: () -> Unit,
@@ -176,160 +267,295 @@ fun RecentlyViewedScreen(
     viewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    var isGrid by remember { mutableStateOf(false) }
-    var search by remember { mutableStateOf("") }
-    var statusFilter by remember { mutableStateOf("All") }
-    var bulkSelect by remember { mutableStateOf(false) }
-    var selectedIds by remember { mutableStateOf(setOf<String>()) }
-    val statusOptions = listOf("All", "Posts", "Feed", "Available", "Sold", "Promoted")
-    val displayed = remember(state.posts, search, statusFilter) {
-        state.posts
-            .filter { if (search.isBlank()) true else it.displayTitle.contains(search, true) || (it.location ?: "").contains(search, true) }
-            .filter { post -> when (statusFilter) {
-                "Posts" -> post.status != "feed"
-                "Feed" -> post.status == "feed"
-                "Available" -> post.status?.lowercase()?.let { it != "sold" } ?: true
-                "Sold" -> post.status?.lowercase() == "sold"
-                "Promoted" -> post.isPromoted == true
-                else -> true
-            } }
+    var searchQuery by remember { mutableStateOf("") }
+    var gridMode by remember { mutableStateOf(false) }
+    var sortBy by remember { mutableStateOf(RecentlyViewedSort.RECENT) }
+    var statusFilter by remember { mutableStateOf("all") }
+    var removeConfirmId by remember { mutableStateOf<String?>(null) }
+    val focusManager = LocalFocusManager.current
+
+    // Remove confirmation dialog
+    removeConfirmId?.let { idToRemove ->
+        AlertDialog(
+            onDismissRequest = { removeConfirmId = null },
+            title = { Text("Remove from Recently Viewed") },
+            text = { Text("Are you sure you want to remove this item from your recently viewed history?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.remove(idToRemove)
+                    removeConfirmId = null
+                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
+            },
+        )
     }
-    // Group by day
-    val grouped = remember(displayed) {
-        displayed.groupBy { dayGroup(it.createdAt) }
+
+    val filteredItems = remember(state.posts, searchQuery, sortBy, statusFilter) {
+        state.posts
+            .filter { post ->
+                (searchQuery.isBlank() ||
+                    post.displayTitle.contains(searchQuery, ignoreCase = true) ||
+                    post.location?.contains(searchQuery, ignoreCase = true) == true ||
+                    post.categoryName?.contains(searchQuery, ignoreCase = true) == true) &&
+                when (statusFilter) {
+                    "all" -> true
+                    "posts" -> post.status != "feed"
+                    "feed" -> post.status == "feed"
+                    "available" -> post.status?.lowercase()?.let { it != "sold" } ?: true
+                    "sold" -> post.status?.lowercase() == "sold"
+                    else -> true
+                }
+            }
+            .let { list ->
+                when (sortBy) {
+                    RecentlyViewedSort.RECENT -> list.sortedByDescending { it.createdAt ?: "" }
+                    RecentlyViewedSort.PRICE_ASC -> list.sortedBy { it.price ?: Double.MAX_VALUE }
+                    RecentlyViewedSort.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
+                }
+            }
+    }
+
+    // Group by day for list mode
+    val grouped = remember(filteredItems) {
+        filteredItems.groupBy { dayGroup(it.createdAt) }
     }
     val groupOrder = listOf("Today", "Yesterday", "Earlier")
 
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
-        Column(Modifier.fillMaxSize()) {
-            // Header
-            Row(
-                Modifier.fillMaxWidth().padding(WindowInsets.statusBars.asPaddingValues()).padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.recently_viewed_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
-                    if (state.posts.isNotEmpty()) Text("${state.posts.size} items browsed", fontSize = 11.sp, color = Color(0xFF64748B))
-                }
-                if (state.posts.isNotEmpty()) TextButton(onClick = { viewModel.clearAll() }) { Text(stringResource(R.string.btn_clear_all), color = Color(0xFFEF4444), fontSize = 13.sp) }
-                IconButton(onClick = { bulkSelect = !bulkSelect; if (!bulkSelect) selectedIds = emptySet() }, modifier = Modifier.size(36.dp)) {
-                    Icon(if (bulkSelect) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank, null, tint = if (bulkSelect) Color(0xFF2563EB) else Color(0xFF64748B))
-                }
-                IconButton(onClick = { isGrid = !isGrid }, modifier = Modifier.size(36.dp)) {
-                    Icon(if (isGrid) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView, null, tint = Color(0xFF64748B))
-                }
-            }
-
-            when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
-                else -> {
-                    OutlinedTextField(
-                        value = search, onValueChange = { search = it },
-                        placeholder = { Text(stringResource(R.string.commerce_search_recently)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
-                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
-                        singleLine = true, shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                    // Status filter chips (web-parity: RecentlyViewed.jsx filterTabs)
-                    androidx.compose.foundation.lazy.LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(statusOptions) { opt ->
-                            FilterChip(
-                                selected = statusFilter == opt,
-                                onClick = { statusFilter = opt },
-                                label = { Text(opt, fontSize = 12.sp) },
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(text = if (state.isMultiSelectMode) "Select Items" else "Recently Viewed", fontWeight = FontWeight.Bold)
+                        if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+                            Text(
+                                text = "${state.selectedItems.size} selected",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else if (state.posts.isNotEmpty()) {
+                            Text(
+                                text = "${state.posts.size} item${if (state.posts.size != 1) "s" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
-                    // Bulk-select toolbar
-                    if (bulkSelect && selectedIds.isNotEmpty()) {
-                        Surface(color = Color(0xFFFEE2E2)) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("${selectedIds.size} selected", fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
-                                TextButton(onClick = { selectedIds.forEach { viewModel.removePost(it) }; selectedIds = emptySet(); bulkSelect = false }) {
-                                    Text(stringResource(R.string.btn_delete_selected), color = Color(0xFFDC2626))
-                                }
-                                TextButton(onClick = { selectedIds = emptySet(); bulkSelect = false }) { Text(stringResource(R.string.btn_cancel)) }
-                            }
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        if (state.isMultiSelectMode) {
+                            viewModel.toggleMultiSelect()
+                        } else {
+                            onBack()
                         }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Spacer(Modifier.height(4.dp))
-                    if (displayed.isEmpty()) EmptyState(
-                        icon = { Icon(Icons.Filled.History, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                        title = if (search.isNotBlank()) "No results for \"$search\"" else "No recently viewed items",
-                        subtitle = "Items you browse will appear here",
-                    )
-                    else if (isGrid) LazyVerticalGrid(
-                        columns = GridCells.Fixed(2), contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        items(displayed, key = { it.stableId }) { post ->
-                            val swipeState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value -> if (value == SwipeToDismissBoxValue.EndToStart) { viewModel.removePost(post.stableId); true } else false }
-                            )
-                            SwipeToDismissBox(
-                                state = swipeState,
-                                backgroundContent = {
-                                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(Color(0xFFEF4444)), contentAlignment = Alignment.CenterEnd) {
-                                        Icon(Icons.Filled.Delete, null, tint = Color.White, modifier = Modifier.padding(end = 16.dp))
-                                    }
-                                },
-                                modifier = Modifier.clip(RoundedCornerShape(14.dp)),
+                },
+                actions = {
+                    if (state.isMultiSelectMode) {
+                        TextButton(onClick = { viewModel.selectAll() }) {
+                            Text("Select All", style = MaterialTheme.typography.labelMedium)
+                        }
+                        TextButton(onClick = { viewModel.clearSelection() }) {
+                            Text("Clear", style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        if (state.posts.isNotEmpty()) {
+                            TextButton(
+                                onClick = { viewModel.clearAll() },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                             ) {
-                                Surface(modifier = Modifier.clickable {
-                                    if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId)
-                                }, shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp) {
-                                    Column {
-                                        Box(Modifier.fillMaxWidth().height(110.dp)) {
-                                            if (post.primaryImage != null) AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
-                                            else Box(Modifier.fillMaxSize().background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
-                                        }
-                                        Column(Modifier.padding(8.dp)) {
-                                            Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF1E293B), maxLines = 2)
-                                            if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
-                                            val timeLabel = timeSinceLabel(post.createdAt)
-                                            if (timeLabel.isNotEmpty()) Text(timeLabel, fontSize = 10.sp, color = Color(0xFF94A3B8))
-                                        }
-                                    }
-                                }
+                                Icon(Icons.Default.DeleteSweep, contentDescription = "Clear All", modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(2.dp))
+                                Text("Clear All", style = MaterialTheme.typography.labelMedium)
+                            }
+                            IconButton(onClick = { viewModel.toggleMultiSelect() }) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = "Multi-select")
                             }
                         }
+                        IconButton(onClick = { gridMode = !gridMode }) {
+                            Icon(
+                                imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle view",
+                            )
+                        }
                     }
-                    else LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                        groupOrder.forEach { group ->
-                            val groupPosts = grouped[group] ?: return@forEach
-                            if (groupPosts.isEmpty()) return@forEach
-                            item {
-                                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(group, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF6366F1))
-                                    Spacer(Modifier.width(6.dp))
-                                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFEEF2FF)) {
-                                        Text("${groupPosts.size}", fontSize = 11.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp))
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    text = { Text("Remove ${state.selectedItems.size}") },
+                    icon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) },
+                    onClick = { viewModel.bulkRemove() },
+                    containerColor = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+    ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = { viewModel.load() },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            when {
+                state.loading -> ListShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
+
+                state.error != null && state.posts.isEmpty() -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppErrorState(
+                        title = "Recently viewed unavailable",
+                        message = state.error ?: "Unable to load recently viewed items",
+                        onRetry = { viewModel.load() },
+                        retryLabel = "Retry",
+                    )
+                }
+
+                else -> {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Search bar
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search recent items...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotBlank()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear")
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                        )
+                        // Sort chips
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            RecentlyViewedSort.entries.forEach { option ->
+                                FilterChip(
+                                    selected = sortBy == option,
+                                    onClick = { sortBy = option },
+                                    label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
+                            }
+                        }
+                        // Status filter chips
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val statusOptions = listOf("all" to "All", "posts" to "Posts", "feed" to "Feed", "available" to "Available", "sold" to "Sold")
+                            statusOptions.forEach { (key, label) ->
+                                FilterChip(
+                                    selected = statusFilter == key,
+                                    onClick = { statusFilter = key },
+                                    label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                    ),
+                                )
+                            }
+                        }
+
+                        when {
+                            state.posts.isEmpty() -> Box(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 64.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppEmptyState(
+                                    icon = Icons.Default.History,
+                                    title = "No recently viewed items",
+                                    subtitle = "Items you browse will appear here.",
+                                )
+                            }
+                            filteredItems.isEmpty() -> Box(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 64.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppEmptyState(
+                                    icon = Icons.Default.Search,
+                                    title = "No items match",
+                                    subtitle = "Try adjusting your filters.",
+                                )
+                            }
+                            gridMode -> {
+                                // Grid mode: Column+verticalScroll with chunked rows
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 90.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    filteredItems.chunked(2).forEach { row ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            row.forEach { post ->
+                                                Box(modifier = Modifier.weight(1f)) {
+                                                    RecentlyViewedGridCard(
+                                                        post = post,
+                                                        onOpen = { if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId) },
+                                                        onRemove = { removeConfirmId = post.stableId },
+                                                    )
+                                                }
+                                            }
+                                            if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                                        }
                                     }
                                 }
                             }
-                            items(groupPosts, key = { it.stableId }) { post ->
-                                val swipeState = rememberSwipeToDismissBoxState(
-                                    confirmValueChange = { value -> if (value == SwipeToDismissBoxValue.EndToStart) { viewModel.removePost(post.stableId); true } else false }
-                                )
-                                SwipeToDismissBox(
-                                    state = swipeState,
-                                    backgroundContent = {
-                                        Box(Modifier.fillMaxSize().padding(horizontal = 16.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFEF4444)), contentAlignment = Alignment.CenterEnd) {
-                                            Icon(Icons.Filled.Delete, null, tint = Color.White, modifier = Modifier.padding(end = 16.dp))
-                                        }
-                                    },
+                            else -> {
+                                // List mode: day-grouped LazyColumn
+                                LazyColumn(
+                                    contentPadding = PaddingValues(bottom = 90.dp),
+                                    modifier = Modifier.fillMaxSize(),
                                 ) {
-                                    Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                        RecentlyViewedListItem(post) {
-                                            if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId)
+                                    groupOrder.forEach { group ->
+                                        val groupPosts = grouped[group] ?: return@forEach
+                                        if (groupPosts.isEmpty()) return@forEach
+                                        item(key = "header_$group") {
+                                            DayGroupHeader(group = group, count = groupPosts.size)
+                                        }
+                                        items(groupPosts, key = { it.stableId }) { post ->
+                                            RecentlyViewedListCard(
+                                                post = post,
+                                                onOpen = { if (post.status == "feed") onOpenFeed(post.stableId) else onOpenPost(post.stableId) },
+                                                onRemove = { removeConfirmId = post.stableId },
+                                                isMultiSelectMode = state.isMultiSelectMode,
+                                                isSelected = post.stableId in state.selectedItems,
+                                                onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            )
                                         }
                                     }
                                 }
@@ -341,54 +567,216 @@ fun RecentlyViewedScreen(
         }
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// DayGroupHeader — section header for Today / Yesterday / Earlier
+// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun RecentlyViewedListItem(post: Post, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp,
+private fun DayGroupHeader(group: String, count: Int) {
+    val accentColor = when (group) {
+        "Today" -> MaterialTheme.colorScheme.primary
+        "Yesterday" -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-            if (post.primaryImage != null) {
-                AsyncImage(
-                    model = post.primaryImage, contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
+        androidx.compose.material3.Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = accentColor.copy(alpha = 0.12f),
+        ) {
+            Text(
+                group,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = accentColor,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "$count item${if (count != 1) "s" else ""}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// RecentlyViewedListCard — Wishlist-grade list card
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RecentlyViewedListCard(
+    post: Post,
+    onOpen: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+    isMultiSelectMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
+) {
+    val timeLabel = remember(post.createdAt) { timeSinceLabel(post.createdAt) }
+
+    Card(
+        onClick = { if (isMultiSelectMode) onToggleSelect() else onOpen() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                           else MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            // Checkbox for multi-select mode
+            if (isMultiSelectMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onToggleSelect() },
                 )
-            } else {
-                Box(
-                    Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(28.dp)) }
             }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B), maxLines = 2)
-                if (post.price != null) {
-                    Spacer(Modifier.height(3.dp))
-                    Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+
+            // Image
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
                 }
-                Spacer(Modifier.height(3.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            }
+
+            // Info column
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Title
+                Text(
+                    text = post.displayTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                // Price
+                post.price?.let {
+                    Text(
+                        text = "₹${"%,.0f".format(it)}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                // Category chip
+                post.categoryName?.let { cat ->
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Text(
+                            text = cat,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+
+                // Location + time row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     post.location?.let { loc ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
-                            Text(loc, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1)
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Spacer(Modifier.width(2.dp))
+                            Text(
+                                text = loc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
                         }
                     }
-                    val timeLabel = timeSinceLabel(post.createdAt)
                     if (timeLabel.isNotEmpty()) {
-                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF1F5F9)) {
-                            Row(Modifier.padding(horizontal = 5.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Icon(Icons.Filled.AccessTime, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(10.dp))
-                                Text(timeLabel, fontSize = 10.sp, color = Color(0xFF94A3B8))
-                            }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.AccessTime,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(11.dp),
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text(
+                                text = timeLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
-                post.condition?.let { cond ->
-                    Spacer(Modifier.height(2.dp))
-                    StatusChip(cond)
+
+                // Status/condition chip
+                if (post.status == "feed") {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                    ) {
+                        Text(
+                            "Feed Post",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                } else {
+                    post.condition?.let { cond ->
+                        ConditionChip(cond)
+                    }
+                }
+            }
+
+            // Remove button (only outside multi-select mode)
+            if (!isMultiSelectMode) {
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(32.dp).align(Alignment.Top),
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remove",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -396,18 +784,149 @@ private fun RecentlyViewedListItem(post: Post, onClick: () -> Unit) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SavedSearchesScreen
+// RecentlyViewedGridCard — Wishlist-grade grid card
 // ──────────────────────────────────────────────────────────────────────────────
-data class SavedSearchesUiState(
-    val loading: Boolean = true,
-    val searches: List<SavedSearch> = emptyList(),
-    val error: String? = null,
-    val newKeyword: String = "",
-    val newLocation: String = "",
-    val newMinPrice: String = "",
-    val newMaxPrice: String = "",
-    val newCategory: String = "",
-    val showCreateForm: Boolean = false,
-    val creating: Boolean = false,
-    val notificationsEnabled: Map<String, Boolean> = emptyMap(),
-)
+
+@Composable
+private fun RecentlyViewedGridCard(
+    post: Post,
+    onOpen: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val timeLabel = remember(post.createdAt) { timeSinceLabel(post.createdAt) }
+
+    Card(
+        onClick = onOpen,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier,
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+            ) {
+                if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                    }
+                }
+
+                // Remove X button
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                // Price overlay
+                post.price?.let {
+                    Text(
+                        text = "₹${"%,.0f".format(it)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                    )
+                }
+
+                // Time badge
+                if (timeLabel.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp),
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.AccessTime, null,
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(10.dp),
+                            )
+                            Text(
+                                timeLabel,
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.9f),
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Info below image
+            Column(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = post.displayTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                post.location?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ConditionChip helper
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ConditionChip(condition: String) {
+    val (bg, fg) = when (condition.lowercase()) {
+        "new" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        "like new" -> Color(0xFFDCFCE7) to Color(0xFF166534)
+        "good" -> Color(0xFFDBEAFE) to Color(0xFF1D4ED8)
+        "fair" -> Color(0xFFFEF9C3) to Color(0xFF854D0E)
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(shape = RoundedCornerShape(6.dp), color = bg) {
+        Text(
+            condition.replaceFirstChar { it.uppercase() },
+            fontSize = 10.sp,
+            color = fg,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}

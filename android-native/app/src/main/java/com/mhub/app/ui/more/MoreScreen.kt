@@ -48,7 +48,6 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalOffer
-import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Notifications
@@ -128,7 +127,6 @@ fun MoreScreen(
     onOpenForYou: () -> Unit,
     onOpenRewards: () -> Unit,
     onOpenOffers: () -> Unit = {},
-    onOpenNearby: () -> Unit = {},
     onOpenDashboard: () -> Unit = {},
     onOpenCart: () -> Unit = {},
     onOpenTierSelection: () -> Unit = {},
@@ -167,7 +165,7 @@ fun MoreScreen(
 ) {
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 6 focused items — Centre/CategoryMode/Subcategories/Nearby removed (not in web app)
+    // ── TRADE section: 6 focused items — Nearby removed (not in web app)
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
@@ -212,11 +210,11 @@ fun MoreScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                    Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                    Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color(0xFF64748B))
+                    Icon(Icons.Filled.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -279,9 +277,9 @@ fun MoreScreen(
                     }
                     if (prefsExpanded) {
                         Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = Color(0xFFF1F5F9))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(Modifier.height(12.dp))
-                        Text("Theme", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF64748B))
+                        Text("Theme", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf("Light" to ThemeMode.LIGHT, "System" to ThemeMode.SYSTEM, "Dark" to ThemeMode.DARK).forEach { (label, mode) ->
@@ -295,7 +293,7 @@ fun MoreScreen(
                             }
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text("Language", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF64748B))
+                        Text("Language", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(6.dp))
                         val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
                         var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
@@ -324,7 +322,7 @@ fun MoreScreen(
 private fun MoreSectionHeader(title: String, accent: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.width(3.dp).height(16.dp).clip(RoundedCornerShape(2.dp)).background(accent))
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+        Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -332,7 +330,7 @@ private fun MoreSectionHeader(title: String, accent: Color) {
 private fun MoreRowList(rows: List<MenuRow>) {
     androidx.compose.material3.Card(
         shape = RoundedCornerShape(16.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column {

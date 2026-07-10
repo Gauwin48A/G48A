@@ -57,8 +57,6 @@ object Routes {
     const val RECENTLY_VIEWED = "recently-viewed"
     const val SAVED_SEARCHES = "saved-searches"
     const val COMPARE = "compare"
-    const val NEARBY = "nearby"
-
     // Category sub-app
     const val CATEGORY_DETAIL = "category/{categoryKey}"
     fun categoryDetail(key: String): String = "category/$key"
@@ -67,7 +65,8 @@ object Routes {
     const val FEED_DETAIL = "feed/{feedId}"
     fun feedDetail(id: String): String = "feed/$id"
     const val MY_FEED = "my-feed"
-    const val FEED_POST_ADD = "feed/post-add"
+    const val FEED_POST_ADD = "feed/post-add?initialContent={initialContent}"
+    fun feedPostAdd(initialContent: String = ""): String = "feed/post-add?initialContent=${java.net.URLEncoder.encode(initialContent, "UTF-8")}"
     const val PUBLIC_WALL = "public-wall"
     const val COMPLAINTS = "complaints"
     const val FEEDBACK = "feedback"
@@ -152,5 +151,4 @@ object Routes {
     const val CONTACT_US      = "contact"
     const val FAQ             = "faq"
     const val SHIPPING_POLICY = "shipping-policy"
-    const val RECENTLY_VIEWED_SCREEN = "recently-viewed-screen"
 }

@@ -3,6 +3,7 @@
 package com.mhub.app.ui.feed
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -41,6 +41,7 @@ import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Campaign
@@ -203,8 +204,16 @@ class FeedViewModel @Inject constructor(
     }
 
     fun setSortOption(option: String) {
-        _state.value = _state.value.copy(sortOption = option)
-        load(refresh = true)
+        val current = _state.value.copy(sortOption = option)
+        // Client-side sorts: re-sort locally without re-fetching from API.
+        // Server-side sorts ("For You") require a fresh API call.
+        val clientSort = option in setOf("Recent", "Oldest", "Views", "Likes", "Title", "Shuffle")
+        if (clientSort && current.feedItems.isNotEmpty()) {
+            _state.value = current.copy(feedItems = sortFeedItems(current.feedItems, option))
+        } else {
+            _state.value = current
+            load(refresh = true)
+        }
     }
 
     fun setDensity(density: String) {
@@ -240,6 +249,7 @@ class FeedViewModel @Inject constructor(
 
     private fun sortFeedItems(items: List<FeedItem>, sortOption: String): List<FeedItem> = when (sortOption) {
         "Recent" -> items.sortedByDescending { it.createdAt }
+        "Oldest" -> items.sortedBy { it.createdAt }
         "Updated" -> items.sortedByDescending { it.createdAt } // FeedItem has no updatedAt; fall back to created
         "Views" -> items.sortedByDescending { it.effectiveViews }
         "Likes" -> items.sortedByDescending { it.effectiveLikes }
@@ -271,13 +281,12 @@ class FeedViewModel @Inject constructor(
     }
 }
 
-private val feedSortOptions = listOf("For You", "Shuffle", "Recent", "Updated", "Views", "Likes", "Title")
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     onOpenPost: (String) -> Unit,
-    onCreatePost: () -> Unit = {},
+    onCreatePost: (String) -> Unit = {},
+    onOpenMyFeed: () -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
     isGuest: Boolean = false,
     onNavigateToLogin: () -> Unit = {},
@@ -329,7 +338,7 @@ fun FeedScreen(
                                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
                             }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                                listOf("For You" to "✨ Discover", "Shuffle" to "🔀 Shuffle", "Recent" to "🕒 Newest", "Updated" to "⚡ Updated", "Views" to "👁 Popular", "Likes" to "❤ Most Liked", "Title" to "🗒 Title").forEach { (value, label) ->
+                                listOf("For You" to "✨ Discover", "Shuffle" to "🔀 Shuffle", "Recent" to "🕒 Newest", "Oldest" to "📜 Oldest", "Updated" to "⚡ Updated", "Views" to "👁 Popular", "Likes" to "❤ Most Liked", "Title" to "🗒 Title").forEach { (value, label) ->
                                     DropdownMenuItem(
                                         text = { Text(label) },
                                         onClick = { viewModel.setSortOption(value); showSortMenu = false },
@@ -379,8 +388,9 @@ fun FeedScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     )
                 }
-                // Sort order pills row (web parity)
-                var sortDesc by remember { mutableStateOf(true) }
+                // Sort order pills row (web parity) — derived from sortOption to stay in sync with dropdown
+                val sortPillNewest = state.sortOption == "Recent"
+                val sortPillOldest = state.sortOption == "Oldest"
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -389,20 +399,20 @@ fun FeedScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = if (sortDesc) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable { sortDesc = true; viewModel.setSortOption("Recent") },
+                            color = if (sortPillNewest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { viewModel.setSortOption("Recent") },
                         ) {
                             Text("↓ Newest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (sortDesc) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (sortPillNewest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
                         }
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = if (!sortDesc) Color(0xFF6366F1) else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable { sortDesc = false; viewModel.setSortOption("For You") },
+                            color = if (sortPillOldest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { viewModel.setSortOption("Oldest") },
                         ) {
                             Text("↑ Oldest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (!sortDesc) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (sortPillOldest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
                         }
                         if (state.feedItems.isNotEmpty()) {
@@ -415,7 +425,7 @@ fun FeedScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onCreatePost,
+                onClick = { onCreatePost("") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 72.dp),
             ) {
@@ -493,14 +503,14 @@ fun FeedScreen(
                                         }
                                         Spacer(Modifier.width(8.dp))
                                         Column(verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.End) {
-                                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.15f), modifier = Modifier.clickable { }) {
+                                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.15f), modifier = Modifier.clickable { onOpenMyFeed() }) {
                                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                     Icon(Icons.Outlined.AccountCircle, null, tint = Color.White, modifier = Modifier.size(14.dp))
                                                     Text("My Feed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                                 }
                                             }
                                             if (!isGuest) {
-                                                Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.clickable(onClick = onCreatePost)) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.clickable(onClick = { onCreatePost("") })) {
                                                     Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                         Icon(Icons.Filled.Add, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
                                                         Text("Share Update", color = Color(0xFF4F46E5), fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -513,7 +523,7 @@ fun FeedScreen(
                             }
                             // Composer Card at top
                             item(key = "composer_card") {
-                                ComposerCard(onCreatePost = onCreatePost)
+                                ComposerCard(onCreatePost = { text -> onCreatePost(text) })
                             }
                             items(filteredPosts, key = { it.stableId }) { post ->
                                 FeedCard(
@@ -590,7 +600,7 @@ fun FeedScreen(
 }
 
 @Composable
-private fun ComposerCard(onCreatePost: () -> Unit) {
+private fun ComposerCard(onCreatePost: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     var text by rememberSaveable { mutableStateOf("") }
     Card(
@@ -621,7 +631,7 @@ private fun ComposerCard(onCreatePost: () -> Unit) {
                         Icons.AutoMirrored.Outlined.Send,
                         null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { onCreatePost() }
+                        modifier = Modifier.clickable { onCreatePost(text) }
                     )
                 } else {
                     OutlinedTextField(
@@ -642,7 +652,7 @@ private fun ComposerCard(onCreatePost: () -> Unit) {
                 ) {
                     TextButton(onClick = { expanded = false; text = "" }) { Text("Cancel") }
                     Button(
-                        onClick = onCreatePost,
+                        onClick = { onCreatePost(text) },
                         enabled = text.isNotBlank(),
                     ) {
                         Icon(Icons.AutoMirrored.Outlined.Send, null, modifier = Modifier.size(16.dp))
@@ -762,7 +772,7 @@ private fun FeedCard(
                     // Location row
                     if (!post.location.isNullOrBlank()) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                            Icon(Icons.Filled.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
                             Text(post.location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -777,12 +787,18 @@ private fun FeedCard(
                         DropdownMenuItem(
                             text = { Text("Report") },
                             leadingIcon = { Icon(Icons.Outlined.Flag, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showMoreMenu = false },
+                            onClick = {
+                                showMoreMenu = false
+                                Toast.makeText(context, "Post reported. We'll review it shortly.", Toast.LENGTH_SHORT).show()
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Promote") },
                             leadingIcon = { Icon(Icons.Outlined.Campaign, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showMoreMenu = false },
+                            onClick = {
+                                showMoreMenu = false
+                                Toast.makeText(context, "Promotion feature coming soon", Toast.LENGTH_SHORT).show()
+                            },
                         )
                     }
                 }
@@ -823,17 +839,17 @@ private fun FeedCard(
                     post.categoryName?.takeIf { it.isNotBlank() }?.let { cat ->
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF6366F1).copy(alpha = 0.1f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         ) {
-                            Text(cat, style = MaterialTheme.typography.labelSmall, color = Color(0xFF6366F1), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                            Text(cat, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                         }
                     }
                     post.subcategoryName?.takeIf { it.isNotBlank() }?.let { sub ->
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF8B5CF6).copy(alpha = 0.1f),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                         ) {
-                            Text(sub, style = MaterialTheme.typography.labelSmall, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                            Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                         }
                     }
                 }
@@ -895,12 +911,12 @@ private fun FeedCard(
                 // Save pill
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = if (isBookmarked) Color(0xFF6366F1).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (isBookmarked) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable { onBookmark() },
                 ) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = if (isBookmarked) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Text(if (isBookmarked) "Saved" else "Save", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isBookmarked) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Text(if (isBookmarked) "Saved" else "Save", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 // Views pill
@@ -916,12 +932,12 @@ private fun FeedCard(
                 // View Details CTA (web parity: indigo pill button)
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF6366F1).copy(alpha = 0.1f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     modifier = Modifier.clickable(onClick = onOpenPost),
                 ) {
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Visibility, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
-                        Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+                        Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                        Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

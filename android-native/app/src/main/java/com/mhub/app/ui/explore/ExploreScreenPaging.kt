@@ -86,6 +86,7 @@ data class PagingFilterParams(
  * Provides a production-grade [PagingData] flow that automatically
  * invalidates and re-fetches when any filter parameter changes.
  */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ExplorePagingViewModel @Inject constructor(
     private val pagingSourceFactory: PostPagingSourceFactory,
@@ -154,6 +155,14 @@ class ExplorePagingViewModel @Inject constructor(
         )
     }
 
+    fun reportCompareError(message: String) {
+        _compareError.value = message
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3000)
+            _compareError.value = null
+        }
+    }
+
     fun commitCompareSelection(postIds: List<String>, onComplete: () -> Unit) {
         val ids = postIds.distinct().take(4)
         if (ids.size < 2) {
@@ -203,8 +212,8 @@ fun ExploreScreenWithPaging(
     val focusManager = LocalFocusManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedSubcategory by remember { mutableStateOf<String?>(null) }
-    // Track locally which posts are selected for compare
-    val compareSet = remember { mutableStateMapOf<String, Boolean>() }
+    // Track locally which posts are selected for compare (stores Post objects for subcategory validation)
+    val comparePosts = remember { mutableStateMapOf<String, Post>() }
     // Sort options
     val sortOptions = listOf("newest" to "Newest", "popular" to "Popular", "price_asc" to "Price ↑", "price_desc" to "Price ↓")
     var selectedSort by remember { mutableStateOf("newest") }
@@ -345,7 +354,7 @@ fun ExploreScreenWithPaging(
                         start = 0.dp,
                         top = 8.dp,
                         end = 0.dp,
-                        bottom = if (compareSet.values.any { it }) 120.dp else 80.dp,
+                        bottom = if (comparePosts.isNotEmpty()) 120.dp else 80.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxSize(),
@@ -354,9 +363,15 @@ fun ExploreScreenWithPaging(
 
                     if (refreshState is LoadState.Loading && lazyPosts.itemCount == 0) {
                         items(6) {
-                            com.mhub.app.ui.components.ShimmerItem(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                height = 140.dp
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(12.dp)
+                                    )
                             )
                         }
                     } else if (refreshState is LoadState.Error && lazyPosts.itemCount == 0) {
@@ -384,9 +399,24 @@ fun ExploreScreenWithPaging(
                                     onClick = { onOpenPost(item.stableId) },
                                     isWishlisted = false,
                                     onToggleWishlist = {},
-                                    isCompared = compareSet[item.stableId] ?: false,
-                                    onToggleCompare = { 
-                                        compareSet[item.stableId] = !(compareSet[item.stableId] ?: false)
+                                    isCompared = comparePosts.containsKey(item.stableId),
+                                    onToggleCompare = {
+                                        val id = item.stableId
+                                        if (comparePosts.containsKey(id)) {
+                                            comparePosts.remove(id)
+                                        } else if (comparePosts.size < 4) {
+                                            // Subcategory match check: only allow comparing same type of products
+                                            val canCompare = comparePosts.isEmpty() ||
+                                                comparePosts.values.first().subcategory == null ||
+                                                item.subcategory == null ||
+                                                comparePosts.values.first().subcategory.equals(item.subcategory, ignoreCase = true)
+                                            if (canCompare) {
+                                                comparePosts[id] = item
+                                            } else {
+                                                val firstSub = comparePosts.values.first().subcategory ?: ""
+                                                viewModel.reportCompareError("Can only compare similar products ($firstSub)")
+                                            }
+                                        }
                                     },
                                     showCompare = true,
                                     showCart = true,
@@ -426,7 +456,7 @@ fun ExploreScreenWithPaging(
                 }
 
                 // Floating Compare Panel
-                val selectedCount = compareSet.values.count { it }
+                val selectedCount = comparePosts.size
                 if (selectedCount >= 2) {
                     Surface(
                         modifier = Modifier
@@ -452,7 +482,7 @@ fun ExploreScreenWithPaging(
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(
-                                    onClick = { compareSet.clear() },
+                                    onClick = { comparePosts.clear() },
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF475569)),
                                 ) {
@@ -461,7 +491,7 @@ fun ExploreScreenWithPaging(
                                 Button(
                                     onClick = {
                                         viewModel.commitCompareSelection(
-                                            compareSet.filterValues { it }.keys.toList(),
+                                            comparePosts.keys.toList(),
                                             onOpenCompare,
                                         )
                                     },

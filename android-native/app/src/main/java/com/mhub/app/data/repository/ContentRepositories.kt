@@ -140,10 +140,6 @@ class PostsRepository @Inject constructor(
 
     suspend fun bought(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).allItems }
 
-    suspend fun nearby(lat: Double, lng: Double, radius: Int = 10): ApiResult<List<Post>> = safeApiCall {
-        api.nearbyPosts(lat, lng, radius).allItems
-    }
-
     suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().allItems }
     suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
         api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit
@@ -557,6 +553,11 @@ class SocialRepository @Inject constructor(private val api: MhubApi) {
     suspend fun viewPost(id: String): ApiResult<Unit> = safeApiCall { api.viewPost(id); Unit }
     suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
         api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit
+    }
+
+    /** Delete a feed post. Uses the posts endpoint since feed items share the same posts table. */
+    suspend fun deleteFeedPost(id: String): ApiResult<Unit> = safeApiCall {
+        api.deletePost(id); Unit
     }
 }
 

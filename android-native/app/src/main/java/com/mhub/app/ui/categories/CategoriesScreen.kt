@@ -237,9 +237,9 @@ fun CategoriesScreen(
                                         Text(group, fontSize = 12.sp)
                                         if (count > 0) {
                                             Surface(shape = RoundedCornerShape(20.dp),
-                                                color = if (selectedGroup == group) Color.White.copy(alpha = 0.3f) else Color(0xFFE5E7EB)) {
+                                                color = if (selectedGroup == group) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant) {
                                                 Text("$count", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                                                    color = if (selectedGroup == group) Color.White else Color(0xFF64748B),
+                                                    color = if (selectedGroup == group) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp))
                                             }
                                         }
@@ -247,7 +247,7 @@ fun CategoriesScreen(
                                 },
                                 shape = RoundedCornerShape(20.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF4F46E5),
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = Color.White,
                                 ),
                             )
@@ -257,7 +257,7 @@ fun CategoriesScreen(
                     if (filtered.isNotEmpty()) {
                         Text(
                             "${filtered.size} ${if (selectedGroup == "All") "categories" else selectedGroup.lowercase() + " categories"}",
-                            fontSize = 12.sp, color = Color(0xFF64748B),
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
                         )
                     }
@@ -338,7 +338,7 @@ private fun CategoryTile(
             if (isFeatured) {
                 Surface(
                     shape = RoundedCornerShape(bottomEnd = 12.dp, topStart = 12.dp),
-                    color = Color(0xFFF59E0B),
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.align(Alignment.TopEnd),
                 ) {
                     Text(

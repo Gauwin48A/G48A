@@ -177,15 +177,10 @@ fun CategoryHubScreen(
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val totalListings = state.stats.sumOf { it.activeCount ?: 0 }.takeIf { it > 0 }
-        ?: (state.categories.size * 5)
-    val newToday = state.stats.sumOf { it.newToday ?: 0 }
 
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val pageGradient = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
         else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
-    val titleGradient = Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFFEC4899)))
-
     PullToRefreshBox(
         isRefreshing = state.refreshing,
         onRefresh = { viewModel.refresh() },
@@ -199,17 +194,25 @@ fun CategoryHubScreen(
             ),
         ) {
 
-            // ── Header: greeting + 4 category apps ──────────────────────
+            // ── Header: welcome greeting ───────────────────────────────
             item(key = "header") {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Welcome to MHub 🌟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                    Text(stringResource(R.string.hub_subtitle), fontSize = 13.sp, color = Color(0xFF64748B))
+                    Text(
+                        "Welcome to MHub 🌟",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                    )
+                    Text(
+                        stringResource(R.string.hub_subtitle),
+                        fontSize = 13.sp,
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                    )
                     Spacer(Modifier.height(4.dp))
                 }
             }
 
-            // ── Stats row ──────────────────────────────────────────────
             // ── Error banner ───────────────────────────────────────────
             if (state.error != null && !state.loading) {
                 item(key = "error") {
@@ -228,11 +231,6 @@ fun CategoryHubScreen(
                 }
             }
 
-            // ── Section spacer ────────────────────────────────────────
-            item(key = "cat_header") {
-                Spacer(Modifier.height(16.dp))
-            }
-
             // ── Loading state ──────────────────────────────────────────
             if (state.loading) {
                 item(key = "loading") {
@@ -241,6 +239,10 @@ fun CategoryHubScreen(
                     }
                 }
             } else {
+                item(key = "section_spacer") {
+                    Spacer(Modifier.height(16.dp))
+                }
+
                 // ── Row 1: Electronics + Fashion ───────────────────────
                 item(key = "row1") {
                     Row(
@@ -296,53 +298,12 @@ fun CategoryHubScreen(
                         )
                     }
                 }
+
                 item(key = "bottom_spacer") {
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(32.dp))
                 }
             }
         }
-    }
-}
-
-/* ── Stat formatting (1.2k, 3.5M) ─────────────────────────────────────── */
-
-private fun formatCompact(n: Int): String = when {
-    n >= 1_000_000 -> "${"%.1f".format(n / 1_000_000.0)}M"
-    n >= 1_000 -> "${"%.1f".format(n / 1_000.0)}k"
-    else -> "$n+"
-}
-
-/* ── Hub Stats Row ─────────────────────────────────────────────────────── */
-
-@Composable
-private fun HubStatsRow(totalListings: Int, newToday: Int, categoryCount: Int, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.75f),
-        shadowElevation = 2.dp,
-        modifier = modifier,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            HubStat("📦", if (totalListings > 0) formatCompact(totalListings) else "—", stringResource(R.string.hub_total_listings))
-            Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("✨", if (newToday > 0) "+$newToday" else "0", stringResource(R.string.hub_new_today))
-            Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
-            HubStat("🏷️️", "$categoryCount", stringResource(R.string.categories))
-        }
-    }
-}
-
-@Composable
-private fun HubStat(emoji: String, value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(emoji, fontSize = 14.sp)
-            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0F172A))
-        }
-        Text(label, fontSize = 10.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
     }
 }
 
@@ -450,204 +411,4 @@ private fun AppPulsingDot() {
     Box(Modifier.size(6.dp).alpha(dotAlpha).background(Color(0xFF4ADE80), CircleShape))
 }
 
-/* ── Promo banner ──────────────────────────────────────────────────────── */
 
-@Composable
-private fun PromoBanner(onOpenAllPosts: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFFEC4899)),
-                )
-            )
-            .clickable { onOpenAllPosts() }
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color.White.copy(alpha = 0.2f),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                ) {
-                    Text(
-                        "🔥  TRENDING NOW",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        letterSpacing = 1.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
-                Text(
-                    "Discover latest\nlistings near you",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    lineHeight = 22.sp,
-                )
-                Spacer(Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color.White,
-                    modifier = Modifier.clickable { onOpenAllPosts() },
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text("Browse All", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
-                    }
-                }
-            }
-            Text("🛒", fontSize = 64.sp, modifier = Modifier.padding(start = 8.dp))
-        }
-    }
-}
-
-/* ── Quick links section ───────────────────────────────────────────────── */
-
-private data class QuickLink(val label: String, val emoji: String, val key: String, val color: Color)
-
-private val QUICK_LINKS = listOf(
-    QuickLink("Wishlist", "\uD83D\uDD16", "wishlist", Color(0xFF6366F1)),
-    QuickLink("Offers", "🎁", "offers", Color(0xFF10B981)),
-    QuickLink("Compare", "⚖️", "compare", Color(0xFF6366F1)),
-    QuickLink("Rewards", "🪙", "rewards", Color(0xFFF59E0B)),
-    QuickLink("Dashboard", "📊", "dashboard", Color(0xFF0EA5E9)),
-    QuickLink("Saved", "🔖", "saved", Color(0xFF8B5CF6)),
-)
-
-@Composable
-private fun QuickLinksSection(
-    onOpenAllPosts: () -> Unit,
-    onSelectApp: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            "QUICK ACCESS",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF94A3B8),
-            letterSpacing = 1.5.sp,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(QUICK_LINKS, key = { it.key }) { link ->
-                Surface(
-                    onClick = { onSelectApp(link.key) },
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color.White,
-                    shadowElevation = 3.dp,
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(link.color.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(link.emoji, fontSize = 18.sp)
-                        }
-                        Text(link.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155))
-                    }
-                }
-            }
-        }
-    }
-}
-
-/* ── Trending categories horizontal strip ─────────────────────────────── */
-
-private data class TrendingCat(val label: String, val emoji: String, val key: String, val bg: Color)
-private val TRENDING_CATS = listOf(
-    TrendingCat("Phones", "📱", "electronics", Color(0xFF3B82F6)),
-    TrendingCat("Cars", "🚗", "vehicles", Color(0xFF10B981)),
-    TrendingCat("Clothes", "👗", "fashion", Color(0xFFEC4899)),
-    TrendingCat("Laptops", "💻", "electronics", Color(0xFF8B5CF6)),
-    TrendingCat("Bikes", "🏍️", "vehicles", Color(0xFFEA580C)),
-    TrendingCat("Shoes", "👟", "fashion", Color(0xFFF59E0B)),
-    TrendingCat("Home", "🏠", "others", Color(0xFF0891B2)),
-    TrendingCat("Jobs", "💼", "others", Color(0xFF059669)),
-)
-
-@Composable
-private fun TrendingCategoriesSection(onSelectApp: (String) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("🏪 Trending", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-            Text("See all →", fontSize = 12.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(TRENDING_CATS, key = { it.label }) { cat ->
-                Surface(
-                    onClick = { onSelectApp(cat.key) },
-                    shape = RoundedCornerShape(20.dp),
-                    color = cat.bg.copy(alpha = 0.1f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cat.bg.copy(alpha = 0.3f)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(cat.emoji, fontSize = 16.sp)
-                        Text(cat.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = cat.bg)
-                    }
-                }
-            }
-        }
-    }
-}
-
-/* ── Platform trust strip ───────────────────────────────────────────────── */
-
-@Composable
-private fun PlatformTrustStrip(modifier: Modifier = Modifier) {
-    val trustItems = listOf(
-        Triple("🛡", "Secure", "Verified sellers"),
-        Triple("⚡", "Fast", "Quick listings"),
-        Triple("🏪", "Local", "Near you"),
-        Triple("📞", "Support", "24/7 help"),
-    )
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 2.dp,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            trustItems.forEach { (emoji, title, subtitle) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(emoji, fontSize = 20.sp)
-                    Text(title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                    Text(subtitle, fontSize = 9.sp, color = Color(0xFF94A3B8))
-                }
-            }
-        }
-    }
-}

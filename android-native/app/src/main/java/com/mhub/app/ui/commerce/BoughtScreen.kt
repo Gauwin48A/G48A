@@ -149,10 +149,10 @@ private fun PostsListScreen(
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
                         placeholder = { Text(stringResource(R.string.commerce_search_location)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
-                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) } },
                         singleLine = true, shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant, focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                     )
                     // Sort chips
@@ -166,11 +166,11 @@ private fun PostsListScreen(
                         listOf("newest" to "Newest", "price_asc" to "Price ↑", "price_desc" to "Price ↓").forEach { (key, label) ->
                             FilterChip(selected = sortBy == key, onClick = { sortBy = key },
                                 label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary))
                         }
                     }
                     if (displayed.isEmpty()) EmptyState(
-                        icon = { Icon(icon, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                        icon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(64.dp)) },
                         title = if (search.isNotBlank()) "No results for \"$search\"" else emptyMsg, subtitle = subtitle,
                     )
                     else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

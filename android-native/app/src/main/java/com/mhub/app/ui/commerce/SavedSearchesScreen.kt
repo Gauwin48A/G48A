@@ -65,6 +65,20 @@ import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
 
+data class SavedSearchesUiState(
+    val loading: Boolean = true,
+    val searches: List<SavedSearch> = emptyList(),
+    val error: String? = null,
+    val newKeyword: String = "",
+    val newLocation: String = "",
+    val newMinPrice: String = "",
+    val newMaxPrice: String = "",
+    val newCategory: String = "",
+    val showCreateForm: Boolean = false,
+    val creating: Boolean = false,
+    val notificationsEnabled: Map<String, Boolean> = emptyMap(),
+)
+
 @HiltViewModel
 class SavedSearchesViewModel @Inject constructor(private val repo: SavedSearchesRepository) : ViewModel() {
     private val _state = MutableStateFlow(SavedSearchesUiState())
@@ -136,7 +150,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                     modifier = Modifier.fillMaxWidth())
                                 OutlinedTextField(value = state.newLocation, onValueChange = { viewModel.setNewLocation(it) },
                                     placeholder = { Text(stringResource(R.string.commerce_location_optional)) },
-                                    leadingIcon = { Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
+                                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
                                     singleLine = true, shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
                                     modifier = Modifier.fillMaxWidth())
@@ -198,7 +212,7 @@ fun SavedSearchesScreen(onBack: () -> Unit, onRunSearch: (String) -> Unit = {}, 
                                             }
                                             if (s.location != null) Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
                                                 Row(Modifier.padding(horizontal = 5.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                    Icon(Icons.Filled.LocationOn, null, tint = Color(0xFFB45309), modifier = Modifier.size(10.dp))
+                                                    Icon(Icons.Default.Place, null, tint = Color(0xFFB45309), modifier = Modifier.size(10.dp))
                                                     Text(s.location, fontSize = 11.sp, color = Color(0xFF92400E))
                                                 }
                                             }
