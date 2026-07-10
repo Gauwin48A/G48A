@@ -611,7 +611,7 @@ fun MyPostsScreen(
                         if (allItems.isEmpty()) {
                             // ── Onboarding for new users ──
                             item {
-                                var showOnboarding by rememberSaveable { mutableStateOf(true) }
+                                var showOnboarding by remember { mutableStateOf(true) }
                                 if (showOnboarding) {
                                     Surface(
                                         modifier = Modifier.fillMaxWidth().padding(12.dp),
