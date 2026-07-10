@@ -891,7 +891,22 @@ exports.getMe = async (req, res) => {
     if (rewardsAvailable) {
       try {
         user = await runQuery(
-          `\n            SELECT\n              u.user_id,\n              u.name,\n              u.phone_number,\n              u.email,\n              u.role,\n              NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,\n              NULLIF(to_jsonb(u)->>'tier', '') AS tier,\n              COALESCE(r.tier, 'Bronze') AS rewards_rank\n            FROM users u\n            LEFT JOIN rewards r ON r.user_id::text = u.user_id::text\n            WHERE u.user_id = $1\n          `,
+          `
+            SELECT
+              u.user_id,
+              u.name,
+              u.phone_number,
+              u.email,
+              u.role,
+              NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,
+              NULLIF(to_jsonb(u)->>'tier', '') AS tier,
+              COALESCE(r.tier, 'Bronze') AS rewards_rank,
+              pr.reward_badge
+            FROM users u
+            LEFT JOIN rewards r ON r.user_id::text = u.user_id::text
+            LEFT JOIN profiles pr ON pr.user_id::text = u.user_id::text
+            WHERE u.user_id = $1
+          `,
           [userId],
         );
       } catch (err) {
@@ -900,13 +915,27 @@ exports.getMe = async (req, res) => {
         }
         rewardsTableAvailability = false;
         user = await runQuery(
-          `SELECT u.user_id, u.name, u.phone_number, u.email, u.role,\n           NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,\n           NULLIF(to_jsonb(u)->>'tier', '') AS tier,\n           'Bronze'::text AS rewards_rank\n           FROM users u\n           WHERE u.user_id = $1`,
+          `SELECT u.user_id, u.name, u.phone_number, u.email, u.role,
+           NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,
+           NULLIF(to_jsonb(u)->>'tier', '') AS tier,
+           'Bronze'::text AS rewards_rank,
+           pr.reward_badge
+           FROM users u
+           LEFT JOIN profiles pr ON pr.user_id::text = u.user_id::text
+           WHERE u.user_id = $1`,
           [userId],
         );
       }
     } else {
       user = await runQuery(
-        `SELECT u.user_id, u.name, u.phone_number, u.email, u.role,\n         NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,\n         NULLIF(to_jsonb(u)->>'tier', '') AS tier,\n         'Bronze'::text AS rewards_rank\n         FROM users u\n         WHERE u.user_id = $1`,
+        `SELECT u.user_id, u.name, u.phone_number, u.email, u.role,
+         NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,
+         NULLIF(to_jsonb(u)->>'tier', '') AS tier,
+         'Bronze'::text AS rewards_rank,
+         pr.reward_badge
+         FROM users u
+         LEFT JOIN profiles pr ON pr.user_id::text = u.user_id::text
+         WHERE u.user_id = $1`,
         [userId],
       );
     }
@@ -922,6 +951,7 @@ exports.getMe = async (req, res) => {
       tier: membershipPlan,
       current_plan: membershipPlan,
       rewards_rank: u.rewards_rank || 'Bronze',
+      reward_badge: u.reward_badge || null,
     });
   } catch (err) {
     logger.error('[GET ME ERROR]', err);

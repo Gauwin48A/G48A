@@ -37,6 +37,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Lock
@@ -142,6 +145,9 @@ data class RewardsUiState(
     val myLeaderboardPosition: Int = 0,
     val actionLoading: String? = null,
     val actionResult: String? = null,
+    val referralTree: com.mhub.app.data.remote.dto.ReferralTreeResponse? = null,
+    val chainStatus: com.mhub.app.data.remote.dto.ReferralChainStatusResponse? = null,
+    val activePosts: List<com.mhub.app.domain.model.Post> = emptyList(),
 )
 
 private val fallbackRewardsOverview = RewardsOverviewResponse(
@@ -207,6 +213,7 @@ private val fallbackLeaderboard = listOf(
 @HiltViewModel
 class RewardsViewModel @Inject constructor(
     private val rewardsRepository: RewardsRepository,
+    private val postsRepository: com.mhub.app.data.repository.PostsRepository,
     private val tokenStore: com.mhub.app.data.local.TokenStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RewardsUiState())
@@ -282,6 +289,7 @@ class RewardsViewModel @Inject constructor(
                         loading = false, refreshing = false, rewards = result.data,
                     )
                     loadSecondaryData()
+                    loadActivePosts()
                 }
                 is ApiResult.Failure -> {
                     if (result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden) {
@@ -293,6 +301,7 @@ class RewardsViewModel @Inject constructor(
                                     loading = false, refreshing = false, rewards = retry.data,
                                 )
                                 loadSecondaryData()
+                                loadActivePosts()
                             }
                             is ApiResult.Failure -> showFallbackRewards()
                         }
@@ -304,12 +313,27 @@ class RewardsViewModel @Inject constructor(
         }
     }
 
-    /** Fire engagement, coin history, and leaderboard concurrently. */
+    fun loadActivePosts() {
+        viewModelScope.launch {
+            when (val r = postsRepository.mine(userId = "me")) {
+                is ApiResult.Success -> {
+                    val active = r.data.filter { (it.status ?: "").lowercase() == "active" }
+                    _state.value = _state.value.copy(activePosts = active)
+                }
+                is ApiResult.Failure -> { }
+            }
+        }
+    }
+
+    /** Fire engagement, coin history, leaderboard, referral tree, and chain status concurrently. */
     private suspend fun loadSecondaryData() {
         coroutineScope {
             val engDef = async { rewardsRepository.engagementStatus() }
             val histDef = async { rewardsRepository.coinHistory() }
             val lbDef  = async { rewardsRepository.referralLeaderboard() }
+            val treeDef = async { rewardsRepository.referralTree() }
+            val statusDef = async { rewardsRepository.referralChainStatus() }
+
             when (val eng = engDef.await()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(engagement = eng.data)
                 is ApiResult.Failure -> { }
@@ -323,6 +347,14 @@ class RewardsViewModel @Inject constructor(
                     leaderboard = lb.data.leaderboard,
                     myLeaderboardPosition = lb.data.myPosition,
                 )
+                is ApiResult.Failure -> { }
+            }
+            when (val tree = treeDef.await()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(referralTree = tree.data)
+                is ApiResult.Failure -> { }
+            }
+            when (val status = statusDef.await()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(chainStatus = status.data)
                 is ApiResult.Failure -> { }
             }
         }
@@ -506,28 +538,83 @@ fun RewardsScreen(
                     var redeemDialogType by remember { mutableStateOf<String?>(null) }
                     var redeemPostId by remember { mutableStateOf("") }
                     redeemDialogType?.let { type ->
-                        val itemName = when (type) { "boost" -> "Listing Boost (24h)"; "badge" -> "Featured Badge"; "top_search" -> "Top Placement (7d)"; "gift_5" -> "$5 Gift Card"; "voucher_10" -> "$10 Voucher"; "theme" -> "Custom Theme"; "badges" -> "Badge Pack"; else -> type }
-                        val itemCost = when (type) { "boost" -> 100; "badge" -> 200; "top_search" -> 500; "gift_5" -> 250; "voucher_10" -> 450; "theme" -> 150; "badges" -> 80; else -> 100 }
-                        val needsPost = type in listOf("boost", "badge", "top_search")
+                        val itemName = when (type) {
+                            "boost" -> "Listing Boost (24h)"
+                            "badge" -> "Elite Seller Badge"
+                            "top_search" -> "Top Placement (7d)"
+                            "gift_5" -> "$5 Gift Card"
+                            "voucher_10" -> "$10 Voucher"
+                            "theme" -> "Custom Theme"
+                            "badges" -> "Badge Pack"
+                            else -> type
+                        }
+                        val itemCost = when (type) {
+                            "boost" -> 100
+                            "badge" -> 1000
+                            "top_search" -> 500
+                            "gift_5" -> 250
+                            "voucher_10" -> 450
+                            "theme" -> 150
+                            "badges" -> 80
+                            else -> 100
+                        }
                         AlertDialog(
                             onDismissRequest = { redeemDialogType = null; redeemPostId = "" },
                             title = { Text(stringResource(R.string.rewards_redeem_item, itemName)) },
                             text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(stringResource(R.string.rewards_redeem_confirm, itemCost, itemName, user.totalCoins))
-                                    if (needsPost) {
-                                        OutlinedTextField(
-                                            value = redeemPostId,
-                                            onValueChange = { redeemPostId = it },
-                                            label = { Text(stringResource(R.string.rewards_post_id_optional)) },
-                                            placeholder = { Text(stringResource(R.string.rewards_post_id_hint)) },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth(),
-                                        )
+                                    if (type == "boost" || type == "top_search") {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text("Select Post:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                        if (state.activePosts.isEmpty()) {
+                                            Text("No active posts found. Please create an active listing first.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                                        } else {
+                                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                state.activePosts.forEach { post ->
+                                                    val isSelected = redeemPostId == post.id
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
+                                                            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
+                                                            .clickable { redeemPostId = post.id ?: "" }
+                                                            .padding(10.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(16.dp)
+                                                                .clip(CircleShape)
+                                                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray)
+                                                        )
+                                                        Spacer(Modifier.width(10.dp))
+                                                        Column {
+                                                            Text(post.title ?: "Untitled", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                            Text("ID: ${post.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             },
-                            confirmButton = { TextButton(onClick = { viewModel.redeemStore(type, redeemPostId.ifBlank { null }); redeemDialogType = null; redeemPostId = "" }, enabled = state.actionLoading == null) { Text(stringResource(R.string.rewards_redeem)) } },
+                            confirmButton = {
+                                val canConfirm = state.actionLoading == null &&
+                                        ((type != "boost" && type != "top_search") || redeemPostId.isNotBlank())
+                                TextButton(
+                                    onClick = {
+                                        viewModel.redeemStore(type, redeemPostId.ifBlank { null })
+                                        redeemDialogType = null
+                                        redeemPostId = ""
+                                    },
+                                    enabled = canConfirm
+                                ) {
+                                    Text(stringResource(R.string.rewards_redeem))
+                                }
+                            },
                             dismissButton = { TextButton(onClick = { redeemDialogType = null; redeemPostId = "" }) { Text(stringResource(R.string.rewards_cancel)) } },
                         )
                     }
@@ -541,7 +628,7 @@ fun RewardsScreen(
                         divider = {},
                     ) {
                         listOf(
-                            stringResource(R.string.rewards_tab_dashboard),
+                            "Overview",
                             stringResource(R.string.rewards_tab_earn),
                             stringResource(R.string.rewards_tab_referrals),
                             stringResource(R.string.rewards_tab_activity),
@@ -598,6 +685,36 @@ fun RewardsScreen(
                                             Text("${user.xpCurrent}/${user.xpRequired} XP", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.SemiBold)
                                         }
                                         GoldProgressBar(progress = xpProgress)
+                                    }
+                                }
+                            }
+                        }
+
+                        // ─── Level & XP Guide ───────────────────────────
+                        if (selectedTab == 0) item {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF8FAFC)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("ℹ️ How Levels & XP Work", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                    }
+                                    Text(
+                                        "Earn XP (Points) automatically by listing posts, referring friends, claiming daily rewards, and completing challenges. Every 100 XP levels up your profile!",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.fillMaxWidth().height(1.dp).background(if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0)))
+                                    Text("Level Privileges:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("• Level 1 (Bronze): Standard listing limits & basic visibility.", style = MaterialTheme.typography.bodySmall)
+                                        Text("• Level 2 (Silver): Higher listing limit (10 posts/day) & search visibility boost.", style = MaterialTheme.typography.bodySmall)
+                                        Text("• Level 3 (Gold): Premium Elite Seller badge unlocked & 2x search priority.", style = MaterialTheme.typography.bodySmall)
+                                        Text("• Level 4+ (Platinum/Diamond): Elite benefits, early access, and priority support.", style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
@@ -889,9 +1006,9 @@ fun RewardsScreen(
                                     // Premium items
                                     if (redeemFilter == "All" || redeemFilter == "Premium") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🚀", "Listing Boost", 100, user.totalCoins >= 100, MaterialTheme.colorScheme.primary, darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
-                                            RedeemCard("⭐", "Featured Badge", 200, user.totalCoins >= 200, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
-                                            RedeemCard("⭐", "Top Placement", 500, user.totalCoins >= 500, Color(0xFF8B5CF6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
+                                            RedeemCard("🚀", "Boost (24h)", 100, user.totalCoins >= 100, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("⭐", "Elite Seller Badge", 1000, user.totalCoins >= 1000, Color(0xFF7C3AED), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
+                                            RedeemCard("🏆", "Top Placement (7d)", 500, user.totalCoins >= 500, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
                                         }
                                     }
                                     // Gift Cards
@@ -939,9 +1056,14 @@ fun RewardsScreen(
                                 Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.22f) else Color(0xFFE2E8F0).copy(alpha = 0.7f), RoundedCornerShape(20.dp))) {
                                     Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Text(stringResource(R.string.rewards_coin_history), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                        // Filter chips
                                         var historyFilter by remember { mutableStateOf("all") }
-                                        val filterChips = listOf("all" to "All", "earned" to "Earned", "redeemed" to "Redeemed", "bonus" to "Bonus")
+                                        val filterChips = listOf(
+                                            "all" to "All",
+                                            "earned" to "Earned",
+                                            "spent" to "Spent",
+                                            "referral" to "Referrals",
+                                            "daily" to "Daily"
+                                        )
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                             filterChips.forEach { (key, label) ->
                                                 val sel = historyFilter == key
@@ -955,9 +1077,8 @@ fun RewardsScreen(
                                             }
                                         }
                                         val filteredHistory = state.coinHistory.filter { tx ->
+                                            val descLower = (tx.description ?: tx.action ?: "").lowercase()
                                             when (historyFilter) {
-                                                "earned" -> tx.amount > 0 && (tx.action?.contains("bonus", true) != true)
-                                                "redeemed" -> tx.amount < 0
                                                 "bonus" -> tx.action?.contains("bonus", true) == true || tx.action?.contains("referral", true) == true
                                                 else -> true
                                             }
@@ -1018,22 +1139,62 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Referral Network ────────────────────────────
+                        // ─── Referral Network Stats Grid ─────────────────
                         if (selectedTab == 2) item {
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF8FAFC)), elevation = CardDefaults.cardElevation(3.dp), modifier = Modifier.fillMaxWidth().border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.18f) else Color(0xFFE2E8F0).copy(alpha = 0.6f), RoundedCornerShape(20.dp))) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(R.string.rewards_referral_network), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                    if (rewards.referralChain.isEmpty()) {
-                                        Text(stringResource(R.string.rewards_no_referrals), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF1F5F9))) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Text("Direct Referrals", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("${user.directReferrals}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF1F5F9))) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Text("Total Network", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("${state.referralTree?.total ?: user.totalReferrals}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF1F5F9))) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Text("Direct Earned", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("${user.directPoints} coins", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF1F5F9))) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Text("Chain Earned", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("${user.chainEarnedPoints} coins", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ─── Referral Tree Visualizer ────────────────────
+                        if (selectedTab == 2) item {
+                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.95f)), elevation = CardDefaults.cardElevation(3.dp), modifier = Modifier.fillMaxWidth().border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.18f) else Color(0xFFE2E8F0).copy(alpha = 0.6f), RoundedCornerShape(20.dp))) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("Referral Network Tree", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    val treeResponse = state.referralTree
+                                    if (treeResponse == null) {
+                                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                        }
                                     } else {
-                                        rewards.referralChain.take(5).forEachIndexed { index, node ->
-                                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.width(20.dp)) {
-                                                    if (index > 0) Box(modifier = Modifier.width(2.dp).height(20.dp).offset(y = (-14).dp).background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)))))
-                                                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, Color(0xFF22D3EE)))))
+                                        val rootNode = treeResponse.tree
+                                        if (rootNode == null || rootNode.children.isEmpty()) {
+                                            Text("No referrals yet. Share your link to grow your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        } else {
+                                            val statusMap = remember(state.chainStatus) {
+                                                state.chainStatus?.referrals?.associateBy { it.userId } ?: emptyMap()
+                                            }
+                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                for (childNode in rootNode.children) {
+                                                    ReferralTreeNodeView(childNode, 1, statusMap, chainRules = rewards.chainRules)
                                                 }
-                                                Text(node.name ?: "User", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                                Text("+${max(node.coins, 0)} coins", style = MaterialTheme.typography.labelLarge, color = Color(0xFF059669), fontWeight = FontWeight.SemiBold)
                                             }
                                         }
                                     }
@@ -1319,3 +1480,202 @@ fun ScratchCardCanvas(
         }
     }
 }
+
+@Composable
+fun ReferralTreeNodeView(
+    node: com.mhub.app.data.remote.dto.ReferralNode,
+    depth: Int = 1,
+    statusMap: Map<String, com.mhub.app.data.remote.dto.ReferralChainMember> = emptyMap(),
+    chainRules: List<RewardsChainRuleDto> = emptyList(),
+) {
+    var expanded by remember { mutableStateOf(depth < 2) }
+    val hasChildren = node.children.isNotEmpty()
+    val colorIdx = (depth - 1) % 5
+
+    val levelColors = listOf(
+        Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF4F46E5))),
+        Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0D9488))),
+        Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))),
+        Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFFD946EF))),
+        Brush.linearGradient(listOf(Color(0xFFF43F5E), Color(0xFFEC4899)))
+    )
+
+    val levelBgs = listOf(
+        Color(0xFFEFF6FF),
+        Color(0xFFECFDF5),
+        Color(0xFFFEF3C7),
+        Color(0xFFF5F3FF),
+        Color(0xFFFFF1F2)
+    )
+    val levelBgsDark = listOf(
+        Color(0xFF1E3A8A).copy(alpha = 0.15f),
+        Color(0xFF064E3B).copy(alpha = 0.15f),
+        Color(0xFF78350F).copy(alpha = 0.15f),
+        Color(0xFF581C87).copy(alpha = 0.15f),
+        Color(0xFF881337).copy(alpha = 0.15f)
+    )
+
+    val levelTexts = listOf(
+        Color(0xFF1D4ED8),
+        Color(0xFF047857),
+        Color(0xFFB45309),
+        Color(0xFF6D28D9),
+        Color(0xFFBE123C)
+    )
+
+    val darkTheme = isSystemInDarkTheme()
+    val bg = if (darkTheme) levelBgsDark[colorIdx] else levelBgs[colorIdx]
+    val borderCol = if (darkTheme) levelTexts[colorIdx].copy(alpha = 0.3f) else levelTexts[colorIdx].copy(alpha = 0.2f)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(bg)
+                .border(1.dp, borderCol, RoundedCornerShape(12.dp))
+                .clickable(enabled = hasChildren) { expanded = !expanded }
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Expand/collapse indicator
+            Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) {
+                if (hasChildren) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = levelTexts[colorIdx],
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(levelColors[colorIdx]),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = node.name.take(1).uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Info
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = node.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (darkTheme) Color.White else Color(0xFF1E293B)
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = levelTexts[colorIdx].copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "L$depth",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = levelTexts[colorIdx],
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Status Badge if available
+                    val memberStatus = statusMap[node.id]
+                    if (memberStatus != null) {
+                        val status = memberStatus.status.lowercase()
+                        val badgeColor = when (status) {
+                            "rewarded" -> Color(0xFF10B981)
+                            "qualified" -> Color(0xFFF59E0B)
+                            else -> Color(0xFF64748B)
+                        }
+                        val badgeBg = badgeColor.copy(alpha = 0.12f)
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = badgeBg
+                        ) {
+                            Text(
+                                text = status.replaceFirstChar { it.lowercase() },
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = badgeColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                val joinDateFormatted = node.joinDate?.take(10) ?: ""
+                val memberStatus = statusMap[node.id]
+                val activityInfo = if (memberStatus != null) {
+                    if (memberStatus.transactionCount > 0) "${memberStatus.transactionCount} txns"
+                    else if (memberStatus.postCount > 0) "${memberStatus.postCount} posts"
+                    else ""
+                } else ""
+
+                if (joinDateFormatted.isNotEmpty() || activityInfo.isNotEmpty()) {
+                    Text(
+                        text = listOfNotNull(
+                            if (joinDateFormatted.isNotEmpty()) "Joined $joinDateFormatted" else null,
+                            if (activityInfo.isNotEmpty()) activityInfo else null
+                        ).joinToString(" • "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Reward amount (multi-tier) L1: 100, L2: 40, L3: 20, L4: 10, L5: 5
+            if (depth in 1..5) {
+                val reward = chainRules.firstOrNull { it.depth == depth }?.points?.toInt()
+                    ?: when (depth) {
+                        1 -> 50
+                        2 -> 25
+                        3 -> 10
+                        else -> 2
+                    }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("🎁", fontSize = 14.sp)
+                    Text(
+                        text = "+$reward",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF59E0B)
+                    )
+                }
+            }
+        }
+
+        // Render children recursively with indentation
+        if (expanded && hasChildren) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(16.dp))
+                // Connector vertical line
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(30.dp)
+                        .background(if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    for (child in node.children) {
+                        ReferralTreeNodeView(child, depth + 1, statusMap, chainRules)
+                    }
+                }
+            }
+        }
+    }
+}
+

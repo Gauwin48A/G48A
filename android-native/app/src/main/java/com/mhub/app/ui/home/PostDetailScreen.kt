@@ -725,10 +725,11 @@ fun PostDetailScreen(
                                     }
                                     // Boost/Promo badge
                                     PromoBadgeRow(
-                                        isBoosted = (post.boostLevel ?: 0) >= 1 || post.promoLabel?.contains("boost", true) == true,
-                                        isFeatured = (post.boostLevel ?: 0) >= 2 || post.promoLabel?.contains("feature", true) == true,
+                                        boostLevel = post.boostLevel,
+                                        promoLabel = post.promoLabel,
                                         isHotDeal = post.isFlashSale == true,
                                         isJustListed = (post.viewCount ?: 0) < 10,
+                                        expiresAt = post.expiresAt,
                                     )
                                 }
                             }

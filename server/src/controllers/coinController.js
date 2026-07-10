@@ -63,7 +63,7 @@ const REFERRAL_MILESTONES = [
 ];
 const STORE_REDEEM_COSTS = {
   boost: 100,
-  badge: 200,
+  badge: 1000,
   top_search: 500,
 };
 const STORE_REDEEM_REQUIRES_POST = new Set(["boost", "top_search"]);
@@ -1162,12 +1162,12 @@ exports.redeemStoreReward = async (req, res) => {
     if (rewardType === "badge") {
       await runQuery(
         `INSERT INTO profiles (user_id, reward_badge)
-         VALUES ($1, 'premium')
+         VALUES ($1, 'elite')
          ON CONFLICT (user_id)
-         DO UPDATE SET reward_badge = 'premium'`,
+         DO UPDATE SET reward_badge = 'elite'`,
         [String(userId)],
       );
-      fulfillment = { badge: "premium" };
+      fulfillment = { badge: "elite" };
     }
 
     if (rewardType === "boost") {
@@ -1316,7 +1316,7 @@ exports.getRewardsConfig = async (req, res) => {
     ],
     storeItems: [
       { type: "boost", cost: STORE_REDEEM_COSTS.boost, label: "Listing Boost", desc: "Top of search for 1 day", requiresPost: true },
-      { type: "badge", cost: STORE_REDEEM_COSTS.badge, label: "Profile Badge", desc: "Premium badge on your profile", requiresPost: false },
+      { type: "badge", cost: STORE_REDEEM_COSTS.badge, label: "Elite Seller Badge", desc: "Elite badge on profile & posts", requiresPost: false },
       { type: "top_search", cost: STORE_REDEEM_COSTS.top_search, label: "Top Search Spotlight", desc: "Spotlight for 7 days", requiresPost: true },
     ],
     expiry: {

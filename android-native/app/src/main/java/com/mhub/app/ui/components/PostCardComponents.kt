@@ -140,8 +140,13 @@ fun PostCard(
                 // Top-left badge
                 if (topLeftBadge != null) { Box(Modifier.align(Alignment.TopStart).padding(8.dp)) { topLeftBadge() } }
 
-                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(
-                    top = if (topLeftBadge != null) 36.dp else if (post.originalPrice != null && post.price != null && post.originalPrice!! > post.price!!) 32.dp else 8.dp, start = 8.dp))
+                PromoBadgeRow(
+                    boostLevel = post.boostLevel,
+                    promoLabel = post.promoLabel,
+                    isPromoted = post.isPromoted,
+                    expiresAt = post.expiresAt,
+                    modifier = Modifier.align(Alignment.TopStart).padding(
+                        top = if (topLeftBadge != null) 36.dp else if (post.originalPrice != null && post.price != null && post.originalPrice!! > post.price!!) 32.dp else 8.dp, start = 8.dp))
 
                 // Wishlist save
                 if (onToggleWishlist != null) {
@@ -199,15 +204,12 @@ fun PostCard(
                             }
                         }
                     }
-                    if (post.promoLabel != null) {
-                        val promoColor = when (post.promoLabel.lowercase()) {
-                            "spotlight" -> Color(0xFFD97706)
-                            "featured" -> Color(0xFF7C3AED)
-                            "boost" -> Color(0xFF059669)
-                            else -> MaterialTheme.colorScheme.primary
-                        }
-                        Surface(shape = RoundedCornerShape(4.dp), color = promoColor.copy(alpha = 0.12f)) {
-                            Text(post.promoLabel.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = promoColor, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp))
+                    if (post.rewardBadge != null && post.rewardBadge.lowercase().contains("elite")) {
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF7C3AED).copy(alpha = 0.1f)) {
+                            Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Icon(Icons.Default.Star, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(10.dp))
+                                Text("Elite Seller", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                            }
                         }
                     }
                     // 3-dot menu

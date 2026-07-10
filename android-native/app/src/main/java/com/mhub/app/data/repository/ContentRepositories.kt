@@ -292,6 +292,8 @@ class RewardsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun referralLeaderboard(): ApiResult<com.mhub.app.data.remote.dto.ReferralLeaderboardResponse> = safeApiCall { api.referralLeaderboard() }
     suspend fun updateProfile(body: com.mhub.app.data.remote.dto.ProfileUpdateRequest): ApiResult<com.mhub.app.data.remote.dto.MessageResponse> =
         safeApiCall { api.updateProfile(body) }
+    suspend fun referralTree(): ApiResult<com.mhub.app.data.remote.dto.ReferralTreeResponse> = safeApiCall { api.referralTree() }
+    suspend fun referralChainStatus(): ApiResult<com.mhub.app.data.remote.dto.ReferralChainStatusResponse> = safeApiCall { api.referralChainStatus() }
 }
 
 @Singleton
@@ -309,6 +311,13 @@ class UserSocialRepository @Inject constructor(private val api: MhubApi) {
     suspend fun blockUser(userId: String): ApiResult<Unit> = safeApiCall { api.blockUser(userId); Unit }
     suspend fun myComplaints(): ApiResult<ComplaintHistoryResponse> = safeApiCall { api.myComplaints() }
     suspend fun dataExport(): ApiResult<Unit> = safeApiCall { api.dataExport(); Unit }
+
+    // Followers / Following lists
+    suspend fun followers(userId: String): ApiResult<FollowersResponse> = safeApiCall { api.followers(userId) }
+    suspend fun following(userId: String): ApiResult<FollowersResponse> = safeApiCall { api.following(userId) }
+
+    // Profile activity feed
+    suspend fun activity(userId: String): ApiResult<ProfileActivityResponse> = safeApiCall { api.profileActivity(userId) }
 }
 
 @Singleton

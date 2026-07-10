@@ -663,6 +663,7 @@ data class RewardsUserDto(
     val dailySecretCode: String? = null,
     val dailySecretCodeExpiresAt: String? = null,
     val activityStats: RewardsActivityStatsDto = RewardsActivityStatsDto(),
+    @SerialName("has_elite_badge") val hasEliteBadge: Boolean = false,
     val leaderboard: RewardsLeaderboardDto = RewardsLeaderboardDto(),
     val referralLedger: RewardsReferralLedgerDto = RewardsReferralLedgerDto(),
 )
@@ -1416,21 +1417,63 @@ data class DailyCodeResponse(
 // -------- Referral Tree --------
 @Serializable
 data class ReferralTreeResponse(
+    val userId: String? = null,
+    val maxDepth: Int = 0,
     val total: Int = 0,
-    @SerialName("level_1") val level1: Int = 0,
-    @SerialName("level_2") val level2: Int = 0,
-    @SerialName("level_3") val level3: Int = 0,
-    val earnings: Double = 0.0,
-    val referrals: List<ReferralNode> = emptyList(),
+    val directCount: Int = 0,
+    val indirectCount: Int = 0,
+    val tree: ReferralNode? = null,
 )
 
 @Serializable
 data class ReferralNode(
     val id: String = "",
     val name: String = "",
-    val level: Int = 1,
-    @SerialName("joined_at") val joinedAt: String? = null,
-    val earnings: Double = 0.0,
+    val depth: Int = 0,
+    @SerialName("joinDate") val joinDate: String? = null,
+    val parentId: String? = null,
+    val children: List<ReferralNode> = emptyList(),
+) {
+    fun flatten(): List<ReferralNode> {
+        val result = mutableListOf<ReferralNode>()
+        fun traverse(node: ReferralNode) {
+            if (node.depth > 0) {
+                result.add(node)
+            }
+            node.children.forEach { traverse(it) }
+        }
+        traverse(this)
+        return result
+    }
+}
+
+// -------- Referral Chain Status --------
+@Serializable
+data class ReferralChainStatusResponse(
+    val referrals: List<ReferralChainMember> = emptyList(),
+    val summary: ReferralChainSummary? = null,
+)
+
+@Serializable
+data class ReferralChainMember(
+    val userId: String = "",
+    val username: String? = null,
+    val fullName: String? = null,
+    val avatarUrl: String? = null,
+    val depth: Int = 0,
+    val status: String = "pending", // pending, qualified, rewarded
+    val isVerified: Boolean = false,
+    val postCount: Int = 0,
+    val transactionCount: Int = 0,
+    val joinDate: String? = null,
+)
+
+@Serializable
+data class ReferralChainSummary(
+    val pending: Int = 0,
+    val qualified: Int = 0,
+    val rewarded: Int = 0,
+    val total: Int = 0,
 )
 
 @Serializable
@@ -1454,6 +1497,44 @@ data class ComplaintRecord(
     val status: String? = null,
     val evidence: List<String> = emptyList(),
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+// -------- Followers / Following --------
+@Serializable
+data class FollowUserBrief(
+    val id: String = "",
+    val name: String? = null,
+    val username: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("is_following_back") val isFollowingBack: Boolean = false,
+    @SerialName("is_verified") val isVerified: Boolean = false,
+) {
+    val displayName: String get() = name ?: username ?: "User"
+    val initials: String get() = displayName.take(2).uppercase()
+}
+
+@Serializable
+data class FollowersResponse(
+    val users: List<FollowUserBrief> = emptyList(),
+    val total: Int = 0,
+)
+
+// -------- Profile Activity --------
+@Serializable
+data class ProfileActivityItem(
+    val id: String = "",
+    val type: String = "", // "post_created", "reviewed", "followed", "sold", "bought", "earned_badge"
+    val description: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("reference_id") val referenceId: String? = null,
+    @SerialName("reference_title") val referenceTitle: String? = null,
+    @SerialName("reference_image") val referenceImage: String? = null,
+)
+
+@Serializable
+data class ProfileActivityResponse(
+    val activities: List<ProfileActivityItem> = emptyList(),
+    val total: Int = 0,
 )
 
 // -------- Subscriptions --------

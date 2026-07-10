@@ -280,9 +280,9 @@ fun MyPostsScreen(
         // Clear previous result when dialog opens for a new post
         LaunchedEffect(promoteTarget) { viewModel.clearPromoteResult() }
         val tiers = listOf(
-            TierOption("⚡ Boost", 50, Color(0xFF059669), Color(0xFF10B981), "basic", 168),
-            TierOption("⭐ Featured", 100, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 336),
-            TierOption("🌟 Spotlight", 200, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
+            TierOption("⚡ Boost (24h)", 100, Color(0xFF059669), Color(0xFF10B981), "basic", 24),
+            TierOption("⭐ Top Placement (7d)", 500, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 168),
+            TierOption("🌟 Spotlight (30d)", 1000, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
         )
         AlertDialog(
             onDismissRequest = {
@@ -534,9 +534,9 @@ fun MyPostsScreen(
                                         Spacer(Modifier.height(8.dp))
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                                             listOf(
-                                                Triple("⚡ Boost", "50 coins", "7 days • Green badge"),
-                                                Triple("⭐ Featured", "100 coins", "14 days • Purple badge"),
-                                                Triple("🌟 Spotlight", "200 coins", "30 days • Gold badge"),
+                                                Triple("⚡ Boost (24h)", "100 coins", "Green badge • Top results"),
+                                                Triple("⭐ Top Placement (7d)", "500 coins", "Purple badge • Boosted visibility"),
+                                                Triple("🌟 Spotlight (30d)", "1000 coins", "Gold badge • Premium placement"),
                                             ).forEach { (title, cost, desc) ->
                                                 Surface(shape = RoundedCornerShape(10.dp), color = Color.White, modifier = Modifier.weight(1f)) {
                                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {

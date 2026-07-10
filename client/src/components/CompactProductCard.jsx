@@ -32,6 +32,7 @@ const CompactProductCard = memo(function CompactProductCard({
   const sellerInitial = sellerName.charAt(0).toUpperCase();
   const rating = post.seller_rating || post.rating || null;
   const isVerified = post.seller_verified || post.is_verified || false;
+  const hasEliteBadge = post.reward_badge === 'elite' || post.rewardBadge === 'elite' || post.user?.rewardBadge === 'elite' || false;
   const sellerId =
     post.seller_id ||
     post.sellerId ||
@@ -152,6 +153,9 @@ const CompactProductCard = memo(function CompactProductCard({
           {rating && <span className="text-xs">⭐ {rating}</span>}
           {isVerified && (
             <span className="text-xs" title="Verified seller" aria-label="Verified seller">✅</span>
+          )}
+          {hasEliteBadge && (
+            <span className="text-xs inline-flex items-center px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 font-bold" title="Elite Seller" aria-label="Elite Seller">⭐ Elite</span>
           )}
         </div>
 

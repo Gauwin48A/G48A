@@ -552,7 +552,7 @@ fun MhubApp(
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
                             },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenHome = { navController.navigate(Routes.HOME) {
+                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
                             } },
@@ -580,7 +580,7 @@ fun MhubApp(
                             isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenHome = { navController.navigate(Routes.HOME) {
+                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
                             } },
@@ -1482,8 +1482,8 @@ fun MainShell(
                             .navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Left cluster: Home, Browse, For You
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS, BottomTab.FOR_YOU).forEach { tab ->
+                        // Left cluster: Home, Browse
+                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,

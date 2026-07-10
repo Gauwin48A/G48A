@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -103,6 +104,7 @@ import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.ui.components.PromoBadgeRow
 import com.mhub.app.ui.components.SectionHeader
 import com.mhub.app.ui.theme.CategoryTints
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -864,7 +866,6 @@ fun ExploreScreen(
     val wishlistedSet by viewModel.wishlisted.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val focusManager = LocalFocusManager.current
     var showInterestModal by remember { mutableStateOf(false) }
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
@@ -914,25 +915,22 @@ fun ExploreScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = viewModel::onQueryChange,
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.explore_search_placeholder), style = MaterialTheme.typography.bodyMedium) },
-                    leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
-                    trailingIcon = {
-                        if (state.searchQuery.isNotBlank()) {
-                            IconButton(onClick = { viewModel.clearSearch(); focusManager.clearFocus() }) {
-                                Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                // Clickable search bar — opens dedicated SearchScreen
+                Surface(
+                    onClick = onOpenSearch,
                     shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.weight(1f).height(48.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                )
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.explore_search_placeholder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 // Filter button with active badge
                 BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
                     FilledIconButton(
@@ -1176,7 +1174,8 @@ fun ExploreScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .padding(bottom = 32.dp),
+                    .padding(bottom = 48.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Header
@@ -2397,25 +2396,12 @@ fun AllPostCard(
                                 }
                             }
                         }
-                        // Promo badge: Spotlight → Featured → Boosted → Sponsored
-                        val boostLevel = post.boostLevel ?: 0
-                        val promoLabel = post.promoLabel?.lowercase() ?: ""
-                        val (promoBadgeLabel, promoBadgeColor) = when {
-                            boostLevel >= 3 || promoLabel.contains("spotlight") ->
-                                "⭐ SPOTLIGHT" to Color(0xFFF97316)
-                            boostLevel == 2 || promoLabel.contains("featured") ->
-                                "✨ FEATURED" to Color(0xFF7C3AED)
-                            boostLevel == 1 || promoLabel.contains("boost") ->
-                                "⚡ BOOSTED" to Color(0xFF10B981)
-                            post.isPromoted == true || promoLabel.contains("sponsor") ->
-                                "AD" to Color(0xFF2563EB)
-                            else -> null to null
-                        }
-                        if (promoBadgeLabel != null && promoBadgeColor != null) {
-                            Surface(shape = RoundedCornerShape(6.dp), color = promoBadgeColor.copy(alpha = 0.92f)) {
-                                Text(promoBadgeLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                            }
-                        }
+                                                PromoBadgeRow(
+                            boostLevel = post.boostLevel,
+                            promoLabel = post.promoLabel,
+                            isPromoted = post.isPromoted,
+                            expiresAt = post.expiresAt,
+                        )
                         // Condition badge
                         post.condition?.let { cond ->
                             val (condColor, condLabel) = when (cond.lowercase()) {

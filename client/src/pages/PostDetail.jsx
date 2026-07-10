@@ -1367,6 +1367,13 @@ function PostDetail() {
       r?.pan_verified ||
       r?.user?.isVerified
     ),
+    hasEliteBadge = !!(
+      r?.reward_badge === "elite" ||
+      r?.rewardBadge === "elite" ||
+      r?.user?.rewardBadge === "elite" ||
+      o?.rewardBadge === "elite" ||
+      r?.user?.reward_badge === "elite"
+    ),
     _ = Number(o?.rating || r?.seller_rating || 0),
     B = Number(
       o?.successful_sales ||
@@ -2506,6 +2513,15 @@ function PostDetail() {
                           tr("seller_under_review", "Under Review"),
                         )
                       : null,
+                  hasEliteBadge
+                    ? React.createElement(Badge,
+                        {
+                          className:
+                            "text-xs px-2 py-1 leading-none bg-purple-600 text-white border-0 font-bold ml-1",
+                        },
+                        "⭐ " + tr("elite_seller", "Elite Seller"),
+                      )
+                    : null,
                   S
                     ? React.createElement(ye, {
                         className: "w-4 h-4 text-green-500 dark:text-green-300",

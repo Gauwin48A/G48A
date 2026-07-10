@@ -459,46 +459,113 @@ fun PostMoreMenuButton(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 5. PromoBadgeRow
+// 5. PromoBadgeRow — unified boost badge system
 // ─────────────────────────────────────────────────────────────
+
+// Unified badge palette (all locations use these same colors)
+object PromoBadgeColors {
+    val boosted = Color(0xFF10B981)       // ⚡ Boosted — emerald green
+    val featured = Color(0xFF7C3AED)      // ✨ Featured — purple
+    val spotlight = Color(0xFFF59E0B)     // ⭐ Spotlight — amber/gold
+    val ad = Color(0xFF2563EB)            // AD — blue
+    val hotDeal = Color(0xFFFF5722)       // 🔥 Hot Deal — orange-red
+    val justListed = Color(0xFF22C55E)    // ✨ Just Listed — green
+    val premium = Color(0xFFD97706)       // 👑 Premium — gold
+}
+
+/** Resolve badge label + color from Post boostLevel and promoLabel. */
+internal fun resolvePromoBadge(
+    boostLevel: Int?,
+    promoLabel: String?,
+    isPromoted: Boolean? = null,
+): Pair<String, Color>? {
+    val level = boostLevel ?: 0
+    val label = promoLabel?.lowercase().orEmpty()
+    return when {
+        level >= 3 || label.contains("spotlight") -> "⭐ SPOTLIGHT" to PromoBadgeColors.spotlight
+        level == 2 || label.contains("featured") -> "✨ FEATURED" to PromoBadgeColors.featured
+        level == 1 || label.contains("boost") -> "⚡ BOOSTED" to PromoBadgeColors.boosted
+        isPromoted == true || label.contains("sponsor") -> "AD" to PromoBadgeColors.ad
+        else -> null
+    }
+}
 
 @Composable
 fun PromoBadgeRow(
+    // New unified system (preferred — pass from Post.boostLevel / Post.promoLabel)
+    boostLevel: Int? = null,
+    promoLabel: String? = null,
+    isPromoted: Boolean? = null,
+    // Legacy boolean system (kept for backward compat)
     isBoosted: Boolean = false,
     isFeatured: Boolean = false,
     isHotDeal: Boolean = false,
     isJustListed: Boolean = false,
+    // Optional time remaining (shown after badge text)
+    expiresAt: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    if (!isBoosted && !isFeatured && !isHotDeal && !isJustListed) return
+    // Determine which badges to show
+    val boostBadge = resolvePromoBadge(boostLevel, promoLabel, isPromoted)
+    val showBoostedLegacy = boostBadge == null && isBoosted
+    val showFeaturedLegacy = boostBadge == null && isFeatured
+
+    // Time remaining string
+    val timeRemaining = expiresAt?.let { e ->
+        try {
+            val then = java.time.Instant.parse(e)
+            val now = java.time.Instant.now()
+            val hours = java.time.temporal.ChronoUnit.HOURS.between(now, then)
+            val days = java.time.temporal.ChronoUnit.DAYS.between(now, then)
+            when {
+                hours < 0 -> null  // expired
+                hours < 1 -> "<1h left"
+                hours < 24 -> "${hours}h left"
+                days < 30 -> "${days}d left"
+                else -> null
+            }
+        } catch (_: Exception) { null }
+    }
+
+    if (boostBadge == null && !showBoostedLegacy && !showFeaturedLegacy && !isHotDeal && !isJustListed) return
 
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // New system badge (highest priority)
+        if (boostBadge != null) {
+            val (badgeLabel, badgeColor) = boostBadge
+            val displayLabel = if (timeRemaining != null) "$badgeLabel · $timeRemaining" else badgeLabel
+            BadgeChip(
+                label = displayLabel,
+                brush = Brush.horizontalGradient(listOf(badgeColor, badgeColor.copy(alpha = 0.8f))),
+            )
+        }
+        // Legacy badges (only if new system didn't match)
+        if (showBoostedLegacy) {
+            BadgeChip(
+                label = if (timeRemaining != null) "⚡ Boosted · $timeRemaining" else "⚡ Boosted",
+                brush = Brush.horizontalGradient(listOf(PromoBadgeColors.boosted, PromoBadgeColors.boosted.copy(alpha = 0.8f))),
+            )
+        }
+        if (showFeaturedLegacy) {
+            BadgeChip(
+                label = if (timeRemaining != null) "⭐ Featured · $timeRemaining" else "⭐ Featured",
+                brush = Brush.horizontalGradient(listOf(PromoBadgeColors.featured, PromoBadgeColors.featured.copy(alpha = 0.8f))),
+            )
+        }
         if (isHotDeal) {
             BadgeChip(
                 label = "🔥 Hot Deal",
-                brush = Brush.horizontalGradient(listOf(Color(0xFFFF5722), Color(0xFFFF9800))),
-            )
-        }
-        if (isBoosted) {
-            BadgeChip(
-                label = "⚡ Boosted",
-                brush = Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))),
+                brush = Brush.horizontalGradient(listOf(PromoBadgeColors.hotDeal, Color(0xFFFF9800))),
             )
         }
         if (isJustListed) {
             BadgeChip(
                 label = "✨ Just Listed",
-                brush = Brush.horizontalGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A))),
-            )
-        }
-        if (isFeatured) {
-            BadgeChip(
-                label = "⭐ Featured",
-                brush = Brush.horizontalGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))),
+                brush = Brush.horizontalGradient(listOf(PromoBadgeColors.justListed, Color(0xFF16A34A))),
             )
         }
     }

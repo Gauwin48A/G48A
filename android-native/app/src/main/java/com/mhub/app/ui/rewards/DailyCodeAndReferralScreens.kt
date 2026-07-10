@@ -178,11 +178,15 @@ class ReferralTreeViewModel @Inject constructor(
     private fun load() {
         viewModelScope.launch {
             when (val r = repo.tree()) {
-                is ApiResult.Success -> _state.value = ReferralState(
-                    loading = false,
-                    nodes = r.data.referrals,
-                    totalReferrals = r.data.total,
-                )
+                is ApiResult.Success -> {
+                    val root = r.data.tree
+                    val flatNodes = root?.flatten() ?: emptyList()
+                    _state.value = ReferralState(
+                        loading = false,
+                        nodes = flatNodes,
+                        totalReferrals = r.data.total,
+                    )
+                }
                 is ApiResult.Failure -> _state.value = ReferralState(loading = false)
             }
         }
@@ -237,10 +241,17 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(node.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                Text("Level ${node.level} • Joined ${node.joinedAt?.take(10) ?: ""}", fontSize = 11.sp, color = Color(0xFF64748B))
+                                Text("Level ${node.depth} • Joined ${node.joinDate?.take(10) ?: ""}", fontSize = 11.sp, color = Color(0xFF64748B))
                             }
                             Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
-                                Text("${node.earnings}", fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                val reward = when (node.depth) {
+                                    1 -> 50
+                                    2 -> 25
+                                    3 -> 10
+                                    4 -> 5
+                                    else -> 2
+                                }
+                                Text("+$reward", fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                             }
                         }
                     }

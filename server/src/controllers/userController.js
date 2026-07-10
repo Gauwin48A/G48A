@@ -138,7 +138,7 @@ exports.getProfile = async (req, res) => {
          COALESCE(NULLIF(u.current_plan, ''), NULLIF(u.tier, ''), 'basic') AS tier,
          u.subscription_expiry,
          u.post_credits,
-         p.full_name, p.bio, p.avatar_url, p.phone,
+         p.full_name, p.bio, p.avatar_url, p.phone, p.reward_badge,
          ${getProfilesLocationSelectExpression(profileColumnAvailability, "p")},
          p.created_at,
          COALESCE(ps.active_posts, 0) AS active_posts,

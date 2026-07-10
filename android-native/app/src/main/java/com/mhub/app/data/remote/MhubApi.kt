@@ -271,6 +271,17 @@ interface MhubApi {
     @POST("api/users/{userId}/block")
     suspend fun blockUser(@Path("userId") userId: String): MessageResponse
 
+    // ---- Followers / Following ----
+    @GET("api/users/{userId}/followers")
+    suspend fun followers(@Path("userId") userId: String): FollowersResponse
+
+    @GET("api/users/{userId}/following")
+    suspend fun following(@Path("userId") userId: String): FollowersResponse
+
+    // ---- Profile Activity ----
+    @GET("api/users/{userId}/activity")
+    suspend fun profileActivity(@Path("userId") userId: String): ProfileActivityResponse
+
     // ---- Rewards ----
     @GET("api/rewards")
     suspend fun rewards(): RewardsOverviewResponse
@@ -696,6 +707,9 @@ interface MhubApi {
     // ---- Referral Tree ----
     @GET("api/referral/tree")
     suspend fun referralTree(): ReferralTreeResponse
+
+    @GET("api/referral/chain-status")
+    suspend fun referralChainStatus(): ReferralChainStatusResponse
 
     // ---- Batch View ----
     @POST("api/posts/batch-view")

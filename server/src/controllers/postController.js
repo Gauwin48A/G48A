@@ -669,6 +669,7 @@ function mapPostForResponse(post) {
       username: post.username,
       rating: parseFloat(post.seller_rating) || 0,
       isVerified: !!(post.aadhaar_verified || post.pan_verified),
+      rewardBadge: post.reward_badge || null,
     },
     image_url: normalizedImageUrl,
   };
@@ -1054,6 +1055,7 @@ exports.getAllPosts = async (req, res) => {
         u.username,
         u.rating as seller_rating,
         COALESCE(pr.full_name, u.username) as user_name,
+        pr.reward_badge,
         c.name as category_name,
         sc.name as subcategory_name,
         p.subcategory_id,
@@ -1512,7 +1514,8 @@ exports.getPostById = async (req, res) => {
           'name', COALESCE(pr.full_name, u.username),
           'avatar_url', pr.avatar_url,
           'verified', COALESCE(pr.verified, false),
-          'rating', COALESCE(CAST(u.rating AS numeric(3,2)), 0)
+          'rating', COALESCE(CAST(u.rating AS numeric(3,2)), 0),
+          'rewardBadge', pr.reward_badge
         ) AS "user"
       FROM updated_post up
       LEFT JOIN users u ON up.user_id::text = u.user_id::text
