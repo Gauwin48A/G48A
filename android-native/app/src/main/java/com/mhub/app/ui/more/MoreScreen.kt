@@ -189,10 +189,6 @@ fun MoreScreen(
                         Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                         Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    // Tap outside (overlay) to close, or swipe back
-                    androidx.compose.material3.TextButton(onClick = onDismiss) {
-                        Text("Close", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
                 }
             }
 
