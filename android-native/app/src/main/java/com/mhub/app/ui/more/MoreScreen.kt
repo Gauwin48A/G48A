@@ -219,9 +219,37 @@ fun MoreScreen(
             }
 
             item(key = "account") {
-                MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
-                Spacer(Modifier.height(6.dp))
-                MoreRowList(accountRows)
+                var accountExpanded by rememberSaveable { mutableStateOf(false) }
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { accountExpanded = !accountExpanded }.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
+                            Icon(
+                                if (accountExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (accountExpanded) "Collapse" else "Expand",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = accountExpanded,
+                            enter = expandVertically(),
+                            exit = shrinkVertically(),
+                        ) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 8.dp))
+                            Spacer(Modifier.height(6.dp))
+                            MoreRowList(accountRows)
+                        }
+                    }
+                }
             }
 
             item(key = "div3") {

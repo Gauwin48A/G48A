@@ -122,6 +122,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** Resolves relative image URLs to absolute by prepending the API base URL. */
+private fun resolveImageUrl(img: String?): String? {
+    if (img == null) return null
+    if (img.startsWith("http://") || img.startsWith("https://")) return img
+    val base = com.mhub.app.BuildConfig.DEFAULT_API_BASE_URL.trimEnd('/')
+    return "$base/$img"
+        .replace("//", "/")
+        .replace("https:/", "https://")
+        .replace("http:/", "http://")
+}
+
 data class PostDetailState(
     val loading: Boolean = true,
     val post: Post? = null,
@@ -133,18 +144,10 @@ data class PostDetailState(
     val offerError: String? = null,
     val reported: Boolean = false,
     val similarPosts: List<Post> = emptyList(),
-    val priceAlertSubscribed: Boolean = false,
-    val boostStatus: com.mhub.app.data.remote.dto.BoostStatusResponse? = null,
-    val activityLog: List<ActivityLogItem> = emptyList(),
-    val sellerResponseTimeMinutes: Int? = null,
-    val inCompareList: Boolean = false,
     val inCart: Boolean = false,
     val ownerInsights: OwnerInsights? = null,
-    // Plan-gating for boost/promote panel (web parity)
+    // Current plan (for premium/boost badge logic)
     val currentPlan: String? = null,   // "basic" | "bronze" | "silver" | "premium"
-    val coinBalance: Int = 0,
-    val boostMessage: String? = null,
-    val compareError: String? = null,
 )
 
 data class OwnerInsights(
@@ -152,13 +155,6 @@ data class OwnerInsights(
     val totalInquiries: Int = 0,
     val totalOffers: Int = 0,
     val activeWatchers: Int = 0,
-)
-
-data class ActivityLogItem(
-    val id: String,
-    val type: String, // "view", "interest", "offer"
-    val description: String,
-    val timestamp: String,
 )
 
 @HiltViewModel
@@ -170,11 +166,8 @@ class PostDetailViewModel @Inject constructor(
     private val trustRepo: TrustRepository,
     private val offersRepo: OffersRepository,
     private val socialRepo: SocialRepository,
-    private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
-    private val boostRepo: com.mhub.app.data.repository.BoostRepository,
     private val analyticsRepo: com.mhub.app.data.repository.AnalyticsRepository,
     private val authRepo: com.mhub.app.data.repository.AuthRepository,
-    private val rewardsRepo: com.mhub.app.data.repository.RewardsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
@@ -202,18 +195,12 @@ class PostDetailViewModel @Inject constructor(
                     // Track view + recently viewed
                     launch { runCatching { socialRepo.viewPost(postId) } }
                     launch { runCatching { socialRepo.trackViewed(postId) } }
-                    // Load current plan (for boost/promote gating) + coin balance
+                    // Load current plan
                     launch {
                         when (val me = authRepo.me()) {
                             is ApiResult.Success -> _state.value = _state.value.copy(
                                 currentPlan = me.data.currentPlan?.lowercase()
                             )
-                            is ApiResult.Failure -> {}
-                        }
-                    }
-                    launch {
-                        when (val c = rewardsRepo.coinBalance()) {
-                            is ApiResult.Success -> _state.value = _state.value.copy(coinBalance = c.data.balance)
                             is ApiResult.Failure -> {}
                         }
                     }
@@ -334,83 +321,6 @@ class PostDetailViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repo.report(postId) }
             _state.value = _state.value.copy(reported = true)
-        }
-    }
-
-    fun togglePriceAlert() {
-        viewModelScope.launch {
-            if (_state.value.priceAlertSubscribed) {
-                priceAlertsRepo.unsubscribe(postId)
-                _state.value = _state.value.copy(priceAlertSubscribed = false)
-            } else {
-                priceAlertsRepo.subscribe(postId)
-                _state.value = _state.value.copy(priceAlertSubscribed = true)
-            }
-        }
-    }
-
-    fun boostPost(tier: String = "basic", duration: Int = 24) {
-        viewModelScope.launch {
-            boostRepo.boost(postId, tier, duration)
-            when (val r = boostRepo.status(postId)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data, boostMessage = "✅ Boost applied via your plan")
-                is ApiResult.Failure -> {}
-            }
-        }
-    }
-
-    /** Redeem coins to boost a post. Maps boost tier → store redeem type used by the rewards API. */
-    fun boostWithCoins(tier: String, cost: Int) {
-        val balance = _state.value.coinBalance
-        if (balance < cost) {
-            _state.value = _state.value.copy(boostMessage = "Not enough coins ($balance/$cost). Upgrade your plan or top up.")
-            return
-        }
-        viewModelScope.launch {
-            val redeemType = when (tier) { "basic" -> "boost"; "featured" -> "feature"; else -> "spotlight" }
-            when (rewardsRepo.storeRedeem(redeemType, postId)) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(coinBalance = balance - cost, boostMessage = "✅ Boosted with $cost coins")
-                    when (val r = boostRepo.status(postId)) {
-                        is ApiResult.Success -> _state.value = _state.value.copy(boostStatus = r.data)
-                        is ApiResult.Failure -> {}
-                    }
-                }
-                is ApiResult.Failure -> _state.value = _state.value.copy(boostMessage = "Coin redemption failed. Try again.")
-            }
-        }
-    }
-
-    fun clearBoostMessage() { _state.value = _state.value.copy(boostMessage = null) }
-
-    fun toggleCompare() {
-        val newValue = !_state.value.inCompareList
-        if (newValue) {
-            // Subcategory match check: only allow comparing similar products
-            val post = _state.value.post
-            val existingPosts = SharedExploreStore.comparePosts
-            if (existingPosts.isNotEmpty() && post != null) {
-                val firstSubcategory = existingPosts.first().subcategory
-                if (firstSubcategory != null && post.subcategory != null &&
-                    !firstSubcategory.equals(post.subcategory, ignoreCase = true)
-                ) {
-                    _state.value = _state.value.copy(
-                        compareError = "Can only compare similar products (${firstSubcategory})"
-                    )
-                    viewModelScope.launch {
-                        delay(3000)
-                        _state.value = _state.value.copy(compareError = null)
-                    }
-                    return
-                }
-            }
-            _state.value = _state.value.copy(inCompareList = true)
-            post?.let { SharedExploreStore.addCompare(it) }
-            viewModelScope.launch { repo.addToCompare(postId) }
-        } else {
-            _state.value = _state.value.copy(inCompareList = false)
-            SharedExploreStore.removeCompare(postId)
-            viewModelScope.launch { repo.removeFromCompare(postId) }
         }
     }
 
@@ -569,10 +479,7 @@ fun PostDetailScreen(
                                             .background(MaterialTheme.colorScheme.surfaceVariant),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        val displayUrl = if (img != null && !img.startsWith("http")) {
-                                            val base = com.mhub.app.BuildConfig.DEFAULT_API_BASE_URL.trimEnd('/')
-                                            "$base/$img".replace("//", "/").replace("https:/", "https://").replace("http:/", "http://")
-                                        } else img
+                                        val displayUrl = resolveImageUrl(img)
                                         if (displayUrl != null) {
                                             AsyncImage(
                                                 model = displayUrl,
@@ -1064,15 +971,18 @@ fun PostDetailScreen(
                                             ) {
                                                 Column {
                                                     Box(modifier = Modifier.fillMaxWidth()) {
-                                                        spPost.primaryImage?.let { img ->
-                                                            AsyncImage(model = img, contentDescription = null,
+                                                        val recImgUrl = resolveImageUrl(spPost.primaryImage)
+                                                        if (recImgUrl != null) {
+                                                            AsyncImage(model = recImgUrl, contentDescription = null,
                                                                 contentScale = ContentScale.Crop,
                                                                 modifier = Modifier.fillMaxWidth().height(110.dp))
-                                                        } ?: Box(
-                                                            modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surfaceVariant),
-                                                            contentAlignment = Alignment.Center
-                                                        ) {
-                                                            Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        } else {
+                                                            Box(
+                                                                modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                            }
                                                         }
                                                         // Premium/Featured/Boosted badge overlay
                                                         val badge = when {
@@ -1124,8 +1034,9 @@ fun PostDetailScreen(
                                             ) {
                                                 Column {
                                                     Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                                                        simPost.primaryImage?.let { img ->
-                                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                                        val simImgUrl = resolveImageUrl(simPost.primaryImage)
+                                                        if (simImgUrl != null) {
+                                                            AsyncImage(model = simImgUrl, contentDescription = null, contentScale = ContentScale.Crop,
                                                                 modifier = Modifier.fillMaxWidth().height(100.dp))
                                                         }
                                                         // Minimal premium badge

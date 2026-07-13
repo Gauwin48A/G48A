@@ -87,6 +87,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
+import com.mhub.app.core.ApiError
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Post
@@ -122,6 +123,7 @@ data class RecentlyViewedUiState(
 class RecentlyViewedViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
+    private val authRepo: com.mhub.app.data.repository.AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RecentlyViewedUiState())
     val state: StateFlow<RecentlyViewedUiState> = _state.asStateFlow()
@@ -156,24 +158,51 @@ class RecentlyViewedViewModel @Inject constructor(
             loading = loading,
             refreshing = refreshing,
             posts = mergedPosts,
+            // Only show error if there's absolutely no data (local + remote)
             error = if (mergedPosts.isEmpty()) error else null,
         )
     }
 
     fun load() {
+        // Show shimmer only if we have no data at all
         _state.value = _state.value.copy(
-            loading = _state.value.posts.isEmpty(),
-            refreshing = _state.value.posts.isNotEmpty(),
+            loading = _state.value.posts.isEmpty() && SharedExploreStore.recentlyViewedPosts.isEmpty(),
+            refreshing = _state.value.posts.isNotEmpty() || SharedExploreStore.recentlyViewedPosts.isNotEmpty(),
             error = null,
         )
         viewModelScope.launch {
+            // Proactively refresh token if needed before API call
+            if (authRepo.hasSession && !authRepo.isCurrentlyAuthenticated) {
+                authRepo.tryRefreshToken()
+            }
+
             when (val result = repo.recentlyViewed()) {
                 is ApiResult.Success -> {
                     remoteRecentPosts = result.data
                     syncRecentlyViewed(loading = false)
                 }
                 is ApiResult.Failure -> {
-                    syncRecentlyViewed(loading = false, error = result.error.message)
+                    val isAuthError = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
+                    if (isAuthError) {
+                        // Retry once with fresh token
+                        authRepo.tryRefreshToken()
+                        when (val retry = repo.recentlyViewed()) {
+                            is ApiResult.Success -> {
+                                remoteRecentPosts = retry.data
+                                syncRecentlyViewed(loading = false)
+                            }
+                            is ApiResult.Failure -> {
+                                // Even on auth failure, show local data instead of error
+                                syncRecentlyViewed(loading = false, error = null)
+                            }
+                        }
+                    } else {
+                        // Network/server error — show local data silently, keep error for retry
+                        syncRecentlyViewed(
+                            loading = false,
+                            error = if (SharedExploreStore.recentlyViewedPosts.isEmpty()) result.error.message else null,
+                        )
+                    }
                 }
             }
         }
@@ -756,9 +785,10 @@ private fun RecentlyViewedListCard(
                 )
 
                 // Price
-                post.price?.let {
+                post.price?.let { price ->
+                    val fmtText = "%,.0f".format(price)
                     Text(
-                        text = "₹${"%,.0f".format(it)}",
+                        text = "₹$fmtText",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -923,9 +953,10 @@ private fun RecentlyViewedGridCard(
                 }
 
                 // Price overlay
-                post.price?.let {
+                post.price?.let { price ->
+                    val fmtText = "%,.0f".format(price)
                     Text(
-                        text = "₹${"%,.0f".format(it)}",
+                        text = "₹$fmtText",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

@@ -464,7 +464,6 @@ fun MhubApp(
                                 popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
                             }
                         },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                         onForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) { launchSingleTop = true } },
                         onSignUp = { navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
                     )

@@ -107,6 +107,7 @@ class WishlistViewModel @Inject constructor(
     private val repo: WishlistRepository,
     private val cartRepo: CartRepository,
     private val priceAlertsRepo: com.mhub.app.data.repository.PriceAlertsRepository,
+    private val authRepo: com.mhub.app.data.repository.AuthRepository,
     private val localeManager: com.mhub.app.core.LocaleManager,
 ) : ViewModel() {
     private fun findPostById(postId: String): Post? {
@@ -150,18 +151,43 @@ class WishlistViewModel @Inject constructor(
 
     fun load() {
         _state.value = _state.value.copy(
-            loading = _state.value.items.isEmpty(),
-            refreshing = _state.value.items.isNotEmpty(),
+            loading = _state.value.items.isEmpty() && SharedExploreStore.wishlistPosts.isEmpty(),
+            refreshing = _state.value.items.isNotEmpty() || SharedExploreStore.wishlistPosts.isNotEmpty(),
             error = null,
         )
         viewModelScope.launch {
+            // Proactively refresh token if needed before API call
+            if (authRepo.hasSession && !authRepo.isCurrentlyAuthenticated) {
+                authRepo.tryRefreshToken()
+            }
+
             when (val result = repo.list()) {
                 is ApiResult.Success -> {
                     remoteWishlistItems = result.data
                     syncWishlist(loading = false)
                 }
                 is ApiResult.Failure -> {
-                    syncWishlist(loading = false, error = result.error.message)
+                    val isAuthError = result.error is com.mhub.app.core.ApiError.Unauthorized || result.error is com.mhub.app.core.ApiError.Forbidden
+                    if (isAuthError) {
+                        // Retry once with fresh token
+                        authRepo.tryRefreshToken()
+                        when (val retry = repo.list()) {
+                            is ApiResult.Success -> {
+                                remoteWishlistItems = retry.data
+                                syncWishlist(loading = false)
+                            }
+                            is ApiResult.Failure -> {
+                                // Even on auth failure, show local data instead of error
+                                syncWishlist(loading = false, error = null)
+                            }
+                        }
+                    } else {
+                        // Network/server error — show local data silently
+                        syncWishlist(
+                            loading = false,
+                            error = if (SharedExploreStore.wishlistPosts.isEmpty()) result.error.message else null,
+                        )
+                    }
                 }
             }
         }

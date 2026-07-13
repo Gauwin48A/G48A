@@ -29,7 +29,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -91,7 +90,6 @@ import com.mhub.app.R
 @Composable
 fun LoginScreen(
     onSignedIn: () -> Unit,
-    onOpenSettings: () -> Unit,
     onSignUp: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
     onPreviewApp: () -> Unit = {},
@@ -594,21 +592,6 @@ fun LoginScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Preview App (no sign-in required)", fontSize = 13.sp, color = mutedText)
             }
-        }
-
-        // Settings IconButton (top-right) — preserved from previous behavior
-        IconButton(
-            onClick = onOpenSettings,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(8.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = stringResource(R.string.nav_settings),
-                tint = mutedText,
-            )
         }
 
         // ── OTP 2FA Challenge Overlay ──

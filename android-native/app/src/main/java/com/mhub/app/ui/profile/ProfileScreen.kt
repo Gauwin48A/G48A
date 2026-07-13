@@ -215,9 +215,11 @@ class ProfileViewModel @Inject constructor(
 
     /**
      * Load profile data with:
+     * - Proactive token refresh before API calls to prevent session-expired flickering
      * - Instant display of cached data (no loading spinner if we have it)
      * - Parallel execution of stats, referral code, and trust score
-     * - Automatic retry for transient failures (backed by RetryInterceptor)
+     * - Automatic retry for transient failures + token refresh retry on 401
+     * - Cache-first: even on auth errors, show cached profile with non-blocking warning
      */
     fun load() {
         val current = _state.value
@@ -232,40 +234,56 @@ class ProfileViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            // Step 1: Proactively refresh token if we have a session but token may be expired
+            if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
+                repo.tryRefreshToken()
+            }
+
+            // Step 2: Load profile
             val meResult = repo.me()
             when (meResult) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         loading = false, refreshing = false, user = meResult.data,
                         lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                        isSessionExpired = false,
                     )
                 }
                 is ApiResult.Failure -> {
                     val isUnauth = meResult.error is ApiError.Unauthorized || meResult.error is ApiError.Forbidden
                     if (isUnauth) {
-                        // Retry once before declaring session expired
+                        // Step 3: Retry with token refresh before declaring session expired
+                        repo.tryRefreshToken()
                         when (val retry = repo.me()) {
-                            is ApiResult.Success -> _state.value = _state.value.copy(
-                                loading = false, refreshing = false, user = retry.data,
-                                lastLoadTimeMs = System.currentTimeMillis(), error = null,
-                            )
+                            is ApiResult.Success -> {
+                                _state.value = _state.value.copy(
+                                    loading = false, refreshing = false, user = retry.data,
+                                    lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                                    isSessionExpired = false,
+                                )
+                            }
                             is ApiResult.Failure -> {
                                 val expired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden
-                                // Demo session check: populate with demo user data silently
-                                if (expired && repo.isDemoSession) {
+                                // Cache-first: always prefer showing cached profile over blocking UI
+                                if (cachedProfile?.user != null) {
+                                    // Show cached profile with a non-blocking warning banner
+                                    _state.value = cachedProfile!!.copy(
+                                        loading = false, refreshing = false,
+                                        error = if (expired)
+                                            "Session expired. Please sign in again."
+                                        else
+                                            retry.error.userFacingMessage("refresh your profile"),
+                                        isSessionExpired = expired,
+                                    )
+                                } else if (repo.isDemoSession) {
                                     val demoUser = createDemoUser()
                                     _state.value = _state.value.copy(
                                         loading = false, refreshing = false,
                                         user = demoUser, error = null, isSessionExpired = false,
                                     )
                                     cachedProfile = _state.value
-                                } else if (cachedProfile?.user != null) {
-                                    _state.value = _state.value.copy(
-                                        loading = false, refreshing = false,
-                                        error = if (expired) null else retry.error.userFacingMessage("refresh your profile"),
-                                        isSessionExpired = expired,
-                                    )
                                 } else {
+                                    // No cache available — show minimal error state
                                     _state.value = _state.value.copy(
                                         loading = false, refreshing = false,
                                         isSessionExpired = expired,
@@ -275,18 +293,18 @@ class ProfileViewModel @Inject constructor(
                             }
                         }
                     } else {
-                        // Network/server error — fall back to demo session if applicable
-                        if (repo.isDemoSession) {
+                        // Network/server error — fall back to cache or demo
+                        if (cachedProfile?.user != null) {
+                            _state.value = cachedProfile!!.copy(
+                                loading = false, refreshing = false,
+                                error = meResult.error.userFacingMessage("refresh your profile"),
+                            )
+                        } else if (repo.isDemoSession) {
                             _state.value = _state.value.copy(
                                 loading = false, refreshing = false,
                                 user = createDemoUser(), error = null, isSessionExpired = false,
                             )
                             cachedProfile = _state.value
-                        } else if (cachedProfile?.user != null) {
-                            _state.value = _state.value.copy(
-                                loading = false, refreshing = false,
-                                error = meResult.error.userFacingMessage("refresh your profile"),
-                            )
                         } else {
                             _state.value = _state.value.copy(
                                 loading = false, refreshing = false,
@@ -316,6 +334,10 @@ class ProfileViewModel @Inject constructor(
     fun refresh() {
         _state.value = _state.value.copy(refreshing = true)
         viewModelScope.launch {
+            // Proactive token refresh before refresh call
+            if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
+                repo.tryRefreshToken()
+            }
             val meResult = repo.me()
             when (meResult) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
@@ -674,29 +696,6 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
 
-                state.isSessionExpired -> Box(
-                    Modifier.fillMaxSize().padding(32.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    ) {
-                        Column(
-                            Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                            Text(stringResource(R.string.session_expired_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text(stringResource(R.string.session_expired_message), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer, textAlign = TextAlign.Center)
-                            Button(onClick = onSignedOut) {
-                                Text(stringResource(R.string.action_sign_in))
-                            }
-                        }
-                    }
-                }
-
                 else -> {
                     val user = state.user
                     var showEditDialog by remember { mutableStateOf(false) }
@@ -735,7 +734,48 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     ) {
-                        ErrorBanner(message = state.error)
+                        // Non-blocking session expired banner (keeps profile content visible)
+                        if (state.isSessionExpired) {
+                            Surface(
+                                shape = RoundedCornerShape(0.dp),
+                                color = Color(0xFFFEF2F2),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Lock,
+                                        contentDescription = null,
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            stringResource(R.string.session_expired_title),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF991B1B),
+                                        )
+                                        Text(
+                                            stringResource(R.string.session_expired_message),
+                                            fontSize = 11.sp,
+                                            color = Color(0xFFB91C1C),
+                                        )
+                                    }
+                                    OutlinedButton(
+                                        onClick = onSignedOut,
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    ) {
+                                        Text(stringResource(R.string.action_sign_in), fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                        ErrorBanner(message = if (state.isSessionExpired) null else state.error)
                         state.editResult?.let { msg ->
                             ProfileFeedbackBanner(
                                 message = msg,
