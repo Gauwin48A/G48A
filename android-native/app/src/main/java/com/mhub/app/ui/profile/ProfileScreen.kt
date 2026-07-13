@@ -63,6 +63,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
@@ -652,6 +654,7 @@ fun ProfileScreen(
     onOpenOrders: () -> Unit = {},
     onOpenSaleDone: () -> Unit = {},
     onOpenSaleUndone: () -> Unit = {},
+    onOpenRecentlyViewed: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -669,8 +672,29 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold) },
                 actions = {
+                    var showMoreMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    Box {
+                        IconButton(onClick = { showMoreMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More")
+                        }
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Recently Viewed") },
+                                leadingIcon = { Icon(Icons.Default.History, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showMoreMenu = false; onOpenRecentlyViewed() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Language") },
+                                leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showMoreMenu = false; onOpenSettings() },
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),

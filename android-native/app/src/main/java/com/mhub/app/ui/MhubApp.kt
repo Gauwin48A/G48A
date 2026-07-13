@@ -658,6 +658,7 @@ fun MhubApp(
                             onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
                             onOpenSaleDone = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                         )
                     }
                 }
