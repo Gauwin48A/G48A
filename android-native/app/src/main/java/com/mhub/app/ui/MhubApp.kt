@@ -1382,6 +1382,8 @@ fun MainShell(
                 MhubTopBar(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                    onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                    onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                     currentThemeMode = themeCtl.currentThemeMode,
                     onToggleTheme = themeCtl.onToggleTheme,
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
