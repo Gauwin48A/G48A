@@ -542,98 +542,12 @@ fun PostDetailScreen(
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
                 val lazyState = rememberLazyListState()
-                val scope = rememberCoroutineScope()
-                var activeSection by remember { mutableStateOf(0) }
-                // Scroll-spy: update active section tab based on scroll position
-                LaunchedEffect(lazyState.firstVisibleItemIndex) {
-                    activeSection = when (lazyState.firstVisibleItemIndex) {
-                        0 -> 0; 2 -> 2; 3 -> 3; 4 -> 4; else -> if (lazyState.firstVisibleItemIndex >= 5) 5 else 1
-                    }
-                }
-                // sectionScrollIndices maps each tab to a LazyColumn item index
-                // Items: 0=images, 1=overview, 2=specs, 3=trust, 4=similar, 5=seller
-                val sectionScrollIndices = listOf(0, 1, 2, 3, 1, 5)
-                val sectionLabels = listOf(stringResource(R.string.detail_overview), stringResource(R.string.detail_details), stringResource(R.string.detail_specs), stringResource(R.string.detail_trust), stringResource(R.string.detail_description_tab), stringResource(R.string.detail_seller_tab))
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
                 ) {
-                    // Breadcrumbs navigation
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Home,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Icon(
-                                Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            post.categoryName?.let { category ->
-                                Text(
-                                    category,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.clickable { onOpenCategory(post.categoryId ?: category) }
-                                )
-                                Icon(
-                                    Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                post.displayTitle.take(20) + if (post.displayTitle.length > 20) "..." else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // Section navigation strip (scroll-to-section on click, scroll-spy highlighting)
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
-                    ) {
-                        itemsIndexed(sectionLabels) { idx, label ->
-                            val isActive = activeSection == idx
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = if (isActive) 1f else 0.3f)),
-                                onClick = {
-                                    activeSection = idx
-                                    scope.launch { lazyState.animateScrollToItem(sectionScrollIndices[idx]) }
-                                },
-                            ) {
-                                Text(
-                                    label,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-
                     LazyColumn(
                         state = lazyState,
                         modifier = Modifier.weight(1f),
@@ -655,9 +569,13 @@ fun PostDetailScreen(
                                             .background(MaterialTheme.colorScheme.surfaceVariant),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        if (img != null) {
+                                        val displayUrl = if (img != null && !img.startsWith("http")) {
+                                            val base = com.mhub.app.BuildConfig.DEFAULT_API_BASE_URL.trimEnd('/')
+                                            "$base/$img".replace("//", "/").replace("https:/", "https://").replace("http:/", "http://")
+                                        } else img
+                                        if (displayUrl != null) {
                                             AsyncImage(
-                                                model = img,
+                                                model = displayUrl,
                                                 contentDescription = null,
                                                 contentScale = ContentScale.Crop,
                                                 modifier = Modifier
@@ -1267,43 +1185,12 @@ fun PostDetailScreen(
 
                     Surface(color = MaterialTheme.colorScheme.surface) {
                         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
-                            // Make Offer / Report row
+                            // Make Offer row
                             var showOfferDialog by remember { mutableStateOf(false) }
                             var offerAmount by remember { mutableStateOf("") }
-                            var showBoostPanel by remember { mutableStateOf(false) }
-
-                            // Compare error banner
-                            if (state.compareError != null) {
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF2F2).copy(alpha = 0.95f), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                                    Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Icon(Icons.Default.Compare, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
-                                        Text(state.compareError ?: "", color = Color(0xFFDC2626), fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                                    }
-                                }
-                            }
                             if (state.offerSent) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
-                                }
-                            }
-
-                            // Bargain quick actions
-                            if (showOfferDialog && post.price != null) {
-                                Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    listOf(10 to "-10%", 15 to "-15%", 20 to "-20%").forEach { (pct, label) ->
-                                        val discounted = post.price!! * (100 - pct) / 100
-                                        Surface(
-                                            onClick = { viewModel.makeOffer(discounted); showOfferDialog = false },
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            modifier = Modifier.weight(1f),
-                                        ) {
-                                            Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                                Text("₹${"%,.0f".format(discounted)}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
-                                        }
-                                    }
                                 }
                             }
 
@@ -1312,7 +1199,6 @@ fun PostDetailScreen(
                                     val offerVal = offerAmount.toDoubleOrNull()
                                     val minAcceptable = (post.price ?: 0.0) * 0.5
                                     val isTooLow = offerVal != null && offerVal < minAcceptable
-                                    val discountPct = if (offerVal != null && (post.price ?: 0.0) > 0) ((1.0 - offerVal / post.price!!) * 100).toInt() else null
                                     Column(Modifier.weight(1f)) {
                                         OutlinedTextField(
                                             value = offerAmount, onValueChange = { offerAmount = it.filter(Char::isDigit) },
@@ -1320,7 +1206,7 @@ fun PostDetailScreen(
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                             shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().height(48.dp),
                                             isError = isTooLow,
-                                            supportingText = if (isTooLow) {{ Text("Must be ≥50% of price (₹${"%,.0f".format(minAcceptable)})", color = Color(0xFFEF4444), fontSize = 10.sp) }} else if (discountPct != null && discountPct > 0) {{ Text("${discountPct}% off asking price", color = Color(0xFF22C55E), fontSize = 10.sp) }} else null,
+                                            supportingText = if (isTooLow) {{ Text("Min ₹${"%,.0f".format(minAcceptable)}", color = Color(0xFFEF4444), fontSize = 10.sp) }} else null,
                                         )
                                     }
                                     Button(onClick = {
@@ -1328,105 +1214,9 @@ fun PostDetailScreen(
                                         showOfferDialog = false
                                     }, enabled = offerAmount.isNotBlank() && !isTooLow, shape = RoundedCornerShape(10.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
-                                        Text(stringResource(R.string.detail_send), fontWeight = FontWeight.SemiBold)
+                                        Text("Send", fontWeight = FontWeight.SemiBold)
                                     }
-                                    TextButton(onClick = { showOfferDialog = false }) { Text(stringResource(R.string.filter_cancel)) }
-                                }
-                            }
-
-                            // Boost panel (for own posts) — plan-gated like web app
-                            if (showBoostPanel) {
-                                // Plan tier drives free quota per tier (web parity):
-                                //  basic/bronze → no included boosts; silver → 5/mo; premium → unlimited
-                                val plan = state.currentPlan ?: "basic"
-                                val planRank = when (plan) { "premium" -> 3; "silver" -> 2; "bronze" -> 1; else -> 0 }
-                                Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Text(stringResource(R.string.detail_boost), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                        // Plan + coin balance context row
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            val planColor = when (plan) { "premium" -> Color(0xFF8B5CF6); "silver" -> Color(0xFF64748B); "bronze" -> Color(0xFFB45309); else -> Color(0xFF94A3B8) }
-                                            Surface(shape = RoundedCornerShape(6.dp), color = planColor.copy(alpha = 0.15f)) {
-                                                Text(
-                                                    "${plan.replaceFirstChar { it.uppercase() }} plan",
-                                                    fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = planColor,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                                )
-                                            }
-                                            Text("🪙 ${state.coinBalance} coins", fontSize = 11.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.Medium)
-                                        }
-                                        Text("Choose visibility tier:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        // Tier cards: (tier, title, desc, minPlanRank, coinCost, price)
-                                        data class BoostTier(val tier: String, val title: String, val desc: String, val minRank: Int, val coins: Int, val price: String, val freeQuota: Int)
-                                        listOf(
-                                            BoostTier("basic", "⚡ Boost · 7 days", "More views in category feed", 1, 50, "₹49", if (planRank >= 3) 999 else if (planRank >= 2) 5 else 0),
-                                            BoostTier("featured", "⭐ Featured · 14 days", "Highlighted badge + top of results", 2, 100, "₹99", if (planRank >= 3) 999 else if (planRank >= 2) 2 else 0),
-                                            BoostTier("spotlight", "🌟 Spotlight · 30 days", "Home page showcase + all badges", 3, 200, "₹199", if (planRank >= 3) 999 else 0),
-                                        ).forEach { t ->
-                                            val hasPlanQuota = t.freeQuota > 0
-                                            val canAffordCoins = state.coinBalance >= t.coins
-                                            Card(
-                                                shape = RoundedCornerShape(10.dp),
-                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                                modifier = Modifier.fillMaxWidth(),
-                                            ) {
-                                                Column(Modifier.padding(10.dp)) {
-                                                    Text(t.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                                    Text(t.desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    Spacer(Modifier.height(6.dp))
-                                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                        // Use Plan Quota (only if plan grants it)
-                                                        OutlinedButton(
-                                                            onClick = { viewModel.boostPost(t.tier); showBoostPanel = false },
-                                                            enabled = hasPlanQuota,
-                                                            shape = RoundedCornerShape(8.dp),
-                                                            modifier = Modifier.weight(1f),
-                                                            border = BorderStroke(1.dp, if (hasPlanQuota) Color(0xFF22C55E) else Color(0xFFCBD5E1)),
-                                                        ) {
-                                                            val label = when {
-                                                                t.freeQuota >= 999 -> "Plan ✓"
-                                                                t.freeQuota > 0 -> "Plan (${t.freeQuota})"
-                                                                else -> "Locked"
-                                                            }
-                                                            Text(label, fontSize = 10.sp, color = if (hasPlanQuota) Color(0xFF22C55E) else Color(0xFF94A3B8))
-                                                        }
-                                                        // Use Coins
-                                                        OutlinedButton(
-                                                            onClick = { viewModel.boostWithCoins(t.tier, t.coins); showBoostPanel = false },
-                                                            enabled = canAffordCoins,
-                                                            shape = RoundedCornerShape(8.dp),
-                                                            modifier = Modifier.weight(1f),
-                                                            border = BorderStroke(1.dp, if (canAffordCoins) Color(0xFFF59E0B) else Color(0xFFCBD5E1)),
-                                                        ) {
-                                                            Text("${t.coins}🪙", fontSize = 10.sp, color = if (canAffordCoins) Color(0xFFF59E0B) else Color(0xFF94A3B8))
-                                                        }
-                                                        // Pay (always available fallback)
-                                                        Button(
-                                                            onClick = { viewModel.boostPost(t.tier); showBoostPanel = false },
-                                                            shape = RoundedCornerShape(8.dp),
-                                                            modifier = Modifier.weight(1f),
-                                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                                        ) {
-                                                            Text(t.price, fontSize = 10.sp)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (planRank < 2) {
-                                            Text(
-                                                "💡 Upgrade to Silver or Premium for free monthly boosts.",
-                                                fontSize = 11.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Medium,
-                                            )
-                                        }
-                                        state.boostMessage?.let { msg ->
-                                            Text(msg, fontSize = 11.sp, color = Color(0xFF22C55E))
-                                        }
-                                        state.boostStatus?.let { bs ->
-                                            if (bs.boosted) Text("✅ Currently boosted (${bs.tier}) — ${bs.viewsGained} extra views", fontSize = 11.sp, color = Color(0xFF22C55E))
-                                        }
-                                        TextButton(onClick = { showBoostPanel = false }) { Text("Cancel") }
-                                    }
+                                    TextButton(onClick = { showOfferDialog = false }) { Text("Cancel") }
                                 }
                             }
 
@@ -1434,17 +1224,7 @@ fun PostDetailScreen(
                                 OutlinedButton(onClick = { showOfferDialog = !showOfferDialog }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Filled.LocalOffer, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.detail_make_offer))
-                                }
-                                // Price Alert toggle
-                                OutlinedButton(
-                                    onClick = { viewModel.togglePriceAlert() },
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.priceAlertSubscribed) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurface),
-                                ) {
-                                    Icon(if (state.priceAlertSubscribed) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone, null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(if (state.priceAlertSubscribed) stringResource(R.string.detail_alert_on) else stringResource(R.string.detail_price_alert), fontSize = 12.sp)
+                                    Text("Make Offer")
                                 }
                                 OutlinedButton(onClick = { if (!state.reported) viewModel.reportPost() }, shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.reported) Color(0xFF94A3B8) else Color(0xFFEF4444))) {
@@ -1456,19 +1236,7 @@ fun PostDetailScreen(
                                 OutlinedButton(onClick = { showInterestModal = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
                                     Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(R.string.detail_interested))
-                                }
-                                OutlinedButton(
-                                    onClick = { viewModel.toggleCompare() },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = if (state.inCompareList) Color(0xFF3B82F6) else MaterialTheme.colorScheme.onSurface
-                                    )
-                                ) {
-                                    Icon(Icons.Default.Compare, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(if (state.inCompareList) stringResource(R.string.detail_comparing) else stringResource(R.string.detail_compare))
+                                    Text("Interested")
                                 }
                                 Button(
                                     onClick = { viewModel.addToCart() },
