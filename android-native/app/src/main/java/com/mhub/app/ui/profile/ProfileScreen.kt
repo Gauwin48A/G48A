@@ -63,8 +63,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
@@ -92,8 +90,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ScrollableTabRow
 
 import androidx.compose.material3.Tab
@@ -667,46 +663,11 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) { viewModel.loadPreferences() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold) },
-                actions = {
-                    var showMoreMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    Box {
-                        IconButton(onClick = { showMoreMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More")
-                        }
-                        DropdownMenu(
-                            expanded = showMoreMenu,
-                            onDismissRequest = { showMoreMenu = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Recently Viewed") },
-                                leadingIcon = { Icon(Icons.Default.History, null, modifier = Modifier.size(18.dp)) },
-                                onClick = { showMoreMenu = false; onOpenRecentlyViewed() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Language") },
-                                leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
-                                onClick = { showMoreMenu = false; onOpenSettings() },
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = { viewModel.refresh() },
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
+    PullToRefreshBox(
+        isRefreshing = state.refreshing,
+        onRefresh = { viewModel.refresh() },
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
             when {
                 state.loading -> Box(
                     Modifier.fillMaxSize(),
@@ -1607,7 +1568,6 @@ fun ProfileScreen(
                 }
             }
         }
-    }
 }
 
 // ── Tab composables ───────────────────────────────────────────────────────────

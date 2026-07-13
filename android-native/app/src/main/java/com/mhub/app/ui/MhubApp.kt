@@ -640,7 +640,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.PROFILE) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
                         ProfileScreen(
                             onSignedOut = {
                                 userInitiatedLogout = true
