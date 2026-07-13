@@ -35,13 +35,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -53,7 +51,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AssistChip
@@ -86,11 +83,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.border
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -486,7 +486,10 @@ fun PostDetailScreen(
                     Spacer(Modifier.width(8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = Color(0xFF1E3A8A),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White,
                 ),
             )
         },
@@ -1026,36 +1029,7 @@ fun PostDetailScreen(
                                 }
                             }
                         }
-                        // "Why trustworthy" panel (non-owner, 3-col) — web parity
-                        if (!isOwner) item(key = "sec_why_trust") {
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D1B2E) else Color(0xFFEFF6FF)),
-                                border = BorderStroke(1.dp, if (isDark) Color(0xFF1E3A5F) else Color(0xFFBFDBFE)),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                            ) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("🛡️ Why this listing is trustworthy", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A))
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        val trustItems = listOf(
-                                            "✅" to "Verified Seller",
-                                            "⭐" to "High Trust Score",
-                                            "📍" to "Local Pickup",
-                                        )
-                                        trustItems.forEach { (emoji, label) ->
-                                            Column(
-                                                modifier = Modifier.weight(1f),
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                                            ) {
-                                                Text(emoji, fontSize = 22.sp)
-                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A), textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 13.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
                         item(key = "sec_trust") {
                             Column(
                                 modifier = Modifier
@@ -1063,116 +1037,9 @@ fun PostDetailScreen(
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                // Trust Score Badge
-                                state.trustScore?.let { ts ->
-                                    val score = ts.trustScore.toInt()
-                                    val trustColor = when { score >= 80 -> Color(0xFF22C55E); score >= 50 -> Color(0xFFF59E0B); else -> Color(0xFFEF4444) }
-                                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = trustColor.copy(alpha = 0.1f)), modifier = Modifier.fillMaxWidth()) {
-                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Filled.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(22.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(stringResource(R.string.detail_trust_score, score), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = trustColor)
-                                                Text(ts.trustLabel ?: when { score >= 80 -> stringResource(R.string.detail_highly_trusted); score >= 50 -> stringResource(R.string.detail_trusted); else -> stringResource(R.string.detail_new_seller) }, fontSize = 12.sp, color = trustColor.copy(alpha = 0.8f))
-                                            }
-                                            // Seller response time
-                                            state.sellerResponseTimeMinutes?.let { mins ->
-                                                val (timeText, timeColor) = when {
-                                                    mins < 60 -> "<1hr" to Color(0xFF22C55E)
-                                                    mins < 1440 -> "<24hr" to Color(0xFFFBBF24)
-                                                    else -> ">1day" to Color(0xFFEF4444)
-                                                }
-                                                Surface(
-                                                    shape = RoundedCornerShape(20.dp),
-                                                    color = timeColor.copy(alpha = 0.2f)
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Text("⚡", fontSize = 10.sp)
-                                                        Text(
-                                                            timeText,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = timeColor,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
 
-                                // Delivery Estimate Card
-                                Card(
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D1B2E) else Color(0xFFEFF6FF)),
-                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF1E3A5F) else Color(0xFFBFDBFE)),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.LocalShipping, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("📦 Delivery & Returns", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
-                                        }
-                                        Text("• Estimated delivery: 3-5 business days", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
-                                        Text("• Local meetup available in ${post.location ?: "your area"}", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
-                                        Text("• 7-day return policy on eligible items", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E3A8A))
-                                    }
-                                }
 
-                                // Activity Log
-                                if (state.activityLog.isNotEmpty()) {
-                                    var activityExpanded by remember { mutableStateOf(false) }
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth().clickable { activityExpanded = !activityExpanded },
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.Timeline, null, modifier = Modifier.size(18.dp))
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(stringResource(R.string.detail_activity_timeline), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                                }
-                                                Text(if (activityExpanded) "▲" else "▼", fontSize = 12.sp)
-                                            }
-                                            if (activityExpanded) {
-                                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    state.activityLog.take(5).forEach { item ->
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                        ) {
-                                                            val emoji = when (item.type) {
-                                                                "view" -> "👁"
-                                                                "interest" -> "❤️"
-                                                                "offer" -> "💰"
-                                                                else -> "•"
-                                                            }
-                                                            Text(emoji, fontSize = 14.sp)
-                                                            Column(modifier = Modifier.weight(1f)) {
-                                                                Text(item.description, style = MaterialTheme.typography.bodySmall)
-                                                                Text(item.timestamp, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                            }
-                                                        }
-                                                        if (item != state.activityLog.last()) {
-                                                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+
 
                                 // Condition & Brand chips
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1180,47 +1047,97 @@ fun PostDetailScreen(
                                     post.brand?.let { b -> AssistChip(onClick = {}, label = { Text(b) }) }
                                 }
 
-                                // Safety Tips
+                                // Safety Tips (collapsible with border glow & READ badge)
+                                var safetyExpanded by remember { mutableStateOf(false) }
                                 Card(
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = RoundedCornerShape(14.dp),
                                     colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7)),
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { safetyExpanded = !safetyExpanded }
+                                        .then(
+                                            if (safetyExpanded) Modifier.border(
+                                                1.5.dp, Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFEF4444))),
+                                                RoundedCornerShape(14.dp),
+                                            )
+                                            else Modifier.border(
+                                                1.5.dp, Color(0xFFFDE68A).copy(alpha = 0.5f),
+                                                RoundedCornerShape(14.dp),
+                                            )
+                                        ),
                                 ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("⚠️ Safety Tips", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
-                                        Text("• Meet in a public place for exchanges", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
-                                        Text("• Inspect the item thoroughly before paying", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
-                                        Text("• Don't share personal financial information", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
-                                        Text("• Use MHub secure payment when possible", fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
-                                    }
-                                }
-
-                                // Safety at a Glance (3 emerald tiles — web parity)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    val safetyItems = listOf(
-                                        "🤝" to "Public Meetup",
-                                        "🔒" to "No Pre-payment",
-                                        "✅" to "Verify Listing ID",
-                                    )
-                                    safetyItems.forEach { (emoji, label) ->
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = if (isDark) Color(0xFF062010) else Color(0xFFECFDF5),
-                                            border = BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.3f) else Color(0xFF6EE7B7)),
-                                            modifier = Modifier.weight(1f),
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(8.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("\u26A0\uFE0F", fontSize = 18.sp)
+                                            Text("Safety Tips", fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                                                color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E),
+                                                modifier = Modifier.weight(1f))
+                                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFEF4444)) {
+                                                Text("READ", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                            }
+                                            Text(if (safetyExpanded) "\u25B2" else "\u25BC", fontSize = 12.sp,
+                                                color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
+                                        }
+                                        if (safetyExpanded) {
+                                            HorizontalDivider(color = if (isDark) Color(0xFFFDE68A).copy(alpha = 0.2f) else Color(0xFFD97706).copy(alpha = 0.2f))
+                                            val safetyEmojiTips = listOf(
+                                                "\uD83D\uDC6B" to "Meet in a public place for exchanges",
+                                                "\uD83D\uDD0D" to "Inspect the item thoroughly before paying",
+                                                "\uD83D\uDCB3" to "Use secure payment methods only",
+                                                "\uD83D\uDD12" to "Don't share personal financial info",
+                                                "\uD83D\uDCCD" to "Verify the listing ID with the seller",
+                                            )
+                                            safetyEmojiTips.forEach { (emoji, tip) ->
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    Text(emoji, fontSize = 14.sp)
+                                                    Text(tip, fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
+                                                }
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (isDark) Color(0xFFEF4444).copy(alpha = 0.15f) else Color(0xFFFEE2E2),
+                                                modifier = Modifier.fillMaxWidth(),
                                             ) {
-                                                Text(emoji, fontSize = 18.sp)
-                                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF4ADE80) else Color(0xFF065F46), lineHeight = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Text("\uD83D\uDEE1\uFE0F", fontSize = 14.sp)
+                                                    Text("Stay safe! MHub will never ask for your password or OTP.",
+                                                        fontSize = 11.sp, color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF991B1B))
+                                                }
                                             }
                                         }
                                     }
                                 }
 
+                                // Safety at a Glance (3 highlighted tiles)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val safetyItems = listOf(
+                                "🤝" to "Public Meetup",
+                                "💰" to "No Pre-payment",
+                                "🔍" to "Verify Listing ID",
+                            )
+                            safetyItems.forEach { (emoji, label) ->
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isDark) Color(0xFF064E3B).copy(alpha = 0.6f) else Color(0xFFECFDF5),
+                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF10B981).copy(alpha = 0.5f) else Color(0xFF6EE7B7)),
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Text(emoji, fontSize = 22.sp)
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(label, fontSize = 11.sp, color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF065F46), fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                                    }
+                                }
+                            }
+                        }
                             }
                         }
                         item(key = "sec_similar") {
@@ -1263,13 +1180,13 @@ fun PostDetailScreen(
                                     }
                                 }
 
-                                // Sponsored / Premium Recommendations
+                                // \u2B50 Recommended For You — Boosted & Premium Posts
                                 state.similarPosts.takeIf { it.size > 1 }?.let { sponsored ->
                                     Spacer(Modifier.height(8.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(stringResource(R.string.detail_recommended), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                                        Text("\u2B50 Recommended For You", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
                                         Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
-                                            Text(stringResource(R.string.detail_sponsored), fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            Text("SPONSORED", fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
                                     }
@@ -1345,45 +1262,8 @@ fun PostDetailScreen(
                                             }
                                         }
                                     }
-                                    // Seller stats grid — web parity (Completed sales, Response rate, Member since)
-                                    val sellerStats = buildList {
-                                        post.completedSales?.let { add("✅ Sales" to "$it") }
-                                        post.responseRate?.let { add("⚡ Response" to "$it%") }
-                                        post.memberSince?.take(7)?.let { add("🗓 Member" to it) }
-                                    }
-                                    if (sellerStats.isNotEmpty()) {
-                                        Row(
-                                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceEvenly,
-                                        ) {
-                                            sellerStats.forEach { (label, value) ->
-                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                    Text(value, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                                    Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    // Visit Seller's Farm Page — web parity
-                                    Surface(
-                                        onClick = { post.userId?.let { uid -> onOpenCentre(uid) } },
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = Color(0xFF7C3AED),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        ) {
-                                            Text("🌾", fontSize = 20.sp)
-                                            Column(Modifier.weight(1f)) {
-                                                Text("Visit Seller's Farm Page", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
-                                                Text("Browse all listings by $it", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                                            }
-                                            Icon(Icons.Default.ChevronRight, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                        }
-                                    }
+
+
                                 }
                             }
                         }

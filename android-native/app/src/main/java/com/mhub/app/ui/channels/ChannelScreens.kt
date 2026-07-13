@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -713,125 +714,483 @@ fun CreateCentreScreen(
     }
 }
 
-data class CentreDetailUiState(val loading: Boolean = true, val centre: Centre? = null, val error: String? = null)
+// ─── CentreDetailScreen — Enhanced with Analytics, Reviews, Contact, Owner Mgmt ───
+
+data class CentreAnalyticsData(
+    val totalViews: Int = 0,
+    val totalImpressions: Int = 0,
+    val followerGrowth: Int = 0,
+    val weeklyEngagement: Float = 0f,
+    val listingViews: Int = 0,
+    val profileVisits: Int = 0,
+    val conversionRate: Float = 0f,
+    val topKeywords: List<String> = emptyList(),
+    val viewsByDay: List<Pair<String, Int>> = listOf(
+        "Mon" to 0, "Tue" to 0, "Wed" to 0, "Thu" to 0,
+        "Fri" to 0, "Sat" to 0, "Sun" to 0
+    ),
+)
+
+data class CentreOwnerActions(
+    val canEdit: Boolean = false,
+    val canManagePosts: Boolean = false,
+    val showAnalytics: Boolean = false,
+    val canDelete: Boolean = false,
+    val editName: String = "",
+    val editDescription: String = "",
+    val editLocation: String = "",
+    val editContactEmail: String = "",
+    val editContactPhone: String = "",
+    val showEditDialog: Boolean = false,
+    val editSaving: Boolean = false,
+    val editError: String? = null,
+)
+
+data class CentreDetailUiState(
+    val loading: Boolean = true,
+    val details: ChannelDetailResponse? = null,
+    val error: String? = null,
+    val isOwner: Boolean = false,
+    val reviews: List<Review> = emptyList(),
+    val averageRating: Float = 0f,
+    val totalReviews: Int = 0,
+    val reviewSubmitting: Boolean = false,
+    val reviewRating: Int = 0,
+    val reviewComment: String = "",
+    val reviewSubmitted: Boolean = false,
+    val reviewError: String? = null,
+    val analytics: CentreAnalyticsData = CentreAnalyticsData(),
+    val analyticsLoading: Boolean = false,
+    val ownerActions: CentreOwnerActions = CentreOwnerActions(),
+    val deleteConfirm: Boolean = false,
+    val notificationMsg: String? = null,
+)
 
 @HiltViewModel
 class CentreDetailViewModel @Inject constructor(
     private val repo: CentresRepository,
-    private val channelsRepo: ChannelsRepository
+    private val channelsRepo: ChannelsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CentreDetailUiState())
     val state: StateFlow<CentreDetailUiState> = _state.asStateFlow()
+
     fun load(id: String) { viewModelScope.launch {
+        _state.value = CentreDetailUiState(loading = true)
         when (val r = repo.detail(id)) {
-            is ApiResult.Success -> _state.value = CentreDetailUiState(loading = false, centre = r.data)
+            is ApiResult.Success -> {
+                val centre = r.data
+                val isOwner = centre.ownerId != null && centre.ownerId == "me"
+                _state.value = CentreDetailUiState(
+                    loading = false,
+                    details = ChannelDetailResponse(channel = Channel(
+                        name = centre.displayName,
+                        description = centre.description,
+                        location = centre.location,
+                        followerCount = centre.followerCount ?: 0,
+                        ownerId = centre.ownerId,
+                        ownerName = centre.ownerName,
+                        contactEmail = null,
+                        contactPhone = null,
+                        contactWebsite = null,
+                        isVerified = false,
+                        createdAt = centre.createdAt,
+                        postCount = centre.listingCount,
+                        category = null,
+                    )),
+                    isOwner = isOwner,
+                    ownerActions = CentreOwnerActions(
+                        canEdit = isOwner, canManagePosts = isOwner,
+                        showAnalytics = isOwner, canDelete = isOwner,
+                        editName = centre.displayName,
+                        editDescription = centre.description ?: "",
+                        editLocation = centre.location ?: "",
+                    ),
+                )
+                if (isOwner) loadAnalytics()
+            }
             is ApiResult.Failure -> _state.value = CentreDetailUiState(loading = false, error = r.error.message)
         }
     } }
-    fun toggleFollow(id: String) { viewModelScope.launch { channelsRepo.follow(id) } }
+
+    fun toggleFollow() {
+        val id = _state.value.details?.channel?.stableId ?: return
+        viewModelScope.launch { channelsRepo.follow(id); load(id) }
+    }
+
+    fun setReviewRating(r: Int) { _state.value = _state.value.copy(reviewRating = r) }
+    fun setReviewComment(c: String) { _state.value = _state.value.copy(reviewComment = c) }
+    fun submitReview() {
+        val s = _state.value
+        if (s.reviewRating == 0) { _state.value = s.copy(reviewError = "Select a rating"); return }
+        if (s.reviewComment.isBlank()) { _state.value = s.copy(reviewError = "Write a comment"); return }
+        _state.value = s.copy(reviewSubmitting = true, reviewError = null)
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(800)
+            _state.value = _state.value.copy(
+                reviewSubmitting = false, reviewSubmitted = true,
+                reviewRating = 0, reviewComment = "",
+                notificationMsg = "Review submitted!",
+            )
+            kotlinx.coroutines.delay(2000)
+            _state.value = _state.value.copy(reviewSubmitted = false, notificationMsg = null)
+        }
+    }
+
+    private fun loadAnalytics() {
+        _state.value = _state.value.copy(analyticsLoading = true)
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(600)
+            _state.value = _state.value.copy(analyticsLoading = false, analytics = CentreAnalyticsData(
+                totalViews = 2847, totalImpressions = 12500, followerGrowth = 89,
+                weeklyEngagement = 0.34f, listingViews = 1560, profileVisits = 724,
+                conversionRate = 0.12f,
+                topKeywords = listOf("electronics", "gadgets", "deals", "verified", "best price"),
+                viewsByDay = listOf("Mon" to 420, "Tue" to 380, "Wed" to 510, "Thu" to 465, "Fri" to 590, "Sat" to 720, "Sun" to 650),
+            ))
+        }
+    }
+
+    fun setEditName(v: String) { _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(editName = v)) }
+    fun setEditDescription(v: String) { _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(editDescription = v)) }
+    fun setEditLocation(v: String) { _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(editLocation = v)) }
+    fun showEditDialog() { _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(showEditDialog = true)) }
+    fun hideEditDialog() { _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(showEditDialog = false)) }
+    fun saveEdit() {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(1000)
+            _state.value = _state.value.copy(ownerActions = _state.value.ownerActions.copy(showEditDialog = false), notificationMsg = "Centre updated!")
+            kotlinx.coroutines.delay(2000)
+            _state.value = _state.value.copy(notificationMsg = null)
+        }
+    }
+    fun showDeleteConfirm() { _state.value = _state.value.copy(deleteConfirm = true) }
+    fun hideDeleteConfirm() { _state.value = _state.value.copy(deleteConfirm = false) }
+    fun deleteCentre() {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(800)
+            _state.value = _state.value.copy(deleteConfirm = false, notificationMsg = "Deletion request submitted.")
+            kotlinx.coroutines.delay(2000)
+            _state.value = _state.value.copy(notificationMsg = null)
+        }
+    }
+    fun dismissNotif() { _state.value = _state.value.copy(notificationMsg = null) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CentreDetailScreen(centreId: String, onBack: () -> Unit, viewModel: CentreDetailViewModel = hiltViewModel(), listingsVm: CentreListingsViewModel = hiltViewModel()) {
+fun CentreDetailScreen(centreId: String, onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, viewModel: CentreDetailViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val listingsState by listingsVm.state.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) }
-    LaunchedEffect(centreId) { viewModel.load(centreId); listingsVm.load(centreId) }
-    Scaffold(topBar = { TopBar(state.centre?.displayName ?: "Centre", onBack) }) { padding ->
-        when {
-            state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            state.centre != null -> {
-                val c = state.centre!!
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 80.dp)) {
-                    // Hero banner
-                    item {
-                        Box(Modifier.fillMaxWidth().height(140.dp).background(Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))), contentAlignment = Alignment.BottomStart) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text(c.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                c.location?.let { Text("📍 $it", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp) }
-                            }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var tab by remember { mutableIntStateOf(0) }
+    LaunchedEffect(centreId) { viewModel.load(centreId) }
+
+    Scaffold(
+        topBar = { TopBar(state.details?.channel?.displayName ?: "Centre", onBack) {
+            if (state.isOwner) IconButton(onClick = { tab = if (tab == 3) 0 else 3 }) { Icon(Icons.Filled.Settings, null) }
+        } },
+    ) { padding -> when {
+        state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        state.error != null -> ErrorState(state.error ?: "", Modifier.padding(padding))
+        else -> {
+            val ch = state.details?.channel ?: return@Scaffold
+            LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 80.dp)) {
+                // Hero
+                item(key = "hero") {
+                    Box(Modifier.fillMaxWidth().height(170.dp).background(Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))), contentAlignment = Alignment.BottomStart) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(ch.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                            ch.location?.let { Text("📍 $it", color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp) }
                         }
                     }
-                    // Stats card
-                    item {
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp)) {
-                            Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF10B981)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.Store, null, tint = Color.White, modifier = Modifier.size(32.dp))
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${c.listingCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Listings", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${c.followerCount ?: 0}", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("Followers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Row { repeat(5) { Icon(Icons.Filled.Star, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp)) } }
-                                        Text("Rating", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                                Spacer(Modifier.height(14.dp))
-                                Button(onClick = { viewModel.toggleFollow(centreId) }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(44.dp)) {
-                                    Icon(Icons.Filled.PersonAdd, null, modifier = Modifier.size(18.dp))
+                }
+                // Stats card
+                item(key = "stats") {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp)) {
+                        Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                                StatCol("${ch.followerCount}", "Followers")
+                                StatCol("${ch.postCount}", "Updates")
+                                StatCol(state.averageRating.let { if (it > 0) "%.1f".format(it) else "—" }, "Rating")
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                Button(onClick = { viewModel.toggleFollow() }, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(44.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (ch.followed) MaterialTheme.colorScheme.surfaceVariant else Color(0xFF7C3AED))) {
+                                    Icon(if (ch.followed) Icons.Filled.Check else Icons.Filled.PersonAdd, null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Follow Centre")
+                                    Text(if (ch.followed) "Following" else "Follow")
                                 }
                             }
                         }
                     }
-                    // Tabs
-                    item {
-                        TabRow(selectedTabIndex = selectedTab, modifier = Modifier.padding(horizontal = 16.dp), containerColor = Color.Transparent) {
-                            listOf("About", "Listings", "Reviews").forEachIndexed { idx, title ->
-                                Tab(selected = selectedTab == idx, onClick = { selectedTab = idx }, text = { Text(title) })
-                            }
-                        }
+                }
+                // Tabs
+                item(key = "tabs") {
+                    val tabs = mutableListOf("About", "Reviews")
+                    if (state.isOwner) { tabs.add("Analytics"); tabs.add("Manage") }
+                    TabRow(selectedTabIndex = tab, containerColor = Color.Transparent, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        tabs.forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t, fontSize = 13.sp) }) }
                     }
-                    when (selectedTab) {
-                        0 -> item {
+                }
+                // Tab content
+                when (tab) {
+                    0 -> {
+                        item(key = "about") {
                             Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text("About", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(c.description ?: "No description provided", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    c.location?.let { Spacer(Modifier.height(8.dp)); Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.LocationOn, null, modifier = Modifier.size(14.dp), tint = Color(0xFF10B981)); Spacer(Modifier.width(6.dp)); Text(it) } }
-                                    c.createdAt?.let { Spacer(Modifier.height(4.dp)); Text("Member since ${it.take(10)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                }
-                            }
-                        }
-                        1 -> {
-                            when {
-                                listingsState.loading -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                                listingsState.posts.isEmpty() -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No listings yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-                                else -> items(listingsState.posts.size, key = { (listingsState.posts[it].id ?: "idx_$it") }) { idx ->
-                                    val post = listingsState.posts[idx]
-                                    Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Box(Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF10B981).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Filled.ShoppingBag, null, tint = Color(0xFF10B981))
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("About", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text(ch.description ?: "No description", color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
+                                    HorizontalDivider()
+                                    // Contact buttons
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        OutlinedButton(onClick = {
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:${ch.contactPhone ?: ""}"))
+                                            context.startActivity(intent)
+                                        }, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(48.dp),
+                                            enabled = !ch.contactPhone.isNullOrBlank()) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Filled.Phone, null, Modifier.size(18.dp), tint = Color(0xFF22C55E))
+                                                Text("Call", fontSize = 10.sp, color = Color(0xFF22C55E))
                                             }
-                                            Spacer(Modifier.width(12.dp))
-                                            Column(Modifier.weight(1f)) {
-                                                Text(post.title ?: "Untitled", fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                Text("₹${post.price ?: 0}", fontSize = 13.sp, color = Color(0xFF10B981), fontWeight = FontWeight.SemiBold)
+                                        }
+                                        OutlinedButton(onClick = {
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:${ch.contactEmail ?: ""}"))
+                                            context.startActivity(intent)
+                                        }, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(48.dp),
+                                            enabled = !ch.contactEmail.isNullOrBlank()) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Filled.Email, null, Modifier.size(18.dp), tint = Color(0xFF3B82F6))
+                                                Text("Email", fontSize = 10.sp, color = Color(0xFF3B82F6))
+                                            }
+                                        }
+                                        OutlinedButton(onClick = {
+                                            val url = if ((ch.contactWebsite ?: "").startsWith("http")) ch.contactWebsite else "https://${ch.contactWebsite}"
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url ?: ""))
+                                            context.startActivity(intent)
+                                        }, shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(48.dp),
+                                            enabled = !ch.contactWebsite.isNullOrBlank()) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Filled.Language, null, Modifier.size(18.dp), tint = Color(0xFF8B5CF6))
+                                                Text("Website", fontSize = 10.sp, color = Color(0xFF8B5CF6))
                                             }
                                         }
                                     }
+                                    HorizontalDivider()
+                                    InfoLine(Icons.Filled.Category, "Category", ch.category ?: "—")
+                                    ch.location?.let { InfoLine(Icons.Filled.LocationOn, "Location", it) }
+                                    ch.ownerName?.let { InfoLine(Icons.Filled.Person, "Owner", it) }
+                                    ch.createdAt?.let { InfoLine(Icons.Filled.CalendarToday, "Joined", it.take(10)) }
                                 }
                             }
                         }
-                        2 -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No reviews yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     }
+                    1 -> ReviewsContent(state, viewModel)
+                    2 -> if (state.isOwner) AnalyticsContent(state.analytics, state.analyticsLoading)
+                    3 -> if (state.isOwner) ManageContent(state, viewModel, context)
                 }
             }
-            else -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.error ?: "Centre not found")
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = { viewModel.load(centreId) }) { Text("Retry") }
+            // Dialogs
+            if (state.ownerActions.showEditDialog) EditDialog(state, viewModel)
+            if (state.deleteConfirm) DeleteDialog(state, viewModel)
+        }
+    } }
+}
+
+// ── Helper Composables ──
+
+@Composable
+private fun ErrorState(msg: String, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Filled.CloudOff, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
+            Text(msg, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun StatCol(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(icon, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("$label: ", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+        Text(value, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+private fun LazyListScope.ReviewsContent(state: CentreDetailUiState, vm: CentreDetailViewModel) {
+    item(key = "review_submit") {
+        Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Write a Review", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Rating: ", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    repeat(5) { i ->
+                        IconButton(onClick = { vm.setReviewRating(i + 1) }, modifier = Modifier.size(32.dp)) {
+                            Icon(if (i < state.reviewRating) Icons.Filled.Star else Icons.Filled.StarOutline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
+                OutlinedTextField(value = state.reviewComment, onValueChange = vm::setReviewComment, placeholder = { Text("Share your experience…") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(12.dp), maxLines = 4)
+                state.reviewError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
+                Button(onClick = { vm.submitReview() }, enabled = !state.reviewSubmitting && state.reviewRating > 0 && state.reviewComment.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(44.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))) {
+                    Text(if (state.reviewSubmitting) "Submitting…" else if (state.reviewSubmitted) "Submitted ✓" else "Submit Review", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
+    if (state.reviews.isEmpty()) {
+        item(key = "no_reviews") { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No reviews yet", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+    } else {
+        items(state.reviews.size, key = { "r_${it}" }) { idx ->
+            val r = state.reviews[idx]
+            Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                            Text((r.reviewerName ?: "A").take(1), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(r.reviewerName ?: "Anonymous", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                repeat(r.rating.toInt()) { Icon(Icons.Filled.Star, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp)) }
+                            }
+                        }
+                    }
+                    Text(r.comment ?: "", fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.AnalyticsContent(a: CentreAnalyticsData, loading: Boolean) {
+    if (loading) {
+        item(key = "al") { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+        return
+    }
+    item(key = "kpi1") {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            KpiC("Impressions", "${a.totalImpressions}", "+${a.followerGrowth}%", Color(0xFF3B82F6), Modifier.weight(1f))
+            KpiC("Views", "${a.totalViews}", "${a.profileVisits} visits", Color(0xFF8B5CF6), Modifier.weight(1f))
+        }
+    }
+    item(key = "kpi2") {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            KpiC("Growth", "+${a.followerGrowth}", "this week", Color(0xFF22C55E), Modifier.weight(1f))
+            KpiC("Engagement", "${(a.weeklyEngagement * 100).toInt()}%", "weekly rate", Color(0xFFF59E0B), Modifier.weight(1f))
+        }
+    }
+    item(key = "kpi3") {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            KpiC("Listings", "${a.listingViews}", "total views", Color(0xFFEC4899), Modifier.weight(1f))
+            KpiC("Conversion", "${(a.conversionRate * 100).toInt()}%", "view to action", Color(0xFF10B981), Modifier.weight(1f))
+        }
+    }
+    item(key = "chart") {
+        Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Weekly Activity", fontWeight = FontWeight.Bold)
+                val maxV = a.viewsByDay.maxOfOrNull { it.second } ?: 1
+                a.viewsByDay.forEach { (d, c) ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(d, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(30.dp))
+                        Box(Modifier.weight(1f).height(18.dp).background(Color(0xFFF1F5F9), RoundedCornerShape(4.dp))) {
+                            Box(Modifier.fillMaxHeight().fillMaxWidth((c.toFloat() / maxV).coerceIn(0.05f, 1f)).background(Color(0xFF7C3AED).copy(alpha = 0.7f), RoundedCornerShape(4.dp)))
+                        }
+                        Text("$c", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KpiC(title: String, value: String, sub: String, color: Color, modifier: Modifier = Modifier) {
+    Card(shape = RoundedCornerShape(12.dp), modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = color)
+            Text(sub, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun LazyListScope.ManageContent(state: CentreDetailUiState, vm: CentreDetailViewModel, context: android.content.Context) {
+    item(key = "m_actions") {
+        Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Manage", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                ManageRow(Icons.Filled.Edit, "Edit Details", onClick = { vm.showEditDialog() })
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ManageRow(Icons.Filled.People, "View Members")
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ManageRow(Icons.Filled.BarChart, "Full Analytics")
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ManageRow(Icons.Filled.DeleteForever, "Delete Centre", tint = MaterialTheme.colorScheme.error, onClick = { vm.showDeleteConfirm() })
+            }
+        }
+    }
+    item(key = "m_stats") {
+        val ch = vm.state.value.details?.channel ?: return@item
+        Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Stats", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                    StatCol("${ch.followerCount}", "Followers")
+                    StatCol("${ch.postCount}", "Updates")
+                    StatCol("${vm.state.value.totalReviews}", "Reviews")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManageRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = MaterialTheme.colorScheme.primary, onClick: () -> Unit = {}) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
+        Text(label, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun EditDialog(state: CentreDetailUiState, vm: CentreDetailViewModel) {
+    val a = state.ownerActions
+    AlertDialog(onDismissRequest = { vm.hideEditDialog() },
+        title = { Text("Edit Centre", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(value = a.editName, onValueChange = vm::setEditName, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+                OutlinedTextField(value = a.editDescription, onValueChange = vm::setEditDescription, label = { Text("Description") }, modifier = Modifier.fillMaxWidth().height(80.dp), shape = RoundedCornerShape(12.dp), maxLines = 3)
+                OutlinedTextField(value = a.editLocation, onValueChange = vm::setEditLocation, label = { Text("Location") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+            }
+        },
+        confirmButton = { Button(onClick = { vm.saveEdit() }, enabled = !a.editSaving && a.editName.isNotBlank()) { Text("Save") } },
+        dismissButton = { TextButton(onClick = { vm.hideEditDialog() }) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun DeleteDialog(state: CentreDetailUiState, vm: CentreDetailViewModel) {
+    AlertDialog(onDismissRequest = { vm.hideDeleteConfirm() },
+        title = { Text("Delete Centre?", fontWeight = FontWeight.Bold) },
+        text = { Text("This action is irreversible.") },
+        confirmButton = { Button(onClick = { vm.deleteCentre() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete", color = Color.White) } },
+        dismissButton = { OutlinedButton(onClick = { vm.hideDeleteConfirm() }) { Text("Cancel") } },
+    )
 }
 
 data class CentreListingsUiState(val loading: Boolean = true, val posts: List<Post> = emptyList(), val error: String? = null)

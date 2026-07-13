@@ -311,12 +311,8 @@ fun CategoryAppShell(
                     onSignedOut = { /* handled by root */ },
                     onOpenSettings = { },
                     onOpenMyPosts = { },
-                    onOpenKyc = { },
-                    onOpenChat = { },
                     onOpenNotifications = onOpenNotifications,
                     onOpenSecurity = { },
-                    onOpenDashboard = { },
-                    onOpenAnalytics = { },
                     onOpenAccountDelete = { },
                 )
             }

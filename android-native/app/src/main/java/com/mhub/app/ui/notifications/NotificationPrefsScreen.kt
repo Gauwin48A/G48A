@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -36,7 +35,6 @@ data class NotifPrefsState(
     val pushEnabled: Boolean = true,
     val emailEnabled: Boolean = true,
     val smsEnabled: Boolean = false,
-    val chat: Boolean = true,
     val offers: Boolean = true,
     val priceDrops: Boolean = true,
     val sales: Boolean = true,
@@ -62,7 +60,6 @@ class NotifPrefsViewModel @Inject constructor(
                     pushEnabled = r.data.pushEnabled,
                     emailEnabled = r.data.emailEnabled,
                     smsEnabled = r.data.smsEnabled,
-                    chat = r.data.chat,
                     offers = r.data.offers,
                     priceDrops = r.data.priceDrops,
                     sales = r.data.sales,
@@ -80,7 +77,6 @@ class NotifPrefsViewModel @Inject constructor(
             "push"      -> s.copy(pushEnabled = !s.pushEnabled)
             "email"     -> s.copy(emailEnabled = !s.emailEnabled)
             "sms"       -> s.copy(smsEnabled = !s.smsEnabled)
-            "chat"      -> s.copy(chat = !s.chat)
             "offers"    -> s.copy(offers = !s.offers)
             "priceDrops"-> s.copy(priceDrops = !s.priceDrops)
             "sales"     -> s.copy(sales = !s.sales)
@@ -98,7 +94,6 @@ class NotifPrefsViewModel @Inject constructor(
                 pushEnabled = s.pushEnabled,
                 emailEnabled = s.emailEnabled,
                 smsEnabled = s.smsEnabled,
-                chat = s.chat,
                 offers = s.offers,
                 priceDrops = s.priceDrops,
                 sales = s.sales,
@@ -136,7 +131,6 @@ fun NotificationPrefsScreen(
                 Text("Choose which notifications you'd like to receive", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
 
-                NotifToggleRow(icon = Icons.AutoMirrored.Filled.Chat, title = "Chat Messages", subtitle = "New messages from buyers and sellers", checked = state.chat) { viewModel.toggle("chat") }
                 NotifToggleRow(icon = Icons.Filled.LocalOffer, title = "Offers & Negotiations", subtitle = "New offers, counter-offers, and acceptances", checked = state.offers) { viewModel.toggle("offers") }
                 NotifToggleRow(icon = Icons.AutoMirrored.Filled.TrendingDown, title = "Price Drops", subtitle = "Price changes on items you're watching", checked = state.priceDrops) { viewModel.toggle("priceDrops") }
                 NotifToggleRow(icon = Icons.Filled.ShoppingCart, title = "Sales & Transactions", subtitle = "Sale confirmations, payments, and deliveries", checked = state.sales) { viewModel.toggle("sales") }

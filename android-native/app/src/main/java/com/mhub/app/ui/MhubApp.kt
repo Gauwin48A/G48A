@@ -110,12 +110,10 @@ import com.mhub.app.ui.channels.ChannelDetailScreen
 import com.mhub.app.ui.channels.ChannelsListScreen
 import com.mhub.app.ui.channels.CreateCentreScreen
 import com.mhub.app.ui.channels.CreateChannelScreen
-import com.mhub.app.ui.chat.ChatScreen
 import com.mhub.app.ui.commerce.BoughtPostsScreen
 import com.mhub.app.ui.commerce.CartScreen
 import com.mhub.app.ui.commerce.CompareScreen
 import com.mhub.app.ui.commerce.EditPostScreen
-import com.mhub.app.ui.commerce.OffersScreen
 import com.mhub.app.ui.commerce.PaymentScreen
 import com.mhub.app.ui.commerce.PostWelcomeScreen
 import com.mhub.app.ui.commerce.RecentlyViewedScreen
@@ -155,7 +153,7 @@ import com.mhub.app.ui.social.FeedDetailScreen
 import com.mhub.app.ui.social.FeedPostAddScreen
 import com.mhub.app.ui.social.MyFeedScreen
 import com.mhub.app.ui.social.PublicWallScreen
-import com.mhub.app.ui.social.ReviewsScreen
+import com.mhub.app.ui.social.RatingsScreen
 import com.mhub.app.ui.theme.MhubTheme
 import com.mhub.app.ui.wishlist.WishlistScreen
 import com.mhub.app.core.ConnectivityObserver
@@ -563,6 +561,7 @@ fun MhubApp(
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
                             onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                            onOpenRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
@@ -619,7 +618,6 @@ fun MhubApp(
                                     }
                                 }
                             },
-                            onOpenMyFeed = { navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
                             isGuest = guestBrowsing && !isAuthenticated,
                             onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                         )
@@ -642,22 +640,7 @@ fun MhubApp(
                 }
 
                 composable(Routes.PROFILE) {
-                    if (!isAuthenticated) {
-                        MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                            com.mhub.app.ui.components.LoginPromptCard(
-                                onSignIn = {
-                                    guestBrowsing = false
-                                    navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
-                                },
-                                onCreateAccount = {
-                                    guestBrowsing = false
-                                    navController.navigate(Routes.SIGNUP) { launchSingleTop = true }
-                                },
-                                modifier = androidx.compose.ui.Modifier.padding(top = 64.dp),
-                            )
-                        }
-                    } else {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                         ProfileScreen(
                             onSignedOut = {
                                 userInitiatedLogout = true
@@ -668,24 +651,14 @@ fun MhubApp(
                             },
                             onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                             onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
-                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
-                            onOpenChat = { navController.navigate(Routes.CHAT) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenSecurity = { navController.navigate(Routes.SECURITY) { launchSingleTop = true } },
-                            onOpenDashboard = { navController.navigate(Routes.DASHBOARD) { launchSingleTop = true } },
-                            onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) { launchSingleTop = true } },
                             onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
-                            onOpenAddresses = {},
-                            onOpenOffers = { navController.navigate(Routes.OFFERS) { launchSingleTop = true } },
-                            onOpenMyFeed = { navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
-                            onOpenReviews = { userId -> navController.navigate(Routes.reviews(userId.ifBlank { "me" })) { launchSingleTop = true } },
-                            onOpenCentre = { navController.navigate(Routes.CHANNELS) { launchSingleTop = true } },
                             onOpenSaleDone = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
                         )
-                    }
                     }
                 }
 
@@ -832,19 +805,7 @@ fun MhubApp(
                 )
             }
 
-            composable(Routes.CHAT) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                            modifier = Modifier.padding(top = 64.dp),
-                        )
-                    } else {
-                        ChatScreen(onBack = { navController.popBackStack() }, onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } })
-                    }
-                }
-            }
+            
 
             composable(Routes.SETTINGS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
@@ -995,19 +956,6 @@ fun MhubApp(
                 }
             }
 
-            composable(Routes.OFFERS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
-                    OffersScreen(onBack = { navController.popBackStack() })
-                    }
-                }
-            }
-
             composable(Routes.PAYMENT) {
                 PaymentScreen(onBack = { navController.popBackStack() })
             }
@@ -1019,13 +967,18 @@ fun MhubApp(
             }
 
             composable(Routes.RECENTLY_VIEWED) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
-                    RecentlyViewedScreen(
-                        { navController.popBackStack() },
-                        { id: String -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                        { id: String -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
-                    )
-                }
+                RecentlyViewedScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                    onOpenFeed = { id -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
+                    onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                    onRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                    currentThemeMode = themeMode,
+                    onToggleTheme = toggleTheme,
+                    onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                )
             }
 
             composable(Routes.SAVED_SEARCHES) {
@@ -1106,11 +1059,11 @@ fun MhubApp(
             }
 
             composable(
-                route = Routes.REVIEWS,
+                route = Routes.RATINGS,
                 arguments = listOf(navArgument("userId") { type = NavType.StringType }),
             ) { entry ->
                 val userId = entry.arguments?.getString("userId").orEmpty()
-                ReviewsScreen(userId = userId, onBack = { navController.popBackStack() })
+                RatingsScreen(userId = userId, onBack = { navController.popBackStack() })
             }
 
             // â”€â”€ Account â”€â”€
@@ -1337,44 +1290,20 @@ fun MhubApp(
                     }
                     MoreScreen(
                         onDismiss = { showMoreDrawer = false },
-                        onOpenNotifications = { drawerNav(Routes.NOTIFICATIONS) },
                         onOpenWishlist = { drawerNav(Routes.WISHLIST) },
-                        onOpenSearch = { drawerNav(Routes.SEARCH) },
-                        onOpenCategories = { drawerNav(Routes.CATEGORIES) },
                         onOpenCreatePost = { drawerNav(Routes.POST_WELCOME) },
-                        onOpenChat = { drawerNav(Routes.CHAT) },
                         onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenSettings = { drawerNav(Routes.SETTINGS) },
-                        onOpenForYou = { drawerNav(Routes.FOR_YOU) },
-                        onOpenRewards = { drawerNav(Routes.REWARDS) },
-                        onOpenOffers = { drawerNav(Routes.OFFERS) },
-                        onOpenDashboard = { drawerNav(Routes.DASHBOARD) },
-                        onOpenBought = { drawerNav(Routes.BOUGHT_POSTS) },
-                        onOpenSold = { drawerNav(Routes.SOLD_POSTS) },
+                        onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
+                        onOpenMyHome = { drawerNav(Routes.MY_HOME) },
                         onOpenSaleDone = { drawerNav(Routes.SALE_DONE) },
                         onOpenSaleUndone = { drawerNav(Routes.SALE_UNDONE) },
-                        onOpenAllPosts = { drawerNav(Routes.ALL_POSTS) },
-                        onOpenFollowing = { drawerNav(Routes.PROFILE) },
-                        onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
-                        onOpenCart = { drawerNav(Routes.CART) },
-                        onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
-                        onOpenCentre = { drawerNav(Routes.CHANNELS) },
-                        onOpenCategoryMode = { drawerNav(Routes.CATEGORY_MODE) },
-                        onOpenSavedSearches = { drawerNav(Routes.SAVED_SEARCHES) },
-                        onOpenRecentlyViewed = { drawerNav(Routes.RECENTLY_VIEWED) },
-                        onOpenCompare = { drawerNav(Routes.COMPARE) },
-                        onOpenMyHome = { drawerNav(Routes.MY_HOME) },
-                        onOpenFeed = { drawerNav(Routes.FEED) },
                         onOpenPublicWall = { drawerNav(Routes.PUBLIC_WALL) },
-                        onOpenMyReviews = { drawerNav(Routes.reviews("me")) },
                         onOpenFeedback = { drawerNav(Routes.FEEDBACK) },
                         onOpenComplaints = { drawerNav(Routes.COMPLAINTS) },
                         onOpenProfile = { drawerNav(Routes.PROFILE) },
-                        onOpenVerification = { drawerNav(Routes.VERIFICATION) },
-                        onOpenSecurity = { drawerNav(Routes.SECURITY) },
-                        onOpenAccountDelete = { drawerNav(Routes.ACCOUNT_DELETE) },
                         onOpenAdminPanel = { drawerNav(Routes.ADMIN_PANEL) },
-                        onOpenSubcategories = { drawerNav(Routes.SUBCATEGORIES) },
+                        onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
@@ -1456,6 +1385,7 @@ fun MainShell(
                     onToggleTheme = themeCtl.onToggleTheme,
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                    onRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
                 )
                 }
             },
@@ -1530,7 +1460,7 @@ fun MainShell(
                             }
                         }
                         // Right cluster: Feed, Rewards, Profile, More
-                        listOf(BottomTab.FEED, BottomTab.REWARDS, BottomTab.PROFILE).forEach { tab ->
+                        listOf(BottomTab.FEED, BottomTab.PROFILE).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,
@@ -1638,14 +1568,7 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
             val id = segments.getOrNull(1) ?: return
             navController.navigate("${Routes.POST_DETAIL}/$id")
         }
-        "chat", "messages" -> {
-            val conversationId = segments.getOrNull(1)
-            if (conversationId != null) {
-                navController.navigate(Routes.chatConversation(conversationId)) { launchSingleTop = true }
-            } else {
-                navController.navigate(Routes.CHAT) { launchSingleTop = true }
-            }
-        }
+
         "search" -> navController.navigate(Routes.SEARCH) { launchSingleTop = true }
         "create-post", "sell" -> navController.navigate(Routes.CREATE_POST) { launchSingleTop = true }
         "profile" -> {

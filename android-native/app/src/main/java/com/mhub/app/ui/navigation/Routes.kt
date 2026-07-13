@@ -43,15 +43,12 @@ object Routes {
     const val TIER_SELECTION = "tier-selection"
     const val KYC = "kyc"
     const val SETTINGS = "settings"
-    const val CHAT = "chat"
-
     // Commerce
     const val BOUGHT_POSTS = "bought-posts"
     const val SOLD_POSTS = "sold-posts"
     const val BUYER_VIEW = "buyer-view"
     const val SALE_DONE = "saledone"
     const val SALE_UNDONE = "saleundone"
-    const val OFFERS = "offers"
     const val PAYMENT = "payment"
     const val CART = "cart"
     const val RECENTLY_VIEWED = "recently-viewed"
@@ -70,8 +67,9 @@ object Routes {
     const val PUBLIC_WALL = "public-wall"
     const val COMPLAINTS = "complaints"
     const val FEEDBACK = "feedback"
-    const val REVIEWS = "reviews/{userId}"
-    fun reviews(userId: String): String = "reviews/$userId"
+    // Ratings are now based on seller-buyer trust score (not user reviews)
+    const val RATINGS = "ratings/{userId}"
+    fun ratings(userId: String): String = "ratings/$userId"
 
     // Account
     const val SECURITY = "security"
@@ -110,8 +108,7 @@ object Routes {
     // Deep-link-only routes (no dedicated screen, but routing is handled)
     const val PROFILE_USER = "profile/{userId}"
     fun profileForUser(userId: String): String = "profile/$userId"
-    const val CHAT_CONVERSATION = "chat/{conversationId}"
-    fun chatConversation(id: String): String = "chat/$id"
+
 
     // ── Category App Shell routes (prefixed with category key) ──────────────
     const val CATEGORY_HOME       = "cat/{catKey}/home"

@@ -4,7 +4,6 @@ package com.mhub.app.ui.feed
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -37,7 +36,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -83,7 +81,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -695,7 +692,7 @@ private fun FeedCard(
 ) {
     var localLiked by remember(isLiked) { mutableStateOf(isLiked) }
     var showFullDescription by remember { mutableStateOf(false) }
-    var showInlineComments by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
@@ -941,64 +938,7 @@ private fun FeedCard(
                     }
                 }
             }
-            // Inline comments expand
-            if (post.commentCount > 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showInlineComments = !showInlineComments }
-                        .padding(horizontal = cardPadding, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.Chat, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        "${post.commentCount} comment${if (post.commentCount != 1) "s" else ""}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Icon(
-                        if (showInlineComments) Icons.Default.ArrowDropDown else Icons.Default.ArrowDropDown,
-                        null,
-                        modifier = Modifier.size(16.dp).graphicsLayer(rotationZ = if (showInlineComments) 180f else 0f),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                AnimatedVisibility(visible = showInlineComments) {
-                    val mockComments = remember(post.stableId) {
-                        listOf(
-                            "Great listing! 👍" to "User_A",
-                            "Is this still available?" to "User_B",
-                            "Amazing price 💰" to "User_C",
-                        ).take(minOf(post.commentCount, 3))
-                    }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = cardPadding, vertical = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        mockComments.forEach { (text, user) ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                                Box(
-                                    modifier = Modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(user.take(1), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                }
-                                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                                    Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                                        Text(user, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                                        Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+
         }
     }
 }

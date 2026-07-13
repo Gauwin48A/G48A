@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
@@ -94,6 +95,7 @@ fun MhubTopBar(
     onToggleTheme: () -> Unit = {},
     onNotifications: () -> Unit = {},
     onCart: () -> Unit = {},
+    onRewards: () -> Unit = {},
     onFilter: () -> Unit = {},
     activeFilterCount: Int = 0,
     unreadNotifCount: Int = 0,
@@ -147,6 +149,16 @@ fun MhubTopBar(
 
             // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Rewards (trophy icon — prominent, moved from bottom nav)
+                IconButton(onClick = onRewards, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.EmojiEvents,
+                        contentDescription = "Rewards",
+                        tint = Color(0xFFFCD34D),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
                 // Notifications with badge (high-value: badge shows unread count)
                 BadgedBox(badge = { if (unreadNotifCount > 0) Badge(containerColor = Color(0xFFEF4444)) { Text(if (unreadNotifCount > 99) "99+" else "$unreadNotifCount", color = Color.White, fontSize = 9.sp) } }) {
                     IconButton(onClick = onNotifications, modifier = Modifier.size(36.dp)) {

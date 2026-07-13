@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.animation.AnimatedVisibility
@@ -116,44 +117,20 @@ private data class MenuRow(
 @Composable
 fun MoreScreen(
     onDismiss: () -> Unit = {},
-    onOpenNotifications: () -> Unit,
     onOpenWishlist: () -> Unit,
-    onOpenSearch: () -> Unit,
-    onOpenCategories: () -> Unit,
     onOpenCreatePost: () -> Unit,
-    onOpenChat: () -> Unit,
     onOpenKyc: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenForYou: () -> Unit,
-    onOpenRewards: () -> Unit,
-    onOpenOffers: () -> Unit = {},
-    onOpenDashboard: () -> Unit = {},
-    onOpenCart: () -> Unit = {},
     onOpenTierSelection: () -> Unit = {},
-    onOpenCentre: () -> Unit = {},
-    onOpenCategoryMode: () -> Unit = {},
-    onOpenSavedSearches: () -> Unit = {},
-    onOpenRecentlyViewed: () -> Unit = {},
-    onOpenCompare: () -> Unit = {},
     onOpenMyHome: () -> Unit = {},
-    onOpenFeed: () -> Unit = {},
+    onOpenSaleDone: () -> Unit = {},
+    onOpenSaleUndone: () -> Unit = {},
     onOpenPublicWall: () -> Unit = {},
-    onOpenMyReviews: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
     onOpenComplaints: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
-    onOpenVerification: () -> Unit = {},
-    onOpenSecurity: () -> Unit = {},
-    onOpenAccountDelete: () -> Unit = {},
     onOpenAdminPanel: () -> Unit = {},
-    onOpenBought: () -> Unit = {},
-    onOpenSold: () -> Unit = {},
-    onOpenSaleDone: () -> Unit = {},
-    onOpenSaleUndone: () -> Unit = {},
-    onOpenAllPosts: () -> Unit = {},
-    onOpenFollowing: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
-    onOpenSubcategories: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenMyFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -183,11 +160,10 @@ fun MoreScreen(
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
-    // ── ACCOUNT section: focused — Dashboard/Security/DeleteAccount collapsed to Settings
+    // ── ACCOUNT section: focused — Profile, Verification, KYC
     val accountRows = buildList {
         add(MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile))
-        add(MenuRow("Rewards", "Your points, achievements and badges", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenRewards))
-        add(MenuRow("Verification", "Verify your KYC / identity", Icons.Outlined.VerifiedUser, Color(0xFFDCFCE7), Color(0xFF16A34A), onClick = onOpenVerification))
+        add(MenuRow("Verification", "Complete your KYC to sell", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenKyc))
         if (isAdmin) add(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel))
     }
     // ── Utilities (settings + logout always at bottom) ────────────────────────
@@ -197,127 +173,160 @@ fun MoreScreen(
         if (isLoggedIn) add(MenuRow("Logout", "Sign out of your account", Icons.AutoMirrored.Outlined.Logout, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onLogout))
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // ── Header ──────────────────────────────────────────────────────
-        item {
+    Column(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // ── Header ──────────────────────────────────────────────────────
+            item(key = "header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                }
+            }
+
+            item(key = "trade") {
+                MoreSectionHeader("TRADE", Color(0xFF2563EB))
+                Spacer(Modifier.height(6.dp))
+                MoreRowList(tradeRows)
+            }
+
+            item(key = "div1") {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+            }
+
+            item(key = "social") {
+                MoreSectionHeader("SOCIAL", Color(0xFF059669))
+                Spacer(Modifier.height(6.dp))
+                MoreRowList(socialRows)
+            }
+
+            item(key = "div2") {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+            }
+
+            item(key = "account") {
+                MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
+                Spacer(Modifier.height(6.dp))
+                MoreRowList(accountRows)
+            }
+
+            item(key = "div3") {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+            }
+
+            item(key = "settings") {
+                MoreSectionHeader("SETTINGS", Color(0xFF64748B))
+                Spacer(Modifier.height(6.dp))
+                MoreRowList(utilRows)
+            }
+
+            item(key = "login") {
+                if (!isLoggedIn) {
+                    Button(
+                        onClick = onOpenLogin,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    ) {
+                        Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Log In to MHub", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
+
+            item(key = "appearance") {
+                androidx.compose.material3.Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth().clickable { prefsExpanded = !prefsExpanded },
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Outlined.DarkMode, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Text("Appearance & Language", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Icon(if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        }
+                        if (prefsExpanded) {
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(12.dp))
+                            Text("Theme", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(6.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("Light" to ThemeMode.LIGHT, "System" to ThemeMode.SYSTEM, "Dark" to ThemeMode.DARK).forEach { (label, mode) ->
+                                    FilterChip(
+                                        selected = currentThemeMode == mode,
+                                        onClick = { onSetThemeMode(mode) },
+                                        label = { Text(label, fontSize = 12.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text("Language", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(6.dp))
+                            val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
+                            var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
+                            val langs = listOf("en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்", "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી")
+                            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                langs.forEach { (code, label) ->
+                                    FilterChip(
+                                        selected = selectedLang == code,
+                                        onClick = { selectedLang = code; onLanguageChange(code) },
+                                        label = { Text(label, fontSize = 11.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Fixed Bottom Close Bar (always visible, outside scroll) ────
+        androidx.compose.material3.Surface(
+            onClick = onDismiss,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth().height(54.dp).navigationBarsPadding(),
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
-                    Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-                    }
-                    Text("Close", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.clickable(onClick = onDismiss))
-                }
+                Icon(Icons.Filled.Close, null, tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Close Menu", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onErrorContainer)
             }
         }
-
-        item {
-            MoreSectionHeader("TRADE", Color(0xFF2563EB))
-            Spacer(Modifier.height(6.dp))
-            MoreRowList(tradeRows)
-        }
-
-        // ── Discover ────────────────────────────────────────────────────
-        item {
-            MoreSectionHeader("SOCIAL", Color(0xFF059669))
-            Spacer(Modifier.height(6.dp))
-            MoreRowList(socialRows)
-        }
-
-        // ── Account & Support ───────────────────────────────────────────
-        item {
-            MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
-            Spacer(Modifier.height(6.dp))
-            MoreRowList(accountRows)
-        }
-
-        item {
-            MoreSectionHeader("SETTINGS", Color(0xFF64748B))
-            Spacer(Modifier.height(6.dp))
-            MoreRowList(utilRows)
-        }
-
-        item {
-            if (!isLoggedIn) {
-                Button(
-                    onClick = onOpenLogin,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Log In to MHub", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            }
-        }
-
-        item {
-            androidx.compose.material3.Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth().clickable { prefsExpanded = !prefsExpanded },
-            ) {
-                Column(Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.DarkMode, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Text("Appearance & Language", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Icon(if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                    }
-                    if (prefsExpanded) {
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(Modifier.height(12.dp))
-                        Text("Theme", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(6.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("Light" to ThemeMode.LIGHT, "System" to ThemeMode.SYSTEM, "Dark" to ThemeMode.DARK).forEach { (label, mode) ->
-                                FilterChip(
-                                    selected = currentThemeMode == mode,
-                                    onClick = { onSetThemeMode(mode) },
-                                    label = { Text(label, fontSize = 12.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                                    shape = RoundedCornerShape(20.dp),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Text("Language", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(6.dp))
-                        val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
-                        var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
-                        val langs = listOf("en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்", "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી")
-                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            langs.forEach { (code, label) ->
-                                FilterChip(
-                                    selected = selectedLang == code,
-                                    onClick = { selectedLang = code; onLanguageChange(code) },
-                                    label = { Text(label, fontSize = 11.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                                    shape = RoundedCornerShape(20.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item { Spacer(Modifier.height(60.dp)) }
     }
 }
 

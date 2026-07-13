@@ -852,6 +852,7 @@ fun ExploreScreen(
     onOpenForYou: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
     onOpenCart: () -> Unit = {},
+    onOpenRewards: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
@@ -898,6 +899,7 @@ fun ExploreScreen(
                 onLanguage = onLanguage,
                 onToggleTheme = onToggleTheme,
                 onNotifications = onOpenNotifications,
+                onRewards = onOpenRewards,
                 onCart = onOpenCart,
                 onFilter = { showFilterSheet = true },
                 activeFilterCount = if (state.hasActiveFilters) 1 else 0,
@@ -1643,31 +1645,17 @@ private fun AllPostsBrowse(
                             onToggleGrid = { isGridView = !isGridView },
                         )
                     } else {
+                        // Row 1: Sort options (horizontal scroll)
+                        val sortScrollState = rememberScrollState()
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                                .horizontalScroll(sortScrollState)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                stringResource(R.string.explore_sort_view_label),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            IconButton(onClick = { isGridView = !isGridView }, modifier = Modifier.size(28.dp)) {
-                                Icon(if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                        LazyRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(sortOptions.size, key = { sortOptions[it].first }) { idx ->
-                                val (key, label) = sortOptions[idx]
+                            sortOptions.forEach { (key, label) ->
                                 val selected = state.sortBy == key
                                 FilterChip(
                                     selected = selected,
@@ -1686,60 +1674,43 @@ private fun AllPostsBrowse(
                                 )
                             }
                         }
-                    }
-                    if (ecosystemSubcategories.isNotEmpty()) {
-                        // Subcategories section header
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                "Categories",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            )
-                        }
-                        // Subcategory chips in a wrapping FlowRow
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            ecosystemSubcategories.forEach { sub ->
-                                val isSelected = state.filterSubcategory == sub
-                                val emoji = subcategoryEmoji(sub)
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = { onSelectSubcategory(sub) },
-                                    label = {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(emoji, fontSize = 12.sp)
-                                            Text(sub, style = MaterialTheme.typography.labelSmall)
-                                        }
-                                    },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    border = if (isSelected) null else FilterChipDefaults.filterChipBorder(
-                                        borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                        enabled = true,
-                                        selected = false,
-                                    ),
-                                    shape = RoundedCornerShape(20.dp),
-                                )
+                        // Row 2: Category chips (horizontal scroll) — only when categories exist
+                        if (ecosystemSubcategories.isNotEmpty()) {
+                            val catScrollState = rememberScrollState()
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(catScrollState)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                ecosystemSubcategories.forEach { sub ->
+                                    val isSelected = state.filterSubcategory == sub
+                                    val emoji = subcategoryEmoji(sub)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = { onSelectSubcategory(sub) },
+                                        label = {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text(emoji, fontSize = 12.sp)
+                                                Text(sub, style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
+                                        border = if (isSelected) null else FilterChipDefaults.filterChipBorder(
+                                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                            enabled = true,
+                                            selected = false,
+                                        ),
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                }
                             }
                         }
                     }

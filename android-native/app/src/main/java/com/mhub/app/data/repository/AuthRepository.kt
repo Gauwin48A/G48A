@@ -47,6 +47,8 @@ class AuthRepository @Inject constructor(
     val isCurrentlyAuthenticated: Boolean get() = tokenStore.isAuthenticated
     /** True if a token string is stored, regardless of whether it is expired. */
     val hasSession: Boolean get() = tokenStore.hasSession
+    /** True if the stored token is a local demo session (not a real server-issued token). */
+    val isDemoSession: Boolean get() = tokenStore.isDemoSession
     val accessTokenFlow: StateFlow<String?> = tokenStore.accessToken
 
     suspend fun startLocalDemoSession() {

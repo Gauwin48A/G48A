@@ -320,15 +320,7 @@ class UserSocialRepository @Inject constructor(private val api: MhubApi) {
     suspend fun activity(userId: String): ApiResult<ProfileActivityResponse> = safeApiCall { api.profileActivity(userId) }
 }
 
-@Singleton
-class ReviewsRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun forUser(userId: String): ApiResult<ReviewsResponse> = safeApiCall { api.reviews(userId) }
-    suspend fun submit(req: ReviewRequest): ApiResult<Unit> = safeApiCall { api.submitReview(req); Unit }
-    suspend fun markHelpful(id: String): ApiResult<Unit> = safeApiCall { api.markReviewHelpful(id); Unit }
-    suspend fun respond(id: String, response: String): ApiResult<Unit> = safeApiCall {
-        api.respondToReview(id, ReviewRespondRequest(response = response)); Unit
-    }
-}
+
 
 @Singleton
 class OffersRepository @Inject constructor(private val api: MhubApi) {

@@ -28,12 +28,22 @@ import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.ImageNotSupported
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -81,6 +91,7 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.data.local.ThemeMode
 import com.mhub.app.ui.components.AppErrorState
 import com.mhub.app.ui.components.ListShimmer
 import com.mhub.app.ui.explore.SharedExploreStore
@@ -264,6 +275,13 @@ fun RecentlyViewedScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit = {},
     onOpenFeed: (String) -> Unit = {},
+    onWishlist: () -> Unit = {},
+    onRewards: () -> Unit = {},
+    onNotifications: () -> Unit = {},
+    onCart: () -> Unit = {},
+    currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
+    onToggleTheme: () -> Unit = {},
+    onLanguage: () -> Unit = {},
     viewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -357,10 +375,16 @@ fun RecentlyViewedScreen(
                 },
                 actions = {
                     if (state.isMultiSelectMode) {
-                        TextButton(onClick = { viewModel.selectAll() }) {
+                        TextButton(
+                            onClick = { viewModel.selectAll() },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                        ) {
                             Text("Select All", style = MaterialTheme.typography.labelMedium)
                         }
-                        TextButton(onClick = { viewModel.clearSelection() }) {
+                        TextButton(
+                            onClick = { viewModel.clearSelection() },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                        ) {
                             Text("Clear", style = MaterialTheme.typography.labelMedium)
                         }
                     } else {
@@ -383,9 +407,62 @@ fun RecentlyViewedScreen(
                                 contentDescription = "Toggle view",
                             )
                         }
+                        // Overflow menu (three dots) — consistent with MhubTopBar
+                        var showOverflow by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showOverflow = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            }
+                            DropdownMenu(
+                                expanded = showOverflow,
+                                onDismissRequest = { showOverflow = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Wishlist") },
+                                    leadingIcon = { Icon(Icons.Default.BookmarkAdd, null, modifier = Modifier.size(18.dp)) },
+                                    onClick = { showOverflow = false; onWishlist() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Rewards") },
+                                    leadingIcon = { Icon(Icons.Default.EmojiEvents, null, modifier = Modifier.size(18.dp)) },
+                                    onClick = { showOverflow = false; onRewards() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Cart") },
+                                    leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(18.dp)) },
+                                    onClick = { showOverflow = false; onCart() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Notifications") },
+                                    leadingIcon = { Icon(Icons.Default.Notifications, null, modifier = Modifier.size(18.dp)) },
+                                    onClick = { showOverflow = false; onNotifications() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (currentThemeMode == ThemeMode.DARK) "Light Mode" else "Dark Mode") },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                            null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    },
+                                    onClick = { showOverflow = false; onToggleTheme() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Language") },
+                                    leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
+                                    onClick = { showOverflow = false; onLanguage() },
+                                )
+                            }
+                        }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1E3A8A),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White,
+                ),
             )
         },
         containerColor = MaterialTheme.colorScheme.background,

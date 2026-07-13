@@ -52,6 +52,22 @@ class TokenStore @Inject constructor(context: Context) {
      *  to prevent flash-of-login-gate during token refresh cycles. */
     val hasSession: Boolean get() = !_accessToken.value.isNullOrBlank()
 
+    /** True if the stored token is a local demo session (not a real server-issued token). */
+    val isDemoSession: Boolean get() {
+        val token = _accessToken.value ?: return false
+        // Fallback: check for known demo token patterns first (handles non-JWT tokens)
+        if (token == "demo_user" || token.startsWith("demo_") || token.startsWith("eyJ").not()) {
+            return token.contains("demo", ignoreCase = true)
+        }
+        // Standard JWT decode check
+        val parts = token.split(".")
+        if (parts.size < 2) return false
+        return try {
+            val decoded = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+            decoded.contains("\"sub\":\"demo_user\"")
+        } catch (_: Exception) { false }
+    }
+
     /** Non-blocking read of cached access token (safe to call from any thread). */
     fun accessTokenImmediate(): String? = _accessToken.value
 
