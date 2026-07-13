@@ -83,7 +83,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.border
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -125,12 +124,12 @@ import javax.inject.Inject
 /** Resolves relative image URLs to absolute by prepending the API base URL. */
 private fun resolveImageUrl(img: String?): String? {
     if (img == null) return null
-    if (img.startsWith("http://") || img.startsWith("https://")) return img
+    // Already absolute — return as-is
+    if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("blob:")) return img
     val base = com.mhub.app.BuildConfig.DEFAULT_API_BASE_URL.trimEnd('/')
-    return "$base/$img"
-        .replace("//", "/")
-        .replace("https:/", "https://")
-        .replace("http:/", "http://")
+    val cleanImg = img.trimStart('/')
+    // Ensure base ends with / and img has no leading / to avoid "//"
+    return "$base/$cleanImg"
 }
 
 data class PostDetailState(
@@ -270,20 +269,34 @@ class PostDetailViewModel @Inject constructor(
                     }
                 }
                 is ApiResult.Failure -> {
-                    // Build a minimal mock post from the postId so the screen never shows a blank error
-                    val mockPost = com.mhub.app.domain.model.Post(
-                        id = postId,
-                        title = "Post #$postId",
-                        description = "This listing could not be loaded right now. Please check your connection and try again.",
-                        status = "active",
-                        viewCount = 0,
-                    )
-                    _state.value = PostDetailState(
-                        loading = false,
-                        post = mockPost,
-                        error = null,
-                    )
-                    SharedExploreStore.addRecentlyViewed(mockPost)
+                    // Try to show previously cached post data instead of a generic mock
+                    val cachedPost = SharedExploreStore.recentlyViewedPosts.firstOrNull { it.stableId == postId }
+                        ?: SharedExploreStore.wishlistPosts.firstOrNull { it.stableId == postId }
+                    if (cachedPost != null) {
+                        _state.value = PostDetailState(
+                            loading = false,
+                            post = cachedPost,
+                            error = null,
+                        )
+                        SharedExploreStore.addRecentlyViewed(cachedPost)
+                    } else {
+                        // Fallback: minimal mock post with the postId
+                        val mockPost = com.mhub.app.domain.model.Post(
+                            id = postId,
+                            postId = postId,
+                            title = "Post #$postId",
+                            description = "This listing could not be loaded right now. Please check your connection and try again.",
+                            status = "active",
+                            viewCount = 0,
+                            likeCount = 0,
+                        )
+                        _state.value = PostDetailState(
+                            loading = false,
+                            post = mockPost,
+                            error = null,
+                        )
+                        SharedExploreStore.addRecentlyViewed(mockPost)
+                    }
                 }
             }
         }
@@ -851,95 +864,21 @@ fun PostDetailScreen(
                                     post.brand?.let { b -> AssistChip(onClick = {}, label = { Text(b) }) }
                                 }
 
-                                // Safety Tips (collapsible with border glow & READ badge)
-                                var safetyExpanded by remember { mutableStateOf(false) }
-                                Card(
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7)),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { safetyExpanded = !safetyExpanded }
-                                        .then(
-                                            if (safetyExpanded) Modifier.border(
-                                                1.5.dp, Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFEF4444))),
-                                                RoundedCornerShape(14.dp),
-                                            )
-                                            else Modifier.border(
-                                                1.5.dp, Color(0xFFFDE68A).copy(alpha = 0.5f),
-                                                RoundedCornerShape(14.dp),
-                                            )
-                                        ),
-                                ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("\u26A0\uFE0F", fontSize = 18.sp)
-                                            Text("Safety Tips", fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                                                color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E),
-                                                modifier = Modifier.weight(1f))
-                                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFEF4444)) {
-                                                Text("READ", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                            }
-                                            Text(if (safetyExpanded) "\u25B2" else "\u25BC", fontSize = 12.sp,
-                                                color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E))
-                                        }
-                                        if (safetyExpanded) {
-                                            HorizontalDivider(color = if (isDark) Color(0xFFFDE68A).copy(alpha = 0.2f) else Color(0xFFD97706).copy(alpha = 0.2f))
-                                            val safetyEmojiTips = listOf(
-                                                "\uD83D\uDC6B" to "Meet in a public place for exchanges",
-                                                "\uD83D\uDD0D" to "Inspect the item thoroughly before paying",
-                                                "\uD83D\uDCB3" to "Use secure payment methods only",
-                                                "\uD83D\uDD12" to "Don't share personal financial info",
-                                                "\uD83D\uDCCD" to "Verify the listing ID with the seller",
-                                            )
-                                            safetyEmojiTips.forEach { (emoji, tip) ->
-                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    Text(emoji, fontSize = 14.sp)
-                                                    Text(tip, fontSize = 12.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F))
-                                                }
-                                            }
-                                            Spacer(Modifier.height(4.dp))
-                                            Surface(
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = if (isDark) Color(0xFFEF4444).copy(alpha = 0.15f) else Color(0xFFFEE2E2),
-                                                modifier = Modifier.fillMaxWidth(),
-                                            ) {
-                                                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                    Text("\uD83D\uDEE1\uFE0F", fontSize = 14.sp)
-                                                    Text("Stay safe! MHub will never ask for your password or OTP.",
-                                                        fontSize = 11.sp, color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF991B1B))
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Safety at a Glance (3 highlighted tiles)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                // Safety reminder (compact single line — always visible, no expand)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7).copy(alpha = 0.8f),
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                         ) {
-                            val safetyItems = listOf(
-                                "🤝" to "Public Meetup",
-                                "💰" to "No Pre-payment",
-                                "🔍" to "Verify Listing ID",
-                            )
-                            safetyItems.forEach { (emoji, label) ->
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isDark) Color(0xFF064E3B).copy(alpha = 0.6f) else Color(0xFFECFDF5),
-                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF10B981).copy(alpha = 0.5f) else Color(0xFF6EE7B7)),
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(vertical = 12.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                    ) {
-                                        Text(emoji, fontSize = 22.sp)
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(label, fontSize = 11.sp, color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF065F46), fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                                    }
-                                }
+                            Row(
+                                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text("\uD83D\uDEE1\uFE0F", fontSize = 16.sp)
+                                Text("Safety: Meet in public, inspect before paying, never share OTP.",
+                                    fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F),
+                                    fontWeight = FontWeight.Medium, maxLines = 2)
                             }
                         }
                             }
@@ -951,29 +890,51 @@ fun PostDetailScreen(
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                // 🔥 Recommended For You — Premium/Featured/Boosted Posts
-                                state.similarPosts.takeIf { it.size > 1 }?.let { allSimilar ->
+                                // Build suggestion pool: similar posts from API + cached posts from shared store
+                                val suggestionPool = remember(state.similarPosts) {
+                                    val storePosts = SharedExploreStore.recentlyViewedPosts +
+                                        SharedExploreStore.wishlistPosts +
+                                        SharedExploreStore.comparePosts
+                                    // Merge and deduplicate, excluding current post
+                                    (state.similarPosts + storePosts)
+                                        .distinctBy { it.stableId }
+                                        .filter { it.stableId != post.stableId }
+                                }
+                                
+                                // 🔥 For You — prioritize premium/boosted/featured posts
+                                if (suggestionPool.isNotEmpty()) {
                                     Spacer(Modifier.height(2.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("🔥 Recommended For You", fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                                        Text("🔥 For You", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
                                         Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF8B5CF6).copy(alpha = 0.12f)) {
                                             Text("SPONSORED", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF8B5CF6),
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                                         }
                                     }
+                                    Spacer(Modifier.height(6.dp))
+                                    // Sort: premium first, then boosted, then featured, then shuffle rest
+                                    val sortedPool = remember(suggestionPool) {
+                                        suggestionPool.sortedByDescending {
+                                            when {
+                                                it.isPremium == true || (it.tierPriority ?: 0) >= 3 || it.tier?.lowercase() == "premium" -> 100
+                                                it.boostLevel != null || it.promoLabel != null -> 75
+                                                it.tier?.lowercase() == "gold" || it.tier?.lowercase() == "silver" -> 50
+                                                else -> 0
+                                            }
+                                        }.take(12).shuffled().take(8)
+                                    }
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        val shuffledAndBadged = allSimilar.shuffled().take(6)
-                                        items(shuffledAndBadged, key = { "sp_${it.stableId}" }) { spPost ->
+                                        items(sortedPool, key = { "sug_${it.stableId}" }) { sugPost ->
                                             Card(
-                                                onClick = { onOpenPost(spPost.stableId) },
+                                                onClick = { onOpenPost(sugPost.stableId) },
                                                 shape = RoundedCornerShape(12.dp),
                                                 modifier = Modifier.width(150.dp),
                                             ) {
                                                 Column {
                                                     Box(modifier = Modifier.fillMaxWidth()) {
-                                                        val recImgUrl = resolveImageUrl(spPost.primaryImage)
-                                                        if (recImgUrl != null) {
-                                                            AsyncImage(model = recImgUrl, contentDescription = null,
+                                                        val sugImgUrl = resolveImageUrl(sugPost.primaryImage)
+                                                        if (sugImgUrl != null) {
+                                                            AsyncImage(model = sugImgUrl, contentDescription = null,
                                                                 contentScale = ContentScale.Crop,
                                                                 modifier = Modifier.fillMaxWidth().height(110.dp))
                                                         } else {
@@ -986,11 +947,11 @@ fun PostDetailScreen(
                                                         }
                                                         // Premium/Featured/Boosted badge overlay
                                                         val badge = when {
-                                                            spPost.isPremium == true || (spPost.tierPriority ?: 0) >= 3 || spPost.tier?.lowercase() == "premium" -> 
+                                                            sugPost.isPremium == true || (sugPost.tierPriority ?: 0) >= 3 || sugPost.tier?.lowercase() == "premium" -> 
                                                                 "👑 PREMIUM" to Color(0xFFF59E0B)
-                                                            spPost.boostLevel != null || spPost.promoLabel != null -> 
+                                                            sugPost.boostLevel != null || sugPost.promoLabel != null -> 
                                                                 "⚡ BOOSTED" to Color(0xFF2563EB)
-                                                            spPost.tier?.lowercase() == "silver" || spPost.tier?.lowercase() == "gold" -> 
+                                                            sugPost.tier?.lowercase() == "gold" || sugPost.tier?.lowercase() == "silver" -> 
                                                                 "⭐ FEATURED" to Color(0xFF7C3AED)
                                                             else -> null
                                                         }
@@ -1006,52 +967,17 @@ fun PostDetailScreen(
                                                         }
                                                     }
                                                     Column(Modifier.padding(8.dp)) {
-                                                        Text(spPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                                        Text(sugPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                            spPost.price?.let { p ->
+                                                            sugPost.price?.let { p ->
                                                                 Text("₹${"%,.0f".format(p)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                                             }
                                                             Spacer(Modifier.weight(1f))
                                                             Text("↗", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                         }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                // 📋 Similar Listings section
-                                state.similarPosts.takeIf { it.isNotEmpty() }?.let { similar ->
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("📋 Similar Listings", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        items(similar, key = { it.stableId }) { simPost ->
-                                            Card(
-                                                onClick = { onOpenPost(simPost.stableId) },
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.width(150.dp),
-                                            ) {
-                                                Column {
-                                                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                                                        val simImgUrl = resolveImageUrl(simPost.primaryImage)
-                                                        if (simImgUrl != null) {
-                                                            AsyncImage(model = simImgUrl, contentDescription = null, contentScale = ContentScale.Crop,
-                                                                modifier = Modifier.fillMaxWidth().height(100.dp))
-                                                        }
-                                                        // Minimal premium badge
-                                                        if (simPost.isPremium == true) {
-                                                            Surface(shape = RoundedCornerShape(bottomEnd = 6.dp), color = Color(0xFFF59E0B).copy(alpha = 0.85f),
-                                                                modifier = Modifier.align(Alignment.TopStart)) {
-                                                                Text("PREMIUM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
-                                                            }
-                                                        }
-                                                    }
-                                                    Column(Modifier.padding(8.dp)) {
-                                                        Text(simPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                                        simPost.price?.let { p ->
-                                                            Text("₹${"%,.0f".format(p)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                        // Show location if available
+                                                        sugPost.location?.let { loc ->
+                                                            Text(loc.take(25), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                                                         }
                                                     }
                                                 }
