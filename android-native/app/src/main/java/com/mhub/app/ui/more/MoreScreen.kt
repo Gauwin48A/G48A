@@ -30,7 +30,6 @@ import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Apps
@@ -309,24 +308,7 @@ fun MoreScreen(
             }
         }
 
-        // ── Fixed Bottom Close Bar (always visible, outside scroll) ────
-        androidx.compose.material3.Surface(
-            onClick = onDismiss,
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-            shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth().height(54.dp).navigationBarsPadding(),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Close, null, tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Close Menu", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onErrorContainer)
-            }
-        }
+
     }
 }
 
