@@ -420,15 +420,6 @@ class ProfileViewModel @Inject constructor(
         )
     }
 
-    fun shareProfile(context: android.content.Context) {
-        val user = _state.value.user ?: return
-        val shareText = "Check out ${user.fullName ?: "my profile"} on MHub!\nhttps://mhub.app/u/${user.username ?: user.id}"
-        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-        }
-        context.startActivity(android.content.Intent.createChooser(intent, "Share Profile"))
-    }
 
     fun blockUser() {
         val userId = _state.value.user?.stableId ?: return
@@ -1180,7 +1171,6 @@ fun ProfileScreen(
                             Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text(stringResource(R.string.profile_tab_overview), fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp) })
                             Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text(stringResource(R.string.profile_tab_personal), fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp) })
                             Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text(stringResource(R.string.profile_tab_preferences), fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp) })
-                            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text(stringResource(R.string.profile_tab_settings), fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp) })
                         }
 
                         if (selectedTab == 0) {
@@ -1583,21 +1573,8 @@ fun ProfileScreen(
                             )
                         }
 
-                        // ─── Tab 3: Settings ──────────────────────────────────
-                        if (selectedTab == 3) {
-                            SettingsTab(
-                                user = user,
-                                onOpenSettings = onOpenSettings,
-                                onOpenSecurity = onOpenSecurity,
-                                onOpenNotifications = onOpenNotifications,
-                                onSignOut = { viewModel.logout(onSignedOut) },
-                                onExportData = { viewModel.exportData() },
-                                dataExportDone = state.dataExportDone,
-                            )
-                        }
-
                         // ─── Tab content for out-of-range tabs (safe fallback) ────
-                        if (selectedTab >= 4) {
+                        if (selectedTab >= 3) {
                             selectedTab = 0
                         }
 
@@ -2102,116 +2079,6 @@ private fun SearchableChoiceField(
         )
     }
 }
-
-@Composable
-private fun SettingsTab(
-    user: com.mhub.app.domain.model.User?,
-    onOpenSettings: () -> Unit,
-    onOpenSecurity: () -> Unit,
-    onOpenNotifications: () -> Unit,
-    onSignOut: () -> Unit,
-    onExportData: () -> Unit = {},
-    dataExportDone: Boolean = false,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.profile_account_settings), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-
-        // Subscription card
-        val plan = user?.currentPlan?.replaceFirstChar { it.uppercase() } ?: "Basic"
-        val planColor = tierColor(user?.currentPlan)
-        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(planColor.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Star, null, tint = planColor, modifier = Modifier.size(24.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.profile_current_plan), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(plan, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = planColor)
-                }
-                Surface(shape = RoundedCornerShape(8.dp), color = planColor.copy(alpha = 0.1f)) {
-                    Text(stringResource(R.string.profile_upgrade), style = MaterialTheme.typography.labelSmall, color = planColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-
-        // Settings menu
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Column {
-                SettingsRow(Icons.Default.Settings, "App Settings", "Theme, language, display", onClick = onOpenSettings)
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                SettingsRow(Icons.Default.Security, "Security", "Password, 2FA, sessions", onClick = onOpenSecurity)
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                SettingsRow(Icons.Default.Notifications, "Notifications", "Alerts and push settings", onClick = onOpenNotifications)
-            }
-        }
-
-        OutlinedButton(
-            onClick = onSignOut,
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.SemiBold)
-        }
-
-        // GDPR: Download My Data
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = if (dataExportDone) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF6366F1).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Download, null, tint = Color(0xFF6366F1), modifier = Modifier.size(20.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.profile_download_data), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-                    Text(
-                        if (dataExportDone) "Export request sent — check your email" else "Request a GDPR export of your account data",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (dataExportDone) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (!dataExportDone) {
-                    androidx.compose.material3.TextButton(onClick = onExportData) { Text(stringResource(R.string.profile_request)) }
-                } else {
-                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun SettingsRow(icon: ImageVector, label: String, subtitle: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            Icon(icon, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-    }
-}
-
 @Composable
 private fun AvatarWithRing(initial: Char, completionPercent: Int, size: Dp) {
     val ringColor = Color(0xFF34D399)

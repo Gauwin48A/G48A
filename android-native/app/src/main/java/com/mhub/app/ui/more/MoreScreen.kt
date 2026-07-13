@@ -132,6 +132,7 @@ fun MoreScreen(
     onOpenAdminPanel: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onOpenRewards: () -> Unit = {},
     onOpenMyFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
@@ -142,30 +143,29 @@ fun MoreScreen(
 ) {
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 6 focused items — Nearby removed (not in web app)
+    // ── TRADE section: 4 focused items — Sell, Plans, Sale Done/Undone
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
-        MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
         MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
         MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
-        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.BookmarkBorder, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
     )
 
-    // ── SOCIAL section: 4 items — Feed removed (already in bottom navbar), Chat/MyReviews/MyOffers removed per user request
+    // ── SOCIAL section: 2 items — Feedback, Complaints
     val socialRows = listOf(
-        MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall),
-        MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed),
         MenuRow("Feedback", "Share your app experience", Icons.Outlined.VolunteerActivism, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
-    // ── ACCOUNT section: focused — Profile, Verification, KYC
-    val accountRows = buildList {
-        add(MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile))
-        add(MenuRow("Verification", "Complete your KYC to sell", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenKyc))
-        if (isAdmin) add(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel))
-    }
+    // ── ACCOUNT section: Rewards, Profile, MyFeed, MyHome, Wishlist, PublicWall
+    val accountRows = listOf(
+        MenuRow("Rewards", "Earn rewards and bonuses", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenRewards),
+        MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile),
+        MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed),
+        MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
+        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.BookmarkBorder, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
+        MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall),
+    )
     // ── Utilities (settings + logout always at bottom) ────────────────────────
     val utilRows = buildList {
         add(MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings))

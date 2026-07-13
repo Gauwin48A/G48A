@@ -650,18 +650,33 @@ fun PostDetailScreen(
                                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                                     val img = images[page]
                                     Box(modifier = Modifier.fillMaxSize()) {
-                                        if (img != null) {
-                                            AsyncImage(
-                                                model = img,
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize().then(
-                                                    Modifier.clickable(onClick = {
-                                                        zoomImageIndex = page
-                                                        showImageZoom = true
-                                                    }),
-                                                ),
-                                            )
+                                        if (img != null) {            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (img != null) {
+                    AsyncImage(
+                        model = img,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable {
+                                zoomImageIndex = page
+                                showImageZoom = true
+                            },
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.ImageNotSupported,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
+            }
                                         } else {
                                             Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
                                         }
@@ -997,38 +1012,7 @@ fun PostDetailScreen(
                                 }
                             }
                         }
-                        // Negotiate / BargainActions section (non-owner only) — web parity
-                        if (!isOwner) item(key = "sec_negotiate") {
-                            post.price?.let { basePrice ->
-                                Card(
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF0D2818) else Color(0xFFF0FDF4)),
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.4f) else Color(0xFF86EFAC)),
-                                ) {
-                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Text("💬 Negotiate Price", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534))
-                                        Text("Offer a fair price to the seller", style = MaterialTheme.typography.bodySmall, color = if (isDark) Color(0xFF86EFAC) else Color(0xFF4B7A5B))
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf(10 to "10%", 15 to "15%", 20 to "20%").forEach { (pct, label) ->
-                                                val discounted = basePrice * (100 - pct) / 100
-                                                OutlinedButton(
-                                                    onClick = { viewModel.makeOffer(discounted) },
-                                                    modifier = Modifier.weight(1f),
-                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)),
-                                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF22C55E).copy(alpha = 0.5f) else Color(0xFF86EFAC)),
-                                                ) {
-                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                        Text("-$label", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                                        Text("₹${"%,.0f".format(discounted)}", fontSize = 10.sp)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
 
                         item(key = "sec_trust") {
                             Column(
@@ -1140,19 +1124,85 @@ fun PostDetailScreen(
                         }
                             }
                         }
-                        item(key = "sec_similar") {
+                                                item(key = "sec_similar") {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                // Similar Posts section
+                                // 🔥 Recommended For You — Premium/Featured/Boosted Posts
+                                state.similarPosts.takeIf { it.size > 1 }?.let { allSimilar ->
+                                    Spacer(Modifier.height(2.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("🔥 Recommended For You", fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF8B5CF6).copy(alpha = 0.12f)) {
+                                            Text("SPONSORED", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF8B5CF6),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                                        }
+                                    }
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        val shuffledAndBadged = allSimilar.shuffled().take(6)
+                                        items(shuffledAndBadged, key = { "sp_${it.stableId}" }) { spPost ->
+                                            Card(
+                                                onClick = { onOpenPost(spPost.stableId) },
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.width(150.dp),
+                                            ) {
+                                                Column {
+                                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                                        spPost.primaryImage?.let { img ->
+                                                            AsyncImage(model = img, contentDescription = null,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.fillMaxWidth().height(110.dp))
+                                                        } ?: Box(
+                                                            modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                        // Premium/Featured/Boosted badge overlay
+                                                        val badge = when {
+                                                            spPost.isPremium == true || (spPost.tierPriority ?: 0) >= 3 || spPost.tier?.lowercase() == "premium" -> 
+                                                                "👑 PREMIUM" to Color(0xFFF59E0B)
+                                                            spPost.boostLevel != null || spPost.promoLabel != null -> 
+                                                                "⚡ BOOSTED" to Color(0xFF2563EB)
+                                                            spPost.tier?.lowercase() == "silver" || spPost.tier?.lowercase() == "gold" -> 
+                                                                "⭐ FEATURED" to Color(0xFF7C3AED)
+                                                            else -> null
+                                                        }
+                                                        if (badge != null) {
+                                                            Surface(
+                                                                shape = RoundedCornerShape(bottomEnd = 8.dp),
+                                                                color = badge.second.copy(alpha = 0.88f),
+                                                                modifier = Modifier.align(Alignment.TopStart),
+                                                            ) {
+                                                                Text(badge.first, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, 
+                                                                    color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                                            }
+                                                        }
+                                                    }
+                                                    Column(Modifier.padding(8.dp)) {
+                                                        Text(spPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            spPost.price?.let { p ->
+                                                                Text("₹${"%,.0f".format(p)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                            }
+                                                            Spacer(Modifier.weight(1f))
+                                                            Text("↗", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // 📋 Similar Listings section
                                 state.similarPosts.takeIf { it.isNotEmpty() }?.let { similar ->
-                                    Text(stringResource(R.string.detail_similar), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                                    LazyRow(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    ) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("📋 Similar Listings", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                         items(similar, key = { it.stableId }) { simPost ->
                                             Card(
                                                 onClick = { onOpenPost(simPost.stableId) },
@@ -1160,13 +1210,19 @@ fun PostDetailScreen(
                                                 modifier = Modifier.width(150.dp),
                                             ) {
                                                 Column {
-                                                    simPost.primaryImage?.let { img ->
-                                                        AsyncImage(
-                                                            model = img,
-                                                            contentDescription = null,
-                                                            contentScale = ContentScale.Crop,
-                                                            modifier = Modifier.fillMaxWidth().height(100.dp),
-                                                        )
+                                                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                                                        simPost.primaryImage?.let { img ->
+                                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.fillMaxWidth().height(100.dp))
+                                                        }
+                                                        // Minimal premium badge
+                                                        if (simPost.isPremium == true) {
+                                                            Surface(shape = RoundedCornerShape(bottomEnd = 6.dp), color = Color(0xFFF59E0B).copy(alpha = 0.85f),
+                                                                modifier = Modifier.align(Alignment.TopStart)) {
+                                                                Text("PREMIUM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                                            }
+                                                        }
                                                     }
                                                     Column(Modifier.padding(8.dp)) {
                                                         Text(simPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -1179,97 +1235,10 @@ fun PostDetailScreen(
                                         }
                                     }
                                 }
-
-                                // \u2B50 Recommended For You — Boosted & Premium Posts
-                                state.similarPosts.takeIf { it.size > 1 }?.let { sponsored ->
-                                    Spacer(Modifier.height(8.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("\u2B50 Recommended For You", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                                        Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
-                                            Text("SPONSORED", fontSize = 10.sp, color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                        }
-                                    }
-                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        items(sponsored.takeLast(4), key = { "sp_${it.stableId}" }) { spPost ->
-                                            Card(
-                                                onClick = { onOpenPost(spPost.stableId) },
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.width(150.dp),
-                                            ) {
-                                                Column {
-                                                    Box {
-                                                        spPost.primaryImage?.let { img ->
-                                                            AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop,
-                                                                modifier = Modifier.fillMaxWidth().height(100.dp))
-                                                        }
-                                                        Surface(
-                                                            shape = RoundedCornerShape(bottomEnd = 8.dp),
-                                                            color = Color(0xFF2563EB).copy(alpha = 0.85f),
-                                                            modifier = Modifier.align(Alignment.TopStart),
-                                                        ) {
-                                                            Text("⚡", fontSize = 10.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
-                                                        }
-                                                    }
-                                                    Column(Modifier.padding(8.dp)) {
-                                                        Text(spPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                                        spPost.price?.let { p ->
-                                                            Text("₹${"%,.0f".format(p)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                        item(key = "sec_seller") {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                post.userName?.let {
-                                    Card(
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surface,
-                                        ),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                        ) {
-                                            Column {
-                                                Text(stringResource(R.string.detail_seller), style = MaterialTheme.typography.labelMedium)
-                                                Text(it, fontWeight = FontWeight.SemiBold)
-                                            }
-                                            OutlinedButton(onClick = {
-                                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+91"))
-                                                context.startActivity(dialIntent)
-                                            }) {
-                                                Icon(Icons.Default.Call, contentDescription = null)
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(stringResource(R.string.detail_call))
-                                            }
-                                        }
-                                    }
-
-
-                                }
                             }
                         }
                     }
 
-                    // Owner Insights card (visible when data loaded)
                     state.ownerInsights?.let { insights ->
                         Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
                             Column(Modifier.padding(14.dp)) {

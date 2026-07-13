@@ -1292,7 +1292,6 @@ fun MhubApp(
                         onDismiss = { showMoreDrawer = false },
                         onOpenWishlist = { drawerNav(Routes.WISHLIST) },
                         onOpenCreatePost = { drawerNav(Routes.POST_WELCOME) },
-                        onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenSettings = { drawerNav(Routes.SETTINGS) },
                         onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
                         onOpenMyHome = { drawerNav(Routes.MY_HOME) },
@@ -1304,6 +1303,8 @@ fun MhubApp(
                         onOpenProfile = { drawerNav(Routes.PROFILE) },
                         onOpenAdminPanel = { drawerNav(Routes.ADMIN_PANEL) },
                         onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
+                        onOpenRewards = { drawerNav(Routes.REWARDS) },
+                        onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
