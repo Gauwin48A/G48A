@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +70,24 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import androidx.compose.ui.graphics.vector.ImageVector
 import javax.inject.Inject
+
+// ──────────────────────────────────────────────────────────────────────────────
+
+data class CartUiState(
+    val loading: Boolean = true,
+    val items: List<CartItem> = emptyList(),
+    val savedForLater: List<CartItem> = emptyList(),
+    val pendingUndoItem: CartItem? = null,
+    val total: Double = 0.0,
+    val error: String? = null,
+    val selectedIds: Set<String> = emptySet(),
+    val deliveryAddress: String = "",
+    val selectedPayment: String = "cod",
+    val couponCode: String = "",
+    val couponApplied: Boolean = false,
+    val couponDiscount: Double = 0.0,
+    val couponMessage: String? = null,
+)
 
 // ──────────────────────────────────────────────────────────────────────────────
 
