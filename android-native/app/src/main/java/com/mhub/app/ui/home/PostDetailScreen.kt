@@ -649,36 +649,31 @@ fun PostDetailScreen(
                             ) {
                                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                                     val img = images[page]
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        if (img != null) {            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (img != null) {
-                    AsyncImage(
-                        model = img,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable {
-                                zoomImageIndex = page
-                                showImageZoom = true
-                            },
-                    )
-                } else {
-                    Icon(
-                        Icons.Outlined.ImageNotSupported,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(48.dp),
-                    )
-                }
-            }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (img != null) {
+                                            AsyncImage(
+                                                model = img,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable {
+                                                        zoomImageIndex = page
+                                                        showImageZoom = true
+                                                    },
+                                            )
                                         } else {
-                                            Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                                            Icon(
+                                                Icons.Outlined.ImageNotSupported,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(48.dp),
+                                            )
                                         }
                                         // Video play button overlay
                                         val isVideo = img?.contains(".mp4") == true || img?.contains(".mov") == true
