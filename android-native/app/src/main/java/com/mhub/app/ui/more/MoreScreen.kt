@@ -141,8 +141,9 @@ fun MoreScreen(
     onSetThemeMode: (ThemeMode) -> Unit = {},
 ) {
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
+    var accountExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 4 focused items — Sell, Plans, Sale Done/Undone
+    // ── TRADE section: 4 items — Sell, Plans, Sale Done, Sale Undone
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", "Upgrade your seller plan", Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
@@ -156,15 +157,19 @@ fun MoreScreen(
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
 
-    // ── ACCOUNT section: Rewards, Profile, MyFeed, MyHome, Wishlist, PublicWall
-    val accountRows = listOf(
-        MenuRow("Rewards", "Earn rewards and bonuses", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenRewards),
-        MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile),
-        MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed),
-        MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome),
-        MenuRow("Wishlist", "Items you've saved", Icons.Outlined.BookmarkBorder, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist),
-        MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall),
-    )
+    // ── ACCOUNT section: rewards, profile, myfeed, myhome, wishlist, publicwall + more
+    val accountRows = buildList {
+        add(MenuRow("Rewards", "Earn rewards and bonuses", Icons.Outlined.EmojiEvents, Color(0xFFFFF7ED), Color(0xFFD97706), onClick = onOpenRewards))
+        add(MenuRow("Profile", "View and edit your profile", Icons.Outlined.Person, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenProfile))
+        add(MenuRow("My Feed", "Your own posts and discussions", Icons.AutoMirrored.Outlined.Article, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenMyFeed))
+        add(MenuRow("My Home", "Your own marketplace listings", Icons.Outlined.Home, Color(0xFFEFF6FF), Color(0xFF2563EB), onClick = onOpenMyHome))
+        add(MenuRow("Wishlist", "Items you've saved", Icons.Outlined.BookmarkBorder, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenWishlist))
+        add(MenuRow("Public Wall", "Community public discussions", Icons.Outlined.Group, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenPublicWall))
+        add(MenuRow("Verification", "Complete your KYC to sell", Icons.Outlined.VerifiedUser, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenKyc))
+        if (isAdmin) {
+            add(MenuRow("Admin Panel", "Platform administration tools", Icons.Outlined.AdminPanelSettings, Color(0xFFFFF7ED), Color(0xFFD97706), badge = "Admin", onClick = onOpenAdminPanel))
+        }
+    }
     // ── Utilities (settings + logout always at bottom) ────────────────────────
     val utilRows = buildList {
         add(MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings))
@@ -189,6 +194,7 @@ fun MoreScreen(
                         Text("More", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                         Text("All features in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+
                 }
             }
 
@@ -219,36 +225,22 @@ fun MoreScreen(
             }
 
             item(key = "account") {
-                var accountExpanded by rememberSaveable { mutableStateOf(false) }
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { accountExpanded = !accountExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { accountExpanded = !accountExpanded }.padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
-                            Icon(
-                                if (accountExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (accountExpanded) "Collapse" else "Expand",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                        AnimatedVisibility(
-                            visible = accountExpanded,
-                            enter = expandVertically(),
-                            exit = shrinkVertically(),
-                        ) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 8.dp))
-                            Spacer(Modifier.height(6.dp))
-                            MoreRowList(accountRows)
-                        }
-                    }
+                    MoreSectionHeader("ACCOUNT", Color(0xFFF59E0B))
+                    Icon(
+                        if (accountExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (accountExpanded) "Collapse Account" else "Expand Account",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                if (accountExpanded) {
+                    Spacer(Modifier.height(6.dp))
+                    MoreRowList(accountRows)
                 }
             }
 

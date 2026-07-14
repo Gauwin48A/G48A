@@ -163,10 +163,7 @@ const VerificationPage = lazyWithRetry(
   "Verification",
 );
 const NearbyPostsPage = lazyWithRetry(() => import("./pages/NearbyPosts.jsx"), "NearbyPosts");
-const ProtectedChatPage = lazyWithRetry(
-  () => import("./pages/ProtectedChat.jsx"),
-  "ProtectedChat",
-);
+
 const SearchPage = lazyWithRetry(() => import("./pages/SearchPage.jsx"), "SearchPage");
 const TermsPage = lazyWithRetry(
   () => import("./pages/TermsAndConditions.jsx"),
@@ -190,8 +187,7 @@ const PaymentPage = lazyWithRetry(
   () => import("./pages/Payments/PaymentPage.jsx"),
   "PaymentPage",
 );
-const OffersPage = lazyWithRetry(() => import("./pages/Offers.jsx"), "Offers");
-const ReviewsPage = lazyWithRetry(() => import("./pages/Reviews.jsx"), "Reviews");
+
 const AnalyticsPage = lazyWithRetry(() => import("./pages/Analytics.jsx"), "Analytics");
 const WalletPage = lazyWithRetry(() => import("./pages/Wallet.jsx"), "Wallet");
 const PriceAlertsPage = lazyWithRetry(() => import("./pages/PriceAlerts.jsx"), "PriceAlerts");
@@ -404,9 +400,7 @@ function AppShell() {
           if (userId) navigate(`/profile/${userId}`);
         } else if (path.startsWith("feed")) {
           navigate("/feed");
-        } else if (path.startsWith("chat")) {
-          navigate("/chat");
-        } else if (path.startsWith("orders") || path.startsWith("bought-posts")) {
+ else if (path.startsWith("orders") || path.startsWith("bought-posts")) {
           navigate("/bought-posts");
         } else if (path.startsWith("wallet")) {
           navigate("/wallet");
@@ -642,8 +636,7 @@ function AppShell() {
                   <Route path="/saved-searches" element={<PageEnhancer config={PAGE_CONFIGS["saved-searches"]}><RequireAuth><SavedSearchesPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/verification" element={<PageEnhancer config={PAGE_CONFIGS["verification"]}><RequireAuth><VerificationPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/nearby" element={<PageEnhancer config={PAGE_CONFIGS["nearby"]}><RequireAuth><NearbyPostsPage /></RequireAuth></PageEnhancer>} />
-                  <Route path="/chat" element={<PageEnhancer config={PAGE_CONFIGS["chat"]}><RequireAuth><ProtectedChatPage /></RequireAuth></PageEnhancer>} />
-                  <Route path="/chats" element={<Navigate to="/chat" replace />} />
+
                   <Route path="/t&c" element={<PageEnhancer config={PAGE_CONFIGS["terms"]}><TermsPage /></PageEnhancer>} />
                   <Route path="/terms" element={<PageEnhancer config={PAGE_CONFIGS["terms"]}><TermsPage /></PageEnhancer>} />
                   <Route path="/terms-and-conditions" element={<Navigate to="/t&c" replace />} />
@@ -663,8 +656,7 @@ function AppShell() {
                   <Route path="/centre/:id" element={<PageEnhancer config={PAGE_CONFIGS["centre-detail"]}><RequireAuth><ChannelPage variant="centre" /></RequireAuth></PageEnhancer>} />
                   <Route path="/kyc" element={<PageEnhancer config={PAGE_CONFIGS["kyc"]}><RequireAuth><KycVerificationPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/payment" element={<PageEnhancer config={PAGE_CONFIGS["payment"]}><RequireAuth><PaymentPage /></RequireAuth></PageEnhancer>} />
-                  <Route path="/offers" element={<PageEnhancer config={PAGE_CONFIGS["offers"]}><RequireAuth><OffersPage /></RequireAuth></PageEnhancer>} />
-                  <Route path="/reviews/:userId" element={<PageEnhancer config={PAGE_CONFIGS["reviews"]}><ReviewsPage /></PageEnhancer>} />
+
                   <Route path="*" element={<PageEnhancer config={PAGE_CONFIGS["not-found"]}><NotFoundPage /></PageEnhancer>} />
                 </Route>
               </Routes>

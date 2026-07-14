@@ -107,7 +107,12 @@ const Wishlist = () => {
     categories: categoryModeCategories,
   } = useCategoryMode();
 
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => {
+    try {
+      const cached = localStorage.getItem("mhub_wishlist_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [loading, setLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
@@ -115,6 +120,7 @@ const Wishlist = () => {
   const [sortBy, setSortBy] = useState("saved_desc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
@@ -191,7 +197,24 @@ const Wishlist = () => {
       } catch (err) {
         if (import.meta.env.DEV) console.error("Failed to fetch wishlist:", err);
         if (currentId === fetchIdRef.current) {
-          if (parityOfflineMode) {
+          let usedCached = false;
+          try {
+            const cached = localStorage.getItem("mhub_wishlist_cache");
+            const parsed = cached ? JSON.parse(cached) : null;
+            if (parsed && parsed.length > 0) {
+              setItems(parsed);
+              setSessionExpired(true);
+              setCursor(null);
+              cursorRef.current = null;
+              setHasMore(false);
+              const ids = extractSavedPostIds(parsed);
+              savedIdsRef.current = new Set(ids);
+              replaceSavedPostIds(ids);
+              setError(null);
+              usedCached = true;
+            }
+          } catch {}
+          if (!usedCached && parityOfflineMode) {
             const fallbackItems = buildParityWishlistFallback(userId);
             const filteredFallback = fallbackItems.filter((item) => {
               const status = String(item?.status || "active").toLowerCase();
@@ -210,7 +233,7 @@ const Wishlist = () => {
             savedIdsRef.current = new Set(ids);
             replaceSavedPostIds(ids);
             setError(null);
-          } else {
+          } else if (!usedCached) {
             setError(t("failed_load_wishlist"));
             if (reset) setItems([]);
           }
@@ -240,7 +263,19 @@ const Wishlist = () => {
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    if (authLoading || !isAuth || !userId) {
+    if (authLoading) return;
+    if (!isAuth || !userId) {
+      // Try cached data before showing sign-in page
+      try {
+        const cached = localStorage.getItem("mhub_wishlist_cache");
+        const parsed = cached ? JSON.parse(cached) : null;
+        if (parsed && parsed.length > 0) {
+          setItems(parsed);
+          setSessionExpired(true);
+          setLoading(false);
+          return;
+        }
+      } catch {}
       setLoading(false);
       return;
     }
@@ -580,7 +615,11 @@ const Wishlist = () => {
 
   /* ─── not authenticated ─── */
 
+  /* ─── not authenticated — show cached data with banner, or sign-in page ─── */
   if (!isAuth || !userId) {
+    if (items.length > 0) {
+      // Fall through to main authenticated view — cached data with session-expired banner
+    } else {
     return (
       <div
         className={`mhub-page-wishlist min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br ${densityClass}`}
@@ -613,6 +652,7 @@ const Wishlist = () => {
         </div>
       </div>
     );
+    }
   }
 
   /* ─── main authenticated view ─── */
@@ -686,6 +726,33 @@ const Wishlist = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Session Expired Banner ── */}
+      {(sessionExpired || (!isAuth && !userId && items.length > 0)) && (
+        <div className="sticky top-0 z-50 mx-4 sm:mx-6 -mt-1 mb-1">
+          <div className="max-w-[640px] mx-auto rounded-xl bg-red-500/90 backdrop-blur-md border border-red-400/30 shadow-lg shadow-red-500/20 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Bookmark className="w-4 h-4 text-white shrink-0" fill="white" />
+              <p className="text-sm font-semibold text-white">
+                {t("session_expired") || "Session Expired"}
+              </p>
+              <p className="text-xs text-red-100 hidden sm:inline">
+                {t("session_expired_message") || "Please sign in to see your saved items."}
+              </p>
+            </div>
+            <Button
+              onClick={() =>
+                navigate("/login", {
+                  state: { returnTo: "/wishlist" },
+                })
+              }
+              className="bg-white text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg px-3.5 h-8 text-xs font-bold shadow-sm shrink-0"
+            >
+              {t("sign_in") || "Sign In"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── subheader ── */}
       <div className="relative z-10 max-w-[640px] mx-auto px-4 pt-3 pb-0.5 sm:px-6 lg:px-8 page-shell page-pad">

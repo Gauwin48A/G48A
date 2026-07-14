@@ -2,7 +2,7 @@
 -- MHUB PRODUCTION HARDENING MIGRATION (NO POSTGIS VERSION)
 -- The Defender's 100% Completion Script - Universal Compatibility
 -- =============================================================
--- Run this in your PostgreSQL/Supabase SQL Editor
+-- Run this in your PostgreSQL SQL Editor
 -- This creates all missing tables and indexes for production
 -- =============================================================
 

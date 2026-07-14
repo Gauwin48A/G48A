@@ -82,10 +82,10 @@ object NetworkModule {
         }
         return OkHttpClient.Builder()
             .cache(httpCache)
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .callTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(3, TimeUnit.SECONDS)
+            .readTimeout(8, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .callTimeout(10, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             // Connection pool tuned for 10M+ user scale: keep 8 idle connections alive for 3 min
             .connectionPool(ConnectionPool(8, 3, TimeUnit.MINUTES))
@@ -93,6 +93,7 @@ object NetworkModule {
             .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
             .cookieJar(cookieJar)
             .authenticator(authenticator)
+            .addInterceptor(ApiVersionInterceptor())
             .addInterceptor(AuthInterceptor(tokenStore))
             .addInterceptor(localeInterceptor)
             .addInterceptor(RetryInterceptor())
@@ -123,3 +124,38 @@ object NetworkModule {
     @Singleton
     fun provideApi(retrofit: Retrofit): MhubApi = retrofit.create(MhubApi::class.java)
 }
+
+private class ApiVersionInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+        val originalRequest = chain.request()
+        val originalUrl = originalRequest.url
+        val pathSegments = originalUrl.pathSegments
+
+        if (pathSegments.isNotEmpty() && pathSegments[0] == "api" && (pathSegments.size < 2 || pathSegments[1] != "v1")) {
+            val newSegments = mutableListOf<String>()
+            newSegments.add("api")
+            newSegments.add("v1")
+            for (i in 1 until pathSegments.size) {
+                newSegments.add(pathSegments[i])
+            }
+
+            val urlBuilder = originalUrl.newBuilder()
+            // Clear path segments from back to front
+            for (i in pathSegments.size - 1 downTo 0) {
+                urlBuilder.removePathSegment(i)
+            }
+            // Add new segments
+            for (segment in newSegments) {
+                urlBuilder.addPathSegment(segment)
+            }
+
+            val finalRequest = originalRequest.newBuilder()
+                .url(urlBuilder.build())
+                .build()
+            return chain.proceed(finalRequest)
+        }
+
+        return chain.proceed(originalRequest)
+    }
+}
+

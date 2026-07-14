@@ -864,23 +864,23 @@ fun PostDetailScreen(
                                     post.brand?.let { b -> AssistChip(onClick = {}, label = { Text(b) }) }
                                 }
 
-                                // Safety reminder (compact single line — always visible, no expand)
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7).copy(alpha = 0.8f),
-                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                        ) {
-                            Row(
-                                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text("\uD83D\uDEE1\uFE0F", fontSize = 16.sp)
-                                Text("Safety: Meet in public, inspect before paying, never share OTP.",
-                                    fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F),
-                                    fontWeight = FontWeight.Medium, maxLines = 2)
-                            }
-                        }
+                                // Safety reminder (compact single line — always visible)
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7).copy(alpha = 0.85f),
+                                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text("\uD83D\uDEE1\uFE0F", fontSize = 16.sp)
+                                        Text("Safety: Meet in public, inspect before paying, never share OTP.",
+                                            fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F),
+                                            fontWeight = FontWeight.Medium, maxLines = 2)
+                                    }
+                                }
                             }
                         }
                                                 item(key = "sec_similar") {

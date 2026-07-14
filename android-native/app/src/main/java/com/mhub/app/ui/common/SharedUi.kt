@@ -2,6 +2,7 @@ package com.mhub.app.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,16 +23,29 @@ import androidx.compose.ui.unit.sp
 /** Standard page background gradient matching web sky-50 → blue-50 → indigo-100. */
 val PageGradient = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
 
+/** Dark page background gradient */
+val PageGradientDark = Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
+
 /** Brand button gradient blue-500 → blue-600. */
 val BrandGradient = Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))
 
+/** Dark brand button gradient */
+val BrandGradientDark = Brush.horizontalGradient(listOf(Color(0xFF1E3A5F), Color(0xFF2563EB)))
+
 val LinkColor = Color(0xFF2563EB)
+val LinkColorDark = Color(0xFF93C5FD)
 val LabelColor = Color(0xFF374151)
+val LabelColorDark = Color(0xFFE2E8F0)
 val MutedColor = Color(0xFF6B7280)
+val MutedColorDark = Color(0xFF94A3B8)
 val BorderColor = Color(0xFFE5E7EB)
+val BorderColorDark = Color(0xFF334155)
 val ErrorBg = Color(0xFFFFFBEB)
+val ErrorBgDark = Color(0xFF451A03)
 val ErrorIcon = Color(0xFFB45309)
+val ErrorIconDark = Color(0xFFFBBF24)
 val ErrorText = Color(0xFF92400E)
+val ErrorTextDark = Color(0xFFFDE68A)
 val HeaderBlue100 = Color(0xFFDBEAFE)
 
 @Composable
@@ -40,7 +54,10 @@ fun PageScaffold(
     onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(PageGradient)) {
+    val isDark = isSystemInDarkTheme()
+    val bg = if (isDark) PageGradientDark else PageGradient
+    val link = if (isDark) LinkColorDark else LinkColor
+    Box(modifier = Modifier.fillMaxSize().background(bg)) {
         Column(
             modifier = Modifier.fillMaxSize()
                 .padding(WindowInsets.statusBars.asPaddingValues())
@@ -53,9 +70,9 @@ fun PageScaffold(
                         .clickable { onBack() },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LinkColor, modifier = Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = link, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Back", color = LinkColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Back", color = link, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -71,14 +88,17 @@ fun CardWithHeader(
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val isDark = isSystemInDarkTheme()
+    val brandGrad = if (isDark) BrandGradientDark else BrandGradient
+    val cardColor = if (isDark) Color(0xFF1E293B) else Color.White
     Surface(
         modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
-        shape = RoundedCornerShape(24.dp), color = Color.White,
+        shape = RoundedCornerShape(24.dp), color = cardColor,
         shadowElevation = 16.dp,
     ) {
         Column(Modifier.fillMaxWidth()) {
             Column(
-                Modifier.fillMaxWidth().background(BrandGradient).padding(vertical = 26.dp),
+                Modifier.fillMaxWidth().background(brandGrad).padding(vertical = 26.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
@@ -100,13 +120,17 @@ fun CardWithHeader(
 
 @Composable
 fun ErrorBanner(message: String) {
+    val isDark = isSystemInDarkTheme()
+    val bg = if (isDark) ErrorBgDark else ErrorBg
+    val icon = if (isDark) ErrorIconDark else ErrorIcon
+    val text = if (isDark) ErrorTextDark else ErrorText
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(ErrorBg).padding(12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(bg).padding(12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(Icons.Filled.WarningAmber, null, tint = ErrorIcon, modifier = Modifier.size(16.dp))
+        Icon(Icons.Filled.WarningAmber, null, tint = icon, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
-        Text(message, color = ErrorText, fontSize = 12.sp)
+        Text(message, color = text, fontSize = 12.sp)
     }
 }
 

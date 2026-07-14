@@ -362,6 +362,24 @@ export function AuthProvider({ children }) {
       const forceClear =
         Boolean(force) || status === 401 || status === 403;
 
+      // ── PRESERVE local Demo/guest sessions ──────────────────────────────
+      // Background API failures (401/403 from /auth/me, /auth/refresh-token,
+      // etc.) are EXPECTED for Demo users — they have no real JWT. Without
+      // this guard, every 2 failures trigger clearSession(), which destroys
+      // authSession + user + userProfile + userId, kicking the user into a
+      // permanent session-expired loop. Only suppress clearing when the session
+      // is a local session (authSession flag is present). Real sessions with
+      // truly expired credentials get cleared normally when the user explicitly
+      // logs out via the logout() function.
+      if (hasAuthSession()) {
+        logAuthDiagnostic("auto_logout_suppressed_local_session", {
+          reason,
+          forced: Boolean(forceClear),
+          ...meta,
+        });
+        return false;
+      }
+
       if (isParityOfflineAuthEnabled()) {
         logAuthDiagnostic("auto_logout_suppressed_parity", {
           reason,
@@ -614,6 +632,23 @@ export function AuthProvider({ children }) {
         Date.now() - lastSessionCheck < AUTH_SESSION_CACHE_TTL_MS
       ) {
         return applyCachedUser();
+      }
+
+      // ── OPTIMIZATION: Skip /auth/session API call for Demo users ────────
+      // Demo users have no real backend session, so /auth/session will always
+      // 401. Making the call wastes 1-15s and still falls through to the
+      // refresh path. Instead, detect this case early and go straight to
+      // the cached user flow, which completes instantly.
+      if (hasAuthSession()) {
+        const user = safeParseJson(localStorage.getItem("user"));
+        if (user) {
+          logAuthDiagnostic("bootstrap_demo_session", {
+            hasCachedUser: true,
+          });
+          writeAuthSessionLastCheck(Date.now());
+          setUserState(user);
+          return true;
+        }
       }
 
       if (authSessionInFlightRef.current) {

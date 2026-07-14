@@ -9,6 +9,17 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 
+// ── Sample fallback posts for offline/demo mode ──
+const SAMPLE_FALLBACK_POSTS = [
+  { title: "iPhone 14 Pro Max 256GB", price: 89999, location: "Hyderabad", promo_label: "Spotlight", images: "/placeholder.svg", post_id: "sample-sp-1", seller_name: "TechStore Hyd", tier: "premium" },
+  { title: "Sony WH-1000XM5 Headphones", price: 24990, location: "Mumbai", promo_label: "Featured", images: "/placeholder.svg", post_id: "sample-sp-2", seller_name: "AudioHub", tier: "silver" },
+  { title: "MacBook Air M2 15-inch", price: 114900, location: "Bangalore", promo_label: "Boosted", images: "/placeholder.svg", post_id: "sample-sp-3", seller_name: "MacZone", tier: "premium" },
+  { title: "Samsung 65\" Neo QLED 4K TV", price: 129990, location: "Chennai", promo_label: "Spotlight", images: "/placeholder.svg", post_id: "sample-sp-4", seller_name: "ElectroWorld", tier: "premium" },
+  { title: "Canon EOS R6 Mark II Camera", price: 185000, location: "Delhi", promo_label: "Featured", images: "/placeholder.svg", post_id: "sample-sp-5", seller_name: "ShutterBug", tier: "silver" },
+  { title: "Royal Enfield Classic 350", price: 195000, location: "Pune", promo_label: "Boosted", images: "/placeholder.svg", post_id: "sample-sp-6", seller_name: "BikePoint", tier: "premium" },
+  { title: "PS5 + Extra Controller Bundle", price: 54990, location: "Hyderabad", promo_label: "Promoted", images: "/placeholder.svg", post_id: "sample-sp-7", seller_name: "GameNation", tier: "premium" },
+];
+
 const PROMO_BADGE_COLORS = {
   Spotlight: "bg-orange-500 text-white",
   Featured: "bg-purple-500 text-white",
@@ -96,6 +107,16 @@ function getPostId(post) {
   return nestedId !== null && nestedId !== undefined ? String(nestedId) : "";
 }
 
+// Shuffle array helper for random ordering
+function shuffleArray(arr) {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function SponsoredListings({
   excludePostId,
   category,
@@ -107,6 +128,10 @@ export default function SponsoredListings({
 }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const sampleRef = React.useRef(null);
+  if (!sampleRef.current) {
+    sampleRef.current = shuffleArray(SAMPLE_FALLBACK_POSTS);
+  }
   const {
     activeCategory,
     activeApp,
@@ -164,16 +189,25 @@ export default function SponsoredListings({
       .then((res) => {
         if (cancelled) return;
         const list = Array.isArray(res?.posts) ? res.posts : Array.isArray(res) ? res : [];
-        setPosts(list);
-        if (onStatusChange) {
-          onStatusChange({ loading: false, count: list.length, hasResults: list.length > 0 });
+        // Use fallback sample data if no real posts returned
+        if (list.length === 0) {
+          setPosts(shuffleArray(SAMPLE_FALLBACK_POSTS).slice(0, limit));
+          if (onStatusChange) {
+            onStatusChange({ loading: false, count: limit, hasResults: true, isFallback: true });
+          }
+        } else {
+          setPosts(list);
+          if (onStatusChange) {
+            onStatusChange({ loading: false, count: list.length, hasResults: true });
+          }
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setPosts([]);
+          // API failed — show sample fallback data
+          setPosts(shuffleArray(SAMPLE_FALLBACK_POSTS).slice(0, limit));
           if (onStatusChange) {
-            onStatusChange({ loading: false, count: 0, hasResults: false, error: true });
+            onStatusChange({ loading: false, count: limit, hasResults: true, isFallback: true });
           }
         }
       })
@@ -200,7 +234,11 @@ export default function SponsoredListings({
   }, [resolvedCategoryId, resolvedCategoryName]);
 
   const displayPosts = useMemo(() => {
-    if (!Array.isArray(posts) || posts.length === 0) return [];
+    if (!Array.isArray(posts) || posts.length === 0) {
+      // Use pre-shuffled sample data — stable across renders
+      const samplePosts = sampleRef.current || shuffleArray(SAMPLE_FALLBACK_POSTS);
+      return samplePosts.slice(0, limit);
+    }
     return posts.filter((post) => {
       if (categoryFilter) {
         if (!matchesCategoryModeItem(post, categoryFilter)) {
@@ -214,7 +252,7 @@ export default function SponsoredListings({
       }
       return true;
     });
-  }, [activeAppMatcher, categoryFilter, posts]);
+  }, [activeAppMatcher, categoryFilter, posts, limit]);
 
   useEffect(() => {
     if (!onStatusChange) return;
@@ -229,17 +267,7 @@ export default function SponsoredListings({
     });
   }, [displayPosts.length, loading, onStatusChange]);
 
-  if (!loading && displayPosts.length === 0) {
-    if (variant === "embedded") {
-      return (
-        <div className="text-xs text-gray-400 dark:text-gray-500">
-          No sponsored listings right now.
-        </div>
-      );
-    }
-    return null;
-  }
-
+  // Always render content — no more empty state since we have fallback data
   const cardWidth = variant === "embedded" ? "w-48 sm:w-52" : "w-36";
   const useGrid = variant === "embedded" && !loading && displayPosts.length > 0 && displayPosts.length <= 3;
   const listClass = useGrid
@@ -333,6 +361,3 @@ export default function SponsoredListings({
     </div>
   );
 }
-
-
-

@@ -226,29 +226,10 @@ export default function Login() {
       // Auto-fill the form for visual feedback
       setForm({ mobile: DEMO_ACCOUNT.mobile, password: DEMO_ACCOUNT.password });
 
-      const deviceId = getDeviceId();
-      const body = {
-        identifier: DEMO_ACCOUNT.mobile,
-        password: DEMO_ACCOUNT.password,
-        deviceId: deviceId || 'demo-device',
-        _demoLogin: true,
-      };
-
-      const result = await login(body);
-
-      if (result?.success) {
-        await refreshAuth();
-        toast({
-          title: t("demo_login_successful") || "Demo Login Successful",
-          description: t("demo_welcome_msg") || "Welcome! Exploring the full platform in demo mode.",
-          variant: "success",
-          duration: 2500,
-        });
-        navigate(getReturnPath(), { replace: true });
-        return;
-      }
-
-      // ── Local fallback: create a mock session so login works everywhere ──
+      // ── IMMEDIATE LOCAL DEMO SESSION ──
+      // Skip the server login attempt entirely — no 15s timeout waiting for a
+      // backend that may not be running. This matches the Android native behavior
+      // where startLocalDemoSession() creates an offline session instantly.
       const demoUser = {
         id: "demo-user-001",
         name: "Demo User",
@@ -273,30 +254,8 @@ export default function Login() {
       });
       navigate(getReturnPath(), { replace: true });
     } catch (err) {
-      // ── Local fallback on errors too ──
-      const demoUser = {
-        id: "demo-user-001",
-        name: "Demo User",
-        phone: "9999999999",
-        email: "demo@mhub.app",
-        role: "user",
-        tier: "basic",
-        current_plan: "basic",
-        rewards_rank: "Bronze",
-      };
-      setUser(demoUser);
-      localStorage.setItem("authSession", "true");
-      localStorage.setItem("userId", "demo-user-001");
-      localStorage.setItem("user_id", "demo-user-001");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-
-      toast({
-        title: "Demo Mode Active",
-        description: "Backend unavailable — signed in locally as Demo User.",
-        variant: "success",
-        duration: 3000,
-      });
-      navigate(getReturnPath(), { replace: true });
+      // Fallback — should never happen since we don't make API calls
+      setErrorMessage("Demo login failed. Please try again.");
     } finally {
       setLoading(false);
     }

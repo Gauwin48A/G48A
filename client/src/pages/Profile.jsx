@@ -160,6 +160,7 @@ const ProfilePage = () => {
         return DEFAULT_PREFERENCE_RADIUS_KM;
       }
     }),
+    [sessionExpired, setSessionExpired] = n(!1),
     [detectingPreferenceLocation, setDetectingPreferenceLocation] = n(!1),
     b = ke(0),
     refreshAttemptedRef = ke(!1),
@@ -375,9 +376,20 @@ const ProfilePage = () => {
         } catch {}
       }
       if (l === 401 || l === 403) {
-        N(null),
-          w(null),
-          p("/login", { replace: !0, state: { returnTo: "/profile" } });
+        // Don't clear profile data — show a session-expired banner instead
+        w(null);
+        setSessionExpired(!0);
+        if (!m) {
+          // For local/demo sessions, use AuthContext user as fallback instead of redirecting
+          if (ft()) {
+            const fallbackProfile = y || W.current || null;
+            if (fallbackProfile) {
+              N(fallbackProfile);
+            }
+          } else {
+            p("/login", { replace: !0, state: { returnTo: "/profile" } });
+          }
+        }
         return;
       }
       l >= 500
@@ -397,7 +409,37 @@ const ProfilePage = () => {
   F(() => {
     if (!O) {
       if (!G) {
-        j(!1), w(null), N(null);
+        // Try to load cached profile data so we can show content with a session-expired banner
+        let cachedProfile = null;
+        try {
+          const a = localStorage.getItem("userProfile");
+          if (a) cachedProfile = JSON.parse(a);
+        } catch {}
+        if (cachedProfile) {
+          N(cachedProfile);
+          setSessionExpired(!0);
+          w(null);
+          j(!1);
+        } else {
+          // For local/demo sessions, use AuthContext user as fallback
+          if (ft()) {
+            const fallbackProfile = y || W.current || null;
+            if (fallbackProfile) {
+              N(fallbackProfile);
+              w(null);
+            }
+          }
+          j(!1);
+        }
+        // For local/demo sessions, still attempt fresh profile fetch
+        if (ft()) {
+          return (
+            X(),
+            () => {
+              b.current += 1;
+            }
+          );
+        }
         return;
       }
       return (
@@ -407,7 +449,7 @@ const ProfilePage = () => {
         }
       );
     }
-  }, [O, G, X]);
+  }, [O, G, X, ft, y]);
   usePageRefresh(X);
   const k = L(async ({ force: r = !1, guard: a = () => !0 } = {}) => {
     fe(!0), ve(null);
@@ -833,7 +875,7 @@ const ProfilePage = () => {
         }),
       ),
     );
-  if (!G)
+  if (!G && !m)
     return e.createElement(
       "div",
       {
@@ -1040,8 +1082,7 @@ const ProfilePage = () => {
       [key]: !r[key],
     }));
   const editProfileDetails = () => {
-    Ae("personal");
-    V(!0);
+    p("/settings");
   };
   const profileChecklistItems = [
     {
@@ -1071,16 +1112,6 @@ const ProfilePage = () => {
         ? tr("verify_now", "Verify now")
         : tr("add_phone", "Add phone"),
       onClick: i?.phone ? () => p("/verification") : editProfileDetails,
-    },
-    {
-      key: "kyc",
-      label: tr("kyc", "KYC"),
-      description: kycVerified
-        ? tr("kyc_verified_ready", "KYC is complete and visible on your profile.")
-        : tr("kyc_verify_desc", "Finish KYC to unlock the strongest trust badge."),
-      done: kycVerified,
-      actionLabel: tr("verify_now", "Verify now"),
-      onClick: () => p("/verification"),
     },
     {
       key: "avatar",
@@ -1277,6 +1308,40 @@ const ProfilePage = () => {
         `profile-surface min-h-screen mhub-premium-page pb-20 sm:pb-36 page-fade-in ${density === "compact" ? "mhub-compact" : ""}`,
       style: { "--top-nav-height": "0px" },
     },
+    sessionExpired && e.createElement(
+      "div",
+      {
+        className: "sticky z-[60] w-full bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg",
+        style: { top: "var(--top-nav-height, 60px)" },
+      },
+      e.createElement(
+        "div",
+        { className: "max-w-[640px] mx-auto px-4 py-3 flex items-center justify-between gap-3" },
+        e.createElement(
+          "div",
+          { className: "flex items-center gap-3 min-w-0" },
+          e.createElement(
+            "span",
+            { className: "text-sm font-bold shrink-0" },
+            t("session_expired") || "Session Expired"
+          ),
+          e.createElement(
+            "span",
+            { className: "text-xs text-red-100 truncate" },
+            t("session_expired_message") || "Your session has ended. Sign in again to continue."
+          ),
+        ),
+        e.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => p("/login", { state: { returnTo: "/profile" } }),
+            className: "shrink-0 h-8 px-5 rounded-lg bg-white text-red-700 font-bold text-xs hover:bg-red-50 transition shadow-sm hover:shadow-md",
+          },
+          t("sign_in") || "Sign In"
+        ),
+      ),
+    ),
     e.createElement(
       "div",
       { className: "relative overflow-hidden" },
@@ -2729,33 +2794,6 @@ const ProfilePage = () => {
                         disabled: !(y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode),
                       },
                       e.createElement(Re, { className: "w-4 h-4 mr-1.5" }),
-                      tr("copy", "Copy"),
-                    ),
-                    e.createElement(
-                      d,
-                      {
-                        size: "sm",
-                        variant: "outline",
-                        className: "border-slate-200 rounded-xl px-4 dark:border-slate-700",
-                        onClick: () => {
-                          const code = y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode;
-                          if (!code) return;
-                          const shareUrl = `${window.location.origin}/signup?ref=${code}`;
-                          navigator.share
-                            ? navigator.share({
-                                title: tr("join_mhub", "Join MHub!"),
-                                text: tr("use_my_referral_code", "Use my referral code"),
-                                url: shareUrl,
-                              })
-                            : (navigator.clipboard.writeText(shareUrl),
-                              u({
-                                title: tr("copied", "Copied!"),
-                                description: tr("referral_link_copied", "Referral link copied to clipboard"),
-                              }));
-                        },
-                        disabled: !(y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode),
-                      },
-                      tr("share", "Share"),
                     ),
                   ),
                 ),

@@ -17,11 +17,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
@@ -90,12 +89,11 @@ fun MhubTopBar(
     onSearch: () -> Unit,
     onWishlist: () -> Unit = {},
     onRecentlyViewed: () -> Unit = {},
-    onLanguage: () -> Unit = {},
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     onNotifications: () -> Unit = {},
     onCart: () -> Unit = {},
-    onRewards: () -> Unit = {},
+    onProfile: () -> Unit = {},
     onFilter: () -> Unit = {},
     activeFilterCount: Int = 0,
     unreadNotifCount: Int = 0,
@@ -149,12 +147,12 @@ fun MhubTopBar(
 
             // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Rewards (trophy icon — prominent, moved from bottom nav)
-                IconButton(onClick = onRewards, modifier = Modifier.size(36.dp)) {
+                // Profile (person icon — moved from bottom nav to top bar)
+                IconButton(onClick = onProfile, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        Icons.Default.EmojiEvents,
-                        contentDescription = "Rewards",
-                        tint = Color(0xFFFCD34D),
+                        Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color.White.copy(alpha = 0.92f),
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -183,7 +181,7 @@ fun MhubTopBar(
                     }
                 }
 
-                // Overflow menu: Wishlist, Dark Mode, Recently Viewed, Language
+                // Overflow menu: Wishlist, Dark Mode, Recently Viewed
                 var showOverflow by remember { mutableStateOf(false) }
                 Box {
                     IconButton(onClick = { showOverflow = true }, modifier = Modifier.size(36.dp)) {
@@ -218,11 +216,6 @@ fun MhubTopBar(
                             text = { Text(stringResource(R.string.more_recently_viewed)) },
                             leadingIcon = { Icon(Icons.Default.History, null, modifier = Modifier.size(18.dp)) },
                             onClick = { showOverflow = false; onRecentlyViewed() },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.more_language)) },
-                            leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showOverflow = false; onLanguage() },
                         )
                     }
                 }

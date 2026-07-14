@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiGrid, FiUserCheck, FiMapPin, FiBell, FiSave, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiGrid, FiUserCheck, FiMapPin, FiBell, FiSave, FiClock, FiFileText, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiChevronDown } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useCategoryMode } from '@/context/CategoryModeContext';
 import { useLocation } from '@/context/LocationContext';
@@ -78,17 +78,16 @@ const GreenNavbar = () => {
     { key: 'subcategories', path: '/subcategories', icon: FiGrid, group: 'trade' },
     { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
     { key: 'saved_searches', path: '/saved-searches', icon: FiSearch, group: 'trade', requiresAuth: true },
-    { key: 'wishlist', path: '/wishlist', icon: FiSave, group: 'trade', requiresAuth: true },
     { key: 'recently_viewed', path: '/recently-viewed', icon: FiClock, group: 'trade' },
     { key: 'cart', path: '/cart', icon: FiShoppingCart, group: 'trade', requiresAuth: true },
     { key: 'compare', path: '/compare', icon: FiCheck, group: 'trade' },
-    { key: 'feed', path: '/feed', icon: FiFileText, group: 'social' },
-    { key: 'public_wall', path: '/public-wall', icon: FiBell, group: 'social', labelKey: 'public_wall_title' },
-    { key: 'chat', path: '/chat', icon: FiMessageCircle, group: 'social', requiresAuth: true },
-    { key: 'my_reviews', path: '/reviews', icon: FiStar, group: 'social', requiresAuth: true, requiresUserId: true },
-    { key: 'my_offers', path: '/offers', icon: FiShoppingCart, group: 'social', requiresAuth: true },
+
     { key: 'feedback', path: '/feedback', icon: FiStar, group: 'social' },
     { key: 'complaints', path: '/complaints', icon: FiFileText, group: 'social' },
+    { key: 'wishlist', path: '/wishlist', icon: FiSave, group: 'account', requiresAuth: true },
+    { key: 'feed', path: '/feed', icon: FiFileText, group: 'account', labelKey: 'my_feed' },
+    { key: 'public_wall', path: '/public-wall', icon: FiBell, group: 'account', labelKey: 'public_wall_title' },
+    { key: 'my_home', path: '/my-home', icon: FiUserCheck, group: 'account', requiresAuth: true, labelKey: 'my_home' },
     { key: 'profile', path: '/profile', icon: FiUser, group: 'account', requiresAuth: true },
     { key: 'wallet', path: '/wallet', icon: FiStar, group: 'account', requiresAuth: true },
     { key: 'price_alerts', path: '/price-alerts', icon: FiBell, group: 'account', requiresAuth: true },
@@ -119,6 +118,7 @@ const GreenNavbar = () => {
     categories: categoryModeCategories,
   } = useCategoryMode();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [accountExpanded, setAccountExpanded] = useState(false);
   const { mode: themeMode, setThemeMode } = useTheme();
   const isNativePlatform =
     typeof window !== 'undefined' &&
@@ -848,15 +848,6 @@ const GreenNavbar = () => {
             onClick={(event) => event.stopPropagation()}
             data-no-auto-translate="true"
           >
-            <button
-              type="button"
-              onClick={closeMoreMenu}
-              className="absolute right-5 top-5 rounded p-1 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
-              aria-label={t('close', { defaultValue: 'Close' })}
-            >
-              <FiX className="h-6 w-6" />
-            </button>
-
             <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
               {t('more_options', { defaultValue: 'More options' })}
             </h2>
@@ -885,11 +876,23 @@ const GreenNavbar = () => {
               return groupOrder.map((groupKey) => {
                 const items = grouped[groupKey];
                 if (!items || items.length === 0) return null;
+                const isAccount = groupKey === 'account';
                 return (
                   <div key={groupKey} className="space-y-2">
-                    <p className="px-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                      {groupLabels[groupKey] || groupKey}
-                    </p>
+                    <div
+                      onClick={() => isAccount && setAccountExpanded(!accountExpanded)}
+                      className={`flex items-center justify-between px-1 cursor-pointer ${isAccount ? 'hover:opacity-80' : ''}`}
+                    >
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                        {groupLabels[groupKey] || groupKey}
+                      </p>
+                      {isAccount && (
+                        <span className="text-slate-400 dark:text-slate-500 transition-transform duration-200" style={{ transform: accountExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                          <FiChevronDown className="w-4 h-4" />
+                        </span>
+                      )}
+                    </div>
+                    {(!isAccount || accountExpanded) && (
                     <div className="grid gap-2">
                       {items.map((item) => {
                         const blockedForGuest = item.requiresAuth && !isLoggedIn;
@@ -939,6 +942,7 @@ const GreenNavbar = () => {
                         );
                       })}
                     </div>
+                    )}
                   </div>
                 );
               });

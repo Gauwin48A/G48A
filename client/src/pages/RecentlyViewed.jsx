@@ -75,7 +75,13 @@ const RecentlyViewed = () => {
     Array.isArray(window.__MHUB_TEST_RECENTLY_VIEWED__)
       ? window.__MHUB_TEST_RECENTLY_VIEWED__
       : null;
-  const [items, setItems] = useState(() => seededHistory || []);
+  const [items, setItems] = useState(() => {
+    if (seededHistory) return seededHistory;
+    try {
+      const cached = localStorage.getItem("mhub_recently_viewed_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const { translatedPosts } = useTranslatedPosts(items);
   const [loading, setLoading] = useState(() => !seededHistory);
   const [error, setError] = useState(null);
@@ -88,6 +94,7 @@ const RecentlyViewed = () => {
   const [, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const requestIdRef = useRef(0);
@@ -149,6 +156,18 @@ const RecentlyViewed = () => {
         setError(null);
         const { userId, authed } = getAuthInfo();
         if (!userId || !authed) {
+          // Check for cached data first — show banner instead of full-screen error
+          try {
+            const cached = localStorage.getItem("mhub_recently_viewed_cache");
+            const parsed = cached ? JSON.parse(cached) : null;
+            if (parsed && parsed.length > 0) {
+              setItems(parsed);
+              setSessionExpired(true);
+              setError(null);
+              setLoading(false);
+              return;
+            }
+          } catch {}
           setError(t("please_login_history"));
           setLoading(false);
           return;
@@ -181,7 +200,23 @@ const RecentlyViewed = () => {
         if (err?.name === "AbortError" || err?.code === "ERR_CANCELED") return;
         logError("Failed to fetch history:", err);
         const status = err?.status || err?.response?.status;
-        setError(status === 401 ? "session_expired" : t("failed_load_history"));
+        // Try localStorage cache fallback when the API fails
+        let usedCached = false;
+        if (status === 401 || status === 403) {
+          try {
+            const cached = localStorage.getItem("mhub_recently_viewed_cache");
+            const parsed = cached ? JSON.parse(cached) : null;
+            if (parsed && parsed.length > 0) {
+              setItems(parsed);
+              setSessionExpired(true);
+              setError(null);
+              usedCached = true;
+            }
+          } catch {}
+        }
+        if (!usedCached) {
+          setError(status === 401 ? "session_expired" : t("failed_load_history"));
+        }
       } finally {
         if (requestControllerRef.current === controller) {
           requestControllerRef.current = null;
@@ -206,6 +241,20 @@ const RecentlyViewed = () => {
   useEffect(() => {
     if (seededHistory) return;
     if (authLoading) return;
+    // Pre-check auth: if not authenticated, try cached data immediately
+    const { userId, authed } = getAuthInfo();
+    if (!userId || !authed) {
+      try {
+        const cached = localStorage.getItem("mhub_recently_viewed_cache");
+        const parsed = cached ? JSON.parse(cached) : null;
+        if (parsed && parsed.length > 0) {
+          setItems(parsed);
+          setSessionExpired(true);
+          setLoading(false);
+          return;
+        }
+      } catch {}
+    }
     const delay = initialFetchRef.current ? 0 : 250;
     initialFetchRef.current = false;
     const debounce = setTimeout(() => {
@@ -215,7 +264,7 @@ const RecentlyViewed = () => {
       clearTimeout(debounce);
       requestIdRef.current += 1;
     };
-  }, [authLoading, fetchHistory, searchQuery, sortBy, sourceFilter, seededHistory]);
+  }, [authLoading, fetchHistory, searchQuery, sortBy, sourceFilter, seededHistory, getAuthInfo]);
   usePageRefresh(useCallback(() => fetchHistory({ reset: true }), [fetchHistory]));
 
   const showToast = useCallback((message, type = "success") => {
@@ -700,6 +749,34 @@ const RecentlyViewed = () => {
               onClick={() => navigate("/category-mode")}
             >
               Switch category
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Session Expired Banner ── */}
+      {sessionExpired && (
+        <div className="sticky top-0 z-50 mx-4 sm:mx-6 -mt-1 mb-1">
+          <div className="max-w-[640px] mx-auto rounded-xl bg-red-500/90 backdrop-blur-md border border-red-400/30 shadow-lg shadow-red-500/20 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Lock className="w-4 h-4 text-white shrink-0" />
+              <p className="text-sm font-semibold text-white">
+                {t("session_expired") || "Session Expired"}
+              </p>
+              <p className="text-xs text-red-100 hidden sm:inline">
+                {t("session_expired_message") || "Please sign in to see your latest items."}
+              </p>
+            </div>
+            <Button
+              onClick={() =>
+                navigate("/login", {
+                  state: { returnTo: "/recently-viewed" },
+                })
+              }
+              className="bg-white text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg px-3.5 h-8 text-xs font-bold shadow-sm shrink-0"
+            >
+              <LogIn className="w-3.5 h-3.5 mr-1.5" />
+              {t("sign_in") || "Sign In"}
             </Button>
           </div>
         </div>

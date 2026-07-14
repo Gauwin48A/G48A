@@ -45,7 +45,7 @@ class TokenStore @Inject constructor(context: Context) {
      *  Reduced from 60s to prevent false-negative auth states during token refresh windows. */
     val isAuthenticated: Boolean get() {
         val token = _accessToken.value
-        return !token.isNullOrBlank() && !JwtHelper.isExpired(token, bufferSeconds = 10)
+        return !token.isNullOrBlank() && (isDemoSession || !JwtHelper.isExpired(token, bufferSeconds = 10))
     }
 
     /** True if any token exists (even if near-expiry). Used for UI-level "user logged in" checks

@@ -43,7 +43,9 @@ class AuthRepository @Inject constructor(
     private val wishlistItemDao: WishlistItemDao,
     private val cartItemDao: CartItemDao,
 ) {
-    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { !it.isNullOrBlank() && !JwtHelper.isExpired(it, bufferSeconds = 10) }
+    val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { token ->
+        !token.isNullOrBlank() && (tokenStore.isDemoSession || !JwtHelper.isExpired(token, bufferSeconds = 10))
+    }
     val isCurrentlyAuthenticated: Boolean get() = tokenStore.isAuthenticated
     /** True if a token string is stored, regardless of whether it is expired. */
     val hasSession: Boolean get() = tokenStore.hasSession

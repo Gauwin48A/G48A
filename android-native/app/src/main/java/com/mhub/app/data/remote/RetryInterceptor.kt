@@ -9,8 +9,8 @@ import java.io.IOException
  * Keeps UX snappy on flaky mobile networks.
  */
 class RetryInterceptor(
-    private val maxRetries: Int = 3,
-    private val initialDelayMs: Long = 300,
+    private val maxRetries: Int = 1,
+    private val initialDelayMs: Long = 200,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()

@@ -2,6 +2,7 @@ package com.mhub.app.ui.channels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -40,7 +41,33 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private val bgGradient get() = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+private val bgGradientLight get() = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+private val bgGradientDark get() = Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
+@Composable
+private fun pageGradient() = if (isSystemInDarkTheme()) bgGradientDark else bgGradientLight
+
+@Composable
+private fun amberCard() = if (isSystemInDarkTheme()) Color(0xFF451A03) else Color(0xFFFEF3C7)
+@Composable
+private fun amberText() = if (isSystemInDarkTheme()) Color(0xFFFDE68A) else Color(0xFFB45309)
+@Composable
+private fun redCard() = if (isSystemInDarkTheme()) Color(0xFF450A0A) else Color(0xFFFEE2E2)
+@Composable
+private fun redText() = if (isSystemInDarkTheme()) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+@Composable
+private fun greenText() = if (isSystemInDarkTheme()) Color(0xFF86EFAC) else Color(0xFF047857)
+@Composable
+private fun greenCard() = if (isSystemInDarkTheme()) Color(0xFF064E3B) else Color(0xFFECFDF5)
+@Composable
+private fun indigoCard() = if (isSystemInDarkTheme()) Color(0xFF1E1B4B) else Color(0xFFEEF2FF)
+@Composable
+private fun chartBarBg() = if (isSystemInDarkTheme()) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+@Composable
+private fun heroGradient() = if (isSystemInDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF1A1B4B), Color(0xFF3B1F6E))) else Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))
+@Composable
+private fun heroGradient2() = if (isSystemInDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF2D1B69), Color(0xFF4B1F7A))) else Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))
+@Composable
+private fun greenContainer() = if (isSystemInDarkTheme()) Color(0xFF064E3B) else Color(0xFF10B981)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,19 +242,19 @@ fun CreateChannelScreen(onBack: () -> Unit, viewModel: CreateChannelViewModel = 
     Scaffold(topBar = { TopBar("Create Centre Page", onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             // Premium notice (server enforces premium-only + one page per category)
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)), shape = RoundedCornerShape(10.dp)) {
+            Card(colors = CardDefaults.cardColors(containerColor = amberCard()), shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.WorkspacePremium, null, tint = Color(0xFFB45309), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.WorkspacePremium, null, tint = amberText(), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Premium feature — one Centre Page per category.", color = Color(0xFFB45309), fontSize = 12.sp)
+                    Text("Premium feature — one Centre Page per category.", color = amberText(), fontSize = 12.sp)
                 }
             }
             state.error?.let {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), shape = RoundedCornerShape(10.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = redCard()), shape = RoundedCornerShape(10.dp)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.ErrorOutline, null, tint = redText(), modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                        Text(it, color = redText(), fontSize = 13.sp)
                     }
                 }
             }
@@ -306,7 +333,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                 LazyColumn(contentPadding = PaddingValues(bottom = 80.dp), modifier = Modifier.fillMaxSize().padding(padding)) {
                     // Hero cover banner
                     item {
-                        Box(Modifier.fillMaxWidth().height(160.dp).background(Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))), contentAlignment = Alignment.BottomStart) {
+                        Box(Modifier.fillMaxWidth().height(160.dp).background(heroGradient()), contentAlignment = Alignment.BottomStart) {
                             Column(Modifier.padding(16.dp)) {
                                 Text(ch.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                                 ch.description?.let { Text(it, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis) }
@@ -533,7 +560,7 @@ fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, on
                     items(state.centres, key = { it.stableId }) { c ->
                         Card(onClick = { onOpenCentre(c.stableId) }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF10B981)), contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(greenContainer()), contentAlignment = Alignment.Center) {
                                     Icon(Icons.Filled.Store, null, tint = Color.White, modifier = Modifier.size(24.dp))
                                 }
                                 Spacer(Modifier.width(14.dp))
@@ -649,11 +676,11 @@ fun CreateCentreScreen(
     Scaffold(topBar = { TopBar("Create Centre", onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             state.error?.let {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), shape = RoundedCornerShape(10.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = redCard()), shape = RoundedCornerShape(10.dp)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.ErrorOutline, null, tint = redText(), modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                        Text(it, color = redText(), fontSize = 13.sp)
                     }
                 }
             }
@@ -667,7 +694,7 @@ fun CreateCentreScreen(
                     }
                 }
                 !state.canCreateCentre -> {
-                    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = indigoCard()), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(42.dp))
                             Text("Premium Feature", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
@@ -686,8 +713,8 @@ fun CreateCentreScreen(
                     }
                 }
                 else -> {
-                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)), modifier = Modifier.fillMaxWidth()) {
-                        Text(state.accessLabel.ifBlank { "Centre access active" }, modifier = Modifier.padding(12.dp), color = Color(0xFF047857), fontWeight = FontWeight.SemiBold)
+                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = greenCard()), modifier = Modifier.fillMaxWidth()) {
+                        Text(state.accessLabel.ifBlank { "Centre access active" }, modifier = Modifier.padding(12.dp), color = greenText(), fontWeight = FontWeight.SemiBold)
                     }
                     CField("Centre Name *", state.name, viewModel::setName, "e.g. Andheri Electronics Market")
                     CField("Description (optional)", state.description, viewModel::setDescription, "What does this centre sell?", maxLines = 3, minLines = 2)
@@ -896,7 +923,7 @@ fun CentreDetailScreen(centreId: String, onBack: () -> Unit, onOpenCentre: (Stri
             LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 80.dp)) {
                 // Hero
                 item(key = "hero") {
-                    Box(Modifier.fillMaxWidth().height(170.dp).background(Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))), contentAlignment = Alignment.BottomStart) {
+                    Box(Modifier.fillMaxWidth().height(170.dp).background(heroGradient2()), contentAlignment = Alignment.BottomStart) {
                         Column(Modifier.padding(16.dp)) {
                             Text(ch.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                             ch.location?.let { Text("📍 $it", color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp) }
@@ -1104,7 +1131,7 @@ private fun LazyListScope.AnalyticsContent(a: CentreAnalyticsData, loading: Bool
                 a.viewsByDay.forEach { (d, c) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(d, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(30.dp))
-                        Box(Modifier.weight(1f).height(18.dp).background(Color(0xFFF1F5F9), RoundedCornerShape(4.dp))) {
+                        Box(Modifier.weight(1f).height(18.dp).background(chartBarBg(), RoundedCornerShape(4.dp))) {
                             Box(Modifier.fillMaxHeight().fillMaxWidth((c.toFloat() / maxV).coerceIn(0.05f, 1f)).background(Color(0xFF7C3AED).copy(alpha = 0.7f), RoundedCornerShape(4.dp)))
                         }
                         Text("$c", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)

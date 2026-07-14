@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, Share2, Eye, ArrowLeft, Clock, MapPin } from "lucide-react";
+import { Heart, Share2, Eye, ArrowLeft, Clock, MapPin, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import api from "../lib/api";
 import { getUserId } from "@/utils/authStorage";
@@ -12,24 +12,8 @@ import {
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
-
-// Demo feed post shown when backend is unavailable
-const DEMO_FEED_POST = {
-  post_id: "feed-demo-001",
-  id: "feed-demo-001",
-  title: "Fresh organic vegetables from our farm — weekly delivery available!",
-  description: "We grow pesticide-free vegetables including tomatoes, spinach, capsicum, and brinjal. Weekly subscription available for families. Free delivery within 5km of our farm in Whitefield.",
-  price: 299,
-  currency: "INR",
-  category: "Fresh Produce",
-  location: "Whitefield, Bangalore",
-  created_at: new Date(Date.now() - 86400000).toISOString(),
-  likes: 45,
-  views: 189,
-  images: ["https://placehold.co/600x400/2d6a4f/e0e0e0?text=Fresh+Vegetables"],
-  author: { name: "Green Acres Farm", avatar: null },
-  _isDemo: true,
-};
+import SponsoredListings from "@/components/SponsoredListings";
+import PremiumRecommendations from "@/components/PremiumRecommendations";
 
 export default function FeedPostDetail() {
   const { t } = useTranslation();
@@ -52,6 +36,8 @@ export default function FeedPostDetail() {
   const [likesCount, setLikesCount] = useState(Number(locationPost?.likes || 0));
   const [toastMessage, setToastMessage] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const fetchPost = useCallback(
     async (signal) => {
@@ -72,10 +58,13 @@ export default function FeedPostDetail() {
         setLikesCount(Number(parsed.likes || 0));
       } catch (err) {
         if (signal?.aborted) return;
-        // Fallback to demo post when backend is unavailable
-        setPost({ ...DEMO_FEED_POST, post_id: postId || DEMO_FEED_POST.post_id, id: postId || DEMO_FEED_POST.id });
-        setLikesCount(DEMO_FEED_POST.likes);
-        setErrorMessage("");
+        // Show a real error state instead of silently falling back to fake demo data
+        setPost(null);
+        setErrorMessage(
+          err?.response?.data?.message ||
+            err?.message ||
+            tr("feed_post_load_failed", "Unable to load this post. Check your connection and try again."),
+        );
       } finally {
         if (!signal?.aborted) setIsLoading(false);
       }
@@ -154,6 +143,18 @@ export default function FeedPostDetail() {
           minute: "2-digit",
         })
       : "";
+
+  const images = post?.images || post?.image_urls || [];
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen]);
 
   /* ---- Loading ---- */
   if (isLoading) {
@@ -249,6 +250,73 @@ export default function FeedPostDetail() {
             </div>
           </div>
 
+          {/* Image gallery — if post has images */}
+          {images.length > 0 && (
+            <div className="relative w-full bg-gray-100 dark:bg-gray-800">
+              <div className="aspect-[16/9] sm:aspect-[4/3] relative overflow-hidden">
+                <img
+                  src={images[activeImageIdx]}
+                  alt={post.title || "Post image"}
+                  className="w-full h-full object-cover cursor-pointer transition-transform hover:scale-[1.02]"
+                  onClick={() => setLightboxOpen(true)}
+                  onError={(e) => {
+                    e.target.src = `https://placehold.co/600x400/e2e8f0/64748b?text=Image+Not+Available`;
+                  }}
+                />
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+                      }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 rounded-full p-1.5 shadow-md transition-all hover:scale-110"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 rounded-full p-1.5 shadow-md transition-all hover:scale-110"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Thumbnail strip */}
+              {images.length > 1 && (
+                <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-thin">
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIdx(idx)}
+                      className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                        idx === activeImageIdx
+                          ? "border-indigo-500 ring-2 ring-indigo-500/30"
+                          : "border-transparent opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Post body */}
           <div className="p-6 md:p-8">
             {post.title && (
@@ -294,6 +362,22 @@ export default function FeedPostDetail() {
           </div>
         </Card>
 
+        {/* ── Suggested posts: Sponsored Listings ── */}
+        <div className="mt-10 px-1">
+          <SponsoredListings
+            currentPostId={postId}
+            title={tr("sponsored_listings_title", "Sponsored Listings")}
+          />
+        </div>
+
+        {/* ── Suggested posts: Premium Recommendations ── */}
+        <div className="mt-8 px-1">
+          <PremiumRecommendations
+            currentPostId={postId}
+            title={tr("premium_recommendations_title", "Premium Recommendations")}
+          />
+        </div>
+
         <div className="text-center mt-8">
           <Button
             onClick={() => navigate("/feed")}
@@ -305,6 +389,44 @@ export default function FeedPostDetail() {
           </Button>
         </div>
       </div>
+
+      {/* Lightbox overlay */}
+      {lightboxOpen && images.length > 0 && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition p-2"
+            aria-label="Close lightbox"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={images[activeImageIdx]}
+              alt={post.title || "Enlarged image"}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+            {images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      idx === activeImageIdx
+                        ? "bg-white scale-125"
+                        : "bg-white/40 hover:bg-white/70"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toastMessage && (

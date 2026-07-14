@@ -26,6 +26,10 @@ const ALLOWED_MEDIA_HOSTS = [
   /^(.*\.)?imgur\.com$/i,
   /^(.*\.)?googleusercontent\.com$/i,
   /^(.*\.)?unsplash\.com$/i,
+  /^(.*\.)?placehold\.co$/i,
+  /^(.*\.)?picsum\.photos$/i,
+  /^via\.placeholder\.com$/i,
+  /^dummyimage\.com$/i,
   LOCALHOST_HOSTNAME_PATTERN,
 ];
 

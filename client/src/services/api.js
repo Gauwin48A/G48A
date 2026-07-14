@@ -27,8 +27,12 @@ const AUTH_REFRESH_EXCLUDED_PATHS = [
   "/auth/refresh-token",
   "/auth/csrf-token",
   "/auth/logout",
+  "/recently-viewed",
+  "/wishlist",
+  "/profile",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/auth/me",
 ];
 const LOCAL_DEV_BACKEND_ORIGINS = [
   "http://localhost:5001",
@@ -64,11 +68,16 @@ export function setRefreshDelegate(fn) {
   externalRefreshFn = typeof fn === "function" ? fn : null;
 }
 let csrfBootstrapPromise = null;
+let csrfBootstrapPreloaded = false;
 let backendRecoveryPromise = null;
 let backendRecoveryFailureUntil = 0;
 let backendRecoveredOriginCache = "";
 let refreshFailureBackoffUntil = 0;
 let authEventCooldownUntil = 0;
+let consecutiveAuthFailures = 0;
+const MAX_CONSECUTIVE_AUTH_FAILURES = 2;
+let lastAuthFailureAt = 0;
+const AUTH_FAILURE_RESET_WINDOW_MS = 60 * 1000;
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
 const AUTH_EVENT_NAME = "mhub:auth-required";
@@ -450,6 +459,20 @@ const clearClientAuthState = () => {
   if (isParityOfflineAuthMode()) {
     return;
   }
+  // Preserve active local sessions (Demo Login, etc.). Only clear JWT
+  // tokens that the backend might have issued. Without this guard, every
+  // 2 API 401s within 60s trigger `clearClientAuthState()`, which destroys
+  // `authSession`, `user`, `userProfile` — all the cached data that powers
+  // Profile/Wishlist/RecentlyViewed graceful degradation. Demo Login users
+  // have no real backend session, so these failures are expected and harmless.
+  try {
+    if (localStorage.getItem("authSession") === "true") {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("token");
+      return;
+    }
+  } catch {}
   localStorage.removeItem("authToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
@@ -493,6 +516,18 @@ const dispatchAuthRequiredOnce = (detail = {}) => {
     });
     return true;
   }
+  // Preserve Demo Login sessions — API 401s are expected since there's no
+  // real backend session. Without this guard, 2 consecutive auth failures
+  // redirect the user to /login?expired=true, breaking the demo experience.
+  try {
+    if (localStorage.getItem("authSession") === "true") {
+      logAuthDiagnostic("auto_logout_suppressed_demo_session", {
+        source: "api_auth_required_event",
+        ...detail,
+      });
+      return true;
+    }
+  } catch {}
   const now = Date.now();
   if (now < authEventCooldownUntil) {
     return true;
@@ -718,15 +753,24 @@ const api = axios.create({
   timeout: 15e3,
 });
 // Expose for runtime diagnostics (no-op in production but harmless)
-try {
-  if (typeof window !== "undefined") {
-    window.__mhubApi = api;
-    const c = window.__mhubConsole || console;
-    (c.log || console.log)("[MHub:api.js] module loaded; baseURL=" + getCurrentApiRootUrl());
-    const buf = window.__mhubDiagBuffer || (window.__mhubDiagBuffer = []);
-    buf.push({ t: Date.now(), tag: "MODULE_LOAD", detail: getCurrentApiRootUrl() });
-  }
-} catch {}
+  try {
+    if (typeof window !== "undefined") {
+      window.__mhubApi = api;
+      const c = window.__mhubConsole || console;
+      (c.log || console.log)("[MHub:api.js] module loaded; baseURL=" + getCurrentApiRootUrl());
+      const buf = window.__mhubDiagBuffer || (window.__mhubDiagBuffer = []);
+      buf.push({ t: Date.now(), tag: "MODULE_LOAD", detail: getCurrentApiRootUrl() });
+      // Pre-fetch CSRF token immediately so login/signup don't wait for it
+      if (!csrfBootstrapPreloaded && document.cookie.indexOf("XSRF-TOKEN") === -1) {
+        csrfBootstrapPreloaded = true;
+        fetch(getCurrentApiRootUrl() + "/auth/csrf-token", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        }).catch(() => {});
+      }
+    }
+  } catch {}
 api.interceptors.request.use(
   async (config) => {
     const _diag = (tag, detail) => {
@@ -970,6 +1014,8 @@ api.interceptors.response.use(
       try {
         const refreshed = await refreshAccessToken();
         if (refreshed) {
+          consecutiveAuthFailures = 0;
+          lastAuthFailureAt = 0;
           return api(originalRequest);
         }
         throw new Error("Session refresh failed");
@@ -983,25 +1029,42 @@ api.interceptors.response.use(
           retainAuth,
         });
         if (!retainAuth) {
-          const hardAuthFailure = refreshStatus === 401 || refreshStatus === 403;
-          if (DISABLE_AUTO_LOGOUT && !hardAuthFailure) {
-            logAuthDiagnostic("auto_logout_suppressed", {
-              source: "api_interceptor_refresh_failure",
-              status: refreshStatus,
-            });
-          } else {
-            clearClientAuthState();
-            if (DISABLE_AUTO_LOGOUT) {
-              logAuthDiagnostic("auto_logout_forced", {
+          // Track consecutive auth failures — don't destroy session on first blip
+          const now = Date.now();
+          if (now - lastAuthFailureAt > AUTH_FAILURE_RESET_WINDOW_MS) {
+            consecutiveAuthFailures = 0;
+          }
+          lastAuthFailureAt = now;
+          consecutiveAuthFailures++;
+          logAuthDiagnostic("auth_consecutive_failures", {
+            count: consecutiveAuthFailures,
+            threshold: MAX_CONSECUTIVE_AUTH_FAILURES,
+            path: getRequestPath(originalRequest?.url),
+          });
+          // Only destroy session after repeated failures within the window
+          if (consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
+            const hardAuthFailure = refreshStatus === 401 || refreshStatus === 403;
+            if (DISABLE_AUTO_LOGOUT && !hardAuthFailure) {
+              logAuthDiagnostic("auto_logout_suppressed", {
                 source: "api_interceptor_refresh_failure",
                 status: refreshStatus,
+                consecutiveFailures: consecutiveAuthFailures,
               });
             } else {
-              dispatchAuthRequiredOnce({
-                reason: "session_expired",
-                redirectTo: "/login?expired=true",
-                source: "api_interceptor_refresh_failure",
-              });
+              clearClientAuthState();
+              if (DISABLE_AUTO_LOGOUT) {
+                logAuthDiagnostic("auto_logout_forced", {
+                  source: "api_interceptor_refresh_failure",
+                  status: refreshStatus,
+                  consecutiveFailures: consecutiveAuthFailures,
+                });
+              } else {
+                dispatchAuthRequiredOnce({
+                  reason: "session_expired",
+                  redirectTo: "/login?expired=true",
+                  source: "api_interceptor_refresh_failure",
+                });
+              }
             }
           }
         }

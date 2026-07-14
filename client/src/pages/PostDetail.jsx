@@ -60,56 +60,13 @@ import {
   Link as Qe,
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
+  FileText as Ce,
 } from "lucide-react";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 
-// Demo post shown when backend is unavailable (offline fallback)
-const DEMO_POST = {
-  post_id: "demo-001",
-  id: "demo-001",
-  title: "Samsung Galaxy S24 Ultra — 256GB Titanium Black",
-  description: "Barely used Samsung Galaxy S24 Ultra in pristine condition. Comes with original box, charger, and unused S Pen. Purchased 3 months ago from official Samsung store. No scratches or dents. Battery health at 98%. Includes 1 year remaining warranty.",
-  price: 89999,
-  currency: "INR",
-  category_name: "Electronics",
-  category_id: "electronics",
-  condition: "Like New",
-  location: "Hyderabad, Telangana",
-  city: "Hyderabad",
-  state: "Telangana",
-  created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  views: 342,
-  likes: 28,
-  is_negotiable: true,
-  images: [
-    "https://placehold.co/600x400/1a1a2e/e0e0e0?text=Galaxy+S24+Ultra",
-    "https://placehold.co/600x400/16213e/e0e0e0?text=Back+View",
-    "https://placehold.co/600x400/0f3460/e0e0e0?text=Box+%26+Accessories",
-  ],
-  seller: {
-    id: "seller-demo",
-    name: "Priya Sharma",
-    avatar: null,
-    rating: 4.7,
-    total_reviews: 23,
-    member_since: "2023-01-15",
-    verified: true,
-    response_time: "Usually responds within 1 hour",
-  },
-  specs: { brand: "Samsung", model: "Galaxy S24 Ultra", storage: "256GB", ram: "12GB", color: "Titanium Black" },
-  trust: { score: 92, label: "Excellent", level: "high" },
-  _isDemo: true,
-};
-
 const SECTION_OBSERVER_IDS = [
   "overview",
-  "listing-details",
-  "key-details",
-  "specs",
-  "location",
-  "trust-safety",
   "description",
-  "negotiation",
   "seller",
   "sponsored",
   "premium",
@@ -144,15 +101,9 @@ function PostDetail() {
     [zoomOpen, setZoomOpen] = useState(!1),
     [sponsoredStatus, setSponsoredStatus] = useState({ loading: !0, count: null }),
     [premiumStatus, setPremiumStatus] = useState({ loading: !0, count: null }),
-    [ownerInsights, setOwnerInsights] = useState({
-      inquiries: [],
-      offers: [],
-      viewers: [],
-    }),
-    [ownerInsightsLoading, setOwnerInsightsLoading] = useState(!1),
-    [ownerInsightsError, setOwnerInsightsError] = useState(null),
+
     [activeSection, setActiveSection] = useState("overview"),
-    [collapsedSections, setCollapsedSections] = useState({}),
+    
     [reportSubmitting, setReportSubmitting] = useState(!1),
     [reportSubmitted, setReportSubmitted] = useState(!1),
     sectionNavRef = useRef(null),
@@ -165,10 +116,7 @@ function PostDetail() {
       return s ? tr(s, Q || s) : Q;
     },
     errorMessage = resolveMessage(v, "load_product_failed"),
-    ownerInsightsErrorMessage = resolveMessage(
-      ownerInsightsError,
-      "lead_fetch_failed",
-    ),
+
     normalizeId = (t) => {
       if (t === undefined || t === null) return "";
       if (typeof t === "number") {
@@ -377,9 +325,9 @@ function PostDetail() {
     window.scrollTo(0, 0),
       r ||
         (async () => {
+          const safeId = normalizeId(d);
           try {
             N(null);
-            const safeId = normalizeId(d);
             if (!safeId) {
               N({
                 key: "invalid_listing_id",
@@ -407,21 +355,35 @@ function PostDetail() {
                     })()
                   : [],
               T = { ...s, images: mediaList, seller: s.seller || {} };
-            u(T),
-              setSavedPost(
-                Boolean(
-                  T?.is_saved ||
-                    T?.saved ||
-                    isSavedPostId(T?.post_id || T?.id || safeId),
-                ),
-              ),
-              c(!1);
+            // Cache successful post data in localStorage for offline fallback
+            try { localStorage.setItem("mhub_post_cache_" + safeId, JSON.stringify(T));
+              const cacheKeys = Object.keys(localStorage).filter(k => k.startsWith("mhub_post_cache_"));
+              if (cacheKeys.length > 50) {
+                const toRemove = cacheKeys.sort().slice(0, cacheKeys.length - 50);
+                toRemove.forEach(k => localStorage.removeItem(k));
+              }
+            } catch {}
+            u(T)
           } catch (a) {
             if (abortCtrl.signal.aborted) return;
             if (import.meta.env.DEV) console.error("Error fetching post data:", a);
-            // Fallback to demo post when backend is unavailable
-            u({ ...DEMO_POST, post_id: d || DEMO_POST.post_id, id: d || DEMO_POST.id });
-            N(null);
+            // Try localStorage cache as fallback
+            let cachedPost = null;
+            try {
+              const raw = localStorage.getItem("mhub_post_cache_" + safeId);
+              if (raw) cachedPost = JSON.parse(raw);
+            } catch {}
+            if (cachedPost && cachedPost.post_id) {
+              const mediaList = Array.isArray(cachedPost.images)
+                ? cachedPost.images
+                : typeof cachedPost.images == "string" && cachedPost.images.trim()
+                  ? (() => { try { const p = JSON.parse(cachedPost.images); return Array.isArray(p) ? p : [cachedPost.images]; } catch { return [cachedPost.images]; } })()
+                  : [];
+              u({ ...cachedPost, images: mediaList, seller: cachedPost.seller || {} });
+            } else {
+              u(null);
+              N({ key: "network_error", fallback: tr("network_error", "Unable to load product. Check your connection and try again.") });
+            }
             c(!1);
           }
         })(),
@@ -639,8 +601,24 @@ function PostDetail() {
     imageList = parsedImages.length
       ? parsedImages.map(extractImageUrl).filter((t) => t)
       : [
-          r.image_url || r.imageUrl || r.thumbnail || r.cover,
+          r.image_url,
+          r.imageUrl,
+          r.thumbnail,
+          r.thumbnail_url,
+          r.thumbnailUrl,
+          r.cover,
+          r.cover_image,
+          r.featured_image,
+          r.featuredImage,
+          r.photo,
+          r.photo_url,
+          r.photoUrl,
+          r.img,
+          r.media,
+          r.hero_image,
+          r.heroImage,
         ]
+          .filter(Boolean)
           .map(extractImageUrl)
           .filter((t) => t),
     imageCount = imageList.length,
@@ -1299,46 +1277,10 @@ function PostDetail() {
         show: !0,
       },
       {
-        key: "listing-details",
-        id: "listing-details",
-        label: tr("listing_details", "Listing details"),
-        show: listingDetails.length > 0,
-      },
-      {
-        key: "key-details",
-        id: "key-details",
-        label: tr("key_details", "Key details"),
-        show: keyDetails.length > 0,
-      },
-      {
-        key: "specs",
-        id: "specs",
-        label: tr("specifications", "Specs"),
-        show: specs.length > 0,
-      },
-      {
-        key: "location",
-        id: "location",
-        label: tr("location_meetup", "Location & meetup"),
-        show: !0,
-      },
-      {
-        key: "trust-safety",
-        id: "trust-safety",
-        label: tr("trust_safety", "Trust & Safety"),
-        show: !0,
-      },
-      {
         key: "description",
         id: "description",
         label: tr("description", "Description"),
         show: !0,
-      },
-      {
-        key: "negotiation",
-        id: "negotiation",
-        label: tr("negotiate_price", "Negotiate"),
-        show: !isOwnerView,
       },
       {
         key: "seller",
@@ -1520,145 +1462,10 @@ function PostDetail() {
         return;
       }
       w(!0);
-    },
-    toggleSection = (sectionKey) => {
-      setCollapsedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
-    },
-    renderSectionHeader = (sectionKey, icon, title, extraClass) => {
-      const isCollapsed = collapsedSections[sectionKey];
-      return React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: () => toggleSection(sectionKey),
-          className: `flex items-center justify-between w-full gap-2 group cursor-pointer ${extraClass || ""}`,
-        },
-        React.createElement(
-          "div",
-          { className: "flex items-center gap-2" },
-          icon && React.createElement(icon, { className: "w-5 h-5" }),
-          React.createElement(
-            "h3",
-            { className: "font-bold text-gray-900 dark:text-gray-100" },
-            title,
-          ),
-        ),
-        React.createElement(isCollapsed ? ChevronDownIcon : ChevronUpIcon, {
-          className: "w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform group-hover:text-gray-600 dark:group-hover:text-gray-300",
-        }),
-      );
-    },
-    K = [
-      {
-        key: "verification",
-        label: tr("seller_verification", "Seller verification"),
-        value: S
-          ? tr("verified_profile", "Verified profile")
-          : tr("verification_pending", "Verification pending"),
-        hint: S
-          ? tr("identity_checks_completed", "Identity checks completed.")
-          : tr(
-              "identity_checks_pending_hint",
-              "Use in-app chat and confirm identity before payment.",
-            ),
-      },
-      {
-        key: "rating",
-        label: tr("seller_rating", "Seller rating"),
-        value:
-          _ > 0
-            ? tr("seller_rating_value", "{{rating}} / 5", {
-                rating: _.toFixed(1),
-              })
-            : tr("no_rating_yet", "No rating yet"),
-        hint: tr("seller_rating_hint", "Based on prior buyer feedback."),
-      },
-      {
-        key: "sales",
-        label: tr("completed_sales", "Completed sales"),
-        value:
-          B > 0
-            ? tr("sales_count", "{{count}}", { count: B })
-            : tr("new_seller", "New seller"),
-        hint: tr(
-          "completed_sales_hint",
-          "Higher completed sales can indicate reliability.",
-        ),
-      },
-      {
-        key: "response",
-        label: tr("response_profile", "Response profile"),
-        value:
-          P > 0
-            ? tr("response_rate", "{{count}}% response rate", { count: P })
-            : String(G),
-        hint: tr(
-          "response_time_hint",
-          "Check response time before committing to urgent deals.",
-        ),
-      },
-      {
-        key: "member",
-        label: tr("member_since", "Member since"),
-        value: q,
-        hint: tr("listing_id_hint", "Listing ID: {{id}}", { id: J }),
-      },
-    ];
-  const ownerInquiries = Array.isArray(ownerInsights?.inquiries)
-      ? ownerInsights.inquiries
-      : [],
-    ownerOffers = Array.isArray(ownerInsights?.offers)
-      ? ownerInsights.offers
-      : [],
-    ownerViewers = Array.isArray(ownerInsights?.viewers)
-      ? ownerInsights.viewers
-      : [],
-    ownerLeadSnapshot = (() => {
-      const map = new Map();
-      const upsert = (entry, type) => {
-        if (!entry) return;
-        const id =
-          entry?.buyer_id ||
-          entry?.viewer_id ||
-          entry?.user_id ||
-          entry?.id ||
-          "";
-        if (!id) return;
-        const key = String(id);
-        const existing = map.get(key) || {
-          id: key,
-          name:
-            entry?.buyer_name ||
-            entry?.viewer_name ||
-            entry?.full_name ||
-            entry?.username ||
-            entry?.name ||
-            entry?.buyer_id ||
-            entry?.viewer_id ||
-            entry?.user_id ||
-            tr("unknown", "Unknown"),
-          types: new Set(),
-        };
-        existing.types.add(type);
-        map.set(key, existing);
-      };
-      const leadTypes = {
-        interested: tr("lead_type_interested", "Interested"),
-        offer: tr("lead_type_offer", "Offer"),
-        view: tr("lead_type_view", "View"),
-      };
-      ownerInquiries.forEach((entry) => upsert(entry, leadTypes.interested));
-      ownerOffers.forEach((entry) => upsert(entry, leadTypes.offer));
-      ownerViewers.forEach((entry) => upsert(entry, leadTypes.view));
-      return map;
-    })(),
-    ownerLeadCount = ownerLeadSnapshot.size,
-    ownerLeadList = Array.from(ownerLeadSnapshot.values()).map((lead) => ({
-      ...lead,
-      types: Array.from(lead.types),
-    }));
+    };
+
+
   const handleMediaTouchStart = (event) => {
-    if (imageCount < 2) return;
     const touch = event?.touches?.[0];
     if (!touch) return;
     swipeState.current = {
@@ -1701,9 +1508,8 @@ function PostDetail() {
         role: "region",
         "aria-label": tr("media_gallery", "Media gallery"),
       },
-          activeImage
-        ? React.createElement("img", {
-            src: resolveMediaUrl(activeImage),
+          React.createElement("img", {
+            src: resolveMediaUrl(activeImage || "/placeholder.svg"),
             alt: r.title
               ? `${r.title} - ${tr("image", "Image")} ${activeIndex + 1}`
               : tr("listing_image", "Listing image"),
@@ -1717,180 +1523,7 @@ function PostDetail() {
               t.target.onerror = null;
               t.target.src = "/placeholder.svg";
             },
-          })
-        : React.createElement(
-            "div",
-            {
-              className:
-                "w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 dark:from-gray-700 dark:via-gray-800 dark:to-gray-900 dark:bg-gradient-to-br",
-            },
-            React.createElement(
-              "div",
-              {
-                className:
-                  "text-center space-y-3 text-gray-500 dark:text-gray-300 max-w-sm px-4",
-              },
-              React.createElement(x, {
-                className: "w-12 h-12 mx-auto text-gray-300 dark:text-gray-300",
-              }),
-              React.createElement(
-                "p",
-                { className: "text-sm font-semibold" },
-                isOwnerView
-                  ? tr(
-                      "add_photos_prompt",
-                      "Add photos to get more views",
-                    )
-                  : tr("no_photo", "No photo available"),
-              ),
-              React.createElement(
-                "p",
-                { className: "text-xs text-gray-400 dark:text-gray-300" },
-                isOwnerView
-                  ? tr(
-                      "add_photos_hint",
-                      "Listings with clear photos get more responses.",
-                    )
-                  : contactCtaDisabled
-                    ? contactCtaReason ||
-                      tr(
-                        "seller_unavailable_hint",
-                        "Seller is unavailable right now.",
-                      )
-                    : tr(
-                        "ask_seller_for_photos",
-                        "Ask the seller for photos before deciding.",
-                      ),
-              ),
-              !isOwnerView &&
-                !contactCtaDisabled &&
-                React.createElement(Button,
-                  {
-                    type: "button",
-                    onClick: handleContactSeller,
-                    className:
-                      "mx-auto mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-gray-700 border border-gray-200 shadow-sm hover:bg-gray-50 text-xs font-semibold dark:bg-slate-900/60 dark:text-gray-100 dark:border-slate-700",
-                  },
-                  tr("request_photos", "Request photos"),
-                ),
-              React.createElement(
-                "div",
-                { className: "mt-3 grid grid-cols-3 gap-3 justify-center" },
-                Array.from({ length: 3 }).map((_, idx) =>
-                  React.createElement("div", {
-                    key: idx,
-                    className:
-                      "h-16 w-16 rounded-lg border border-dashed border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60",
-                  }),
-                ),
-              ),
-            ),
-          ),
-      React.createElement(
-        "div",
-        { className: "absolute top-3 left-3 flex flex-col gap-2" },
-        React.createElement(Badge,
-          {
-            className: `px-3 py-1 text-xs font-bold rounded-full ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
-          },
-          React.createElement(ve, { className: "w-4 h-4 mr-1 inline" }),
-          tierLabel,
-        ),
-        highlightBadges.length > 0 &&
-          React.createElement(
-            "div",
-            { className: "flex flex-wrap gap-2" },
-            highlightBadges.map((t) =>
-              React.createElement(
-                "span",
-                {
-                  key: t.key,
-                  className:
-                    "inline-flex items-center rounded-full bg-white/90 text-gray-700 px-2.5 py-1 text-xs font-semibold shadow-sm dark:bg-slate-900/90 dark:text-gray-200",
-                },
-                t.label,
-              ),
-            ),
-          ),
-      ),
-      React.createElement(
-        "div",
-        {
-          className:
-            "absolute top-3 right-3 bg-black/60 text-white px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 dark:bg-black/60 dark:text-white",
-          title: tr("views", "Views"),
-        },
-        React.createElement(ce, { className: "w-3.5 h-3.5" }),
-        Number.isFinite(viewCount) ? viewCount.toLocaleString("en-IN") : "0",
-      ),
-      imageCount > 1 &&
-        React.createElement(
-          "div",
-          {
-            className:
-              "absolute bottom-3 right-3 bg-white/85 text-gray-700 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm dark:bg-slate-900/85 dark:text-gray-200",
-          },
-          activeIndex + 1,
-          " / ",
-          imageCount,
-        ),
-      imageCount > 1 &&
-        React.createElement(
-          React.Fragment,
-          null,
-          React.createElement(
-            "button",
-            {
-              onClick: H,
-              type: "button",
-              "aria-label": tr("previous_image", "Previous image"),
-              title: tr("previous_image", "Previous image"),
-              className:
-                "absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--surface-1)] p-3 sm:p-2 rounded-full shadow-lg opacity-90 hover:opacity-100 transition-opacity dark:bg-[var(--surface-1)]",
-            },
-            React.createElement(me, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
-          ),
-          React.createElement(
-            "button",
-            {
-              onClick: z,
-              type: "button",
-              "aria-label": tr("next_image", "Next image"),
-              title: tr("next_image", "Next image"),
-              className:
-                "absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--surface-1)] p-3 sm:p-2 rounded-full shadow-lg opacity-90 hover:opacity-100 transition-opacity dark:bg-[var(--surface-1)]",
-            },
-            React.createElement(ge, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
-          ),
-          React.createElement(
-            "div",
-            {
-              className:
-                "absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5",
-            },
-            imageList.map((t, a) =>
-              React.createElement(
-                "button",
-                {
-                  key: a,
-                  type: "button",
-                  "aria-label": tr("view_image", "View image {{count}}", {
-                    count: a + 1,
-                  }),
-                  "aria-current": a === activeIndex ? "true" : "false",
-                  onClick: () => m(a),
-                  className:
-                    "inline-flex items-center justify-center w-9 h-9 bg-transparent",
-                },
-                React.createElement("span", {
-                  className: `block h-2 rounded-full transition-all ${a === activeIndex ? "bg-blue-500 w-6" : "bg-white/70 w-2"}`,
-                  "aria-hidden": "true",
-                }),
-              ),
-            ),
-          ),
-        ),
-    ),
+          }),
     imageCount > 1 &&
       React.createElement(
         "div",
@@ -1927,6 +1560,7 @@ function PostDetail() {
           ),
         ),
       ),
+    ),
   );
   const summaryCard = React.createElement(
     "div",
@@ -2010,63 +1644,6 @@ function PostDetail() {
         ),
         React.createElement(
           "div",
-          {
-            className:
-              "rounded-xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 px-3 py-2.5 mb-4 space-y-2 dark:border dark:bg-slate-900/70",
-          },
-          React.createElement(
-            "div",
-            { className: "flex items-start gap-2.5" },
-            React.createElement(pe, {
-              className:
-                "w-4 h-4 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0 dark:text-gray-300",
-            }),
-            React.createElement(
-              "div",
-              { className: "space-y-0.5" },
-              React.createElement(
-                "p",
-                {
-                  className:
-                    "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
-                },
-                tr("delivery_meetup", "Delivery / Meetup"),
-              ),
-              React.createElement(
-                "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-gray-100" },
-                deliveryDetail,
-              ),
-            ),
-          ),
-          React.createElement(
-            "div",
-            { className: "flex items-start gap-2.5" },
-            React.createElement(BargainActions, {
-              className:
-                "w-4 h-4 mt-0.5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 dark:text-emerald-300",
-            }),
-            React.createElement(
-              "div",
-              { className: "space-y-0.5" },
-              React.createElement(
-                "p",
-                {
-                  className:
-                    "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
-                },
-                tr("return_inspection", "Return / Inspection"),
-              ),
-              React.createElement(
-                "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-gray-100" },
-                inspectionDetail,
-              ),
-            ),
-          ),
-        ),
-        React.createElement(
-          "div",
           { className: "mb-4" },
           React.createElement(
             "p",
@@ -2145,70 +1722,7 @@ function PostDetail() {
             ),
           ),
         ),
-        !isOwnerView &&
-          React.createElement(
-            "div",
-            { className: "mhub-summary-meta mt-4 space-y-3" },
-            freshnessLine &&
-              React.createElement(
-                "div",
-                {
-                  className:
-                    "inline-flex flex-wrap items-center gap-1 rounded-full bg-slate-50 dark:bg-gray-900/40 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 dark:bg-slate-950 dark:text-gray-200",
-                },
-                freshnessLine,
-              ),
-            React.createElement(
-              "div",
-              {
-                className:
-                  "rounded-xl border border-gray-200 dark:border-gray-700 p-3 bg-slate-50/70 dark:bg-gray-900/40 dark:border dark:bg-slate-950/70",
-              },
-              React.createElement(
-                "p",
-                {
-                  className:
-                    "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 dark:text-gray-300",
-                },
-                tr("trustworthy_listing", "Why this listing is trustworthy"),
-              ),
-              React.createElement(
-                "div",
-                { className: "grid grid-cols-1 sm:grid-cols-3 gap-2" },
-                trustFacts.map((fact) =>
-                  React.createElement(
-                    "div",
-                    {
-                      key: fact.key,
-                      className:
-                        "rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 px-2.5 py-2 dark:border dark:bg-slate-900/70",
-                    },
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
-                      },
-                      fact.icon &&
-                        React.createElement(fact.icon, {
-                          className: `w-3.5 h-3.5 ${fact.tone || "text-gray-400"}`,
-                        }),
-                      fact.label,
-                    ),
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-xs font-semibold text-gray-700 dark:text-gray-200 mt-1 leading-tight",
-                      },
-                      fact.value,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        !isOwnerView &&
+                !isOwnerView &&
           React.createElement(
             "div",
             { className: "mhub-summary-cta mt-4 space-y-3" },
@@ -2227,7 +1741,7 @@ function PostDetail() {
                     className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-sm sm:text-sm truncate dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
                   React.createElement(fe, { className: "w-4 h-4 mr-2" }),
-                  tr("chat_seller", "Chat seller"),
+                  tr("contact_seller", "Contact seller"),
                 ),
                 React.createElement(Button,
                   {
@@ -2483,19 +1997,6 @@ function PostDetail() {
                     { className: "font-bold text-gray-900 dark:text-gray-100" },
                     o.name,
                   ),
-                  sellerTrustLabel
-                    ? React.createElement(Badge,
-                        {
-                          className: `text-xs px-2 py-1 leading-none ${sellerTrustBadgeClass}`,
-                          title:
-                            sellerTrustScore != null
-                              ? `${sellerTrustLabel} · ${sellerTrustScore}`
-                              : sellerTrustLabel,
-                        },
-                        sellerTrustLabel,
-                        sellerTrustScore != null ? ` · ${sellerTrustScore}` : "",
-                      )
-                    : null,
                   sellerFrozen
                     ? React.createElement(Badge,
                         {
@@ -2543,18 +2044,27 @@ function PostDetail() {
                     className:
                       "flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                   },
-                  _ > 0 &&
-                    React.createElement(ue, {
-                      className: "w-4 h-4 text-amber-400 fill-current dark:text-amber-200",
-                    }),
-                  React.createElement(
-                    "span",
-                    { className: "font-semibold" },
-                    _ > 0
-                      ? _.toFixed(1)
-                      : tr("no_rating_yet", "No rating yet"),
-                  ),
-                  React.createElement("span", null, "\u2022"),
+                  _ > 0
+                  ? React.createElement(
+                      "span",
+                      { className: "inline-flex items-center gap-0.5" },
+                      Array.from({ length: 5 }).map(function(v, idx) {
+                        return React.createElement(ue, {
+                          key: idx,
+                          className: "w-3.5 h-3.5 " + (idx < Math.round(_) ? "text-amber-400 fill-current dark:text-amber-300" : "text-gray-300 dark:text-gray-600"),
+                        });
+                      }),
+                      React.createElement(
+                        "span",
+                        { className: "ml-1 font-semibold text-sm" },
+                        _.toFixed(1),
+                      ),
+                    )
+                  : React.createElement(
+                      "span",
+                      { className: "font-semibold text-sm text-gray-500" },
+                      tr("no_rating_yet", "No rating yet"),
+                    ), React.createElement("span", null, "\u2022"),
                   React.createElement(
                     "span",
                     null,
@@ -2563,83 +2073,6 @@ function PostDetail() {
                     o.id,
                   ),
                 ),
-                React.createElement(
-                  "div",
-                  {
-                    className:
-                      "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-200",
-                  },
-                  sellerStats.map((t) =>
-                    React.createElement(
-                      "div",
-                      {
-                        key: t.key,
-                        className:
-                          "rounded-lg bg-white/80 dark:bg-gray-900/40 px-2.5 py-2 dark:bg-slate-900/80",
-                      },
-                      React.createElement(
-                        "p",
-                        {
-                          className:
-                            "text-xs uppercase text-gray-500 dark:text-gray-300",
-                        },
-                        t.label,
-                      ),
-                      React.createElement(
-                        "p",
-                        {
-                          className:
-                            "font-semibold text-gray-800 dark:text-gray-100",
-                        },
-                        t.value,
-                      ),
-                    ),
-                  ),
-                ),
-                sellerTrustUserId &&
-                  React.createElement(
-                    "div",
-                    { className: "mt-4" },
-                    React.createElement(Link,
-                      { to: `/centre/${sellerTrustUserId}` },
-                      React.createElement(
-                        "div",
-                        {
-                          className:
-                            "group flex items-center gap-3 rounded-xl border border-purple-200 dark:border-purple-800/50 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 p-3 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer",
-                        },
-                        React.createElement(
-                          "div",
-                          {
-                            className:
-                              "w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-purple-500/20 flex-shrink-0",
-                          },
-                          React.createElement(ve, { className: "w-4.5 h-4.5 text-white" }),
-                        ),
-                        React.createElement(
-                          "div",
-                          { className: "flex-1 min-w-0" },
-                          React.createElement(
-                            "p",
-                            { className: "text-sm font-semibold text-gray-900 dark:text-white" },
-                            tr("visit_seller_farm", "Visit Seller's Farm Page"),
-                          ),
-                          React.createElement(
-                            "p",
-                            { className: "text-xs text-gray-500 dark:text-gray-400" },
-                            tr("browse_all_listings", "Browse all listings & reviews from this seller"),
-                          ),
-                        ),
-                        React.createElement(
-                          "div",
-                          { className: "text-purple-500 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" },
-                          React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", className: "w-4 h-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-                            React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 5l7 7-7 7" }),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ),
             ),
           ),
@@ -2734,669 +2167,96 @@ function PostDetail() {
             React.createElement(be, { className: "w-4 h-4 mr-2" }),
             tr("report_listing", "Report this listing"),
           ),
-          isOwnerView &&
-            React.createElement(
-            "div",
-            {
-              className:
-                "rounded-2xl border border-slate-200 mhub-premium-surface p-4 shadow-lg space-y-4 dark:border-slate-700",
-            },
-            React.createElement(
-              "div",
-              { className: "flex items-center justify-between" },
-              React.createElement(
-                "div",
-                null,
-                React.createElement(
-                  "h3",
-                  {
-                    className:
-                      "text-lg font-bold text-gray-900 dark:text-gray-100",
-                  },
-                  tr("lead_activity", "Lead activity"),
-                ),
-                React.createElement(
-                  "p",
-                  { className: "text-xs text-gray-500 dark:text-gray-300" },
-                  tr(
-                    "lead_activity_hint",
-                    "Track who viewed and engaged with your post.",
-                  ),
-                ),
-              ),
-              React.createElement(
-                "span",
-                {
-                  className:
-                    "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold dark:bg-emerald-950/20 dark:text-emerald-300",
-                },
-                tr("total_leads", "Total leads"),
-                " : ",
-                ownerLeadCount,
-              ),
-            ),
-            ownerInsightsLoading
-              ? React.createElement(
-                  "p",
-                  { className: "text-sm text-gray-500 dark:text-gray-300" },
-                  tr("loading_leads", "Loading lead activity..."),
-                )
-              : ownerInsightsErrorMessage
-                ? React.createElement(
-                    "p",
-                    { className: "text-sm text-gray-500 dark:text-gray-300" },
-                    ownerInsightsErrorMessage,
-                  )
-                : React.createElement(
-                    "div",
-                    { className: "grid gap-3 md:grid-cols-3" },
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
-                      },
-                      React.createElement(
-                        "div",
-                        { className: "flex items-center justify-between" },
-                        React.createElement(
-                          "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
-                          tr("interested_users", "Interested"),
-                        ),
-                        React.createElement(
-                          "span",
-                          {
-                            className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
-                          },
-                          ownerInquiries.length,
-                        ),
-                      ),
-                      ownerInquiries.length > 0
-                        ? React.createElement(
-                            "div",
-                            {
-                              className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
-                            },
-                            ownerInquiries.map((t, s) =>
-                              React.createElement(
-                                "div",
-                                {
-                                  key: t.inquiry_id || t.buyer_id || s,
-                                  className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
-                                },
-                                React.createElement(
-                                  "span",
-                                  null,
-                                  t.buyer_name ||
-                                    t.name ||
-                                    t.buyer_id ||
-                                    tr("unknown", "Unknown"),
-                                ),
-                                t.phone
-                                  ? React.createElement(
-                                      "span",
-                                      { className: "text-xs" },
-                                      t.phone,
-                                    )
-                                  : null,
-                              ),
-                            ),
-                          )
-                        : React.createElement(
-                            "p",
-                            {
-                              className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
-                            },
-                            tr("no_leads_yet", "No interactions yet."),
-                          ),
-                    ),
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
-                      },
-                      React.createElement(
-                        "div",
-                        { className: "flex items-center justify-between" },
-                        React.createElement(
-                          "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
-                          tr("detail_views", "View details"),
-                        ),
-                        React.createElement(
-                          "span",
-                          {
-                            className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
-                          },
-                          ownerViewers.length,
-                        ),
-                      ),
-                      ownerViewers.length > 0
-                        ? React.createElement(
-                            "div",
-                            {
-                              className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
-                            },
-                            ownerViewers.map((t, s) =>
-                              React.createElement(
-                                "div",
-                                {
-                                  key: t.viewer_id || t.user_id || s,
-                                  className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
-                                },
-                                React.createElement(
-                                  "span",
-                                  null,
-                                  t.viewer_name ||
-                                    t.full_name ||
-                                    t.username ||
-                                    t.user_id ||
-                                    tr("unknown", "Unknown"),
-                                ),
-                                t.viewed_at
-                                  ? React.createElement(
-                                      "span",
-                                      { className: "text-xs" },
-                                      I(t.viewed_at),
-                                    )
-                                  : null,
-                              ),
-                            ),
-                          )
-                        : React.createElement(
-                            "p",
-                            {
-                              className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
-                            },
-                            tr("no_leads_yet", "No interactions yet."),
-                          ),
-                    ),
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-950",
-                      },
-                      React.createElement(
-                        "div",
-                        { className: "flex items-center justify-between" },
-                        React.createElement(
-                          "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
-                          tr("lead_users", "Leads"),
-                        ),
-                        React.createElement(
-                          "span",
-                          {
-                            className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-200",
-                          },
-                          ownerLeadCount,
-                        ),
-                      ),
-                      ownerLeadList.length > 0
-                        ? React.createElement(
-                            "div",
-                            {
-                              className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
-                            },
-                            ownerLeadList.map((t, s) =>
-                              React.createElement(
-                                "div",
-                                {
-                                  key: t.id || s,
-                                  className:
-                                    "flex items-center justify-between text-slate-600 dark:text-slate-200",
-                                },
-                                React.createElement(
-                                  "span",
-                                  null,
-                                  t.name || tr("unknown", "Unknown"),
-                                ),
-                                t.types?.length
-                                  ? React.createElement(
-                                      "span",
-                                      { className: "text-xs" },
-                                      t.types.join(", "),
-                                    )
-                                  : null,
-                              ),
-                            ),
-                          )
-                        : React.createElement(
-                            "p",
-                            {
-                              className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-300",
-                            },
-                            tr("no_leads_yet", "No interactions yet."),
-                          ),
-                    ),
-                  ),
-          ),
           ),
           React.createElement(
             "div",
             { className: "mhub-post-main" },
         listingDetails.length > 0 &&
-          React.createElement(Card,
-            {
-              className:
-                "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-              id: "listing-details",
-            },
-            React.createElement(CardContent,
-              { className: "p-5" },
-              renderSectionHeader("listing-details", xe, tr("listing_details", "Listing details"), "mb-3"),
-              !collapsedSections["listing-details"] &&
-              React.createElement(
-                "div",
-                { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" },
-                listingDetails.map((t) =>
-                  React.createElement(
-                    "div",
-                    {
-                      key: t.key,
-                      className:
-                        "rounded-xl border border-gray-200 dark:border-gray-700 p-3 dark:border",
-                    },
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300",
-                      },
-                      t.icon &&
-                        React.createElement(t.icon, { className: "w-3.5 h-3.5" }),
-                      t.label,
-                    ),
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
-                      },
-                      t.value,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        keyDetails.length > 0 &&
-          React.createElement(Card,
-            {
-              className:
-                "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-              id: "key-details",
-            },
-            React.createElement(CardContent,
-              { className: "p-5" },
-              renderSectionHeader("key-details", ve, tr("key_details", "Key details"), "mb-3"),
-              !collapsedSections["key-details"] &&
-              React.createElement(
-                "div",
-                { className: "divide-y divide-gray-100 dark:divide-gray-800" },
-                keyDetails.map((item) =>
-                  React.createElement(
-                    "div",
-                    {
-                      key: item.key,
-                      className:
-                        "flex items-center justify-between py-3 px-1",
-                    },
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300",
-                      },
-                      item.icon &&
-                        React.createElement(item.icon, { className: "w-3.5 h-3.5" }),
-                      item.label,
-                    ),
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
-                      },
-                      item.value,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        specs.length > 0 &&
-          React.createElement(Card,
-            {
-              className:
-                "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-              id: "specs",
-            },
-            React.createElement(CardContent,
-              { className: "p-5" },
-              renderSectionHeader("specs", xe, tr("specifications", "Specifications"), "mb-3"),
-              !collapsedSections["specs"] &&
-              React.createElement(
-                "div",
-                { className: "divide-y divide-gray-100 dark:divide-gray-800" },
-                specs.map((spec) =>
-                  React.createElement(
-                    "div",
-                    {
-                      key: spec.key,
-                      className:
-                        "flex items-center justify-between py-3 px-1",
-                    },
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300",
-                      },
-                      spec.label,
-                    ),
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
-                      },
-                      spec.value,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        React.createElement(Card,
-          {
-            className:
-              "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-            id: "location",
-          },
-          React.createElement(CardContent,
-            { className: "p-5 space-y-3" },
-            renderSectionHeader("location", pe, tr("location_meetup", "Location & meetup")),
-            !collapsedSections["location"] &&
-            React.createElement(
-              React.Fragment,
-              null,
+          React.createElement(
+            "div",
+            { className: "rounded-xl border border-gray-100 dark:border-gray-700 bg-white/60 dark:bg-slate-900/40 divide-y divide-gray-100 dark:divide-gray-700 mb-5 scroll-mt-24" },
             React.createElement(
               "div",
-              {
-                className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3",
-              },
+              { className: "px-4 py-3 flex items-center justify-between" },
+              React.createElement(
+                "span",
+                { className: "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" },
+                tr("listing_details", "Listing Details"),
+              ),
+            ),
+            listingDetails.map((detail) =>
               React.createElement(
                 "div",
-                null,
-                React.createElement(
-                  "p",
-                  {
-                    className:
-                      "text-sm font-semibold text-gray-900 dark:text-gray-100",
-                  },
-                  locationDisplay,
-                ),
-                hasCoords &&
-                  React.createElement(
-                    "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-300" },
-                    tr("coordinates", "Coordinates"),
-                    ": ",
-                    latitude.toFixed(4),
-                    ", ",
-                    longitude.toFixed(4),
-                  ),
-              ),
-              mapsUrl &&
-                React.createElement(Button,
-                  { variant: "outline", asChild: true },
-                  React.createElement(
-                    "a",
-                    {
-                      href: mapsUrl,
-                      target: "_blank",
-                      rel: "noreferrer",
-                    },
-                    tr("open_in_maps", "Open in maps"),
-                  ),
-                ),
-            ),
-            React.createElement(
-              "p",
-              { className: "text-xs text-gray-500 dark:text-gray-300" },
-              locationHint,
-            ),
-            ),
-          ),
-        ),
-        React.createElement(Card,
-          {
-            className:
-              "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-            id: "trust-safety",
-          },
-          React.createElement(CardContent,
-            { className: "p-5" },
-            renderSectionHeader("trust-safety", Ne, tr("trust_safety", "Trust & Safety"), "mb-4"),
-            !collapsedSections["trust-safety"] &&
-            React.createElement(
-              React.Fragment,
-              null,
-            React.createElement(
-              "div",
-              {
-                className:
-                  "rounded-xl border border-emerald-100 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-900/20 p-3 mb-4 dark:border-emerald-600/40 dark:bg-emerald-950/70",
-              },
-              React.createElement(
-                "p",
-                {
-                  className:
-                    "text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2",
-                },
-                tr("safety_at_a_glance", "Safety at a glance"),
-              ),
-              React.createElement(
-                "div",
-                { className: "grid grid-cols-1 sm:grid-cols-3 gap-3" },
-                safetyHighlights.map((tip) =>
-                  React.createElement(
-                    "div",
-                    {
-                      key: tip.key,
-                      className:
-                        "mhub-safety-tile rounded-lg border border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-gray-900/40 p-2.5 dark:border-emerald-600/60 dark:bg-slate-900/80",
-                    },
-                    React.createElement(
-                      "div",
-                      {
-                        className:
-                          "mhub-safety-title flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300",
-                      },
-                      tip.icon &&
-                        React.createElement(tip.icon, { className: "w-3.5 h-3.5" }),
-                      tip.label,
-                    ),
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "mhub-safety-hint text-xs text-emerald-800/80 dark:text-emerald-200/80 mt-1",
-                      },
-                      tip.hint,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            React.createElement(
-              "div",
-              { className: "grid grid-cols-1 md:grid-cols-2 gap-3" },
-              K.map((t) =>
+                { key: detail.key, className: "flex items-center justify-between px-4 py-2.5" },
                 React.createElement(
                   "div",
-                  {
-                    key: t.key,
-                    className:
-                      "rounded-xl border border-gray-200 dark:border-gray-700 p-3 dark:border",
-                  },
+                  { className: "flex items-center gap-2" },
+                  React.createElement(detail.icon, { className: "w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" }),
                   React.createElement(
-                    "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-300" },
-                    t.label,
-                  ),
-                  React.createElement(
-                    "p",
-                    {
-                      className:
-                        "text-sm font-semibold text-gray-900 dark:text-gray-100",
-                    },
-                    t.value,
-                  ),
-                  React.createElement(
-                    "p",
-                    {
-                      className:
-                        "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
-                    },
-                    t.hint,
+                    "span",
+                    { className: "text-xs font-medium text-gray-500 dark:text-gray-300" },
+                    detail.label,
                   ),
                 ),
-              ),
-            ),
-            React.createElement(
-              "div",
-              {
-                className:
-                  "mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 dark:bg-amber-950/20 dark:border-amber-600/40",
-              },
-              React.createElement(
-                "p",
-                { className: "text-xs text-amber-800 dark:text-amber-200" },
-                tr(
-                  "safety_tip",
-                  "Safety tip: avoid sharing sensitive details outside the app and verify the listing ID before payment handover.",
+                React.createElement(
+                  "span",
+                  { className: "text-xs font-semibold text-gray-800 dark:text-gray-100 text-right" },
+                  detail.value,
                 ),
               ),
-            ),
             ),
           ),
-        ),
-        React.createElement(Card,
-          {
-            className:
-              "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-            id: "description",
-          },
-          React.createElement(CardContent,
-            { className: "p-5" },
-            renderSectionHeader("description", x, tr("description", "Description"), "mb-3"),
-            !collapsedSections["description"] &&
-            React.createElement(
-              React.Fragment,
-              null,
+        hasDescription &&
+          React.createElement(
+            "div",
+            { className: "rounded-xl border border-gray-100 dark:border-gray-700 bg-white/60 dark:bg-slate-900/40 p-4 mb-5 scroll-mt-24", id: "description" },
             React.createElement(
               "div",
-              {
-                className:
-                  descriptionContainerClass,
-              },
-              hasDescription
-                ? React.createElement(
-                    React.Fragment,
-                    null,
-                    descriptionParagraphs.map((t, s) =>
-                      React.createElement("p", { key: `desc-${s}` }, t),
-                    ),
-                    descriptionBullets.length > 0 &&
-                      React.createElement(
-                        "ul",
-                        { className: "list-disc pl-5 space-y-1" },
-                        descriptionBullets.map((t, s) =>
-                          React.createElement(
-                            "li",
-                            { key: `desc-bullet-${s}` },
-                            t,
-                          ),
-                        ),
-                      ),
-                  )
-                : React.createElement(
-                    "p",
-                    { className: "text-gray-500 dark:text-gray-300" },
-                    tr(
-                      "no_description",
-                      "No description provided for this product. Contact the seller for more details.",
+              { className: "flex items-center gap-2 mb-3" },
+              React.createElement(Ce, { className: "w-4 h-4 text-blue-500 dark:text-blue-300" }),
+              React.createElement(
+                "span",
+                { className: "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" },
+                tr("description", "Description"),
+              ),
+            ),
+            React.createElement(
+              "div",
+              { className: descriptionContainerClass },
+              descriptionParagraphs.map((paragraph, idx) =>
+                React.createElement(
+                  "p",
+                  { key: idx, className: "text-sm text-gray-600 dark:text-gray-300 leading-relaxed" },
+                  paragraph,
+                ),
+              ),
+              descriptionBullets.length > 0 &&
+                React.createElement(
+                  "ul",
+                  { className: "list-disc list-inside space-y-1 mt-2" },
+                  descriptionBullets.map((bullet, idx) =>
+                    React.createElement(
+                      "li",
+                      { key: idx, className: "text-sm text-gray-600 dark:text-gray-300" },
+                      bullet,
                     ),
                   ),
-              descriptionIsLong &&
-                !descriptionExpanded &&
-                React.createElement("div", {
-                  className:
-                    "pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white dark:from-gray-800 to-transparent dark:bg-gradient-to-t",
-                  "aria-hidden": "true",
-                }),
+                ),
             ),
             descriptionIsLong &&
               React.createElement(
                 "button",
                 {
                   type: "button",
-                  onClick: () => setDescriptionExpanded((t) => !t),
-                  className:
-                    "mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 dark:text-blue-300",
+                  onClick: () => setDescriptionExpanded(!descriptionExpanded),
+                  className: "mt-2 flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors",
                 },
+                descriptionExpanded ? tr("show_less", "Show less") : tr("show_more", "Show more"),
                 descriptionExpanded
-                  ? tr("show_less", "Show less")
-                  : tr("read_more", "Read more"),
+                  ? React.createElement(ChevronUpIcon, { className: "w-3.5 h-3.5" })
+                  : React.createElement(ChevronDownIcon, { className: "w-3.5 h-3.5" }),
               ),
-            ),
           ),
-        ),
-        React.createElement(Card,
-          {
-            className:
-              "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
-            id: "negotiation",
-          },
-          React.createElement(CardContent,
-            { className: "p-5" },
-            React.createElement(
-              "div",
-              { className: "flex items-center gap-2 mb-3" },
-              React.createElement(ke, { className: "w-5 h-5 text-emerald-500 dark:text-emerald-300" }),
-              React.createElement(
-                "h3",
-                { className: "font-bold text-gray-900 dark:text-gray-100" },
-                tr("negotiate_price", "Negotiate & bargain"),
-              ),
-            ),
-            React.createElement(BargainActions, {
-              post: r,
-              currentUser: {
-                userId: currentUserId,
-                id: currentUserId,
-              },
-              onChatClick: handleContactSeller,
-            }),
-          ),
-        ),
         !isOwnerView &&
           React.createElement(
             "div",

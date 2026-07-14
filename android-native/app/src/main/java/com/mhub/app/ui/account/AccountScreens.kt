@@ -307,7 +307,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                                 Text("${seller.sales} sales", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
-                                        if (seller.rank < 5) HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                                        if (seller.rank < 5) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                     }
                                 }
                             }

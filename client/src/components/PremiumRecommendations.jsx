@@ -31,6 +31,16 @@ const BOOST_BADGE_CONFIG = {
   1: { label: "Boosted", className: "bg-emerald-500 text-white" },
 };
 
+// ── Sample fallback premium recommendations for offline/demo mode ──
+const SAMPLE_PREMIUM_POSTS = [
+  { title: "iPhone 15 Pro Max 1TB", price: 159900, location: "Mumbai", images: "/placeholder.svg", post_id: "sample-pr-1", seller_name: "iExpert", badge_type: "crown", boost_level: 3 },
+  { title: "Samsung Galaxy S24 Ultra", price: 124999, location: "Hyderabad", images: "/placeholder.svg", post_id: "sample-pr-2", seller_name: "Samsung Plaza", badge_type: "crown", boost_level: 2 },
+  { title: "Sony A7 IV Full-Frame Camera", price: 214990, location: "Bangalore", images: "/placeholder.svg", post_id: "sample-pr-3", seller_name: "PhotoHub Pro", badge_type: "verified", boost_level: 2 },
+  { title: "Dell XPS 16 Intel Ultra 9", price: 189990, location: "Delhi", images: "/placeholder.svg", post_id: "sample-pr-4", seller_name: "LaptopWorld", badge_type: "crown", boost_level: 3 },
+  { title: "Rolex Submariner Date 2024", price: 825000, location: "Chennai", images: "/placeholder.svg", post_id: "sample-pr-5", seller_name: "LuxeTime", badge_type: "crown", boost_level: 3 },
+  { title: "Tesla Model 3 (Used 2023)", price: 3500000, location: "Pune", images: "/placeholder.svg", post_id: "sample-pr-6", seller_name: "EV Motors", badge_type: "verified", boost_level: 1 },
+];
+
 function formatPrice(price) {
   if (!price && price !== 0) return "\u20B9 N/A";
   const numeric = Number(price);
@@ -108,6 +118,15 @@ function getPostId(post) {
   return nestedId !== null && nestedId !== undefined ? String(nestedId) : "";
 }
 
+function shuffleArray(arr) {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 const RecommendationCard = memo(function RecommendationCard({ post }) {
   const postId = getPostId(post);
   const image = resolveMediaUrl(getFirstImage(post.images), "/placeholder.svg");
@@ -178,7 +197,7 @@ const RecommendationCard = memo(function RecommendationCard({ post }) {
 /**
  * Premium Recommendations section for post detail pages.
  * Shows premium listings from the same category.
- * @param {{ postId: string, limit?: number, category?: string, categoryId?: string, categoryGroup?: string }} props
+ * Falls back to sample data when API is unavailable.
  */
 export default function PremiumRecommendations({
   postId,
@@ -191,6 +210,10 @@ export default function PremiumRecommendations({
 }) {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const sampleRef = React.useRef(null);
+  if (!sampleRef.current) {
+    sampleRef.current = shuffleArray(SAMPLE_PREMIUM_POSTS);
+  }
   const {
     activeCategory,
     activeApp,
@@ -231,7 +254,15 @@ export default function PremiumRecommendations({
   );
 
   useEffect(() => {
-    if (!postId) return;
+    if (!postId) {
+      // No postId — show fallback data immediately
+      setRecommendations(shuffleArray(SAMPLE_PREMIUM_POSTS).slice(0, limit));
+      setLoading(false);
+      if (onStatusChange) {
+        onStatusChange({ loading: false, count: limit, hasResults: true, isFallback: true });
+      }
+      return;
+    }
     let cancelled = false;
 
     async function load() {
@@ -257,16 +288,27 @@ export default function PremiumRecommendations({
         const data = await res.json();
         if (!cancelled) {
           const list = Array.isArray(data.recommendations) ? data.recommendations : [];
-          setRecommendations(list);
-          if (onStatusChange) {
-            onStatusChange({ loading: false, count: list.length, hasResults: list.length > 0 });
+          if (list.length === 0) {
+            // No real data — use fallback samples
+            setRecommendations(shuffleArray(SAMPLE_PREMIUM_POSTS).slice(0, limit));
+            if (onStatusChange) {
+              onStatusChange({ loading: false, count: limit, hasResults: true, isFallback: true });
+            }
+          } else {
+            setRecommendations(list);
+            if (onStatusChange) {
+              onStatusChange({ loading: false, count: list.length, hasResults: true });
+            }
           }
         }
       } catch {
-        if (!cancelled && onStatusChange) {
-          onStatusChange({ loading: false, count: 0, hasResults: false, error: true });
+        if (!cancelled) {
+          // API failed — use fallback sample data
+          setRecommendations(shuffleArray(SAMPLE_PREMIUM_POSTS).slice(0, limit));
+          if (onStatusChange) {
+            onStatusChange({ loading: false, count: limit, hasResults: true, isFallback: true });
+          }
         }
-        // Silently fail - this is an enhancement, not critical
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -284,7 +326,11 @@ export default function PremiumRecommendations({
   ]);
 
   const filteredRecommendations = useMemo(() => {
-    if (!Array.isArray(recommendations) || recommendations.length === 0) return [];
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+      // Use pre-shuffled sample data — stable across renders
+      const samplePosts = sampleRef.current || shuffleArray(SAMPLE_PREMIUM_POSTS);
+      return samplePosts.slice(0, limit);
+    }
     const hasCategory = !!(resolvedCategoryId || resolvedCategoryName);
     const categoryFilter = hasCategory
       ? {
@@ -305,7 +351,7 @@ export default function PremiumRecommendations({
       }
       return true;
     });
-  }, [activeAppMatcher, recommendations, resolvedCategoryId, resolvedCategoryName]);
+  }, [activeAppMatcher, recommendations, resolvedCategoryId, resolvedCategoryName, limit]);
 
   useEffect(() => {
     if (!onStatusChange) return;
@@ -361,7 +407,3 @@ export default function PremiumRecommendations({
     </div>
   );
 }
-
-
-
-

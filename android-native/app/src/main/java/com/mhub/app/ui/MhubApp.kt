@@ -1383,12 +1383,11 @@ fun MainShell(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                     onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                    onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                     currentThemeMode = themeCtl.currentThemeMode,
                     onToggleTheme = themeCtl.onToggleTheme,
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
-                    onRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
+                    onProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                 )
                 }
             },
@@ -1462,8 +1461,8 @@ fun MainShell(
                                 )
                             }
                         }
-                        // Right cluster: Feed, Rewards, Profile, More
-                        listOf(BottomTab.FEED, BottomTab.PROFILE).forEach { tab ->
+                        // Right cluster: Feed, Rewards, More
+                        listOf(BottomTab.FEED, BottomTab.REWARDS).forEach { tab ->
                             BottomNavTabItem(
                                 tab = tab,
                                 isSelected = tab == selected,

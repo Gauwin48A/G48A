@@ -592,15 +592,30 @@ app.get("/health", (req, res) => {
    ───────────────────────────────────────────────────────── */
 
 app.use("/api/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
+
 app.use("/api/categories", categoriesRoutes);
+app.use("/api/v1/categories", categoriesRoutes);
+
 app.use("/api/subcategories", subcategoriesRoutes);
+app.use("/api/v1/subcategories", subcategoriesRoutes);
+
 app.use(
   "/api/posts",
   requireCriticalTenantWriteContext("posts write operations"),
   postsRoutes
 );
+app.use(
+  "/api/v1/posts",
+  requireCriticalTenantWriteContext("posts write operations"),
+  postsRoutes
+);
+
 app.use("/api/location", locationRoutes);
+app.use("/api/v1/location", locationRoutes);
+
 app.use("/api/v1/location", locationVerificationRoutes);
+
 // Alias mounts for backwards compatibility
 app.use(
   "/api/channel",
@@ -608,13 +623,30 @@ app.use(
   channelsRoutes
 );
 app.use(
+  "/api/v1/channel",
+  requireCriticalTenantWriteContext("channel write operations"),
+  channelsRoutes
+);
+
+app.use(
   "/api/channels",
   requireCriticalTenantWriteContext("channels write operations"),
   channelsRoutes
 );
+app.use(
+  "/api/v1/channels",
+  requireCriticalTenantWriteContext("channels write operations"),
+  channelsRoutes
+);
+
 app.use("/api/publicwall", publicWallRoutes);
+app.use("/api/v1/publicwall", publicWallRoutes);
+
 app.use("/api/public-wall", publicWallRoutes);
+app.use("/api/v1/public-wall", publicWallRoutes);
+
 app.use("/api/users", usersRoutes);
+app.use("/api/v1/users", usersRoutes);
 
 /* ─────────────────────────────────────────────────────────
    Route Mounts — Bulk (path → handler or [middleware, handler])
@@ -715,12 +747,20 @@ const apiRouteMounts = [
 ];
 
 for (const [routePath, routeHandler] of apiRouteMounts) {
+  const mountRoute = (path) => {
+    app.use(path, routeHandler);
+    if (path.startsWith("/api/")) {
+      const v1Path = "/api/v1/" + path.substring(5);
+      app.use(v1Path, routeHandler);
+    }
+  };
+
   if (Array.isArray(routePath)) {
     for (const aliasPath of routePath) {
-      app.use(aliasPath, routeHandler);
+      mountRoute(aliasPath);
     }
   } else {
-    app.use(routePath, routeHandler);
+    mountRoute(routePath);
   }
 }
 

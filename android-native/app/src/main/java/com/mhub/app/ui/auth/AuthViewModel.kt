@@ -42,17 +42,6 @@ class AuthViewModel @Inject constructor(
         const val TAG = "AuthViewModel"
     }
 
-    private data class DemoCredential(val identifier: String, val password: String)
-
-    private val demoCredentialCandidates = if (com.mhub.app.BuildConfig.DEBUG) {
-        listOf(
-            DemoCredential(identifier = "rahul.sharma@mhub.com", password = "Password123!"),
-            DemoCredential(identifier = "user1", password = "Password123!"),
-        )
-    } else {
-        emptyList()
-    }
-
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
@@ -158,51 +147,17 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /** Quick demo login — uses hardcoded test credentials. Fails with error if server unreachable. */
+    /** Quick demo login — immediately creates a local offline demo session without server attempts. */
     fun demoLogin() {
         if (_state.value.loading) return
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             Log.d(TAG, "demoLogin invoked")
-            var lastError: String? = null
 
-            // Try real server credentials first
-            for (credential in demoCredentialCandidates) {
-                when (val res = repo.signInWithEmail(credential.identifier, credential.password)) {
-                    is ApiResult.Success -> {
-                        Log.d(TAG, "demoLogin credential success for ${credential.identifier}")
-                        val authRes = res.data
-                        if (authRes.requireOtp) {
-                            _state.value = AuthUiState(
-                                loading = false,
-                                requireOtp = true,
-                                otpPhone = credential.identifier,
-                                otpCountdown = 120,
-                            )
-                            startOtpCountdown()
-                        } else {
-                            _state.value = AuthUiState(loading = false, success = true)
-                        }
-                        return@launch
-                    }
-                    is ApiResult.Failure -> {
-                        lastError = res.error.message
-                        Log.w(TAG, "demoLogin credential failed for ${credential.identifier}: ${res.error.message}")
-                    }
-                }
-            }
-
-            // All credentials failed — show the actual error
-            if (com.mhub.app.BuildConfig.DEBUG) {
-                Log.w(TAG, "demoLogin falling back to local demo session: $lastError")
-                repo.startLocalDemoSession()
-                _state.value = AuthUiState(loading = false, success = true)
-            } else {
-                _state.value = AuthUiState(
-                    loading = false,
-                    error = lastError ?: "Cannot connect to server. Please check your internet connection.",
-                )
-            }
+            // Skip server credential attempts — directly create a local demo session
+            // This is instant and avoids slow timeouts when the backend is not running.
+            repo.startLocalDemoSession()
+            _state.value = AuthUiState(loading = false, success = true)
         }
     }
 

@@ -202,9 +202,28 @@ class CategoriesRepository @Inject constructor(
 
 @Singleton
 class WishlistRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun list(): ApiResult<List<Post>> = safeApiCall { api.wishlist().posts }
+    @Volatile
+    private var cachedItems: List<Post>? = null
+
+    suspend fun list(): ApiResult<List<Post>> {
+        val result = safeApiCall { api.wishlist().posts }
+        if (result is ApiResult.Success) {
+            cachedItems = result.data
+        }
+        if (result is ApiResult.Failure) {
+            // Return cached data if available instead of showing error
+            val cache = cachedItems
+            if (!cache.isNullOrEmpty()) return ApiResult.Success(cache)
+        }
+        return result
+    }
     suspend fun add(postId: String): ApiResult<Unit> = safeApiCall { api.addWishlist(postId); Unit }
-    suspend fun remove(postId: String): ApiResult<Unit> = safeApiCall { api.removeWishlist(postId); Unit }
+    suspend fun remove(postId: String): ApiResult<Unit> {
+        // Optimistically remove from cache
+        cachedItems = cachedItems?.filterNot { it.stableId == postId }
+        return safeApiCall { api.removeWishlist(postId); Unit }
+    }
+
 }
 
 @Singleton
