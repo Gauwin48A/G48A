@@ -120,6 +120,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+/** Small pool of mock suggested posts — used when the server API fails. */
+private val MOCK_SUGGESTED_POSTS = listOf(
+    com.mhub.app.domain.model.Post(id="mock_sug_p1", title="iPhone 15 Pro Max 256GB – Titanium", description="Brand new, sealed box. 48MP camera, A17 Pro chip. 5x optical zoom.", price=132000.0, category="electronics", subcategory="Phones", brand="Apple", condition="New", location="Mumbai, MH", imageUrl="https://picsum.photos/seed/iph15pro/400/300", tier="premium", isPremium=true, viewCount=15200, likeCount=345, promoLabel="spotlight", boostLevel=3, sellerVerified=true, city="Mumbai", sellerName="Apple Store"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p2", title="Samsung Galaxy Book 4 Ultra – i9 32GB 1TB", description="16\" 3K AMOLED, RTX 4070. Perfect for creators and professionals. 1 month old.", price=185000.0, category="electronics", subcategory="Laptops", brand="Samsung", condition="Like New", location="Bengaluru, KA", imageUrl="https://picsum.photos/seed/galbook4/400/300", tier="silver", viewCount=8900, likeCount=198, boostLevel=2, promoLabel="featured", sellerVerified=true, city="Bengaluru", sellerName="TechHub"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p3", title="Royal Enfield Himalayan 450 – 2024 Model", description="5,000 km only. First owner. All accessories included. Excellent condition.", price=285000.0, category="vehicles", subcategory="Motorcycles", brand="Royal Enfield", condition="Like New", location="Pune, MH", imageUrl="https://picsum.photos/seed/himalayan450/400/300", tier="gold", viewCount=12300, likeCount=276, boostLevel=1, promoLabel="boost", sellerVerified=true, city="Pune", sellerName="RE Rider"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p4", title="Louis Vuitton Neverfull GM – Damier Azur", description="Authentic LV. Gently used. Original dust bag and box included. Price negotiable.", price=165000.0, category="fashion", subcategory="Bags", brand="Louis Vuitton", condition="Used", location="Delhi, DL", imageUrl="https://picsum.photos/seed/lvneverfull2/400/300", tier="premium", isPremium=true, viewCount=28400, likeCount=612, sellerVerified=true, city="Delhi", sellerName="Luxury Closet"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p5", title="Bose QuietComfort Ultra Headphones", description="Best-in-class ANC. Immersive spatial audio. 24hr battery. 2 weeks old.", price=28500.0, category="electronics", subcategory="Audio", brand="Bose", condition="Like New", location="Chennai, TN", imageUrl="https://picsum.photos/seed/boseqcu/400/300", tier="silver", viewCount=6700, likeCount=145, boostLevel=3, promoLabel="spotlight", sellerVerified=true, city="Chennai", sellerName="AudioPhile"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p6", title="Mercedes-Benz GLC 300 – 2022 Model", description="18,000 km. Sunroof, 360° camera, ambient lighting. Full service history. Single owner.", price=5800000.0, category="vehicles", subcategory="Cars", brand="Mercedes-Benz", condition="Used", location="Mumbai, MH", imageUrl="https://picsum.photos/seed/glc300/400/300", tier="premium", isPremium=true, viewCount=34200, likeCount=789, boostLevel=2, promoLabel="featured", sellerVerified=true, city="Mumbai", sellerName="AutoLux"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p7", title="Sony Alpha 7 IV + 24-70mm GM II", description="Full-frame 33MP. 4K 60fps. Kit lens included. 3 months old. No shutter count.", price=265000.0, category="electronics", subcategory="Cameras", brand="Sony", condition="Like New", location="Hyderabad, TS", imageUrl="https://picsum.photos/seed/sonya7iv/400/300", tier="gold", viewCount=9800, likeCount=234, boostLevel=1, sellerVerified=true, city="Hyderabad", sellerName="ShutterBug"),
+    com.mhub.app.domain.model.Post(id="mock_sug_p8", title="Nike Air Force 1 '07 – White UK 10", description="Limited edition 'White on White'. Worn once. 100% authentic. Comes with box.", price=8500.0, category="fashion", subcategory="Shoes", brand="Nike", condition="Like New", location="Bengaluru, KA", imageUrl="https://picsum.photos/seed/nikeaf1/400/300", viewCount=4500, likeCount=98, sellerVerified=true, city="Bengaluru", sellerName="SneakerHead"),
+)
 
 /** Resolves relative image URLs to absolute by prepending the API base URL. */
 private fun resolveImageUrl(img: String?): String? {
@@ -890,13 +901,14 @@ fun PostDetailScreen(
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                // Build suggestion pool: similar posts from API + cached posts from shared store
+                                // Build suggestion pool: API similar posts + mock fallback + shared store
                                 val suggestionPool = remember(state.similarPosts) {
                                     val storePosts = SharedExploreStore.recentlyViewedPosts +
                                         SharedExploreStore.wishlistPosts +
                                         SharedExploreStore.comparePosts
                                     // Merge and deduplicate, excluding current post
-                                    (state.similarPosts + storePosts)
+                                    // MOCK_SUGGESTED_POSTS always ensures a rich pool even when offline
+                                    (state.similarPosts + MOCK_SUGGESTED_POSTS + storePosts)
                                         .distinctBy { it.stableId }
                                         .filter { it.stableId != post.stableId }
                                 }

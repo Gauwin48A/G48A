@@ -201,7 +201,7 @@ const TIER_RULES = {
   },
 };
 
-const TIER_ORDER = ["basic", "bronze", "silver", "premium"];
+const TIER_ORDER = ["basic", "starter", "bronze", "silver", "premium"];
 
 const PROMO_CODES = {
   LAUNCH50: { discount: 0.5, validUntil: new Date("2026-06-30"), maxUses: 500, usedCount: 0 },

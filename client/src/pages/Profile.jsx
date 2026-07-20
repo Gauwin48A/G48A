@@ -763,6 +763,31 @@ const ProfilePage = () => {
       const a = ze();
       if ((ce(a), !(Object.keys(a).length > 0)))
         try {
+          const isDemo =
+            localStorage.getItem("authSession") === "true" &&
+            (localStorage.getItem("userId") === "demo-user-001" || (y?.id || y?.user_id) === "demo-user-001");
+
+          if (isDemo) {
+            N((s) => {
+              const updated = {
+                ...s,
+                ...f,
+                name: f?.name ?? f?.full_name ?? s?.name ?? s?.full_name ?? "",
+              };
+              localStorage.setItem("userProfile", JSON.stringify(updated));
+              localStorage.setItem("user", JSON.stringify(updated));
+              E(updated);
+              return updated;
+            });
+            V(!1);
+            u({
+              title:
+                t("profile_updated_successfully") ||
+                "Profile updated successfully!",
+            });
+            return;
+          }
+
           const o = await h.post("/profile/update", { ...f });
           N((s) => {
             const l = {

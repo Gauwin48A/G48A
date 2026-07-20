@@ -19,38 +19,52 @@ export function setCoinsPerRupee(rate) {
 
 /**
  * Get current conversion rate.
+ * @param {boolean|string} [planOrIsPremium=false]
  */
-export function getCoinsPerRupee() {
-  return _configCoinsPerRupee || DEFAULT_COINS_PER_RUPEE;
+export function getCoinsPerRupee(planOrIsPremium = false) {
+  const isPremium =
+    typeof planOrIsPremium === "boolean"
+      ? planOrIsPremium
+      : String(planOrIsPremium || "").toLowerCase().includes("premium");
+
+  if (isPremium) {
+    return 20; // 100 coins = ₹5 (5x multiplier)
+  }
+  return _configCoinsPerRupee || DEFAULT_COINS_PER_RUPEE; // 100 coins = ₹1
 }
 
 /**
  * Convert coins to rupees.
  * @param {number} coins
+ * @param {boolean|string} [planOrIsPremium=false]
  * @returns {number} rupees (2 decimal places)
  */
-export function coinsToRupees(coins) {
+export function coinsToRupees(coins, planOrIsPremium = false) {
   const c = Number(coins) || 0;
-  return Math.round((c / getCoinsPerRupee()) * 100) / 100;
+  const rate = getCoinsPerRupee(planOrIsPremium);
+  return Math.round((c / rate) * 100) / 100;
 }
 
 /**
  * Convert rupees to coins.
  * @param {number} rupees
+ * @param {boolean|string} [planOrIsPremium=false]
  * @returns {number} coins (whole number)
  */
-export function rupeesToCoins(rupees) {
+export function rupeesToCoins(rupees, planOrIsPremium = false) {
   const r = Number(rupees) || 0;
-  return Math.round(r * getCoinsPerRupee());
+  const rate = getCoinsPerRupee(planOrIsPremium);
+  return Math.round(r * rate);
 }
 
 /**
  * Format coins as a "₹X.XX value" display string.
  * @param {number} coins
+ * @param {boolean|string} [planOrIsPremium=false]
  * @returns {string} e.g. "₹5.00"
  */
-export function formatCoinValue(coins) {
-  const rupees = coinsToRupees(coins);
+export function formatCoinValue(coins, planOrIsPremium = false) {
+  const rupees = coinsToRupees(coins, planOrIsPremium);
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -62,8 +76,9 @@ export function formatCoinValue(coins) {
 /**
  * Format a short coin + rupee display.
  * @param {number} coins
- * @returns {string} e.g. "500 coins (₹5)"
+ * @param {boolean|string} [planOrIsPremium=false]
+ * @returns {string} e.g. "500 coins (₹25)"
  */
-export function formatCoinWithRupee(coins) {
-  return `${Number(coins).toLocaleString()} coins (${formatCoinValue(coins)})`;
+export function formatCoinWithRupee(coins, planOrIsPremium = false) {
+  return `${Number(coins).toLocaleString()} coins (${formatCoinValue(coins, planOrIsPremium)})`;
 }

@@ -951,22 +951,29 @@ fun ExploreScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Clickable search bar — opens dedicated SearchScreen
-                Surface(
-                    onClick = onOpenSearch,
+                // Search bar — inline text input with live search
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.onQueryChange(it) },
+                    placeholder = { Text(stringResource(R.string.explore_search_placeholder)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    trailingIcon = {
+                        if (state.searchQuery.isNotBlank()) {
+                            IconButton(onClick = { viewModel.clearSearch() }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    },
+                    singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    ),
                     modifier = Modifier.weight(1f).height(48.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.explore_search_placeholder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { /* handled live by onQueryChange */ }),
+                )
                 // Filter button with active badge
                 BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
                     FilledIconButton(
@@ -1717,10 +1724,19 @@ private fun AllPostsBrowse(
             return@LazyColumn
         }
 
+        // For You mode — filter by selected subcategory preferences if available
+        val forYouSubs = SharedExploreStore.selectedSubcategories
+        val forYouFilteredPosts = if (state.forYouMode && forYouSubs.isNotEmpty()) {
+            state.posts.filter { post ->
+                val postSub = (post.subcategory ?: post.subcategoryName ?: "").lowercase()
+                forYouSubs.any { it.lowercase() == postSub || postSub.contains(it.lowercase()) }
+            }
+        } else state.posts
+
         if (state.forYouMode) {
             item(key = "for_you_header") {
                 ForYouBrowseHeader(
-                    resultCount = state.posts.size,
+                    resultCount = forYouFilteredPosts.size,
                     categoryCount = ecosystemSubcategories.size,
                     hasActiveFilters = state.hasActiveFilters,
                     autoRefresh = state.autoRefresh,
@@ -1899,7 +1915,8 @@ private fun AllPostsBrowse(
                     }
                 }
             } else {
-                items(state.posts, key = { it.stableId }) { post ->
+                val displayPosts = if (state.forYouMode) forYouFilteredPosts else state.posts
+                items(displayPosts, key = { it.stableId }) { post ->
                     AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
             }

@@ -252,6 +252,26 @@ const ComplaintsPage = () => {
       }
       A(!0);
       try {
+        const isDemo =
+          localStorage.getItem("authSession") === "true" &&
+          (localStorage.getItem("userId") === "demo-user-001" || I?.id === "demo-user-001");
+
+        if (isDemo) {
+          const mockRef = `CMP-DEMO-${Math.floor(1000 + Math.random() * 9000)}`;
+          Q(mockRef);
+          X(new Date().toISOString());
+          d({
+            title: tr("complaint_submitted_title", "Complaint Filed"),
+            description: tr(
+              "complaint_reference_desc",
+              "Reference ID: {{id}}. Support team will investigate.",
+              { id: mockRef },
+            ),
+          });
+          D({ sellerId: "", postId: "", secretCode: "", complaintType: "transaction", description: "" });
+          return;
+        }
+
         const l = await api.post("/complaints", {
               seller_id: a.sellerId || void 0,
               post_id: a.postId,

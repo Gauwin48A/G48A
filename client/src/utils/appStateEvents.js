@@ -1,5 +1,7 @@
 const SUBSCRIPTION_UPDATED_EVENT = "mhub:subscription-updated";
 const COIN_BALANCE_UPDATED_EVENT = "mhub:coin-balance-updated";
+const COINS_UPDATED_EVENT = "mhub:coins-updated";
+const PROFILE_UPDATED_EVENT = "mhub:profile-updated";
 
 function canUseWindow() {
   return typeof window !== "undefined";
@@ -45,9 +47,11 @@ export function subscribeSubscriptionUpdated(listener) {
 }
 
 export function emitCoinBalanceUpdated(balance, detail = {}) {
+  emitEvent(COINS_UPDATED_EVENT, { occurredAt: Date.now(), balance, coins: balance, ...detail });
   return emitEvent(COIN_BALANCE_UPDATED_EVENT, {
     occurredAt: Date.now(),
     balance,
+    coins: balance,
     ...detail,
   });
 }
@@ -56,7 +60,17 @@ export function subscribeCoinBalanceUpdated(listener) {
   return subscribeToEvent(COIN_BALANCE_UPDATED_EVENT, listener);
 }
 
+export function emitProfileUpdated(profileData, detail = {}) {
+  return emitEvent(PROFILE_UPDATED_EVENT, {
+    occurredAt: Date.now(),
+    profile: profileData,
+    ...detail,
+  });
+}
+
 export {
   SUBSCRIPTION_UPDATED_EVENT,
   COIN_BALANCE_UPDATED_EVENT,
+  COINS_UPDATED_EVENT,
+  PROFILE_UPDATED_EVENT,
 };

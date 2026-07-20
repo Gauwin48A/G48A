@@ -138,7 +138,29 @@ const FeedbackPage = () => {
         return;
       }
       y(!0);
+
+      // Demo mode handling — bypass server 401 for offline demo sessions
       try {
+        const isDemo =
+          localStorage.getItem("authSession") === "true" &&
+          (localStorage.getItem("userId") === "demo-user-001" || k?.id === "demo-user-001");
+
+        if (isDemo) {
+          const mockId = `FB-DEMO-${Math.floor(1000 + Math.random() * 9000)}`;
+          $(mockId);
+          D(new Date().toISOString());
+          d({
+            title: t("feedback_submitted"),
+            description: tr(
+              "feedback_reference_desc",
+              "Reference ID: {{id}}. Thank you for helping us improve (Demo Mode).",
+              { id: mockId },
+            ),
+          });
+          b({ feedbackType: "general", rating: 5, subject: "", message: "" });
+          return;
+        }
+
         const l = await api.post("/feedback", {
             subject: o.subject,
             message: o.message,

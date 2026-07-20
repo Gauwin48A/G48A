@@ -667,11 +667,14 @@ data class RewardsUserDto(
     val hasPosted: Boolean = false,
     val dailySecretCode: String? = null,
     val dailySecretCodeExpiresAt: String? = null,
+    @SerialName("post_credits") val coins: Int? = null,
     val activityStats: RewardsActivityStatsDto = RewardsActivityStatsDto(),
     @SerialName("has_elite_badge") val hasEliteBadge: Boolean = false,
     val leaderboard: RewardsLeaderboardDto = RewardsLeaderboardDto(),
     val referralLedger: RewardsReferralLedgerDto = RewardsReferralLedgerDto(),
-)
+) {
+    val isPremium: Boolean get() = currentPlan?.lowercase() == "premium"
+}
 
 @Serializable
 data class RewardsActivityStatsDto(

@@ -220,17 +220,45 @@ const PaymentPage = () => {
         );
       }
     } catch (error) {
-      setPaymentConfig(null);
-      const status = Number(error?.status || error?.response?.status || 0);
-      setConfigError(
-        status === 401 || status === 403
-          ? tr(
+      const isDemo =
+        localStorage.getItem("authSession") === "true" &&
+        (localStorage.getItem("userId") === "demo-user-001" || user?.id === "demo-user-001");
+
+      setPaymentConfig({
+        upi_id: "mhub@upi",
+        merchant_name: "MHub Marketplace",
+        gateway_enabled: false,
+        razorpay_key_id: "",
+        tiers: {
+          basic: { name: "Basic Plan", amount: 500, period: "1 post" },
+          bronze: { name: "Bronze Plan", amount: 850, period: "3 months" },
+          silver: { name: "Silver Plan", amount: 1200, period: "6 months" },
+          gold: { name: "Gold Plan", amount: 1500, period: "9 months" },
+          premium: { name: "Premium Plan", amount: 1800, period: "12 months" },
+        },
+        boosts: {
+          boost: { name: "Post Boost", amount: 50 },
+          featured: { name: "Featured Post", amount: 100 },
+          spotlight: { name: "Spotlight Top Placement", amount: 200 },
+        },
+        instructions: [
+          "Scan the QR code or copy UPI ID to complete payment.",
+          "Enter your UTR or Transaction reference ID after completing payment.",
+          "Your tier or boost status will activate upon verification.",
+        ],
+      });
+
+      if (!isDemo) {
+        const status = Number(error?.status || error?.response?.status || 0);
+        if (status === 401 || status === 403) {
+          setConfigError(
+            tr(
               "payment_sign_in_continue",
               "Please sign in to continue payments.",
-            )
-          : error?.response?.data?.error ||
-              tr("payment_load_failed", "Failed to load payment details."),
-      );
+            ),
+          );
+        }
+      }
     } finally {
       setConfigLoading(false);
     }
@@ -366,6 +394,35 @@ const PaymentPage = () => {
     setSubmitState({ loading: true, message: "", error: "" });
 
     try {
+      const isDemo =
+        localStorage.getItem("authSession") === "true" &&
+        (localStorage.getItem("userId") === "demo-user-001" || user?.id === "demo-user-001");
+
+      if (isDemo) {
+        const mockMsg = tr(
+          "payment_submit_demo_success",
+          "Demo payment submitted! Verification pending (TX: {{tx}})",
+          { tx: transactionId.trim() },
+        );
+        setSubmitState({ loading: false, message: mockMsg, error: "" });
+        toast({
+          title: tr("payment_submit_success_title", "Payment submitted"),
+          description: mockMsg,
+        });
+        setHistory((prev) => [
+          {
+            id: `PAY-DEMO-${Date.now()}`,
+            transaction_id: transactionId.trim(),
+            amount: selectedOption?.amount || 0,
+            status: "pending",
+            created_at: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+        setTransactionId("");
+        return;
+      }
+
       const submitPayload = isBoostFlow
         ? {
             boost_type: selectedBoost,

@@ -187,23 +187,11 @@ export function RewardsHero({
                 </h2>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   <Badge
-                    className={`bg-gradient-to-r ${rankGradient} text-white border-0 text-xs px-2 py-1 leading-none`}
-                    title={`${tr("rewards_rank", "Rewards rank")}: ${
-                      rewardsUser?.rank || tr("unknown", "Unknown")
-                    }`}
-                  >
-                    <Trophy className="w-4 h-4 mr-1" />
-                    {tr("rank", "Rank")}: {rewardsUser?.rank || tr("unknown", "Unknown")}
-                  </Badge>
-                  <Badge className="bg-white/15 text-white border-0 text-xs px-2 py-1 leading-none">
-                    {tr("level", "Level")} {rewardsUser?.level ?? "-"}
-                  </Badge>
-                  <Badge
-                    className={`${planBadgeClass} border-0 text-xs px-2 py-1 leading-none`}
+                    className={`${planBadgeClass} border-0 text-xs px-2 py-1 leading-none font-semibold`}
                     title={`${tr("membership_plan", "Membership plan")}: ${planLabel}`}
                   >
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    {planLabel}
+                    <Sparkles className="w-4 h-4 mr-1 text-yellow-300" />
+                    {planLabel} Plan
                   </Badge>
                   {resolvedTrustLabel ? (
                     <Badge
@@ -228,47 +216,12 @@ export function RewardsHero({
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-white/70">
-                  {tr(
-                    "rewards_rank_plan_note",
-                    "Rewards rank is based on activity and is separate from your membership plan.",
-                  )}
-                </p>
               </div>
             </div>
 
-            <div className="mt-1.5">
-              <div className="flex items-center justify-between text-xs text-white/70">
-                <span>{tr("level_progress", "Level progress")}</span>
-                <span>
-                  {rewardsUser?.xpCurrent} / {rewardsUser?.xpRequired} XP
-                </span>
-              </div>
-              <div
-                className="mt-1.5 h-2 rounded-full bg-white/20 overflow-hidden"
-                role="progressbar"
-                aria-label={tr("level_progress", "Level progress")}
-                aria-valuenow={xpProgressPercent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div
-                  className="h-full bg-gradient-to-r from-yellow-300 to-orange-400 rounded-full transition-[width] duration-700 ease-out"
-                  style={{ width: `${xpProgressPercent}%` }}
-                />
-              </div>
-              <p className="text-xs text-white/60 mt-1.5">
-                {xpRemaining === 0
-                  ? tr("rewards_levelup_ready", "Level-up ready")
-                  : tr("rewards_xp_remaining", `${xpRemaining} XP remaining`, {
-                      count: xpRemaining,
-                    })}
-              </p>
-            </div>
-
-            <div className="mt-1.5 text-xs text-white/70 flex items-center gap-2">
-              <Share2 className="w-3.5 h-3.5" />
-              {tr("invite_friends_hint", "Invite friends to boost your coins.")}
+            <div className="mt-2 text-xs text-white/80 flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl">
+              <Zap className="w-3.5 h-3.5 text-yellow-300" />
+              <span>Use coins to boost posts or get up to 25% off Premium subscriptions! (100 coins = ₹1)</span>
             </div>
           </div>
 
@@ -844,37 +797,26 @@ export function RewardsOverview({
                   <div className="rewards-overview-stats-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
-                        {tr("level", "Level")}
+                        {tr("rupee_value", "Rupee Value")}
                       </p>
-                      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
-                        {rewardsUser?.level ?? "-"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
-                        {tr("rewards_rank", "Rewards rank")}
-                      </p>
-                      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
-                        {rewardsUser?.rank || tr("unknown", "Unknown")}
+                      <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">
+                        ₹{((Number(displayCoins) || 0) / 100).toFixed(2)}
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
-                        {tr("membership_plan", "Membership plan")}
+                        {tr("membership_plan", "Active Plan")}
                       </p>
-                      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
-                        {membershipPlanLabel || tr("basic_plan", "Basic")}
+                      <p className="mt-1 text-xl font-black text-indigo-600 dark:text-indigo-300 capitalize">
+                        {membershipPlanLabel || tr("premium_plan", "Premium")}
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
-                        {tr("milestones", "Milestones")}
+                        {tr("coin_rate", "Conversion Rate")}
                       </p>
-                      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
-                        {milestoneUnlockedCount}
-                        <span className="ml-1 text-sm font-semibold text-slate-400 dark:text-slate-300">
-                          / {milestones.length}
-                        </span>
+                      <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                        100 coins = ₹1.00
                       </p>
                     </div>
                   </div>
@@ -883,98 +825,74 @@ export function RewardsOverview({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 <div className="rounded-2xl border border-indigo-100/80 bg-indigo-50/80 p-4 shadow-sm dark:border-indigo-900/40 dark:bg-indigo-900/20">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
-                    {tr("xp_progress", "XP Progress")}
-                  </p>
-                  <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
-                    {rewardsUser?.xpCurrent}
-                    <span className="ml-1 text-sm font-semibold text-slate-400 dark:text-slate-300">
-                      / {rewardsUser?.xpRequired} XP
-                    </span>
-                  </p>
-                  <div className="mt-3 h-2 rounded-full bg-indigo-100/90 dark:bg-slate-800/80 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-[width] duration-700 ease-out"
-                      style={{ width: `${xpProgressPercent}%` }}
-                    />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+                      Post Boosting
+                    </p>
+                    <Badge className="bg-indigo-600 text-white text-xs font-bold">10 coins</Badge>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
-                    {xpRemaining === 0
-                      ? tr("rewards_levelup_ready", "Level-up ready")
-                      : tr("rewards_xp_remaining", `${xpRemaining} XP remaining`, {
-                          count: xpRemaining,
-                        })}
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    Boost your post for 7 days
                   </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+                    Get top priority placement in feeds & search.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
+                    onClick={onOpenRedeem}
+                  >
+                    Boost a Post
+                  </Button>
+                </div>
+
+                <div className="rounded-2xl border border-amber-100/80 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900/40 dark:bg-amber-900/20">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
+                      Featured Listing
+                    </p>
+                    <Badge className="bg-amber-600 text-white text-xs font-bold">20 coins</Badge>
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    Feature post for 14 days
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+                    Highlighted badge & featured recommendations.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                    onClick={onOpenRedeem}
+                  >
+                    Feature a Post
+                  </Button>
                 </div>
 
                 <div className="rounded-2xl border border-emerald-100/80 bg-emerald-50/80 p-4 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-900/20">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
-                        {tr("next_reward", "Next reward")}
-                      </p>
-                      <p className="mt-2 text-base font-bold text-slate-900 dark:text-white">
-                        {nextRewardTarget} {tr("coins", "coins")} {"->"} {nextRewardLabel}
-                      </p>
-                    </div>
-                    <Badge className="w-fit bg-white/80 text-emerald-700 shadow-sm dark:bg-slate-900/80 dark:text-emerald-200">
-                      {nextRewardProgress}%
-                    </Badge>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
+                      Plan Discount
+                    </p>
+                    <Badge className="bg-emerald-600 text-white text-xs font-bold">Up to 25% Off</Badge>
                   </div>
-                  <div className="mt-3 h-2.5 rounded-full bg-emerald-100/90 dark:bg-slate-800/80 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full transition-[width] duration-700 ease-out"
-                      style={{ width: `${nextRewardProgress}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
-                    {nextRewardRemaining > 0
-                      ? tr("coins_to_unlock", "{{count}} coins to unlock", {
-                          count: nextRewardRemaining,
-                        })
-                      : tr("ready_to_redeem", "Ready to redeem")}
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    Save on Premium Subscriptions
                   </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/40">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
-                    {tr("rewards_summary", "Rewards summary")}
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+                    Use your coins to discount up to 25% of Premium plan cost.
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                      {tr("level", "Level")} {rewardsUser?.level ?? "-"}
-                    </Badge>
-                    <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
-                      {milestoneUnlockedCount}/{milestones.length} {tr("unlocked", "Unlocked")}
-                    </Badge>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-300">
-                    {tr(
-                      "xp_explainer",
-                      "Earn XP by completing challenges, sales, and referrals.",
-                    )}
-                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                    onClick={onOpenEarnPlan}
+                  >
+                    Upgrade Plan (Use Coins)
+                  </Button>
                 </div>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                type="button"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white sm:w-auto"
-                onClick={onShareReferral}
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                {tr("invite_friends", "Invite friends")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-slate-200 text-slate-700 dark:border-slate-600 dark:text-slate-200 sm:w-auto"
-                onClick={onOpenRedeem}
-              >
-                {tr("redeem_coins", "Redeem coins")}
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -1565,43 +1483,40 @@ export function RewardsEarn({
 
             <div className="rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/20 p-4">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-200 font-semibold">
-                <Star className="w-4 h-4" />
-                {tr("scratch_card", "Scratch card")}
+                <Gift className="w-4 h-4" />
+                {tr("daily_code", "Daily Code")}
               </div>
               <p className="text-xs text-amber-700 dark:text-amber-200 mt-1">
-                {tr(
-                  "scratch_card_desc",
-                  "Scratch after a referral to win 10-100 coins.",
-                )}
+                {tr("daily_code_desc", "Enter active daily code to claim bonus coins instantly.")}
               </p>
-              {scratchStatus ? (
-                <p className="text-xs text-amber-600 dark:text-amber-200 mt-1">
-                  {scratchStatus.available
-                    ? tr("scratch_available", "Available: {{count}}", {
-                        count: scratchStatus.available,
-                      })
-                    : tr("scratch_none", "No scratch cards available")}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                size="sm"
-                disabled={
-                  scratchLoading ||
-                  (scratchStatus && Number(scratchStatus.available || 0) === 0)
-                }
-                className={
-                  scratchLoading ||
-                  (scratchStatus && Number(scratchStatus.available || 0) === 0)
-                    ? "mt-3 bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
-                    : "mt-3 bg-amber-600 hover:bg-amber-700 text-white"
-                }
-                onClick={onScratch}
-              >
-                {scratchLoading
-                  ? tr("scratching", "Scratching...")
-                  : tr("scratch_now", "Scratch now")}
-              </Button>
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. SEC-1234"
+                  id="daily-code-input"
+                  className="px-3 py-1.5 text-xs rounded-xl border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500 w-full"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0"
+                  onClick={async () => {
+                    const val = document.getElementById("daily-code-input")?.value;
+                    if (!val) return;
+                    try {
+                      const res = await api.post("/dailycode/redeem", { code: val });
+                      alert(res?.data?.message || res?.message || "Daily code redeemed!");
+                      if (document.getElementById("daily-code-input")) {
+                        document.getElementById("daily-code-input").value = "";
+                      }
+                    } catch (err) {
+                      alert(err?.response?.data?.error || err?.message || "Invalid daily code");
+                    }
+                  }}
+                >
+                  Redeem
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -3225,7 +3140,15 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
   const [showWinScreen, setShowWinScreen] = React.useState(false);
   const confettiCleanupRef = React.useRef(null);
 
-  const segments = [5, 10, 20, 30, 50, 100];
+  const segments = [
+    { value: 25, label: "+25" },
+    { value: 15, label: "+15" },
+    { value: 10, label: "+10" },
+    { value: 5, label: "+5" },
+    { value: 0, label: "0" },
+    { value: -5, label: "-5" },
+    { value: -10, label: "-10" },
+  ];
 
   const handleStartSpin = async () => {
     if (isSpinning || spinLoading) return;
@@ -3236,7 +3159,7 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
       const prize = res?.reward ?? 0;
       const newBalance = res?.newBalance ?? 0;
       
-      const prizeIndex = segments.indexOf(prize);
+      const prizeIndex = segments.findIndex((s) => s.value === prize);
       const targetIdx = prizeIndex >= 0 ? prizeIndex : 0;
       
       // Calculate stopping angle
@@ -3255,10 +3178,11 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
         setShowWinScreen(true);
         onWin(newBalance, prize);
         
-        // Start confetti
-        setTimeout(() => {
-          confettiCleanupRef.current = triggerConfetti("spin-confetti-canvas");
-        }, 100);
+        if (prize > 0) {
+          setTimeout(() => {
+            confettiCleanupRef.current = triggerConfetti("spin-confetti-canvas");
+          }, 100);
+        }
       }, 4100);
 
     } catch (err) {
@@ -3304,7 +3228,7 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
               {tr("daily_spin_wheel", "Daily Spin Wheel")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-              {tr("spin_wheel_tagline", "Try your luck to win free coins daily!")}
+              {tr("spin_wheel_tagline", "Try your luck daily! Win coins or watch out for penalties.")}
             </p>
 
             {/* Pointer indicator */}
@@ -3325,8 +3249,8 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
               >
                 {/* Visual Segments using SVG */}
                 <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
-                  {segments.map((val, idx) => {
-                    const angle = 60;
+                  {segments.map((seg, idx) => {
+                    const angle = 360 / segments.length;
                     const startAngle = idx * angle;
                     const endAngle = startAngle + angle;
                     const radStart = (startAngle * Math.PI) / 180;
@@ -3338,33 +3262,34 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
                     
                     const d = `M 100 100 L ${x1} ${y1} A 100 100 0 0 1 ${x2} ${y2} Z`;
                     const colors = [
-                      "#6366f1", // indigo-500
-                      "#10b981", // emerald-500
-                      "#f59e0b", // amber-500
-                      "#a855f7", // purple-500
-                      "#f43f5e", // rose-500
-                      "#0ea5e9"  // sky-500
+                      "#6366f1", // indigo (+25)
+                      "#10b981", // emerald (+15)
+                      "#3b82f6", // blue (+10)
+                      "#0ea5e9", // sky (+5)
+                      "#94a3b8", // slate (0)
+                      "#f59e0b", // amber (-5)
+                      "#f43f5e"  // rose (-10)
                     ];
                     
                     const textAngle = startAngle + angle / 2;
                     const radText = (textAngle * Math.PI) / 180;
-                    const tx = 100 + 60 * Math.cos(radText);
-                    const ty = 100 + 60 * Math.sin(radText);
+                    const tx = 100 + 62 * Math.cos(radText);
+                    const ty = 100 + 62 * Math.sin(radText);
 
                     return (
                       <g key={idx}>
-                        <path d={d} fill={colors[idx]} stroke="#1e293b" strokeWidth="1" />
+                        <path d={d} fill={colors[idx % colors.length]} stroke="#1e293b" strokeWidth="1" />
                         <text
                           x={tx}
                           y={ty}
                           fill="white"
-                          fontSize="12"
+                          fontSize="11"
                           fontWeight="bold"
                           textAnchor="middle"
                           dominantBaseline="middle"
                           transform={`rotate(${textAngle + 90}, ${tx}, ${ty})`}
                         >
-                          {val}
+                          {seg.label}
                         </text>
                       </g>
                     );
@@ -3391,20 +3316,32 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
           </div>
         ) : (
           <div className="flex flex-col items-center py-4">
-            <div className="w-20 h-20 bg-amber-100 dark:bg-amber-950/40 rounded-full flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-900/30 shadow-lg animate-bounce">
-              <Trophy className="w-10 h-10 text-amber-500" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 border shadow-lg animate-bounce ${
+              reward > 0
+                ? "bg-amber-100 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/30"
+                : reward < 0
+                ? "bg-rose-100 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/30"
+                : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+            }`}>
+              <Trophy className={`w-10 h-10 ${
+                reward > 0 ? "text-amber-500" : reward < 0 ? "text-rose-500" : "text-slate-400"
+              }`} />
             </div>
             <h4 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-              {tr("congrats", "Congratulations!")}
+              {reward > 0 ? tr("congrats", "Congratulations!") : reward < 0 ? tr("oops", "Oops!") : tr("try_again", "Spin Result")}
             </h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-              {tr("spin_wheel_win_msg", "You won {{count}} coins from the daily spin!", { count: reward })}
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 font-medium">
+              {reward > 0
+                ? `You won +${reward} coins from the daily spin!`
+                : reward < 0
+                ? `Daily spin penalty: ${reward} coins deducted.`
+                : "0 coins! Better luck tomorrow."}
             </p>
             <Button
               onClick={handleClose}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-indigo-500/20"
             >
-              {tr("claim_rewards", "Claim Reward")}
+              {tr("continue", "Continue")}
             </Button>
           </div>
         )}

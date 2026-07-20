@@ -1,4 +1,4 @@
-﻿const { pool, runQuery, getAuthUserId, DB_QUERY_TIMEOUT_MS } = require("../utils/dbHelpers");
+const { pool, runQuery, getAuthUserId, DB_QUERY_TIMEOUT_MS } = require("../utils/dbHelpers");
 const { parseOptionalString, parsePositiveInt, parsePositiveNumber } = require("../utils/parseHelpers");
 const crypto = require("crypto");
 const otpService = require("../services/otpService");
@@ -510,14 +510,14 @@ const initiateSale = async (req, res) => {
 
 const confirmSale = async (req, res) => {
   const buyerId = getAuthUserId(req);
-  const { transactionId, otp } = req.body || {};
+  const { transactionId, sellerId, postId, otp } = req.body || {};
 
   if (!buyerId) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
-  if (!transactionId || !otp) {
-    return res.status(400).json({ error: "Transaction ID and OTP are required" });
+  if ((!transactionId && (!sellerId || !postId)) || !otp) {
+    return res.status(400).json({ error: "Seller ID + Post ID (or Transaction ID) and OTP are required" });
   }
 
   const client = await pool.connect();
@@ -533,30 +533,55 @@ const confirmSale = async (req, res) => {
       });
     }
 
-    const txResult = await client.query(
-      `
-        SELECT
-          transaction_id,
-          post_id,
-          seller_id,
-          buyer_id,
-          ${schema.priceColumn} AS agreed_price,
-          ${schema.secretOtp ? "secret_otp" : "NULL::text AS secret_otp"},
-          ${schema.otpHash ? "otp_hash" : "NULL::text AS otp_hash"},
-          ${schema.otpExpiresAt ? "otp_expires_at" : "NULL::timestamp AS otp_expires_at"},
-          ${schema.otpAttempts ? "otp_attempts" : "0::int AS otp_attempts"},
-          status,
-          ${schema.expiresAt ? "expires_at" : "NULL::timestamp AS expires_at"}
-        FROM transactions
-        WHERE transaction_id = $1
-        FOR UPDATE
-      `,
-      [transactionId],
-    );
+    const txResult = transactionId
+      ? await client.query(
+          `
+            SELECT
+              transaction_id,
+              post_id,
+              seller_id,
+              buyer_id,
+              ${schema.priceColumn} AS agreed_price,
+              ${schema.secretOtp ? "secret_otp" : "NULL::text AS secret_otp"},
+              ${schema.otpHash ? "otp_hash" : "NULL::text AS otp_hash"},
+              ${schema.otpExpiresAt ? "otp_expires_at" : "NULL::timestamp AS otp_expires_at"},
+              ${schema.otpAttempts ? "otp_attempts" : "0::int AS otp_attempts"},
+              status,
+              ${schema.expiresAt ? "expires_at" : "NULL::timestamp AS expires_at"}
+            FROM transactions
+            WHERE transaction_id = $1
+            FOR UPDATE
+          `,
+          [transactionId],
+        )
+      : await client.query(
+          `
+            SELECT
+              transaction_id,
+              post_id,
+              seller_id,
+              buyer_id,
+              ${schema.priceColumn} AS agreed_price,
+              ${schema.secretOtp ? "secret_otp" : "NULL::text AS secret_otp"},
+              ${schema.otpHash ? "otp_hash" : "NULL::text AS otp_hash"},
+              ${schema.otpExpiresAt ? "otp_expires_at" : "NULL::timestamp AS otp_expires_at"},
+              ${schema.otpAttempts ? "otp_attempts" : "0::int AS otp_attempts"},
+              status,
+              ${schema.expiresAt ? "expires_at" : "NULL::timestamp AS expires_at"}
+            FROM transactions
+            WHERE (seller_id = $1 OR seller_id::text = $1)
+              AND (post_id = $2 OR post_id::text = $2)
+              AND status IN ('pending_buyer_confirm', 'initiated', 'pending')
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+          `,
+          [sellerId, postId],
+        );
 
     if (txResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Transaction not found" });
+      return res.status(404).json({ error: "Pending sale transaction not found" });
     }
 
     const transaction = txResult.rows[0];

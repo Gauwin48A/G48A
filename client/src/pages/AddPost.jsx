@@ -45,8 +45,9 @@ import { buildActiveAppMatcher } from "@/utils/categoryModeFilters";
 const Xe = 2 * 1024 * 1024,
   M = [
     { key: "basic", name: "Basic", maxImages: 1, color: "bg-gray-500" },
-    { key: "bronze", name: "Bronze", maxImages: 3, color: "bg-amber-500" },
-    { key: "silver", name: "Silver", maxImages: 5, color: "bg-blue-500" },
+    { key: "bronze", name: "Bronze", maxImages: 1, color: "bg-amber-500" },
+    { key: "silver", name: "Silver", maxImages: 1, color: "bg-blue-500" },
+    { key: "gold", name: "Gold", maxImages: 1, color: "bg-emerald-500" },
     { key: "premium", name: "Premium", maxImages: 10, color: "bg-yellow-500" },
   ],
   V = (a) => {
@@ -54,13 +55,15 @@ const Xe = 2 * 1024 * 1024,
     const m = String(a).trim().toLowerCase();
     return m.includes("premium")
       ? "premium"
-      : m.includes("silver")
-        ? "silver"
-        : m.includes("bronze")
-          ? "bronze"
-        : m.includes("basic") || m.includes("free")
-          ? "basic"
-          : m;
+      : m.includes("gold")
+        ? "gold"
+        : m.includes("silver")
+          ? "silver"
+          : m.includes("bronze")
+            ? "bronze"
+            : m.includes("basic") || m.includes("free")
+              ? "basic"
+              : m;
   },
   ze = (a) => {
     if (!a) return "bg-gray-500";
@@ -72,6 +75,7 @@ const Xe = 2 * 1024 * 1024,
     basic: "bg-gray-500",
     bronze: "bg-amber-500",
     silver: "bg-blue-500",
+    gold: "bg-emerald-500",
     premium: "bg-yellow-500",
   },
   We = (a) => {

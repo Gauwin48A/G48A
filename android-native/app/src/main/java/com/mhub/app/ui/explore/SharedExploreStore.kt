@@ -88,6 +88,15 @@ object SharedExploreStore {
         _recentlyViewedPosts.value = emptyList()
     }
 
+    // ── Subcategory Preferences (for ForYou filtering) ──
+    private val _selectedSubcategories = MutableStateFlow<Set<String>>(emptySet())
+    val selectedSubcategoriesFlow: StateFlow<Set<String>> = _selectedSubcategories.asStateFlow()
+    val selectedSubcategories: Set<String> get() = _selectedSubcategories.value
+
+    fun updateSelectedSubcategories(subs: Set<String>) {
+        _selectedSubcategories.value = subs
+    }
+
     private fun FeedItem.toRecentPost(): Post {
         val titleText = title ?: displayContent.take(80).ifBlank { "Feed update" }
         return Post(

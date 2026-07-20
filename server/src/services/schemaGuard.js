@@ -185,6 +185,31 @@ async function ensureOffersOptionalColumns() {
   }
 }
 
+/**
+ * Auto-provision user_settings table for push/email notification toggles.
+ * @returns {Promise<boolean>}
+ */
+async function ensureUserSettingsTable() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS user_settings (
+        user_id TEXT PRIMARY KEY,
+        push_enabled BOOLEAN NOT NULL DEFAULT true,
+        email_enabled BOOLEAN NOT NULL DEFAULT true,
+        sms_enabled BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision user_settings table", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Schema contract evaluation                                        */
 /* ------------------------------------------------------------------ */
@@ -399,6 +424,7 @@ async function ensureSchemaPreflight({
   }
   await ensureTransactionsOptionalColumns();
   await ensureOffersOptionalColumns();
+  await ensureUserSettingsTable();
 
   const report = await evaluateSchemaContract({
     autoCreateTwoFactorFallback,
@@ -434,4 +460,5 @@ module.exports = {
   ensurePostsOptionalColumns,
   ensureTransactionsOptionalColumns,
   ensureOffersOptionalColumns,
+  ensureUserSettingsTable,
 };

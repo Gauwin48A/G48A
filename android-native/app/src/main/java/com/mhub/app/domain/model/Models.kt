@@ -30,6 +30,7 @@ data class User(
     @SerialName("bio") val bio: String? = null,
     @SerialName("website") val website: String? = null,
     @SerialName("social_links") val socialLinks: Map<String, String>? = null,
+    @SerialName("post_credits") val coins: Int? = null,
 ) {
     val stableId: String get() = userId ?: id ?: email ?: phone ?: "unknown"
     val displayName: String get() = fullName ?: name ?: username ?: email ?: phone ?: "User"
@@ -37,6 +38,7 @@ data class User(
     val isSeller: Boolean get() = role == "seller" || role == "admin"
     val isKycVerified: Boolean get() = kycStatus == "verified"
     val canCreatePosts: Boolean get() = isSeller && isKycVerified
+    val isPremium: Boolean get() = currentPlan?.lowercase() == "premium"
 }
 
 @Immutable

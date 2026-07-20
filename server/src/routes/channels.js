@@ -1185,7 +1185,183 @@ router.get("/:channelId/analytics", protect, async (req, res) => {
     });
   } catch (err) {
     logger.error("Error fetching channel analytics:", err);
-    res.status(500).json({ error: "Failed to fetch analytics" });
+/* ------------------------------------------------------------------ */
+/*  Creator Applications & Reels Extensions                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Ensure creator_applications and creator_reels tables exist.
+ */
+async function ensureCreatorTables() {
+  await runQuery(`
+    CREATE TABLE IF NOT EXISTS creator_applications (
+      id BIGSERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT NOT NULL,
+      photo_url TEXT,
+      social_links JSONB DEFAULT '{}',
+      reason TEXT NOT NULL,
+      status TEXT CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED')) DEFAULT 'PENDING',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS creator_reels (
+      id BIGSERIAL PRIMARY KEY,
+      channel_id TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      video_url TEXT NOT NULL,
+      thumbnail_url TEXT,
+      caption TEXT,
+      duration_seconds INT DEFAULT 30,
+      views_count INT DEFAULT 0,
+      likes_count INT DEFAULT 0,
+      shares_count INT DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+}
+
+/**
+ * @route POST /creator/apply - Apply to become a Creator
+ */
+router.post("/creator/apply", protect, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { display_name, category, description, photo_url, social_links, reason } = req.body;
+
+    if (!display_name || !category || !reason) {
+      return res.status(400).json({ error: "display_name, category, and reason are required" });
+    }
+
+    await ensureCreatorTables();
+
+    const existing = await runQuery(
+      `SELECT id, status FROM creator_applications WHERE user_id = $1 AND status = 'PENDING'`,
+      [userId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: "You already have a pending application" });
+    }
+
+    const result = await runQuery(
+      `INSERT INTO creator_applications
+         (user_id, display_name, category, description, photo_url, social_links, reason, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING')
+       RETURNING id, status, created_at`,
+      [userId, display_name, category, description || '', photo_url || null, JSON.stringify(social_links || {}), reason]
+    );
+
+    res.status(201).json({
+      success: true,
+      application: result.rows[0],
+    });
+  } catch (err) {
+    logger.error("[Creator] Apply error:", err);
+    res.status(500).json({ error: "Failed to submit creator application" });
+  }
+});
+
+/**
+ * @route GET /creator/status - Check creator application status
+ */
+router.get("/creator/status", protect, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    await ensureCreatorTables();
+
+    const result = await runQuery(
+      `SELECT id, display_name, category, status, created_at
+       FROM creator_applications
+       WHERE user_id = $1
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ status: "NONE", isCreator: false });
+    }
+
+    const app = result.rows[0];
+    res.json({
+      status: app.status,
+      isCreator: app.status === "APPROVED",
+      application: app,
+    });
+  } catch (err) {
+    logger.error("[Creator] Status error:", err);
+    res.status(500).json({ error: "Failed to fetch application status" });
+  }
+});
+
+/**
+ * @route GET /reels - Get Reels Feed for auto-play swiper
+ */
+router.get("/reels", optionalAuth, async (req, res) => {
+  try {
+    const { limit = 20, offset = 0 } = req.query;
+    await ensureCreatorTables();
+
+    const result = await runQuery(
+      `SELECT r.*, c.name AS channel_name, c.logo_url AS channel_logo
+       FROM creator_reels r
+       LEFT JOIN channels c ON c.channel_id::text = r.channel_id::text
+       ORDER BY r.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [parseInt(limit, 10), parseInt(offset, 10)]
+    );
+
+    res.json({
+      success: true,
+      reels: result.rows,
+    });
+  } catch (err) {
+    logger.error("[Reels] Fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch reels feed" });
+  }
+});
+
+/**
+ * @route POST /:channelId/reels - Publish a Reel for a channel
+ */
+router.post("/:channelId/reels", protect, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { channelId } = req.params;
+    const { video_url, thumbnail_url, caption, duration_seconds } = req.body;
+
+    if (!video_url) {
+      return res.status(400).json({ error: "video_url is required for a reel" });
+    }
+
+    await ensureCreatorTables();
+
+    const ownerCheck = await runQuery(
+      `SELECT owner_id FROM channels WHERE channel_id::text = $1 LIMIT 1`,
+      [channelId]
+    );
+
+    if (!ownerCheck.rows.length || String(ownerCheck.rows[0].owner_id) !== String(userId)) {
+      return res.status(403).json({ error: "Only the channel owner can publish reels" });
+    }
+
+    const result = await runQuery(
+      `INSERT INTO creator_reels (channel_id, owner_id, video_url, thumbnail_url, caption, duration_seconds)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [channelId, userId, video_url, thumbnail_url || null, caption || '', duration_seconds || 30]
+    );
+
+    res.status(201).json({
+      success: true,
+      reel: result.rows[0],
+    });
+  } catch (err) {
+    logger.error("[Reels] Create error:", err);
+    res.status(500).json({ error: "Failed to create reel" });
   }
 });
 

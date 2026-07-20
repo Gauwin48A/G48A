@@ -15,6 +15,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +60,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonAdd
@@ -79,6 +82,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -388,6 +392,26 @@ class ProfileViewModel @Inject constructor(
 
     fun updateProfile(fullName: String?, phone: String?, bio: String?, onDone: () -> Unit) {
         _state.value = _state.value.copy(editSaving = true, editError = null, editResult = null)
+        
+        // Handle demo sessions locally — no server to call
+        if (repo.isDemoSession) {
+            val currentUser = _state.value.user
+            val updatedUser = currentUser?.copy(
+                fullName = fullName ?: currentUser.fullName,
+                phone = phone ?: currentUser.phone,
+                bio = bio ?: currentUser.bio,
+            )
+            _state.value = _state.value.copy(
+                editSaving = false,
+                editResult = "Profile updated!",
+                editError = null,
+                user = updatedUser,
+            )
+            cachedProfile = _state.value
+            onDone()
+            return
+        }
+        
         viewModelScope.launch {
             when (val result = rewardsRepo.updateProfile(ProfileUpdateRequest(fullName = fullName, phone = phone, bio = bio))) {
                 is ApiResult.Success -> {
@@ -574,12 +598,38 @@ class ProfileViewModel @Inject constructor(
             try {
                 val resp = api.getPreferences()
                 _prefsLoaded.value = resp
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+                // Demo fallback — provide defaults so UI doesn't show N/A
+                if (repo.isDemoSession && _prefsLoaded.value == null) {
+                    _prefsLoaded.value = com.mhub.app.data.remote.dto.PreferencesResponse(
+                        location = "Mumbai, MH",
+                        minPrice = null,
+                        maxPrice = null,
+                        categories = emptyList(),
+                    )
+                }
+            }
         }
     }
 
-    fun savePreferences(location: String, minPrice: Int?, maxPrice: Int?) {
+    fun savePreferences(location: String, minPrice: Int?, maxPrice: Int?, categories: List<String> = emptyList()) {
         _prefsSaving.value = true
+        
+        // Handle demo sessions locally — no server to call
+        if (repo.isDemoSession) {
+            // Simulate saving by updating in-memory preferences
+            val fakeResponse = com.mhub.app.data.remote.dto.PreferencesResponse(
+                location = location,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                categories = categories,
+            )
+            _prefsLoaded.value = fakeResponse
+            _state.value = _state.value.copy(editResult = "Preferences saved")
+            _prefsSaving.value = false
+            return
+        }
+        
         viewModelScope.launch {
             try {
                 api.updatePreferences(
@@ -587,10 +637,10 @@ class ProfileViewModel @Inject constructor(
                         location = location,
                         minPrice = minPrice,
                         maxPrice = maxPrice,
+                        categories = categories,
                     )
                 )
                 _state.value = _state.value.copy(editResult = "Preferences saved")
-                // Re-fetch preferences so the UI reflects the saved values
                 loadPreferences()
             } catch (_: Exception) {
                 _state.value = _state.value.copy(editResult = "Failed to save preferences")
@@ -700,26 +750,9 @@ fun ProfileScreen(
 
                 else -> {
                     val user = state.user
-                    var showEditDialog by remember { mutableStateOf(false) }
                     val coverPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
                     ) { uri -> uri?.let { viewModel.uploadCoverImage(context, it) } }
-
-                    // Edit Profile Dialog
-                    if (showEditDialog) {
-                        EditProfileDialog(
-                            user = user,
-                            saving = state.editSaving,
-                            saveError = state.editError,
-                            onDismiss = {
-                                showEditDialog = false
-                                viewModel.clearEditResult()
-                            },
-                            onSave = { name: String?, phone: String?, bio: String? ->
-                                viewModel.updateProfile(name, phone, bio) { showEditDialog = false }
-                            },
-                        )
-                    }
 
                     // Edit result toast
                     state.editResult?.let { msg ->
@@ -730,6 +763,7 @@ fun ProfileScreen(
                     }
 
                     var selectedTab by remember { mutableIntStateOf(0) }
+                    var showEditDialog by remember { mutableStateOf(false) }
 
                     Column(
                         modifier = Modifier
@@ -1180,7 +1214,7 @@ fun ProfileScreen(
                                     if (state.isOwnProfile) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.profile_edit_profile)) },
-                                            onClick = { showEditDialog = true; showMoreMenu = false },
+                                            onClick = { onOpenEditProfile(); showMoreMenu = false },
                                             leadingIcon = { Icon(Icons.Default.Edit, null) },
                                         )
                                     }
@@ -1590,13 +1624,12 @@ fun ProfileScreen(
                             LaunchedEffect(selectedTab) { viewModel.loadPreferences() }
                             val prefsSaving by viewModel.prefsSaving.collectAsState()
                             PreferencesTab(
-                                onOpenCategoryMode = onOpenCategoryMode,
                                 initialLocation = prefs?.location ?: "",
                                 initialMinPrice = prefs?.minPrice?.toString() ?: "",
                                 initialMaxPrice = prefs?.maxPrice?.toString() ?: "",
                                 selectedCategories = prefs?.categories.orEmpty(),
                                 saving = prefsSaving,
-                                onSave = { loc, min, max -> viewModel.savePreferences(loc, min, max) },
+                                onSave = { loc, min, max, cats -> viewModel.savePreferences(loc, min, max, cats) },
                             )
                         }
 
@@ -1606,6 +1639,21 @@ fun ProfileScreen(
                         }
 
                         Spacer(Modifier.height(24.dp))
+                    }
+
+                    // ─── Edit Profile Dialog ──────────────────────────────────────
+                    if (showEditDialog) {
+                        EditProfileDialog(
+                            user = user,
+                            saving = state.editSaving,
+                            saveError = state.editError,
+                            onDismiss = { showEditDialog = false },
+                            onSave = { name, phone, bio ->
+                                viewModel.updateProfile(name, phone, bio) {
+                                    showEditDialog = false
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -1811,19 +1859,30 @@ private fun PersonalInfoTab(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun PreferencesTab(
-    onOpenCategoryMode: () -> Unit,
+    onOpenCategoryMode: () -> Unit = {},
     initialLocation: String = "",
     initialMinPrice: String = "",
     initialMaxPrice: String = "",
     selectedCategories: List<String> = emptyList(),
     saving: Boolean = false,
-    onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit = { _, _, _ -> },
+    onSave: (location: String, minPrice: Int?, maxPrice: Int?, categories: List<String>) -> Unit = { _, _, _, _ -> },
 ) {
     val locationParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
     val minPriceValue = initialMinPrice.toIntOrNull()
     val maxPriceValue = initialMaxPrice.toIntOrNull()
     var showEditor by remember { mutableStateOf(false) }
+
+    // All subcategories organized by category for the multi-select chips
+    val allSubcategories = remember {
+        mapOf(
+            "Electronics" to listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories"),
+            "Fashion" to listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery"),
+            "Vehicles" to listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts"),
+            "Others" to listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate", "Services"),
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -1836,42 +1895,55 @@ private fun PreferencesTab(
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ProfileInfoRow(stringResource(R.string.profile_location), initialLocation)
-                ProfileInfoRow(stringResource(R.string.profile_country), locationParts.country)
-                ProfileInfoRow(stringResource(R.string.profile_state), locationParts.state)
-                ProfileInfoRow(stringResource(R.string.profile_district), locationParts.district)
-                ProfileInfoRow(stringResource(R.string.profile_city), locationParts.city)
                 ProfileInfoRow(stringResource(R.string.profile_price_range), profilePriceRange(minPriceValue, maxPriceValue))
-                ProfileInfoRow(stringResource(R.string.profile_selected_categories), selectedCategories.joinToString())
-                ProfileInfoRow(stringResource(R.string.profile_page_density), "Comfortable")
-                Button(
-                    onClick = { showEditor = true },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                ) {
-                    Icon(Icons.Default.Settings, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.SemiBold)
-                }
             }
         }
 
-        // Category Mode link
-        val catDark = ColorTokens.isDark
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = if (catDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
-            border = androidx.compose.foundation.BorderStroke(1.dp, if (catDark) Color(0xFF334155) else Color(0xFFBFDBFE)),
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCategoryMode),
-        ) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("🏪", fontSize = 22.sp)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = if (catDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
-                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = if (catDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
+        // Subcategory Selection — multi-select chips organized by category
+        Text("Your Interests", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text("Select subcategories to personalize your For You feed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        
+        allSubcategories.forEach { (category, subs) ->
+            val selectedInCategory = selectedCategories.filter { it in subs }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(category, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    if (selectedInCategory.isNotEmpty()) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF6366F1).copy(alpha = 0.12f)) {
+                            Text("${selectedInCategory.size} selected", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6366F1), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = if (catDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    subs.forEach { sub ->
+                        val isSelected = sub in selectedCategories
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { },
+                            label = { Text(sub, fontSize = 12.sp) },
+                            leadingIcon = if (isSelected) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }} else null,
+                            shape = RoundedCornerShape(10.dp),
+                        )
+                    }
+                }
             }
+            Spacer(Modifier.height(4.dp))
+        }
+
+        Button(
+            onClick = { showEditor = true },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+        ) {
+            Icon(Icons.Default.Settings, null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(Modifier.height(24.dp))
@@ -1882,10 +1954,11 @@ private fun PreferencesTab(
             initialLocation = initialLocation,
             initialMinPrice = initialMinPrice,
             initialMaxPrice = initialMaxPrice,
+            initialCategories = selectedCategories,
             saving = saving,
             onDismiss = { showEditor = false },
-            onSave = { loc, min, max ->
-                onSave(loc, min, max)
+            onSave = { loc, min, max, cats ->
+                onSave(loc, min, max, cats)
                 showEditor = false
             },
         )
@@ -1893,13 +1966,15 @@ private fun PreferencesTab(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun PreferencesEditDialog(
     initialLocation: String,
     initialMinPrice: String,
     initialMaxPrice: String,
+    initialCategories: List<String> = emptyList(),
     saving: Boolean,
     onDismiss: () -> Unit,
-    onSave: (location: String, minPrice: Int?, maxPrice: Int?) -> Unit,
+    onSave: (location: String, minPrice: Int?, maxPrice: Int?, categories: List<String>) -> Unit,
 ) {
     val initialParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
     var country by remember(initialLocation) { mutableStateOf(initialParts.country) }
@@ -1908,100 +1983,190 @@ private fun PreferencesEditDialog(
     var city by remember(initialLocation) { mutableStateOf(initialParts.city) }
     var minPrice by remember(initialMinPrice) { mutableStateOf(initialMinPrice) }
     var maxPrice by remember(initialMaxPrice) { mutableStateOf(initialMaxPrice) }
+    var selectedCats by remember(initialCategories) { mutableStateOf(initialCategories.toSet()) }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .height(460.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SearchableChoiceField(
-                    label = stringResource(R.string.profile_country),
-                    value = country,
-                    placeholder = stringResource(R.string.profile_select_country),
-                    options = profileCountryOptions,
-                    onSelected = {
-                        country = it
-                        state = ""
-                        district = ""
-                        city = ""
-                    },
-                )
-                SearchableChoiceField(
-                    label = stringResource(R.string.profile_state),
-                    value = state,
-                    placeholder = stringResource(R.string.profile_select_state),
-                    options = profileStatesFor(country),
-                    enabled = country.isNotBlank(),
-                    onSelected = {
-                        state = it
-                        district = ""
-                        city = ""
-                    },
-                )
-                SearchableChoiceField(
-                    label = stringResource(R.string.profile_district),
-                    value = district,
-                    placeholder = stringResource(R.string.profile_select_district),
-                    options = profileDistrictsFor(state),
-                    enabled = state.isNotBlank(),
-                    onSelected = {
-                        district = it
-                        city = ""
-                    },
-                )
-                SearchableChoiceField(
-                    label = stringResource(R.string.profile_city),
-                    value = city,
-                    placeholder = stringResource(R.string.profile_select_city),
-                    options = profileCitiesFor(district),
-                    enabled = district.isNotBlank(),
-                    onSelected = { city = it },
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = minPrice,
-                        onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
-                        label = { Text(stringResource(R.string.profile_min_price)) },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        val sheetMaxHeight = config.screenHeightDp * 0.70f
+        val scrollState = rememberScrollState()
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = sheetMaxHeight.dp)
+                .padding(horizontal = 18.dp)
+                .imePadding()
+                .navigationBarsPadding(),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Fixed header
+                Surface(
+                    color = Color(0xFF6366F1).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(Icons.Default.Settings, null, tint = Color(0xFF6366F1), modifier = Modifier.size(24.dp))
+                        Text(stringResource(R.string.profile_update_preferences), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                // Scrollable content
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(scrollState)
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SearchableChoiceField(
+                        label = stringResource(R.string.profile_country),
+                        value = country,
+                        placeholder = stringResource(R.string.profile_select_country),
+                        options = profileCountryOptions,
+                        onSelected = {
+                            country = it
+                            state = ""
+                            district = ""
+                            city = ""
+                        },
                     )
-                    OutlinedTextField(
-                        value = maxPrice,
-                        onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
-                        label = { Text(stringResource(R.string.profile_max_price)) },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                    SearchableChoiceField(
+                        label = stringResource(R.string.profile_state),
+                        value = state,
+                        placeholder = stringResource(R.string.profile_select_state),
+                        options = profileStatesFor(country),
+                        enabled = country.isNotBlank(),
+                        onSelected = {
+                            state = it
+                            district = ""
+                            city = ""
+                        },
+                    )
+                    SearchableChoiceField(
+                        label = stringResource(R.string.profile_district),
+                        value = district,
+                        placeholder = stringResource(R.string.profile_select_district),
+                        options = profileDistrictsFor(state),
+                        enabled = state.isNotBlank(),
+                        onSelected = {
+                            district = it
+                            city = ""
+                        },
+                    )
+                    SearchableChoiceField(
+                        label = stringResource(R.string.profile_city),
+                        value = city,
+                        placeholder = stringResource(R.string.profile_select_city),
+                        options = profileCitiesFor(district),
+                        enabled = district.isNotBlank(),
+                        onSelected = { city = it },
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = minPrice,
+                            onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
+                            label = { Text(stringResource(R.string.profile_min_price)) },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        OutlinedTextField(
+                            value = maxPrice,
+                            onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
+                            label = { Text(stringResource(R.string.profile_max_price)) },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                // Subcategory selection section
+                Text("Interested Categories", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                Text("Select subcategories to personalize your feed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                val allSubs = remember {
+                    mapOf(
+                        "Electronics" to listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories"),
+                        "Fashion" to listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery"),
+                        "Vehicles" to listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts"),
+                        "Others" to listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate", "Services"),
                     )
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onSave(composeProfileLocation(country, state, district, city), minPrice.toIntOrNull(), maxPrice.toIntOrNull()) },
-                enabled = !saving,
-            ) {
-                if (saving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.profile_save_prefs))
+                allSubs.forEach { (cat, subs) ->
+                    Text(cat, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        subs.forEach { sub ->
+                            val isSel = sub in selectedCats
+                            FilterChip(
+                                selected = isSel,
+                                onClick = {
+                                    selectedCats = if (isSel) selectedCats - sub else selectedCats + sub
+                                },
+                                label = { Text(sub, fontSize = 12.sp) },
+                                leadingIcon = if (isSel) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }} else null,
+                                shape = RoundedCornerShape(10.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+
+                // Fixed footer — always visible Save/Cancel buttons
+                Surface(
+                    tonalElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text(stringResource(R.string.profile_cancel), modifier = Modifier.padding(vertical = 4.dp))
+                        }
+                        Button(
+                            onClick = { onSave(composeProfileLocation(country, state, district, city), minPrice.toIntOrNull(), maxPrice.toIntOrNull(), selectedCats.toList()) },
+                            enabled = !saving,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            if (saving) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text(stringResource(R.string.profile_save_prefs), fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
                 }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.profile_cancel))
-            }
-        },
-    )
+        }
+    }
+}
 }
 
 @Composable
@@ -2799,20 +2964,22 @@ private fun EditProfileDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        val sheetMaxHeight = config.screenHeightDp * 0.85f
+        val scrollState = rememberScrollState()
         Surface(
             shape = RoundedCornerShape(24.dp),
             tonalElevation = 6.dp,
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = sheetMaxHeight.dp)
                 .padding(horizontal = 18.dp)
                 .imePadding()
                 .navigationBarsPadding(),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-            ) {
-                // Gradient header with avatar preview
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Fixed gradient header with avatar preview
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2847,11 +3014,13 @@ private fun EditProfileDialog(
                     }
                 }
 
+                // Scrollable content area (takes remaining space)
                 Column(
                     modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(scrollState)
                         .fillMaxWidth()
-                        .heightIn(max = 500.dp)
-                        .padding(20.dp),
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     saveError?.let { message ->
@@ -2863,7 +3032,6 @@ private fun EditProfileDialog(
                         }
                     }
 
-                    // Full Name field with icon
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -2883,7 +3051,6 @@ private fun EditProfileDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    // Phone field with icon
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it.take(20) },
@@ -2898,7 +3065,6 @@ private fun EditProfileDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    // Bio field with icon
                     OutlinedTextField(
                         value = bio,
                         onValueChange = { if (it.length <= bioMaxLen) bio = it },
@@ -2960,19 +3126,28 @@ private fun EditProfileDialog(
                             }
                         }
                     }
+                }
 
-                    // Action buttons
+                // Fixed footer — always visible Save/Cancel buttons
+                Surface(
+                    tonalElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         OutlinedButton(
                             onClick = onDismiss,
                             enabled = !saving,
                             shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f),
                         ) {
-                            Text("Cancel")
+                            Text("Cancel", modifier = Modifier.padding(vertical = 4.dp))
                         }
                         Button(
                             onClick = {
@@ -2984,6 +3159,7 @@ private fun EditProfileDialog(
                             },
                             enabled = canSave,
                             shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF6366F1),
                             ),

@@ -156,8 +156,8 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
         name = "MHub Member",
         rank = "Bronze",
         tier = "Bronze",
-        membershipPlan = "basic",
-        currentPlan = "basic",
+        membershipPlan = "premium",
+        currentPlan = "premium",
         level = 2,
         xpCurrent = 140,
         xpRequired = 250,
@@ -530,6 +530,8 @@ fun RewardsScreen(
                 state.rewards != null -> {
                     val rewards = state.rewards!!
                     val user = rewards.user
+                    val userCoins = user.coins ?: 0
+                    val isPremium = user.isPremium
                     val engagement = state.engagement
                     val referralTarget = engagement?.referralMilestones?.target ?: 3
                     val referralReward = engagement?.referralMilestones?.reward ?: 50
@@ -677,25 +679,25 @@ fun RewardsScreen(
                                             Text(user.name ?: "User", style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold)
                                             Text(stringResource(R.string.rewards_referral_code, user.referralCode ?: "\u2014"), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
                                         }
-                                        // Quick chips inline
+                                        // Active Plan chip
                                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            HeroChip("\uD83C\uDFC6 ${user.rank ?: "Bronze"}")
-                                            HeroChip("Lv.${max(user.level, 1)}")
+                                            HeroChip("✨ ${user.membershipPlan?.replaceFirstChar { it.uppercase() } ?: "Premium"} Plan")
                                         }
                                     }
-                                    // XP progress - compact
-                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.rewards_level_progress), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
-                                            Text("${user.xpCurrent}/${user.xpRequired} XP", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.SemiBold)
-                                        }
-                                        GoldProgressBar(progress = xpProgress)
+                                    // Member plan badge row
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "🪙 Balance: $userCoins Coins (₹${if (isPremium) (userCoins * 0.05).toInt() else (userCoins * 0.01).toInt()})",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
                         }
 
-                        // ─── Level & XP Guide ───────────────────────────
+                        // ─── Coins Utility Overview ───────────────────────
                         if (selectedTab == 0) item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
@@ -705,44 +707,49 @@ fun RewardsScreen(
                                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            "ℹ️ How Levels & XP Work",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                        )
-                                    }
                                     Text(
-                                        "Earn XP (Points) automatically by listing posts, referring friends, claiming daily rewards, and completing challenges. Every 100 XP levels up your profile!",
+                                        "💰 Coins Usage & Strategic Valuation",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        if (isPremium) "🔥 Premium Active Perk: 100 coins = ₹5.00 (5x Valuation Bonus!)"
+                                        else "Standard Rate: 100 coins = ₹1.00. Upgrade to Premium for 5x valuation!",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isPremium) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     Spacer(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
-                                    Text(
-                                        "Level Privileges:",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("• Level 1 (Bronze): Standard listing limits & basic visibility.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("• Level 2 (Silver): Higher listing limit (10 posts/day) & search visibility boost.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("• Level 3 (Gold): Premium Elite Seller badge unlocked & 2x search priority.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("• Level 4+ (Platinum/Diamond): Elite benefits, early access, and priority support.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            if (isPremium) "• Post Boost (50 coins): Top priority placement for 7 days."
+                                            else "• Post Boost (200 coins): Top priority placement for 7 days (50c for Premium).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            if (isPremium) "• Featured Post (100 coins): Highlighted badge & featured placement for 14 days."
+                                            else "• Featured Post (300 coins): Highlighted placement for 14 days (100c for Premium).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            if (isPremium) "• Spotlight / Top Placement (200 coins): Premium top feed placement below deals banner."
+                                            else "• Spotlight / Top Placement (500 coins): Top placement below deals banner (200c for Premium).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            "• Plan Purchase Discount: Redeem coins to claim up to 25% off plan purchases (7,200 coins = ₹450 off ₹1,800 Premium plan).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     }
-                                }
-                            }
-                        }
-
-                        // ─── Tier Progression Carousel ───────────────────
-                        if (selectedTab == 0) item {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(stringResource(R.string.rewards_tier_progression), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    TierCard("Bronze 🥉", listOf("Basic rewards", "+5% bonus", "Weekly challenges"), user.rank == "Bronze" || user.rank == null, Color(0xFFCD7F32))
-                                    TierCard("Silver 🥈", listOf("Premium rewards", "+10% bonus", "Daily spins", "Priority support"), user.rank == "Silver", if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280))
-                                    TierCard("Gold 🥇", listOf("Elite rewards", "+20% bonus", "Exclusive perks", "VIP events", "Ad-free"), user.rank == "Gold", Color(0xFFF59E0B))
                                 }
                             }
                         }

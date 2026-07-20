@@ -126,6 +126,8 @@ const SaleDone = () => {
     saleAmount: "",
   });
   const [buyerForm, setBuyerForm] = useState({
+    sellerId: "",
+    postId: "",
     transactionId: "",
     otp: "",
   });
@@ -393,15 +395,17 @@ const SaleDone = () => {
   const handleConfirmSale = async (event) => {
     event.preventDefault();
 
+    const sellerId = String(buyerForm.sellerId || "").trim();
+    const postId = String(buyerForm.postId || "").trim();
     const transactionId = String(buyerForm.transactionId || "").trim();
     const otp = String(buyerForm.otp || "").trim();
 
-    if (!transactionId || !otp) {
+    if ((!sellerId && !postId && !transactionId) || !otp) {
       toast({
         title: tr("missing_details_title", "Missing details"),
         description: tr(
           "sale_confirm_missing_desc",
-          "Transaction ID and OTP are required.",
+          "Seller ID (or Transaction ID), Post ID, and OTP are required.",
         ),
         variant: "destructive",
       });
@@ -414,7 +418,7 @@ const SaleDone = () => {
         "post",
         "/sale/confirm",
         "/transactions/confirm",
-        { transactionId, otp },
+        { sellerId, postId, transactionId, otp },
       );
       const payloadData = payload?.data ?? payload ?? {};
       const tx =
@@ -1220,29 +1224,49 @@ const SaleDone = () => {
                 </div>
 
                 <form onSubmit={handleConfirmSale} className="space-y-6">
-                  <div>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
                       <Label
-                        htmlFor="buyerTransactionId"
+                        htmlFor="buyerSellerId"
                         className="text-sm font-bold mb-2 block"
                       >
-                      {tr("transaction_id", "Transaction ID")}
+                        {tr("seller_user_id", "Seller User ID")}
                       </Label>
                       <Input
-                        id="buyerTransactionId"
-                        value={buyerForm.transactionId}
-                      onChange={(event) =>
-                        setBuyerForm((prev) => ({
-                          ...prev,
-                          transactionId: event.target.value,
-                        }))
-                      }
-                      placeholder={tr(
-                        "transaction_id_placeholder",
-                        "e.g., ABC123",
-                      )}
-                      className="h-12"
-                      required
-                    />
+                        id="buyerSellerId"
+                        value={buyerForm.sellerId}
+                        onChange={(event) =>
+                          setBuyerForm((prev) => ({
+                            ...prev,
+                            sellerId: event.target.value,
+                          }))
+                        }
+                        placeholder={tr("seller_id_example", "e.g., USR-9821")}
+                        className="h-12"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="buyerPostId"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                        {tr("post_id", "Post ID")}
+                      </Label>
+                      <Input
+                        id="buyerPostId"
+                        value={buyerForm.postId}
+                        onChange={(event) =>
+                          setBuyerForm((prev) => ({
+                            ...prev,
+                            postId: event.target.value,
+                          }))
+                        }
+                        placeholder={tr("post_id_example", "e.g., 126")}
+                        className="h-12"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div>

@@ -236,9 +236,9 @@ export default function Login() {
         phone: "9999999999",
         email: "demo@mhub.app",
         role: "user",
-        tier: "basic",
-        current_plan: "basic",
-        rewards_rank: "Bronze",
+        tier: "premium",
+        current_plan: "premium",
+        rewards_rank: "Premium Member",
       };
       setUser(demoUser);
       localStorage.setItem("authSession", "true");

@@ -2,11 +2,18 @@ const { pool, runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const { parsePositiveNumber } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 
-// Coin costs for redemptions
+// Coin costs for redemptions based on user active plan
 const REDEEM_COSTS = {
-  boost: 10,
-  featured: 20,
-  spotlight: 40,
+  premium: {
+    boost: 50,
+    featured: 100,
+    spotlight: 200,
+  },
+  standard: {
+    boost: 200,
+    featured: 300,
+    spotlight: 500,
+  },
 };
 
 const REFERRAL_DIRECT_COINS = parsePositiveNumber(
@@ -43,12 +50,13 @@ const DAILY_EARN_CAPS = {
 
 const DAILY_CHECKIN_REWARDS = [5, 10, 15, 20, 30, 50, 100];
 const SPIN_REWARD_POOL = [
-  { amount: 5, weight: 30 },
+  { amount: 25, weight: 15 },
+  { amount: 15, weight: 20 },
   { amount: 10, weight: 25 },
-  { amount: 20, weight: 20 },
-  { amount: 30, weight: 12 },
-  { amount: 50, weight: 8 },
-  { amount: 100, weight: 5 },
+  { amount: 5, weight: 25 },
+  { amount: 0, weight: 10 },
+  { amount: -5, weight: 3 },
+  { amount: -10, weight: 2 },
 ];
 const SCRATCH_REWARD_POOL = [
   { amount: 10, weight: 30 },
@@ -670,10 +678,20 @@ exports.redeemCoins = async (req, res) => {
   const redeemType = String(req.body?.type || "").toLowerCase();
   const postId = req.body?.postId;
 
-  if (!REDEEM_COSTS[redeemType]) {
+  const userRes = await runQuery(
+    "SELECT membership_plan, current_plan, tier FROM users WHERE user_id = $1",
+    [userId],
+  ).catch(() => ({ rows: [] }));
+  const planName = String(
+    userRes.rows[0]?.membership_plan || userRes.rows[0]?.current_plan || userRes.rows[0]?.tier || "",
+  ).toLowerCase();
+  const isPremium = planName.includes("premium");
+  const costMap = isPremium ? REDEEM_COSTS.premium : REDEEM_COSTS.standard;
+
+  if (!costMap[redeemType]) {
     return res.status(400).json({
       error: "Invalid redeem type",
-      options: Object.entries(REDEEM_COSTS).map(([type, cost]) => ({ type, cost })),
+      options: Object.entries(costMap).map(([type, cost]) => ({ type, cost })),
     });
   }
 
@@ -681,7 +699,7 @@ exports.redeemCoins = async (req, res) => {
     return res.status(400).json({ error: "postId is required" });
   }
 
-  const cost = REDEEM_COSTS[redeemType];
+  const cost = costMap[redeemType];
   const idempotencyKey =
     req.body?.idempotencyKey ||
     req.body?.requestId ||
@@ -1002,16 +1020,34 @@ exports.spinWheel = async (req, res) => {
 
     const reward = pickWeightedReward(SPIN_REWARD_POOL);
     const referenceId = `spin:${userId}:${todayKey}`;
-    const result = await addCoins(
-      userId,
-      reward,
-      "spin_wheel",
-      referenceId,
-      "Daily spin wheel reward",
-    );
+    let newBalance = 0;
 
-    if (!result.applied) {
-      return res.status(409).json({ error: "Duplicate spin" });
+    if (reward > 0) {
+      const result = await addCoins(
+        userId,
+        reward,
+        "spin_wheel",
+        referenceId,
+        `Daily spin wheel reward (+${reward} coins)`,
+      );
+      if (!result.applied) {
+        return res.status(409).json({ error: "Duplicate spin" });
+      }
+      newBalance = result.newBalance;
+    } else if (reward < 0) {
+      const penaltyCost = Math.abs(reward);
+      const result = await spendCoins(
+        userId,
+        penaltyCost,
+        "spin_penalty",
+        referenceId,
+        `Daily spin wheel penalty (-${penaltyCost} coins)`,
+      ).catch(() => ({ applied: false, newBalance: 0 }));
+      newBalance = result.newBalance ?? 0;
+    } else {
+      // 0 coins - just fetch balance
+      const balRes = await runQuery("SELECT coins FROM users WHERE user_id = $1", [userId]);
+      newBalance = parseFloat(balRes.rows[0]?.coins || 0);
     }
 
     await runQuery(
@@ -1022,7 +1058,7 @@ exports.spinWheel = async (req, res) => {
     res.json({
       success: true,
       reward,
-      newBalance: result.newBalance,
+      newBalance,
       nextSpinAt: getNextIstMidnightIso(),
     });
   } catch (err) {

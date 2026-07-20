@@ -1,4 +1,4 @@
-﻿package com.mhub.app.ui
+package com.mhub.app.ui
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -143,7 +143,9 @@ import com.mhub.app.core.LocaleManager
 import com.mhub.app.ui.notifications.NotificationsScreen
 import com.mhub.app.ui.post.CreatePostScreen
 import com.mhub.app.ui.post.MyPostsScreen
+import com.mhub.app.ui.profile.EditProfileScreen
 import com.mhub.app.ui.profile.ProfileScreen
+import com.mhub.app.ui.profile.ProfileViewModel
 import com.mhub.app.ui.rewards.RewardsScreen
 import com.mhub.app.ui.search.SearchScreen
 import com.mhub.app.ui.settings.SettingsScreen
@@ -588,22 +590,12 @@ fun MhubApp(
 
                 composable(Routes.FEED) {
                     MainShell(navController = navController, selected = BottomTab.FEED) {
-                        val feedSellVm: SellFlowViewModel = hiltViewModel()
-                        val feedScope = rememberCoroutineScope()
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
-                            onCreatePost = {
-                                feedScope.launch {
-                                    // Feed posts require active plan (same as sell flow)
-                                    val subResult = feedSellVm.checkSubscriptionOnly()
-                                    if (subResult) {
-                                        navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
-                                    } else {
-                                        navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
-                                    }
-                                }
+                            onCreatePost = { initialContent ->
+                                navController.navigate(Routes.feedPostAdd(initialContent)) { launchSingleTop = true }
                             },
-                            )
+                        )
                     }
                 }
 
@@ -640,10 +632,29 @@ fun MhubApp(
                             onOpenSaleDone = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                            onOpenEditProfile = {},
+                            onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
                             onOpenCategoryMode = { navController.navigate(Routes.CATEGORY_MODE) { launchSingleTop = true } },
                         )
                     }
+                }
+
+                composable(Routes.EDIT_PROFILE) {
+                    val profileVm: ProfileViewModel = hiltViewModel()
+                    val pState by profileVm.state.collectAsState()
+                    EditProfileScreen(
+                        user = pState.user,
+                        saving = pState.editSaving,
+                        saveError = pState.editError,
+                        onDismiss = { navController.popBackStack() },
+                        onSave = { name, phone, bio, loc, socialLinks, minP, maxP, cats ->
+                            profileVm.updateProfile(name, phone, bio) {
+                                socialLinks?.let { profileVm.updateSocialLinks(it) }
+                                navController.popBackStack()
+                            }
+                        },
+                        onUploadAvatar = { _ -> },
+                        onUploadCover = { _ -> },
+                    )
                 }
 
                 // MORE is now a drawer overlay (not a page), redirect to HOME
@@ -937,19 +948,10 @@ fun MhubApp(
 
             composable(Routes.MY_FEED) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
-                    val feedSellVm: SellFlowViewModel = hiltViewModel()
-                    val feedScope = rememberCoroutineScope()
                     MyFeedScreen(
                         onBack = { navController.popBackStack() },
                         onCreatePost = {
-                            feedScope.launch {
-                                val subResult = feedSellVm.checkSubscriptionOnly()
-                                if (subResult) {
-                                    navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
-                                } else {
-                                    navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
-                                }
-                            }
+                            navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
                         },
                     )
                 }

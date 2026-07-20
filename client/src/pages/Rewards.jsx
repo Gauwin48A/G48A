@@ -2252,18 +2252,6 @@ const RewardsPage = () => {
                 tr={tr}
                 tFunc={tFunc}
               />
-              <RewardsLeaderboard
-                leaderboardCountdown={leaderboardCountdown}
-                nextLeaderboardPayout={nextLeaderboardPayout}
-                lastLeaderboardPayout={lastLeaderboardPayout}
-                currentReferralRank={currentReferralRank}
-                referralLeaderboard={referralLeaderboard}
-                leaderboardReady={leaderboardReady}
-                publicWall={publicWall}
-                leaderboardHistory={leaderboardHistory}
-                tr={tr}
-                tFunc={tFunc}
-              />
             </div>
           ) : null}
         </div>

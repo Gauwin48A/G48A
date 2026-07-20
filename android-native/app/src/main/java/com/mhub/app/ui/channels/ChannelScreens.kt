@@ -1282,3 +1282,68 @@ private fun CField(label: String, value: String, onValueChange: (String) -> Unit
         OutlinedTextField(value = value, onValueChange = onValueChange, placeholder = { Text(placeholder, fontSize = 13.sp) }, singleLine = maxLines == 1, maxLines = maxLines, minLines = minLines, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BecomeCreatorScreen(
+    onBack: () -> Unit,
+    onSubmit: (displayName: String, category: String, description: String, reason: String) -> Unit = { _, _, _, _ -> },
+) {
+    var displayName by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Vehicles") }
+    var description by remember { mutableStateOf("") }
+    var reason by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf(false) }
+
+    Scaffold(topBar = { TopBar("Become a Creator", onBack) }) { padding ->
+        if (submitted) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(64.dp))
+                    Spacer(Modifier.height(16.dp))
+                    Text("Application Submitted!", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("An admin will review your request shortly.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(24.dp))
+                    Button(onClick = onBack, shape = RoundedCornerShape(12.dp)) { Text("Return Home") }
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text("Creator Onboarding", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                Text(
+                    "Submit an application to create your own category pages, upload reels, and reach thousands of buyers.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                CField(label = "Display Name", value = displayName, onValueChange = { displayName = it }, placeholder = "e.g., John's Motors")
+                CField(label = "Category", value = category, onValueChange = { category = it }, placeholder = "e.g., Vehicles")
+                CField(label = "Page Bio / Description", value = description, onValueChange = { description = it }, placeholder = "Describe your content...", maxLines = 3, minLines = 2)
+                CField(label = "Reason for Application", value = reason, onValueChange = { reason = it }, placeholder = "Why do you want to become a creator?", maxLines = 4, minLines = 3)
+
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        onSubmit(displayName, category, description, reason)
+                        submitted = true
+                    },
+                    enabled = displayName.isNotBlank() && reason.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text("Submit Application", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
