@@ -333,7 +333,7 @@ fun ForgotPasswordScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.forgot_field_placeholder),
-                                        color = Color(0xFFD1D5DB),
+                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8),
                                     )
                                 },
                                 singleLine = true,

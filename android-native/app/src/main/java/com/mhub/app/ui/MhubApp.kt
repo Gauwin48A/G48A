@@ -265,12 +265,9 @@ fun MhubApp(
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
         val isAdmin by authViewModel.isAdmin.collectAsState()
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
-        var guestBrowsing by rememberSaveable { mutableStateOf(false) }
         var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
         var showAuthGate by rememberSaveable { mutableStateOf(false) }
-        // Show login gate only when truly unauthenticated AND in guest mode
-        // Prevents login prompts for demo-login users whose token might transiently be null
-        val needsLogin = !isAuthenticated && guestBrowsing
+
         val context = LocalContext.current
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
         val exitScope = rememberCoroutineScope()
@@ -300,6 +297,13 @@ fun MhubApp(
 
         fun openCategoryInAllPosts(rawCategoryKey: String?) {
             openAllPosts(normalizeMarketplaceCategoryKey(rawCategoryKey))
+        }
+
+        /** Pop back stack; navigate to [fallback] if there's no back stack entry. */
+        fun safeBack(fallback: String = Routes.ALL_POSTS) {
+            if (!navController.popBackStack()) {
+                navController.navigate(fallback) { popUpTo(0) { inclusive = true } }
+            }
         }
 
         // Double-back to exit on Home
@@ -355,11 +359,9 @@ fun MhubApp(
         // Observe locale version to trigger recomposition on locale change
         val localeVersion = localeManager?.localeVersion?.collectAsState()
 
-        // Reset guest mode when user becomes authenticated (prevents stale guest state after login)
         val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
         LaunchedEffect(isAuthenticated) {
             if (isAuthenticated) {
-                guestBrowsing = false
                 showAuthGate = false
                 // Schedule daily plan expiry notification checks
                 com.mhub.app.core.schedulePlanExpiryChecks(appContext)
@@ -398,39 +400,37 @@ fun MhubApp(
             }
         }
 
-        // ── Graceful Session Degradation ──────────────────────────────────
-        // When the token is cleared involuntarily (e.g., refresh token expired on server),
-        // transition to guest browsing mode instead of force-redirecting to login.
-        // This ensures the user can continue browsing the marketplace without interruption.
-        // Only a user-initiated logout (tapping "Logout") should redirect to the auth graph.
-        var wasAuthenticated by remember { mutableStateOf(isAuthenticated) }
-        var userInitiatedLogout by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(isAuthenticated) {
-            if (!isAuthenticated && wasAuthenticated) {
-                if (userInitiatedLogout) {
-                    // User tapped Logout — redirect to auth graph
+        // ── Session Expiry — Force re-auth ────────────────────────────────
+        // Only monitor session expiry for REAL sessions (not demo/local).
+        // Demo sessions have no JWT so API calls always 401 — that's expected.
+        LaunchedEffect(Unit) {
+            if (authViewModel.isDemoSession) {
+                android.util.Log.d("SESSION_EXPIRY", "Demo session — skipping session expiry monitor entirely")
+                return@LaunchedEffect
+            }
+            // Real session: watch for auth state becoming false without a stored session.
+            // Track whether user was ever authenticated so we don't fire at startup.
+            var hadAuth = false
+            authViewModel.isAuthenticated.collect { authed ->
+                val nowAuthed: Boolean = authed
+                val nowHasSession: Boolean = authViewModel.hasSession
+                android.util.Log.d("SESSION_EXPIRY", "Real session auth: authed=$nowAuthed hasSession=$nowHasSession hadAuth=$hadAuth")
+                if (nowAuthed) hadAuth = true
+                if (hadAuth && !nowAuthed && !nowHasSession) {
+                    android.util.Log.w("SESSION_EXPIRY", "Real session expired! Redirecting to login.")
                     navController.navigate(Routes.AUTH_GRAPH) {
                         popUpTo(0) { inclusive = true }
                     }
-                    userInitiatedLogout = false
-                } else if (!guestBrowsing && !authViewModel.hasSession) {
-                    // Session involuntarily cleared (refresh expired, server rejected) —
-                    // degrade gracefully to guest browsing mode instead of force-login.
-                    // Show a non-intrusive toast so the user knows, but let them continue.
-                    guestBrowsing = true
                     Toast.makeText(
                         context,
-                        "Session expired. Sign in to access all features.",
+                        "Session expired. Please sign in again.",
                         Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
-            wasAuthenticated = isAuthenticated
         }
 
-        // Use hasSession so users with an expired-but-refreshable token start on the main
-        // graph where the first API call triggers the OkHttp token refresh flow.
-        val startDestination = if (authViewModel.hasSession || isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
+        val startDestination = if (isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Offline banner shown above all content
@@ -453,13 +453,6 @@ fun MhubApp(
                 composable(Routes.LOGIN) {
                     LoginScreen(
                         onSignedIn = {
-                            guestBrowsing = false
-                            navController.navigate(Routes.MAIN_GRAPH) {
-                                popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
-                            }
-                        },
-                        onPreviewApp = {
-                            guestBrowsing = true
                             navController.navigate(Routes.MAIN_GRAPH) {
                                 popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
                             }
@@ -476,7 +469,6 @@ fun MhubApp(
                 composable(Routes.SIGNUP) {
                     SignUpScreen(
                         onSignedUp = {
-                            guestBrowsing = false
                             navController.navigate(Routes.MAIN_GRAPH) {
                                 popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
                             }
@@ -553,6 +545,7 @@ fun MhubApp(
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
                             } },
+                            onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                             onOpenForYou = { navController.navigate(Routes.FOR_YOU) {
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
@@ -564,7 +557,6 @@ fun MhubApp(
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
-                            onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
                         )
@@ -575,13 +567,12 @@ fun MhubApp(
                     MainShell(navController = navController, selected = BottomTab.FOR_YOU, showTopBar = false) {
                         com.mhub.app.ui.foryou.ForYouScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                            isGuest = guestBrowsing && !isAuthenticated,
-                            onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                             onOpenHome = { navController.navigate(Routes.MY_POSTS) {
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
                             } },
+                            onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                             onOpenForYou = {},
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
                             onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
@@ -602,24 +593,17 @@ fun MhubApp(
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
                             onCreatePost = {
-                                if (!isAuthenticated) {
-                                    guestBrowsing = false
-                                    navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
-                                } else {
-                                    feedScope.launch {
-                                        // Feed posts require active plan (same as sell flow)
-                                        val subResult = feedSellVm.checkSubscriptionOnly()
-                                        if (subResult) {
-                                            navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
-                                        } else {
-                                            navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
-                                        }
+                                feedScope.launch {
+                                    // Feed posts require active plan (same as sell flow)
+                                    val subResult = feedSellVm.checkSubscriptionOnly()
+                                    if (subResult) {
+                                        navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
+                                    } else {
+                                        navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
                                     }
                                 }
                             },
-                            isGuest = guestBrowsing && !isAuthenticated,
-                            onNavigateToLogin = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                        )
+                            )
                     }
                 }
 
@@ -628,7 +612,6 @@ fun MhubApp(
                         RewardsScreen(
                             isAuthenticated = isAuthenticated,
                             onSignInRequired = {
-                                guestBrowsing = false
                                 navController.navigate(Routes.AUTH_GRAPH) {
                                     popUpTo(Routes.MAIN_GRAPH) { inclusive = true }
                                 }
@@ -642,7 +625,6 @@ fun MhubApp(
                     MainShell(navController = navController, selected = BottomTab.PROFILE) {
                         ProfileScreen(
                             onSignedOut = {
-                                userInitiatedLogout = true
                                 authViewModel.logout()
                                 navController.navigate(Routes.AUTH_GRAPH) {
                                     popUpTo(0) { inclusive = true }
@@ -658,6 +640,8 @@ fun MhubApp(
                             onOpenSaleDone = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                            onOpenEditProfile = {},
+                            onOpenCategoryMode = { navController.navigate(Routes.CATEGORY_MODE) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -673,16 +657,9 @@ fun MhubApp(
 
                 composable(Routes.NOTIFICATIONS) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                        if (needsLogin) {
-                            com.mhub.app.ui.components.LoginPromptCard(
-                                onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                                onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                            )
-                        } else {
                         NotificationsScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         )
-                        }
                     }
                 }
 
@@ -741,35 +718,24 @@ fun MhubApp(
             }
 
             composable(Routes.CREATE_POST) {
-                if (needsLogin) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    }
-                } else {
                 CreatePostScreen(
                     onBack = { navController.popBackStack() },
                     onPublished = { navController.popBackStack() },
                 )
-                }
             }
 
             composable(Routes.MY_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     MyPostsScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = {
+                            navController.navigate(Routes.ALL_POSTS) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         onCreatePost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
                     )
-                    }
                 }
             }
 
@@ -816,18 +782,10 @@ fun MhubApp(
             // â”€â”€ Commerce â”€â”€
             composable(Routes.POST_WELCOME) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                            modifier = Modifier.padding(top = 64.dp),
-                        )
-                    } else {
                     PostWelcomeScreen(
                         onBack = { navController.popBackStack() },
                         onStartPost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
                     )
-                    }
                 }
             }
 
@@ -841,14 +799,7 @@ fun MhubApp(
 
             composable(Routes.TIER_SELECTION) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     TierSelectionScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
@@ -898,33 +849,19 @@ fun MhubApp(
 
             composable(Routes.BOUGHT_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     BoughtPostsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
-                    }
                 }
             }
 
             composable(Routes.SOLD_POSTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     SoldPostsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     )
-                    }
                 }
             }
 
@@ -932,27 +869,23 @@ fun MhubApp(
 
             composable(Routes.SALE_DONE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
-                        SaleDoneScreen(onBack = { navController.popBackStack() })
-                    }
+                    SaleDoneScreen(onBack = {
+                        navController.navigate(Routes.ALL_POSTS) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    })
                 }
             }
 
             composable(Routes.SALE_UNDONE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
-                        SaleUndoneScreen(onBack = { navController.popBackStack() })
-                    }
+                    SaleUndoneScreen(onBack = {
+                        navController.navigate(Routes.ALL_POSTS) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    })
                 }
             }
 
@@ -1009,17 +942,12 @@ fun MhubApp(
                     MyFeedScreen(
                         onBack = { navController.popBackStack() },
                         onCreatePost = {
-                            if (!isAuthenticated) {
-                                guestBrowsing = false
-                                navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
-                            } else {
-                                feedScope.launch {
-                                    val subResult = feedSellVm.checkSubscriptionOnly()
-                                    if (subResult) {
-                                        navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
-                                    } else {
-                                        navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
-                                    }
+                            feedScope.launch {
+                                val subResult = feedSellVm.checkSubscriptionOnly()
+                                if (subResult) {
+                                    navController.navigate(Routes.FEED_POST_ADD) { launchSingleTop = true }
+                                } else {
+                                    navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true }
                                 }
                             }
                         },
@@ -1069,66 +997,31 @@ fun MhubApp(
             // â”€â”€ Account â”€â”€
             composable(Routes.DASHBOARD) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     DashboardScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
             composable(Routes.SECURITY) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     SecurityScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
             composable(Routes.ACCOUNT_DELETE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     AccountDeleteScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
             composable(Routes.VERIFICATION) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     VerificationScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
             composable(Routes.ANALYTICS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    if (needsLogin) {
-                        com.mhub.app.ui.components.LoginPromptCard(
-                            onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
-                            onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
-                        )
-                    } else {
                     AnalyticsScreen(onBack = { navController.popBackStack() })
-                    }
                 }
             }
 
@@ -1309,7 +1202,6 @@ fun MhubApp(
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
                             showMoreDrawer = false
-                            userInitiatedLogout = true
                             authViewModel.logout()
                             navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } }
                         },

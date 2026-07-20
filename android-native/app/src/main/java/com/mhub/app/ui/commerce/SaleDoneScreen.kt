@@ -52,6 +52,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -161,14 +162,14 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color(0xFF1E293B)
+                        tint = if (isDark) Color.White else Color(0xFF1E293B)
                     )
                 }
                 Text(
                     stringResource(R.string.commerce_mark_sold),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF1E293B)
+                    color = if (isDark) Color.White else Color(0xFF1E293B)
                 )
             }
             // Hero gradient card (web parity: mhub-hero-card "Sale Confirmation")
@@ -199,7 +200,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                 }
             }
             // Premium Stepper with connecting lines
-            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                         steps.forEachIndexed { i, label ->
@@ -225,7 +226,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                 }
             }
             // Seller / Buyer tabs (web parity: Saledone.jsx)
-            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFF1F5F9), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                 Row(Modifier.padding(4.dp)) {
                     listOf(
                         "seller" to stringResource(R.string.commerce_tab_seller),
@@ -233,36 +234,36 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     ).forEach { (key, label) ->
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (state.tab == key) Color.White else Color.Transparent,
+                            color = if (state.tab == key) { if (isDark) Color(0xFF0F172A) else Color.White } else Color.Transparent,
                             shadowElevation = if (state.tab == key) 2.dp else 0.dp,
                             modifier = Modifier.weight(1f).clickable { viewModel.setTab(key) },
                         ) {
-                            Text(label, fontSize = 12.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF16A34A) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp), maxLines = 1)
+                            Text(label, fontSize = 12.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF22C55E) else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp), maxLines = 1)
                         }
                     }
                 }
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 state.error?.let {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF2F2)) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = ColorTokens.RedContainer) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Error, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
-                            Text(it, color = Color(0xFFDC2626), fontSize = 13.sp)
+                            Icon(Icons.Filled.Error, null, tint = ColorTokens.RedText, modifier = Modifier.size(18.dp))
+                            Text(it, color = ColorTokens.RedText, fontSize = 13.sp)
                         }
                     }
                 }
                 // Testing Guide (web parity: collapsible "How to test this page")
                 if (!state.success) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFEFF6FF), border = BorderStroke(1.dp, Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF), border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth().clickable { showTestingGuide = !showTestingGuide }.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Icon(Icons.Filled.Info, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                                Text("How to test this page — tap to expand", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8), modifier = Modifier.weight(1f))
-                                Icon(if (showTestingGuide) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.Info, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                                Text("How to test this page — tap to expand", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8), modifier = Modifier.weight(1f))
+                                Icon(if (showTestingGuide) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
                             }
                             if (showTestingGuide) {
                                 Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,14 +273,14 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                         "Step 3 — Seller initiates" to "Enter Post ID, Buyer ID and agreed amount → tap Initiate Sale. Share Transaction ID + OTP with buyer.",
                                         "Step 4 — Buyer confirms" to "Switch to 'Confirm Purchase' tab. Enter Transaction ID + OTP → tap Confirm Purchase. Post moves to Sold.",
                                     ).forEach { (title, desc) ->
-                                        Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF26324A) else Color.White, modifier = Modifier.fillMaxWidth()) {
                                             Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF))
-                                                Text(desc, fontSize = 11.sp, color = Color(0xFF3B82F6))
+                                                Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
+                                                Text(desc, fontSize = 11.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
                                             }
                                         }
                                     }
-                                    Text("OTPs expire in 24 hours. If expired, seller must re-initiate.", fontSize = 10.sp, color = Color(0xFF3B82F6))
+                                    Text("OTPs expire in 24 hours. If expired, seller must re-initiate.", fontSize = 10.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
                                 }
                             }
                         }
@@ -289,53 +290,53 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     if (state.success) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             // Success animation card
-                            Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(24.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                     Box(Modifier.size(88.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))), contentAlignment = Alignment.Center) {
                                         Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(52.dp))
                                     }
-                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF14532D))
-                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 14.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF14532D))
+                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), textAlign = TextAlign.Center)
                                 }
                             }
                             // Receipt card
-                            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(20.dp), color = ColorTokens.GreenContainer, border = BorderStroke(1.dp, ColorTokens.GreenText.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Icon(Icons.Filled.Receipt, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
-                                        Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF166534), letterSpacing = 1.sp)
+                                        Icon(Icons.Filled.Receipt, null, tint = ColorTokens.GreenText, modifier = Modifier.size(18.dp))
+                                        Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ColorTokens.GreenText, letterSpacing = 1.sp)
                                     }
-                                    HorizontalDivider(color = Color(0xFF86EFAC))
+                                    HorizontalDivider(color = ColorTokens.GreenText.copy(alpha = 0.3f))
                                     // Item title
                                     state.completedItem?.title?.let { title ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Item", fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B), modifier = Modifier.weight(1f, fill = false), textAlign = TextAlign.End)
+                                            Text("Item", fontSize = 13.sp, color = ColorTokens.TextSecondary)
+                                            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading, modifier = Modifier.weight(1f, fill = false), textAlign = TextAlign.End)
                                         }
                                     }
                                     // Buyer name
                                     state.completedBuyer?.name?.let { name ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Buyer", fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                            Text("Buyer", fontSize = 13.sp, color = ColorTokens.TextSecondary)
+                                            Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
                                         }
                                     }
                                     // Receipt ID
                                     state.completedReceipt?.receiptId?.let { rid ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(rid, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = ColorTokens.TextSecondary)
+                                            Text(rid, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
                                         }
                                     }
                                     // Transaction ID with copy
                                     val txId = state.completedReceipt?.transactionId ?: state.initiatedTxnId
                                     if (txId != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                            Text(stringResource(R.string.commerce_transaction), fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(stringResource(R.string.commerce_transaction), fontSize = 13.sp, color = ColorTokens.TextSecondary)
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(txId, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                                                Text(txId, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
                                                 IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(txId)) }, modifier = Modifier.size(20.dp)) {
-                                                    Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF64748B), modifier = Modifier.size(12.dp))
+                                                    Icon(Icons.Default.ContentCopy, null, tint = ColorTokens.TextSecondary, modifier = Modifier.size(12.dp))
                                                 }
                                             }
                                         }
@@ -344,15 +345,15 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     val amount = state.completedReceipt?.amount ?: state.saleAmount.toDoubleOrNull()
                                     if (amount != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text("₹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                            Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = ColorTokens.TextSecondary)
+                                            Text("₹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ColorTokens.GreenText)
                                         }
                                     }
                                     // Completed at
                                     state.completedReceipt?.completedAt?.let { ts ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Completed", fontSize = 13.sp, color = Color(0xFF64748B))
-                                            Text(ts.take(19).replace("T", " "), fontSize = 11.sp, color = Color(0xFF64748B))
+                                            Text("Completed", fontSize = 13.sp, color = ColorTokens.TextSecondary)
+                                            Text(ts.take(19).replace("T", " "), fontSize = 11.sp, color = ColorTokens.TextSecondary)
                                         }
                                     }
                                 }
@@ -361,29 +362,28 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                             val rewardsInfo = state.completedRewards
                             val totalPoints = rewardsInfo?.totalPoints ?: 0
                             if (totalPoints > 0) {
-                                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED), border = BorderStroke(1.dp, Color(0xFFFBBF24)), modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("✅", fontSize = 22.sp)
-                                            Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
-                                        }
-                                        // 4-metric breakdown (web parity)
-                                        val metricsRow1 = listOf(
-                                            "Seller Points" to (rewardsInfo?.sellerPoints ?: 0),
-                                            "Buyer Points" to (rewardsInfo?.buyerPoints ?: 0),
-                                        )
-                                        val metricsRow2 = listOf(
-                                            "Bonus Points" to (rewardsInfo?.bonusPoints ?: 0),
-                                            "Referral Points" to ((rewardsInfo?.referralPoints ?: 0) + (rewardsInfo?.chainPoints ?: 0)),
-                                        )
-                                        listOf(metricsRow1, metricsRow2).forEach { row ->
-                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                row.forEach { (label, pts) ->
-                                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
-                                                        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                            Text("+$pts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFFB45309))
-                                                            Text(label, fontSize = 10.sp, color = Color(0xFF92400E), textAlign = TextAlign.Center)
-                                                        }
+                            Surface(shape = RoundedCornerShape(20.dp), color = ColorTokens.AmberContainer, border = BorderStroke(1.dp, ColorTokens.AmberText.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("✅", fontSize = 22.sp)
+                                        Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.AmberText)
+                                    }
+                                    // 4-metric breakdown (web parity)
+                                    val metricsRow1 = listOf(
+                                        "Seller Points" to (rewardsInfo?.sellerPoints ?: 0),
+                                        "Buyer Points" to (rewardsInfo?.buyerPoints ?: 0),
+                                    )
+                                    val metricsRow2 = listOf(
+                                        "Bonus Points" to (rewardsInfo?.bonusPoints ?: 0),
+                                        "Referral Points" to ((rewardsInfo?.referralPoints ?: 0) + (rewardsInfo?.chainPoints ?: 0)),
+                                    )
+                                    listOf(metricsRow1, metricsRow2).forEach { row ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            row.forEach { (label, pts) ->
+                                                Surface(shape = RoundedCornerShape(10.dp), color = if (isDark) Color(0xFF2D1F00) else Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
+                                                    Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                        Text("+$pts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = ColorTokens.AmberText)
+                                                        Text(label, fontSize = 10.sp, color = ColorTokens.AmberText, textAlign = TextAlign.Center)
                                                     }
                                                 }
                                             }
@@ -391,15 +391,16 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     }
                                 }
                             }
+                            }
                             // Sold Item Card (web parity)
                             state.completedItem?.let { item ->
-                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                                Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Icon(Icons.Filled.Inventory2, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                                            Text("Sold Item", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Icon(Icons.Filled.Inventory2, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                                            Text("Sold Item", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color.White else Color(0xFF1E293B))
                                         }
-                                        HorizontalDivider(color = Color(0xFFE2E8F0))
+                                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                                             // Item image
                                             item.imageUrl?.let { url ->
@@ -409,28 +410,28 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                                     modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
                                                     contentScale = ContentScale.Crop,
                                                 )
-                                            } ?: Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFE2E8F0), modifier = Modifier.size(60.dp)) {
+                                            } ?: Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0), modifier = Modifier.size(60.dp)) {
                                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                    Icon(Icons.Filled.Image, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(28.dp))
+                                                    Icon(Icons.Filled.Image, null, tint = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8), modifier = Modifier.size(28.dp))
                                                 }
                                             }
                                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                item.title?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF0F172A), maxLines = 2) }
+                                                item.title?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color.White else Color(0xFF0F172A), maxLines = 2) }
                                                 item.categoryName?.let { cat ->
                                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Text(cat, fontSize = 11.sp, color = Color(0xFF64748B))
-                                                        item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                        Text(cat, fontSize = 11.sp, color = ColorTokens.TextSecondary)
+                                                        item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = ColorTokens.TextSecondary) }
                                                     }
                                                 }
-                                                item.location?.let { Text("📍 $it", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                                                item.location?.let { Text("📍 $it", fontSize = 11.sp, color = ColorTokens.TextSecondary) }
                                                 // Agreed vs listing price
                                                 val agreed = item.agreedPrice ?: item.price
                                                 val listing = item.listingPrice ?: item.price
                                                 if (agreed != null) {
                                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                        Text("₹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF22C55E))
+                                                        Text("₹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText)
                                                         if (listing != null && listing != agreed) {
-                                                            Text("₹${listing.toLong()}", fontSize = 12.sp, color = Color(0xFF94A3B8), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                                                            Text("₹${listing.toLong()}", fontSize = 12.sp, color = ColorTokens.TextSecondary, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                                                         }
                                                     }
                                                 }
@@ -441,29 +442,30 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                             }
                             // Buyer Details Card (web parity)
                             state.completedBuyer?.let { buyer ->
-                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                                Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Icon(Icons.Filled.Person, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
-                                            Text("Buyer Details", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Icon(Icons.Filled.Person, null, tint = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
+                                            Text("Buyer Details", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color.White else Color(0xFF1E293B))
                                         }
-                                        HorizontalDivider(color = Color(0xFFE2E8F0))
+                                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                             // Avatar circle
-                                            Surface(shape = CircleShape, color = Color(0xFF7C3AED).copy(alpha = 0.15f), modifier = Modifier.size(48.dp)) {
+                                            val purpleColor = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED)
+                                            Surface(shape = CircleShape, color = purpleColor.copy(alpha = 0.15f), modifier = Modifier.size(48.dp)) {
                                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                    Text(buyer.name?.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF7C3AED))
+                                                    Text(buyer.name?.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = purpleColor)
                                                 }
                                             }
                                             Column(Modifier.weight(1f)) {
-                                                buyer.name?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF0F172A)) }
-                                                buyer.username?.let { Text("@$it", fontSize = 12.sp, color = Color(0xFF64748B)) }
+                                                buyer.name?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color.White else Color(0xFF0F172A)) }
+                                                buyer.username?.let { Text("@$it", fontSize = 12.sp, color = ColorTokens.TextSecondary) }
                                                 val buyerIdDisplay = buyer.userId ?: buyer.id
                                                 buyerIdDisplay?.let { uid ->
                                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Text("ID: $uid", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                                        Text("ID: $uid", fontSize = 11.sp, color = ColorTokens.TextSecondary)
                                                         IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(uid)) }, modifier = Modifier.size(18.dp)) {
-                                                            Icon(Icons.Default.ContentCopy, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                                                            Icon(Icons.Default.ContentCopy, null, tint = ColorTokens.TextSecondary, modifier = Modifier.size(12.dp))
                                                         }
                                                     }
                                                 }
@@ -473,6 +475,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                 }
                             }
                             // Receipt Actions row (web parity: copy/share)
+                            val btnContent = if (isDark) Color.White else Color.Unspecified
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -488,9 +491,9 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.ContentCopy, null, tint = btnContent, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Copy", style = MaterialTheme.typography.labelMedium)
+                                    Text("Copy", style = MaterialTheme.typography.labelMedium, color = btnContent)
                                 }
                                 // Share receipt
                                 OutlinedButton(
@@ -509,15 +512,15 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Outlined.Share, null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Outlined.Share, null, tint = btnContent, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Share", style = MaterialTheme.typography.labelMedium)
+                                    Text("Share", style = MaterialTheme.typography.labelMedium, color = btnContent)
                                 }
                             }
                             // Next Steps Section (web parity)
-                            Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFEFF6FF), border = BorderStroke(1.dp, Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF), border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("Next Steps", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
+                                    Text("Next Steps", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
                                     listOf(
                                         "📦" to "View your post in My Home → Sold tab",
                                         "⭐" to "Leave a review for the buyer",
@@ -525,7 +528,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                                     ).forEach { (emoji, text) ->
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                                             Text(emoji, fontSize = 14.sp)
-                                            Text(text, fontSize = 12.sp, color = Color(0xFF1E40AF))
+                                            Text(text, fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E40AF))
                                         }
                                     }
                                 }
@@ -559,15 +562,15 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         }
                     } else {
                         // Seller initiation form
-                        Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Surface(shape = CircleShape, color = Color(0xFFDCFCE7), modifier = Modifier.size(36.dp)) {
+                                    Surface(shape = CircleShape, color = if (isDark) Color(0xFF064E3B) else Color(0xFFDCFCE7), modifier = Modifier.size(36.dp)) {
                                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            Icon(Icons.Filled.Sell, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Filled.Sell, null, tint = ColorTokens.GreenText, modifier = Modifier.size(18.dp))
                                         }
                                     }
-                                    Text("Initiate Sale", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                    Text("Initiate Sale", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
                                 }
                                 MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
                                 MhubTextField(stringResource(R.string.commerce_field_buyer_id), state.buyerId, viewModel::setBuyerId)
@@ -593,44 +596,44 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         if (state.initiatedTxnId != null) {
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
-                                color = Color(0xFFEFF6FF),
-                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+                                border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)),
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("Transaction Created", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
+                                    Text("Transaction Created", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Transaction ID:", fontSize = 12.sp, color = Color(0xFF2563EB))
-                                        Text(state.initiatedTxnId!!, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF1E40AF), modifier = Modifier.weight(1f, fill = false), maxLines = 1)
+                                        Text("Transaction ID:", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF2563EB))
+                                        Text(state.initiatedTxnId!!, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF), modifier = Modifier.weight(1f, fill = false), maxLines = 1)
                                     }
                                     if (state.initiatedOtp != null) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("OTP to share with buyer:", fontSize = 12.sp, color = Color(0xFF2563EB))
-                                            Text(state.initiatedOtp!!, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
+                                            Text("OTP to share with buyer:", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF2563EB))
+                                            Text(state.initiatedOtp!!, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
                                         }
                                     } else {
-                                        Text("OTP sent to buyer's notification channel.", fontSize = 12.sp, color = Color(0xFF3B82F6))
+                                        Text("OTP sent to buyer's notification channel.", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
                                     }
                                     state.initiatedOtpExpiresIn?.let { expiry ->
-                                        Text("Expires in: $expiry", fontSize = 11.sp, color = Color(0xFF60A5FA))
+                                        Text("Expires in: $expiry", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF60A5FA))
                                     }
-                                    Text("Switch to 'Confirm Purchase' tab to complete the sale.", fontSize = 11.sp, color = Color(0xFF93C5FD))
+                                    Text("Switch to 'Confirm Purchase' tab to complete the sale.", fontSize = 11.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF93C5FD))
                                 }
                             }
                         }
                     }
                 } else {
                     // Buyer confirmation form
-                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Surface(shape = CircleShape, color = Color(0xFFEDE9FE), modifier = Modifier.size(36.dp)) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Icon(Icons.Filled.Verified, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(18.dp))
+                    Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Surface(shape = CircleShape, color = if (isDark) Color(0xFF2D1B4E) else Color(0xFFEDE9FE), modifier = Modifier.size(36.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(Icons.Filled.Verified, null, tint = ColorTokens.CardPurpleText, modifier = Modifier.size(18.dp))
+                                        }
                                     }
+                                    Text("Confirm Purchase", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
                                 }
-                                Text("Confirm Purchase", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-                            }
                             MhubTextField(stringResource(R.string.commerce_field_txn_id), state.txnId, viewModel::setTxnId)
                             MhubTextField(stringResource(R.string.commerce_field_otp), state.otp, viewModel::setOtp)
                             Button(
@@ -655,24 +658,24 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                 if (state.pending.isNotEmpty()) {
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Filled.PendingActions, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                        Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                        Icon(Icons.Filled.PendingActions, null, tint = ColorTokens.PremiumAmber, modifier = Modifier.size(20.dp))
+                        Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
                     }
                     state.pending.forEach { sale ->
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEF3C7), modifier = Modifier.size(40.dp)) {
+                                Surface(shape = RoundedCornerShape(10.dp), color = ColorTokens.PremiumAmberContainer, modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Icon(Icons.Filled.Timer, null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Filled.Timer, null, tint = ColorTokens.PremiumAmber, modifier = Modifier.size(20.dp))
                                     }
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(sale.postTitle ?: stringResource(R.string.commerce_listing), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                    Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = Color(0xFF64748B))
+                                    Text(sale.postTitle ?: stringResource(R.string.commerce_listing), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = ColorTokens.TextHeading)
+                                    Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = ColorTokens.TextSecondary)
                                 }
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
-                                    Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                Surface(shape = RoundedCornerShape(8.dp), color = ColorTokens.GreenContainer) {
+                                    Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                 }
                             }
                         }

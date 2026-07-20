@@ -1156,7 +1156,7 @@ const RewardsPage = () => {
         { className: "text-center" },
         React.createElement("div", {
           className:
-            "w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-t-transparent",
+            "w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-blue-400/40 dark:border-t-transparent",
         }),
         React.createElement(
           "p",
@@ -1170,7 +1170,7 @@ const RewardsPage = () => {
       "div",
       {
           className:
-            "min-h-screen flex items-center justify-center mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-28 px-4 dark:bg-gradient-to-br",
+            "min-h-screen flex items-center justify-center mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-28 px-4 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
       },
       React.createElement(
         "div",
@@ -1781,11 +1781,11 @@ const RewardsPage = () => {
     milestoneUnlockedCount = milestones.filter((t) => t.unlocked).length,
     nextMilestone = milestones.find((t) => !t.unlocked),
     $ = {
-      Bronze: "from-amber-600 to-amber-800",
-      Silver: "from-gray-400 to-gray-600",
-      Gold: "from-yellow-400 to-yellow-600",
-      Platinum: "from-cyan-400 to-cyan-600",
-      Diamond: "from-purple-400 to-pink-500",
+      Bronze: "from-amber-600 to-amber-800 dark:from-amber-700 dark:to-amber-900",
+      Silver: "from-gray-400 to-gray-600 dark:from-gray-300 dark:to-gray-400",
+      Gold: "from-yellow-400 to-yellow-600 dark:from-yellow-500 dark:to-yellow-700",
+      Platinum: "from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-700",
+      Diamond: "from-purple-400 to-pink-500 dark:from-purple-500 dark:to-pink-600",
     },
     levelBenefits = [
       {
@@ -2027,7 +2027,7 @@ const RewardsPage = () => {
       : "border-slate-200 bg-white text-slate-600 hover:bg-white/95 hover:border-indigo-200 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white");
   return (
     <div
-      className="rewards-surface min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-sky-50 to-purple-50 pb-20 page-fade-in dark:bg-gradient-to-br"
+      className="rewards-surface min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-sky-50 to-purple-50 pb-20 page-fade-in dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
       style={{ "--top-nav-height": "0px" }}
     >
       <RewardsHero
@@ -2114,7 +2114,7 @@ const RewardsPage = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
                   {tr("jump_to_section", "Jump to section")}
                 </p>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs text-slate-500 dark:text-slate-300">
                   {tr("sticky_tabs_hint", "Scroll to switch")}
                 </span>
               </div>
@@ -2332,8 +2332,8 @@ const RewardsPage = () => {
                           className={
                             "w-full text-left rounded-xl border px-4 py-3 transition " +
                             (selected
-                              ? "border-indigo-300 bg-indigo-50"
-                              : "border-slate-200 hover:border-indigo-200")
+                              ? "border-indigo-300 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-900/30"
+                              : "border-slate-200 hover:border-indigo-200 dark:border-slate-600/60 dark:hover:border-indigo-400/50")
                           }
                         >
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">

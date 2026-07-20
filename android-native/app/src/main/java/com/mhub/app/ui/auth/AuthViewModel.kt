@@ -50,6 +50,8 @@ class AuthViewModel @Inject constructor(
 
     /** True if a token string is present (regardless of expiry). Used for startDestination. */
     val hasSession: Boolean get() = repo.hasSession
+    /** True if the stored session is a local demo session (no real JWT issued by the server). */
+    val isDemoSession: Boolean get() = repo.isDemoSession
 
     init {
         // On startup, if a session exists but the access token is expired, proactively refresh.

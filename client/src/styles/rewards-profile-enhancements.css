@@ -603,6 +603,96 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 
+/* ── Dark mode: Rewards page card visibility refinements ── */
+.dark .rewards-surface .rewards-stat-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(15, 23, 42, 0.70) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35) !important;
+}
+
+.dark .rewards-surface .rewards-stat-card::before {
+  opacity: 0.85;
+}
+
+.dark .rewards-surface .mhub-premium-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.65) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.4) !important;
+}
+
+.dark .rewards-surface .rewards-overview-summary {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(15, 23, 42, 0.65) 100%) !important;
+}
+
+.dark .rewards-surface .rewards-summary-stats {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+}
+
+.dark .rewards-surface .earn-playbook-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.3) !important;
+}
+
+.dark .rewards-surface .earn-playbook-card:hover {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.4) !important;
+}
+
+.dark .rewards-surface .redeem-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+}
+
+.dark .rewards-surface .redeem-card:hover {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+}
+
+/* ── Dark mode: Rewards tab bar refinements ── */
+.dark .rewards-surface .rewards-tabs-sticky {
+  background: linear-gradient(180deg, rgba(11, 18, 32, 0.92) 0%, rgba(11, 18, 32, 0.8) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.dark .rewards-surface .rewards-tab-bar {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+}
+
+.dark .rewards-surface .rewards-tab-btn {
+  color: rgba(148, 163, 184, 0.8) !important;
+}
+
+.dark .rewards-surface .rewards-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #e2e8f0 !important;
+}
+
+/* ── Dark mode: Activity log items ── */
+.dark .rewards-surface .coin-history-item:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* ── Dark mode: Milestone badges ── */
+.dark .rewards-surface .milestone-badge.locked .badge-icon {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6)) !important;
+  box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.2) !important;
+}
+
+.dark .rewards-surface .milestone-badge.unlocked .badge-icon {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(217, 119, 6, 0.12)) !important;
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.2), 0 8px 18px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ── Dark mode: Referral tree ── */
+.dark .rewards-surface .referral-tree-connector {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0.05)) !important;
+}
+
+.dark .rewards-surface .referral-tree-dot {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
 /* ── Verification step connector ── */
 .verification-steps {
   display: flex;
@@ -640,4 +730,243 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   transition: all 0.3s ease;
+}
+
+/* ── Dark mode: Profile page comprehensive overrides ── */
+
+/* Profile hero section - ensure text contrast on dark gradient */
+.dark .profile-surface .profile-hero-bg + div * {
+  /* Inherit text color from parent - the profile-hero-bg has its own dark variant */
+}
+
+/* Profile stat cards in dashboard area */
+.dark .profile-surface .rewards-stat-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35) !important;
+}
+
+/* Profile panel child elements with borders */
+.dark .profile-surface .profile-panel {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.62)) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.5) !important;
+}
+
+.dark .profile-surface .profile-subpanel {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+  box-shadow: 0 16px 32px rgba(2, 6, 23, 0.4) !important;
+}
+
+/* Tab bar on profile */
+.dark .profile-surface .profile-tabs-sticky > div {
+  background: rgba(11, 18, 32, 0.82) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Quick action cards hover state */
+.dark .profile-surface .quick-action-card:hover {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.65)) !important;
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.5) !important;
+}
+
+/* Profile category mode banner */
+.dark .profile-surface [class*="border-blue-100 bg-white/90"] {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Profile referral code section */
+.dark .profile-surface [class*="bg-slate-50"][class*="border-slate-200"] {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+}
+
+/* Profile trust section panels */
+.dark .profile-surface .trust-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.6)) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.35) !important;
+}
+
+/* Profile checklist items */
+.dark .profile-surface .checklist-item {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border-color: rgba(100, 116, 139, 0.18) !important;
+}
+
+/* Profile category selection cards */
+.dark .profile-surface [class*="border-indigo-200/60"],
+.dark .profile-surface [class*="border-sky-200/60"],
+.dark .profile-surface [class*="border-emerald-200/60"],
+.dark .profile-surface [class*="border-amber-200/60"] {
+  border-color: rgba(100, 116, 139, 0.25) !important;
+}
+
+/* Profile form elements - ensure inputs are visible */
+.dark .profile-surface .profile-input {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-color: rgba(100, 116, 139, 0.25) !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .profile-surface .profile-input::placeholder {
+  color: rgba(148, 163, 184, 0.5) !important;
+}
+
+.dark .profile-surface .profile-input:focus {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Profile select/option elements */
+.dark .profile-surface select.profile-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 32px !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Profile avatar/edit button */
+.dark .profile-surface [class*="bg-white/95 rounded-full shadow-lg"] {
+  background: rgba(15, 23, 42, 0.85) !important;
+}
+
+/* Profile notifications/badges area */
+.dark .profile-surface .profile-panel .text-slate-400 {
+  color: rgba(148, 163, 184, 0.7) !important;
+}
+
+/* Profile stat number displays */
+.dark .profile-surface .coin-big-number {
+  color: #fbbf24 !important;
+}
+
+/* ── Unified: Ensure both pages have consistent dark backgrounds ── */
+.dark .profile-surface .bg-white\/90,
+.dark .profile-surface .bg-white\/95,
+.dark .rewards-surface .bg-white\/90,
+.dark .rewards-surface .bg-white\/95 {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+}
+
+/* ── Dark mode: Rewards page text contrast fixes ── */
+
+/* Improve low-contrast text in cards - target slate-400 level toward slate-300 for readability */
+.dark .rewards-surface .text-slate-400 {
+  color: rgba(203, 213, 225, 0.85) !important;
+}
+
+/* Dark mode: Hero section stat card text */
+.dark .rewards-surface .rewards-stat-card .text-slate-500 {
+  color: rgba(148, 163, 184, 0.9) !important;
+}
+
+/* Dark mode: Card section headers (indigo icons) */
+.dark .rewards-surface .text-indigo-600 {
+  color: rgba(129, 140, 248, 1) !important;
+}
+
+/* Dark mode: Milestone locked text */
+.dark .rewards-surface .text-slate-400.uppercase {
+  color: rgba(148, 163, 184, 0.6) !important;
+}
+
+/* Dark mode: Skeleton/border contrast */
+.dark .rewards-surface .bg-slate-50 {
+  background: rgba(15, 23, 42, 0.4) !important;
+}
+
+/* Dark mode: Mission/challenge section */
+.dark .rewards-surface .earn-playbook-card .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
+}
+
+/* Dark mode: Reward log empty state */
+.dark .rewards-surface .text-slate-400.text-xs {
+  color: rgba(148, 163, 184, 0.5) !important;
+}
+
+/* Dark mode: Check-in day text for non-active days */
+.dark .rewards-surface [class*="text-slate-400"]:not([class*="dark:"]) {
+  color: rgba(148, 163, 184, 0.6) !important;
+}
+
+/* Dark mode: Referral section code display */
+.dark .rewards-surface .text-emerald-700 {
+  color: rgba(52, 211, 153, 0.9) !important;
+}
+
+/* Dark mode: Locked milestone badges - better contrast */
+.dark .rewards-surface .milestone-badge.locked .badge-icon {
+  opacity: 0.5 !important;
+}
+
+/* ── Dark mode: Profile & Rewards page shadow visibility ── */
+.dark .profile-surface .shadow-sm,
+.dark .rewards-surface .shadow-sm {
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.5), 0 1px 2px rgba(2, 6, 23, 0.3) !important;
+}
+.dark .profile-surface .shadow-md,
+.dark .rewards-surface .shadow-md {
+  box-shadow: 0 4px 6px rgba(2, 6, 23, 0.45), 0 2px 4px rgba(2, 6, 23, 0.3) !important;
+}
+.dark .profile-surface .shadow-lg,
+.dark .rewards-surface .shadow-lg {
+  box-shadow: 0 10px 15px rgba(2, 6, 23, 0.5), 0 4px 6px rgba(2, 6, 23, 0.35) !important;
+}
+.dark .profile-surface .shadow-xl,
+.dark .rewards-surface .shadow-xl {
+  box-shadow: 0 20px 25px rgba(2, 6, 23, 0.55), 0 10px 10px rgba(2, 6, 23, 0.3) !important;
+}
+.dark .profile-surface .shadow-2xl,
+.dark .rewards-surface .shadow-2xl {
+  box-shadow: 0 25px 50px rgba(2, 6, 23, 0.6) !important;
+}
+
+/* ── Dark mode: mhub-premium-surface consistency ── */
+.dark .profile-surface .mhub-premium-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.65)) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.4) !important;
+}
+
+/* ── Dark mode: Profile hero badges with blur ── */
+.dark .profile-surface [class*="bg-emerald-500/20"],
+.dark .profile-surface [class*="bg-amber-500/20"],
+.dark .profile-surface [class*="bg-rose-500/20"] {
+  backdrop-filter: blur(4px) !important;
+}
+
+/* ── Dark mode: Location suggestions dropdown ── */
+.dark .profile-surface [class*="profile-location-suggestions"] {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+}
+.dark .profile-surface [class*="profile-location-suggestions"] button,
+.dark .profile-surface [class*="profile-location-suggestions"] [role="option"] {
+  color: #e2e8f0 !important;
+}
+.dark .profile-surface [class*="profile-location-suggestions"] button:hover,
+.dark .profile-surface [class*="profile-location-suggestions"] [role="option"]:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+
+
+/* ── Dark mode: Consistent panel backgrounds for all profile panels ── */
+.dark .profile-surface [class*="bg-white"][class*="rounded-2xl"][class*="border-slate-200"] {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.6)) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+}
+
+/* ── Dark mode: Checkbox/radio accent ── */
+.dark .profile-surface input[type="checkbox"],
+.dark .profile-surface input[type="radio"],
+.dark .profile-surface input[type="range"] {
+  accent-color: #6366f1 !important;
 }

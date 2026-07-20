@@ -1,7 +1,17 @@
 const { runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
-
 const translateText = async (text, sourceLang, targetLang) => {
+  const fetchFn = resolveFetch();
+  if (fetchFn) {
+    try {
+      const translated = await translateViaGoogle(text, sourceLang, targetLang, fetchFn);
+      if (translated && translated !== text) {
+        return translated;
+      }
+    } catch (err) {
+      logger.warn(`[Translation] Google translate failed for "${text.slice(0, 20)}":`, err.message || err);
+    }
+  }
   await new Promise((resolve) => setTimeout(resolve, 100));
   return `[${targetLang.toUpperCase()}] ${text}`;
 };
@@ -173,6 +183,7 @@ const processTranslations = async (req, res) => {
             queue_id: item.queue_id,
             post_id: item.post_id,
             translated_text: outcome.value,
+            target_lang: item.target_lang,
           });
           successCount += 1;
         } else {
@@ -217,6 +228,25 @@ const processTranslations = async (req, res) => {
           JSON.stringify(
             successRecords.map(({ post_id, translated_text }) => ({
               post_id,
+              translated_text,
+            }))
+          ),
+        ]
+      );
+
+      await runQuery(
+        `
+        INSERT INTO translations (entity_type, entity_id, language, field, value)
+        SELECT 'post', s.post_id::text, s.target_lang, 'title', s.translated_text
+        FROM jsonb_to_recordset($1::jsonb) AS s(post_id bigint, target_lang text, translated_text text)
+        ON CONFLICT ON CONSTRAINT unique_translation
+        DO UPDATE SET value = EXCLUDED.value
+        `,
+        [
+          JSON.stringify(
+            successRecords.map(({ post_id, target_lang, translated_text }) => ({
+              post_id,
+              target_lang,
               translated_text,
             }))
           ),

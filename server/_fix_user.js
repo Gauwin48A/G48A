@@ -13,7 +13,7 @@ const pool = new Pool({
     // Check user password hash
     const { rows } = await pool.query(
       "SELECT user_id, email, password_hash, is_active, role FROM users WHERE email = $1",
-      ['priya@mhub.com']
+      ['rahul.sharma@mhub.com']
     );
     if (rows[0]) {
       console.log('User found:', rows[0].email);
@@ -28,12 +28,12 @@ const pool = new Pool({
     // Try to reset password with bcrypt
     const bcrypt = require('bcrypt');
     const newHash = await bcrypt.hash('Test@1234', 12);
-    await pool.query('UPDATE users SET password_hash = $1 WHERE email = $2', [newHash, 'priya@mhub.com']);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE email = $2', [newHash, 'rahul.sharma@mhub.com']);
     console.log('\nPassword reset to Test@1234');
     console.log('New hash:', newHash.substring(0, 20) + '...');
 
     // Also ensure user is active
-    await pool.query("UPDATE users SET is_active = true WHERE email = $1", ['priya@mhub.com']);
+    await pool.query("UPDATE users SET is_active = true WHERE email = $1", ['rahul.sharma@mhub.com']);
     console.log('User activated');
 
   } catch (e) {

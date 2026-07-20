@@ -169,6 +169,11 @@ class WishlistViewModel @Inject constructor(
                 is ApiResult.Failure -> {
                     val isAuthError = result.error is com.mhub.app.core.ApiError.Unauthorized || result.error is com.mhub.app.core.ApiError.Forbidden
                     if (isAuthError) {
+                        if (authRepo.isDemoSession) {
+                            // Demo sessions always get 401 — use local data silently
+                            syncWishlist(loading = false, error = null)
+                            return@launch
+                        }
                         // Retry once with fresh token
                         authRepo.tryRefreshToken()
                         when (val retry = repo.list()) {

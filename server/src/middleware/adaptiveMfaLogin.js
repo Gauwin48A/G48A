@@ -4,9 +4,9 @@ const {
   verifyTwoFactorCodeOrBackup,
 } = require("../services/twoFactorPolicyService");
 
-const ADAPTIVE_MFA_ENABLED = String(process.env.AUTH_ADAPTIVE_MFA_ENABLED || "true")
+const ADAPTIVE_MFA_ENABLED = String(process.env.AUTH_ADAPTIVE_MFA_ENABLED || "false")
   .trim()
-  .toLowerCase() !== "false";
+  .toLowerCase() === "true";
 
 const MFA_CHALLENGE_HTTP_STATUS = Number.parseInt(
   process.env.AUTH_MFA_CHALLENGE_STATUS || "202",

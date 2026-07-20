@@ -30,7 +30,7 @@ const TIER_RULES = {
     perPostCost: 500,
     maxImages: 1,
     tagline: "Simple one-off listing",
-    features: ["1 Single Post", "15 Days Visibility", "Standard Reach"],
+    features: ["📄 1 Single Post", "⏱️ 15 Days Visibility", "📍 Standard Reach"],
     canPost: (user) => (user.post_credits || 0) > 0,
     getExpiry: () => {
       const d = new Date();
@@ -61,10 +61,10 @@ const TIER_RULES = {
     maxImages: 3,
     tagline: "For casual sellers",
     features: [
-      "Up to 100 Posts",
-      "30 Days Visibility/Post",
-      "Seller Badge",
-      "Basic Analytics",
+      "📦 Up to 100 Posts",
+      "⏱️ 30 Days Visibility/Post",
+      "🏅 Seller Badge",
+      "📊 Basic Analytics",
     ],
     canPost: (user) => {
       if (!user.subscription_expiry) return false;
@@ -99,13 +99,13 @@ const TIER_RULES = {
     maxImages: 5,
     tagline: "Most Popular",
     features: [
-      "Up to 200 Posts",
-      "30 Days Visibility/Post",
-      "5 Boosts + 5 Featured + 5 Spotlights / 6 Months",
-      "Verified Badge",
-      "Priority Search Ranking",
-      "Full Analytics Dashboard",
-      "7-Day Free Trial",
+      "📦 Up to 200 Posts",
+      "⏱️ 30 Days Visibility/Post",
+      "🚀 5 Boosts + 5 Featured + 5 Spotlights / 6 Months",
+      "✅ Verified Badge",
+      "🔝 Priority Search Ranking",
+      "📊 Full Analytics Dashboard",
+      "🎁 7-Day Free Trial",
     ],
     canPost: (user) => {
       if (!user.subscription_expiry) return false;
@@ -140,14 +140,14 @@ const TIER_RULES = {
     maxImages: 10,
     tagline: "Best Value",
     features: [
-      "Unlimited Posts",
-      "45 Days Visibility",
-      "5 Boosts + 5 Featured + 5 Spotlights/Month",
-      "Crown Badge",
-      "Top of Feed Priority",
-      "Priority Support",
-      "Full Analytics Dashboard",
-      "14-Day Free Trial",
+      "📦 Unlimited Posts",
+      "⏱️ 45 Days Visibility",
+      "🚀 5 Boosts + 5 Featured + 5 Spotlights/Month",
+      "👑 Crown Badge",
+      "🔝 Top of Feed Priority",
+      "💬 Priority Support",
+      "📊 Full Analytics Dashboard",
+      "🎁 14-Day Free Trial",
     ],
     canPost: (user) => {
       if (!user.subscription_expiry) return false;
@@ -156,6 +156,46 @@ const TIER_RULES = {
     getExpiry: () => {
       const d = new Date();
       d.setDate(d.getDate() + 45);
+      return d;
+    },
+  },
+  starter: {
+    name: "Starter Plan",
+    displayName: "Starter Plan",
+    visibilityDays: 30,
+    maxListings: 999999,
+    dailyLimit: 1,
+    priority: 3,
+    searchPriority: 3,
+    priceINR: 111,
+    durationMonths: 1,
+    quotaPeriodMonths: 1,
+    trialDays: 0,
+    boostQuotaMonthly: 0,
+    featuredQuotaMonthly: 0,
+    spotlightQuotaMonthly: 0,
+    badgeType: null,
+    hasAnalytics: false,
+    hasPrioritySearch: false,
+    hasPrioritySupport: false,
+    perPostCost: 0,
+    maxImages: 1,
+    tagline: "Taste Premium Experience",
+    features: [
+      "✨ 1 Month Access (30 Days)",
+      "📸 1 Photo per Post",
+      "✍️ 1 Post Per Day Limit",
+      "💰 100 Coins Bonus on Activation",
+      "🆔 KYC Verification Included",
+      "🛡️ Inclusive of GST & all fees",
+    ],
+    canPost: (user) => {
+      if (!user.subscription_expiry) return false;
+      return new Date(user.subscription_expiry) >= new Date();
+    },
+    getExpiry: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
       return d;
     },
   },

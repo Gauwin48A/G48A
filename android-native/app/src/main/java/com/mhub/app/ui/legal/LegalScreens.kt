@@ -1,7 +1,10 @@
 package com.mhub.app.ui.legal
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,29 +28,31 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
+import com.mhub.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private val bgGradient get() = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+private fun bgGradient(isDark: Boolean): Brush {
+    return if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E3A5F)))
+    else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+}
 
 @Composable
 private fun LegalTopBar(title: String, onBack: () -> Unit) {
+    val isDark = ColorTokens.isDark
     Row(
         Modifier.fillMaxWidth()
             .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF2563EB)) }
+        IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
         Spacer(Modifier.width(8.dp))
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+        Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
     }
 }
 
@@ -91,29 +96,30 @@ class SupportPolicyViewModel @Inject constructor(private val repo: CmsRepository
 
 @Composable
 private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBack: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
+    val isDark = ColorTokens.isDark
+    Box(Modifier.fillMaxSize().background(bgGradient(isDark))) {
         Column(Modifier.fillMaxSize()) {
             LegalTopBar(title, onBack)
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
                 state.content != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (isDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF2563EB).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                                    Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+                                Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF3B82F6).copy(alpha = 0.2f) else Color(0xFF2563EB).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                    Icon(icon, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(20.dp))
                                 }
                                 Spacer(Modifier.width(12.dp))
-                                Text(title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1E293B))
+                                Text(title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
                             }
                             Spacer(Modifier.height(16.dp))
-                            Text(state.content, fontSize = 14.sp, color = Color(0xFF374151), lineHeight = 22.sp)
+                            Text(state.content, fontSize = 14.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151), lineHeight = 22.sp)
                         }
                     }
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                        Text(state.error ?: "Content unavailable", color = Color(0xFF64748B))
+                        Text(state.error ?: "Content unavailable", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                     }
                 }
             }
@@ -406,8 +412,9 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
     }
     
     // Access denied screen
+    val adminDark = ColorTokens.isDark
     if (!state.loading && !state.hasAdminAccess) {
-        Box(Modifier.fillMaxSize().background(bgGradient), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().background(bgGradient(adminDark)), contentAlignment = Alignment.Center) {
             Column(Modifier.fillMaxSize()) {
                 LegalTopBar("Admin Panel", onBack)
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -418,7 +425,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         Spacer(Modifier.height(20.dp))
                         Text("Access Denied", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFFEF4444))
                         Spacer(Modifier.height(8.dp))
-                        Text("You don't have permission to access this area.", fontSize = 14.sp, color = Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Text("You don't have permission to access this area.", fontSize = 14.sp, color = if (adminDark) Color(0xFFCBD5E1) else Color(0xFF64748B), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         Spacer(Modifier.height(20.dp))
                         Button(onClick = onBack, shape = RoundedCornerShape(12.dp)) { Text("Go Back") }
                     }
@@ -427,14 +434,14 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
         }
         return
     }
-    Box(Modifier.fillMaxSize().background(bgGradient)) {
+    Box(Modifier.fillMaxSize().background(bgGradient(adminDark))) {
         Scaffold(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             containerColor = Color.Transparent
         ) { paddingValues ->
             Column(Modifier.fillMaxSize().padding(paddingValues)) {
                 LegalTopBar("Admin Panel", onBack)
-                if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (adminDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
                 else PullToRefreshBox(isRefreshing = refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize()) { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Stats grid
                 item {
@@ -694,18 +701,19 @@ class InviteViewModel @Inject constructor(private val repo: InviteRepository) : 
 fun InviteScreen(code: String, onBack: () -> Unit, viewModel: InviteViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(code) { viewModel.load(code) }
-    Box(Modifier.fillMaxSize().background(bgGradient), contentAlignment = Alignment.Center) {
+    val inviteDark = ColorTokens.isDark
+    Box(Modifier.fillMaxSize().background(bgGradient(inviteDark)), contentAlignment = Alignment.Center) {
         Column(Modifier.fillMaxSize()) {
             LegalTopBar("Invite", onBack)
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (inviteDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
                 state.valid -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF2563EB)), contentAlignment = Alignment.Center) {
                         Icon(Icons.Filled.PersonAdd, null, tint = Color.White, modifier = Modifier.size(40.dp))
                     }
                     Spacer(Modifier.height(20.dp))
-                    Text("You've been invited!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
-                    if (state.inviterName != null) { Spacer(Modifier.height(8.dp)); Text("by ${state.inviterName}", fontSize = 15.sp, color = Color(0xFF64748B)) }
+                    Text("You've been invited!", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = if (inviteDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                    if (state.inviterName != null) { Spacer(Modifier.height(8.dp)); Text("by ${state.inviterName}", fontSize = 15.sp, color = if (inviteDark) Color(0xFF94A3B8) else Color(0xFF64748B)) }
                     if (state.bonus != null) {
                         Spacer(Modifier.height(16.dp))
                         Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF7ED)) {
@@ -721,11 +729,11 @@ fun InviteScreen(code: String, onBack: () -> Unit, viewModel: InviteViewModel = 
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                        Icon(Icons.Filled.LinkOff, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
+                        Icon(Icons.Filled.LinkOff, null, tint = if (inviteDark) Color(0xFF475569) else Color(0xFFCBD5E1), modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("Invalid Invite", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color(0xFF374151))
+                        Text("Invalid Invite", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = if (inviteDark) Color(0xFFCBD5E1) else Color(0xFF374151))
                         Spacer(Modifier.height(8.dp))
-                        Text(state.error ?: "This invite link is invalid or has expired.", fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(state.error ?: "This invite link is invalid or has expired.", fontSize = 14.sp, color = if (inviteDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                         Spacer(Modifier.height(20.dp))
                         Button(onClick = onBack, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))) { Text("Go Back") }
                     }
@@ -738,24 +746,25 @@ fun InviteScreen(code: String, onBack: () -> Unit, viewModel: InviteViewModel = 
 // ─── NotFoundScreen ───────────────────────────────────────────────────────────
 @Composable
 fun NotFoundScreen(onBack: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(bgGradient), contentAlignment = Alignment.Center) {
+    val nfDark = ColorTokens.isDark
+    Box(Modifier.fillMaxSize().background(bgGradient(nfDark)), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
             Box(
-                Modifier.size(120.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+                Modifier.size(120.dp).clip(CircleShape).background(if (nfDark) Color(0xFF1E293B) else Color(0xFFEFF6FF)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.SearchOff, null, tint = Color(0xFF2563EB), modifier = Modifier.size(56.dp))
+                Icon(Icons.Filled.SearchOff, null, tint = if (nfDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(56.dp))
             }
             Spacer(Modifier.height(20.dp))
-            Text("404", fontWeight = FontWeight.Bold, fontSize = 64.sp, color = Color(0xFF2563EB))
+            Text("404", fontWeight = FontWeight.Bold, fontSize = 64.sp, color = if (nfDark) Color(0xFF93C5FD) else Color(0xFF2563EB))
             Spacer(Modifier.height(8.dp))
-            Text("Page Not Found", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E293B))
+            Text("Page Not Found", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = if (nfDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
             Spacer(Modifier.height(8.dp))
-            Text("The page you're looking for doesn't exist or has been moved.", fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(horizontal = 16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("The page you're looking for doesn't exist or has been moved.", fontSize = 14.sp, color = if (nfDark) Color(0xFF94A3B8) else Color(0xFF64748B), modifier = Modifier.padding(horizontal = 16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Spacer(Modifier.height(28.dp))
             Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)), modifier = Modifier.fillMaxWidth().height(50.dp)) { Text("Go Home", fontWeight = FontWeight.SemiBold) }
             Spacer(Modifier.height(12.dp))
-            TextButton(onClick = onBack) { Text("Go back", color = Color(0xFF64748B)) }
+            TextButton(onClick = onBack) { Text("Go back", color = if (nfDark) Color(0xFF94A3B8) else Color(0xFF64748B)) }
         }
     }
 }

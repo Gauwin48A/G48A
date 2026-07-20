@@ -130,6 +130,12 @@ async function ensurePostsOptionalColumns() {
     await runQuery(
       "ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_flash_sale BOOLEAN NOT NULL DEFAULT false"
     );
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS brand TEXT"
+    );
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS model TEXT"
+    );
     return true;
   } catch (error) {
     logger.warn("[SchemaGuard] Unable to auto-provision optional post columns", {

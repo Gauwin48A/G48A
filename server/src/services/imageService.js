@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const { getUploadsSubdir } = require('../utils/uploads');
+const r2Client = require('./r2Client');
 
 // Configuration
 const OUTPUT_DIR = getUploadsSubdir('optimized');
@@ -70,9 +71,26 @@ const optimizeImage = async (input, filename) => {
 
     console.log(`[IMAGE] ✅ Optimized ${filename}: ${savings}% smaller`);
 
+    let optimizedUrl = `/uploads/optimized/${optimizedName}`;
+    let thumbnailUrl = `/uploads/optimized/thumbnails/${thumbnailName}`;
+
+    // Upload to Cloudflare R2 if configured
+    if (r2Client.isR2Configured() || process.env.STORAGE_PROVIDER === "r2") {
+        try {
+            optimizedUrl = await r2Client.uploadFile(optimizedPath, optimizedName, "image/webp");
+            thumbnailUrl = await r2Client.uploadFile(thumbnailPath, `thumbnails/${thumbnailName}`, "image/webp");
+
+            // Clean up temporary local optimized files to save space
+            await fs.unlink(optimizedPath).catch(() => {});
+            await fs.unlink(thumbnailPath).catch(() => {});
+        } catch (uploadErr) {
+            console.error('[IMAGE] R2 upload failed, falling back to local files:', uploadErr.message);
+        }
+    }
+
     return {
-        optimized: `/uploads/optimized/${optimizedName}`,
-        thumbnail: `/uploads/optimized/thumbnails/${thumbnailName}`,
+        optimized: optimizedUrl,
+        thumbnail: thumbnailUrl,
         originalSize,
         optimizedSize: optimizedStats.size,
         savings

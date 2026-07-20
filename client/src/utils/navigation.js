@@ -3,7 +3,10 @@
  * Provides reliable back navigation and route history management
  */
 
-export const DEFAULT_BACK_FALLBACK = "/all-posts";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+export const DEFAULT_BACK_FALLBACK = "/my-home";
 export const LAST_ROUTE_KEY = "mhub:lastRoute";
 export const ROUTE_HISTORY_KEY = "mhub:routeHistory";
 export const MAX_HISTORY_LENGTH = 10;
@@ -24,7 +27,7 @@ const PROTECTED_ROUTES = new Set([
 export const canNavigateBack = () => {
   if (typeof window === "undefined") return false;
   
-  // Check React Router's history index
+  // Check React Router's history index (set by the history package used in BrowserRouter)
   const historyIndex =
     typeof window.history?.state?.idx === "number"
       ? window.history.state.idx
@@ -78,23 +81,26 @@ export const getLastSafeRoute = () => {
 export const saveRouteToHistory = (route) => {
   if (typeof window === "undefined" || !route) return;
   
+  // Normalize: remove trailing slash
+  const normalized = route.replace(/\/+$/, "") || "/";
+  
   // Don't save protected routes
-  const basePath = route.split("?")[0];
+  const basePath = normalized.split("?")[0];
   if (PROTECTED_ROUTES.has(basePath)) return;
   
   try {
     // Update last route
-    sessionStorage.setItem(LAST_ROUTE_KEY, route);
+    sessionStorage.setItem(LAST_ROUTE_KEY, normalized);
     
     // Update route history
     const historyJson = sessionStorage.getItem(ROUTE_HISTORY_KEY);
     let history = historyJson ? JSON.parse(historyJson) : [];
     
     // Remove duplicate if exists
-    history = history.filter(r => r !== route);
+    history = history.filter(r => r !== normalized);
     
     // Add new route
-    history.push(route);
+    history.push(normalized);
     
     // Keep history within limit
     if (history.length > MAX_HISTORY_LENGTH) {
@@ -105,6 +111,20 @@ export const saveRouteToHistory = (route) => {
   } catch {
     // Ignore storage errors
   }
+};
+
+/**
+ * React hook that automatically saves the current route to sessionStorage
+ * whenever the location pathname changes. Place this in a top-level component
+ * that is inside the Router context (e.g., in App.jsx's ScrollToTop or AppShell).
+ */
+export const useRouteTracker = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    const route = `${location.pathname}${location.search}`;
+    saveRouteToHistory(route);
+  }, [location.pathname, location.search]);
 };
 
 /**
@@ -173,5 +193,6 @@ export default {
   saveRouteToHistory,
   navigateBack,
   navigateTo,
+  useRouteTracker,
   clearNavigationHistory,
 };

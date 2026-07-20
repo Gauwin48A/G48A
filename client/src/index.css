@@ -355,31 +355,8 @@ html.dark textarea {
 }
 
 /* Dark-mode compatibility layer for legacy light-only classes */
-/* Skip elements that explicitly set dark:bg-white (intentional white on dark) */
 html.dark .bg-white:not([class*="dark:bg-white"]) {
   background-color: var(--card) !important;
-}
-
-html.dark .bg-gray-50,
-html.dark .bg-slate-50 {
-  background-color: var(--primary-bg) !important;
-}
-
-html.dark .bg-gray-100,
-html.dark .bg-slate-100 {
-  background-color: var(--surface-2) !important;
-}
-
-html.dark .bg-gray-200,
-html.dark .bg-slate-200 {
-  background-color: var(--surface-3) !important;
-}
-
-html.dark .text-gray-900,
-html.dark .text-slate-900,
-html.dark .text-gray-800,
-html.dark .text-slate-800 {
-  color: var(--foreground) !important;
 }
 
 html.dark .text-gray-700,
@@ -802,32 +779,9 @@ html[data-native-platform] .location-accuracy-badge-close {
   background-color: var(--background) !important;
 }
 
-/* 3. Low-contrast meta text: text-gray-500/600 Ã¢â€ â€™ visible in dark */
-.dark .text-gray-500:not([class*="dark\:text-"]) {
-  color: var(--text-faint) !important;
-}
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ MHUB DESIGN SYSTEM Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Spacing, WCAG contrast, compact cards, skeletons */
 
-/* === DARK MODE WCAG AA CONTRAST FIXES === */
-.dark .text-gray-400:not([class*="dark\:text-"]) {
-  color: var(--text-faint) !important;
-}
-.dark .text-gray-600:not([class*="dark\:text-"]) {
-  color: var(--text-secondary) !important;
-}
-.dark .text-gray-700:not([class*="dark\:text-"]) {
-  color: var(--text-secondary) !important;
-}
-.dark .text-gray-800:not([class*="dark\:text-"]) {
-  color: var(--text-primary) !important;
-}
-.dark .border-gray-200:not([class*="dark\:border-"]) {
-  border-color: var(--border) !important;
-}
-.dark .border-gray-100:not([class*="dark\:border-"]) {
-  border-color: var(--border) !important;
-}
 
 /* === COMPACT CARD SPACING (reduce 32-48px gaps to 8px) === */
 .mhub-compact-feed > * + * {
@@ -909,27 +863,6 @@ html[data-native-platform] .location-accuracy-badge-close {
 .mhub-carousel > * {
   scroll-snap-align: start;
   flex-shrink: 0;
-}
-.dark .text-gray-600:not([class*="dark\:text-"]) {
-  color: var(--text-secondary) !important;
-}
-.dark .text-gray-700:not([class*="dark\:text-"]) {
-  color: var(--text-secondary) !important;
-}
-.dark .text-gray-800:not([class*="dark\:text-"]),
-.dark .text-gray-900:not([class*="dark\:text-"]) {
-  color: var(--text-primary) !important;
-}
-
-/* 4. Borders that disappear in dark mode */
-.dark .border-gray-100:not([class*="dark\:border-"]) {
-  border-color: var(--border) !important;
-}
-.dark .border-gray-200:not([class*="dark\:border-"]) {
-  border-color: var(--border) !important;
-}
-.dark .border-gray-300:not([class*="dark\:border-"]) {
-  border-color: var(--border) !important;
 }
 
 /* 5. Coloured accents on light surfaces Ã¢â€ â€™ dark-safe */
@@ -1504,6 +1437,17 @@ html[data-native-platform] .location-accuracy-badge-close {
 .dark .\!text-slate-700 { color: var(--text-primary); }
 .dark .\!text-gray-600 { color: var(--text-secondary); }
 .dark .\!text-gray-700 { color: var(--text-primary); }
+
+/* Shadow mapping — dark mode */
+.dark .shadow:not(.shadow-none),
+.dark .shadow-sm:not(.shadow-none),
+.dark .shadow-md:not(.shadow-none),
+.dark .shadow-lg:not(.shadow-none) {
+  box-shadow: var(--card-shadow);
+}
+.dark [class*="shadow"]:not([class*="shadow-none"]) {
+  box-shadow: var(--card-shadow);
+}
 
 /* ── Demo login button pulse-shadow animation ── */
 @keyframes pulse-shadow {
@@ -2312,9 +2256,10 @@ html[data-native-platform] .location-accuracy-badge-close {
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ 1. AllPosts quick-filter toolbar: mobile simplification Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 639px) {
-  /* Hide the Browse/Shuffle/Live and Sort button groups on mobile.
-     Users access sort via the main Filter button in the top nav.     */
-  .mhub-allposts-action-group,
+  /* Keep the filter/sort gear icon & action group visible on mobile.
+     Users need the gear icon to open the filter panel on small screens.
+     The sort dropdown (.quick-filters-sort) remains hidden since sort
+     is handled inside the filter panel.                                    */
   .quick-filters-sort {
     display: none !important;
   }

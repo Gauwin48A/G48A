@@ -78,12 +78,23 @@ import java.net.HttpURLConnection
 import java.net.URL
 import javax.inject.Inject
 
+import com.mhub.app.data.repository.AuthRepository
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val prefs: AppPreferences,
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
     private val tokenStore: com.mhub.app.data.local.TokenStore,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
+
+    fun updateLanguagePreference(languageCode: String) {
+        viewModelScope.launch {
+            if (tokenStore.accessToken.first() != null) {
+                authRepository.updatePreferredLanguage(languageCode)
+            }
+        }
+    }
     private val _baseUrl = MutableStateFlow("")
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
 

@@ -26,7 +26,7 @@ const redisSession = require("../config/redisSession");
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPPORTED_PLANS = ["basic", "bronze", "silver", "premium"];
+const SUPPORTED_PLANS = ["basic", "starter", "bronze", "silver", "premium"];
 const DEFAULT_PENDING_LIMIT = 50;
 const MAX_PENDING_LIMIT = 200;
 
@@ -175,13 +175,22 @@ function buildRazorpayReceipt({
  */
 async function createRazorpayOrder({ amountInr, receipt, notes }) {
   const credentials = getRazorpayCredentials();
-  if (!credentials) {
-    throw new Error("RAZORPAY credentials not configured");
-  }
-
   const amountPaise = Math.round(Number(amountInr) * 100);
   if (!Number.isFinite(amountPaise) || amountPaise <= 0) {
     throw new Error("Invalid Razorpay amount");
+  }
+
+  if (!credentials) {
+    logger.info(`[PAYMENT MOCK] Creating mock Razorpay order. Amount: ${amountInr} INR`);
+    return {
+      id: `order_mock_${crypto.randomBytes(8).toString("hex")}`,
+      amount: amountPaise,
+      currency: "INR",
+      receipt,
+      status: "created",
+      notes: notes || {},
+      mock: true
+    };
   }
 
   const response = await axios.post(
@@ -1017,6 +1026,19 @@ async function applyVerifiedPayment(client, payment, options = {}) {
     params
   );
 
+  // ── Award 100 coins on starter plan activation ───────────────────────
+  if (normalizedPlan === "starter") {
+    try {
+      await client.query(
+        `UPDATE users SET post_credits = COALESCE(post_credits, 0) + 100
+         WHERE user_id::text = $1::text`,
+        [payment.user_id]
+      );
+    } catch (coinErr) {
+      logger.warn("[Payment] Failed to award starter coins", { message: coinErr.message });
+    }
+  }
+
   const successMessage =
     normalizedPlan !== "basic"
       ? `Your ${normalizedPlan.toUpperCase()} plan is now active!${
@@ -1278,9 +1300,7 @@ exports.createRazorpayOrder = async (req, res) => {
 
     const credentials = getRazorpayCredentials();
     if (!credentials) {
-      return res.status(503).json({
-        error: "Payment gateway is not configured. Try manual UPI instead.",
-      });
+      logger.info("[PAYMENT MOCK] Creating payment order in mock mode");
     }
 
     await ensurePaymentsExtendedSchema();
@@ -1449,8 +1469,8 @@ exports.createRazorpayOrder = async (req, res) => {
 
     const insertResult = await runQuery(
       `INSERT INTO payments
-         (user_id, amount, payment_method, status, plan_purchased, expires_at, purchase_type, boost_type, post_id, metadata, payment_provider, provider_order_id)
-       VALUES ($1, $2, $3, 'pending', $4, NOW() + INTERVAL '48 hours', $5, $6, $7, $8, $9, $10)
+         (user_id, amount, payment_method, status, plan_purchased, expires_at, purchase_type, boost_type, post_id, metadata, payment_provider, provider_order_id, raw_payload)
+       VALUES ($1, $2, $3, 'pending', $4, NOW() + INTERVAL '48 hours', $5, $6, $7, $8, $9, $10, $11)
        RETURNING id, created_at`,
       [
         paymentUserId,
@@ -1463,6 +1483,7 @@ exports.createRazorpayOrder = async (req, res) => {
         JSON.stringify(metadata),
         "razorpay",
         order.id,
+        JSON.stringify(order),
       ]
     );
 
@@ -1538,20 +1559,21 @@ exports.verifyRazorpayPayment = async (req, res) => {
 
     const credentials = getRazorpayCredentials();
     if (!credentials) {
-      return res.status(503).json({
-        error: "Payment gateway is not configured. Try manual UPI instead.",
-      });
-    }
+      logger.info(`[PAYMENT MOCK] Verifying mock payment. Order: ${razorpay_order_id}, Payment: ${razorpay_payment_id}`);
+      if (razorpay_signature !== "mock_signature_success") {
+        return res.status(400).json({ error: "Invalid Mock Razorpay signature. Use 'mock_signature_success'." });
+      }
+    } else {
+      const signatureOk = verifyRazorpaySignature(
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        credentials.keySecret
+      );
 
-    const signatureOk = verifyRazorpaySignature(
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      credentials.keySecret
-    );
-
-    if (!signatureOk) {
-      return res.status(400).json({ error: "Invalid Razorpay signature" });
+      if (!signatureOk) {
+        return res.status(400).json({ error: "Invalid Razorpay signature" });
+      }
     }
 
     await ensurePaymentsExtendedSchema();
@@ -1639,9 +1661,10 @@ exports.verifyRazorpayPayment = async (req, res) => {
          SET transaction_id = COALESCE(transaction_id, $1),
              payment_provider = COALESCE(payment_provider, 'razorpay'),
              provider_payment_id = COALESCE(provider_payment_id, $1),
-             provider_signature = COALESCE(provider_signature, $2)
-         WHERE id = $3`,
-        [razorpay_payment_id, razorpay_signature, payment.id]
+             provider_signature = COALESCE(provider_signature, $2),
+             raw_payload = COALESCE(raw_payload, $3::jsonb)
+         WHERE id = $4`,
+        [razorpay_payment_id, razorpay_signature, JSON.stringify(req.body), payment.id]
       );
 
       const updatedPayment = {

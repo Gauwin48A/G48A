@@ -21,6 +21,8 @@ import com.mhub.app.data.remote.dto.VerifyOtpRequest
 import com.mhub.app.data.remote.dto.AuthResponse
 import com.mhub.app.data.remote.dto.AadhaarOtpResponse
 import com.mhub.app.data.remote.dto.AadhaarVerifyResponse
+import com.mhub.app.data.remote.dto.PreferredLanguageRequest
+import com.mhub.app.data.remote.dto.MessageResponse
 import com.mhub.app.data.local.db.PostDao
 import com.mhub.app.data.local.db.CategoryDao
 import com.mhub.app.data.local.db.WishlistItemDao
@@ -174,6 +176,10 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun me(): ApiResult<User> = safeApiCall { api.me() }
+
+    suspend fun updatePreferredLanguage(language: String): ApiResult<MessageResponse> = safeApiCall {
+        api.updatePreferredLanguage(PreferredLanguageRequest(language))
+    }
 
     /** Quick health check with short timeout to determine if server is reachable. */
     suspend fun isServerReachable(): Boolean = try {

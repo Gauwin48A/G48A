@@ -63,6 +63,8 @@ import {
   isAuthenticated as vt,
 } from "@/utils/authStorage";
 import { fetchCategoriesCached as bt } from "@/services/categoriesService";
+import { isParityOfflineAuthMode } from "@/utils/parityMode";
+import { buildParityProfileFallback } from "@/utils/parityFallbackData";
 import { fetchUserPreferencesCached, clearUserPreferencesCache } from "@/services/preferencesService";
 import {
   hasUserSnapshotChanged as ht,
@@ -1167,11 +1169,11 @@ const ProfilePage = () => {
         : "")) || "";
   const trustBadgeClass =
     trustLevel === "verified"
-      ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-emerald-500/20 text-emerald-50 border border-emerald-200/40"
+      ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-emerald-500/20 text-emerald-50 border border-emerald-200/40 dark:bg-emerald-500/30 dark:text-emerald-200 dark:border-emerald-700/50"
       : trustLevel === "risky"
-        ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-rose-500/20 text-rose-50 border border-rose-200/40"
+        ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-rose-500/20 text-rose-50 border border-rose-200/40 dark:bg-rose-500/30 dark:text-rose-200 dark:border-rose-700/50"
         : trustLevel
-          ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/20 text-amber-50 border border-amber-200/40"
+          ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/20 text-amber-50 border border-amber-200/40 dark:bg-amber-500/30 dark:text-amber-200 dark:border-amber-700/50"
           : "";
   const profileRiskState = $?.riskState || $?.risk_state || null;
   const profileFrozen = profileRiskState?.status === "frozen";
@@ -1305,7 +1307,7 @@ const ProfilePage = () => {
     "div",
     {
       className:
-        `profile-surface min-h-screen mhub-premium-page pb-20 sm:pb-36 page-fade-in ${density === "compact" ? "mhub-compact" : ""}`,
+        `profile-surface min-h-screen mhub-premium-page pb-20 sm:pb-36 page-fade-in dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`,
       style: { "--top-nav-height": "0px" },
     },
     sessionExpired && e.createElement(
@@ -1336,7 +1338,7 @@ const ProfilePage = () => {
           {
             type: "button",
             onClick: () => p("/login", { state: { returnTo: "/profile" } }),
-            className: "shrink-0 h-8 px-5 rounded-lg bg-white text-red-700 font-bold text-xs hover:bg-red-50 transition shadow-sm hover:shadow-md",
+            className: "shrink-0 h-8 px-5 rounded-lg bg-white text-red-700 font-bold text-xs hover:bg-red-50 transition shadow-sm hover:shadow-md dark:bg-slate-900 dark:text-red-400 dark:hover:bg-slate-800 dark:border dark:border-red-800/40",
           },
           t("sign_in") || "Sign In"
         ),
@@ -1561,8 +1563,8 @@ const ProfilePage = () => {
                     z,
                     {
                       className: i.verified
-                        ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-emerald-500/20 text-emerald-50 border border-emerald-200/40"
-                        : "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/20 text-amber-50 border border-amber-200/40",
+                        ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-emerald-500/20 text-emerald-50 border border-emerald-200/40 dark:bg-emerald-500/30 dark:text-emerald-200 dark:border-emerald-700/50"
+                        : "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/20 text-amber-50 border border-amber-200/40 dark:bg-amber-500/30 dark:text-amber-200 dark:border-amber-700/50",
                     },
                     e.createElement(se, { className: "w-4 h-4 mr-1" }),
                     " ",
@@ -1601,11 +1603,11 @@ const ProfilePage = () => {
                         tr("account_frozen", "Account Frozen"),
                       )
                     : profileUnderReview
-                      ? e.createElement(
+                      ?                          e.createElement(
                           z,
                           {
                             className:
-                              "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/80 text-white border border-amber-400/60",
+                              "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/80 text-white border border-amber-400/60 dark:bg-amber-600/40 dark:text-amber-200 dark:border-amber-700/50",
                           },
                           e.createElement(it, { className: "w-4 h-4 mr-1" }),
                           " ",
@@ -1638,8 +1640,8 @@ const ProfilePage = () => {
                       onClick: () => V(!0),
                       className:
                         i.verified
-                          ? "h-9 px-4 rounded-xl bg-white/90 text-slate-900 hover:bg-white font-bold shadow-md border border-white/40"
-                          : "h-9 px-4 rounded-xl border border-white/40 text-white/90 hover:bg-white/15 font-semibold",
+                          ? "h-9 px-4 rounded-xl bg-white/90 text-slate-900 hover:bg-white font-bold shadow-md border border-white/40 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border-white/20"
+                          : "h-9 px-4 rounded-xl border border-white/40 text-white/90 hover:bg-white/15 font-semibold dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10",
                     },
                     e.createElement(et, { className: "w-4 h-4 mr-2" }),
                     tr("edit_profile", "Edit profile"),
@@ -1760,7 +1762,7 @@ const ProfilePage = () => {
                 ),
                 e.createElement(
                   "span",
-                  { className: "text-xs text-slate-400 dark:text-slate-400" },
+                  { className: "text-xs text-slate-400 dark:text-slate-300" },
                   tr("sticky_tabs_hint", "Scroll to switch"),
                 ),
               ),
@@ -1846,7 +1848,7 @@ const ProfilePage = () => {
         "div",
         {
           className:
-            "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
+            "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900",
         },
                   e.createElement(
                     "div",
@@ -2237,7 +2239,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 page-fade-in page-fade-in-delay-3",
                     "data-density": "extra",
                   },
                   e.createElement(
@@ -2445,7 +2447,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900",
                   },
                   e.createElement(
                     "div",
@@ -2517,7 +2519,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900",
                   },
                   e.createElement(
                     "div",
@@ -2583,7 +2585,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-2 dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 page-fade-in page-fade-in-delay-2",
                   },
                   e.createElement(
                     "div",
@@ -2682,7 +2684,7 @@ const ProfilePage = () => {
                 {
                   key: r.key,
                   className:
-                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-900",
+                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900",
                 },
                         e.createElement(
                           "div",
@@ -2724,7 +2726,7 @@ const ProfilePage = () => {
                 "div",
                 {
                   className:
-                    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
+                    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900",
                 },
                 e.createElement(
                   "div",
@@ -2771,7 +2773,7 @@ const ProfilePage = () => {
                   e.createElement(
                     "div",
                     { className: "flex items-center gap-2 bg-slate-50 dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto" },
-                    e.createElement("span", { className: "text-xs font-mono text-slate-500" }, tr("your_code", "Your Code: ")),
+                    e.createElement("span", { className: "text-xs font-mono text-slate-500 dark:text-slate-300" }, tr("your_code", "Your Code: ")),
                     e.createElement("span", { className: "text-sm font-bold font-mono text-slate-800 dark:text-slate-100" }, y?.referral_code || y?.referralCode || m?.referral_code || m?.referralCode || tr("not_available", "N/A")),
                   ),
                   e.createElement(
@@ -2804,13 +2806,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "personal",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-slate-700/80 shadow-xl rounded-2xl",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-3",
               },
               e.createElement(
                 "div",
@@ -3310,13 +3312,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "preferences",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-slate-700/80 shadow-xl rounded-2xl",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-3",
               },
               e.createElement(
                 "div",
@@ -3599,7 +3601,7 @@ const ProfilePage = () => {
                                         "label",
                                         {
                                           key: r.subcategory_id || r.name,
-                                          className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border ${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
+                                          className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border-slate-700/60 ${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
                                         },
                                         e.createElement("input", {
                                           type: "checkbox",
@@ -4024,13 +4026,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "settings",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-slate-700/80 shadow-xl rounded-2xl",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-3",
               },
               e.createElement(
                 "div",

@@ -12,6 +12,7 @@ import com.mhub.app.core.ConnectivityObserver
 import com.mhub.app.core.LocaleManager
 import com.mhub.app.ui.MhubApp
 import dagger.hilt.android.AndroidEntryPoint
+import org.json.JSONObject
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -22,8 +23,13 @@ class MainActivity : AppCompatActivity() {
 
     private val deepLinkUri = mutableStateOf<String?>(null)
 
+    /**
+     * Callback set by TierSelectionScreen to handle Razorpay payment results.
+     * Razorpay SDK finds these methods via reflection on the Activity.
+     */
+    var onRazorpayCallback: ((razorpayPaymentId: String, response: JSONObject) -> Unit)? = null
+
     override fun attachBaseContext(newBase: Context) {
-        // Apply locale to activity context for proper resource resolution
         val localeCtx = if (::localeManager.isInitialized) {
             localeManager.applyToContext(newBase)
         } else {
@@ -37,7 +43,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Handle initial deep link
         handleDeepLink(intent)
 
         var keepSplash = true
@@ -62,5 +67,16 @@ class MainActivity : AppCompatActivity() {
     private fun handleDeepLink(intent: Intent?) {
         val uri = intent?.data?.toString()
         if (uri != null) deepLinkUri.value = uri
+    }
+
+    // ── Razorpay callbacks: SDK finds these via reflection ────────────────
+    fun onPaymentSuccess(razorpayPaymentId: String, response: JSONObject) {
+        onRazorpayCallback?.invoke(razorpayPaymentId, response)
+        onRazorpayCallback = null
+    }
+
+    fun onPaymentError(code: Int, response: String) {
+        android.util.Log.w("Razorpay", "Payment error: code=$code msg=$response")
+        onRazorpayCallback = null
     }
 }

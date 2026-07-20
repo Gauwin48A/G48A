@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
@@ -251,6 +252,7 @@ data class ExploreState(
     val planExpiringSoon: Boolean = false,   // true = expiring within 7 days
     val planExpired: Boolean = false,        // true = already expired
     val planExpiryDate: String? = null,
+    val restricted: Boolean = false,
 )
 
 @HiltViewModel
@@ -422,9 +424,11 @@ class ExploreViewModel @Inject constructor(
                 } else MOCK_EXPLORE_POSTS
                 if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
                 if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
-                list.ifEmpty { MOCK_EXPLORE_POSTS }
+                if (s.filterMinPrice > 0f) list = list.filter { (it.price ?: 0.0) >= s.filterMinPrice.toDouble() }
+                if (s.filterMaxPrice < 500000f) list = list.filter { (it.price ?: 0.0) <= s.filterMaxPrice.toDouble() }
+                list
             } else emptyList()
-            val finalPosts = applyQuickFilter(applySort(if (mockFallback.isNotEmpty()) mockFallback else s.posts))
+            val finalPosts = applyQuickFilter(applySort(mockFallback))
             _state.value = s.copy(
                 loadingPosts = false, loadingMore = false,
                 posts = finalPosts,
@@ -437,82 +441,110 @@ class ExploreViewModel @Inject constructor(
             val condition = _state.value.filterCondition.takeIf { it != "any" }
             val subcategory = _state.value.filterSubcategory
             if (_state.value.forYouMode && reset) {
+                // Bypass recommendations API (server endpoint may not exist) and go straight
+                // to the regular feed so For You always shows content even without preferences.
                 val s = _state.value
-                val minPrice = s.filterMinPrice.takeIf { it > 0f }?.toDouble()
-                val maxPrice = s.filterMaxPrice.takeIf { it < 500000f }?.toDouble()
-                val recommended = when (val result = recommendationsRepo.forYou(
-                    search = s.searchQuery.takeIf { it.isNotBlank() },
-                    categoryId = categoryKey,
-                    minPrice = minPrice,
-                    maxPrice = maxPrice,
-                )) {
-                    is ApiResult.Success -> filterForEcosystem(result.data, categoryKey)
-                    is ApiResult.Failure -> emptyList()
-                }
-                val fallback = if (recommended.isEmpty()) {
-                    when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
-                        is ApiResult.Success -> filterForEcosystem(result.data, categoryKey)
-                        is ApiResult.Failure -> {
+                when (val result = postsRepo.feedResponse(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
+                    is ApiResult.Success -> {
+                        val newPosts = filterForEcosystem(result.data.allItems, categoryKey)
+                        val filteredNewPosts = newPosts.let { p ->
+                            var filtered = p
+                            if (!subcategory.isNullOrBlank()) filtered = filtered.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
+                            if (condition != null) filtered = filtered.filter { it.condition?.lowercase() == condition }
+                            filtered
+                        }
+                        val mockFallback = if (reset && filteredNewPosts.isEmpty()) {
                             var list = if (categoryKey != null) MOCK_EXPLORE_POSTS.filter {
                                 it.category.equals(categoryKey, ignoreCase = true)
                             } else MOCK_EXPLORE_POSTS
                             if (!subcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
                             if (condition != null) list = list.filter { it.condition?.lowercase() == condition }
-                            list.ifEmpty { MOCK_EXPLORE_POSTS.shuffled() }
-                        }
+                            list
+                        } else emptyList()
+                        val finalPosts = applyQuickFilter(applySort(if (mockFallback.isNotEmpty()) mockFallback else filteredNewPosts))
+                        _state.value = s.copy(
+                            loadingPosts = false, loadingMore = false,
+                            posts = finalPosts,
+                            page = 2,
+                            hasMore = false,
+                            errorMessage = null,
+                            restricted = result.data.isRestricted,
+                        )
                     }
-                } else {
-                    recommended
+                    is ApiResult.Failure -> {
+                        val mockFallback = if (reset) {
+                            var list = if (categoryKey != null) MOCK_EXPLORE_POSTS.filter { it.category.equals(categoryKey, ignoreCase = true) } else MOCK_EXPLORE_POSTS
+                            if (!subcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
+                            if (condition != null) list = list.filter { it.condition?.lowercase() == condition }
+                            list
+                        } else emptyList()
+                        val finalPosts = applyQuickFilter(applySort(mockFallback))
+                        _state.value = s.copy(
+                            loadingPosts = false, loadingMore = false,
+                            posts = finalPosts,
+                            page = 2,
+                            hasMore = false,
+                            errorMessage = null,
+                            restricted = true,
+                        )
+                    }
                 }
-                _state.value = _state.value.copy(
-                    loadingPosts = false,
-                    loadingMore = false,
-                    posts = applyQuickFilter(applySort(fallback)),
-                    page = 2,
-                    hasMore = false,
-                    errorMessage = null,
-                )
                 return@launch
             }
-            when (val result = postsRepo.feed(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
+            when (val result = postsRepo.feedResponse(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
-                    val newPosts = filterForEcosystem(result.data, categoryKey)
+                    val postsResponse = result.data
+                    val newPosts = filterForEcosystem(postsResponse.allItems, categoryKey)
+                    // Apply client-side subcategory & condition filtering so filters work
+                    // even if the server API ignores these parameters.
+                    val filteredNewPosts = newPosts.let { p ->
+                        var result = p
+                        if (!subcategory.isNullOrBlank()) result = result.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
+                        if (condition != null) result = result.filter { it.condition?.lowercase() == condition }
+                        result
+                    }
                     // BUG-001 fix: if API returns success with 0 posts on reset, fall back to mocks
                     val s = _state.value
-                    val mockFallback = if (reset && newPosts.isEmpty()) {
+                    val mockFallback = if (reset && filteredNewPosts.isEmpty()) {
                         var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter {
                             it.category.equals(s.ecosystemKey, ignoreCase = true)
                         } else MOCK_EXPLORE_POSTS
                         if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
                         if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
-                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+                        if (s.filterMinPrice > 0f) list = list.filter { (it.price ?: 0.0) >= s.filterMinPrice.toDouble() }
+                        if (s.filterMaxPrice < 500000f) list = list.filter { (it.price ?: 0.0) <= s.filterMaxPrice.toDouble() }
+                        list
                     } else emptyList()
                     val finalPosts = applyQuickFilter(applySort(when {
                         mockFallback.isNotEmpty() -> mockFallback
-                        reset -> newPosts
-                        else -> (_state.value.posts + newPosts).take(MAX_CACHED_POSTS)
+                        reset -> filteredNewPosts
+                        else -> (_state.value.posts + filteredNewPosts).take(MAX_CACHED_POSTS)
                     }))
                     _state.value = _state.value.copy(
                         loadingPosts = false, loadingMore = false,
                         posts = finalPosts,
                         page = currentPage + 1,
                         hasMore = newPosts.size >= 20 && mockFallback.isEmpty(),
+                        restricted = postsResponse.isRestricted,
                     )
                 }
                 is ApiResult.Failure -> {
                     // Fall back to mock data so the screen is never empty
                     val s = _state.value
-                    val mockFallback = if (reset && s.posts.isEmpty()) {
-                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter { it.category == s.ecosystemKey } else MOCK_EXPLORE_POSTS
-                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(s.filterSubcategory, ignoreCase = true) }
+                    val mockFallback = if (reset) {
+                        var list = if (s.ecosystemKey != null) MOCK_EXPLORE_POSTS.filter { it.category.equals(s.ecosystemKey, ignoreCase = true) } else MOCK_EXPLORE_POSTS
+                        if (!s.filterSubcategory.isNullOrBlank()) list = list.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
                         if (s.filterCondition != "any") list = list.filter { it.condition?.lowercase() == s.filterCondition }
-                        list.ifEmpty { MOCK_EXPLORE_POSTS }
+                        if (s.filterMinPrice > 0f) list = list.filter { (it.price ?: 0.0) >= s.filterMinPrice.toDouble() }
+                        if (s.filterMaxPrice < 500000f) list = list.filter { (it.price ?: 0.0) <= s.filterMaxPrice.toDouble() }
+                        list
                     } else emptyList()
-                    val finalPosts = applyQuickFilter(applySort(if (mockFallback.isNotEmpty()) mockFallback else s.posts))
+                    val finalPosts = applyQuickFilter(applySort(mockFallback))
                     _state.value = s.copy(
                         loadingPosts = false, loadingMore = false,
                         posts = finalPosts,
                         hasMore = false,
+                        restricted = true, // Set to true on failure so user is alerted
                     )
                 }
             }
@@ -605,13 +637,13 @@ class ExploreViewModel @Inject constructor(
                     val fallback = when (key) {
                         "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
                         "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
-                        "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
-                        "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
+                        "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
+                        "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
                         else -> listOf(
             "Phones", "Laptops", "Cameras", "Audio", "Gaming",
             "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
-            "Cars", "Motorcycles", "Bicycles",
-            "Home & Furniture", "Books", "Sports", "Health & Beauty",
+            "Cars", "Motorcycles", "Scooters", "Bicycles",
+            "Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate",
             "Agriculture", "Real Estate", "Services",
         )
                     }
@@ -817,6 +849,7 @@ private fun subcategoryEmoji(name: String): String {
         "Home & Furniture" -> "🏠"; "Books" -> "📚"; "Sports" -> "⚽"
         "Health & Beauty" -> "💄"; "Toys" -> "🧸"; "Services" -> "💼"
         "Agriculture" -> "🌾"; "Real Estate" -> "🏘️"
+        "Sports & Fitness" -> "⚽"; "Books & Education" -> "📚"; "Scooters" -> "🛵"
         else -> "📦"
     }
 }
@@ -849,6 +882,7 @@ fun ExploreScreen(
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenHome: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
     onOpenForYou: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
     onOpenCart: () -> Unit = {},
@@ -870,15 +904,16 @@ fun ExploreScreen(
     var showInterestModal by remember { mutableStateOf(false) }
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
+    var showRestrictionDialog by remember { mutableStateOf(false) }
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
         state.subcategories.isNotEmpty() -> state.subcategories
         ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
         ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
-        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Bicycles", "Trucks", "Spare Parts", "Accessories")
-        ecosystemKey == "others" -> listOf("Home & Furniture", "Books", "Sports", "Health & Beauty", "Toys", "Services")
-        else -> listOf("Phones", "Laptops", "Cameras", "Audio", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Bicycles", "Home & Furniture", "Books", "Sports", "Health & Beauty", "Agriculture", "Real Estate", "Services")
+        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
+        ecosystemKey == "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
+        else -> listOf("Phones", "Laptops", "Cameras", "Audio", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Books & Education", "Sports & Fitness", "Health & Beauty", "Agriculture", "Real Estate", "Services")
     }
 
     // Draft filter state for the bottom sheet
@@ -898,7 +933,7 @@ fun ExploreScreen(
                 onRecentlyViewed = onOpenRecentlyViewed,
                 onToggleTheme = onToggleTheme,
                 onNotifications = onOpenNotifications,
-                onProfile = onOpenHome,
+                onProfile = onOpenProfile,
                 onCart = onOpenCart,
                 onFilter = { showFilterSheet = true },
                 activeFilterCount = if (state.hasActiveFilters) 1 else 0,
@@ -1019,6 +1054,44 @@ fun ExploreScreen(
                                     color = Color(0xFF8B5CF6),
                                 )
                             }
+                    }
+                }
+            }
+            }
+
+            // ── App Limited Banner ──
+            if (state.restricted) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "App Access Limited",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = "Purchase a plan and complete KYC verification to unlock full access.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                            )
                         }
                     }
                 }
@@ -1035,8 +1108,12 @@ fun ExploreScreen(
                     wishlisted = wishlistedSet,
                     ecosystemSubcategories = ecosystemSubcategories,
                     onOpenPost = { id ->
-                        viewModel.recordViewed(id)
-                        onOpenPost(id)
+                        if (state.restricted) {
+                            showRestrictionDialog = true
+                        } else {
+                            viewModel.recordViewed(id)
+                            onOpenPost(id)
+                        }
                     },
                     onToggleWishlist = viewModel::toggleWishlist,
                     onSetSort = viewModel::setSortBy,
@@ -1375,6 +1452,33 @@ fun ExploreScreen(
             postTitle = interestPostTitle,
             onDismiss = { showInterestModal = false },
             onSubmit = { _, _, _ -> showInterestModal = false },
+        )
+    }
+
+    if (showRestrictionDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestrictionDialog = false },
+            title = {
+                Text(
+                    text = "Subscription & KYC Required",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "App access is currently limited. To view details, go to the 'More' tab (or bottom navigation), choose 'Plans & Subscriptions' to buy a plan, and then verify your Aadhaar/PAN KYC. Click OK to dismiss.",
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showRestrictionDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("OK", color = Color.White)
+                }
+            }
         )
     }
 }

@@ -48,6 +48,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.ui.components.ListShimmer
 import com.mhub.app.ui.explore.SharedExploreStore
+import com.mhub.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -1315,9 +1316,9 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
         "delivery" to "🚚 Delivery",
         "other" to "❓ Other",
     )
-    val complaintsDark = isSystemInDarkTheme()
+    val complaintsDark = ColorTokens.isDark
     Box(Modifier.fillMaxSize().background(
-        if (complaintsDark) Brush.verticalGradient(listOf(Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)))
+        if (complaintsDark) Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E3A5F)))
         else Brush.verticalGradient(listOf(Color(0xFFFFF7F7), Color(0xFFFFF3E0), Color(0xFFFFF8E1)))
     )) {
         Column(Modifier.fillMaxSize()) {
@@ -1334,7 +1335,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(when (density) { "compact" -> 8.dp; "spacious" -> 20.dp; else -> 14.dp })) {
                 // Hero section (web parity)
-                Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Surface(shape = RoundedCornerShape(16.dp), color = if (complaintsDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (complaintsDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.error, Color(0xFFF97316)))), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.ReportProblem, null, tint = Color.White, modifier = Modifier.size(28.dp))
@@ -1355,12 +1356,12 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                 }
 
                 if (state.success) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (complaintsDark) Color(0xFF064E3B) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
-                                Text("Complaint submitted successfully. We'll review it within 24-48 hours.", fontSize = 14.sp, color = Color(0xFF166534))
+                                Text("Complaint submitted successfully. We'll review it within 24-48 hours.", fontSize = 14.sp, color = if (complaintsDark) Color(0xFF86EFAC) else Color(0xFF166534))
                             }
                             state.recentRefId?.let { refId ->
                                 Spacer(Modifier.height(8.dp))
@@ -1376,7 +1377,7 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                     }
                 } else {
                     // Premium card with gradient header (web parity: bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500)
-                    Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(20.dp), color = if (complaintsDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (complaintsDark) 0.dp else 3.dp, modifier = Modifier.fillMaxWidth()) {
                         Column {
                             // Gradient card header
                             Box(
@@ -1594,8 +1595,8 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
         FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", Color(0xFFFFF7ED), Color(0xFFEA580C)),
         FeedbackType("general", "💬", "General", "Any other feedback or thoughts", Color(0xFFEFF6FF), MaterialTheme.colorScheme.primary),
     )
-    val darkTheme = isSystemInDarkTheme()
-    Box(Modifier.fillMaxSize().background(if (darkTheme) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236))) else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEEF2FF), Color(0xFFF5F3FF))))) {
+    val darkTheme = ColorTokens.isDark
+    Box(Modifier.fillMaxSize().background(if (darkTheme) Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E3A5F))) else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEEF2FF), Color(0xFFF5F3FF))))) {
         Column(Modifier.fillMaxSize()) {
             SocialTopBar("Feedback", onBack)
             // Density toggle (web parity: Feedback.jsx densitySelector)
@@ -1611,13 +1612,13 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(when (density) { "compact" -> 8.dp; "spacious" -> 20.dp; else -> 14.dp })) {
                 // Hero section with toggle (web parity: Show/Hide Highlights)
                 if (showHero) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White, shadowElevation = if (darkTheme) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Filled.RateReview, null, tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("Share Your Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                            Text("Share Your Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (darkTheme) MaterialTheme.colorScheme.onSurface else Color(0xFF1E293B))
                             Spacer(Modifier.height(4.dp))
                             Text("Help us improve MHub for everyone", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(10.dp))
@@ -1637,12 +1638,12 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 }
 
                 if (state.success) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (darkTheme) Color(0xFF064E3B) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
-                                Text(stringResource(R.string.social_feedback_thanks), fontSize = 14.sp, color = Color(0xFF166534))
+                                Text(stringResource(R.string.social_feedback_thanks), fontSize = 14.sp, color = if (darkTheme) Color(0xFF86EFAC) else Color(0xFF166534))
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1656,7 +1657,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                     }
                 } else {
                     // Main card with gradient header (web parity: mhub-premium-surface rounded-3xl + CardHeader bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500)
-                    Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White, shadowElevation = if (darkTheme) 0.dp else 3.dp, modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Box(
                                 modifier = Modifier.fillMaxWidth()

@@ -126,7 +126,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.mhub.app.ui.theme.ColorTokens
 import com.mhub.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -653,9 +653,9 @@ private val profileHeroGradientLight = listOf(
 )
 
 private val profileHeroGradientDark = listOf(
-    Color(0xFF0B1220),
-    Color(0xFF1B2542),
-    Color(0xFF2A1F45),
+    Color(0xFF1A2744),
+    Color(0xFF2D3A6E),
+    Color(0xFF3D2D6B),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -673,12 +673,14 @@ fun ProfileScreen(
     onOpenSaleDone: () -> Unit = {},
     onOpenSaleUndone: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
+    onOpenEditProfile: () -> Unit = {},
+    onOpenCategoryMode: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val prefs by viewModel.prefsLoaded.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     val heroGradient = Brush.horizontalGradient(
         if (darkTheme) profileHeroGradientDark else profileHeroGradientLight,
     )
@@ -738,7 +740,7 @@ fun ProfileScreen(
                         if (state.isSessionExpired) {
                             Surface(
                                 shape = RoundedCornerShape(0.dp),
-                                color = Color(0xFFFEF2F2),
+                                color = if (darkTheme) Color(0xFF2D0A0A) else Color(0xFFFEF2F2),
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Row(
@@ -749,7 +751,7 @@ fun ProfileScreen(
                                     Icon(
                                         Icons.Outlined.Lock,
                                         contentDescription = null,
-                                        tint = Color(0xFFDC2626),
+                                        tint = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626),
                                         modifier = Modifier.size(20.dp),
                                     )
                                     Column(Modifier.weight(1f)) {
@@ -757,12 +759,12 @@ fun ProfileScreen(
                                             stringResource(R.string.session_expired_title),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF991B1B),
+                                            color = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFF991B1B),
                                         )
                                         Text(
                                             stringResource(R.string.session_expired_message),
                                             fontSize = 11.sp,
-                                            color = Color(0xFFB91C1C),
+                                            color = if (darkTheme) Color(0xFFFCA5A5).copy(alpha = 0.85f) else Color(0xFFB91C1C),
                                         )
                                     }
                                     OutlinedButton(
@@ -1189,7 +1191,7 @@ fun ProfileScreen(
                         ScrollableTabRow(
                             selectedTabIndex = selectedTab,
                             edgePadding = 16.dp,
-                            containerColor = MaterialTheme.colorScheme.surface,
+                            containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface,
                             divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)) },
 
                         ) {
@@ -1394,7 +1396,7 @@ fun ProfileScreen(
                         // ─── My Channel / Centre ─────────────────────────────
                         Card(
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         ) {
@@ -1419,7 +1421,7 @@ fun ProfileScreen(
                         // ─── Profile Essentials (compact) ─────────────────────────
                         Card(
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         ) {
@@ -1588,7 +1590,7 @@ fun ProfileScreen(
                             LaunchedEffect(selectedTab) { viewModel.loadPreferences() }
                             val prefsSaving by viewModel.prefsSaving.collectAsState()
                             PreferencesTab(
-                                onOpenCategoryMode = {},
+                                onOpenCategoryMode = onOpenCategoryMode,
                                 initialLocation = prefs?.location ?: "",
                                 initialMinPrice = prefs?.minPrice?.toString() ?: "",
                                 initialMaxPrice = prefs?.maxPrice?.toString() ?: "",
@@ -1855,19 +1857,20 @@ private fun PreferencesTab(
         }
 
         // Category Mode link
+        val catDark = ColorTokens.isDark
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = Color(0xFFEFF6FF),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
+            color = if (catDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+            border = androidx.compose.foundation.BorderStroke(1.dp, if (catDark) Color(0xFF334155) else Color(0xFFBFDBFE)),
             modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCategoryMode),
         ) {
             Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("🏪", fontSize = 22.sp)
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF1D4ED8))
-                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = Color(0xFF3B82F6))
+                    Text(stringResource(R.string.profile_category_mode), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = if (catDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
+                    Text(stringResource(R.string.profile_category_mode_desc), style = MaterialTheme.typography.bodySmall, color = if (catDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.ChevronRight, null, tint = if (catDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
             }
         }
 
@@ -2298,7 +2301,7 @@ private fun profileCompletionHint(user: User?): String {
 
 @Composable
 private fun PulseStatCard(label: String, value: String, accentColor: Color, modifier: Modifier = Modifier) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -2347,7 +2350,7 @@ private fun QuickActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -2408,7 +2411,7 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun ProfileChecklist(user: User?, onEditProfile: () -> Unit, onVerify: () -> Unit) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     val steps = listOf(
         Triple("Display name", !user?.displayName.isNullOrBlank() && user?.displayName != "User", "Add your name"),
         Triple("Phone number", !user?.phone.isNullOrBlank(), "Add phone number"),
@@ -2503,7 +2506,7 @@ private fun ProfileChecklist(user: User?, onEditProfile: () -> Unit, onVerify: (
 
 @Composable
 private fun ReferralCodeBox(code: String) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     val clipboardManager = LocalClipboardManager.current
     val shimmerTransition = rememberInfiniteTransition(label = "refShimmer")
     val shimmerX by shimmerTransition.animateFloat(
@@ -2606,7 +2609,7 @@ private fun ReferralCodeBox(code: String) {
 
 @Composable
 private fun ProfileMenuCard(content: @Composable () -> Unit) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -2633,7 +2636,7 @@ private fun ProfileMenuItem(
     onClick: () -> Unit,
     tint: Color? = null,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     val iconTint = tint ?: if (darkTheme) Color(0xFFBFDBFE) else Color(0xFF1D4ED8)
     Card(
         onClick = onClick,
@@ -2713,7 +2716,7 @@ private fun ProfileMenuItemCompact(
 
 @Composable
 private fun UserIdSection(userId: String) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     val clipboardManager = LocalClipboardManager.current
     if (userId.isBlank()) return
     Card(
@@ -2753,8 +2756,9 @@ private fun UserIdSection(userId: String) {
 
 @Composable
 private fun ProfileFeedbackBanner(message: String, isError: Boolean) {
-    val bg = if (isError) MaterialTheme.colorScheme.errorContainer else Color(0xFFDCFCE7)
-    val fg = if (isError) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF166534)
+    val darkTheme = ColorTokens.isDark
+    val bg = if (isError) MaterialTheme.colorScheme.errorContainer else if (darkTheme) Color(0xFF0F2E20) else Color(0xFFDCFCE7)
+    val fg = if (isError) MaterialTheme.colorScheme.onErrorContainer else if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF166534)
     Surface(shape = RoundedCornerShape(14.dp), color = bg, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -3179,7 +3183,7 @@ private fun ProfileActivityFeed(
     activities: List<com.mhub.app.data.remote.dto.ProfileActivityItem>,
     onViewPost: (String?) -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDark
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(

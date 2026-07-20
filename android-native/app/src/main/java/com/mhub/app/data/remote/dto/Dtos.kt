@@ -23,6 +23,11 @@ data class PushTokenRequest(
     val deviceName: String = "Android",
 )
 
+@Serializable
+data class PreferredLanguageRequest(
+    val language: String,
+)
+
 // -------- Auth --------
 @Serializable
 data class GoogleAuthRequest(val idToken: String)
@@ -507,7 +512,6 @@ data class IdResponse(val success: Boolean = true, val id: String? = null)
 @Serializable
 data class UploadResponse(val url: String? = null, val key: String? = null, val size: Long? = null)
 
-// -------- Posts --------
 @Serializable
 data class PostsResponse(
     val posts: List<Post> = emptyList(),
@@ -515,6 +519,7 @@ data class PostsResponse(
     val items: List<Post> = emptyList(),
     val rows: List<Post> = emptyList(),
     val total: Int? = null,
+    @SerialName("is_restricted") val isRestricted: Boolean = false,
 ) {
     // Mirror web app extractPostList() — handle all response shapes
     val allItems: List<Post> get() = when {

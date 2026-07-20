@@ -184,6 +184,11 @@ class RecentlyViewedViewModel @Inject constructor(
                 is ApiResult.Failure -> {
                     val isAuthError = result.error is ApiError.Unauthorized || result.error is ApiError.Forbidden
                     if (isAuthError) {
+                        if (authRepo.isDemoSession) {
+                            // Demo sessions always get 401 — use local data silently
+                            syncRecentlyViewed(loading = false, error = null)
+                            return@launch
+                        }
                         // Retry once with fresh token
                         authRepo.tryRefreshToken()
                         when (val retry = repo.recentlyViewed()) {

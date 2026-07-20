@@ -407,9 +407,6 @@ export default function Login() {
 
                 {/* Credentials display */}
                 <div className="text-center mb-3">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    No account needed — one click to explore
-                  </p>
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/70 dark:bg-gray-800/60 rounded-lg text-xs font-mono text-gray-600 dark:text-gray-300 border border-purple-200/50 dark:border-purple-700/30">
                     <Phone className="w-3 h-3 text-purple-500" />
                     <span className="font-semibold">{DEMO_ACCOUNT.mobile}</span>

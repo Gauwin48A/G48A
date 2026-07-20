@@ -92,7 +92,7 @@ fun LoginScreen(
     onSignedIn: () -> Unit,
     onSignUp: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
-    onPreviewApp: () -> Unit = {},
+
     onBack: (() -> Unit)? = null,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
@@ -302,7 +302,7 @@ fun LoginScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.auth_mobile_placeholder),
-                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB),
+                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8),
                                     )
                                 },
                                 singleLine = true,
@@ -344,7 +344,7 @@ fun LoginScreen(
                             },
                             placeholder = {
                                 Text(                                        stringResource(R.string.auth_password_placeholder),
-                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB),
+                                        color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8),
                                     )
                             },
                             singleLine = true,
@@ -569,124 +569,6 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
-
-            // ── Preview App section ───────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
-                Text("No account?", color = mutedText, fontSize = 12.sp)
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            androidx.compose.material3.OutlinedButton(
-                onClick = onPreviewApp,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).height(44.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)),
-            ) {
-                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp), tint = mutedText)
-                Spacer(Modifier.width(8.dp))
-                Text("Preview App (no sign-in required)", fontSize = 13.sp, color = mutedText)
-            }
-        }
-
-        // ── OTP 2FA Challenge Overlay ──
-        if (state.requireOtp) {
-            var otpCode by rememberSaveable { mutableStateOf("") }
-            val context = LocalContext.current
-            // SMS Retriever — auto-fill OTP from incoming SMS (web-parity: Auth/Login.jsx webOTP)
-            DisposableEffect(Unit) {
-                val intentFilter = android.content.IntentFilter("com.google.android.gms.auth.api.phone.SMS_RETRIEVED")
-                val receiver = object : android.content.BroadcastReceiver() {
-                    override fun onReceive(ctx: android.content.Context?, intent: android.content.Intent?) {
-                        if (intent?.action == "com.google.android.gms.auth.api.phone.SMS_RETRIEVED") {
-                            val extras = intent.extras ?: return
-                            val status = extras.get("com.google.android.gms.common.api.Status")
-                            val message = extras.getString("com.google.android.gms.auth.api.phone.EXTRA_SMS_MESSAGE") ?: return
-                            // Extract 6-digit OTP from the message
-                            val matched = Regex("\\b(\\d{6})\\b").find(message)?.groupValues?.get(1)
-                            if (matched != null) otpCode = matched
-                        }
-                    }
-                }
-                try {
-                    context.registerReceiver(receiver, intentFilter)
-                } catch (_: Exception) { /* non-fatal: SMS retriever not available */ }
-                onDispose {
-                    try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
-                }
-            }
-            Box(
-                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = if (darkTheme) Color(0xFF1E293B) else Color.White,
-                    shadowElevation = 16.dp,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                ) {
-                    Column(
-                        Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(Icons.Default.Shield, null, tint = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(48.dp))
-                        Spacer(Modifier.height(12.dp))
-                        Text("Verification Required", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = if (darkTheme) Color(0xFFF1F5F9) else Color(0xFF111827))
-                        Spacer(Modifier.height(4.dp))
-                        Text("Enter the 6-digit code sent to your device", fontSize = 13.sp, color = mutedText, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = otpCode,
-                            onValueChange = { otpCode = it.filter(Char::isDigit).take(6) },
-                            placeholder = { Text("Enter 6-digit OTP", color = if (darkTheme) Color(0xFF64748B) else Color(0xFFD1D5DB)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
-                                unfocusedBorderColor = borderColor,
-                                focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
-                                unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
-                            ),
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        // Countdown timer
-                        if (state.otpCountdown > 0) {
-                            Text("Resend in ${state.otpCountdown}s", fontSize = 12.sp, color = mutedText)
-                        } else {
-                            TextButton(onClick = { viewModel.sendOtp() }) {
-                                Text("Resend OTP", color = linkColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                viewModel.verifyLoginOtp(state.otpPhone, otpCode)
-                            },
-                            enabled = otpCode.length == 6 && !state.loading,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = if (darkTheme) Color(0xFF2563EB) else Color(0xFF2563EB)),
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) {
-                            if (state.loading) {
-                                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-                            } else {
-                                Text("Verify", color = Color.White, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.cancelOtp() }) {
-                            Text("Cancel", color = mutedText, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
         }
     }
 }

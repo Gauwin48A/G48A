@@ -789,6 +789,8 @@ router.put(
     status,
     category_id: rawCategoryId,
     subcategory_id: rawSubcategoryId,
+    brand,
+    model,
   } = req.body;
 
   if (!userId) {
@@ -895,6 +897,8 @@ router.put(
         category_id = COALESCE($6, category_id),
         subcategory_id = COALESCE($7, subcategory_id),
         images = COALESCE($9, images),
+        brand = COALESCE($10, brand),
+        model = COALESCE($11, model),
         updated_at = NOW()
       WHERE post_id = $8
       RETURNING
@@ -910,6 +914,8 @@ router.put(
         status,
         images,
         location,
+        brand,
+        model,
         created_at,
         updated_at`,
       [
@@ -922,6 +928,8 @@ router.put(
         normalizedSubcategoryId,
         postId,
         mergedImages,
+        brand || null,
+        model || null,
       ]
     );
 

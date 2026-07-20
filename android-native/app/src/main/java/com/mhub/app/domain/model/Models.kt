@@ -21,6 +21,7 @@ data class User(
     @SerialName("current_plan") val currentPlan: String? = null,
     @SerialName("reward_badge") val rewardBadge: String? = null,
     @SerialName("rewards_rank") val rewardsRank: String? = null,
+    @SerialName("preferred_language") val preferredLanguage: String? = null,
     @SerialName("cover_image") val coverImage: String? = null,
     @SerialName("follower_count") val followerCount: Int? = null,
     @SerialName("following_count") val followingCount: Int? = null,

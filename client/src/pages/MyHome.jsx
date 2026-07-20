@@ -51,6 +51,7 @@ import { useAuth as mt } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { hasAuthSession as ct, getUserId as ut } from "@/utils/authStorage";
+import { navigateBack as _navigateBack } from "@/utils/navigation";
 import {
   buildSavedPostsMap,
   fetchWishlistIds,
@@ -903,7 +904,7 @@ const MyHomePage = () => {
                   e.createElement(
                     "button",
                     {
-                      onClick: () => b("/all-posts"),
+                      onClick: () => _navigateBack(b, "/all-posts"),
                       className:
                         "mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all dark:bg-slate-900/20 dark:hover:bg-slate-900/30",
                     },

@@ -115,6 +115,14 @@ async function ensureSubscriptionSchema() {
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS post_credits INTEGER DEFAULT 0",
     );
 
+    // Payments table schema expansions
+    await safeRun("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_plan_purchased_check");
+    await safeRun("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_method_check");
+    await safeRun("ALTER TABLE payments ADD COLUMN IF NOT EXISTS raw_payload JSONB");
+    await safeRun("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_order_id TEXT");
+    await safeRun("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT");
+    await safeRun("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_signature TEXT");
+
     await safeRun(
       "CREATE INDEX IF NOT EXISTS idx_user_sub_active ON user_subscriptions(user_id, is_active)",
     );

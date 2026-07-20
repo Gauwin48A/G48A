@@ -20,6 +20,24 @@ const {
 } = require("../utils/categoryGroupSql");
 
 const logger = require("../utils/logger");
+
+const checkUserAccessFull = async (userId) => {
+  if (!userId) return false;
+  try {
+    const res = await runQuery(
+      `SELECT kyc_verified, COALESCE(subscription_expiry > NOW(), false) as plan_active 
+       FROM users WHERE user_id::text = $1`,
+      [String(userId)]
+    );
+    if (res.rows.length === 0) return false;
+    const user = res.rows[0];
+    return user.kyc_verified && user.plan_active;
+  } catch (err) {
+    logger.error("[AccessCheck] Error checking user access:", err);
+    return false;
+  }
+};
+
 const logError = (msg, err) => {
   if (err) {
     logger.error(msg, typeof err === "string" ? { message: err } : err);
@@ -1026,7 +1044,17 @@ exports.getAllPosts = async (req, res) => {
       filters,
     } = normalizePostListQuery(req.query);
 
-    const offset = (pageNumber - 1) * limitNumber;
+    const userId = getAuthUserId(req);
+    const hasFullAccess = await checkUserAccessFull(userId);
+    const restrictedMode = !hasFullAccess;
+
+    let finalLimit = limitNumber;
+    let finalOffset = offset;
+    if (restrictedMode) {
+      finalLimit = 5;
+      finalOffset = 0;
+    }
+
     const { clause: whereClause, params: whereParams, categoryResolution } =
       buildPostWhereClause(filters);
 
@@ -1036,7 +1064,7 @@ exports.getAllPosts = async (req, res) => {
         filters,
         categoryResolution,
         page: pageNumber,
-        limit: limitNumber,
+        limit: finalLimit,
         sortBy,
         sortOrder,
         shuffleSeed,
@@ -1060,7 +1088,7 @@ exports.getAllPosts = async (req, res) => {
         sc.name as subcategory_name,
         p.subcategory_id,
         COALESCE(u.isaadhaarverified, false) as aadhaar_verified,
-        false as pan_verified,
+        COALESCE(u.kyc_verified, false) as pan_verified,
         NULL as verification_date
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
@@ -1077,17 +1105,18 @@ exports.getAllPosts = async (req, res) => {
       query += ` ORDER BY p.created_at DESC LIMIT ${SHUFFLE_POOL_LIMIT}`;
       const result = await runQuery(query, params);
       const shuffled = shuffleRowsWithSeed(result.rows, shuffleSeed);
-      const paginatedRows = shuffled.slice(offset, offset + limitNumber);
+      const paginatedRows = shuffled.slice(finalOffset, finalOffset + finalLimit);
       const posts = paginatedRows.map(mapPostForResponse);
       const enrichedPosts = await attachTrustToPosts(posts);
 
       return res.json({
         posts: enrichedPosts,
-        total: result.rows.length,
+        total: restrictedMode ? 5 : result.rows.length,
         page: pageNumber,
-        limit: limitNumber,
+        limit: finalLimit,
         shuffled: true,
         shuffleSeed,
+        is_restricted: restrictedMode,
       });
     }
 
@@ -1103,18 +1132,24 @@ exports.getAllPosts = async (req, res) => {
     const sortClause = `ORDER BY ${rankScore} DESC, ${freshnessOrder}${safeSortBy} ${safeSortOrder}, p.created_at DESC`;
 
     query += ` ${sortClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limitNumber, offset);
+    params.push(finalLimit, finalOffset);
 
     const result = await runQuery(query, params);
     const posts = result.rows.map(({ total_count, ...post }) =>
       mapPostForResponse(post)
     );
     const enrichedPosts = await attachTrustToPosts(posts);
-    const total = result.rows.length
-      ? Number.parseInt(result.rows[0].total_count, 10) || 0
-      : 0;
+    const total = restrictedMode
+      ? 5
+      : (result.rows.length ? Number.parseInt(result.rows[0].total_count, 10) || 0 : 0);
 
-    res.json({ posts: enrichedPosts, total, page: pageNumber, limit: limitNumber });
+    res.json({
+      posts: enrichedPosts,
+      total,
+      page: pageNumber,
+      limit: finalLimit,
+      is_restricted: restrictedMode,
+    });
   } catch (err) {
     logError("Error fetching posts:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -1155,6 +1190,16 @@ exports.createPost = async (req, res) => {
       null;
     const rawSubcategoryId =
       req.body?.subcategory_id ?? req.body?.subcategoryId ?? req.body?.subcategoryID ?? null;
+    const rawBrand =
+      req.body?.brand ??
+      req.body?.brand_name ??
+      req.body?.brandName ??
+      null;
+    const rawModel =
+      req.body?.model ??
+      req.body?.model_name ??
+      req.body?.modelName ??
+      null;
     const images = req.files?.images || [];
     const audioFile = req.files?.audio?.[0] || req.file;
 
@@ -1305,10 +1350,10 @@ exports.createPost = async (req, res) => {
       `INSERT INTO posts (
         user_id, category_id, subcategory_id, title, description, price, location,
         post_type, images, status, created_at, views_count, likes, shares,
-        is_flash_sale, expires_at, tier_priority
+        is_flash_sale, expires_at, tier_priority, brand, model
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-              $9::JSONB, 'active', NOW(), 0, 0, 0, $10, $11, $12)
+              $9::JSONB, 'active', NOW(), 0, 0, 0, $10, $11, $12, $13, $14)
       RETURNING post_id`,
       [
         user_id,
@@ -1323,6 +1368,8 @@ exports.createPost = async (req, res) => {
         is_flash_sale === "true" || is_flash_sale === true,
         expiresAt,
         rules.priority,
+        rawBrand || null,
+        rawModel || null,
       ]
     );
     const post_id = insertResult.rows[0]?.post_id;
@@ -1464,6 +1511,15 @@ exports.getPostById = async (req, res) => {
     // Validate UUID format to avoid Postgres cast errors on invalid IDs
     if (!postId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId)) {
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    const userId = getAuthUserId(req);
+    const hasFullAccess = await checkUserAccessFull(userId);
+    if (!hasFullAccess) {
+      return res.status(403).json({
+        error: "KYC_PLAN_REQUIRED",
+        message: "Complete subscription plan purchase and KYC verification to unlock full access."
+      });
     }
 
     const postRes = await runQuery(

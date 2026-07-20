@@ -102,7 +102,12 @@ class PaymentViewModel @Inject constructor(private val repo: PaymentsRepository)
 fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val steps = listOf("Select Plan", "Pay", "Submit UTR", "Verification", "Active")
-    val plans = listOf("silver" to "Silver ₹149/mo", "gold" to "Gold ₹299/mo", "platinum" to "Platinum ₹999/mo")
+    val plans = listOf(
+        "starter" to "Starter Premium Gateway (₹111/mo)",
+        "silver" to "Silver Plan (₹149/mo)",
+        "gold" to "Gold Plan (₹299/mo)",
+        "platinum" to "Platinum Plan (₹999/mo)"
+    )
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.checkout_payment_title), onBack)
@@ -139,6 +144,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             
                             // Plan comparison
                             val planFeatures = mapOf(
+                                "starter" to listOf("✨ 1 Month Premium Status", "🆔 Aadhaar & PAN KYC Included", "✍️ Limit: 1 Post Per Day", "🛡️ Inclusive of GST & KYC fees"),
                                 "silver" to listOf("Up to 10 posts", "Basic support", "Standard delivery"),
                                 "gold" to listOf("Up to 50 posts", "Priority support", "Featured badge", "Fast delivery"),
                                 "platinum" to listOf("Unlimited posts", "24/7 VIP support", "Homepage placement", "Instant delivery", "Custom branding"),

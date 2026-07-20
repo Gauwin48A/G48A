@@ -43,6 +43,10 @@ class TokenRefreshAuthenticator(
         if (response.request.header("X-Retry-After-Refresh") != null) return null
         // Don't retry refresh endpoint itself
         if (response.request.url.encodedPath.contains("refresh-token")) return null
+        // Demo sessions have fake tokens that always get 401 — never try to refresh.
+        // The server doesn't recognize demo tokens, so the refresh would always fail
+        // and clear the demo session, forcing an unwanted "Session expired" toast.
+        if (tokenStore.isDemoSession) return null
 
         // Check if token was already refreshed by another thread
         val currentToken = tokenStore.accessTokenImmediate()
@@ -81,7 +85,10 @@ class TokenRefreshAuthenticator(
                 // No refresh token available and we have a 401 — the session is unrecoverable.
                 // Clear the stale access token so isAuthenticated emits false and the app
                 // navigates to the login screen instead of silently failing on every API call.
-                tokenStore.clearImmediate()
+                // BUT only for real sessions — demo sessions should never be cleared.
+                if (!tokenStore.isDemoSession) {
+                    tokenStore.clearImmediate()
+                }
                 lastRefreshResult = null
                 return null
             }
@@ -133,7 +140,10 @@ class TokenRefreshAuthenticator(
             } else if (response.code == 401 || response.code == 403) {
                 // Server explicitly rejected the refresh token — clear tokens to force re-login
                 AppLogger.apiError(REFRESH_PATH, "Refresh rejected: HTTP ${response.code}")
-                tokenStore.clearImmediate()
+                // Never clear demo sessions — their tokens are fake and always get rejected
+                if (!tokenStore.isDemoSession) {
+                    tokenStore.clearImmediate()
+                }
                 null
             } else {
                 // Server error (4xx other than 401/403, or 5xx) — transient, don't clear tokens

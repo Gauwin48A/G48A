@@ -193,7 +193,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                     item {
                         val rankColor = when (state.userRank) {
                             "Gold" -> Color(0xFFFBBF24)
-                            "Silver" -> Color(0xFF94A3B8)
+                            "Silver" -> Color(0xFF64748B)
                             "Bronze" -> Color(0xFFF97316)
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
@@ -606,12 +606,12 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(session.displayDevice, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                                    Text("IP: ${session.maskedIp}", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                    Text("IP: ${session.maskedIp}", fontSize = 11.sp, color = Color(0xFF64748B))
                                     if (session.userAgent != null) Text(session.userAgent.take(50), fontSize = 10.sp, color = Color(0xFFBFDBFE), maxLines = 1)
                                 }
                                 OutlinedButton(onClick = { session.sessionId?.let { viewModel.revokeSession(it) } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), modifier = Modifier.height(30.dp)) { Text(stringResource(R.string.account_revoke), fontSize = 11.sp) }
                             }
-                            if (session.lastActivity != null) { Spacer(Modifier.height(4.dp)); Text("Last active: ${session.lastActivity.take(16).replace("T", " ")}", fontSize = 11.sp, color = Color(0xFF94A3B8)) }
+                            if (session.lastActivity != null) { Spacer(Modifier.height(4.dp)); Text("Last active: ${session.lastActivity.take(16).replace("T", " ")}", fontSize = 11.sp, color = Color(0xFF64748B)) }
                             if (session.createdAt != null) Text("Created: ${session.createdAt.take(10)}", fontSize = 10.sp, color = Color(0xFFBFDBFE))
                         }
                     }
@@ -675,7 +675,7 @@ fun AccountDeleteScreen(onBack: () -> Unit, viewModel: DeleteAccountViewModel = 
                 Column {
                     Text(stringResource(R.string.account_delete_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text(stringResource(R.string.account_delete_reason_hint), color = Color(0xFF94A3B8)) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text(stringResource(R.string.account_delete_reason_hint), color = Color(0xFF64748B)) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
                 }
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                 if (!state.confirmed) {
@@ -764,7 +764,7 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
                     Column {
                         Text("Document Number", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(value = state.docNumber, onValueChange = viewModel::setDocNumber, placeholder = { Text("Enter document number", color = Color(0xFF94A3B8)) }, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = state.docNumber, onValueChange = viewModel::setDocNumber, placeholder = { Text("Enter document number", color = Color(0xFF64748B)) }, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
                     }
                     Button(onClick = { viewModel.submit() }, enabled = !state.submitting, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)), modifier = Modifier.fillMaxWidth().height(50.dp)) { Text(if (state.submitting) "Submitting…" else "Submit for Verification", fontWeight = FontWeight.SemiBold) }
                 }

@@ -47,6 +47,9 @@ interface MhubApi {
     @GET("api/auth/me")
     suspend fun me(): User
 
+    @PUT("api/users/preferred-language")
+    suspend fun updatePreferredLanguage(@Body body: PreferredLanguageRequest): MessageResponse
+
     // ---- Auth extended (OTP/2FA/Aadhaar) ----
     @POST("api/auth/send-otp")
     suspend fun sendOtp(@Body body: SendOtpRequest): MessageResponse

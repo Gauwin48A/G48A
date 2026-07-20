@@ -55,6 +55,7 @@ import PromoteDialog from "@/components/PromoteDialog";
 import BuyerInterestModal from "@/components/BuyerInterestModal";
 import AllPostsCategoryBar from "@/components/allposts/CategoryBar";
 import AllPostsQuickFilters from "@/components/allposts/QuickFilters";
+import AllPostsFilterPanel from "@/components/allposts/FilterPanel";
 import AllPostsGreatDealsBanner from "@/components/allposts/GreatDealsBanner";
 import PostPromoBadges from "@/components/PostPromoBadges";
 import {
@@ -66,6 +67,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
+import { getDemoPosts } from "@/utils/demoPosts";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 const ve = 5,
   SHOW_POST_ID_CHIP = !1,
@@ -611,9 +613,21 @@ const ve = 5,
         Garden: "\uD83C\uDF3F",
         "Pet Supplies": "\uD83D\uDC3E",
       },
+      fallbackCategoryIds = {
+        Electronics: "1",
+        Mobiles: "2",
+        Fashion: "3",
+        Furniture: "4",
+        Vehicles: "5",
+        Books: "6",
+        Beauty: "7",
+        Sports: "8",
+        "Home Appliances": "9",
+        Grocery: "10",
+      },
       fallbackCategoryList = Object.keys(Le).map((e) => ({
         name: e,
-        category_id: e,
+        category_id: fallbackCategoryIds[e] || e,
       })),
       categoryList =
         Array.isArray(categoryModeCategories) && categoryModeCategories.length > 0
@@ -972,6 +986,7 @@ const ve = 5,
       [updatedPulse, setUpdatedPulse] = useState(!1),
       [autoRefreshEnabled, setAutoRefreshEnabled] = useState(!1),
       [showBackToTop, setShowBackToTop] = useState(!1),
+      [filterPanelOpen, setFilterPanelOpen] = useState(!1),
       [showAllQuickFilters, setShowAllQuickFilters] = useState(!1),
       [compareItems, setCompareItems] = useState([]),
       [showComparePanel, setShowComparePanel] = useState(!1),
@@ -1507,6 +1522,23 @@ const ve = 5,
         },
         [b, clearSubcategoryMode, hasCategoryMode, clearCategoryMode],
       ),
+      handleApplyFilters = useCallback(
+        (panelFilters) => {
+          b({
+            search: panelFilters.search || "",
+            location: panelFilters.location || "",
+            minPrice: panelFilters.minPrice || "",
+            maxPrice: panelFilters.maxPrice || "",
+            startDate: panelFilters.startDate || "",
+            endDate: panelFilters.endDate || "",
+            condition: panelFilters.condition || "",
+            verifiedOnly: !!panelFilters.verifiedOnly,
+            sortBy: panelFilters.sortBy || "",
+            postType: panelFilters.postType || "",
+          });
+        },
+        [b],
+      ),
       effectiveCategoryLabel = hasCategoryMode && categoryModeCategory?.name
         ? categoryModeCategory.name
         : t.category,
@@ -1828,11 +1860,20 @@ const ve = 5,
                       : t.sortBy === "views_desc"
                         ? (e.append("sortBy", "views"),
                           e.append("sortOrder", "desc"))
-                      : latestWindow
-                        ? (e.append("sortBy", "created_at"),
+                      : t.sortBy === "likes_desc"
+                        ? (e.append("sortBy", "popularity"),
                           e.append("sortOrder", "desc"))
-                        : (e.append("sortBy", t.sortBy),
-                          e.append("sortOrder", "desc"))),
+                        : t.sortBy === "featured"
+                          ? (e.append("sortBy", "featured"),
+                            e.append("sortOrder", "desc"))
+                          : t.sortBy === "premium"
+                            ? (e.append("sortBy", "premium"),
+                              e.append("sortOrder", "desc"))
+                            : latestWindow
+                              ? (e.append("sortBy", "created_at"),
+                                e.append("sortOrder", "desc"))
+                              : (e.append("sortBy", t.sortBy),
+                                e.append("sortOrder", "desc"))),
           e.append("page", L),
           e.append("limit", requestLimit),
           e
@@ -1902,6 +1943,22 @@ const ve = 5,
             const sortByParam = n.get("sortBy");
             if (sortByParam !== "shuffle" && !n.has("refresh")) {
               n.append("refresh", String(Date.now()));
+            }
+            // Demo mode guard: if user is in demo mode, skip the API call entirely
+            // and inject mock posts directly so sorting/filtering always works.
+            if (typeof window !== 'undefined') {
+              try {
+                if (window.localStorage.getItem('authSession') === 'true') {
+                  const demo = getDemoPosts();
+                  if (demo && demo.length > 0) {
+                    if (typeof console !== 'undefined') console.log('[AllPosts] Demo mode: injecting mock posts (bypassing API)');
+                    O(demo);
+                    z(null);
+                    if (L === 1) ee(!1);
+                    return;
+                  }
+                }
+              } catch (_) {}
             }
             const endpoint = isForYouMode ? "/posts/for-you" : "/posts";
             const i = await A.get(`${endpoint}?${n.toString()}`, {
@@ -2015,6 +2072,19 @@ const ve = 5,
             }
           } catch (n) {
             if (n?.name === "AbortError") {
+              if (typeof window !== 'undefined') {
+                try {
+                  if (window.localStorage.getItem('authSession') === 'true') {
+                    const demo = getDemoPosts();
+                    if (demo && demo.length > 0) {
+                      O(demo);
+                      z(null);
+                      if (L === 1) ee(!1);
+                      return;
+                    }
+                  }
+                } catch (_) {}
+              }
               if (didTimeout && e === P.current) {
                 const timeoutMessage = tr("home_load_error", "Unable to load posts right now.");
                 z(timeoutMessage);
@@ -2035,6 +2105,24 @@ const ve = 5,
               normalized.includes("too many")
             ) {
               loadMoreCooldownRef.current = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+            }
+            // Demo mode fallback: on ANY error, if the user is in demo mode (authSession in localStorage),
+            // inject mock posts so sorting/filtering can still be tested.
+            // This handles 401, 403, 500, network errors, etc. — any case where the backend is unavailable.
+            // filtering/sorting is handled client-side by filteredPosts useMemo with fresh filter state.
+            if (typeof window !== 'undefined') {
+              try {
+                const session = window.localStorage.getItem('authSession');
+                if (session === 'true') {
+                  const demo = getDemoPosts();
+                  if (demo && demo.length > 0) {
+                    O(demo);
+                    z(null);
+                    if (L === 1) ee(!1);
+                    return;
+                  }
+                }
+              } catch (_) {}
             }
             z(message);
             if (L === 1) {
@@ -2262,7 +2350,19 @@ const ve = 5,
               return !1;
             }
           } else if (activeSubcategoryId) {
-            return !1;
+            // Filter is by numeric ID but post has no matching ID and name lookup failed.
+            // Try reverse name-to-ID lookup: resolve the post's raw subcategory name.
+            const rawPostSubcategoryName =
+              a?.subcategory_name ?? a?.subcategoryName ?? a?.subcategory ?? "";
+            const normalizedPostName = normalizeName(rawPostSubcategoryName);
+            if (normalizedPostName) {
+              const resolvedFilterId = subcategoryIdByName[normalizedPostName];
+              if (!resolvedFilterId || String(resolvedFilterId) !== String(activeSubcategoryId)) {
+                return !1;
+              }
+            } else {
+              return !1;
+            }
           }
         }
         if (hasLocationFilter) {
@@ -2356,6 +2456,32 @@ const ve = 5,
           const p = a.stats?.views ?? a.views ?? a.view_count ?? a.viewCount ?? 0;
           const F = i.stats?.views ?? i.views ?? i.view_count ?? i.viewCount ?? 0;
           return F - p;
+        });
+        return n;
+      }
+      if (sortKey === "likes_desc") {
+        n.sort((a, i) => {
+          const p = a.stats?.likes ?? a.likes ?? a.like_count ?? a.likeCount ?? 0;
+          const F = i.stats?.likes ?? i.likes ?? i.like_count ?? i.likeCount ?? 0;
+          return F - p;
+        });
+        return n;
+      }
+      if (sortKey === "featured") {
+        n.sort((a, i) => {
+          const aFeatured = !!(a.is_featured || a.isFeatured || a.featured);
+          const iFeatured = !!(i.is_featured || i.isFeatured || i.featured);
+          if (aFeatured !== iFeatured) return aFeatured ? -1 : 1;
+          return (resolvePostDateValue(i) || 0) - (resolvePostDateValue(a) || 0);
+        });
+        return n;
+      }
+      if (sortKey === "premium") {
+        n.sort((a, i) => {
+          const aPremium = !!(a.is_premium || a.isPremium || a.premium);
+          const iPremium = !!(i.is_premium || i.isPremium || i.premium);
+          if (aPremium !== iPremium) return aPremium ? -1 : 1;
+          return (resolvePostDateValue(i) || 0) - (resolvePostDateValue(a) || 0);
         });
         return n;
       }
@@ -2765,7 +2891,7 @@ const ve = 5,
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
         window.matchMedia("(max-width: 767px)").matches,
-      quickFilterMax = isForYouMode ? 2 : isNarrowQuickFilterViewport ? 0 : 4,
+      quickFilterMax = isForYouMode ? 2 : isNarrowQuickFilterViewport ? 2 : 4,
       quickFilterChips = [
         {
           key: "posted-today",
@@ -3065,6 +3191,20 @@ const ve = 5,
                   className:
                     "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-1 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                 },
+                React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: "mhub-allposts-action-btn",
+                    onClick: () => setFilterPanelOpen(!0),
+                    title: s("filter_sort", { defaultValue: "Filter & Sort" }),
+                  },
+                  React.createElement(
+                    "span",
+                    { className: "text-base" },
+                    "\u2699\uFE0F",
+                  ),
+                ),
                 React.createElement(
                   "button",
                   {
@@ -3412,6 +3552,40 @@ const ve = 5,
           ref: secondaryStickyRef,
           style: { top: `${secondaryStickyTop}px` },
         },
+        // ── Inline search input ────────────────
+        React.createElement(
+          "div",
+          { className: "px-3 pt-1.5 pb-0" },
+          React.createElement(
+            "div",
+            { className: "relative flex items-center w-full" },
+            React.createElement(
+              "svg",
+              { className: "absolute left-3 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+              React.createElement("path", { d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
+            ),
+            React.createElement("input", {
+              type: "text",
+              value: t.search || "",
+              onChange: (e) => b({ search: e.target.value }),
+              placeholder: s("search_products", { defaultValue: "Search by title, description or subcategory..." }),
+              className: "w-full h-10 pl-9 pr-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-slate-400 transition-all",
+            }),
+            t.search ? React.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: (e) => { e.stopPropagation(); b({ search: "" }); },
+                className: "absolute right-2 p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 transition-colors",
+              },
+              React.createElement(
+                "svg",
+                { className: "w-4 h-4", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+                React.createElement("path", { d: "M18 6L6 18M6 6l12 12" })
+              )
+            ) : null
+          )
+        ),
         toolbarQuickFiltersNode,
         React.createElement(AllPostsCategoryBar, {
           categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
@@ -4325,6 +4499,14 @@ const ve = 5,
           },
           postId: promotePostId,
           postTitle: promotePostTitle,
+        }),
+        React.createElement(AllPostsFilterPanel, {
+          open: filterPanelOpen,
+          onClose: () => setFilterPanelOpen(!1),
+          filters: t,
+          onApplyFilters: handleApplyFilters,
+          onClearFilters: Y,
+          activeFilterCount: activeFiltersCount,
         }),
         React.createElement(LoginPromptModal, {
           isOpen: loginPromptOpen,

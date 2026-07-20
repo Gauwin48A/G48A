@@ -190,7 +190,7 @@ fun ResetPasswordScreen(
                             Text("New Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                             OutlinedTextField(
                                 value = password, onValueChange = { password = it },
-                                placeholder = { Text("Enter new password", color = Color(0xFFD1D5DB)) },
+                                placeholder = { Text("Enter new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 visualTransformation = if (showPw) VisualTransformation.None else PasswordVisualTransformation(),
                                 trailingIcon = {
@@ -223,7 +223,7 @@ fun ResetPasswordScreen(
                             Text("Confirm Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                             OutlinedTextField(
                                 value = confirmPassword, onValueChange = { confirmPassword = it },
-                                placeholder = { Text("Confirm new password", color = Color(0xFFD1D5DB)) },
+                                placeholder = { Text("Confirm new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(),
                                 trailingIcon = {

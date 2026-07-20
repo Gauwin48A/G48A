@@ -89,6 +89,18 @@ class PostsRepository @Inject constructor(
     private val api: MhubApi,
     private val postDao: PostDao,
 ) {
+    suspend fun feedResponse(
+        page: Int = 1,
+        limit: Int = 20,
+        categoryId: String? = null,
+        query: String? = null,
+        sort: String? = null,
+        condition: String? = null,
+        subcategory: String? = null,
+    ): ApiResult<PostsResponse> = safeApiCall {
+        api.posts(page, limit, categoryId, query, sort, condition, subcategory)
+    }
+
     suspend fun feed(
         page: Int = 1,
         limit: Int = 20,

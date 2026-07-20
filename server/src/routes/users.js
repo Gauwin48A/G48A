@@ -18,6 +18,9 @@ router.get("/profile", protect, userController.getProfile);
 /** @route PUT /profile - Update the current user's profile */
 router.put("/profile", protect, userController.updateProfile);
 
+/** @route PUT /preferred-language - Update user's language preference */
+router.put("/preferred-language", protect, userController.updatePreferredLanguage);
+
 /**
  * Tier management routes
  */

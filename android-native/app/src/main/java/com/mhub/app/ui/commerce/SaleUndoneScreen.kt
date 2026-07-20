@@ -52,6 +52,7 @@ import com.mhub.app.data.remote.dto.*
 import com.mhub.app.data.repository.*
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.common.LinkColor
+import com.mhub.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -131,13 +132,15 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
     val steps = listOf(stringResource(R.string.commerce_step_listed), stringResource(R.string.commerce_step_marked_sold), stringResource(R.string.commerce_step_issue_found), stringResource(R.string.commerce_step_undo_request), stringResource(R.string.commerce_step_reactivated))
     var expanded by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    val isDark = ColorTokens.isDark
+    val bgGradient = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E3A5F))) else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF), Color(0xFFF0F9FF)))
     
     // Confirmation AlertDialog (web parity)
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
             title = { Text("Confirm Undo Sale", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-            text = { Text("Are you sure you want to undo this sale? This will reactivate the listing and notify the buyer.", fontSize = 14.sp, color = Color(0xFF64748B)) },
+            text = { Text("Are you sure you want to undo this sale? This will reactivate the listing and notify the buyer.", fontSize = 14.sp, color = ColorTokens.TextSecondary) },
             confirmButton = {
                 Button(
                     onClick = { showConfirmDialog = false; viewModel.submit() },
@@ -190,50 +193,50 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                 steps.forEachIndexed { i, label ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         Box(Modifier.size(30.dp).clip(CircleShape).background(
-                            when { i < currentStep -> Color(0xFFF59E0B); i == currentStep -> Color(0xFF3B82F6); else -> Color(0xFFE2E8F0) }
+                            when { i < currentStep -> Color(0xFFF59E0B); i == currentStep -> Color(0xFF3B82F6); else -> if (isDark) Color(0xFF475569) else Color(0xFFE2E8F0) }
                         ), contentAlignment = Alignment.Center) {
                             if (i < currentStep) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            else Text("${i + 1}", fontSize = 11.sp, color = if (i <= currentStep) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                            else Text("${i + 1}", fontSize = 11.sp, color = if (i <= currentStep) Color.White else if (isDark) Color(0xFF94A3B8) else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
                         }
                         Spacer(Modifier.height(2.dp))
-                        Text(label, fontSize = 8.sp, color = if (i <= currentStep) Color(0xFF374151) else Color(0xFF94A3B8), maxLines = 1, textAlign = TextAlign.Center)
+                        Text(label, fontSize = 8.sp, color = if (i <= currentStep) ColorTokens.TextHeading else if (isDark) Color(0xFF94A3B8) else Color(0xFF94A3B8), maxLines = 1, textAlign = TextAlign.Center)
                     }
                     if (i < steps.size - 1) {
-                        HorizontalDivider(modifier = Modifier.weight(0.5f).padding(bottom = 14.dp), color = if (i < currentStep) Color(0xFFF59E0B) else Color(0xFFE2E8F0), thickness = 2.dp)
+                        HorizontalDivider(modifier = Modifier.weight(0.5f).padding(bottom = 14.dp), color = if (i < currentStep) Color(0xFFF59E0B) else if (isDark) Color(0xFF475569) else Color(0xFFE2E8F0), thickness = 2.dp)
                     }
                 }
             }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
+                state.error?.let { Text(it, color = ColorTokens.RedText, fontSize = 13.sp) }
                 if (state.success) {
-                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0FDF4), border = BorderStroke(1.dp, Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(20.dp), color = ColorTokens.GreenContainer, border = BorderStroke(1.dp, ColorTokens.GreenText.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Box(Modifier.size(96.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF4ADE80), Color(0xFF22C55E), Color(0xFF16A34A)))), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Filled.Autorenew, null, tint = Color.White, modifier = Modifier.size(52.dp))
                             }
-                            Text("✅ " + stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFF14532D))
-                            Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = Color(0xFF166534), textAlign = TextAlign.Center)
+                            Text("✅ " + stringResource(R.string.commerce_listing_reactivated), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = ColorTokens.GreenText)
+                            Text(stringResource(R.string.commerce_undo_success_msg), fontSize = 14.sp, color = ColorTokens.GreenText, textAlign = TextAlign.Center)
                             // Active | Visible status panel (web parity)
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFDCFCE7), border = BorderStroke(1.dp, Color(0xFF86EFAC)), modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF064E3B) else Color(0xFFDCFCE7), border = BorderStroke(1.dp, ColorTokens.GreenText.copy(alpha = if (isDark) 0.3f else 0.5f)), modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF16A34A), modifier = Modifier.size(28.dp))
-                                        Text("Active", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF166534))
-                                        Text("Post Status", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Icon(Icons.Filled.CheckCircle, null, tint = ColorTokens.GreenText, modifier = Modifier.size(28.dp))
+                                        Text("Active", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.GreenText)
+                                        Text("Post Status", fontSize = 11.sp, color = ColorTokens.TextSecondary)
                                     }
-                                    Box(modifier = Modifier.width(1.dp).height(48.dp).background(Color(0xFF86EFAC)))
+                                    Box(modifier = Modifier.width(1.dp).height(48.dp).background(ColorTokens.GreenText.copy(alpha = 0.3f)))
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Filled.Visibility, null, tint = Color(0xFF16A34A), modifier = Modifier.size(28.dp))
-                                        Text("Visible", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF166534))
-                                        Text("To Buyers", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Icon(Icons.Filled.Visibility, null, tint = ColorTokens.GreenText, modifier = Modifier.size(28.dp))
+                                        Text("Visible", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.GreenText)
+                                        Text("To Buyers", fontSize = 11.sp, color = ColorTokens.TextSecondary)
                                     }
                                 }
                             }
                             state.transactionId?.let { txnId ->
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF)) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFF0F9FF)) {
                                     Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Filled.Tag, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
-                                        Text("Reference: $txnId", fontSize = 12.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
+                                        Icon(Icons.Filled.Tag, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                                        Text("Reference: $txnId", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF2563EB), fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -271,7 +274,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                         "other" to "Other reason",
                     ) }
                     Column {
-                        Text(stringResource(R.string.commerce_field_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                        Text(stringResource(R.string.commerce_field_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ColorTokens.TextBody)
                         Spacer(Modifier.height(4.dp))
                         ExposedDropdownMenuBox(
                             expanded = expanded,
@@ -284,7 +287,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = if (isDark) Color(0xFF93C5FD) else Color(0xFF3B82F6), unfocusedBorderColor = if (isDark) Color(0xFF475569) else Color(0xFFE5E7EB), focusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White),
                                 modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                             )
                             ExposedDropdownMenu(
@@ -293,7 +296,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                             ) {
                                 // Web parity: first option is empty (optional)
                                 DropdownMenuItem(
-                                    text = { Text("Select reason (optional)", color = Color(0xFF9CA3AF)) },
+                                    text = { Text("Select reason (optional)", color = ColorTokens.TextSecondary) },
                                     onClick = { viewModel.setReason(""); expanded = false },
                                 )
                                 viewModel.getReasons().forEach { r ->
@@ -316,7 +319,7 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                         )
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Spacer(Modifier.weight(1f))
-                            Text("${state.description.length}/2000", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                            Text("${state.description.length}/2000", fontSize = 11.sp, color = ColorTokens.TextSecondary)
                         }
                     }
                     Button(onClick = { showConfirmDialog = true }, enabled = !state.loading,
@@ -328,9 +331,9 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                 // History
                 if (state.history.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.commerce_undo_history), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(R.string.commerce_undo_history), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
                     state.history.forEach { rec ->
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                        Surface(shape = RoundedCornerShape(12.dp), color = ColorTokens.CardSurface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 if (rec.postImage != null) {
                                     AsyncImage(model = rec.postImage, contentDescription = null, contentScale = ContentScale.Crop,
@@ -338,10 +341,10 @@ fun SaleUndoneScreen(onBack: () -> Unit, viewModel: SaleUndoneViewModel = hiltVi
                                 }
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(rec.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
-                                    Text(rec.reason ?: "", fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text(rec.postTitle ?: "Listing", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ColorTokens.TextHeading)
+                                    Text(rec.reason ?: "", fontSize = 11.sp, color = ColorTokens.TextSecondary)
                                 }
-                                Text("₹${rec.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFF59E0B))
+                                Text("₹${rec.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ColorTokens.PremiumAmber)
                             }
                         }
                     }

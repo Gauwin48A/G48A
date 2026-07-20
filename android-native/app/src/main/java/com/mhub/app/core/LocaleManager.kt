@@ -12,6 +12,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.inject.Provider
+import com.mhub.app.data.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Centralized locale manager that provides reactive locale state.
@@ -24,6 +29,7 @@ import javax.inject.Singleton
 @Singleton
 class LocaleManager @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val authRepositoryProvider: Provider<AuthRepository>,
 ) {
     private val _currentLocale = MutableStateFlow(getPersistedLocale())
     val currentLocale: StateFlow<Locale> = _currentLocale.asStateFlow()
@@ -55,6 +61,17 @@ class LocaleManager @Inject constructor(
         AppCompatDelegate.setApplicationLocales(
             LocaleListCompat.forLanguageTags(languageCode),
         )
+        // Sync language selection with backend if logged in
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = authRepositoryProvider.get()
+                if (repository.isCurrentlyAuthenticated) {
+                    repository.updatePreferredLanguage(languageCode)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LocaleManager", "Failed to sync language selection: ${e.message}")
+            }
+        }
     }
 
     fun applyToContext(base: Context): Context {

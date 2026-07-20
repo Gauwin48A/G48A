@@ -138,7 +138,7 @@ export function RewardsHero({
 
   return (
     <div className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-500 to-violet-400 opacity-95" />
+      <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-500 to-violet-400 opacity-95 dark:from-slate-800/90 dark:via-slate-800/90 dark:to-slate-900/90" />
       <div
         className="absolute inset-0 opacity-10"
         style={{
@@ -301,7 +301,7 @@ export function RewardsHero({
                   }}
                 />
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 dark:text-slate-300 mt-1">
                 {tr("coin_balance_hint", "Earn coins to unlock rewards")}
               </p>
               {coinDelta?.amount ? (
@@ -497,7 +497,7 @@ export function RewardsImpactDashboard({
                 style={{ width: `${nextRewardProgress}%` }}
               />
             </div>
-            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-300">
               {nextRewardRemaining > 0
                 ? tr("coins_to_unlock", "{{count}} coins to unlock", {
                     count: nextRewardRemaining,
@@ -799,7 +799,7 @@ export function RewardsOverview({
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Sparkles className="w-5 h-5 text-indigo-600" />
+              <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {tr("my_rewards", "My rewards")}
             </CardTitle>
           </CardHeader>
@@ -982,7 +982,7 @@ export function RewardsOverview({
         <Card className="rewards-summary-stats mhub-premium-surface border-0 shadow-xl rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
+              <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {tr("rewards_summary", "Rewards summary")}
             </CardTitle>
           </CardHeader>
@@ -1004,7 +1004,7 @@ export function RewardsOverview({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-400">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-300">
                           {stat.label}
                         </p>
                         <p className="text-xl sm:text-3xl font-black coin-big-number text-slate-900 dark:text-white mt-0.5">
@@ -1026,7 +1026,7 @@ export function RewardsOverview({
                         style={{ width: `${stat.progress}%` }}
                       />
                     </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-400 mt-1.5">
+                    <p className="text-xs text-slate-400 dark:text-slate-300 mt-1.5">
                       {tr("progress_pct", "{{count}}% complete", {
                         count: stat.progress,
                       })}
@@ -1086,7 +1086,7 @@ export function RewardsOverview({
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-indigo-600" />
+                  <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
                   {tr("progress_tracker", "Progress Tracker")}
                 </CardTitle>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
@@ -1346,7 +1346,7 @@ export function RewardsEarn({
       >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-600" />
+            <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
             {tr("earn_more_coins", "Earn More Coins")}
           </CardTitle>
         </CardHeader>
@@ -1409,7 +1409,7 @@ export function RewardsEarn({
         <Card className="mhub-premium-surface border-0 shadow-xl rounded-2xl min-h-[260px] transition-none transform-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-indigo-600" />
+              <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {tr("daily_checkin_reward", "Daily check-in reward")}
             </CardTitle>
           </CardHeader>
@@ -1422,15 +1422,15 @@ export function RewardsEarn({
             </p>
             <div className="min-h-[18px]">
               {engagementLoading ? (
-                <p className="text-xs text-slate-400">{tr("loading", "Loading...")}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-300">{tr("loading", "Loading...")}</p>
               ) : engagementErrorMessage ? (
-                <p className="text-xs text-rose-500">{engagementErrorMessage}</p>
+                <p className="text-xs text-rose-500 dark:text-rose-300">{engagementErrorMessage}</p>
               ) : hasCheckedInToday ? (
-                <p className="text-xs text-emerald-600">
+                <p className="text-xs text-emerald-600 dark:text-emerald-300">
                   {tr("checked_in_today", "Checked in today")}
                 </p>
               ) : dailyCheckInStatus?.nextReward && !hasCheckedInToday ? (
-                <p className="text-xs text-emerald-600">
+                <p className="text-xs text-emerald-600 dark:text-emerald-300">
                   {tr("next_reward", "Next reward")}: +{dailyCheckInStatus.nextReward}{" "}
                   {tr("coins", "coins")}
                 </p>
@@ -1455,14 +1455,13 @@ export function RewardsEarn({
                     }`}
                   >
                     <span
-                      className={`text-xs font-bold uppercase ${
-                        isCompleted
+                      className={`text-xs font-bold uppercase ${                        isCompleted
                           ? "text-emerald-600 dark:text-emerald-400"
                           : isToday
                             ? "text-indigo-600 dark:text-indigo-300"
-                            : "text-slate-400"
+                            : "text-slate-400 dark:text-slate-300"
                       }`}
-                    >
+                      >
                       {tr("day", "D")}
                       {reward.day}
                     </span>
@@ -1474,14 +1473,13 @@ export function RewardsEarn({
                       <Circle className="w-4 h-4 text-slate-300 dark:text-slate-500" />
                     )}
                     <p
-                      className={`text-xs font-black ${
-                        isCompleted
+                      className={`text-xs font-black ${                        isCompleted
                           ? "text-emerald-700 dark:text-emerald-300"
                           : isToday
                             ? "text-indigo-700 dark:text-indigo-300"
-                            : "text-slate-400"
+                            : "text-slate-400 dark:text-slate-300"
                       }`}
-                    >
+                      >
                       +{reward.coins}
                     </p>
                   </div>
@@ -1531,7 +1529,7 @@ export function RewardsEarn({
         <Card className="mhub-premium-surface border-0 shadow-xl rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-600" />
+              <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {tr("killer_features", "Killer features")}
             </CardTitle>
           </CardHeader>
@@ -1836,7 +1834,7 @@ export function RewardsMilestones({
                       </div>
                     ) : (
                       <div className="inline-flex items-center rounded-full bg-slate-200/60 dark:bg-slate-700/40 px-2 py-0.5">
-                        <span className="text-xs text-slate-400 uppercase tracking-wide">
+                        <span className="text-xs text-slate-400 dark:text-slate-300 uppercase tracking-wide">
                           {tr("locked", "Locked")}
                         </span>
                       </div>

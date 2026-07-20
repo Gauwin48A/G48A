@@ -21,7 +21,7 @@ const MAX_DEVICES_PER_USER = parseInt(process.env.MAX_DEVICES_PER_USER || "1", 1
 const MAX_LOGINS_PER_HOUR = parseInt(process.env.MAX_LOGINS_PER_HOUR || "5", 10);
 const MAX_LOGOUTS_PER_HOUR = parseInt(process.env.MAX_LOGOUTS_PER_HOUR || "3", 10);
 const LOGIN_COOLDOWN_AFTER_LOGOUT_SECONDS = parseInt(process.env.LOGIN_COOLDOWN_AFTER_LOGOUT_SECONDS || "60", 10);
-const DEVICE_BINDING_ENABLED = String(process.env.DEVICE_BINDING_ENABLED || "true").toLowerCase() === "true";
+const DEVICE_BINDING_ENABLED = String(process.env.DEVICE_BINDING_ENABLED || "false").toLowerCase() === "true";
 const DEVICE_BINDING_STRICT = String(process.env.DEVICE_BINDING_STRICT || "false").toLowerCase() === "true";
 const MULTI_ACCOUNT_FLAG_THRESHOLD = parseInt(process.env.MULTI_ACCOUNT_FLAG_THRESHOLD || "2", 10);
 const FLAGGED_DEVICE_BLOCK_DAYS = parseInt(process.env.FLAGGED_DEVICE_BLOCK_DAYS || "30", 10);

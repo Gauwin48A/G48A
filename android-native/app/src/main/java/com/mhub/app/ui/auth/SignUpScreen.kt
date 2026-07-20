@@ -112,7 +112,7 @@ fun SignUpScreen(
                                 Text("Aadhaar Number", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 OutlinedTextField(
                                     value = aadhaar, onValueChange = { aadhaar = it.filter(Char::isDigit).take(12) },
-                                    placeholder = { Text("Enter 12-digit Aadhaar", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("Enter 12-digit Aadhaar", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp),
                                     colors = suTfColors(borderColor, darkTheme),
@@ -126,7 +126,7 @@ fun SignUpScreen(
                                     }
                                     OutlinedTextField(
                                         value = mobile, onValueChange = { mobile = it.filter(Char::isDigit).take(10) },
-                                        placeholder = { Text("9876543210", color = Color(0xFFD1D5DB)) },
+                                        placeholder = { Text("9876543210", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                         shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f).height(52.dp),
                                         colors = suTfColors(borderColor, darkTheme),
@@ -159,7 +159,7 @@ fun SignUpScreen(
                                 }
                                 OutlinedTextField(
                                     value = otp, onValueChange = { otp = it.filter(Char::isDigit).take(6) },
-                                    placeholder = { Text("Enter 6-digit OTP", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("Enter 6-digit OTP", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp),
                                     colors = suTfColors(borderColor, darkTheme),
@@ -179,7 +179,7 @@ fun SignUpScreen(
                                 Text("PAN Number (optional)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 OutlinedTextField(
                                     value = pan, onValueChange = { pan = it.uppercase().take(10) },
-                                    placeholder = { Text("ABCDE1234F", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("ABCDE1234F", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )
@@ -219,7 +219,7 @@ fun SignUpScreen(
                                 }
                                 OutlinedTextField(
                                     value = password, onValueChange = { password = it },
-                                    placeholder = { Text("Min 12 characters", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("Min 12 characters", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
                                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -244,7 +244,7 @@ fun SignUpScreen(
                                 Text("Confirm Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 OutlinedTextField(
                                     value = confirmPassword, onValueChange = { confirmPassword = it },
-                                    placeholder = { Text("Re-enter password", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("Re-enter password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
                                     visualTransformation = PasswordVisualTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -253,7 +253,7 @@ fun SignUpScreen(
                                 Text("Referral Code (optional)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                                 OutlinedTextField(
                                     value = referralCode, onValueChange = { referralCode = it.take(20) },
-                                    placeholder = { Text("Enter referral code", color = Color(0xFFD1D5DB)) },
+                                    placeholder = { Text("Enter referral code", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                                     singleLine = true, shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.fillMaxWidth().height(52.dp), colors = suTfColors(borderColor, darkTheme),
                                 )

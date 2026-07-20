@@ -800,3 +800,37 @@ exports.deleteAccount = async (req, res) => {
     client.release();
   }
 };
+
+/**
+ * Update the user's preferred language.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.updatePreferredLanguage = async (req, res) => {
+  try {
+    const userId = getAuthUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { language } = req.body || {};
+    if (!language || typeof language !== "string") {
+      return res.status(400).json({ error: "Language string is required" });
+    }
+
+    const normalizedLang = language.trim().toLowerCase().slice(0, 5);
+
+    await runQuery(
+      `UPDATE users
+       SET preferred_language = $1, updated_at = NOW()
+       WHERE user_id::text = $2`,
+      [normalizedLang, String(userId)]
+    );
+
+    logger.info(`[User] Updated preferred language for user ${userId} to ${normalizedLang}`);
+    return res.json({ success: true, preferred_language: normalizedLang });
+  } catch (err) {
+    logger.error("[User] Update preferred language error:", err);
+    return res.status(500).json({ error: "Failed to update preferred language" });
+  }
+};

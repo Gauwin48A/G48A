@@ -803,44 +803,50 @@
 }
 
 /* ============================================
-   LIGHT MODE TEXT CONTRAST FIXES (CRITICAL)
+   LIGHT MODE TEXT CONTRAST FIXES — WCAG AA compliance
    ============================================ */
 
-html:not(.dark) [class*="text-gray-100"],
-html:not(.dark) [class*="text-gray-200"],
-html:not(.dark) [class*="text-gray-300"],
-html:not(.dark) [class*="text-slate-100"],
-html:not(.dark) [class*="text-slate-200"],
-html:not(.dark) [class*="text-slate-300"],
-html:not(.dark) [class*="text-zinc-100"],
-html:not(.dark) [class*="text-zinc-200"],
-html:not(.dark) [class*="text-zinc-300"],
-html:not(.dark) [class*="text-neutral-100"],
-html:not(.dark) [class*="text-neutral-200"],
-html:not(.dark) [class*="text-neutral-300"],
-html:not(.dark) [class*="text-stone-100"],
-html:not(.dark) [class*="text-stone-200"],
-html:not(.dark) [class*="text-stone-300"] {
+/* Tailwind's light grays are invisible on white (#ffffff) backgrounds:
+   gray-300 (#d1d5db) has 1.9:1 contrast — fails WCAG AA
+   gray-400 (#9ca3af) has 2.8:1 contrast — fails WCAG AA
+   
+   Remap them to darker, readable values while preserving visual hierarchy.
+   gray-500 (#6b7280) = 4.6:1 contrast — WCAG AA passes for normal text
+   
+   IMPORTANT: Exclude hover/focus/group-hover variants so interactive
+   states still work (buttons that change text color on hover, etc.) */
+
+html:not(.dark) [class*="text-gray-100"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]),
+html:not(.dark) [class*="text-gray-200"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]),
+html:not(.dark) [class*="text-gray-300"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]) {
   color: var(--mhub-text-secondary);
 }
 
+html:not(.dark) [class*="text-slate-100"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]),
+html:not(.dark) [class*="text-slate-200"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]),
+html:not(.dark) [class*="text-slate-300"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]) {
+  color: var(--mhub-text-secondary);
+}
+
+html:not(.dark) [class*="text-gray-400"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]) {
+  color: var(--mhub-text-tertiary);
+}
+
+html:not(.dark) [class*="text-slate-400"]:not([class*="hover\\:"]):not([class*="focus\\:"]):not([class*="group-hover\\:"]):not([class*="active\\:"]) {
+  color: var(--mhub-text-tertiary);
+}
+
 /* ============================================
-   DARK MODE TEXT + SURFACE GUARDS (CRITICAL)
+   DARK MODE TEXT + SURFACE GUARDS
    ============================================ */
 
 .dark [class*="text-gray-900"]:not([class*="dark:text-"]),
-.dark [class*="text-slate-900"]:not([class*="dark:text-"]),
-.dark [class*="text-zinc-900"]:not([class*="dark:text-"]),
-.dark [class*="text-neutral-900"]:not([class*="dark:text-"]),
-.dark [class*="text-stone-900"]:not([class*="dark:text-"]) {
+.dark [class*="text-slate-900"]:not([class*="dark:text-"]) {
   color: var(--mhub-text-primary);
 }
 
 .dark [class*="text-gray-800"]:not([class*="dark:text-"]),
-.dark [class*="text-slate-800"]:not([class*="dark:text-"]),
-.dark [class*="text-zinc-800"]:not([class*="dark:text-"]),
-.dark [class*="text-neutral-800"]:not([class*="dark:text-"]),
-.dark [class*="text-stone-800"]:not([class*="dark:text-"]) {
+.dark [class*="text-slate-800"]:not([class*="dark:text-"]) {
   color: var(--mhub-text-secondary);
 }
 
@@ -851,106 +857,63 @@ html:not(.dark) [class*="text-stone-300"] {
 }
 
 /* Handle light surfaces that slip into dark mode */
-.dark [class*="bg-white/"],
-.dark [class*="bg-gray-50/"],
-.dark [class*="bg-slate-50/"],
-.dark [class*="bg-gray-100/"],
-.dark [class*="bg-slate-100/"],
-.dark [class*="bg-gray-200/"],
-.dark [class*="bg-slate-200/"] {
+.dark [class*="bg-white/"] {
   background-color: var(--mhub-bg-card);
 }
 
 /* ============================================
-   CRITICAL DARK MODE TEXT FIXES (WCAG AAA)
-   Issue: Dark text on dark backgrounds unreadable
+   SPACING — Balanced for both modes
+   Moderately reduce excess spacing (24-32px → 16-20px) on mobile,
+   keep standard spacing on desktop for readability.
    ============================================ */
 
-/* Fix ALL gray text variants in dark mode */
-.dark .text-gray-400,
-.dark .text-gray-500,
-.dark .text-gray-600,
-.dark [class*="text-gray-4"],
-.dark [class*="text-gray-5"],
-.dark [class*="text-gray-6"] {
-  color: #cbd5e1; /* slate-300 - high contrast */
-}
+@media (max-width: 768px) {
+  /* Target common gap utilities */
+  .gap-6, .gap-8 {
+    gap: var(--mhub-space-lg); /* 24px → 16px on mobile */
+  }
 
-.dark .text-slate-400,
-.dark .text-slate-500,
-.dark .text-slate-600,
-.dark [class*="text-slate-4"],
-.dark [class*="text-slate-5"],
-.dark [class*="text-slate-6"] {
-  color: #cbd5e1;
-}
+  .gap-4, .gap-5 {
+    gap: var(--mhub-space-sm); /* 16px → 8px on mobile */
+  }
 
-/* Category button text in dark mode */
-.dark button,
-.dark [role="button"] {
-  color: var(--mhub-text-secondary);
-}
+  /* Target margin-bottom utilities */
+  .mb-6, .mb-8 {
+    margin-bottom: var(--mhub-space-lg); /* 24px → 16px on mobile */
+  }
 
-.dark button:hover,
-.dark [role="button"]:hover {
-  color: var(--mhub-text-primary);
-}
+  .mb-4, .mb-5 {
+    margin-bottom: var(--mhub-space-md); /* 16px → 12px on mobile */
+  }
 
-/* Ensure muted text is still readable in dark mode */
-.dark .text-muted-foreground {
-  color: #94a3b8; /* slate-400 minimum */
-}
+  /* Target margin-top utilities */
+  .mt-6, .mt-8 {
+    margin-top: var(--mhub-space-lg); /* 24px → 16px on mobile */
+  }
 
-/* ============================================
-   GLOBAL SPACING REDUCTION
-   Issue: 32-48px gaps everywhere - reduce to 8-16px
-   ============================================ */
+  /* Target padding utilities */
+  .p-6, .p-8 {
+    padding: var(--mhub-space-md); /* 24px → 12px on mobile */
+  }
 
-/* Target common gap utilities */
-.gap-6, .gap-8, [class*="gap-6"], [class*="gap-8"] {
-  gap: var(--mhub-space-md);
-}
+  .py-6, .py-8 {
+    padding-top: var(--mhub-space-md);
+    padding-bottom: var(--mhub-space-md);
+  }
 
-.gap-4, .gap-5, [class*="gap-4"], [class*="gap-5"] {
-  gap: var(--mhub-space-sm);
-}
+  .px-6, .px-8 {
+    padding-left: var(--mhub-space-md);
+    padding-right: var(--mhub-space-md);
+  }
 
-/* Target margin-bottom utilities */
-.mb-6, .mb-8, [class*="mb-6"], [class*="mb-8"] {
-  margin-bottom: var(--mhub-space-lg);
-}
+  /* Space between sections */
+  .space-y-6 > * + *, .space-y-8 > * + * {
+    margin-top: var(--mhub-space-lg);
+  }
 
-.mb-4, .mb-5, [class*="mb-4"], [class*="mb-5"] {
-  margin-bottom: var(--mhub-space-md);
-}
-
-/* Target margin-top utilities */
-.mt-6, .mt-8, [class*="mt-6"], [class*="mt-8"] {
-  margin-top: var(--mhub-space-lg);
-}
-
-/* Target padding utilities */
-.p-6, .p-8, [class*="p-6"], [class*="p-8"] {
-  padding: var(--mhub-space-md);
-}
-
-.py-6, .py-8, [class*="py-6"], [class*="py-8"] {
-  padding-top: var(--mhub-space-md);
-  padding-bottom: var(--mhub-space-md);
-}
-
-.px-6, .px-8, [class*="px-6"], [class*="px-8"] {
-  padding-left: var(--mhub-space-md);
-  padding-right: var(--mhub-space-md);
-}
-
-/* Space between sections */
-.space-y-6 > * + *, .space-y-8 > * + * {
-  margin-top: var(--mhub-space-lg);
-}
-
-.space-y-4 > * + *, .space-y-5 > * + * {
-  margin-top: var(--mhub-space-md);
+  .space-y-4 > * + *, .space-y-5 > * + * {
+    margin-top: var(--mhub-space-md);
+  }
 }
 
 /* ============================================
@@ -1006,9 +969,11 @@ html:not(.dark) [class*="text-stone-300"] {
   box-shadow: var(--mhub-shadow-md);
 }
 
-/* Card grid gap reduction */
-.grid[class*="gap-"] {
-  gap: var(--mhub-space-md);
+/* Card grid gap reduction — mobile only */
+@media (max-width: 768px) {
+  .grid[class*="gap-"] {
+    gap: var(--mhub-space-md);
+  }
 }
 
 /* ============================================
@@ -1021,37 +986,39 @@ body {
 }
 
 /* ============================================
-   ALL POSTS PAGE - CRITICAL FIXES
+   ALL POSTS PAGE - MODERATE SPACING
    ============================================ */
 
-/* Fix post grid spacing - Target the specific grid patterns */
-[class*="grid-cols-1"][class*="sm:grid-cols-2"][class*="lg:grid-cols-3"] {
-  gap: var(--mhub-space-md);
-}
+@media (max-width: 768px) {
+  /* Fix post grid spacing - Target the specific grid patterns */
+  [class*="grid-cols-1"][class*="sm:grid-cols-2"][class*="lg:grid-cols-3"] {
+    gap: var(--mhub-space-md);
+  }
 
-/* Fix card grid gap */
-.grid[class*="gap-4"],
-.grid[class*="gap-5"],
-.grid[class*="gap-6"] {
-  gap: var(--mhub-space-md);
-}
+  /* Fix card grid gap */
+  .grid[class*="gap-4"],
+  .grid[class*="gap-5"],
+  .grid[class*="gap-6"] {
+    gap: var(--mhub-space-md);
+  }
 
-/* Fix section margins - target mb-6, mb-7, mb-8 patterns */
-[class*="mb-6"],
-[class*="mb-7"],
-[class*="mb-8"] {
-  margin-bottom: var(--mhub-space-lg);
-}
+  /* Fix section margins */
+  [class*="mb-6"],
+  [class*="mb-7"],
+  [class*="mb-8"] {
+    margin-bottom: var(--mhub-space-lg);
+  }
 
-[class*="mt-6"],
-[class*="mt-7"],
-[class*="mt-8"] {
-  margin-top: var(--mhub-space-lg);
-}
+  [class*="mt-6"],
+  [class*="mt-7"],
+  [class*="mt-8"] {
+    margin-top: var(--mhub-space-lg);
+  }
 
-/* Fix flex gaps */
-[class*="flex"][class*="gap-6"] {
-  gap: var(--mhub-space-md);
+  /* Fix flex gaps */
+  [class*="flex"][class*="gap-6"] {
+    gap: var(--mhub-space-md);
+  }
 }
 
 /* ============================================
@@ -1115,7 +1082,7 @@ body {
 }
 
 /* ============================================
-   DARK MODE TEXT CONTRAST FIXES (CRITICAL)
+   DARK MODE — Additional text contrast
    ============================================ */
 
 /* Ensure all text in dark mode is readable */
@@ -1123,28 +1090,7 @@ body {
   color: var(--mhub-text-primary);
 }
 
-/* Fix gray text in dark mode */
-.dark [class*="text-gray-400"],
-.dark [class*="text-gray-500"],
-.dark [class*="text-slate-400"],
-.dark [class*="text-slate-500"] {
-  color: var(--mhub-text-tertiary);
-}
-
-.dark [class*="text-gray-600"],
-.dark [class*="text-gray-700"],
-.dark [class*="text-slate-600"],
-.dark [class*="text-slate-700"] {
-  color: var(--mhub-text-secondary);
-}
-
-/* Fix border colors in dark mode */
-.dark [class*="border-gray-"],
-.dark [class*="border-slate-"] {
-  border-color: var(--mhub-border);
-}
-
-/* Category buttons dark mode */
+/* Category buttons dark mode — scoped to rounded-full buttons only */
 .dark button[class*="rounded-full"] {
   color: var(--mhub-text-secondary);
 }
