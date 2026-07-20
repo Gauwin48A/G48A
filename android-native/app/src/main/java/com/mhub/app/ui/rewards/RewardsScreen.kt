@@ -546,24 +546,26 @@ fun RewardsScreen(
                     var redeemPostId by remember { mutableStateOf("") }
                     redeemDialogType?.let { type ->
                         val itemName = when (type) {
-                            "boost" -> "Listing Boost (24h)"
+                            "boost" -> if (isPremium) "Listing Boost (7 Days)" else "Listing Boost (7 Days)"
                             "badge" -> "Elite Seller Badge"
-                            "top_search" -> "Top Placement (7d)"
-                            "gift_5" -> "$5 Gift Card"
-                            "voucher_10" -> "$10 Voucher"
+                            "featured" -> if (isPremium) "Featured Post (14 Days)" else "Featured Post (14 Days)"
+                            "spotlight" -> if (isPremium) "Spotlight / Top Placement (30 Days)" else "Spotlight / Top Placement (30 Days)"
+                            "gift_5" -> "₹5 Gift Card"
+                            "voucher_10" -> "₹10 Voucher"
                             "theme" -> "Custom Theme"
                             "badges" -> "Badge Pack"
                             else -> type
                         }
                         val itemCost = when (type) {
-                            "boost" -> 100
+                            "boost" -> if (isPremium) 50 else 200
+                            "featured" -> if (isPremium) 100 else 300
+                            "spotlight" -> if (isPremium) 200 else 500
                             "badge" -> 1000
-                            "top_search" -> 500
                             "gift_5" -> 250
                             "voucher_10" -> 450
                             "theme" -> 150
                             "badges" -> 80
-                            else -> 100
+                            else -> if (isPremium) 50 else 200
                         }
                         AlertDialog(
                             onDismissRequest = { redeemDialogType = null; redeemPostId = "" },
@@ -571,7 +573,7 @@ fun RewardsScreen(
                             text = {
                                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(stringResource(R.string.rewards_redeem_confirm, itemCost, itemName, user.totalCoins))
-                                    if (type == "boost" || type == "top_search") {
+                                    if (type == "boost" || type == "featured" || type == "spotlight") {
                                         Spacer(Modifier.height(8.dp))
                                         Text("Select Post:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                                         if (state.activePosts.isEmpty()) {
@@ -610,7 +612,7 @@ fun RewardsScreen(
                             },
                             confirmButton = {
                                 val canConfirm = state.actionLoading == null &&
-                                        ((type != "boost" && type != "top_search") || redeemPostId.isNotBlank())
+                                        ((type != "boost" && type != "featured" && type != "spotlight") || redeemPostId.isNotBlank())
                                 TextButton(
                                     onClick = {
                                         viewModel.redeemStore(type, redeemPostId.ifBlank { null })
@@ -723,22 +725,22 @@ fun RewardsScreen(
                                     Spacer(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text(
-                                            if (isPremium) "• Post Boost (50 coins): Top priority placement for 7 days."
-                                            else "• Post Boost (200 coins): Top priority placement for 7 days (50c for Premium).",
+                                            if (isPremium) "🔥 Post Boost (50 coins): Top priority placement for 7 days."
+                                            else "📢 Post Boost (200 coins): Top priority placement for 7 days (50c for Premium).",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            if (isPremium) "• Featured Post (100 coins): Highlighted badge & featured placement for 14 days."
-                                            else "• Featured Post (300 coins): Highlighted placement for 14 days (100c for Premium).",
+                                            if (isPremium) "🔥 Featured Post (100 coins): Highlighted badge & featured placement for 14 days."
+                                            else "📢 Featured Post (300 coins): Highlighted placement for 14 days (100c for Premium).",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            if (isPremium) "• Spotlight / Top Placement (200 coins): Premium top feed placement below deals banner."
-                                            else "• Spotlight / Top Placement (500 coins): Top placement below deals banner (200c for Premium).",
+                                            if (isPremium) "🔥 Spotlight / Top Placement (200 coins): Premium top feed placement for 30 days."
+                                            else "📢 Spotlight / Top Placement (500 coins): Top placement for 30 days (200c for Premium).",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.primary
@@ -1028,16 +1030,16 @@ fun RewardsScreen(
                                     // Premium items
                                     if (redeemFilter == "All" || redeemFilter == "Premium") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🚀", "Boost (24h)", 100, user.totalCoins >= 100, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
-                                            RedeemCard("⭐", "Elite Seller Badge", 1000, user.totalCoins >= 1000, Color(0xFF7C3AED), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
-                                            RedeemCard("🏆", "Top Placement (7d)", 500, user.totalCoins >= 500, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "top_search" }
+                                            RedeemCard("🚀", if (isPremium) "Boost (50c)" else "Boost (200c)", if (isPremium) 50 else 200, user.totalCoins >= if (isPremium) 50 else 200, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("⭐", if (isPremium) "Featured (100c)" else "Featured (300c)", if (isPremium) 100 else 300, user.totalCoins >= if (isPremium) 100 else 300, Color(0xFF7C3AED), darkTheme, Modifier.weight(1f)) { redeemDialogType = "featured" }
+                                            RedeemCard("🏆", if (isPremium) "Spotlight (200c)" else "Spotlight (500c)", if (isPremium) 200 else 500, user.totalCoins >= if (isPremium) 200 else 500, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "spotlight" }
                                         }
                                     }
                                     // Gift Cards
                                     if (redeemFilter == "All" || redeemFilter == "Gift Cards") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🎁", "$5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
-                                            RedeemCard("🎫", "$10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
+                                            RedeemCard("🎁", "₹5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
+                                            RedeemCard("🎫", "₹10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
                                         }
                                     }
                                     // Accessories

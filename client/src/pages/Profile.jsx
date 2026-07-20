@@ -210,47 +210,22 @@ const ProfilePage = () => {
     [activeApp, categoryModeCategories],
   );
   const scopedPreferenceSubcategories = $e(() => {
-    const source = Array.isArray(ge) ? ge : [];
-    return source.filter((item) => {
-      const itemCategoryId =
-        item?.category_id != null ? String(item.category_id) : "";
-      const itemCategoryName = Pt(item?.category_name || "");
-      if (categoryModeCategoryId) {
-        return itemCategoryId === String(categoryModeCategoryId);
-      }
-      if (scopedPreferenceAppMatcher?.activeApp) {
-        if (
-          itemCategoryId &&
-          scopedPreferenceAppMatcher.categoryIds.has(itemCategoryId)
-        ) {
-          return !0;
-        }
-        if (
-          itemCategoryName &&
-          scopedPreferenceAppMatcher.categoryNames.has(itemCategoryName)
-        ) {
-          return !0;
-        }
-        return !1;
-      }
-      return !0;
-    });
-  }, [categoryModeCategoryId, ge, scopedPreferenceAppMatcher]);
+    return Array.isArray(ge) ? ge : [];
+  }, [ge]);
   const scopedPreferenceSelected = $e(() => {
-    const selected = Array.isArray(c.subcategories) ? c.subcategories : [];
-    if (!(categoryModeCategoryId || scopedPreferenceAppMatcher?.activeApp)) {
-      return selected;
-    }
-    const scopedNames = new Set(
-      scopedPreferenceSubcategories.map((item) => Pt(item?.name || "")),
-    );
-    return selected.filter((item) => scopedNames.has(Pt(item)));
-  }, [
-    c.subcategories,
-    categoryModeCategoryId,
-    scopedPreferenceAppMatcher?.activeApp,
-    scopedPreferenceSubcategories,
-  ]);
+    return Array.isArray(c.subcategories) ? c.subcategories : [];
+  }, [c.subcategories]);
+  const groupedSubcategories = $e(() => {
+    const map = new Map();
+    (scopedPreferenceSubcategories || []).forEach((item) => {
+      const catName = item.category_name || "General";
+      if (!map.has(catName)) map.set(catName, []);
+      map.get(catName).push(item);
+    });
+    return Array.from(map.entries());
+  }, [scopedPreferenceSubcategories]);
+
+
   const profileErrorMessage = $e(() => resolveMessage(de), [resolveMessage, de]);
   const centreChannelId = $e(() => {
     const channel = Ee?.channel || Ee || null;
@@ -854,6 +829,20 @@ const ProfilePage = () => {
     He = async (r) => {
       r.preventDefault();
       try {
+        const isDemo =
+          localStorage.getItem("authSession") === "true" &&
+          (localStorage.getItem("userId") === "demo-user-001" || (y?.id || y?.user_id) === "demo-user-001");
+        if (isDemo) {
+          localStorage.setItem("userPreferences", JSON.stringify(c));
+          pe(!1);
+          u({
+            title: t("preferences_saved_title") || "Preferences saved!",
+            description:
+              t("preferences_saved_desc") ||
+              "Your recommendations will now be personalized.",
+          });
+          return;
+        }
         const a = await h.post("/profile/preferences/update", { ...c });
         if (Me) {
           clearUserPreferencesCache(Me);
@@ -3617,60 +3606,61 @@ const ProfilePage = () => {
                                   })
                                 : e.createElement(
                                     "div",
-                                    {
-                                      className:
-                                        "mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5",
-                                    },
-                                    scopedPreferenceSubcategories.map((r) =>
+                                    { className: "mt-3 space-y-4" },
+                                    groupedSubcategories.map(([catName, subItems]) =>
                                       e.createElement(
-                                        "label",
-                                        {
-                                          key: r.subcategory_id || r.name,
-                                          className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border-slate-700/60 ${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
-                                        },
-                                        e.createElement("input", {
-                                          type: "checkbox",
-                                          checked:
-                                            c.subcategories?.includes(r.name) ||
-                                            !1,
-                                          onChange: (a) => {
-                                            const o = r.name;
-                                            I((s) => ({
-                                              ...s,
-                                              subcategories: a.target.checked
-                                                ? [...(s.subcategories || []), o]
-                                                : (s.subcategories || []).filter(
-                                                    (l) => l !== o,
-                                                  ),
-                                            }));
-                                          },
-                                          className:
-                                            "mt-1 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:text-indigo-300",
-                                        }),
+                                        "div",
+                                        { key: catName, className: "space-y-2" },
                                         e.createElement(
                                           "div",
-                                          { className: "min-w-0" },
+                                          { className: "flex items-center justify-between border-b border-slate-200/60 pb-1 dark:border-slate-700/60" },
                                           e.createElement(
-                                            "p",
-                                            {
-                                              className:
-                                                "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate",
-                                            },
-                                            r.name,
-                                          ),
-                                          r.category_name &&
-                                            e.createElement(
-                                              "p",
-                                              {
-                                                className:
-                                                  "text-xs text-slate-500 dark:text-slate-300",
-                                              },
-                                              r.category_name,
-                                            ),
+                                            "h4",
+                                            { className: "text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5" },
+                                            catName,
+                                            e.createElement("span", { className: "text-slate-400 font-normal" }, `(${subItems.length})`)
+                                          )
                                         ),
-                                      ),
-                                    ),
+                                        e.createElement(
+                                          "div",
+                                          { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" },
+                                          subItems.map((r) =>
+                                            e.createElement(
+                                              "label",
+                                              {
+                                                key: r.subcategory_id || r.name,
+                                                className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border-slate-700/60 ${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
+                                              },
+                                              e.createElement("input", {
+                                                type: "checkbox",
+                                                checked: c.subcategories?.includes(r.name) || !1,
+                                                onChange: (a) => {
+                                                  const o = r.name;
+                                                  I((s) => ({
+                                                    ...s,
+                                                    subcategories: a.target.checked
+                                                      ? [...(s.subcategories || []), o]
+                                                      : (s.subcategories || []).filter((l) => l !== o),
+                                                  }));
+                                                },
+                                                className: "mt-1 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 dark:text-indigo-300",
+                                              }),
+                                              e.createElement(
+                                                "div",
+                                                { className: "min-w-0" },
+                                                e.createElement(
+                                                  "p",
+                                                  { className: "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate" },
+                                                  r.name
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
                                   ),
+
                         ),
                         e.createElement(
                           "div",

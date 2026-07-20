@@ -1829,7 +1829,38 @@ const ve = 5,
               e.append("subcategory", rawSubcategory);
             }
           }
+        } else if (isForYouMode) {
+          let userSubcats = [];
+          try {
+            const rawUserPref = typeof window !== "undefined" ? localStorage.getItem("userPreferences") : null;
+            if (rawUserPref) {
+              const parsedPref = JSON.parse(rawUserPref);
+              if (Array.isArray(parsedPref.subcategories)) {
+                userSubcats = parsedPref.subcategories;
+              }
+            }
+          } catch (_) {}
+          if (userSubcats.length > 0) {
+            const activeCategoryFilter = (a && a !== "All") ? a : (t.categoryGroup || null);
+            if (activeCategoryFilter) {
+              const normActiveCat = normalizeName(activeCategoryFilter);
+              const scopedSubcats = userSubcats.filter((subName) => {
+                const foundSub = sortedSubcategories.find(
+                  (s) => normalizeName(s.name) === normalizeName(subName)
+                );
+                if (!foundSub || !foundSub.category_name) return true;
+                const subCatNorm = normalizeName(foundSub.category_name);
+                return subCatNorm === normActiveCat || subCatNorm.includes(normActiveCat) || normActiveCat.includes(subCatNorm);
+              });
+              if (scopedSubcats.length > 0) {
+                e.append("subcategory_ids", scopedSubcats.join(","));
+              }
+            } else {
+              e.append("subcategory_ids", userSubcats.join(","));
+            }
+          }
         }
+
         if (
           (t.minPrice && e.append("minPrice", t.minPrice),
           t.maxPrice && e.append("maxPrice", t.maxPrice),
@@ -2418,6 +2449,8 @@ const ve = 5,
           if (!isVerified) return !1;
         }
         if (!e) return !0;
+        if (t.search && String(t.search).trim()) return !0;
+
         const l = [];
         const n = a?.category_id ?? a?.categoryId ?? a?.categoryID ?? null;
         if (n != null) {

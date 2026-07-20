@@ -1377,6 +1377,7 @@ exports.verifyAadhaarSignupOtp = async (req, res) => {
         verifiedAt: Date.now(),
         panNumber: null,
         panVerifiedAt: null,
+        surepassResponse: verification,
       },
       AADHAAR_SIGNUP_SESSION_TTL_SECONDS,
     );
@@ -1384,6 +1385,25 @@ exports.verifyAadhaarSignupOtp = async (req, res) => {
       redisSession.del(buildAadhaarSignupKey(txnId)),
       redisSession.del(buildAadhaarSignupAttemptsKey(txnId)),
     ]);
+
+    // Persist KYC verification response to user_verifications for compliance audit
+    // (best-effort; stored in Redis session too for signup completion later)
+    try {
+      await runQuery(
+        `INSERT INTO kyc_verification_log (aadhaar_masked, surepass_raw_response, surepass_request_id, mobile_number, verified_at)
+         VALUES ($1, $2::jsonb, $3, $4, NOW())
+         ON CONFLICT DO NOTHING`,
+        [
+          `XXXX-XXXX-${aadhaarNumber.slice(-4)}`,
+          JSON.stringify(verification || {}),
+          verification?.request_id || verification?.requestId || txnId,
+          mobileNumber,
+        ]
+      );
+    } catch (logErr) {
+      logger.warn('[AADHAAR SIGNUP] KYC log write skipped (table may not exist yet):', logErr.message);
+    }
+
     return res.json({
       success: true,
       signupToken: signupToken,

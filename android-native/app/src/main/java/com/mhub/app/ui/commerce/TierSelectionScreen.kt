@@ -271,8 +271,8 @@ class TiersViewModel @Inject constructor(
             name = "Basic",
             price = 500.0,
             currency = "INR",
-            duration = 15,
-            features = listOf("📄 1 listing credit", "📍 Standard reach", "⏱️ 15 days visibility", "📸 1 photo per post"),
+            duration = 30,
+            features = listOf("📄 1 Post Credit", "⏱️ 30 Days Visibility", "📸 1 Photo per Post", "✍️ 1 Post Per Day"),
             popular = false
         ),
         Tier(
@@ -281,7 +281,7 @@ class TiersViewModel @Inject constructor(
             price = 850.0,
             currency = "INR",
             duration = 90,
-            features = listOf("📦 100 listings", "⏱️ 30 days visibility", "🏅 Seller badge", "📸 3 photos per post", "📊 Basic analytics"),
+            features = listOf("📦 Up to 100 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🏅 Seller Badge", "📊 Basic Analytics"),
             popular = false
         ),
         Tier(
@@ -290,16 +290,36 @@ class TiersViewModel @Inject constructor(
             price = 1200.0,
             currency = "INR",
             duration = 180,
-            features = listOf("📦 200 listings", "🚀 Boosts & featured", "✅ Verified badge", "📸 5 photos per post", "🎁 7-day free trial", "💬 Chat support"),
+            features = listOf("📦 Up to 200 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🚀 Boosts & Featured", "✅ Verified Badge", "🔝 Priority Search", "📊 Full Analytics", "🎁 7-Day Free Trial"),
+            popular = false
+        ),
+        Tier(
+            id = "gold",
+            name = "Gold",
+            price = 1500.0,
+            currency = "INR",
+            duration = 270, // 9 months
+            features = listOf("📦 Up to 500 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🥇 Gold Badge", "🔝 Top Search Priority", "📊 Full Analytics", "🎁 7-Day Free Trial"),
             popular = false
         ),
         Tier(
             id = "premium",
             name = "Premium",
-            price = 1500.0,
+            price = 1800.0,
             currency = "INR",
             duration = 365,
-            features = listOf("📦 Unlimited listings", "⏱️ 45 days visibility", "👑 Crown badge", "📸 10 photos per post", "💬 Priority support", "🎁 14-day free trial", "🏪 Custom storefront"),
+            features = listOf(
+                "📦 Unlimited Posts",
+                "⏱️ 45 Days Visibility",
+                "🔥 2 Posts Per Day",
+                "🔥 10 Photos per Post",
+                "🔥 5x Coin Valuation (100c = ₹5.00)",
+                "👑 Crown Badge & Priority Support",
+                "🚀 10 Boosts + 10 Featured + 10 Spotlights/Month",
+                "🔝 Top of Feed Priority",
+                "📊 Full Analytics Dashboard",
+                "🎁 14-Day Free Trial"
+            ),
             popular = false
         )
     )
@@ -456,12 +476,13 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 "basic" -> "₹500/post"
                                 "bronze" -> "₹8.50/post"
                                 "silver" -> "₹6/post"
+                                "gold" -> "₹3/post"
                                 "premium" -> "Unlimited"
                                 "starter" -> "Taste Premium (1 post/day)"
                                 else -> ""
                             },
                             coinBalance = state.coinBalance,
-                            maxDiscountPct = when (tier.id?.lowercase()) { "premium", "silver" -> 30; else -> 50 },
+                            maxDiscountPct = when (tier.id?.lowercase()) { "premium", "silver", "gold" -> 30; else -> 50 },
                             isLoading = state.subscribeLoading == tier.id,
                             onSelect = {
                                 val tId = tier.id ?: ""
@@ -572,6 +593,17 @@ private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, maxDisco
             borderStroke = BorderStroke(1.dp, ColorTokens.CardSlateBorder),
             badgeBg = ColorTokens.CardSlateBadge,
             badgeTextColor = ColorTokens.CardSlateBadgeText
+        )
+        "gold" -> PlanTheme(
+            primaryGradient = listOf(Color(0xFFB8860B), Color(0xFFDAA520)),
+            headerTextColor = ColorTokens.CardAmberText,
+            subtextColor = ColorTokens.CardAmberSubtext,
+            containerBg = ColorTokens.CardAmberSurface,
+            buttonColor = ColorTokens.CardAmberButton,
+            buttonTextColor = Color.White,
+            borderStroke = BorderStroke(if (isDark) 1.dp else 2.dp, ColorTokens.CardAmberBorder),
+            badgeBg = ColorTokens.CardAmberBadge,
+            badgeTextColor = ColorTokens.CardAmberBadgeText
         )
         "premium" -> PlanTheme(
             primaryGradient = listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)),

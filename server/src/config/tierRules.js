@@ -8,12 +8,52 @@
  */
 
 const TIER_RULES = {
+  starter: {
+    name: "Starter Plan",
+    displayName: "Starter Plan",
+    visibilityDays: 30,
+    maxListings: 999999,
+    dailyLimit: 1,
+    priority: 1,
+    searchPriority: 1,
+    priceINR: 111,
+    durationMonths: 1,
+    quotaPeriodMonths: 1,
+    trialDays: 0,
+    boostQuotaMonthly: 0,
+    featuredQuotaMonthly: 0,
+    spotlightQuotaMonthly: 0,
+    badgeType: null,
+    hasAnalytics: false,
+    hasPrioritySearch: false,
+    hasPrioritySupport: false,
+    perPostCost: 0,
+    maxImages: 1,
+    tagline: "Taste Premium Experience",
+    features: [
+      "✨ 1 Month Access (30 Days)",
+      "📸 1 Photo per Post",
+      "✍️ 1 Post Per Day Limit",
+      "💰 100 Coins Bonus on Activation",
+      "🆔 KYC Verification Included",
+      "🛡️ Inclusive of GST & all fees",
+    ],
+    canPost: (user) => {
+      if (!user.subscription_expiry) return false;
+      return new Date(user.subscription_expiry) >= new Date();
+    },
+    getExpiry: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      return d;
+    },
+  },
   basic: {
     name: "Basic",
     displayName: "Basic",
-    visibilityDays: 15,
+    visibilityDays: 30,
     maxListings: 1,
-    dailyLimit: 0,
+    dailyLimit: 1,
     priority: 0,
     searchPriority: 0,
     priceINR: 500,
@@ -30,11 +70,11 @@ const TIER_RULES = {
     perPostCost: 500,
     maxImages: 1,
     tagline: "Simple one-off listing",
-    features: ["📄 1 Single Post", "⏱️ 15 Days Visibility", "📍 Standard Reach"],
+    features: ["📄 1 Post Credit", "⏱️ 30 Days Visibility", "📸 1 Photo per Post", "✍️ 1 Post Per Day"],
     canPost: (user) => (user.post_credits || 0) > 0,
     getExpiry: () => {
       const d = new Date();
-      d.setDate(d.getDate() + 15);
+      d.setDate(d.getDate() + 30);
       return d;
     },
   },
@@ -43,7 +83,7 @@ const TIER_RULES = {
     displayName: "Bronze",
     visibilityDays: 30,
     maxListings: 100,
-    dailyLimit: 5,
+    dailyLimit: 1,
     priority: 1,
     searchPriority: 1,
     priceINR: 850,
@@ -58,11 +98,13 @@ const TIER_RULES = {
     hasPrioritySearch: false,
     hasPrioritySupport: false,
     perPostCost: 8.5,
-    maxImages: 3,
+    maxImages: 1,
     tagline: "For casual sellers",
     features: [
       "📦 Up to 100 Posts",
       "⏱️ 30 Days Visibility/Post",
+      "📸 1 Photo per Post",
+      "✍️ 1 Post Per Day",
       "🏅 Seller Badge",
       "📊 Basic Analytics",
     ],
@@ -77,11 +119,11 @@ const TIER_RULES = {
     },
   },
   silver: {
-    name: "Silver Seller",
-    displayName: "Silver Seller",
+    name: "Silver",
+    displayName: "Silver",
     visibilityDays: 30,
     maxListings: 200,
-    dailyLimit: 10,
+    dailyLimit: 1,
     priority: 2,
     searchPriority: 2,
     priceINR: 1200,
@@ -96,11 +138,13 @@ const TIER_RULES = {
     hasPrioritySearch: true,
     hasPrioritySupport: false,
     perPostCost: 6,
-    maxImages: 5,
+    maxImages: 1,
     tagline: "Most Popular",
     features: [
       "📦 Up to 200 Posts",
       "⏱️ 30 Days Visibility/Post",
+      "📸 1 Photo per Post",
+      "✍️ 1 Post Per Day",
       "🚀 5 Boosts + 5 Featured + 5 Spotlights / 6 Months",
       "✅ Verified Badge",
       "🔝 Priority Search Ranking",
@@ -117,35 +161,80 @@ const TIER_RULES = {
       return d;
     },
   },
-  premium: {
-    name: "Premium God Mode",
-    displayName: "Premium God Mode",
-    visibilityDays: 45,
-    maxListings: null,
-    dailyLimit: 9999,
+  gold: {
+    name: "Gold",
+    displayName: "Gold",
+    visibilityDays: 30,
+    maxListings: 500,
+    dailyLimit: 1,
     priority: 3,
     searchPriority: 3,
     priceINR: 1500,
-    durationMonths: 12,
-    quotaPeriodMonths: 1,
-    trialDays: 14,
+    durationMonths: 9,
+    quotaPeriodMonths: 9,
+    trialDays: 7,
     boostQuotaMonthly: 5,
     featuredQuotaMonthly: 5,
     spotlightQuotaMonthly: 5,
+    badgeType: "gold",
+    hasAnalytics: true,
+    hasPrioritySearch: true,
+    hasPrioritySupport: true,
+    perPostCost: 3,
+    maxImages: 1,
+    tagline: "Premium Power",
+    features: [
+      "📦 Up to 500 Posts",
+      "⏱️ 30 Days Visibility/Post",
+      "📸 1 Photo per Post",
+      "✍️ 1 Post Per Day",
+      "🚀 5 Boosts + 5 Featured + 5 Spotlights / 9 Months",
+      "🥇 Gold Badge",
+      "🔝 Top Search Priority",
+      "📊 Full Analytics Dashboard",
+      "🎁 7-Day Free Trial",
+    ],
+    canPost: (user) => {
+      if (!user.subscription_expiry) return false;
+      return new Date(user.subscription_expiry) >= new Date();
+    },
+    getExpiry: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      return d;
+    },
+  },
+  premium: {
+    name: "Premium",
+    displayName: "Premium",
+    visibilityDays: 45,
+    maxListings: null,
+    dailyLimit: 2,
+    priority: 4,
+    searchPriority: 4,
+    priceINR: 1800,
+    durationMonths: 12,
+    quotaPeriodMonths: 1,
+    trialDays: 14,
+    boostQuotaMonthly: 10,
+    featuredQuotaMonthly: 10,
+    spotlightQuotaMonthly: 10,
     badgeType: "crown",
     hasAnalytics: true,
     hasPrioritySearch: true,
     hasPrioritySupport: true,
     perPostCost: 0,
     maxImages: 10,
-    tagline: "Best Value",
+    tagline: "Best Value — Unlimited Power",
     features: [
       "📦 Unlimited Posts",
       "⏱️ 45 Days Visibility",
-      "🚀 5 Boosts + 5 Featured + 5 Spotlights/Month",
-      "👑 Crown Badge",
+      "🔥 2 Posts Per Day",
+      "🔥 10 Photos per Post",
+      "🔥 5x Coin Valuation (100c = ₹5.00)",
+      "🚀 10 Boosts + 10 Featured + 10 Spotlights/Month",
+      "👑 Crown Badge & Priority Support",
       "🔝 Top of Feed Priority",
-      "💬 Priority Support",
       "📊 Full Analytics Dashboard",
       "🎁 14-Day Free Trial",
     ],
@@ -201,7 +290,7 @@ const TIER_RULES = {
   },
 };
 
-const TIER_ORDER = ["basic", "starter", "bronze", "silver", "premium"];
+const TIER_ORDER = ["basic", "starter", "bronze", "silver", "gold", "premium"];
 
 const PROMO_CODES = {
   LAUNCH50: { discount: 0.5, validUntil: new Date("2026-06-30"), maxUses: 500, usedCount: 0 },

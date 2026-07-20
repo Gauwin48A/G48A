@@ -300,10 +300,13 @@ exports.getGuaranteedReachPosts = async (req, res) => {
     const minPriceValue = parseOptionalNumber(req.query.minPrice);
     const maxPriceValue = parseOptionalNumber(req.query.maxPrice);
     const subcategoryParam = parseOptionalString(req.query.subcategory);
-    const subcategoryIdParam = parseOptionalString(req.query.subcategory_id);
+    const subcategoryIdParam = parseOptionalString(req.query.subcategory_ids || req.query.subcategory_id);
     const rawSubcategory = subcategoryIdParam || subcategoryParam;
+    const subcatList = rawSubcategory
+      ? rawSubcategory.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+      : [];
     const isNumericSubcategory =
-      rawSubcategory && /^\\d+$/.test(String(rawSubcategory));
+      rawSubcategory && /^\d+$/.test(String(rawSubcategory));
     const subcategoryId = isNumericSubcategory ? rawSubcategory : null;
     const subcategoryName = !isNumericSubcategory ? rawSubcategory : null;
 
@@ -313,8 +316,7 @@ exports.getGuaranteedReachPosts = async (req, res) => {
         minPriceValue !== null ||
         maxPriceValue !== null ||
         (category && category.toLowerCase() !== "all") ||
-        subcategoryId ||
-        subcategoryName
+        subcatList.length > 0
     );
     const targetPool = hasFilters
       ? Math.max(MIN_FEED_POOL * 2, limit * 20, limit + offset)
@@ -323,7 +325,7 @@ exports.getGuaranteedReachPosts = async (req, res) => {
 
     const cacheKey = getCacheKey(userId, queryLimit, refreshSeed, {
       category: category,
-      subcategory: subcategoryId || subcategoryName,
+      subcategory: rawSubcategory,
       search: search,
       minPrice: minPriceValue,
       maxPrice: maxPriceValue,
@@ -388,20 +390,12 @@ exports.getGuaranteedReachPosts = async (req, res) => {
       );
     }
 
-    if (subcategoryId || subcategoryName) {
-      const normalizedSubcategory = String(subcategoryName || "")
-        .toLowerCase()
-        .trim();
+    if (subcatList.length > 0) {
+      const subcatSet = new Set(subcatList);
       posts = posts.filter((p) => {
-        if (subcategoryId) {
-          return String(p.subcategory_id) === String(subcategoryId);
-        }
-        if (!normalizedSubcategory) return true;
-        return (
-          String(p.subcategory_name || "")
-            .toLowerCase()
-            .trim() === normalizedSubcategory
-        );
+        const pSubId = p.subcategory_id != null ? String(p.subcategory_id).toLowerCase() : "";
+        const pSubName = p.subcategory_name ? String(p.subcategory_name).toLowerCase().trim() : "";
+        return subcatSet.has(pSubId) || subcatSet.has(pSubName);
       });
     }
 
@@ -413,9 +407,13 @@ exports.getGuaranteedReachPosts = async (req, res) => {
           p.description?.toLowerCase().includes(searchLower) ||
           p.location?.toLowerCase().includes(searchLower) ||
           p.author_name?.toLowerCase().includes(searchLower) ||
-          p.category_name?.toLowerCase().includes(searchLower)
+          p.category_name?.toLowerCase().includes(searchLower) ||
+          p.subcategory_name?.toLowerCase().includes(searchLower) ||
+          p.brand?.toLowerCase().includes(searchLower) ||
+          p.model?.toLowerCase().includes(searchLower)
       );
     }
+
 
     if (minPriceValue !== null) {
       posts = posts.filter((p) => Number(p.price) >= minPriceValue);

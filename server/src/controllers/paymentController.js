@@ -1658,13 +1658,18 @@ exports.verifyRazorpayPayment = async (req, res) => {
 
       await client.query(
         `UPDATE payments
-         SET transaction_id = COALESCE(transaction_id, $1),
-             payment_provider = COALESCE(payment_provider, 'razorpay'),
-             provider_payment_id = COALESCE(provider_payment_id, $1),
-             provider_signature = COALESCE(provider_signature, $2),
-             raw_payload = COALESCE(raw_payload, $3::jsonb)
-         WHERE id = $4`,
-        [razorpay_payment_id, razorpay_signature, JSON.stringify(req.body), payment.id]
+         SET transaction_id        = COALESCE(transaction_id, $1),
+             payment_provider      = COALESCE(payment_provider, 'razorpay'),
+             provider_payment_id   = COALESCE(provider_payment_id, $1),
+             provider_signature    = COALESCE(provider_signature, $2),
+             raw_payload           = COALESCE(raw_payload, $3::jsonb),
+             razorpay_order_id     = COALESCE(razorpay_order_id, $4),
+             razorpay_payment_id   = COALESCE(razorpay_payment_id, $1),
+             razorpay_signature    = COALESCE(razorpay_signature, $2),
+             gateway_response      = COALESCE(gateway_response, $3::jsonb),
+             webhook_verified_at   = COALESCE(webhook_verified_at, NOW())
+         WHERE id = $5`,
+        [razorpay_payment_id, razorpay_signature, JSON.stringify(req.body), razorpay_order_id, payment.id]
       );
 
       const updatedPayment = {
