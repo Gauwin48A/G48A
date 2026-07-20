@@ -1,0 +1,15 @@
+# secure.properties.example
+# Copy this file to secure.properties and replace with actual credentials.
+# Do NOT check secure.properties into version control (git).
+
+# The absolute path to your release keystore file (.jks or .keystore)
+RELEASE_STORE_FILE=C\:\\Users\\YourUsername\\.android\\release-keystore.jks
+
+# The password for your keystore
+RELEASE_STORE_PASSWORD=your_keystore_password_here
+
+# The key alias you used when generating the key
+RELEASE_KEY_ALIAS=your_key_alias_here
+
+# The password for your key alias
+RELEASE_KEY_PASSWORD=your_key_password_here
