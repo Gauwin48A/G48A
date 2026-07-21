@@ -73,6 +73,7 @@ all_active_posts AS (
         END AS freshness_boost
     FROM posts p
     WHERE p.status = 'active'
+      AND p.post_type = 'text'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
 ),
@@ -203,6 +204,7 @@ all_active_posts AS (
     FROM posts p
     ${withGroupFilter ? "JOIN categories c_grp ON p.category_id = c_grp.category_id" : ""}
     WHERE p.status = 'active'
+      AND p.post_type = 'text'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())
       AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))
       ${groupFilter}
@@ -284,6 +286,7 @@ LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
 LEFT JOIN categories c ON p.category_id = c.category_id
 LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
 WHERE p.status = 'active'
+  AND p.post_type = 'text'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
   AND ($1::text = '' OR p.user_id::text != $1::text)
 ORDER BY
@@ -315,6 +318,7 @@ FROM posts p
 LEFT JOIN categories c ON p.category_id::text = c.category_id::text
 LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
 WHERE p.status = 'active'
+  AND p.post_type = 'text'
   AND p.created_at > NOW() - INTERVAL '7 days'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
 ORDER BY engagement_score DESC

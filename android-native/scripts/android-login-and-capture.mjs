@@ -1,7 +1,7 @@
 /**
  * android-login-and-capture.mjs
  * 
- * 1. Logs into the native Android app (com.mhub.app.debug) via ADB
+ * 1. Logs into the native Android app (com.zaruda.app.debug) via ADB
  * 2. Captures screenshots of all key pages  
  * 3. Also captures web screenshots via Playwright
  * 4. Generates full parity comparison report
@@ -17,7 +17,7 @@ const SHOTS    = path.join(REPO, "android-native", "test-screenshots");
 const DOCS     = path.join(REPO, "android-native", "docs");
 const ADB      = "C:\\Android\\Sdk\\platform-tools\\adb.exe";
 const SERIAL   = process.env.ANDROID_SERIAL || "emulator-5554";
-const PKG      = "com.mhub.app.debug";   // native Kotlin debug build
+const PKG      = "com.zaruda.app.debug";   // native Kotlin debug build
 const BASE_URL = "http://localhost:8081";
 const IDENTIFIER = process.env.MHUB_LOGIN_IDENTIFIER || "9876543210";
 const PASS       = process.env.MHUB_LOGIN_PASSWORD || "Test@12345";
@@ -198,11 +198,11 @@ async function androidLogin() {
   // Force-stop and restart
   adb("shell", "am", "force-stop", PKG);
   await sleep(1000);
-  adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`);
+  adb("shell", "am", "start", "-n", `${PKG}/com.zaruda.app.MainActivity`);
   const foregroundReady = await waitForAppForeground(40000);
   if (!foregroundReady) {
     log("  App not foreground yet, retrying cold launch...");
-    adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`);
+    adb("shell", "am", "start", "-n", `${PKG}/com.zaruda.app.MainActivity`);
     await waitForAppForeground(25000);
   }
 
@@ -227,7 +227,7 @@ async function androidLogin() {
   } else {
     // Navigate to login via intent
     log("  Navigating to /login...");
-    adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`, "--es", "debug_route", "/login");
+    adb("shell", "am", "start", "-n", `${PKG}/com.zaruda.app.MainActivity`, "--es", "debug_route", "/login");
     await waitForAppForeground(20000);
     loginState = await waitForLoginScreen(50000);
   }
@@ -402,7 +402,7 @@ async function captureAndroidPages() {
   log("\n═══ Android: Capture all pages ═══");
   const manifest = [];
   let idx = 0;
-  adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`);
+  adb("shell", "am", "start", "-n", `${PKG}/com.zaruda.app.MainActivity`);
   await waitForAppForeground(20000);
 
   for (const page of KEY_PAGES) {
@@ -411,7 +411,7 @@ async function captureAndroidPages() {
     const filepath = path.join(AND_DIR, filename);
 
     // Navigate via debug_route intent
-    adb("shell", "am", "start", "-n", `${PKG}/com.mhub.app.MainActivity`,
+    adb("shell", "am", "start", "-n", `${PKG}/com.zaruda.app.MainActivity`,
       "--es", "debug_route", page.route);
     let inForeground = await waitForAppForeground(14000);
     let uiXml = "";
@@ -623,3 +623,4 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
+

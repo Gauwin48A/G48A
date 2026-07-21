@@ -1131,7 +1131,7 @@ const Ve = 5,
                       sellerName = getFeedSellerName(t),
                       sellerInitial = (sellerName || "U")[0].toUpperCase(),
                       postPriceValue = getFeedPriceValue(t),
-                      postPriceLabel = formatFeedPrice(postPriceValue),
+                      postPriceLabel = null,
                       primaryImage = getFeedPrimaryImage(t),
                       isOwnerPost = isPostOwnedByUser(t, currentUserId);
                     return e.createElement(
@@ -1202,23 +1202,6 @@ const Ve = 5,
                               Ne(t.created_at),
                             ),
                           ),
-                          (t.category_name || t.subcategory_name || t.category) &&
-                            e.createElement(
-                              "div",
-                              { className: "flex flex-wrap items-center gap-1 mt-0.5" },
-                              (t.category_name || t.category) &&
-                                e.createElement(
-                                  "span",
-                                  { className: "inline-flex items-center px-1.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-xs font-medium text-indigo-600 dark:text-indigo-300" },
-                                  t.category_name || t.category,
-                                ),
-                              t.subcategory_name &&
-                                e.createElement(
-                                  "span",
-                                  { className: "inline-flex items-center px-1.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/30 text-xs font-medium text-purple-600 dark:text-purple-300" },
-                                  t.subcategory_name,
-                                ),
-                            ),
                         ),
                         e.createElement(
                           "button",
@@ -1452,21 +1435,6 @@ const Ve = 5,
                               o("views") || "Views",
                             ),
                             e.createElement("span", null, pe[r] || 0),
-                          ),
-                          e.createElement(
-                            c,
-                            {
-                              variant: "ghost",
-                              className:
-                                "shrink-0 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-3 text-xs text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800/40 font-semibold sm:ml-auto",
-                              onClick: () => ke(r),
-                            },
-                            e.createElement(Pe, { className: "w-3.5 h-3.5" }),
-                            e.createElement(
-                              "span",
-                              null,
-                              o("view_details") || "View Details",
-                            ),
                           ),
                         ),
                       ),

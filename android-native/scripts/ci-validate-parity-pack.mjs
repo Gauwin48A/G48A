@@ -54,3 +54,4 @@ if (!latestWebPack || !latestAndroidPack) {
 const validateScript = path.join(__dirname, "validate-parity-pack.mjs");
 await runNodeScript(validateScript);
 
+

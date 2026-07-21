@@ -1,7 +1,7 @@
 # Android vs Web Mobile Parity Report (Live, Authenticated)
 
 Generated: 2026-05-01
-Scope: Android emulator (`com.mhub.app.debug`) vs web (`http://localhost:8081`) on mobile viewport parity routes.
+Scope: Android emulator (`com.zaruda.app.debug`) vs web (`http://localhost:8081`) on mobile viewport parity routes.
 
 ## Capture Sets
 - Before fixes: `android-native/test-screenshots/manual-check/phase-scan`

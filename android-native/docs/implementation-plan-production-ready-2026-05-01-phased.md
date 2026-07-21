@@ -1,7 +1,7 @@
 # Production-Ready Android-Web Parity Plan (Phased)
 
 Date: 2026-05-01  
-Scope: `http://localhost:8081/category-hub` parity to Android app (`com.mhub.app.debug`) with mobile-first alignment.
+Scope: `http://localhost:8081/category-hub` parity to Android app (`com.zaruda.app.debug`) with mobile-first alignment.
 
 ## 1) Current Baseline
 - Android launch/routing smoke: passing (home/all-posts/login route switches stable).

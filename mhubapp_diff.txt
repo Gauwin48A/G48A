@@ -1,7 +1,7 @@
-diff --git a/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt b/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
+diff --git a/android-native/app/src/main/java/com/zaruda/app/ui/MhubApp.kt b/android-native/app/src/main/java/com/zaruda/app/ui/MhubApp.kt
 index 37b5f478..c01bc185 100644
---- a/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
-+++ b/android-native/app/src/main/java/com/mhub/app/ui/MhubApp.kt
+--- a/android-native/app/src/main/java/com/zaruda/app/ui/MhubApp.kt
++++ b/android-native/app/src/main/java/com/zaruda/app/ui/MhubApp.kt
 @@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Forum
  import androidx.compose.material.icons.outlined.GridView
  import androidx.compose.material.icons.outlined.Search
@@ -10,16 +10,16 @@ index 37b5f478..c01bc185 100644
  import androidx.compose.material.icons.outlined.AutoAwesome
  import androidx.compose.material.icons.outlined.Menu
  import androidx.compose.material.icons.outlined.Person
-@@ -138,6 +139,9 @@ import com.mhub.app.ui.legal.PrivacyScreen
- import com.mhub.app.ui.legal.RefundScreen
- import com.mhub.app.ui.legal.SupportPolicyScreen
- import com.mhub.app.ui.legal.TermsScreen
-+import com.mhub.app.ui.legal.AboutScreen
-+import com.mhub.app.ui.legal.ContactScreen
-+import com.mhub.app.ui.legal.FaqScreen
- import com.mhub.app.ui.more.MoreScreen
- import com.mhub.app.ui.navigation.Routes
- import com.mhub.app.core.AppLogger
+@@ -138,6 +139,9 @@ import com.zaruda.app.ui.legal.PrivacyScreen
+ import com.zaruda.app.ui.legal.RefundScreen
+ import com.zaruda.app.ui.legal.SupportPolicyScreen
+ import com.zaruda.app.ui.legal.TermsScreen
++import com.zaruda.app.ui.legal.AboutScreen
++import com.zaruda.app.ui.legal.ContactScreen
++import com.zaruda.app.ui.legal.FaqScreen
+ import com.zaruda.app.ui.more.MoreScreen
+ import com.zaruda.app.ui.navigation.Routes
+ import com.zaruda.app.core.AppLogger
 @@ -243,6 +247,11 @@ class SellFlowViewModel @Inject constructor(
      }
  }
@@ -109,7 +109,7 @@ index 37b5f478..c01bc185 100644
                  composable(Routes.FOR_YOU) {
 -                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
 +                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = false) {
-                         com.mhub.app.ui.foryou.ForYouScreen(
+                         com.zaruda.app.ui.foryou.ForYouScreen(
 -                            onBack = { navController.popBackStack() },
 +                            onBack = null,
                              onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -122,7 +122,7 @@ index 37b5f478..c01bc185 100644
 -                    MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
 +                    MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }, showTopBar = true) {
                          if (needsLogin) {
-                             com.mhub.app.ui.components.LoginPromptCard(
+                             com.zaruda.app.ui.components.LoginPromptCard(
                                  onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -612,7 +643,7 @@ fun MhubApp(
                  }
@@ -162,7 +162,7 @@ index 37b5f478..c01bc185 100644
                  if (needsLogin) {
 -                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                    MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
                              onCreateAccount = { guestBrowsing = false; navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
 @@ -690,7 +726,7 @@ fun MhubApp(
@@ -172,7 +172,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -749,7 +785,7 @@ fun MhubApp(
              }
@@ -181,7 +181,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.CHAT, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -763,14 +799,14 @@ fun MhubApp(
              }
@@ -198,7 +198,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.SELL, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -795,7 +831,7 @@ fun MhubApp(
              }
@@ -207,7 +207,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -808,7 +844,7 @@ fun MhubApp(
              }
@@ -225,7 +225,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -854,7 +890,7 @@ fun MhubApp(
              }
@@ -234,7 +234,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -896,7 +932,7 @@ fun MhubApp(
              }
@@ -243,7 +243,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -913,13 +949,13 @@ fun MhubApp(
              }
@@ -316,7 +316,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -999,7 +1035,7 @@ fun MhubApp(
              }
@@ -325,7 +325,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -1012,7 +1048,7 @@ fun MhubApp(
              }
@@ -334,7 +334,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -1025,7 +1061,7 @@ fun MhubApp(
              }
@@ -343,7 +343,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -1038,7 +1074,7 @@ fun MhubApp(
              }
@@ -352,7 +352,7 @@ index 37b5f478..c01bc185 100644
 -                MainShell(navController = navController, selected = BottomTab.PROFILE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
 +                MainShell(navController = navController, selected = BottomTab.MORE, currentThemeMode = themeMode, onSetThemeMode = { themeVm.setThemeMode(it) }) {
                      if (needsLogin) {
-                         com.mhub.app.ui.components.LoginPromptCard(
+                         com.zaruda.app.ui.components.LoginPromptCard(
                              onSignIn = { guestBrowsing = false; navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } },
 @@ -1052,7 +1088,7 @@ fun MhubApp(
  
@@ -449,7 +449,7 @@ index 37b5f478..c01bc185 100644
                  if (showBottomBar) {
                  val liveActiveCategoryKey = LocalActiveCategoryKey.current ?: activeCategoryKey
                  val openMore = LocalOnOpenMore.current
-+                val authViewModel: com.mhub.app.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
++                val authViewModel: com.zaruda.app.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 +                val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
                  val navigateToTab: (BottomTab) -> Unit = { tab ->
                      val targetRoute = tab.route
@@ -459,7 +459,7 @@ index 37b5f478..c01bc185 100644
                          verticalAlignment = Alignment.CenterVertically,
                      ) {
 -                        // LEFT: Home | All Posts | For You
-+                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
++                        val notifVm: com.zaruda.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 +                        val notifState by notifVm.state.collectAsState()
 +                        val unreadNotifCount = notifState.items.count { !it.isRead }
 +
@@ -483,7 +483,7 @@ index 37b5f478..c01bc185 100644
                          ) {
 -                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
 -                            val authGate = LocalAuthGate.current
--                            val authVm: com.mhub.app.ui.auth.AuthViewModel = hiltViewModel()
+-                            val authVm: com.zaruda.app.ui.auth.AuthViewModel = hiltViewModel()
 -                            val isAuthed by authVm.isAuthenticated.collectAsState()
                              val sellScope = rememberCoroutineScope()
 +                            val sellVm: SellFlowViewModel = hiltViewModel()
@@ -521,10 +521,10 @@ index 37b5f478..c01bc185 100644
                              }
                          }
 -                        // RIGHT: Feed | Rewards | Profile
--                        val notifVm: com.mhub.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+-                        val notifVm: com.zaruda.app.ui.notifications.NotificationsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 -                        val notifState by notifVm.state.collectAsState()
 -                        val unreadNotifCount = notifState.items.count { !it.isRead }
--                        val wishlistVm: com.mhub.app.ui.wishlist.WishlistViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+-                        val wishlistVm: com.zaruda.app.ui.wishlist.WishlistViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 -                        val wishlistState by wishlistVm.state.collectAsState()
 -                        val wishlistCount = wishlistState.items.size
 +

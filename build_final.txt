@@ -37,12 +37,12 @@ Reusing configuration cache.
 > Task :app:packageDebugResources
 > Task :app:parseDebugLocalResources
 > Task :app:mergeDebugResources
-warn: removing resource com.mhub.app.debug:string/compare_age without required default value.
-warn: removing resource com.mhub.app.debug:string/compare_warranty without required default value.
-warn: removing resource com.mhub.app.debug:string/notif_delete without required default value.
-warn: removing resource com.mhub.app.debug:string/notif_empty without required default value.
-warn: removing resource com.mhub.app.debug:string/notif_mark_read without required default value.
-warn: removing resource com.mhub.app.debug:string/search_try_different without required default value.
+warn: removing resource com.zaruda.app.debug:string/compare_age without required default value.
+warn: removing resource com.zaruda.app.debug:string/compare_warranty without required default value.
+warn: removing resource com.zaruda.app.debug:string/notif_delete without required default value.
+warn: removing resource com.zaruda.app.debug:string/notif_empty without required default value.
+warn: removing resource com.zaruda.app.debug:string/notif_mark_read without required default value.
+warn: removing resource com.zaruda.app.debug:string/search_try_different without required default value.
 
 > Task :app:processDebugResources
 > Task :app:kspDebugKotlin

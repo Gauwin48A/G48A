@@ -40,14 +40,14 @@ Reusing configuration cache.
 > Task :app:processDebugResources UP-TO-DATE
 > Task :app:kspDebugKotlin UP-TO-DATE
 > Task :app:compileDebugKotlin
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/core/JwtHelper.kt:43:35 Java type mismatch: inferred type is 'kotlin.Nothing?', but 'kotlin.String' was expected.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/auth/LoginScreen.kt:613:49 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/channels/ChannelScreens.kt:150:43 'val Icons.Filled.Article: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Article.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/components/Buttons.kt:76:33 'val outlinedButtonBorder: BorderStroke' is deprecated. Please use the version that takes an `enabled` param to get the `BorderStroke` with the correct opacity.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/scanner/ScannerScreen.kt:166:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/scanner/ScannerScreen.kt:211:26 'fun setTargetResolution(p0: Size): ImageAnalysis.Builder' is deprecated. Deprecated in Java.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/theme/Theme.kt:85:20 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/mhub/app/ui/theme/Theme.kt:86:20 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/core/JwtHelper.kt:43:35 Java type mismatch: inferred type is 'kotlin.Nothing?', but 'kotlin.String' was expected.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/auth/LoginScreen.kt:613:49 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/channels/ChannelScreens.kt:150:43 'val Icons.Filled.Article: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Article.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/components/Buttons.kt:76:33 'val outlinedButtonBorder: BorderStroke' is deprecated. Please use the version that takes an `enabled` param to get the `BorderStroke` with the correct opacity.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/scanner/ScannerScreen.kt:166:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/scanner/ScannerScreen.kt:211:26 'fun setTargetResolution(p0: Size): ImageAnalysis.Builder' is deprecated. Deprecated in Java.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/theme/Theme.kt:85:20 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///C:/Users/laksh/GITHUB/1hub_rep2/G48A/android-native/app/src/main/java/com/zaruda/app/ui/theme/Theme.kt:86:20 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
 
 > Task :app:compileDebugJavaWithJavac UP-TO-DATE
 > Task :app:hiltAggregateDepsDebug UP-TO-DATE

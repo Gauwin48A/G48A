@@ -6442,7 +6442,7 @@ Client                          Server
 
 | Setting | Value |
 |---------|-------|
-| App ID | `com.mhub.app` |
+| App ID | `com.zaruda.app` |
 | App Name | `MHub` |
 | Deep Link Scheme | `mhub://` |
 | Web Directory | `dist` |

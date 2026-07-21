@@ -1,9 +1,9 @@
-diff --git a/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt b/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
+diff --git a/android-native/app/src/main/java/com/zaruda/app/ui/explore/ExploreScreen.kt b/android-native/app/src/main/java/com/zaruda/app/ui/explore/ExploreScreen.kt
 index 7b6a241d..10ccfd8e 100644
---- a/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
-+++ b/android-native/app/src/main/java/com/mhub/app/ui/explore/ExploreScreen.kt
+--- a/android-native/app/src/main/java/com/zaruda/app/ui/explore/ExploreScreen.kt
++++ b/android-native/app/src/main/java/com/zaruda/app/ui/explore/ExploreScreen.kt
 @@ -1,5 +1,8 @@
- package com.mhub.app.ui.explore
+ package com.zaruda.app.ui.explore
  
 +import androidx.compose.material.icons.filled.LightMode
 +import androidx.compose.material.icons.filled.DarkMode
@@ -21,16 +21,16 @@ index 7b6a241d..10ccfd8e 100644
  import androidx.compose.material.icons.automirrored.filled.TrendingUp
 @@ -248,19 +252,26 @@ class ExploreViewModel @Inject constructor(
      private val categoriesRepo: CategoriesRepository,
-     private val tiersRepo: com.mhub.app.data.repository.TiersRepository,
-     private val localeManager: com.mhub.app.core.LocaleManager,
-+    private val prefs: com.mhub.app.data.local.AppPreferences,
+     private val tiersRepo: com.zaruda.app.data.repository.TiersRepository,
+     private val localeManager: com.zaruda.app.core.LocaleManager,
++    private val prefs: com.zaruda.app.data.local.AppPreferences,
  ) : ViewModel() {
      private val _state = MutableStateFlow(ExploreState())
      val state: StateFlow<ExploreState> = _state.asStateFlow()
  
-+    val themeMode: kotlinx.coroutines.flow.Flow<com.mhub.app.data.local.ThemeMode> = prefs.themeMode
++    val themeMode: kotlinx.coroutines.flow.Flow<com.zaruda.app.data.local.ThemeMode> = prefs.themeMode
 +
-+    fun setThemeMode(mode: com.mhub.app.data.local.ThemeMode) {
++    fun setThemeMode(mode: com.zaruda.app.data.local.ThemeMode) {
 +        viewModelScope.launch { prefs.setThemeMode(mode) }
 +    }
 +
@@ -189,14 +189,14 @@ index 7b6a241d..10ccfd8e 100644
 -                        val cartCount = state.cartItems.size
 -                        if (cartCount > 0) Badge { Text("$cartCount") }
 +                    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-+                    val currentThemeMode by viewModel.themeMode.collectAsState(initial = com.mhub.app.data.local.ThemeMode.SYSTEM)
++                    val currentThemeMode by viewModel.themeMode.collectAsState(initial = com.zaruda.app.data.local.ThemeMode.SYSTEM)
 +                    val useDarkTheme = when (currentThemeMode) {
-+                        com.mhub.app.data.local.ThemeMode.LIGHT -> false
-+                        com.mhub.app.data.local.ThemeMode.DARK -> true
-+                        com.mhub.app.data.local.ThemeMode.SYSTEM -> isSystemDark
++                        com.zaruda.app.data.local.ThemeMode.LIGHT -> false
++                        com.zaruda.app.data.local.ThemeMode.DARK -> true
++                        com.zaruda.app.data.local.ThemeMode.SYSTEM -> isSystemDark
 +                    }
 +                    IconButton(onClick = {
-+                        val nextMode = if (useDarkTheme) com.mhub.app.data.local.ThemeMode.LIGHT else com.mhub.app.data.local.ThemeMode.DARK
++                        val nextMode = if (useDarkTheme) com.zaruda.app.data.local.ThemeMode.LIGHT else com.zaruda.app.data.local.ThemeMode.DARK
 +                        viewModel.setThemeMode(nextMode)
                      }) {
 -                        IconButton(onClick = onOpenCart) {
@@ -212,7 +212,7 @@ index 7b6a241d..10ccfd8e 100644
 -                        IconButton(onClick = onOpenNotifications) {
 -                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
 +
-+                    val localeManager = com.mhub.app.core.LocalLocaleManager.current
++                    val localeManager = com.zaruda.app.core.LocalLocaleManager.current
 +                    var showLangMenu by remember { mutableStateOf(false) }
 +                    IconButton(onClick = { showLangMenu = true }) {
 +                        Icon(Icons.Default.Language, contentDescription = "Change Language")

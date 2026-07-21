@@ -1236,3 +1236,4 @@ function ratingLabel(score) {
 // Use sync fs for imgSize in scoring (Node built-in, no import needed at module level)
 const { statSync } = await import("node:fs");
 main().catch(e => { console.error(e); process.exit(1); });
+

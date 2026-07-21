@@ -177,3 +177,4 @@ await fs.writeFile(outPath, report.join("\n"));
 
 // eslint-disable-next-line no-console
 console.log(`Parity report generated: ${outPath}`);
+

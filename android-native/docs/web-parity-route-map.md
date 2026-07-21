@@ -27,10 +27,10 @@ node .\scripts\capture-route-reference.mjs --mode auth --storageState .\storageS
 
 ## Android parity implementation
 
-- Route catalog: `android-native/app/src/main/java/com/mhub/app/ui/parity/WebRouteCatalog.kt`
-- Parity hub/detail screens: `android-native/app/src/main/java/com/mhub/app/ui/parity/WebParityScreens.kt`
-- Route UX/state specs: `android-native/app/src/main/java/com/mhub/app/ui/parity/WebParitySpec.kt`
-- Design tokens for parity surfaces: `android-native/app/src/main/java/com/mhub/app/ui/parity/WebParityTokens.kt`
+- Route catalog: `android-native/app/src/main/java/com/zaruda/app/ui/parity/WebRouteCatalog.kt`
+- Parity hub/detail screens: `android-native/app/src/main/java/com/zaruda/app/ui/parity/WebParityScreens.kt`
+- Route UX/state specs: `android-native/app/src/main/java/com/zaruda/app/ui/parity/WebParitySpec.kt`
+- Design tokens for parity surfaces: `android-native/app/src/main/java/com/zaruda/app/ui/parity/WebParityTokens.kt`
 - Navigation routes:
   - `parity/hub`
   - `parity/page/{pageKey}`

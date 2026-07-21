@@ -8,8 +8,8 @@
 
 ### 1. Referral Network Tree Not Loading
 
-**File:** `android-native/app/src/main/java/com/mhub/app/ui/rewards/RewardsScreen.kt`
-**File (standalone):** `android-native/app/src/main/java/com/mhub/app/ui/rewards/DailyCodeAndReferralScreens.kt`
+**File:** `android-native/app/src/main/java/com/zaruda/app/ui/rewards/RewardsScreen.kt`
+**File (standalone):** `android-native/app/src/main/java/com/zaruda/app/ui/rewards/DailyCodeAndReferralScreens.kt`
 
 **Problem:** The referral tree loads via `rewardsRepository.referralTree()` → API `GET /api/referral/tree`. If the API returns empty or an error, the tree silently fails (loading spinner never resolves or shows "No referrals yet").
 

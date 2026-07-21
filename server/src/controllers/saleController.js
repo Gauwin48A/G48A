@@ -516,8 +516,8 @@ const confirmSale = async (req, res) => {
     return res.status(401).json({ error: "Authentication required" });
   }
 
-  if ((!transactionId && (!sellerId || !postId)) || !otp) {
-    return res.status(400).json({ error: "Seller ID + Post ID (or Transaction ID) and OTP are required" });
+  if (!transactionId && (!sellerId || !postId)) {
+    return res.status(400).json({ error: "Seller ID and Post ID (or Transaction ID) are required" });
   }
 
   const client = await pool.connect();

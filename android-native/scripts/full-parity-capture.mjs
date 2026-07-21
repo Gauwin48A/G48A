@@ -22,7 +22,7 @@ const BASE_URL      = "http://localhost:8081";
 const API_URL       = "http://localhost:5001";
 const LOGIN_EMAIL   = "rahul.sharma@mhub.com";
 const LOGIN_PASS    = "password123";
-const ANDROID_PKG   = "com.mhub.app.debug";   // Capacitor WebView debug build
+const ANDROID_PKG   = "com.zaruda.app.debug";   // Capacitor WebView debug build
 const __dir         = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT     = path.resolve(__dir, "..", "..");
 const SCREENSHOT_ROOT = path.join(REPO_ROOT, "android-native", "test-screenshots");
@@ -200,7 +200,7 @@ async function phase3_captureAndroid(outDir) {
   // Ensure app is running
   adb("shell", "am", "force-stop", ANDROID_PKG);
   await sleep(800);
-  adb("shell", "am", "start", "-n", `${ANDROID_PKG}/com.mhub.app.MainActivity`);
+  adb("shell", "am", "start", "-n", `${ANDROID_PKG}/com.zaruda.app.MainActivity`);
   await sleep(5000);
 
   // Enable WebView debugging (already in capacitor.config.json, just ensure it)
@@ -316,7 +316,7 @@ async function phase3_captureAndroid(outDir) {
       idx++;
       const concrete = route.replace(":id", "1").replace(":slug", "mobiles");
       adb("shell", "am", "start",
-        "-n", `${ANDROID_PKG}/com.mhub.app.MainActivity`,
+        "-n", `${ANDROID_PKG}/com.zaruda.app.MainActivity`,
         "--es", "debug_route", concrete);
       await sleep(3000);
       const filename = `${name}.png`;
@@ -482,3 +482,4 @@ main().catch(err => {
   console.error("FATAL:", err);
   process.exit(1);
 });
+

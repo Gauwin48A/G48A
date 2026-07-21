@@ -1,6 +1,6 @@
 param(
     [string]$Serial = "emulator-5554",
-    [string]$PackageName = "com.mhub.app.debug",
+    [string]$PackageName = "com.zaruda.app.debug",
     [string]$OutputRoot = "",
     [int]$UiTimeoutSec = 30
 )
@@ -122,7 +122,7 @@ function TapByText([string]$text, [int]$occurrence = 1, [int]$waitMs = 1800) {
 Adb @("-s", $Serial, "shell", "am", "force-stop", $PackageName) | Out-Null
 Adb @("-s", $Serial, "shell", "pm", "clear", $PackageName) | Out-Null
 Pause 800
-Adb @("-s", $Serial, "shell", "am", "start", "-n", "$PackageName/com.mhub.app.MainActivity") | Out-Null
+Adb @("-s", $Serial, "shell", "am", "start", "-n", "$PackageName/com.zaruda.app.MainActivity") | Out-Null
 
 if (-not (WaitForText "Welcome back" $UiTimeoutSec)) {
     throw "Login screen did not become ready"
@@ -207,3 +207,4 @@ Capture "18_profile_return.png"
 ) | Set-Content -Path (Join-Path $outDir "MANIFEST.txt")
 
 Write-Output "Route pack created: $outDir"
+

@@ -1,14 +1,14 @@
-﻿/**
+/**
  * android-cdp-capture.mjs
  *
  * Full pipeline:
- *  1. Launch com.mhub.app on emulator (Capacitor WebView)
+ *  1. Launch com.zaruda.app on emulator (Capacitor WebView)
  *  2. Forward Chrome DevTools Protocol (CDP) port via ADB
  *  3. Login via CDP JavaScript evaluation (fills real WebView login form)
  *  4. Navigate to every app route and capture ADB screenshots
  *
  * Prerequisites:
- *  - com.mhub.app installed on emulator-5554
+ *  - com.zaruda.app installed on emulator-5554
  *  - webContentsDebuggingEnabled: true in capacitor.config.json (already set)
  *  - node (ws package in cdp-tmp)
  *
@@ -33,17 +33,17 @@ const REPO    = path.resolve(__dir, "..", "..");
 const SHOTS   = path.join(REPO, "android-native", "test-screenshots");
 const ADB     = "C:\\Android\\Sdk\\platform-tools\\adb.exe";
 const SERIAL  = process.env.ANDROID_SERIAL || "emulator-5554";
-const PKG     = process.env.ANDROID_PKG || "com.mhub.app.debug";
-const PKG_ACTIVITY = process.env.ANDROID_ACTIVITY || `${PKG}/com.mhub.app.MainActivity`;
+const PKG     = process.env.ANDROID_PKG || "com.zaruda.app.debug";
+const PKG_ACTIVITY = process.env.ANDROID_ACTIVITY || `${PKG}/com.zaruda.app.MainActivity`;
 const CDP_PORT = Number(process.env.CDP_PORT || "9222");
 const WAIT_MS  = Number(process.env.WAIT_MS  || "3500");
 const CONTENT_POLL_INTERVAL = 500;  // ms between DOM-content polls
-const CONTENT_POLL_MAX      = 14;   // max polls (14 Ã— 500ms = 7s max)
+const CONTENT_POLL_MAX      = 14;   // max polls (14 × 500ms = 7s max)
 const IDENTIFIER = process.env.MHUB_LOGIN_IDENTIFIER || "9876543210";
 const PASS       = process.env.MHUB_LOGIN_PASSWORD || "Pass12345";
 const DEVICE_ID  = process.env.MHUB_DEVICE_ID || "6655fbf0-36e5-4739-84b8-35a6496c7444";
 
-// All app routes (skip param routes â€” they need real IDs)
+// All app routes (skip param routes — they need real IDs)
 const DEFAULT_ROUTES = [
   "/",
   "/category-hub",
@@ -133,7 +133,7 @@ const STAMP  = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
 const AND_DIR = path.join(SHOTS, `android-auth-${STAMP}`);
 fs.mkdirSync(AND_DIR, { recursive: true });
 
-// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── helpers ─────────────────────────────────────────────────────────────────
 function log(msg) { process.stdout.write(msg + "\n"); }
 
 function adb(...args) {
@@ -156,7 +156,7 @@ function screencap(localFile) {
   return fs.existsSync(localFile) ? fs.statSync(localFile).size : 0;
 }
 
-// â”€â”€â”€ CDP helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CDP helpers ──────────────────────────────────────────────────────────────
 function httpGet(url) {
   return new Promise((resolve, reject) => {
     http.get(url, res => {
@@ -279,16 +279,16 @@ async function waitForRenderableContent(wsUrl, { maxWaitMs = 22000 } = {}) {
   return lastProbe;
 }
 
-// â”€â”€â”€ ADB port forward â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ADB port forward ─────────────────────────────────────────────────────────
 async function forwardCdpPort(pid) {
   // Remove any previous forward on this port
   adb("forward", "--remove", `tcp:${CDP_PORT}`);
   const r = adb("forward", `tcp:${CDP_PORT}`, `localabstract:webview_devtools_remote_${pid}`);
   if (r.status !== 0) {
-    log(`  âš  ADB forward failed: ${r.stderr}`);
+    log(`  ⚠ ADB forward failed: ${r.stderr}`);
     return false;
   }
-  log(`  âœ“ Forwarded localhost:${CDP_PORT} â†’ WebView CDP (PID ${pid})`);
+  log(`  ✓ Forwarded localhost:${CDP_PORT} → WebView CDP (PID ${pid})`);
   return true;
 }
 
@@ -307,7 +307,7 @@ async function getWebViewWsUrl() {
 }
 
 /**
- * Get WS URL with retry â€” re-establishes ADB port forward if needed.
+ * Get WS URL with retry — re-establishes ADB port forward if needed.
  */
 async function getWsUrlWithRetry(pid) {
   const maxAttempts = 10;
@@ -321,28 +321,28 @@ async function getWsUrlWithRetry(pid) {
   return null;
 }
 
-// â”€â”€â”€ main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── main ─────────────────────────────────────────────────────────────────────
 async function main() {
-  log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-  log(" MHub Android CDP Capture â€” Authenticated All Routes  ");
-  log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+  log("═══════════════════════════════════════════════════════");
+  log(" MHub Android CDP Capture — Authenticated All Routes  ");
+  log("═══════════════════════════════════════════════════════");
   log(`Output: ${AND_DIR}`);
   log(`Serial: ${SERIAL}  Package: ${PKG}  Activity: ${PKG_ACTIVITY}  CDP port: ${CDP_PORT}`);
 
-  // â”€â”€ Step 1: Launch app into WebView parity screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  log("\n[1/5] Launching com.mhub.app into WebView parity screen...");
+  // ── Step 1: Launch app into WebView parity screen ──────────────────────────
+  log("\n[1/5] Launching com.zaruda.app into WebView parity screen...");
   adb("shell", "am", "force-stop", PKG);
   await sleep(1500);
   // Launch into rewards parity page first so auth-gated session bootstrap is deterministic.
   const launch = adb("shell", "am", "start", "-n", PKG_ACTIVITY, "--es", "debug_route", "parity/page/rewards");
   if (launch.status !== 0) {
-    log(`  âœ— Launch failed: ${launch.stderr}`);
+    log(`  ✗ Launch failed: ${launch.stderr}`);
     process.exit(1);
   }
-  // Wait for the WebView to fully initialize (native app â†’ compose â†’ WebView load)
+  // Wait for the WebView to fully initialize (native app → compose → WebView load)
   await sleep(30000);
 
-  // â”€â”€ Step 2: Get WebView PID from /proc/net/unix & forward CDP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Step 2: Get WebView PID from /proc/net/unix & forward CDP ──────────────
   log("\n[2/5] Getting WebView PID...");
   // Prefer the app process devtools socket; fallback to the first available WebView socket.
   let pid = null;
@@ -374,28 +374,28 @@ async function main() {
     await sleep(3000);
   }
   if (!pid) {
-    log("  âœ— Could not find WebView devtools socket. Ensure webContentsDebuggingEnabled is true.");
+    log("  ✗ Could not find WebView devtools socket. Ensure webContentsDebuggingEnabled is true.");
     process.exit(1);
   }
   log(`  WebView PID: ${pid}`);
 
   const forwarded = await forwardCdpPort(pid);
   if (!forwarded) {
-    log("  âœ— Could not forward CDP port");
+    log("  ✗ Could not forward CDP port");
     process.exit(1);
   }
   await sleep(1500);
 
-  // â”€â”€ Step 3: Get WebSocket URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Step 3: Get WebSocket URL ───────────────────────────────────────────────
   log("\n[3/5] Connecting to Chrome DevTools Protocol...");
   let wsUrl = await getWsUrlWithRetry(pid);
   if (!wsUrl) {
-    log("  âœ— Could not get WebView WS URL. Ensure webContentsDebuggingEnabled:true");
+    log("  ✗ Could not get WebView WS URL. Ensure webContentsDebuggingEnabled:true");
     process.exit(1);
   }
-  log(`  âœ“ WebSocket URL: ${wsUrl}`);
+  log(`  ✓ WebSocket URL: ${wsUrl}`);
 
-  // â”€â”€ Step 4: Ensure authenticated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Step 4: Ensure authenticated ───────────────────────────────────────────
   log("\n[4/5] Checking authentication state...");
 
   // Check if already logged in by reading localStorage / cookie
@@ -422,9 +422,9 @@ async function main() {
   const isLoggedIn = checkResult.meStatus === 200 || checkResult.hasToken === true;
 
   if (!isLoggedIn) {
-    log("  Not authenticated â€” logging in via API fetch...");
+    log("  Not authenticated — logging in via API fetch...");
 
-    // Login via fetch (no page reload â€” stays on current page, sets HttpOnly cookies)
+    // Login via fetch (no page reload — stays on current page, sets HttpOnly cookies)
     const loginJs = `
       (async function() {
         try {
@@ -476,13 +476,13 @@ async function main() {
     log(`  Login result: ${JSON.stringify(lr)}`);
 
     if (!lr.ok) {
-      log("  âš  Login API call may have failed â€” proceeding anyway (cookies may be cached)");
+      log("  ⚠ Login API call may have failed — proceeding anyway (cookies may be cached)");
     } else {
-      log("  âœ“ Login successful");
+      log("  ✓ Login successful");
     }
     await sleep(2000);
   } else {
-    log("  âœ“ Already authenticated (session cookies present)");
+    log("  ✓ Already authenticated (session cookies present)");
   }
 
   // The WebView already loaded /category-hub via the parity screen launch.
@@ -494,7 +494,7 @@ async function main() {
   const startSize = screencap(startShot);
   log(`  Start state captured: ${(startSize / 1024).toFixed(0)}KB`);
 
-  // â”€â”€ Step 5: Capture all routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Step 5: Capture all routes ─────────────────────────────────────────────
   log(`\n[5/5] Capturing ${ACTIVE_ROUTES.length} routes...`);
 
   let ok = 0;
@@ -518,7 +518,7 @@ async function main() {
 
     process.stdout.write(`  [${i + 1}/${ACTIVE_ROUTES.length}] ${route} ... `);
     if (!isDeviceReady()) {
-      process.stdout.write(`âœ— device disconnected\n`);
+      process.stdout.write(`✗ device disconnected\n`);
       fail++;
       manifest.push({
         index: i + 1,
@@ -582,7 +582,7 @@ async function main() {
       if (retrySz > sz) sz = retrySz;
     }
     if (sz > 30000 && contentProbe?.ready) {
-      process.stdout.write(`âœ“ ${(sz / 1024).toFixed(0)}KB${pathNote}\n`);
+      process.stdout.write(`✓ ${(sz / 1024).toFixed(0)}KB${pathNote}\n`);
       ok++;
       manifest.push({
         index: i + 1,
@@ -593,7 +593,7 @@ async function main() {
         actualPath,
       });
     } else if (sz > 30000) {
-      process.stdout.write(`âš  ${(sz / 1024).toFixed(0)}KB${pathNote}${readinessNote}\n`);
+      process.stdout.write(`⚠ ${(sz / 1024).toFixed(0)}KB${pathNote}${readinessNote}\n`);
       ok++;
       manifest.push({
         index: i + 1,
@@ -604,7 +604,7 @@ async function main() {
         actualPath,
       });
     } else if (sz > 0) {
-      process.stdout.write(`âš  ${(sz / 1024).toFixed(0)}KB (may be blank)${pathNote}\n`);
+      process.stdout.write(`⚠ ${(sz / 1024).toFixed(0)}KB (may be blank)${pathNote}\n`);
       ok++;
       manifest.push({
         index: i + 1,
@@ -615,7 +615,7 @@ async function main() {
         actualPath,
       });
     } else {
-      process.stdout.write(`âœ— screencap failed\n`);
+      process.stdout.write(`✗ screencap failed\n`);
       fail++;
       manifest.push({
         index: i + 1,
@@ -632,17 +632,18 @@ async function main() {
   adb("forward", "--remove", `tcp:${CDP_PORT}`);
   fs.writeFileSync(path.join(AND_DIR, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
 
-  log("\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+  log("\n═══════════════════════════════════════════════════════");
   log(` Android capture complete`);
   log(` OK: ${ok}  Failed: ${fail}  Total: ${ACTIVE_ROUTES.length}`);
   log(` Output dir: ${AND_DIR}`);
-  log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+  log("═══════════════════════════════════════════════════════");
 }
 
 main().catch(e => {
-  log(`\nâœ— Fatal error: ${e.message}`);
+  log(`\n✗ Fatal error: ${e.message}`);
   log(e.stack || "");
   // Try to clean up port forward
   try { spawnSync(ADB, ["-s", SERIAL, "forward", "--remove", `tcp:${CDP_PORT}`], { timeout: 5000 }); } catch {}
   process.exit(1);
 });
+

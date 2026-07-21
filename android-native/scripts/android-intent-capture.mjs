@@ -1,4 +1,4 @@
-﻿/**
+/**
  * android-intent-capture.mjs
  *
  * Intent-based Android screenshot capture (no CDP).
@@ -15,8 +15,8 @@ const REPO = path.resolve(__dir, "..", "..");
 const SHOTS = path.join(REPO, "android-native", "test-screenshots");
 const ADB = "C:\\Android\\Sdk\\platform-tools\\adb.exe";
 const SERIAL = process.env.ANDROID_SERIAL || "emulator-5554";
-const PKG = "com.mhub.app.debug";
-const COMPONENT = `${PKG}/com.mhub.app.MainActivity`;
+const PKG = "com.zaruda.app.debug";
+const COMPONENT = `${PKG}/com.zaruda.app.MainActivity`;
 
 const COLD_START_MS = Number(process.env.COLD_START_MS || "30000");
 const AUTH_ROUTE_MS = Number(process.env.AUTH_ROUTE_MS || "25000");
@@ -249,3 +249,4 @@ console.log(`\n${"-".repeat(55)}`);
 console.log(`Done: ${success} captured, ${blank} possibly blank, ${failed} failed, ${recovered} recovered`);
 console.log(`Total: ${ROUTES.length} routes`);
 console.log(`Output: ${AND_DIR}\n`);
+

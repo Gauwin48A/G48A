@@ -3,7 +3,7 @@
 **Generated:** 2026-05-03T05:30:54.587Z
 **Test account:** 9876543210
 **Web:** http://localhost:8081/category-hub
-**Android:** `com.mhub.app.debug` on `emulator-5554`
+**Android:** `com.zaruda.app.debug` on `emulator-5554`
 
 ## Overall Scores
 

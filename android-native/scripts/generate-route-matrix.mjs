@@ -165,3 +165,4 @@ const outPath = path.join(repoRoot, "android-native", "docs", "parity-route-matr
 await fs.writeFile(outPath, lines.join("\n"));
 // eslint-disable-next-line no-console
 console.log(`Route matrix generated: ${outPath}`);
+

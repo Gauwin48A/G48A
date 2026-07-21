@@ -40,7 +40,7 @@ The **actual remaining gaps** were 8 dead routes (defined but not registered in 
 
 ### 1.2 New Files Created
 
-- `android-native/app/src/main/java/com/mhub/app/ui/profile/ProfileSubScreens.kt`
+- `android-native/app/src/main/java/com/zaruda/app/ui/profile/ProfileSubScreens.kt`
   - OrderHistoryScreen with ViewModel (loads bought/sold posts via API)
   - OrderDetailScreen (order detail view)
   - AddressBookScreen with add/edit/delete

@@ -4,11 +4,11 @@ _Last updated this session._
 
 | # | Route | Web source | Native file | Status |
 |---|---|---|---|---|
-| 1 | `/login` | `Mhub/client/src/pages/Auth/Login.jsx` | [LoginScreen.kt](../app/src/main/java/com/mhub/app/ui/auth/LoginScreen.kt) | ✅ Native, ~9.5/10 visual parity |
-| 2 | `/forgot-password` | `Mhub/client/src/pages/Auth/ForgotPassword.jsx` | [ForgotPasswordScreen.kt](../app/src/main/java/com/mhub/app/ui/auth/ForgotPasswordScreen.kt) | ✅ Native, ~9.5/10 visual parity |
-| 3 | `/signup` | `Mhub/client/src/pages/Auth/Signup.jsx` (34 KB, multi-step Aadhaar + OTP + PAN + Password wizard) | [SignUpScreen.kt](../app/src/main/java/com/mhub/app/ui/auth/SignUpScreen.kt) | ⚠️ Native single-page MVP shipped (Full Name / Email / Mobile / Password). Web's Aadhaar/OTP/PAN multi-step flow not yet ported. |
-| 4 | `/category-hub` | `Mhub/client/src/pages/CategoryHub.jsx` | [CategoryHubScreen.kt](../app/src/main/java/com/mhub/app/ui/home/CategoryHubScreen.kt) | ⚠️ Existing native is a generic categories list. Web design is a bold "Choose Your **World**" app-picker with emoji tiles + per-app stats. **Parity gap — needs rebuild.** |
-| 5 | `/all-posts` | `Mhub/client/src/pages/AllPosts.jsx` (2800+ lines) | [HomeScreen.kt](../app/src/main/java/com/mhub/app/ui/home/HomeScreen.kt) | ⚠️ Existing native covers basic post list. Web has rich filters, sort, grid/list toggles, infinite scroll, premium badges. **Parity gap — needs feature rebuild (multi-day).** |
+| 1 | `/login` | `Mhub/client/src/pages/Auth/Login.jsx` | [LoginScreen.kt](../app/src/main/java/com/zaruda/app/ui/auth/LoginScreen.kt) | ✅ Native, ~9.5/10 visual parity |
+| 2 | `/forgot-password` | `Mhub/client/src/pages/Auth/ForgotPassword.jsx` | [ForgotPasswordScreen.kt](../app/src/main/java/com/zaruda/app/ui/auth/ForgotPasswordScreen.kt) | ✅ Native, ~9.5/10 visual parity |
+| 3 | `/signup` | `Mhub/client/src/pages/Auth/Signup.jsx` (34 KB, multi-step Aadhaar + OTP + PAN + Password wizard) | [SignUpScreen.kt](../app/src/main/java/com/zaruda/app/ui/auth/SignUpScreen.kt) | ⚠️ Native single-page MVP shipped (Full Name / Email / Mobile / Password). Web's Aadhaar/OTP/PAN multi-step flow not yet ported. |
+| 4 | `/category-hub` | `Mhub/client/src/pages/CategoryHub.jsx` | [CategoryHubScreen.kt](../app/src/main/java/com/zaruda/app/ui/home/CategoryHubScreen.kt) | ⚠️ Existing native is a generic categories list. Web design is a bold "Choose Your **World**" app-picker with emoji tiles + per-app stats. **Parity gap — needs rebuild.** |
+| 5 | `/all-posts` | `Mhub/client/src/pages/AllPosts.jsx` (2800+ lines) | [HomeScreen.kt](../app/src/main/java/com/zaruda/app/ui/home/HomeScreen.kt) | ⚠️ Existing native covers basic post list. Web has rich filters, sort, grid/list toggles, infinite scroll, premium badges. **Parity gap — needs feature rebuild (multi-day).** |
 
 ## Screenshots
 - [Mhub/android-native/test-screenshots/new-login-shot.png](../test-screenshots/new-login-shot.png) — Login
@@ -26,7 +26,7 @@ _Last updated this session._
 ## Notes for next session
 - Each native screen takes ~300–1500 LOC + ViewModel + sometimes new Repository/DTO/API endpoints. Build wall-clock ~3-5 min per `:app:installDebug`.
 - Use `Icons.Filled.X` with explicit imports (not `Icons.Default.X`) — saves repeat compile errors.
-- Use `pm clear com.mhub.app.debug` then `am start` for fresh launch.
+- Use `pm clear com.zaruda.app.debug` then `am start` for fresh launch.
 - Login flow is fragile to automate via `adb input` — prefer static code audit for verifying existing screens; runtime captures ANR-prone.
 - ANR recovery: `am crash com.android.systemui` or tap "Wait" in the dialog.
 

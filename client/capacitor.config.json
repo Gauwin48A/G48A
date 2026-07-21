@@ -1,5 +1,5 @@
 {
-  "appId": "com.mhub.app",
+  "appId": "com.zaruda.app",
   "appName": "MHub",
   "webDir": "dist",
   "android": {

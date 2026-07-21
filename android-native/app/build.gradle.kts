@@ -31,11 +31,11 @@ fun localProp(key: String, fallback: String = "") =
 
 android {
     val stagingApiBaseUrl = System.getenv("MHUB_STAGING_API_BASE_URL") ?: ""
-    namespace = "com.mhub.app"
+    namespace = "com.zaruda.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.mhub.app"
+        applicationId = "com.zaruda.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 2

@@ -174,3 +174,4 @@ foreach ($languageCode in $localeQualifiers.Keys | Sort-Object) {
 }
 
 Write-Output "Android locale resources synchronized from Web locale bundles."
+

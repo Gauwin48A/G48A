@@ -35,3 +35,4 @@ if (-not (Test-Path $candidate)) {
 & powershell -ExecutionPolicy Bypass -File $compareScript -BaselineDir $BaselineDir -CandidateDir $candidate -ThresholdPercent $ThresholdPercent
 
 Write-Output "Visual regression complete. Candidate: $candidate"
+

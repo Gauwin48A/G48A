@@ -7,7 +7,7 @@
 
 # Capacitor WebView JS interface — keep all bridge classes
 -keep class com.getcapacitor.** { *; }
--keep class com.mhub.app.** { *; }
+-keep class com.zaruda.app.** { *; }
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }

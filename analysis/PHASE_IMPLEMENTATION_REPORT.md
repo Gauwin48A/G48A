@@ -128,7 +128,7 @@ class ForYouViewModel @Inject constructor(
     private val postsRepo: PostsRepository,
     private val categoriesRepo: CategoriesRepository,
     private val profileRepo: ProfileRepository,
-    private val localeManager: com.mhub.app.core.LocaleManager, // NEW
+    private val localeManager: com.zaruda.app.core.LocaleManager, // NEW
 ) : ViewModel() {
     private var lastLocaleVersion = 0L // NEW
 
@@ -289,7 +289,7 @@ private fun loadSubcategories(key: String?) {
 
 **Evidence**:
 ```kotlin
-import com.mhub.app.data.remote.dto.FeedItem
+import com.zaruda.app.data.remote.dto.FeedItem
 
 data class FeedState(
     val feedItems: List<FeedItem> = emptyList(),

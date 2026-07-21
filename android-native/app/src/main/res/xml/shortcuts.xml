@@ -8,8 +8,8 @@
         android:shortcutLongLabel="@string/shortcut_new_post_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.mhub.app"
-            android:targetClass="com.mhub.app.MainActivity"
+            android:targetPackage="com.zaruda.app"
+            android:targetClass="com.zaruda.app.MainActivity"
             android:data="mhub://create-post" />
     </shortcut>
     <shortcut
@@ -20,8 +20,8 @@
         android:shortcutLongLabel="@string/shortcut_search_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.mhub.app"
-            android:targetClass="com.mhub.app.MainActivity"
+            android:targetPackage="com.zaruda.app"
+            android:targetClass="com.zaruda.app.MainActivity"
             android:data="mhub://search" />
     </shortcut>
     <shortcut
@@ -32,8 +32,8 @@
         android:shortcutLongLabel="@string/shortcut_chat_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.mhub.app"
-            android:targetClass="com.mhub.app.MainActivity"
+            android:targetPackage="com.zaruda.app"
+            android:targetClass="com.zaruda.app.MainActivity"
             android:data="mhub://chat" />
     </shortcut>
 </shortcuts>

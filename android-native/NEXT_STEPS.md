@@ -161,7 +161,7 @@
 ## 📁 KEY FILE MAP
 
 ```
-android-native/app/src/main/java/com/mhub/app/
+android-native/app/src/main/java/com/zaruda/app/
 ├── ui/
 │   ├── MhubApp.kt                    — Main nav graph, all routes, BottomTab enum
 │   ├── profile/ProfileScreen.kt      — ⚠️ Missing action buttons & badges
@@ -207,7 +207,7 @@ cd c:\Users\laksh\GITHUB\1hub\repo1\android-native
 C:\Android\Sdk\platform-tools\adb.exe install -r "app\build\outputs\apk\debug\app-debug.apk"
 
 # Launch app
-C:\Android\Sdk\platform-tools\adb.exe shell am start -n com.mhub.app.debug/com.mhub.app.MainActivity
+C:\Android\Sdk\platform-tools\adb.exe shell am start -n com.zaruda.app.debug/com.zaruda.app.MainActivity
 ```
 
 ---

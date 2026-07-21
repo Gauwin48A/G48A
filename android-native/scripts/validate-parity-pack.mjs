@@ -152,3 +152,4 @@ const hasFailure =
 if (hasFailure) {
     process.exitCode = 1;
 }
+

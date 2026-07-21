@@ -400,12 +400,12 @@ const SaleDone = () => {
     const transactionId = String(buyerForm.transactionId || "").trim();
     const otp = String(buyerForm.otp || "").trim();
 
-    if ((!sellerId && !postId && !transactionId) || !otp) {
+    if (!sellerId && !postId && !transactionId) {
       toast({
         title: tr("missing_details_title", "Missing details"),
         description: tr(
           "sale_confirm_missing_desc",
-          "Seller ID (or Transaction ID), Post ID, and OTP are required.",
+          "Seller ID (or Transaction ID) and Post ID are required.",
         ),
         variant: "destructive",
       });
@@ -1269,27 +1269,48 @@ const SaleDone = () => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <Label
+                        htmlFor="buyerAmount"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                        {tr("agreed_purchase_price", "Agreed Purchase Price (₹)")}
+                      </Label>
+                      <Input
+                        id="buyerAmount"
+                        value={buyerForm.saleAmount || ""}
+                        onChange={(event) =>
+                          setBuyerForm((prev) => ({
+                            ...prev,
+                            saleAmount: event.target.value,
+                          }))
+                        }
+                        placeholder={tr("amount_example", "e.g., 15000")}
+                        className="h-12"
+                      />
+                    </div>
+                    <div>
                       <Label
                         htmlFor="buyerOtp"
                         className="text-sm font-bold mb-2 block"
                       >
-                      <KeyRound className="w-4 h-4 inline mr-1" />{" "}
-                      {tr("otp", "OTP")}
+                        <KeyRound className="w-4 h-4 inline mr-1" />{" "}
+                        {tr("otp_optional", "OTP (Optional)")}
                       </Label>
                       <Input
                         id="buyerOtp"
                         value={buyerForm.otp}
-                      onChange={(event) =>
-                        setBuyerForm((prev) => ({
-                          ...prev,
-                          otp: event.target.value,
-                        }))
-                      }
-                      placeholder={tr("enter_otp", "Enter OTP")}
-                      className="h-12"
-                      required
-                    />
+                        onChange={(event) =>
+                          setBuyerForm((prev) => ({
+                            ...prev,
+                            otp: event.target.value,
+                          }))
+                        }
+                        placeholder={tr("enter_otp_optional", "Enter OTP if provided")}
+                        className="h-12"
+                      />
+                    </div>
                   </div>
 
                   <Button

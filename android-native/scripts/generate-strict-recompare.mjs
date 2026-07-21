@@ -266,3 +266,4 @@ await fs.writeFile(outMd, mdLines.join("\n"));
 console.log(`Strict parity CSV generated: ${outCsv}`);
 // eslint-disable-next-line no-console
 console.log(`Strict parity MD generated: ${outMd}`);
+

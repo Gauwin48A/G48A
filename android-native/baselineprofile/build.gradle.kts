@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mhub.app.baselineprofile"
+    namespace = "com.zaruda.app.baselineprofile"
     compileSdk = 35
 
     defaultConfig {

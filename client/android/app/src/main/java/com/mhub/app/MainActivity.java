@@ -1,4 +1,4 @@
-package com.mhub.app;
+package com.zaruda.app;
 
 import android.os.Bundle;
 import android.webkit.CookieManager;

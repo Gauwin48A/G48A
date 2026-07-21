@@ -18,7 +18,7 @@ Production-ready native Android app for MHub, written in **100% Kotlin** with Je
 
 ### Source map
 ```
-app/src/main/java/com/mhub/app/
+app/src/main/java/com/zaruda/app/
 ├── MhubApplication.kt            Hilt entry + Firebase init + Coil ImageLoaderFactory
 ├── MainActivity.kt               Splash + edge-to-edge + Compose root
 ├── core/
@@ -112,7 +112,7 @@ Compile-time default lives in `local.properties` as `MHUB_API_BASE_URL` (read by
 ## Firebase Setup
 
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Add an Android app with package name `com.mhub.app` (and optionally `com.mhub.app.debug`)
+2. Add an Android app with package name `com.zaruda.app` (and optionally `com.zaruda.app.debug`)
 3. Download `google-services.json` and place it in `app/google-services.json`
 4. The stub file works for building without Firebase — Crashlytics/FCM will be inactive until a real config is provided
 
@@ -266,7 +266,7 @@ Android parity implementation lives under:
 
 Route-level behavior rules (commerce/chat/profile/kyc/payment) are tested in:
 
-- `app/src/test/java/com/mhub/app/ui/parity/RouteBehaviorRulesTest.kt`
+- `app/src/test/java/com/zaruda/app/ui/parity/RouteBehaviorRulesTest.kt`
 
 ---
 

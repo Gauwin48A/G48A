@@ -19,11 +19,11 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.mhub.app.**$$serializer { *; }
--keepclassmembers class com.mhub.app.** {
+-keep,includedescriptorclasses class com.zaruda.app.**$$serializer { *; }
+-keepclassmembers class com.zaruda.app.** {
     *** Companion;
 }
--keepclasseswithmembers class com.mhub.app.** {
+-keepclasseswithmembers class com.zaruda.app.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
@@ -38,8 +38,8 @@
 -dontwarn org.bouncycastle.**
 
 # Keep model data classes
--keep class com.mhub.app.domain.model.** { *; }
--keep class com.mhub.app.data.remote.dto.** { *; }
+-keep class com.zaruda.app.domain.model.** { *; }
+-keep class com.zaruda.app.data.remote.dto.** { *; }
 
 # Keep application class
--keep class com.mhub.app.MhubApplication { *; }
+-keep class com.zaruda.app.MhubApplication { *; }

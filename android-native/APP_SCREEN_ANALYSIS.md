@@ -1,7 +1,7 @@
 # MHub Android App — Screen-by-Screen Feature & Improvement Analysis
 
 > **Date:** 2026-06-12
-> **Scope:** Every composable screen/page in the `android-native/app/src/main/java/com/mhub/app/ui/` directory.
+> **Scope:** Every composable screen/page in the `android-native/app/src/main/java/com/zaruda/app/ui/` directory.
 > **Format:** Each section lists current features, then proposes additions, optimizations, and UX enhancements.
 
 ---

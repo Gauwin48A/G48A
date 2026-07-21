@@ -132,7 +132,7 @@ curl https://mhub-api.<your-subdomain>.workers.dev/health
    - Authorized redirect URIs: not needed for Android Credential Manager.
    - Copy the **Client ID** (looks like `123456-xxxx.apps.googleusercontent.com`).
 3. Create **OAuth client ID** of type **Android**.
-   - Package name: `com.mhub.app`
+   - Package name: `com.zaruda.app`
    - SHA-1: obtained from the release keystore:
      ```powershell
      cd C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\android-native
@@ -200,7 +200,7 @@ header set to the value of the `ADMIN_API_KEY` secret.
 |---|---|
 | Location | `Mhub/android-native/app/build/outputs/apk/release/app-release.apk` |
 | Size | ~2.23 MB |
-| Package | `com.mhub.app` |
+| Package | `com.zaruda.app` |
 | versionCode / versionName | `1` / `1.0.0` |
 | minSdk / targetSdk / compileSdk | `24` / `35` / `35` |
 | Signing scheme | APK Signature Scheme v2 |

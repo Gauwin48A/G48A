@@ -2,7 +2,7 @@
 
 ## Scope
 - Target web app: `http://localhost:8081/category-hub`
-- Target Android app: `com.mhub.app.debug` (Web replica mode)
+- Target Android app: `com.zaruda.app.debug` (Web replica mode)
 - Requirement: authenticated parity check and page-by-page scoring
 
 ## Launch and Stability Validation

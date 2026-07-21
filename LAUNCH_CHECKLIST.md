@@ -18,7 +18,7 @@ All code-level bugs have been fixed and all automated tests pass.
    - No redirect URIs needed (Android Credential Manager flow)
    - Copy the **Client ID** (e.g. `123456-xxxx.apps.googleusercontent.com`)
 3. Create an **OAuth client ID** of type **Android**
-   - Package name: `com.mhub.app`
+   - Package name: `com.zaruda.app`
    - SHA-1 fingerprint: get it by running:
      ```powershell
      cd C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\android-native
@@ -228,7 +228,7 @@ Set as appropriate for MHub's marketplace audience.
 | Release keystore | `Mhub/android-native/keystore/release.keystore` |
 | Key alias | `mhub-release` |
 | Keystore password | `MhubRelease2026!` |
-| Package name | `com.mhub.app` |
+| Package name | `com.zaruda.app` |
 | Backend config | `Mhub/server-cf/wrangler.toml` |
 | Android build config | `Mhub/android-native/app/build.gradle.kts` |
 

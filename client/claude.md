@@ -2155,7 +2155,7 @@ Link: text-purple-600 dark:text-purple-300 hover:underline font-medium py-1.5 in
 ### App Identity
 
 ```
-Package: com.mhub.app
+Package: com.zaruda.app
 Android scheme: http (cleartext enabled)
 SDK: API 34 (x86_64)
 Emulator: MHub_AVD (swiftshader_indirect)
@@ -3023,8 +3023,8 @@ cd Mhub\client\android
 ### Deploy to Emulator
 ```powershell
 adb install -r "client\android\app\build\outputs\apk\debug\app-debug.apk"
-adb shell "am force-stop com.mhub.app"
-adb shell "am start -n com.mhub.app/.MainActivity"
+adb shell "am force-stop com.zaruda.app"
+adb shell "am start -n com.zaruda.app/.MainActivity"
 ```
 
 ### Server
@@ -3041,7 +3041,7 @@ adb reverse tcp:5001 tcp:5001     # API access from app
 
 ### CDP Debugging
 ```powershell
-$p = (adb shell "pidof com.mhub.app").Trim()
+$p = (adb shell "pidof com.zaruda.app").Trim()
 adb forward tcp:9222 "localabstract:webview_devtools_remote_$p"
 # WebSocket URL at: http://localhost:9222/json
 ```
@@ -3058,7 +3058,7 @@ adb forward tcp:9222 "localabstract:webview_devtools_remote_$p"
 | Android SDK | `C:\Android\Sdk` |
 | JDK | `C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot` |
 | Emulator | MHub_AVD (Android 34, x86_64, swiftshader_indirect) |
-| App ID | `com.mhub.app` |
+| App ID | `com.zaruda.app` |
 | Server Port | 5001 |
 | Demo Login | Phone: `9876543210` / Password: `Test@12345` |
 | DB | PostgreSQL (pool: 20, idle: 30s, connect: 5s) |

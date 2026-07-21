@@ -94,3 +94,4 @@ if ($failed.Count -gt 0) {
 }
 
 Write-Output "Visual regression passed."
+

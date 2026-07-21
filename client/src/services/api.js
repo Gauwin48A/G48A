@@ -811,7 +811,15 @@ api.interceptors.request.use(
       if (storedFp) {
         headers["X-Device-Fingerprint"] = storedFp;
       }
-    } catch (e) { _diag("localStorage(fp) FAIL", e?.message); }
+      const storedToken = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("jwtToken");
+      if (storedToken && !headers["Authorization"] && !headers["authorization"]) {
+        headers["Authorization"] = storedToken.startsWith("Bearer ") ? storedToken : `Bearer ${storedToken}`;
+      }
+      const storedUserId = localStorage.getItem("userId") || localStorage.getItem("user_id");
+      if (storedUserId && !headers["X-User-Id"] && !headers["x-user-id"]) {
+        headers["X-User-Id"] = storedUserId;
+      }
+    } catch (e) { _diag("authHeaders FAIL", e?.message); }
     headers["X-Timezone"] = CLIENT_TIMEZONE;
     // Send request timestamp for anti-replay protection
     headers["X-MHub-Timestamp"] = String(Date.now());

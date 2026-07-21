@@ -1,6 +1,6 @@
 param(
     [string]$Serial = "emulator-5554",
-    [string]$PackageName = "com.mhub.app.debug",
+    [string]$PackageName = "com.zaruda.app.debug",
     [string]$OutputRoot = "",
     [string]$OutputDir = "",
     [int]$LaunchWaitMs = 2200,
@@ -107,7 +107,7 @@ function WaitForAnyText([string[]]$texts, [int]$timeoutSec = 12) {
 function StartDebugRoute([string]$route) {
     Adb -AdbArgs @(
         "-s", $Serial, "shell", "am", "start",
-        "-n", "$PackageName/com.mhub.app.MainActivity",
+        "-n", "$PackageName/com.zaruda.app.MainActivity",
         "--es", "debug_route", $route
     ) | Out-Null
     Pause $LaunchWaitMs
@@ -210,3 +210,4 @@ $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $manifestJsonPath
 Write-Output "Web parity screenshot pack created: $outDir"
 Write-Output "Screenshots captured (total): $($manifest.Count)"
 Write-Output "Screenshots captured (this run): $capturedThisRun"
+
