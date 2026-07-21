@@ -1100,6 +1100,7 @@ fun ExploreScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                             )
+
                         }
                     }
                 }
@@ -1139,12 +1140,13 @@ fun ExploreScreen(
                         showFilterSheet = true
                     },
                     onSelectSubcategory = { sub ->
-                        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
-                    },    onInterested = { postId, postTitle ->
+                        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)    },
+    onInterested = { postId, postTitle ->
         interestPostId = postId
         interestPostTitle = postTitle
         showInterestModal = true
     },
+    onOpenProfile = onOpenProfile,
 )
             }
 
@@ -1308,6 +1310,7 @@ fun ExploreScreen(
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.height(28.dp),
                             )
+
                         }
                     }
                     androidx.compose.material3.RangeSlider(
@@ -1331,6 +1334,7 @@ fun ExploreScreen(
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White),
                                 shape = RoundedCornerShape(16.dp),
                             )
+
                         }
                     }
                 }
@@ -1356,6 +1360,7 @@ fun ExploreScreen(
                                 label = { Text(label, fontSize = 11.sp) },
                                 shape = RoundedCornerShape(16.dp),
                             )
+
                         }
                     }
                 }
@@ -1378,6 +1383,7 @@ fun ExploreScreen(
                                 label = { Text(label, fontSize = 11.sp) },
                                 shape = RoundedCornerShape(16.dp),
                             )
+
                         }
                     }
                 }
@@ -1667,6 +1673,7 @@ private fun AllPostsBrowse(
     onOpenFilters: () -> Unit = {},
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
+    onOpenProfile: () -> Unit = {},
 ) {
     val sortOptions = listOf(
         "newest" to "Newest",
@@ -1945,6 +1952,7 @@ private fun AllPostsBrowse(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                             )
+
                         }
                     }
                 } else if (state.forYouMode && displayPosts.isEmpty()) {
@@ -1972,9 +1980,16 @@ private fun AllPostsBrowse(
                             Text(
                                 "Try adjusting your subcategory, location, or price range selection.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,                                 textAlign = TextAlign.Center,
                             )
+                            Spacer(Modifier.height(24.dp))
+                            OutlinedButton(
+                                onClick = onOpenProfile,
+                            ) {
+                                Icon(Icons.Default.Tune, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Edit Preferences")
+                            }
                         }
                     }
                 } else {
@@ -2796,6 +2811,7 @@ private fun TrendingCard(
                                 tint = if (isWishlisted) Color(0xFF6366F1) else Color.White,
                                 modifier = Modifier.size(14.dp),
                             )
+
                         }
                     }
                     Surface(
@@ -2959,6 +2975,7 @@ private fun SearchResultCard(post: Post, onClick: () -> Unit) {
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+
                         }
                     }
                 }
