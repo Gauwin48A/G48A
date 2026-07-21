@@ -17,6 +17,7 @@ class MhubApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        com.mhub.app.core.notifications.NotificationChannelHelper.createNotificationChannels(this)
         // Init Firebase on a background thread to avoid blocking main thread at startup
         Thread { initFirebaseSafely() }.also { it.isDaemon = true; it.start() }
     }

@@ -132,6 +132,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import com.mhub.app.ui.theme.ColorTokens
 import com.mhub.app.R
+import com.mhub.app.ui.explore.SharedExploreStore
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -158,6 +159,19 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import javax.inject.Inject
+
+// ── Demo user mock posts for profile gallery ──
+private val DEMO_USER_POSTS: List<com.mhub.app.domain.model.Post> = listOf(
+    com.mhub.app.domain.model.Post(id="demo_p1", title="iPhone 15 Pro Max 256GB – Natural Titanium", description="Brand new sealed. AppleCare+ eligible. 48MP camera.", price=119000.0, originalPrice=159900.0, imageUrl="https://picsum.photos/seed/demo_iphone15/400/300", category="electronics", subcategory="Phones", brand="Apple", condition="New", city="Mumbai", location="Mumbai, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=342, likeCount=28, createdAt="2024-03-15", sellerVerified=true, isNegotiable=true),
+    com.mhub.app.domain.model.Post(id="demo_p3", title="Sony WH-1000XM5 – Midnight Blue ANC Headphones", description="1 month old. Flawless ANC, 30hr battery. Carry case included.", price=18900.0, imageUrl="https://picsum.photos/seed/demo_sonyxm5/400/300", category="electronics", subcategory="Audio", brand="Sony", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=156, likeCount=18, createdAt="2024-03-01"),
+    com.mhub.app.domain.model.Post(id="demo_p4", title="Canon EOS R6 Mark II – Body + 24-105mm Kit Lens", description="6 months old. 24.2MP, 4K 60fps, IBIS. Includes extra battery.", price=185000.0, imageUrl="https://picsum.photos/seed/demo_canonr6/400/300", category="electronics", subcategory="Cameras", brand="Canon", condition="Used", city="Pune", location="Pune, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=490, likeCount=45, createdAt="2024-01-10"),
+    com.mhub.app.domain.model.Post(id="demo_p6", title="Nike Air Force 1 Low White – UK 9 Brand New", description="Deadstock, never worn. Original box. 100% authentic.", price=8500.0, imageUrl="https://picsum.photos/seed/demo_af1/400/300", category="fashion", subcategory="Shoes", brand="Nike", condition="New", city="Mumbai", location="Mumbai, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=620, likeCount=74, createdAt="2024-03-20"),
+    com.mhub.app.domain.model.Post(id="demo_p7", title="Levi\'s 512 Slim Taper Jeans – Black W32 L32", description="Brand new with tags. Premium stretch denim. Authentic Levi\'s.", price=2800.0, imageUrl="https://picsum.photos/seed/demo_levis512/400/300", category="fashion", subcategory="Men\'s Clothing", brand="Levi\'s", condition="New", city="Bengaluru", location="Bengaluru, KA", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=89, likeCount=8, createdAt="2024-02-28"),
+    com.mhub.app.domain.model.Post(id="demo_p11", title="Honda Activa 6G – Pearl White 2022", description="8,500 km driven. First owner. All service records.", price=68000.0, imageUrl="https://picsum.photos/seed/demo_activa/400/300", category="vehicles", subcategory="Scooters", brand="Honda", condition="Used", city="Pune", location="Pune, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=318, likeCount=38, createdAt="2024-03-18"),
+    com.mhub.app.domain.model.Post(id="demo_p13", title="Hyundai Grand i10 NIOS – Magna 1.2L Petrol 2020", description="35,000 km. First owner. Sunroof, touchscreen infotainment.", price=475000.0, imageUrl="https://picsum.photos/seed/demo_i10/400/300", category="vehicles", subcategory="Cars", brand="Hyundai", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=725, likeCount=89, createdAt="2024-01-30"),
+    com.mhub.app.domain.model.Post(id="demo_p15", title="IKEA KALLAX Shelf Unit – 4 Cube White", description="6 months old. Sturdy particleboard. Great for books & decor.", price=3500.0, imageUrl="https://picsum.photos/seed/demo_kallax/400/300", category="others", subcategory="Home & Furniture", brand="IKEA", condition="Used", city="Gurgaon", location="Gurgaon, HR", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=203, likeCount=22, createdAt="2024-03-08"),
+    com.mhub.app.domain.model.Post(id="demo_p18", title="2BHK Apartment for Rent – HSR Layout Bangalore", description="950 sqft. Semi-furnished 2BHK. Close to HSR Club, metro.", price=22000.0, imageUrl="https://picsum.photos/seed/demo_apartment/400/300", category="others", subcategory="Real Estate", brand=null, condition=null, city="Bengaluru", location="HSR Layout, Bengaluru", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=478, likeCount=45, createdAt="2024-03-25"),
+)
 
 @Stable
 data class ProfileState(
@@ -284,6 +298,7 @@ class ProfileViewModel @Inject constructor(
                                     _state.value = _state.value.copy(
                                         loading = false, refreshing = false,
                                         user = demoUser, error = null, isSessionExpired = false,
+                                        userPosts = DEMO_USER_POSTS,
                                     )
                                     cachedProfile = _state.value
                                 } else {
@@ -307,6 +322,7 @@ class ProfileViewModel @Inject constructor(
                             _state.value = _state.value.copy(
                                 loading = false, refreshing = false,
                                 user = createDemoUser(), error = null, isSessionExpired = false,
+                                userPosts = DEMO_USER_POSTS,
                             )
                             cachedProfile = _state.value
                         } else {
@@ -615,6 +631,9 @@ class ProfileViewModel @Inject constructor(
     fun savePreferences(location: String, minPrice: Int?, maxPrice: Int?, categories: List<String> = emptyList()) {
         _prefsSaving.value = true
         
+        // Sync with SharedExploreStore for ForYou page filtering
+        SharedExploreStore.updateSelectedSubcategories(categories.toSet())
+        
         // Handle demo sessions locally — no server to call
         if (repo.isDemoSession) {
             // Simulate saving by updating in-memory preferences
@@ -724,7 +743,6 @@ fun ProfileScreen(
     onOpenSaleUndone: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
-    onOpenCategoryMode: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -1861,7 +1879,6 @@ private fun PersonalInfoTab(
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
 private fun PreferencesTab(
-    onOpenCategoryMode: () -> Unit = {},
     initialLocation: String = "",
     initialMinPrice: String = "",
     initialMaxPrice: String = "",
@@ -1872,6 +1889,8 @@ private fun PreferencesTab(
     val locationParts = remember(initialLocation) { parseProfileLocation(initialLocation) }
     val minPriceValue = initialMinPrice.toIntOrNull()
     val maxPriceValue = initialMaxPrice.toIntOrNull()
+    // Internal mutable state for live toggle — synced from initial
+    val toggledCats = remember(selectedCategories) { mutableStateOf(selectedCategories.toMutableList()) }
     var showEditor by remember { mutableStateOf(false) }
 
     // All subcategories organized by category for the multi-select chips
@@ -1901,10 +1920,10 @@ private fun PreferencesTab(
 
         // Subcategory Selection — multi-select chips organized by category
         Text("Your Interests", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Text("Select subcategories to personalize your For You feed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Tap subcategories below to select your interests. Changes auto-save for your For You feed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         
         allSubcategories.forEach { (category, subs) ->
-            val selectedInCategory = selectedCategories.filter { it in subs }
+            val selectedInCategory = toggledCats.value.filter { it in subs }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(category, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
@@ -1921,10 +1940,23 @@ private fun PreferencesTab(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     subs.forEach { sub ->
-                        val isSelected = sub in selectedCategories
+                        val isSelected = sub in toggledCats.value
                         FilterChip(
                             selected = isSelected,
-                            onClick = { },
+                            onClick = {
+                                toggledCats.value = if (isSelected) {
+                                    toggledCats.value.toMutableList().also { it.remove(sub) }
+                                } else {
+                                    toggledCats.value.toMutableList().also { it.add(sub) }
+                                }
+                                // Auto-save on toggle for immediate For You feed update
+                                onSave(
+                                    initialLocation,
+                                    minPriceValue,
+                                    maxPriceValue,
+                                    toggledCats.value.toList()
+                                )
+                            },
                             label = { Text(sub, fontSize = 12.sp) },
                             leadingIcon = if (isSelected) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }} else null,
                             shape = RoundedCornerShape(10.dp),
@@ -1954,10 +1986,11 @@ private fun PreferencesTab(
             initialLocation = initialLocation,
             initialMinPrice = initialMinPrice,
             initialMaxPrice = initialMaxPrice,
-            initialCategories = selectedCategories,
+            initialCategories = toggledCats.value.toList(),
             saving = saving,
             onDismiss = { showEditor = false },
             onSave = { loc, min, max, cats ->
+                toggledCats.value = cats.toMutableList()
                 onSave(loc, min, max, cats)
                 showEditor = false
             },

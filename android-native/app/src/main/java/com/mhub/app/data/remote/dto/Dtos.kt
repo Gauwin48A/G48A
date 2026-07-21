@@ -94,6 +94,11 @@ data class AadhaarOtpResponse(
 )
 
 @Serializable
+data class AadhaarGenerateRequest(
+    @SerialName("aadhaar_number") val aadhaarNumber: String,
+)
+
+@Serializable
 data class AadhaarVerifyOtpRequest(
     val aadhaarNumber: String,
     val mobileNumber: String? = null,
@@ -106,12 +111,26 @@ data class AadhaarVerifyResponse(
     val success: Boolean = true,
     val signupToken: String? = null,
     val message: String? = null,
+    val name: String? = null,
+)
+
+@Serializable
+data class AadhaarVerifyRequest(
+    val otp: String,
+    @SerialName("txn_id") val txnId: String,
 )
 
 @Serializable
 data class PanVerifyRequest(
     val signupToken: String,
     val panNumber: String,
+)
+
+@Serializable
+data class PanVerifyResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+    val name: String? = null,
 )
 
 @Serializable
@@ -1651,4 +1670,22 @@ data class PublicWallLeaderboardResponse(
     @SerialName("topSellers") val topSellers: List<PublicWallEntry> = emptyList(),
     @SerialName("topBuyers") val topBuyers: List<PublicWallEntry> = emptyList(),
     @SerialName("topUsers") val topUsers: List<PublicWallEntry> = emptyList(),
+)
+
+// ---- Subscription DTOs ----
+@Serializable
+data class SubscriptionPlan(
+    val id: String,
+    val name: String,
+    val displayName: String,
+    val priceINR: Int,
+    val features: List<String> = emptyList(),
+    val maxListings: Int? = null,
+    val maxImages: Int = 1,
+    val dailyLimit: Int = 1
+)
+
+@Serializable
+data class SubscriptionPlansResponse(
+    val plans: List<SubscriptionPlan>
 )

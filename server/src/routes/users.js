@@ -3,7 +3,7 @@ const router = express.Router();
 const { runQuery, getAuthUserId, parseOptionalString, isAdmin } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 const userController = require("../controllers/userController");
-const { protect } = require("../middleware/auth");
+const { protect, requireActivePlan } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/rbac");
 const upload = require("../middleware/upload");
 const optimizeLocalImages = require("../middleware/imageOptimizer");
@@ -25,6 +25,9 @@ router.put("/preferred-language", protect, userController.updatePreferredLanguag
  * Tier management routes
  */
 
+/** @route GET /tier - Get user's current tier */
+router.get("/tier", protect, userController.getTier);
+
 /** @route POST /upgrade-tier - Request a tier upgrade */
 router.post("/upgrade-tier", protect, requireAdmin, userController.upgradeTier);
 
@@ -32,21 +35,17 @@ router.post("/upgrade-tier", protect, requireAdmin, userController.upgradeTier);
 router.get("/tier-status", protect, userController.getTierStatus);
 
 /**
- * KYC (Know Your Customer) routes
+ * KYC (Know Your Customer) routes - Requires Active Subscription Plan First
  */
 
-/** @route POST /kyc/submit - Submit KYC documents (front and back images) */
-router.post(
-  "/kyc/submit",
-  protect,
-  upload.fields([
-    { name: "kyc_front", maxCount: 1 },
-    { name: "kyc_back", maxCount: 1 }
-  ]),
-  require("../middleware/upload").postUploadSecurity,
-  optimizeLocalImages,
-  userController.submitKYC
-);
+/** @route POST /kyc/pan - Verify PAN */
+router.post("/kyc/pan", protect, requireActivePlan, userController.verifyPan);
+
+/** @route POST /kyc/aadhaar/generate - Request Aadhaar OTP */
+router.post("/kyc/aadhaar/generate", protect, requireActivePlan, userController.generateAadhaarOtp);
+
+/** @route POST /kyc/aadhaar/verify - Verify Aadhaar OTP */
+router.post("/kyc/aadhaar/verify", protect, requireActivePlan, userController.verifyAadhaarOtp);
 
 /** @route GET /kyc/status - Check KYC verification status */
 router.get("/kyc/status", protect, userController.getKYCStatus);

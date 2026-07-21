@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -19,6 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.net.HttpURLConnection
+import java.net.URL
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -36,10 +40,13 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     companion object {
-        const val CHANNEL_ORDERS  = "mhub_orders"
-        const val CHANNEL_CHAT    = "mhub_chat"
-        const val CHANNEL_REWARDS = "mhub_rewards"
-        const val CHANNEL_GENERAL = "mhub_general"
+        const val CHANNEL_CHAT        = "chat_messages"
+        const val CHANNEL_TRANSACTION = "transactions"
+        const val CHANNEL_PROMOTION   = "promotions"
+        const val CHANNEL_REWARD      = "rewards"
+        const val CHANNEL_SYSTEM      = "system"
+        const val CHANNEL_GENERAL     = "general"
+
         private const val NOTIFICATION_ID_BASE = 1000
     }
 
@@ -51,19 +58,28 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    /** Called when a message arrives while the app is in the foreground. */
+    /** Called when a message arrives while the app is in foreground or data-only message in background. */
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        val title = message.notification?.title ?: message.data["title"] ?: return
-        val body  = message.notification?.body  ?: message.data["body"]  ?: return
-        val type  = message.data["type"] ?: ""
-        val channel = when {
-            type.contains("order", ignoreCase = true) || type.contains("sale", ignoreCase = true) -> CHANNEL_ORDERS
+
+        val title = message.notification?.title ?: message.data["title"] ?: "MHub Alert"
+        val body  = message.notification?.body  ?: message.data["message"] ?: message.data["body"] ?: ""
+        val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image_url"] ?: message.data["image"]
+        val deepLink = message.data["deep_link"] ?: message.data["action"] ?: ""
+        val type = message.data["type"] ?: "system"
+
+        val serverChannelId = message.data["android_channel_id"] ?: message.data["channelId"]
+        val channelId = serverChannelId ?: when {
             type.contains("chat", ignoreCase = true) || type.contains("message", ignoreCase = true) -> CHANNEL_CHAT
-            type.contains("reward", ignoreCase = true) || type.contains("coin", ignoreCase = true) -> CHANNEL_REWARDS
+            type.contains("transaction", ignoreCase = true) || type.contains("order", ignoreCase = true) || type.contains("pay", ignoreCase = true) -> CHANNEL_TRANSACTION
+            type.contains("promo", ignoreCase = true) || type.contains("offer", ignoreCase = true) || type.contains("marketing", ignoreCase = true) -> CHANNEL_PROMOTION
+            type.contains("reward", ignoreCase = true) || type.contains("coin", ignoreCase = true) -> CHANNEL_REWARD
+            type.contains("system", ignoreCase = true) || type.contains("security", ignoreCase = true) -> CHANNEL_SYSTEM
             else -> CHANNEL_GENERAL
         }
-        showNotification(title, body, channel, message.messageId?.hashCode() ?: System.currentTimeMillis().toInt())
+
+        val notifId = message.messageId?.hashCode() ?: System.currentTimeMillis().toInt()
+        showNotification(title, body, imageUrl, deepLink, type, channelId, notifId)
     }
 
     private fun registerTokenWithServer(fcmToken: String) {
@@ -80,7 +96,15 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun showNotification(title: String, body: String, channelId: String, id: Int) {
+    private fun showNotification(
+        title: String,
+        body: String,
+        imageUrl: String?,
+        deepLink: String,
+        type: String,
+        channelId: String,
+        id: Int
+    ) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -88,31 +112,68 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val tapIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (deepLink.isNotEmpty()) {
+                putExtra("DEEP_LINK", deepLink)
+            }
+            putExtra("NOTIFICATION_TYPE", type)
         }
+
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            this, id, tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, channelId)
+        val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .build()
 
-        manager.notify(NOTIFICATION_ID_BASE + id, notification)
+        if (!imageUrl.isNull_or_blank()) {
+            val bitmap = downloadBitmap(imageUrl!!)
+            if (bitmap != null) {
+                builder.setStyle(
+                    NotificationCompat.BigPictureStyle()
+                        .bigPicture(bitmap)
+                        .setBigContentTitle(title)
+                        .setSummaryText(body)
+                )
+            }
+        }
+
+        manager.notify(NOTIFICATION_ID_BASE + id, builder.build())
+    }
+
+    private fun String?.isNull_or_blank(): Boolean = this == null || this.trim().isEmpty()
+
+    private fun downloadBitmap(urlStr: String): Bitmap? {
+        return try {
+            val url = URL(urlStr)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doInput = true
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.connect()
+            val input = connection.inputStream
+            BitmapFactory.decodeStream(input)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun ensureChannels(manager: NotificationManager) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         listOf(
-            NotificationChannel(CHANNEL_ORDERS,  "Orders & Sales",   NotificationManager.IMPORTANCE_HIGH),
-            NotificationChannel(CHANNEL_CHAT,    "Chat Messages",    NotificationManager.IMPORTANCE_HIGH),
-            NotificationChannel(CHANNEL_REWARDS, "Rewards & Coins",  NotificationManager.IMPORTANCE_DEFAULT),
-            NotificationChannel(CHANNEL_GENERAL, "General",          NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_CHAT,        "Chat & Messages",  NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL_TRANSACTION, "Orders & Payments", NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL_PROMOTION,   "Promotions & Deals", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_REWARD,      "Rewards & Coins",   NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_SYSTEM,      "System & Security", NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL_GENERAL,     "General Alerts",    NotificationManager.IMPORTANCE_DEFAULT),
         ).forEach { channel ->
             if (manager.getNotificationChannel(channel.id) == null) {
                 manager.createNotificationChannel(channel)

@@ -25,13 +25,14 @@ const checkUserAccessFull = async (userId) => {
   if (!userId) return false;
   try {
     const res = await runQuery(
-      `SELECT kyc_verified, COALESCE(subscription_expiry > NOW(), false) as plan_active 
+      `SELECT (COALESCE(kyc_verified, false) OR COALESCE(aadhaar_verified, false)) as kyc_active, 
+              (COALESCE(subscription_expiry > NOW(), false) OR (subscription_tier IS NOT NULL AND LOWER(subscription_tier) NOT IN ('none', '', 'free_trial_expired'))) as plan_active 
        FROM users WHERE user_id::text = $1`,
       [String(userId)]
     );
     if (res.rows.length === 0) return false;
     const user = res.rows[0];
-    return user.kyc_verified && user.plan_active;
+    return Boolean(user.kyc_active && user.plan_active);
   } catch (err) {
     logger.error("[AccessCheck] Error checking user access:", err);
     return false;

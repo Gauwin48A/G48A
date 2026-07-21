@@ -399,6 +399,142 @@ async function ensureUserTierColumns() {
   return tierColumnsPromise;
 }
 
+/**
+ * Add required users status columns for production
+ */
+async function ensureUsersStatusColumns() {
+  try {
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT false");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_status VARCHAR(20) DEFAULT 'PENDING'");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) DEFAULT 'ACTIVE'");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_tier VARCHAR(50) DEFAULT 'BASIC'");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expiry TIMESTAMPTZ");
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision users status columns", { message: error.message });
+    return false;
+  }
+}
+
+/**
+ * Auto-provision KYC tables
+ */
+async function ensureKycTables() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS kyc_verifications (
+        kyc_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
+        pan_hash TEXT,
+        pan_full_name VARCHAR(100),
+        pan_status VARCHAR(20),
+        surepass_pan_ref_id VARCHAR(100),
+        aadhaar_hash TEXT,
+        aadhaar_last_four VARCHAR(4),
+        surepass_aadhaar_client_id VARCHAR(100),
+        encrypted_dob TEXT,
+        encrypted_address TEXT,
+        status VARCHAR(20) DEFAULT 'PENDING',
+        verified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(user_id)
+      )
+    `);
+    
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_kyc_pan_hash ON kyc_verifications(pan_hash)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_kyc_aadhaar_hash ON kyc_verifications(aadhaar_hash)`);
+    
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS kyc_audit_logs (
+        log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT REFERENCES users(user_id),
+        action VARCHAR(50) NOT NULL,
+        provider VARCHAR(50) DEFAULT 'SUREPASS',
+        provider_response_code VARCHAR(20),
+        status VARCHAR(20) NOT NULL,
+        error_message TEXT,
+        ip_address VARCHAR(45),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision KYC tables", { message: error.message });
+    return false;
+  }
+}
+
+/**
+ * Auto-provision subscription tables
+ */
+async function ensureSubscriptionTables() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS subscription_plans (
+        plan_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        plan_name VARCHAR(50) NOT NULL,
+        razorpay_plan_id VARCHAR(100),
+        price DECIMAL(10, 2) NOT NULL,
+        currency VARCHAR(3) DEFAULT 'INR',
+        duration_days INT NOT NULL,
+        features JSONB,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS user_subscriptions (
+        sub_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
+        plan_id UUID REFERENCES subscription_plans(plan_id),
+        razorpay_subscription_id VARCHAR(100),
+        status VARCHAR(20) NOT NULL,
+        start_date TIMESTAMPTZ NOT NULL,
+        end_date TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision Subscription tables", { message: error.message });
+    return false;
+  }
+}
+
+/**
+ * Auto-provision Payment tables
+ */
+async function ensurePaymentTables() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS payment_transactions (
+        transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT REFERENCES users(user_id),
+        plan_id UUID REFERENCES subscription_plans(plan_id),
+        razorpay_order_id VARCHAR(100) NOT NULL,
+        razorpay_payment_id VARCHAR(100),
+        razorpay_signature VARCHAR(255),
+        amount DECIMAL(10, 2) NOT NULL,
+        currency VARCHAR(3) DEFAULT 'INR',
+        status VARCHAR(20) DEFAULT 'CREATED',
+        error_code VARCHAR(50),
+        error_description TEXT,
+        raw_response JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_payment_order_id ON payment_transactions(razorpay_order_id)`);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision Payment tables", { message: error.message });
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Preflight                                                         */
 /* ------------------------------------------------------------------ */
@@ -425,6 +561,10 @@ async function ensureSchemaPreflight({
   await ensureTransactionsOptionalColumns();
   await ensureOffersOptionalColumns();
   await ensureUserSettingsTable();
+  await ensureUsersStatusColumns();
+  await ensureKycTables();
+  await ensureSubscriptionTables();
+  await ensurePaymentTables();
 
   const report = await evaluateSchemaContract({
     autoCreateTwoFactorFallback,
@@ -461,4 +601,8 @@ module.exports = {
   ensureTransactionsOptionalColumns,
   ensureOffersOptionalColumns,
   ensureUserSettingsTable,
+  ensureUsersStatusColumns,
+  ensureKycTables,
+  ensureSubscriptionTables,
+  ensurePaymentTables,
 };

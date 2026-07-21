@@ -1,621 +1,247 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, Link, useLocation as useRouterLocation } from "react-router-dom";
-import {
-  Shield,
-  Phone,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Loader2,
-  Smartphone,
-  FlaskConical,
-  Zap,
-} from "lucide-react";
-import { getDeviceId } from "@/utils/device";
-import { useLocation as useLocationContext } from "@/context/LocationContext";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Shield, Lock, Eye, EyeOff, Loader2, User, Phone, Mail, AlertCircle, FlaskConical, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
+import { useLocation as useLocationContext } from "@/context/LocationContext";
+import { getDeviceId } from "@/utils/device";
 
-const INVALID_LOGIN_MESSAGE_FALLBACK =
-  "Invalid mobile number or password. Please try again.";
+const DEMO_ACCOUNT = { mobile: "9999999999", password: "Test@123456" };
 
-// ── Demo credentials for testing ────────────────────────────
-// Single demo account for quick testing without real credentials.
-// Clicking the demo button auto-fills credentials and logs in instantly.
-const DEMO_ACCOUNT = {
-  label: "Demo Test Account",
-  mobile: "9999999999",
-  password: "Demo@123456",
+const normalizeIdentifier = (val) => {
+  const input = String(val || "").trim();
+  const digits = input.replace(/\D/g, "");
+  // If user entered a 10-digit phone number or +91 number
+  if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+  if (/^[6-9]\d{9}$/.test(digits)) return digits;
+  return input; // Return full email or username string
 };
 
 export default function Login() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
-  const routeLocation = useRouterLocation();
+  const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { login, refreshAuth, setUser } = useAuth();
-  const {
-    requestLocation,
-    latitude,
-    longitude,
-    accuracy,
-    provider,
-  } = useLocationContext();
-
-  useEffect(() => { document.title = "MHub — Sign In"; return () => { document.title = "MHub"; }; }, []);
+  const { requestLocation } = useLocationContext();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ mobile: "", password: "" });
-  const [showOtpChallenge, setShowOtpChallenge] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const [form, setForm] = useState({ identifier: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
-  const otpTimerRef = useRef(null);
-  const otpAbortRef = useRef(null);
-
-  // ── Web OTP API auto-read ─────────────────────────────────
-  const startWebOtpAutoRead = useCallback(() => {
-    if (!("OTPCredential" in window)) return;
-    otpAbortRef.current?.abort();
-    otpAbortRef.current = new AbortController();
-    navigator.credentials
-      .get({ otp: { transport: ["sms"] }, signal: otpAbortRef.current.signal })
-      .then((cred) => {
-        if (cred?.code && cred.code.length >= 4) {
-          setOtpCode(cred.code);
-          // Auto-submit by clicking the form submit button after a brief delay
-          setTimeout(() => {
-            const submitBtn = document.querySelector('form button[type="submit"]');
-            if (submitBtn && !submitBtn.disabled) submitBtn.click();
-          }, 300);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
-    return () => {
-      otpAbortRef.current?.abort();
-      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
-    };
+    document.title = "MHub — Sign In";
+    return () => { document.title = "MHub"; };
   }, []);
-
-  // ── OTP countdown timer ──────────────────────────────────
-  const startOtpCountdown = useCallback((seconds = 120) => {
-    setOtpCountdown(seconds);
-    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
-    otpTimerRef.current = setInterval(() => {
-      setOtpCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(otpTimerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
-
-  // ── Auto-send OTP when SIM verification required ─────────
-  const sendSimVerificationOtp = useCallback(async (mobile) => {
-    if (otpSending) return;
-    try {
-      setOtpSending(true);
-      const normalizedMobile = normalizeMobile(mobile);
-      await api.post("/auth/send-otp", {
-        phone: normalizedMobile,
-        purpose: "sim_verification",
-        deviceId: getDeviceId(),
-      });
-      startOtpCountdown(120);
-      startWebOtpAutoRead();
-      toast({
-        title: t("otp_sent") || "OTP Sent",
-        description: t("otp_sent_to_mobile") || `Verification code sent to ****${normalizedMobile.slice(-4)}`,
-      });
-    } catch (err) {
-      const msg = err?.response?.data?.error || "Failed to send OTP. Please try again.";
-      toast({ title: "OTP Error", description: msg, variant: "destructive" });
-    } finally {
-      setOtpSending(false);
-    }
-  }, [otpSending, startOtpCountdown, startWebOtpAutoRead, t, toast]);
-
-  const extractError = (err) => ({
-    status: err?.status ?? err?.response?.status ?? null,
-    data: err?.data ?? err?.response?.data ?? {},
-    message: err?.message || err?.response?.data?.error || err?.response?.data?.message || "",
-  });
-
-  const normalizeMobile = (value) => {
-    const digits = String(value || "").replace(/\D/g, "");
-    if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
-    return digits;
-  };
-  const isValidMobile = (value) => /^[6-9]\d{9}$/.test(normalizeMobile(value));
-
-  const friendlyError = (parsed, fallback) => {
-    const s = parsed?.status;
-    const msg = String(
-      parsed?.data?.error || parsed?.data?.message || parsed?.message || "",
-    ).toLowerCase();
-    const code = String(parsed?.data?.code || parsed?.code || "").toUpperCase();
-
-    // Security restriction errors — use generic messages to avoid leaking internal logic
-    const DEVICE_RESTRICTION_CODES = [
-      "DEVICE_ALREADY_BOUND", "DEVICE_PREVIOUSLY_BOUND", "ACCOUNT_SWITCHING_BLOCKED",
-      "MULTI_ACCOUNT_DETECTED", "MAX_DEVICES_EXCEEDED", "DEVICE_FINGERPRINT_REQUIRED",
-      "DEVICE_FINGERPRINT_INVALID", "PHONE_DEVICE_MISMATCH",
-    ];
-    if (DEVICE_RESTRICTION_CODES.includes(code))
-      return "This device cannot be used for this account. Contact support for assistance.";
-    if (code === "DEVICE_BLOCKED")
-      return "Access restricted. Contact support for assistance.";
-    if (code === "LOGIN_COOLDOWN")
-      return "Please wait a moment before trying again.";
-    if (code === "VPN_BLOCKED" || code === "TIMEZONE_MISMATCH" || code === "PROXY_HEADER_DETECTED")
-      return "Network security check failed. Please disable VPN/proxy and try again.";
-    if (msg.includes("device") && msg.includes("another account"))
-      return "This device cannot be used for this account. Contact support.";
-
-    if (s === 429 || msg.includes("too many") || msg.includes("rate limit") || code.includes("ABUSE"))
-      return "Too many sign-in attempts. Please wait a few minutes.";
-    if (s === 423 || msg.includes("locked"))
-      return "Your account is temporarily locked. Use Forgot Password or retry later.";
-    if (s === 401 || s === 403 || msg.includes("invalid")) return t("invalid_login") || INVALID_LOGIN_MESSAGE_FALLBACK;
-    if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout"))
-      return "Login service unreachable. Please retry shortly.";
-    return fallback || t("login_failed") || "Login failed";
-  };
 
   const getReturnPath = () => {
-    const params = new URLSearchParams(routeLocation.search).get("returnTo");
-    const path = routeLocation.state?.returnTo || params || "/all-posts";
-    return typeof path === "string" && path.startsWith("/") ? path : "/all-posts";
+    const from = location.state?.from?.pathname || "/";
+    return from === "/login" ? "/" : from;
   };
 
-  const captureLoginLocation = async () => {
-    try {
-      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-        return {
-          lat: latitude,
-          lng: longitude,
-          accuracy: accuracy ?? null,
-          provider: provider || "browser_gps",
-        };
-      }
-
-      const loc = await Promise.race([
-        requestLocation({ silent: true }),
-        new Promise((resolve) => setTimeout(() => resolve(null), 8000)),
-      ]);
-      if (!loc) return null;
-      return {
-        lat: loc.latitude ?? loc.lat,
-        lng: loc.longitude ?? loc.lng,
-        accuracy: loc.accuracy ?? null,
-        provider: loc.provider || "browser_gps",
-      };
-    } catch {
-      return null;
-    }
-  };
-
-  // ── Single-click Demo Login ───────────────────────────────
-  // Auto-fills credentials from DEMO_ACCOUNT and logs in directly.
-  // This bypasses the manual form, making it a true one-click experience.
-  // If the backend is unavailable, creates a local mock session so the user
-  // can still explore the full platform immediately.
   const handleDemoLogin = async () => {
     setErrorMessage("");
     setLoading(true);
     try {
-      // Auto-fill the form for visual feedback
-      setForm({ mobile: DEMO_ACCOUNT.mobile, password: DEMO_ACCOUNT.password });
-
-      // ── IMMEDIATE LOCAL DEMO SESSION ──
-      // Skip the server login attempt entirely — no 15s timeout waiting for a
-      // backend that may not be running. This matches the Android native behavior
-      // where startLocalDemoSession() creates an offline session instantly.
+      setForm({ identifier: DEMO_ACCOUNT.mobile, password: DEMO_ACCOUNT.password });
       const demoUser = {
         id: "demo-user-001",
         name: "Demo User",
         phone: "9999999999",
         email: "demo@mhub.app",
         role: "user",
-        tier: "premium",
-        current_plan: "premium",
-        rewards_rank: "Premium Member",
+        tier: "gold",
+        current_plan: "gold",
+        kyc_verified: true,
       };
       setUser(demoUser);
       localStorage.setItem("authSession", "true");
       localStorage.setItem("userId", "demo-user-001");
-      localStorage.setItem("user_id", "demo-user-001");
       localStorage.setItem("user", JSON.stringify(demoUser));
 
       toast({
-        title: t("demo_login_successful") || "Demo Mode Active",
-        description: t("demo_welcome_msg") || "Signed in as Demo User. Explore the full platform!",
-        variant: "success",
-        duration: 3000,
+        title: "Demo Mode Active ⚡",
+        description: "Signed in as Demo User with Gold Plan & Verified KYC.",
       });
       navigate(getReturnPath(), { replace: true });
     } catch (err) {
-      // Fallback — should never happen since we don't make API calls
       setErrorMessage("Demo login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogin = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
-    if (!isValidMobile(form.mobile) || !form.password) {
-      const msg =
-        t("mobile_password_required") ||
-        "Mobile number and password are required.";
+    const cleanIdentifier = normalizeIdentifier(form.identifier);
+
+    if (!cleanIdentifier || !form.password) {
+      const msg = "Please enter your Mobile Number / Email and Password.";
       setErrorMessage(msg);
-      toast({
-        title: t("validation_error") || "Validation Error",
-        description: msg,
-        variant: "destructive",
-      });
-      return;
-    }
-    if (showOtpChallenge && (!otpCode || otpCode.length < 4)) {
-      const msg = t("enter_authenticator_code") || "Please enter your authenticator code.";
-      setErrorMessage(msg);
-      toast({ title: "OTP Required", description: msg, variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      const loc = await captureLoginLocation();
       const deviceId = getDeviceId();
-      if (!deviceId || typeof deviceId !== "string" || deviceId.length < 10) {
-        setErrorMessage("Unable to identify your device. Please refresh the page and try again.");
-        toast({ title: "Device Error", description: "Device identification failed.", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      const mobileDigits = normalizeMobile(form.mobile);
       const body = {
-        identifier: mobileDigits,
+        identifier: cleanIdentifier,
         password: form.password,
         deviceId,
       };
-      if (loc?.lat != null && loc?.lng != null) {
-        body.lat = loc.lat;
-        body.lng = loc.lng;
-        body.locationAccuracy = loc.accuracy;
-        body.locationProvider = loc.provider;
-      }
-      if (showOtpChallenge) body.otp = otpCode;
 
       const result = await login(body);
 
-      if (result?.requireOtp) {
-        setShowOtpChallenge(true);
-        const isSim = result?.code === "SIM_VERIFICATION_REQUIRED" || result?._triggerOtpSend;
-        const msg = isSim
-          ? "Verify your phone number. An OTP will be sent to your registered mobile."
-          : result.message || "Additional verification required.";
-        setErrorMessage(msg);
-
-        // Auto-send OTP for SIM verification (WhatsApp-style)
-        if (isSim) {
-          sendSimVerificationOtp(form.mobile);
-          toast({ title: "SIM Verification", description: "OTP is being sent to your registered mobile number." });
-        } else {
-          toast({ title: "Security Check", description: msg });
-        }
-        return;
-      }
-
       if (result?.success) {
         await refreshAuth();
-        setShowOtpChallenge(false);
-        setOtpCode("");
         requestLocation({ silent: true }).catch(() => {});
         toast({
-          title: t("login_successful") || "Login Successful",
-          description: t("welcome_back_msg") || "Welcome back!",
-          variant: "success",
-          duration: 2500,
+          title: "Sign-in Successful! 🎉",
+          description: "Welcome back to MHub Platform.",
         });
-        setErrorMessage("");
         navigate(getReturnPath(), { replace: true });
         return;
       }
 
-      const msg = result?.error || t("invalid_login") || INVALID_LOGIN_MESSAGE_FALLBACK;
+      const msg = result?.error || result?.message || "Invalid mobile number/email or password. Please try again.";
       setErrorMessage(msg);
-      toast({ title: "Sign-in Failed", description: msg, variant: "destructive" });
     } catch (err) {
-      const parsed = extractError(err);
-      const msg = friendlyError(parsed, t("invalid_login") || INVALID_LOGIN_MESSAGE_FALLBACK);
+      console.error("Login Error:", err);
+      const msg = err.response?.data?.error || err.response?.data?.message || "Invalid credentials. Please verify your details and try again.";
       setErrorMessage(msg);
-      toast({ title: "Sign-in Failed", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen mhub-premium-page flex items-start justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 pt-10 pb-8 sm:items-center sm:py-12 transition-colors duration-300 dark:bg-gradient-to-br">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-4">
+      <div className="w-full max-w-md space-y-4">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          aria-label={t("back") || "Go back"}
-          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-indigo-300 hover:text-white transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
-          {t("back") || "Back"}
+          ← Back
         </button>
-        <div className="text-center">
-          <div className="flex justify-center mb-5">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-            </div>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
-            {t("welcome_back") || "Welcome Back"}
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-200">
-            {t("sign_in_to_account") || "Sign in with your mobile number"}
-          </p>
-        </div>
 
-        <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
-          <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-5 sm:py-6 dark:bg-gradient-to-r">
-            <CardTitle className="text-xl sm:text-2xl font-bold">
-              {t("sign_in") || "Sign In"}
-            </CardTitle>
-            <CardDescription className="text-sky-100 text-sm dark:text-sky-200">
-              {t("mobile_login_hint") || "Use your Aadhaar-registered mobile number"}
+        <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-xl shadow-2xl text-slate-100 rounded-3xl overflow-hidden">
+          <CardHeader className="text-center bg-gradient-to-r from-indigo-600 to-blue-600 p-6">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2 shadow-inner">
+              <Shield className="w-6 h-6" />
+            </div>
+            <CardTitle className="text-2xl font-black text-white">Welcome Back</CardTitle>
+            <CardDescription className="text-indigo-100 text-xs mt-1">
+              Sign in with Mobile Number, Email, or Username
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-5 sm:p-8">
-            {/* ── 🔥 PROMINENT DEMO LOGIN SECTION ── */}
-            {!showOtpChallenge && (
-              <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-indigo-50 to-violet-50 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-violet-950/30 border-2 border-purple-200 dark:border-purple-700/40 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/20">
-                {/* Badge */}
-                <div className="flex items-center justify-center mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm">
-                    <Zap className="w-3 h-3" />
-                    Quick Test Access
-                  </span>
-                </div>
+          <CardContent className="p-6 space-y-4">
+            {/* Quick Demo Login */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleDemoLogin}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+            >
+              <Zap className="w-4 h-4 fill-slate-950" /> 1-Click Instant Demo Login
+            </button>
 
-                {/* Credentials display */}
-                <div className="text-center mb-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/70 dark:bg-gray-800/60 rounded-lg text-xs font-mono text-gray-600 dark:text-gray-300 border border-purple-200/50 dark:border-purple-700/30">
-                    <Phone className="w-3 h-3 text-purple-500" />
-                    <span className="font-semibold">{DEMO_ACCOUNT.mobile}</span>
-                    <span className="text-gray-300 dark:text-gray-600">|</span>
-                    <span className="text-gray-400 dark:text-gray-500">••••••••</span>
-                    <span className="font-semibold">{DEMO_ACCOUNT.password.slice(0, 4)}••••</span>
-                  </div>
-                </div>
+            {/* Ready Test Accounts Hint */}
+            <div className="p-3 rounded-xl bg-indigo-950/60 border border-indigo-500/20 text-indigo-200 text-xs space-y-1">
+              <div className="font-bold text-amber-400 flex items-center gap-1">
+                <FlaskConical className="w-3.5 h-3.5" /> Test Account Credentials:
+              </div>
+              <div className="font-mono text-[11px] text-slate-300">
+                • Unverified Test Account: <span className="text-white font-bold">9876543210</span> / <span className="text-white font-bold">Test@123456</span>
+              </div>
+              <div className="font-mono text-[11px] text-slate-300">
+                • Verified Gold Account: <span className="text-white font-bold">9999999999</span> / <span className="text-white font-bold">Test@123456</span>
+              </div>
+            </div>
 
-                {/* Main Demo Button - very prominent */}
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleDemoLogin}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold text-lg shadow-xl transition-all duration-200
-                    bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-600
-                    hover:from-purple-700 hover:via-indigo-700 hover:to-violet-700
-                    hover:shadow-2xl hover:shadow-purple-400/40
-                    active:scale-[0.98]
-                    text-white
-                    border-2 border-purple-400/30
-                    disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
-                    animate-[pulse-shadow_2s_ease-in-out_infinite]"
-                  style={{
-                    boxShadow: "0 4px 20px rgba(124, 58, 237, 0.35), 0 0 40px rgba(99, 102, 241, 0.15)",
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span>{t("demo_logging_in", { defaultValue: "Logging in..." })}</span>
-                    </>
-                  ) : (
-                    <>
-                      <FlaskConical className="w-6 h-6" />
-                      <span className="flex flex-col items-start leading-tight">
-                        <span className="font-bold text-lg">
-                          {t("demo_login_button", { defaultValue: "Demo Login — Instant Access" })}
-                        </span>
-                        <span className="text-xs font-normal opacity-75">
-                          {t("demo_login_sub", { defaultValue: "Explore the full platform" })}
-                        </span>
-                      </span>
-                    </>
-                  )}
-                </button>
-
-                <p className="text-[11px] text-center text-gray-400 dark:text-gray-500 mt-2">
-                  {t("demo_login_disclaimer", { defaultValue: "No real data needed. Can be removed when deploying to production." })}
-                </p>
+            {errorMessage && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
               </div>
             )}
 
-            {/* ── Divider ── */}
-            {!showOtpChallenge && (
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-white dark:bg-gray-800 px-3 text-gray-400 dark:text-gray-500 font-medium">
-                    {t("or_sign_in_manually", { defaultValue: "or sign in manually" })}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <Label htmlFor="mobile" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 dark:text-gray-200">
-                  <Phone className="w-4 h-4" /> {t("mobile_number") || "Mobile Number"}
+            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <Label htmlFor="identifier" className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-indigo-400" /> Mobile Number, Email, or Username *
                 </Label>
-                <div className="relative mt-2 flex">
-                  <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-gray-700">
-                    +91
-                  </span>
-                  <Input
-                    id="mobile"
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={form.mobile}
-                    onChange={(e) => setForm((p) => ({ ...p, mobile: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl dark:border-gray-700 dark:focus:border-sky-500/40"
-                    placeholder="9876543210"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-300">
-                  {t("mobile_login_help") || "Enter the mobile number linked to your Aadhaar."}
-                </p>
+                <Input
+                  id="identifier"
+                  type="text"
+                  placeholder="9876543210 or newuser@mhub.com"
+                  value={form.identifier}
+                  onChange={(e) => setForm({ ...form, identifier: e.target.value })}
+                  className="bg-slate-950/60 border-slate-800 text-sm text-slate-100 rounded-xl focus:border-indigo-500"
+                  required
+                />
               </div>
 
-              <div>
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  {t("password") || "Password"}
-                </Label>
-                <div className="relative mt-2">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-indigo-400" /> Password *
+                  </Label>
+                  <Link to="/forgot-password" className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300">
+                    Forgot?
+                  </Link>
+                </div>
+                <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    required
+                    placeholder="••••••••"
                     value={form.password}
-                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-gray-700 dark:focus:border-sky-500/40"
-                    placeholder={t("password_placeholder") || "Enter your password"}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="bg-slate-950/60 border-slate-800 text-sm text-slate-100 rounded-xl focus:border-indigo-500 pr-10"
+                    required
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label={showPassword ? (t("hide_password") || "Hide password") : (t("show_password") || "Show password")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-gray-600 dark:text-gray-200">
-                  {t("dont_have_account") || "Don't have an account?"}{" "}
                   <button
                     type="button"
-                    className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline font-medium"
-                    onClick={() => navigate("/signup")}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
                   >
-                    {t("sign_up_here") || "Sign up here"}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </p>
-                <Link
-                  to="/forgot-password"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium whitespace-nowrap ml-2 dark:text-blue-300 py-1.5"
-                >
-                  {t("forgot_password") || "Forgot?"}
-                </Link>
+                </div>
               </div>
-
-              {errorMessage && (
-                <div role="alert" className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border-amber-600/40 dark:bg-amber-950/20">
-                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
-              {showOtpChallenge && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    <Smartphone className="w-4 h-4 text-orange-500 dark:text-orange-300" />
-                    {t("sim_verification") || "Phone Verification"}
-                  </div>
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl p-3 text-xs text-orange-700 dark:text-orange-300 dark:bg-orange-950/20 dark:border-orange-600/40">
-                    <p>Enter the 6-digit code sent to your registered mobile number. This verifies your SIM is in this device.</p>
-                  </div>
-                  <Input
-                    id="challenge-otp"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                    className="h-12 sm:h-14 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-2xl tracking-[0.3em] font-mono bg-orange-50 dark:bg-orange-900/20 dark:border-orange-600/40 dark:focus:border-orange-500/40 dark:bg-orange-950/20"
-                    placeholder="● ● ● ● ● ●"
-                    maxLength={6}
-                    autoFocus
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    {otpCountdown > 0 ? (
-                      <span className="text-gray-500 dark:text-gray-300">
-                        Resend in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => sendSimVerificationOtp(form.mobile)}
-                        disabled={otpSending}
-                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium disabled:opacity-50 dark:text-blue-300"
-                      >
-                        {otpSending ? "Sending..." : "Resend OTP"}
-                      </button>
-                    )}
-                    <span className="text-gray-400 dark:text-gray-300">
-                      ****{normalizeMobile(form.mobile).slice(-4)}
-                    </span>
-                  </div>
-                </div>
-              )}
 
               <Button
                 type="submit"
                 disabled={loading}
-                className={`w-full h-11 sm:h-12 rounded-xl text-base sm:text-lg font-semibold transition-all ${
-                  showOtpChallenge
-                    ? "bg-orange-500 hover:bg-orange-600"
-                    : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
-                }`}
+                className="w-full bg-gradient-to-r from-indigo-500 via-blue-600 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-500/25 mt-2 transition-all flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t("verifying") || "Verifying..."}
-                  </span>
-                ) : showOtpChallenge ? (
-                  t("verify_login") || "Verify Login"
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Signing In...
+                  </>
                 ) : (
-                  t("sign_in") || "Sign In"
+                  "Sign In to Platform"
                 )}
               </Button>
             </form>
+
+            <div className="text-center pt-2 border-t border-slate-800">
+              <span className="text-xs text-slate-400">Don't have an account? </span>
+              <Link to="/signup" className="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline">
+                Sign up here
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

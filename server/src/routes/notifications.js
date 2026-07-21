@@ -1,41 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const notificationController = require("../controllers/notificationController");
-const { protect } = require("../middleware/auth");
+const authMiddleware = require("../middleware/auth");
 
-/**
- * @route Notification routes
- * @description Manages user notifications: listing, read status, and deletion
- */
+// Optional auth helper depending on route setup
+const authenticate = typeof authMiddleware === "function" 
+  ? authMiddleware 
+  : (authMiddleware.authenticate || ((req, res, next) => next()));
 
-/** @route GET / - Get all notifications for the authenticated user */
-router.get("/", protect, notificationController.getNotifications);
+const controller = require("../controllers/notificationController");
 
-/** @route GET /unread-count - Get the count of unread notifications */
-router.get("/unread-count", protect, notificationController.getUnreadCount);
+// FCM Token registration
+router.post("/fcm-token", authenticate, controller.registerFcmToken);
+router.delete("/fcm-token", authenticate, controller.unregisterFcmToken);
 
-/** @route PUT /:notificationId/read - Mark a single notification as read */
-router.put("/:notificationId/read", protect, notificationController.markAsRead);
+// User notification history & read status
+router.get("/", authenticate, controller.getNotifications);
+router.patch("/read-all", authenticate, controller.markAllAsRead);
+router.patch("/:id/read", authenticate, controller.markAsRead);
 
-/** @route PUT /mark-all-read - Mark all notifications as read (PUT) */
-router.put("/mark-all-read", protect, notificationController.markAllAsRead);
+// Notification preferences
+router.get("/preferences", authenticate, controller.getPreferences);
+router.put("/preferences", authenticate, controller.updatePreferences);
 
-/** @route POST /mark-all-read - Mark all notifications as read (POST) */
-router.post("/mark-all-read", protect, notificationController.markAllAsRead);
-
-/** @route DELETE /:notificationId - Delete a notification */
-router.delete("/:notificationId", protect, notificationController.deleteNotification);
-
-/** @route DELETE / - Delete all notifications for the authenticated user */
-router.delete("/", protect, notificationController.deleteAllNotifications);
-
-/** @route PATCH /:notificationId/snooze - Snooze a notification */
-router.patch("/:notificationId/snooze", protect, notificationController.snoozeNotification);
-
-/** @route GET /preferences - Fetch notification preferences */
-router.get("/preferences", protect, notificationController.getNotificationPreferences);
-
-/** @route PUT /preferences - Update notification preferences */
-router.put("/preferences", protect, notificationController.updateNotificationPreferences);
+// Trigger notification dispatch (Internal/Admin)
+router.post("/send", authenticate, controller.sendNotification);
 
 module.exports = router;

@@ -35,8 +35,8 @@ router.post("/add", protect, async (req, res) => {
         .status(400)
         .json({ error: "Description must be 5-500 characters." });
     }
-    const parsedUserId = Number.parseInt(String(userId), 10);
-    if (!Number.isFinite(parsedUserId) || parsedUserId <= 0) {
+    const cleanUserId = String(userId).trim();
+    if (!cleanUserId) {
       return res.status(400).json({ error: "Invalid user id" });
     }
     const firstNonEmptyLine = normalizedDescription
@@ -74,7 +74,7 @@ router.post("/add", protect, async (req, res) => {
             updated_at
         `,
       [
-        parsedUserId,
+        cleanUserId,
         normalizedTitle,
         normalizedDescription,
         0,

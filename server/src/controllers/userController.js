@@ -10,6 +10,7 @@ const { ensureUserTierColumns } = require("../services/schemaGuard");
 const {
   processKycSubmission,
 } = require("../services/kycAutomationService");
+const kycService = require("../services/kycService");
 
 let profileColumnAvailabilityPromise = null;
 
@@ -472,88 +473,91 @@ exports.getTierStatus = async (req, res) => {
 };
 
 /**
- * POST /api/users/kyc – Submit KYC documents (Aadhaar + PAN) for
- * verification. Delegates to the KYC automation service for
- * auto-approve / auto-reject / manual-queue routing.
- * @param {import("express").Request} req
- * @param {import("express").Response} res
+ * POST /api/users/kyc/pan
+ * Verify PAN Number
  */
-exports.submitKYC = async (req, res) => {
+exports.verifyPan = async (req, res) => {
+  try {
+    const userId = getAuthUserId(req);
+    const panNumber = parseOptionalString(req.body.pan_number);
+
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!panNumber) return res.status(400).json({ error: "PAN number is required" });
+
+    const result = await kycService.verifyPan(userId, panNumber);
+
+    if (result.verified) {
+      await runQuery(
+        `INSERT INTO kyc_verifications (user_id, pan_hash, pan_full_name, surepass_pan_ref_id, status)
+         VALUES ($1, $2, $3, $4, 'PAN_VERIFIED')
+         ON CONFLICT (user_id) DO UPDATE SET pan_hash = EXCLUDED.pan_hash, pan_full_name = EXCLUDED.pan_full_name, surepass_pan_ref_id = EXCLUDED.surepass_pan_ref_id, status = 'PAN_VERIFIED'`,
+        [userId, result.panHash, result.name, result.refId]
+      );
+      await runQuery(`UPDATE users SET kyc_status = 'PAN_VERIFIED' WHERE user_id::text = $1`, [userId]);
+      return res.json({ success: true, message: "PAN verified successfully", name: result.name });
+    }
+
+    return res.status(400).json({ error: result.error || "PAN verification failed" });
+  } catch (err) {
+    logger.error("[KYC] PAN verification failed:", err);
+    return res.status(500).json({ error: "PAN Verification failed" });
+  }
+};
+
+/**
+ * POST /api/users/kyc/aadhaar/generate
+ * Request Aadhaar OTP
+ */
+exports.generateAadhaarOtp = async (req, res) => {
   try {
     const userId = getAuthUserId(req);
     const aadhaarNumber = parseOptionalString(req.body.aadhaar_number);
-    const panNumber = parseOptionalString(req.body.pan_number);
 
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!aadhaarNumber) return res.status(400).json({ error: "Aadhaar number is required" });
 
-    if (!aadhaarNumber || !panNumber) {
-      return res
-        .status(400)
-        .json({ error: "Aadhaar and PAN numbers are required" });
-    }
+    const result = await kycService.sendAadhaarOtp(userId, aadhaarNumber);
 
-    const files = req.files || {};
-    const kycDocuments = {};
-
-    if (files.kyc_front?.[0]) {
-      kycDocuments.front = getImageUrl(files.kyc_front[0]);
-    }
-    if (files.kyc_back?.[0]) {
-      kycDocuments.back = getImageUrl(files.kyc_back[0]);
-    }
-
-    if (!kycDocuments.front) {
-      return res.status(400).json({ error: "Front ID image is required" });
-    }
-
-    const result = await runQuery(
-      `UPDATE users
-       SET aadhaar_number = $1,
-           pan_number = $2,
-           kyc_documents = $3,
-           aadhaar_status = 'PENDING',
-           rejection_reason = NULL
-       WHERE user_id::text = $4
-       RETURNING aadhaar_status, kyc_documents`,
-      [aadhaarNumber, panNumber, JSON.stringify(kycDocuments), userId]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const routingResult = await processKycSubmission({
-      userId,
-      aadhaarNumber,
-      panNumber,
-      documents: kycDocuments,
-    });
-
-    return res.json({
-      success: true,
-      message:
-        routingResult.decision === "auto_approved"
-          ? "KYC submitted and auto-approved."
-          : routingResult.decision === "auto_rejected"
-            ? "KYC submitted but auto-rejected. Please review issues and resubmit."
-            : "KYC submitted successfully. Added to manual review queue.",
-      status: routingResult.user_status || result.rows[0].aadhaar_status,
-      routing: {
-        queue_id: routingResult.queue_id,
-        decision: routingResult.decision,
-        decision_reason: routingResult.decision_reason,
-        confidence: routingResult.confidence,
-        risk_flags: routingResult.risk_flags,
-        validation_errors: routingResult.validation_errors,
-      },
-    });
+    return res.json({ success: true, txnId: result.txnId, masked: result.masked });
   } catch (err) {
-    logger.error("[KYC] Submission failed:", err);
-    return res
-      .status(500)
-      .json({ error: "KYC Submission failed" });
+    logger.error("[KYC] Aadhaar OTP generation failed:", err);
+    return res.status(400).json({ error: err.message || "Failed to generate Aadhaar OTP" });
+  }
+};
+
+/**
+ * POST /api/users/kyc/aadhaar/verify
+ * Verify Aadhaar OTP
+ */
+exports.verifyAadhaarOtp = async (req, res) => {
+  try {
+    const userId = getAuthUserId(req);
+    const { otp, txnId } = req.body;
+
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!otp || !txnId) return res.status(400).json({ error: "OTP and txnId are required" });
+
+    const result = await kycService.verifyAadhaarOtp(userId, otp, txnId);
+
+    if (result.verified) {
+      await runQuery(
+        `UPDATE kyc_verifications SET status = 'VERIFIED', verified_at = NOW() WHERE user_id::text = $1`,
+        [userId]
+      );
+      await runQuery(`UPDATE users SET kyc_status = 'VERIFIED', kyc_verified = true WHERE user_id::text = $1`, [userId]);
+      return res.json({
+        success: true,
+        message: "Aadhaar verified successfully",
+        name: result.name,
+        require_relogin: true,
+        relogin_message: "KYC & Subscription verified! Logging out to activate full access..."
+      });
+    }
+
+    return res.status(400).json({ error: result.error || "Aadhaar verification failed" });
+  } catch (err) {
+    logger.error("[KYC] Aadhaar verification failed:", err);
+    return res.status(500).json({ error: "Aadhaar Verification failed" });
   }
 };
 
@@ -571,46 +575,20 @@ function isUndefinedColumnError(error) {
 }
 
 /**
- * Fetch the KYC status row for a user, gracefully falling back to a
- * schema-flex query when expected columns are missing.
- * @param {string} userId
- * @returns {Promise<pg.QueryResult>}
+ * Fetch the KYC status row for a user from kyc_verifications
  */
 async function getKycStatusRow(userId) {
   try {
     return await runQuery(
-      `SELECT aadhaar_status, rejection_reason, aadhaar_number,
-              pan_number, kyc_documents
-       FROM users
+      `SELECT status, verified_at, pan_status
+       FROM kyc_verifications
        WHERE user_id::text = $1
        LIMIT 1`,
       [userId]
     );
   } catch (error) {
-    if (!isUndefinedColumnError(error)) {
-      throw error;
-    }
-
-    logger.warn("[KYC] Falling back to schema-flex status query", {
-      userId,
-      message: error.message,
-    });
-
-    return runQuery(
-      `SELECT
-         COALESCE(NULLIF(to_jsonb(u)->>'aadhaar_status', ''), 'PENDING') AS aadhaar_status,
-         NULLIF(to_jsonb(u)->>'rejection_reason', '') AS rejection_reason,
-         NULLIF(to_jsonb(u)->>'aadhaar_number', '') AS aadhaar_number,
-         NULLIF(to_jsonb(u)->>'pan_number', '') AS pan_number,
-         COALESCE(to_jsonb(u)->'kyc_documents', '{}'::jsonb) AS kyc_documents
-       FROM users u
-       WHERE COALESCE(
-         NULLIF(to_jsonb(u)->>'user_id', ''),
-         NULLIF(to_jsonb(u)->>'id', '')
-       ) = $1
-       LIMIT 1`,
-      [userId]
-    );
+    logger.warn("[KYC] Error fetching kyc status row", { userId, message: error.message });
+    return { rows: [] };
   }
 }
 
@@ -630,22 +608,18 @@ exports.getKYCStatus = async (req, res) => {
 
     const result = await getKycStatusRow(userId);
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "User not found" });
+    if (result.rows.length === 0) {
+      return res.json({
+        status: "NOT_SUBMITTED",
+        rejection_reason: null,
+      });
     }
 
     const data = result.rows[0];
-    const aadhaar = parseOptionalString(data.aadhaar_number);
-    const pan = parseOptionalString(data.pan_number);
-    const maskedAadhaar = aadhaar ? `XXXX-XXXX-${aadhaar.slice(-4)}` : null;
-    const maskedPan = pan ? `XXXXX${pan.slice(-4)}` : null;
-
     return res.json({
-      status: parseOptionalString(data.aadhaar_status) || "PENDING",
-      rejection_reason: data.rejection_reason,
-      aadhaar_number: maskedAadhaar,
-      pan_number: maskedPan,
-      documents: data.kyc_documents || {},
+      status: data.status || "PENDING",
+      verified_at: data.verified_at,
+      pan_status: data.pan_status,
     });
   } catch (err) {
     logger.error("[KYC] Status fetch failed:", err);

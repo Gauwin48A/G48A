@@ -52,6 +52,7 @@ import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -1139,13 +1140,12 @@ fun ExploreScreen(
                     },
                     onSelectSubcategory = { sub ->
                         viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
-                    },
-                    onInterested = { postId, postTitle ->
-                        interestPostId = postId
-                        interestPostTitle = postTitle
-                        showInterestModal = true
-                    },
-                )
+                    },    onInterested = { postId, postTitle ->
+        interestPostId = postId
+        interestPostTitle = postTitle
+        showInterestModal = true
+    },
+)
             }
 
             // Plan expiry / expired banner
@@ -1726,12 +1726,13 @@ private fun AllPostsBrowse(
 
         // For You mode — filter by selected subcategory preferences if available
         val forYouSubs = SharedExploreStore.selectedSubcategories
+        val hasForYouPrefs = forYouSubs.isNotEmpty()
         val forYouFilteredPosts = if (state.forYouMode && forYouSubs.isNotEmpty()) {
             state.posts.filter { post ->
                 val postSub = (post.subcategory ?: post.subcategoryName ?: "").lowercase()
                 forYouSubs.any { it.lowercase() == postSub || postSub.contains(it.lowercase()) }
             }
-        } else state.posts
+        } else emptyList()
 
         if (state.forYouMode) {
             item(key = "for_you_header") {
@@ -1916,8 +1917,70 @@ private fun AllPostsBrowse(
                 }
             } else {
                 val displayPosts = if (state.forYouMode) forYouFilteredPosts else state.posts
-                items(displayPosts, key = { it.stableId }) { post ->
-                    AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                if (state.forYouMode && !hasForYouPrefs) {
+                    item(key = "for_you_empty_prefs") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 32.dp, vertical = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                Icons.Default.Tune,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "Personalize Your Feed",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Set your preferences to see posts that match your interests — subcategory, location, and price range.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                } else if (state.forYouMode && displayPosts.isEmpty()) {
+                    item(key = "for_you_no_match") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 32.dp, vertical = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(56.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "No Posts Match Your Preferences",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Try adjusting your subcategory, location, or price range selection.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                } else {
+                    items(displayPosts, key = { it.stableId }) { post ->
+                        AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
+                    }
                 }
             }
             item(key = "load_more") {

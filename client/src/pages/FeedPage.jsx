@@ -236,6 +236,29 @@ const Ve = 5,
       [fe, J] = i({}),
       [pe, he] = i({}),
       [K, Q] = i(""),
+      [showAddFeedModal, setShowAddFeedModal] = i(!1),
+      [addFeedText, setAddFeedText] = i(""),
+      [isSubmittingFeed, setIsSubmittingFeed] = i(!1),
+      handleAddFeedPostSubmit = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!addFeedText.trim() || addFeedText.trim().length < 5) return;
+        setIsSubmittingFeed(!0);
+        try {
+          const res = await api.post("/api/feed/add", { description: addFeedText.trim() });
+          if (res.data) {
+            u((prev) => [res.data, ...prev]);
+            setAddFeedText("");
+            setShowAddFeedModal(!1);
+            Q("News/Info update posted successfully!");
+            setTimeout(() => Q(""), 3000);
+          }
+        } catch (err) {
+          Q(err.response?.data?.error || "Failed to add post");
+          setTimeout(() => Q(""), 3000);
+        } finally {
+          setIsSubmittingFeed(!1);
+        }
+      },
       h = j(
         () =>
           !!(Y || hasAuthSession()),
@@ -380,6 +403,7 @@ const Ve = 5,
             params.set("sortBy", sortBy);
             params.set("sortOrder", sortOrder);
           }
+          params.set("post_type", "text");
           const k = await api.get("/feed", { params, signal: a.signal });
           const te = k?.data ?? k;
           let x = Array.isArray(te?.posts)
@@ -1308,36 +1332,6 @@ const Ve = 5,
                                   },
                                   t.title,
                                 ),
-                              postPriceLabel
-                                ? e.createElement(
-                                    "span",
-                                    {
-                                      className:
-                                        "shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-200",
-                                    },
-                                    postPriceLabel,
-                                  )
-                                : null,
-                            )
-                          : null,
-                        primaryImage
-                          ? e.createElement(
-                              "div",
-                              {
-                                className:
-                                  "mb-1.5 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer",
-                                onClick: () => ke(r),
-                              },
-                              e.createElement("img", {
-                                src: primaryImage,
-                                alt: t.title || o("listing_image") || "Listing image",
-                                loading: "lazy",
-                                className:
-                                  "h-32 w-full object-cover transition-transform duration-300 hover:scale-[1.02]",
-                                onError: (evt) => {
-                                  evt.currentTarget.style.display = "none";
-                                },
-                              }),
                             )
                           : null,
                         e.createElement(
@@ -1619,6 +1613,61 @@ const Ve = 5,
               "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+0.5rem)] left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-[60] dark:bg-indigo-700/40 dark:text-white",
           },
           K,
+        ),
+      e.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            if (!h) {
+              W(!0);
+              return;
+            }
+            setShowAddFeedModal(!0);
+          },
+          className:
+            "fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all dark:from-orange-600 dark:to-amber-600",
+          "aria-label": "Add News Update",
+          title: "Post News or Information Update",
+        },
+        e.createElement(Te, { className: "w-6 h-6" })
+      ),
+      showAddFeedModal &&
+        e.createElement(
+          "div",
+          { className: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" },
+          e.createElement(
+            "div",
+            { className: "bg-card border rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4" },
+            e.createElement(
+              "div",
+              { className: "flex items-center justify-between border-b pb-3" },
+              e.createElement("h3", { className: "text-lg font-bold flex items-center gap-2" }, e.createElement(le, { className: "w-5 h-5 text-orange-500" }), "Post News & Info Update"),
+              e.createElement("button", { onClick: () => setShowAddFeedModal(!1), className: "text-muted-foreground hover:text-foreground text-sm font-bold" }, "✕")
+            ),
+            e.createElement(
+              "form",
+              { onSubmit: handleAddFeedPostSubmit, className: "space-y-4" },
+              e.createElement(
+                "div",
+                { className: "space-y-1.5" },
+                e.createElement("label", { className: "text-xs font-semibold text-muted-foreground" }, "Descriptive Update Text (5-500 chars)"),
+                e.createElement("textarea", {
+                  rows: 5,
+                  placeholder: "Write your news, announcement, or descriptive information update here...",
+                  value: addFeedText,
+                  onChange: (e) => setAddFeedText(e.target.value),
+                  className: "w-full p-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-orange-500 outline-none resize-none",
+                })
+              ),
+              e.createElement(
+                "div",
+                { className: "flex justify-end gap-2 pt-2" },
+                e.createElement(c, { type: "button", variant: "outline", onClick: () => setShowAddFeedModal(!1) }, "Cancel"),
+                e.createElement(c, { type: "submit", disabled: isSubmittingFeed || addFeedText.trim().length < 5, className: "bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold" }, isSubmittingFeed ? "Posting..." : "Publish Update")
+              )
+            )
+          )
         ),
       e.createElement(PromoteDialog, {
         open: Boolean(promotePostId),

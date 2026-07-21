@@ -127,6 +127,7 @@ const NotificationsPage = lazyWithRetry(
 );
 const ComplaintsPage = lazyWithRetry(() => import("./pages/Complaints.jsx"), "Complaints");
 const FeedbackPage = lazyWithRetry(() => import("./pages/Feedback.jsx"), "Feedback");
+const ChatPage = lazyWithRetry(() => import("./pages/Chat.jsx"), "Chat");
 const MyHomePage = lazyWithRetry(() => import("./pages/MyHome.jsx"), "MyHome");
 const HomePage = lazyWithRetry(() => import("./pages/Home.jsx"), "Home");
 const ForYouPage = lazyWithRetry(() => import("./pages/ForYou.jsx"), "ForYou");
@@ -627,6 +628,7 @@ function AppShell() {
                   <Route path="/notifications" element={<PageEnhancer config={PAGE_CONFIGS["notifications"]}><RequireAuth><NotificationsPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/complaints" element={<PageEnhancer config={PAGE_CONFIGS["complaints"]}><RequireAuth><ComplaintsPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/feedback" element={<PageEnhancer config={PAGE_CONFIGS["feedback"]}><RequireAuth><FeedbackPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/chat" element={<PageEnhancer config={{ title: "Messages", layout: "default" }}><RequireAuth><ChatPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/rewards" element={<PageEnhancer config={PAGE_CONFIGS["rewards"]}><RequireAuth><RewardsPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/categories" element={<PageEnhancer config={PAGE_CONFIGS["category-hub"]}><RequireAuth><SubcategoriesPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/subcategories" element={<PageEnhancer config={PAGE_CONFIGS["category-hub"]}><RequireAuth><SubcategoriesPage /></RequireAuth></PageEnhancer>} />

@@ -174,15 +174,15 @@ interface MhubApi {
     @POST("api/uploads/post-image")
     suspend fun uploadPostImage(@Body body: RequestBody): UploadResponse
 
-    // ---- KYC ----
-    @POST("api/users/kyc/upload")
-    suspend fun uploadKycDoc(
-        @Query("slot") slot: String,
-        @Body body: RequestBody,
-    ): KycUploadResponse
+    // ---- KYC (Surepass Integration) ----
+    @POST("api/users/kyc/aadhaar/generate")
+    suspend fun generateAadhaarOtp(@Body body: AadhaarGenerateRequest): MessageResponse
 
-    @POST("api/users/kyc/submit")
-    suspend fun submitKyc(@Body body: KycSubmitRequest): KycSubmitResponse
+    @POST("api/users/kyc/aadhaar/verify")
+    suspend fun verifyAadhaarOtp(@Body body: AadhaarVerifyRequest): AadhaarVerifyResponse
+
+    @POST("api/users/kyc/pan/verify")
+    suspend fun verifyPan(@Body body: PanVerifyRequest): PanVerifyResponse
 
     @GET("api/users/kyc/status")
     suspend fun kycStatus(): KycStatusResponse
@@ -626,21 +626,9 @@ interface MhubApi {
         @Body body: ReviewRespondRequest,
     ): MessageResponse
 
-    // ---- Tier / Payment ----
-    @GET("api/tiers")
-    suspend fun tiers(): TiersResponse
-
-    @POST("api/subscriptions")
-    suspend fun subscribe(@Body body: SubscribeRequest): MessageResponse
-
-    @POST("api/subscriptions/trial")
-    suspend fun activateTrial(): MessageResponse
-
-    @POST("api/subscriptions/{id}/cancel")
-    suspend fun cancelSubscription(@Path("id") id: String): MessageResponse
-
-    @GET("api/subscriptions/history")
-    suspend fun subscriptionHistory(): SubscriptionHistoryResponse
+    // ---- Tier / Subscription ----
+    @GET("api/subscriptions/plans")
+    suspend fun getSubscriptionPlans(): SubscriptionPlansResponse
 
     @GET("api/subscriptions/my")
     suspend fun mySubscription(): MySubscriptionResponse

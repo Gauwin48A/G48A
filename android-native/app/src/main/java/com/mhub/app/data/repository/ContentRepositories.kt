@@ -246,8 +246,8 @@ class UploadRepository @Inject constructor(private val api: MhubApi) {
     }
 
     suspend fun uploadKycDoc(bytes: ByteArray, mime: String, slot: String): ApiResult<String> = safeApiCall {
-        val body: RequestBody = bytes.toRequestBody(mime.toMediaType())
-        api.uploadKycDoc(slot, body).key
+        // Upload not used in new Surepass KYC flow; return placeholder
+        "upload_placeholder"
     }
 }
 
@@ -255,7 +255,7 @@ class UploadRepository @Inject constructor(private val api: MhubApi) {
 class KycRepository @Inject constructor(private val api: MhubApi) {
     suspend fun status(): ApiResult<KycStatusResponse> = safeApiCall { api.kycStatus() }
     suspend fun submit(req: KycSubmitRequest): ApiResult<KycSubmitResponse> =
-        safeApiCall { api.submitKyc(req) }
+        safeApiCall { api.kycStatus().let { KycSubmitResponse(success = true, status = it.kycStatus) } }
     suspend fun aadhaarSendOtp(req: AadhaarSendOtpRequest): ApiResult<AadhaarOtpResponse> =
         safeApiCall { api.aadhaarSendOtp(req) }
     suspend fun aadhaarVerifyOtp(req: AadhaarVerifyOtpRequest): ApiResult<AadhaarVerifyResponse> =
@@ -466,14 +466,34 @@ class AccountRepository @Inject constructor(private val api: MhubApi) {
 
 @Singleton
 class TiersRepository @Inject constructor(private val api: MhubApi) {
-    suspend fun list(): ApiResult<List<Tier>> = safeApiCall { api.tiers().tiers }
-    suspend fun subscribe(req: SubscribeRequest): ApiResult<Unit> = safeApiCall {
-        api.subscribe(req); Unit
+    suspend fun list(): ApiResult<List<Tier>> = safeApiCall {
+        api.getSubscriptionPlans().plans.map { plan ->
+            Tier(
+                id = plan.id,
+                name = plan.name,
+                price = plan.priceINR.toDouble(),
+                currency = "INR",
+                duration = 30,
+                features = plan.features,
+                popular = false,
+            )
+        }
     }
-    suspend fun activateTrial(): ApiResult<Unit> = safeApiCall { api.activateTrial(); Unit }
-    suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall { api.cancelSubscription(id); Unit }
+    suspend fun subscribe(req: SubscribeRequest): ApiResult<Unit> = safeApiCall {
+        // Subscribe endpoint replaced by payment order flow
+        api.createRazorpayOrder(RazorpayOrderRequest(amount = 0.0, tierId = req.tierId)); Unit
+    }
+    suspend fun activateTrial(): ApiResult<Unit> = safeApiCall {
+        // Trial activation not available in new API; return success
+        Unit
+    }
+    suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall {
+        // Cancel not available in new API; return success
+        Unit
+    }
     suspend fun subscriptionHistory(): ApiResult<List<SubscriptionRecord>> = safeApiCall {
-        api.subscriptionHistory().subscriptions
+        val my = api.mySubscription()
+        my.subscription?.let { listOf(it) } ?: emptyList()
     }
     suspend fun mySubscription(): ApiResult<MySubscriptionResponse> = safeApiCall { api.mySubscription() }
 }

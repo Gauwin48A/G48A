@@ -48,6 +48,8 @@ const KycVerification = () => {
   const [loadError, setLoadError] = useState("");
   const [kycStatus, setKycStatus] = useState(null);
 
+  const [hasActivePlan, setHasActivePlan] = useState(true);
+
   const fetchStatus = useCallback(async () => {
     if (!hasSession) {
       setIsLoading(false);
@@ -58,8 +60,18 @@ const KycVerification = () => {
     setLoadError("");
 
     try {
-      const response = await api.get("/users/kyc/status");
-      setKycStatus(response || null);
+      const [statusRes, profileRes] = await Promise.all([
+        api.get("/users/kyc/status").catch(() => null),
+        api.get("/api/users/profile").catch(() => null)
+      ]);
+
+      setKycStatus(statusRes || null);
+
+      if (profileRes?.data) {
+        const tier = (profileRes.data.subscription_tier || profileRes.data.tier || "").toLowerCase();
+        const hasPlan = Boolean(tier && tier !== "none" && tier !== "free_trial_expired");
+        setHasActivePlan(hasPlan);
+      }
     } catch (error) {
       if (import.meta.env.DEV) console.error("KYC status fetch failed", error);
       setLoadError(
@@ -107,6 +119,17 @@ const KycVerification = () => {
         response?.message ||
           tr("kyc_documents_submitted", "Documents submitted successfully."),
       );
+
+      if (response?.require_relogin || response?.status === "VERIFIED" || response?.verified) {
+        setSuccessMessage("🎉 Verification Complete! Logging out in 3 seconds to activate your fully unlocked account...");
+        setTimeout(() => {
+          localStorage.removeItem("authSession");
+          localStorage.removeItem("token");
+          navigate("/login?activated=true");
+        }, 3000);
+        return;
+      }
+
       setKycStatus((prev) => ({
         ...prev,
         ...(response || {}),
@@ -167,6 +190,29 @@ const KycVerification = () => {
               "Checking your latest verification status.",
             )}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActivePlan) {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <div className="max-w-md w-full page-shell page-pad">
+          <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-6 text-center space-y-4 rounded-2xl shadow-xl">
+            <h3 className="text-xl font-bold text-amber-900 dark:text-amber-200">
+              Subscription Plan Required
+            </h3>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              As per platform policy, you must select and activate a Subscription Plan (Starter, Basic, Bronze, Silver, Gold, or Premium) before completing your one-time KYC verification.
+            </p>
+            <Button
+              onClick={() => navigate("/tier-selection")}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:scale-105 transition-all"
+            >
+              Select & Activate Subscription Plan
+            </Button>
+          </Card>
         </div>
       </div>
     );

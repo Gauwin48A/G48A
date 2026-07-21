@@ -1448,7 +1448,10 @@ function PostDetail() {
         });
         return;
       }
-      f(!0);
+      const sellerId = r?.seller_id || r?.user_id || r?.user?.id || "seller_demo";
+      const sellerName = encodeURIComponent(r?.seller_name || r?.user?.name || "Seller");
+      const postTitle = encodeURIComponent(r?.title || "Item");
+      navigate(`/chat?sellerId=${sellerId}&sellerName=${sellerName}&postId=${J}&title=${postTitle}`);
     },
     handleMakeOffer = () => {
       if (offerCtaDisabled) {

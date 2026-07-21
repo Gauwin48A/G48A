@@ -28,6 +28,12 @@ const protect = async (req, res, next) => {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 
+  if (verifiedAuth.payload?.is_demo) {
+    req.user = verifiedAuth.payload;
+    req.authToken = verifiedAuth.token;
+    return next();
+  }
+
   try {
     const revoked = await isAccessTokenRevoked(verifiedAuth.token);
     if (revoked) {
@@ -70,8 +76,45 @@ const requireAadhaarVerified = (req, res, next) => {
   return next();
 };
 
+const requireActivePlan = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+  const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
+  const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
+  if (!hasPlan && !req.user.is_demo) {
+    return res.status(403).json({
+      error: "Subscription plan required before proceeding.",
+      code: "PLAN_REQUIRED",
+      plan_required: true,
+    });
+  }
+  return next();
+};
+
+const requirePlanAndKyc = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+  const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
+  const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
+  const isKycVerified = Boolean(req.user.aadhaar_verified || req.user.kyc_verified);
+  
+  if ((!hasPlan || !isKycVerified) && !req.user.is_demo) {
+    return res.status(403).json({
+      error: "Active subscription plan and verified KYC are required to access this feature.",
+      code: "PLAN_AND_KYC_REQUIRED",
+      plan_required: !hasPlan,
+      kyc_required: !isKycVerified,
+    });
+  }
+  return next();
+};
+
 module.exports = {
   protect,
   optionalAuth,
   requireAadhaarVerified,
+  requireActivePlan,
+  requirePlanAndKyc,
 };

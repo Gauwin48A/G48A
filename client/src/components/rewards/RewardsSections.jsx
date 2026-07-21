@@ -1452,32 +1452,52 @@ export function RewardsEarn({
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-900/20 p-4">
-              <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-200 font-semibold">
-                <Sparkles className="w-4 h-4" />
-                {tr("spin_wheel", "Spin wheel")}
+            <div className="rounded-2xl border border-indigo-200/80 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/90 to-purple-50/50 dark:from-indigo-950/30 dark:to-purple-950/20 p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-200 font-black text-sm">
+                    <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                    {tr("spin_wheel", "Daily Spin Wheel")}
+                  </div>
+                  <Badge className="bg-indigo-600 text-white text-[10px] font-bold">1 Free Spin</Badge>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  {spinStatus?.hasSpunToday
+                    ? tr("spin_already", "You already spun today. Next spin in 24h!")
+                    : tr("spin_wheel_desc", "Spin daily to win up to 500 free coins instantly!")}
+                </p>
+                
+                {/* Mini Visual Wheel Preview */}
+                <div className="my-3 flex items-center justify-center relative">
+                  <div className="w-24 h-24 rounded-full border-4 border-amber-400 shadow-md relative overflow-hidden animate-[spin_20s_linear_infinite]">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <path d="M50,50 L50,0 A50,50 0 0,1 100,50 Z" fill="#f59e0b" />
+                      <path d="M50,50 L100,50 A50,50 0 0,1 50,100 Z" fill="#6366f1" />
+                      <path d="M50,50 L50,100 A50,50 0 0,1 0,50 Z" fill="#10b981" />
+                      <path d="M50,50 L0,50 A50,50 0 0,1 50,0 Z" fill="#ec4899" />
+                    </svg>
+                  </div>
+                  <div className="absolute z-10 w-6 h-6 rounded-full bg-amber-400 border-2 border-white shadow flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-slate-900" />
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-indigo-700 dark:text-indigo-200 mt-1">
-                {spinStatus?.hasSpunToday
-                  ? tr("spin_already", "You already spun today.")
-                  : tr("spin_wheel_desc", "Spin daily and win coins.")}
-              </p>
+
               <Button
                 type="button"
-                size="sm"
                 disabled={spinStatus?.hasSpunToday || spinLoading}
                 className={
                   spinStatus?.hasSpunToday || spinLoading
-                    ? "mt-3 bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
-                    : "mt-3 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    ? "w-full bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
+                    : "w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold shadow-md"
                 }
                 onClick={onSpin}
               >
                 {spinStatus?.hasSpunToday
-                  ? tr("spin_done", "Spun today")
+                  ? tr("spin_done", "Spun Today ✓")
                   : spinLoading
                     ? tr("spinning", "Spinning...")
-                    : tr("spin_now", "Spin now")}
+                    : tr("spin_now", "🎡 Open Lucky Spin Wheel")}
               </Button>
             </div>
 
@@ -3141,13 +3161,14 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
   const confettiCleanupRef = React.useRef(null);
 
   const segments = [
-    { value: 25, label: "+25" },
-    { value: 15, label: "+15" },
-    { value: 10, label: "+10" },
-    { value: 5, label: "+5" },
-    { value: 0, label: "0" },
-    { value: -5, label: "-5" },
-    { value: -10, label: "-10" },
+    { value: 50, label: "+50 🪙", color: "from-amber-500 to-yellow-400", hex: "#f59e0b" },
+    { value: 25, label: "+25 🪙", color: "from-indigo-600 to-blue-500", hex: "#6366f1" },
+    { value: 15, label: "+15 🪙", color: "from-emerald-500 to-teal-400", hex: "#10b981" },
+    { value: 10, label: "+10 🪙", color: "from-cyan-500 to-sky-400", hex: "#0ea5e9" },
+    { value: 5, label: "+5 🪙", color: "from-violet-600 to-purple-500", hex: "#8b5cf6" },
+    { value: 100, label: "💎 100", color: "from-rose-500 to-pink-500", hex: "#f43f5e" },
+    { value: 200, label: "⚡ 200", color: "from-yellow-400 to-amber-600", hex: "#d97706" },
+    { value: 500, label: "🔥 500", color: "from-emerald-400 to-green-600", hex: "#059669" },
   ];
 
   const handleStartSpin = async () => {
@@ -3156,14 +3177,13 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
     setError(null);
     try {
       const res = await api.post("/coins/spin");
-      const prize = res?.reward ?? 0;
+      const prize = res?.reward ?? 50;
       const newBalance = res?.newBalance ?? 0;
       
       const prizeIndex = segments.findIndex((s) => s.value === prize);
       const targetIdx = prizeIndex >= 0 ? prizeIndex : 0;
       
-      // Calculate stopping angle
-      const rotations = 6;
+      const rotations = 8;
       const anglePerSegment = 360 / segments.length;
       const targetAngle = 360 - (targetIdx * anglePerSegment + anglePerSegment / 2);
       const finalRotation = 360 * rotations + targetAngle;
@@ -3208,14 +3228,18 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <canvas id="spin-confetti-canvas" className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
       
-      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-slate-900 border border-slate-800 text-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center overflow-hidden">
+        {/* Glowing background aura */}
+        <div className="absolute -top-20 -left-20 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
         {!isSpinning && (
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full bg-slate-800/50 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -3223,31 +3247,35 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
 
         {!showWinScreen ? (
           <div className="flex flex-col items-center">
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
-              {tr("daily_spin_wheel", "Daily Spin Wheel")}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-              {tr("spin_wheel_tagline", "Try your luck daily! Win coins or watch out for penalties.")}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold mb-2">
+              <Sparkles className="w-3.5 h-3.5" /> {tr("daily_bonus", "DAILY LUCKY WHEEL")}
+            </div>
+            
+            <h3 className="text-2xl font-black text-white mb-1">Spin & Win Free Coins!</h3>
+            <p className="text-xs text-slate-400 mb-6">
+              Spin daily to earn up to 500 bonus coins & boost your marketplace power!
             </p>
 
-            {/* Pointer indicator */}
+            {/* Wheel Container */}
             <div className="relative w-64 h-64 flex items-center justify-center mb-6">
-              <div className="absolute -top-3 z-20 text-indigo-600 dark:text-indigo-400 animate-bounce">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 21l-8-14h16z" />
-                </svg>
+              {/* Outer LED Glowing Ring */}
+              <div className="absolute inset-0 rounded-full border-8 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.3)] pointer-events-none" />
+
+              {/* Pointer indicator */}
+              <div className="absolute -top-4 z-30 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                <div className="w-8 h-8 bg-gradient-to-b from-amber-400 to-amber-600 clip-triangle flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full shadow-inner mt-1" />
+                </div>
               </div>
 
               {/* Wheel graphics */}
               <div
-                className="w-full h-full rounded-full border-4 border-slate-900 dark:border-slate-800 overflow-hidden shadow-xl relative"
+                className="w-full h-full rounded-full border-4 border-slate-900 overflow-hidden shadow-2xl relative"
                 style={{
                   transform: `rotate(${rotation}deg)`,
-                  transition: isSpinning ? "transform 4s cubic-bezier(0.15, 0.85, 0.3, 1)" : "none",
+                  transition: isSpinning ? "transform 4s cubic-bezier(0.1, 0.9, 0.2, 1)" : "none",
                 }}
               >
-                {/* Visual Segments using SVG */}
                 <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
                   {segments.map((seg, idx) => {
                     const angle = 360 / segments.length;
@@ -3261,30 +3289,21 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
                     const y2 = 100 + 100 * Math.sin(radEnd);
                     
                     const d = `M 100 100 L ${x1} ${y1} A 100 100 0 0 1 ${x2} ${y2} Z`;
-                    const colors = [
-                      "#6366f1", // indigo (+25)
-                      "#10b981", // emerald (+15)
-                      "#3b82f6", // blue (+10)
-                      "#0ea5e9", // sky (+5)
-                      "#94a3b8", // slate (0)
-                      "#f59e0b", // amber (-5)
-                      "#f43f5e"  // rose (-10)
-                    ];
-                    
+
                     const textAngle = startAngle + angle / 2;
                     const radText = (textAngle * Math.PI) / 180;
-                    const tx = 100 + 62 * Math.cos(radText);
-                    const ty = 100 + 62 * Math.sin(radText);
+                    const tx = 100 + 64 * Math.cos(radText);
+                    const ty = 100 + 64 * Math.sin(radText);
 
                     return (
                       <g key={idx}>
-                        <path d={d} fill={colors[idx % colors.length]} stroke="#1e293b" strokeWidth="1" />
+                        <path d={d} fill={seg.hex} stroke="#0f172a" strokeWidth="1.5" />
                         <text
                           x={tx}
                           y={ty}
                           fill="white"
-                          fontSize="11"
-                          fontWeight="bold"
+                          fontSize="9.5"
+                          fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="middle"
                           transform={`rotate(${textAngle + 90}, ${tx}, ${ty})`}
@@ -3295,17 +3314,12 @@ export function InteractiveSpinWheelModal({ isOpen, onClose, onWin, tr }) {
                     );
                   })}
                 </svg>
-
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900 border-2 border-white dark:border-slate-700 shadow" />
               </div>
 
-              <button
-                disabled={isSpinning || spinLoading}
-                onClick={handleStartSpin}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-slate-900 text-white font-black text-xs border-4 border-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-85 shadow-lg flex items-center justify-center uppercase tracking-wider dark:border-slate-700"
-              >
-                {spinLoading ? "..." : tr("spin", "SPIN")}
-              </button>
+              {/* Metallic Gold Center Cap */}
+              <div className="absolute z-20 w-12 h-12 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 border-2 border-white shadow-lg flex items-center justify-center pointer-events-none">
+                <Sparkles className="w-5 h-5 text-slate-900 animate-spin" style={{ animationDuration: "8s" }} />
+              </div>
             </div>
 
             {error && (

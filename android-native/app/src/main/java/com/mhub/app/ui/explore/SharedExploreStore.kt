@@ -88,13 +88,44 @@ object SharedExploreStore {
         _recentlyViewedPosts.value = emptyList()
     }
 
-    // ── Subcategory Preferences (for ForYou filtering) ──
+    // ── User Preferences (for ForYou filtering) ──
     private val _selectedSubcategories = MutableStateFlow<Set<String>>(emptySet())
     val selectedSubcategoriesFlow: StateFlow<Set<String>> = _selectedSubcategories.asStateFlow()
     val selectedSubcategories: Set<String> get() = _selectedSubcategories.value
 
     fun updateSelectedSubcategories(subs: Set<String>) {
         _selectedSubcategories.value = subs
+    }
+
+    private val _selectedLocation = MutableStateFlow<String?>(null)
+    val selectedLocationFlow: StateFlow<String?> = _selectedLocation.asStateFlow()
+    val selectedLocation: String? get() = _selectedLocation.value
+
+    fun updateSelectedLocation(location: String?) {
+        _selectedLocation.value = location
+    }
+
+    private val _selectedMinPrice = MutableStateFlow<Int?>(null)
+    val selectedMinPriceFlow: StateFlow<Int?> = _selectedMinPrice.asStateFlow()
+    val selectedMinPrice: Int? get() = _selectedMinPrice.value
+
+    fun updateSelectedMinPrice(price: Int?) {
+        _selectedMinPrice.value = price
+    }
+
+    private val _selectedMaxPrice = MutableStateFlow<Int?>(null)
+    val selectedMaxPriceFlow: StateFlow<Int?> = _selectedMaxPrice.asStateFlow()
+    val selectedMaxPrice: Int? get() = _selectedMaxPrice.value
+
+    fun updateSelectedMaxPrice(price: Int?) {
+        _selectedMaxPrice.value = price
+    }
+
+    fun clearAllPreferences() {
+        _selectedSubcategories.value = emptySet()
+        _selectedLocation.value = null
+        _selectedMinPrice.value = null
+        _selectedMaxPrice.value = null
     }
 
     private fun FeedItem.toRecentPost(): Post {

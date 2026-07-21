@@ -769,6 +769,11 @@ for (const [routePath, routeHandler] of apiRouteMounts) {
    ───────────────────────────────────────────────────────── */
 
 const { initCronJobs } = require("./jobs/cronJobs.js");
+try {
+  require("./workers/notificationWorker.js");
+} catch (err) {
+  logger.warn("[Workers] Could not start notificationWorker:", err.message);
+}
 
 /* ─────────────────────────────────────────────────────────
    Static File Serving
