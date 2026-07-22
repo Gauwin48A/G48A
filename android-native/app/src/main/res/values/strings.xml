@@ -1,12 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MHub</string>
+    <string name="app_name">Zaruda</string>
 
     <!-- Auth -->
     <string name="login_title">Welcome back</string>
     <string name="login_subtitle">Sign in to continue</string>
     <string name="signup_title">Create Account</string>
-    <string name="signup_subtitle">Join MHub in just a minute</string>
+    <string name="signup_subtitle">Join Zaruda in just a minute</string>
     <string name="auth_brand_subtitle">Buy and sell locally</string>
     <string name="auth_tab_signin">Sign in</string>
     <string name="auth_tab_signup">Create account</string>
@@ -18,7 +18,7 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_create_account">Create account</string>
     <string name="action_sign_in_google">Continue with Google</string>
-    <string name="action_sign_up_prompt">New to MHub? Create account</string>
+    <string name="action_sign_up_prompt">New to Zaruda? Create account</string>
     <string name="action_sign_in_prompt">Already have an account? Sign in</string>
     <string name="action_forgot_password">Forgot password?</string>
     <string name="validation_required">This field is required</string>
@@ -583,7 +583,7 @@
     <string name="more_admin_panel">Admin Panel</string>
     <string name="more_admin_panel_desc">Admin tools</string>
     <string name="more_about">About Us</string>
-    <string name="more_about_desc">About MHub</string>
+    <string name="more_about_desc">About Zaruda</string>
     <string name="more_contact">Contact Us</string>
     <string name="more_contact_desc">Get in touch</string>
     <string name="more_faq">FAQ</string>
@@ -663,16 +663,16 @@
     <string name="support_policy_title">Support Policy</string>
     <string name="shipping_policy_title">Shipping Policy</string>
     <string name="about_title">About Us</string>
-    <string name="about_headline">MHub — Your Local Marketplace</string>
-    <string name="about_description">MHub is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
+    <string name="about_headline">Zaruda — Your Local Marketplace</string>
+    <string name="about_description">Zaruda is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
     <string name="about_mission_title">Our Mission</string>
     <string name="about_mission">To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.</string>
     <string name="about_vision_title">Our Vision</string>
     <string name="about_vision">A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.</string>
-    <string name="about_why_title">Why Choose MHub?</string>
+    <string name="about_why_title">Why Choose Zaruda?</string>
     <string name="about_why">✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns &amp; refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards &amp; loyalty programme</string>
     <string name="about_version_title">Version</string>
-    <string name="about_version">MHub App v1.1.0 · Made with ❤️ in India</string>
+    <string name="about_version">Zaruda App v1.1.0 · Made with ❤️ in India</string>
     <string name="contact_title">Contact Us</string>
     <string name="contact_get_in_touch">Get in Touch</string>
     <string name="contact_subtitle">We\'re here to help. Fill in the form or reach us directly.</string>
@@ -1312,13 +1312,13 @@
     <string name="skeleton_loading">Loading content…</string>
 
     <!-- MoreScreen / Drawer -->
-    <string name="more_footer">MHub — All your tools in one place</string>
+    <string name="more_footer">Zaruda — All your tools in one place</string>
     <string name="more_close_menu">Close menu</string>
     <string name="more_collapse">Collapse</string>
     <string name="more_expand">Expand</string>
 
     <!-- TopBar -->
-    <string name="topbar_logo">MHub</string>
+    <string name="topbar_logo">Zaruda</string>
     <string name="topbar_search">Search</string>
     <string name="topbar_notifications">Notifications</string>
     <string name="topbar_wishlist">Wishlist</string>

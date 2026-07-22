@@ -18,7 +18,7 @@ import com.zaruda.app.data.local.QueuedAction
     version = 3,
     exportSchema = false,
 )
-abstract class MhubDatabase : RoomDatabase() {
+abstract class ZarudaDatabase : RoomDatabase() {
     abstract fun postDao(): PostDao
     abstract fun categoryDao(): CategoryDao
     abstract fun offlineQueueDao(): OfflineQueueDao

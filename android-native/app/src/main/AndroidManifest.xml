@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
-        android:name=".MhubApplication"
+        android:name=".ZarudaApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -24,33 +24,33 @@
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
         android:localeConfig="@xml/locales_config"
-        android:theme="@style/Theme.Mhub.Splash"
+        android:theme="@style/Theme.Zaruda.Splash"
         tools:targetApi="34">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|density|fontScale|smallestScreenSize|screenLayout"
-            android:theme="@style/Theme.Mhub.Splash"
+            android:theme="@style/Theme.Zaruda.Splash"
             android:windowSoftInputMode="adjustResize"
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep links: mhub://post/123, mhub://chat/123, mhub://search -->
+            <!-- Deep links: zaruda://post/123, zaruda://chat/123, zaruda://search -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="mhub" />
+                <data android:scheme="zaruda" />
             </intent-filter>
             <!-- HTTPS deep links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="mhub.app" />
+                <data android:scheme="https" android:host="zaruda.app" />
             </intent-filter>
             <!-- App Shortcuts (static) -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
@@ -58,7 +58,7 @@
 
         <!-- FCM push notifications -->
         <service
-            android:name=".service.MhubFirebaseMessagingService"
+            android:name=".service.ZarudaFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

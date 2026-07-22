@@ -132,6 +132,7 @@ fun MoreScreen(
     onOpenHelp: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenRewards: () -> Unit = {},
+    onOpenChat: () -> Unit = {},
     onOpenMyFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
@@ -151,8 +152,9 @@ fun MoreScreen(
         MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
     )
 
-    // ── SOCIAL section: 2 items — Feedback, Complaints
+    // ── SOCIAL section: Chat, Feedback, Complaints
     val socialRows = listOf(
+        MenuRow("Messages", "Chat with buyers and sellers", Icons.AutoMirrored.Outlined.Chat, Color(0xFFE0F2FE), Color(0xFF2563EB), onClick = onOpenChat),
         MenuRow("Feedback", "Share your app experience", Icons.Outlined.VolunteerActivism, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )

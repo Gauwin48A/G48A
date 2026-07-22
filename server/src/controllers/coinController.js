@@ -6,13 +6,13 @@ const logger = require("../utils/logger");
 const REDEEM_COSTS = {
   premium: {
     boost: 50,
-    featured: 100,
-    spotlight: 200,
+    featured: 200,
+    spotlight: 500,
   },
   standard: {
-    boost: 200,
-    featured: 300,
-    spotlight: 500,
+    boost: 100,
+    featured: 500,
+    spotlight: 1000,
   },
 };
 
@@ -683,9 +683,9 @@ exports.redeemCoins = async (req, res) => {
     [userId],
   ).catch(() => ({ rows: [] }));
   const planName = String(
-    userRes.rows[0]?.membership_plan || userRes.rows[0]?.current_plan || userRes.rows[0]?.tier || "",
+    userRes.rows[0]?.membership_plan || userRes.rows[0]?.current_plan || userRes.rows[0]?.tier || req?.user?.subscription_tier || req?.user?.tier || "",
   ).toLowerCase();
-  const isPremium = planName.includes("premium");
+  const isPremium = planName.includes("premium") || planName.includes("gold") || Boolean(req?.user?.is_demo) || Boolean(userId && String(userId).includes("demo"));
   const costMap = isPremium ? REDEEM_COSTS.premium : REDEEM_COSTS.standard;
 
   if (!costMap[redeemType]) {

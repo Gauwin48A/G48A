@@ -10,7 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.zaruda.app.core.ConnectivityObserver
 import com.zaruda.app.core.LocaleManager
-import com.zaruda.app.ui.MhubApp
+import com.zaruda.app.ui.ZarudaApp
 import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONObject
 import javax.inject.Inject
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         splash.setKeepOnScreenCondition { keepSplash }
 
         setContent {
-            MhubApp(
+            ZarudaApp(
                 onReady = { keepSplash = false },
                 connectivityObserver = connectivityObserver,
                 deepLinkUri = deepLinkUri.value,

@@ -832,6 +832,12 @@ data class StoreRedeemRequest(
 )
 
 @Serializable
+data class RedeemCoinsRequest(
+    val type: String,
+    val postId: String? = null,
+)
+
+@Serializable
 data class StoreRedeemResponse(
     val success: Boolean = false,
     val message: String? = null,

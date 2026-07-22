@@ -98,6 +98,9 @@ object Routes {
     const val INVITE = "invite/{code}"
     fun invite(code: String): String = "invite/$code"
 
+    // Chat
+    const val CHAT = "chat"
+
     // New screens
     const val CATEGORY_MODE = "category-mode"
     const val AADHAAR_VERIFY = "aadhaar-verify"

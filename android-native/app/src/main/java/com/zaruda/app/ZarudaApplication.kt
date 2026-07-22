@@ -13,7 +13,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class MhubApplication : Application(), ImageLoaderFactory {
+class ZarudaApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()

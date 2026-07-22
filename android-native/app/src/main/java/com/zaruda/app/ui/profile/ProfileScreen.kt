@@ -221,7 +221,7 @@ class ProfileViewModel @Inject constructor(
     private val rewardsRepo: RewardsRepository,
     private val socialRepo: UserSocialRepository,
     private val uploadRepo: com.zaruda.app.data.repository.UploadRepository,
-    private val api: com.zaruda.app.data.remote.MhubApi,
+    private val api: com.zaruda.app.data.remote.ZarudaApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
     val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -1612,8 +1612,6 @@ fun ProfileScreen(
                             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.SemiBold)
-                        }
-
                         }
                         Spacer(Modifier.height(24.dp))
 

@@ -2,7 +2,7 @@ package com.zaruda.app.data.repository
 
 import com.zaruda.app.core.ApiResult
 import com.zaruda.app.core.safeApiCall
-import com.zaruda.app.data.remote.MhubApi
+import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.CreateOrderRequest
 import com.zaruda.app.data.remote.dto.CreateOrderResponse
 import com.zaruda.app.data.remote.dto.InitiateSaleRequest
@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class OrderRepository @Inject constructor(private val api: MhubApi) {
+class OrderRepository @Inject constructor(private val api: ZarudaApi) {
 
     /** Last placed order — kept in memory for confirmation screen. */
     var lastOrder: CreateOrderResponse? = null

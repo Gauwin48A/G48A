@@ -1973,7 +1973,7 @@ exports.reactivatePost = async (req, res) => {
     }
 
     const postCheck = await runQuery(
-      "SELECT post_id, user_id, status FROM posts WHERE post_id = $1",
+      "SELECT post_id, user_id, status, COALESCE(to_jsonb(posts)->>'repost_count', '0')::int AS repost_count FROM posts WHERE post_id = $1",
       [id]
     );
 
@@ -1993,6 +1993,12 @@ exports.reactivatePost = async (req, res) => {
       return res.status(400).json({ error: "Post is already active" });
     }
 
+    if (Number(post.repost_count || 0) >= 1) {
+      return res.status(400).json({
+        error: "This post has already been reactivated once. Re-posting is allowed only 1 time per listing when expired."
+      });
+    }
+
     const { getTierRules } = require("../config/tierRules");
     const userResult = await runQuery(
       "SELECT COALESCE(NULLIF(current_plan, ''), NULLIF(tier, ''), 'basic') AS plan, subscription_expiry FROM users WHERE user_id = $1",
@@ -2010,12 +2016,21 @@ exports.reactivatePost = async (req, res) => {
     }
     const newExpiresAt = rules.getExpiry();
 
-    await runQuery(
-      `UPDATE posts
-       SET status = 'active', sold_at = NULL, expires_at = $2, updated_at = NOW()
-       WHERE post_id = $1`,
-      [id, newExpiresAt]
-    );
+    try {
+      await runQuery(
+        `UPDATE posts
+         SET status = 'active', sold_at = NULL, expires_at = $2, repost_count = COALESCE(repost_count, 0) + 1, updated_at = NOW()
+         WHERE post_id = $1`,
+        [id, newExpiresAt]
+      );
+    } catch {
+      await runQuery(
+        `UPDATE posts
+         SET status = 'active', sold_at = NULL, expires_at = $2, updated_at = NOW()
+         WHERE post_id = $1`,
+        [id, newExpiresAt]
+      );
+    }
 
     logInfo(`[Reactivate] Post ${id} reactivated by user ${userId}`);
 

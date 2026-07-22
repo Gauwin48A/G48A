@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.Mhub.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.Zaruda.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background_dark</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="postSplashScreenTheme">@style/Theme.Mhub</item>
+        <item name="postSplashScreenTheme">@style/Theme.Zaruda</item>
     </style>
 
-    <style name="Theme.Mhub" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Zaruda" parent="Theme.AppCompat.NoActionBar">
         <item name="android:statusBarColor" tools:targetApi="21">@android:color/transparent</item>
         <item name="android:navigationBarColor" tools:targetApi="21">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>

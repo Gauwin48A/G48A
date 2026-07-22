@@ -14,7 +14,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.zaruda.app.MainActivity
 import com.zaruda.app.R
 import com.zaruda.app.data.local.TokenStore
-import com.zaruda.app.data.remote.MhubApi
+import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.PushTokenRequest
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +26,9 @@ import java.net.URL
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MhubFirebaseMessagingService : FirebaseMessagingService() {
+class ZarudaFirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject lateinit var api: MhubApi
+    @Inject lateinit var api: ZarudaApi
     @Inject lateinit var tokenStore: TokenStore
 
     private val serviceJob = SupervisorJob()

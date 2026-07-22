@@ -6,7 +6,7 @@ import com.zaruda.app.data.local.db.CategoryDao
 import com.zaruda.app.data.local.db.CategoryEntity
 import com.zaruda.app.data.local.db.PostDao
 import com.zaruda.app.data.local.db.PostEntity
-import com.zaruda.app.data.remote.MhubApi
+import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.*
 import com.zaruda.app.domain.model.Category
 import com.zaruda.app.domain.model.Notification
@@ -86,7 +86,7 @@ private fun CategoryEntity.toDomain() = Category(
 
 @Singleton
 class PostsRepository @Inject constructor(
-    private val api: MhubApi,
+    private val api: ZarudaApi,
     private val postDao: PostDao,
 ) {
     suspend fun feedResponse(
@@ -193,7 +193,7 @@ class PostsRepository @Inject constructor(
 
 @Singleton
 class CategoriesRepository @Inject constructor(
-    private val api: MhubApi,
+    private val api: ZarudaApi,
     private val categoryDao: CategoryDao,
 ) {
     suspend fun all(): ApiResult<List<Category>> {
@@ -213,7 +213,7 @@ class CategoriesRepository @Inject constructor(
 }
 
 @Singleton
-class WishlistRepository @Inject constructor(private val api: MhubApi) {
+class WishlistRepository @Inject constructor(private val api: ZarudaApi) {
     @Volatile
     private var cachedItems: List<Post>? = null
 
@@ -239,7 +239,7 @@ class WishlistRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class UploadRepository @Inject constructor(private val api: MhubApi) {
+class UploadRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun uploadPostImage(bytes: ByteArray, mime: String): ApiResult<String> = safeApiCall {
         val body: RequestBody = bytes.toRequestBody(mime.toMediaType())
         api.uploadPostImage(body).url ?: error("Upload failed: no URL")
@@ -252,7 +252,7 @@ class UploadRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class KycRepository @Inject constructor(private val api: MhubApi) {
+class KycRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun status(): ApiResult<KycStatusResponse> = safeApiCall { api.kycStatus() }
     suspend fun submit(req: KycSubmitRequest): ApiResult<KycSubmitResponse> =
         safeApiCall { api.kycStatus().let { KycSubmitResponse(success = true, status = it.kycStatus) } }
@@ -263,7 +263,7 @@ class KycRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class NotificationsRepository @Inject constructor(private val api: MhubApi) {
+class NotificationsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(page: Int = 1): ApiResult<List<Notification>> = safeApiCall {
         api.notifications(page = page).items
     }
@@ -276,7 +276,7 @@ class NotificationsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class ChatRepository @Inject constructor(private val api: MhubApi) {
+class ChatRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun conversations(): ApiResult<List<com.zaruda.app.domain.model.ChatConversation>> = safeApiCall {
         api.conversations().conversations
     }
@@ -308,7 +308,7 @@ class ChatRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class RewardsRepository @Inject constructor(private val api: MhubApi) {
+class RewardsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun overview(): ApiResult<RewardsOverviewResponse> = safeApiCall { api.rewards() }
     suspend fun coinBalance(): ApiResult<com.zaruda.app.data.remote.dto.CoinBalanceResponse> = safeApiCall { api.coinBalance() }
     suspend fun coinHistory(): ApiResult<com.zaruda.app.data.remote.dto.CoinHistoryResponse> = safeApiCall { api.coinHistory() }
@@ -319,6 +319,8 @@ class RewardsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun scratchCard(): ApiResult<com.zaruda.app.data.remote.dto.ScratchResultResponse> = safeApiCall { api.scratchCard() }
     suspend fun storeRedeem(type: String, postId: String? = null): ApiResult<com.zaruda.app.data.remote.dto.StoreRedeemResponse> =
         safeApiCall { api.storeRedeem(com.zaruda.app.data.remote.dto.StoreRedeemRequest(type, postId)) }
+    suspend fun redeemCoins(type: String, postId: String? = null): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
+        safeApiCall { api.redeemCoins(com.zaruda.app.data.remote.dto.RedeemCoinsRequest(type, postId)) }
     suspend fun claimReferralMilestone(): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> = safeApiCall { api.claimReferralMilestone() }
     suspend fun referralLeaderboard(): ApiResult<com.zaruda.app.data.remote.dto.ReferralLeaderboardResponse> = safeApiCall { api.referralLeaderboard() }
     suspend fun updateProfile(body: com.zaruda.app.data.remote.dto.ProfileUpdateRequest): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
@@ -328,7 +330,7 @@ class RewardsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class DashboardRepository @Inject constructor(private val api: MhubApi) {
+class DashboardRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<DashboardResponse> = safeApiCall { api.dashboard() }
     suspend fun coinBalance(): ApiResult<CoinBalanceResponse> = safeApiCall { api.coinBalance() }
     suspend fun dailyCode(): ApiResult<DailyCodeResponse> = safeApiCall { api.dailyCode() }
@@ -336,7 +338,7 @@ class DashboardRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class UserSocialRepository @Inject constructor(private val api: MhubApi) {
+class UserSocialRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun follow(userId: String): ApiResult<Unit> = safeApiCall { api.followUser(userId); Unit }
     suspend fun unfollow(userId: String): ApiResult<Unit> = safeApiCall { api.unfollowUser(userId); Unit }
     suspend fun blockUser(userId: String): ApiResult<Unit> = safeApiCall { api.blockUser(userId); Unit }
@@ -354,7 +356,7 @@ class UserSocialRepository @Inject constructor(private val api: MhubApi) {
 
 
 @Singleton
-class OffersRepository @Inject constructor(private val api: MhubApi) {
+class OffersRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(type: String = "received"): ApiResult<List<Offer>> = safeApiCall { api.offers(type).offers }
     suspend fun accept(id: String): ApiResult<Unit> = safeApiCall { api.acceptOffer(id); Unit }
     suspend fun decline(id: String): ApiResult<Unit> = safeApiCall { api.declineOffer(id); Unit }
@@ -367,7 +369,7 @@ class OffersRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class CartRepository @Inject constructor(private val api: MhubApi) {
+class CartRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<CartResponse> = safeApiCall { api.cart() }
     suspend fun add(postId: String): ApiResult<Unit> = safeApiCall { api.addToCart(postId); Unit }
     suspend fun remove(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCart(postId); Unit }
@@ -380,7 +382,7 @@ class CartRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
+class SavedSearchesRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<SavedSearch>> = safeApiCall { api.savedSearches().searches }
     suspend fun save(query: String, category: String?): ApiResult<Unit> = safeApiCall { api.saveSearch(SaveSearchRequest(query, category)); Unit }
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteSavedSearch(id); Unit }
@@ -390,7 +392,7 @@ class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class ChannelsRepository @Inject constructor(private val api: MhubApi) {
+class ChannelsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Channel>> = safeApiCall { api.channels() }
     suspend fun detail(id: String): ApiResult<ChannelDetailResponse> = safeApiCall { api.channelDetail(id) }
     suspend fun create(req: CreateChannelRequest): ApiResult<Channel> = safeApiCall { api.createChannel(req) }
@@ -399,7 +401,7 @@ class ChannelsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class CentresRepository @Inject constructor(private val api: MhubApi) {
+class CentresRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Centre>> = safeApiCall { api.centres().centres }
     suspend fun detail(id: String): ApiResult<Centre> = safeApiCall { api.centreDetail(id) }
     suspend fun listings(id: String): ApiResult<List<Post>> = safeApiCall { api.centreListings(id).allItems }
@@ -409,7 +411,7 @@ class CentresRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class ComplaintsRepository @Inject constructor(private val api: MhubApi) {
+class ComplaintsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun submit(req: ComplaintRequest): ApiResult<Unit> = safeApiCall { api.submitComplaint(req); Unit }
     suspend fun submitFeedback(req: FeedbackRequest): ApiResult<Unit> = safeApiCall { api.submitFeedback(req); Unit }
     suspend fun addEvidence(id: String, bytes: ByteArray, mimeType: String): ApiResult<Unit> = safeApiCall {
@@ -420,7 +422,7 @@ class ComplaintsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class AnalyticsRepository @Inject constructor(private val api: MhubApi) {
+class AnalyticsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<AnalyticsResponse> = safeApiCall { api.analytics() }
     suspend fun sellerStats(range: String? = null): ApiResult<SellerAnalyticsResponse> = safeApiCall {
         api.sellerAnalyticsStats(range)
@@ -434,7 +436,7 @@ class AnalyticsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class SecurityRepository @Inject constructor(private val api: MhubApi) {
+class SecurityRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun sessions(): ApiResult<List<UserSession>> = safeApiCall { api.sessions().sessions }
     suspend fun revokeSession(id: String): ApiResult<Unit> = safeApiCall { api.revokeSession(id); Unit }
     suspend fun revokeAll(): ApiResult<Unit> = safeApiCall { api.revokeAllSessions(); Unit }
@@ -452,7 +454,7 @@ class SecurityRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class AccountRepository @Inject constructor(private val api: MhubApi) {
+class AccountRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun deleteAccount(reason: String?): ApiResult<Unit> = safeApiCall {
         api.deleteAccount(DeleteAccountRequest(reason)); Unit
     }
@@ -465,7 +467,7 @@ class AccountRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class TiersRepository @Inject constructor(private val api: MhubApi) {
+class TiersRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Tier>> = safeApiCall {
         api.getSubscriptionPlans().plans.map { plan ->
             Tier(
@@ -499,7 +501,7 @@ class TiersRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class CmsRepository @Inject constructor(private val api: MhubApi) {
+class CmsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun terms(): ApiResult<CmsContentResponse> = safeApiCall { api.termsContent() }
     suspend fun privacy(): ApiResult<CmsContentResponse> = safeApiCall { api.privacyContent() }
     suspend fun refund(): ApiResult<CmsContentResponse> = safeApiCall { api.refundContent() }
@@ -507,12 +509,12 @@ class CmsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class InviteRepository @Inject constructor(private val api: MhubApi) {
+class InviteRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun info(code: String): ApiResult<InviteResponse> = safeApiCall { api.inviteInfo(code) }
 }
 
 @Singleton
-class AdminRepository @Inject constructor(private val api: MhubApi) {
+class AdminRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun dashboard(): ApiResult<AdminDashboardResponse> = safeApiCall { api.adminDashboard() }
     suspend fun sendWarning(userId: String, message: String): ApiResult<Unit> = safeApiCall {
         api.adminSendWarning(mapOf("userId" to userId, "message" to message)); Unit
@@ -520,7 +522,7 @@ class AdminRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class TransactionsRepository @Inject constructor(private val api: MhubApi) {
+class TransactionsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun initiate(req: InitiateSaleRequest): ApiResult<InitiateSaleResponse> = safeApiCall { api.initiateSale(req) }
     suspend fun confirm(req: ConfirmSaleRequest): ApiResult<ConfirmSaleResponse> = safeApiCall { api.confirmSale(req) }
     suspend fun pending(): ApiResult<List<PendingSale>> = safeApiCall { api.pendingSales().sales }
@@ -555,7 +557,7 @@ class TransactionsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class PaymentsRepository @Inject constructor(private val api: MhubApi) {
+class PaymentsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun upiDetails(): ApiResult<PaymentUpiDetailsResponse> = safeApiCall { api.paymentUpiDetails() }
     suspend fun history(): ApiResult<List<PaymentHistoryItem>> = safeApiCall { api.paymentHistory().payments }
     suspend fun submit(req: SubmitPaymentRequest): ApiResult<Unit> = safeApiCall { api.submitPayment(req); Unit }
@@ -568,12 +570,12 @@ class PaymentsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class BrandsRepository @Inject constructor(private val api: MhubApi) {
+class BrandsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Brand>> = safeApiCall { api.brands().brands }
 }
 
 @Singleton
-class RecommendationsRepository @Inject constructor(private val api: MhubApi) {
+class RecommendationsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun forYou(
         search: String? = null,
         categoryId: String? = null,
@@ -586,12 +588,12 @@ class RecommendationsRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class TrustRepository @Inject constructor(private val api: MhubApi) {
+class TrustRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun score(userId: String): ApiResult<TrustScoreResponse> = safeApiCall { api.trustScore(userId) }
 }
 
 @Singleton
-class SocialRepository @Inject constructor(private val api: MhubApi) {
+class SocialRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page) }
     suspend fun feedDetail(id: String): ApiResult<FeedItem> = safeApiCall { api.feedDetail(id) }
     suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page) }
@@ -614,49 +616,49 @@ class SocialRepository @Inject constructor(private val api: MhubApi) {
 }
 
 @Singleton
-class PriceAlertsRepository @Inject constructor(private val api: MhubApi) {
+class PriceAlertsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun subscribe(postId: String): ApiResult<Unit> = safeApiCall { api.subscribePriceAlert(PriceAlertRequest(postId)); Unit }
     suspend fun unsubscribe(postId: String): ApiResult<Unit> = safeApiCall { api.unsubscribePriceAlert(postId); Unit }
 }
 
 @Singleton
-class BoostRepository @Inject constructor(private val api: MhubApi) {
+class BoostRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun boost(postId: String, tier: String = "basic", duration: Int = 24): ApiResult<Unit> = safeApiCall { api.boostPost(postId, BoostRequest(tier, duration)); Unit }
     suspend fun status(postId: String): ApiResult<BoostStatusResponse> = safeApiCall { api.boostStatus(postId) }
 }
 
 @Singleton
-class SponsoredRepository @Inject constructor(private val api: MhubApi) {
+class SponsoredRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(limit: Int = 10): ApiResult<List<Post>> = safeApiCall { api.sponsoredPosts(limit).allItems }
     suspend fun forYou(limit: Int = 20, page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.forYouPosts(limit, page).allItems }
 }
 
 @Singleton
-class ProfileRepository @Inject constructor(private val api: MhubApi) {
+class ProfileRepository @Inject constructor(private val api: ZarudaApi) {
     /** Fetches the current user's saved category & price preferences. */
     suspend fun preferences(): ApiResult<com.zaruda.app.data.remote.dto.PreferencesResponse> =
         safeApiCall { api.getPreferences() }
 }
 
 @Singleton
-class DraftRepository @Inject constructor(private val api: MhubApi) {
+class DraftRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<DraftResponse> = safeApiCall { api.getDraft() }
     suspend fun save(req: DraftRequest): ApiResult<Unit> = safeApiCall { api.saveDraft(req); Unit }
     suspend fun clear(): ApiResult<Unit> = safeApiCall { api.clearDraft(); Unit }
 }
 
 @Singleton
-class NotificationPrefsRepository @Inject constructor(private val api: MhubApi) {
+class NotificationPrefsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<NotificationPrefsResponse> = safeApiCall { api.notificationPreferences() }
     suspend fun update(req: NotificationPrefsRequest): ApiResult<Unit> = safeApiCall { api.updateNotificationPreferences(req); Unit }
 }
 
 @Singleton
-class DailyCodeRepository @Inject constructor(private val api: MhubApi) {
+class DailyCodeRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<DailyCodeResponse> = safeApiCall { api.dailyCode() }
 }
 
 @Singleton
-class ReferralTreeRepository @Inject constructor(private val api: MhubApi) {
+class ReferralTreeRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun tree(): ApiResult<ReferralTreeResponse> = safeApiCall { api.referralTree() }
 }

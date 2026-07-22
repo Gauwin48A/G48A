@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.zaruda.app.R
-import com.zaruda.app.ui.theme.MhubShapes
+import com.zaruda.app.ui.theme.ZarudaShapes
 
 /**
  * Determines which features guests can access and when to show auth popup.
@@ -152,7 +152,7 @@ fun AuthGatePopup(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = MhubShapes.button,
+                        shape = ZarudaShapes.button,
                     ) {
                         Text(
                             stringResource(R.string.sign_in),
@@ -167,7 +167,7 @@ fun AuthGatePopup(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = MhubShapes.button,
+                        shape = ZarudaShapes.button,
                     ) {
                         Text(
                             stringResource(R.string.create_account),

@@ -4,13 +4,15 @@ import { Zap, Sparkles, TrendingUp, CheckCircle, Coins } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-const BOOST_OPTIONS = [
+import { useAuth } from "@/context/AuthContext";
+
+const BOOST_OPTIONS_PREMIUM = [
   {
     type: "boost",
-    label: "Boost",
-    days: 7,
+    label: "Boost (24h)",
+    days: 1,
     desc: "Higher in search & feeds",
-    coinCost: 10,
+    coinCost: 50,
     amount: 49,
     Icon: Zap,
     bg: "bg-emerald-50 dark:bg-emerald-900/20",
@@ -19,10 +21,10 @@ const BOOST_OPTIONS = [
   },
   {
     type: "featured",
-    label: "Featured",
-    days: 14,
-    desc: "Featured badge + higher feed priority",
-    coinCost: 20,
+    label: "Top Placement (7d)",
+    days: 7,
+    desc: "Featured badge + top placement",
+    coinCost: 200,
     amount: 99,
     Icon: Sparkles,
     bg: "bg-purple-50 dark:bg-purple-900/20",
@@ -31,10 +33,49 @@ const BOOST_OPTIONS = [
   },
   {
     type: "spotlight",
-    label: "Spotlight",
+    label: "Spotlight (30d)",
     days: 30,
     desc: "Top placement + Spotlight badge",
-    coinCost: 40,
+    coinCost: 500,
+    amount: 199,
+    Icon: TrendingUp,
+    bg: "bg-orange-50 dark:bg-orange-900/20",
+    border: "border-orange-300",
+    accent: "text-orange-700 dark:text-orange-300",
+  },
+];
+
+const BOOST_OPTIONS_STANDARD = [
+  {
+    type: "boost",
+    label: "Boost (24h)",
+    days: 1,
+    desc: "Higher in search & feeds",
+    coinCost: 100,
+    amount: 49,
+    Icon: Zap,
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    border: "border-emerald-300",
+    accent: "text-emerald-700 dark:text-emerald-300",
+  },
+  {
+    type: "featured",
+    label: "Top Placement (7d)",
+    days: 7,
+    desc: "Featured badge + top placement",
+    coinCost: 500,
+    amount: 99,
+    Icon: Sparkles,
+    bg: "bg-purple-50 dark:bg-purple-900/20",
+    border: "border-purple-300",
+    accent: "text-purple-700 dark:text-purple-300",
+  },
+  {
+    type: "spotlight",
+    label: "Spotlight (30d)",
+    days: 30,
+    desc: "Top placement + Spotlight badge",
+    coinCost: 1000,
     amount: 199,
     Icon: TrendingUp,
     bg: "bg-orange-50 dark:bg-orange-900/20",
@@ -182,6 +223,15 @@ export default function PostBoostPanel({ postId }) {
     }
   };
 
+  const { user } = useAuth();
+  const isPremiumUser = useMemo(() => {
+    if (!user) return true;
+    const plan = String(user.current_plan || user.membership_plan || user.subscription_tier || user.tier || "").toLowerCase();
+    return Boolean(user.is_demo || plan.includes("premium") || plan.includes("gold"));
+  }, [user]);
+
+  const activeBoostOptions = isPremiumUser ? BOOST_OPTIONS_PREMIUM : BOOST_OPTIONS_STANDARD;
+
   return (
     <div className="mhub-premium-surface rounded-2xl border p-4 shadow-lg !border-violet-200 dark:!border-violet-800">
       <div className="flex items-center justify-between mb-1">
@@ -207,13 +257,13 @@ export default function PostBoostPanel({ postId }) {
         <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
           <CheckCircle className="w-4 h-4 text-green-600" />
           <span className="text-xs text-green-700 dark:text-green-300 font-medium">
-            {BOOST_OPTIONS.find((o) => o.type === boosted)?.label} boost is now active!
+            {activeBoostOptions.find((o) => o.type === boosted)?.label} boost is now active!
           </span>
         </div>
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        {BOOST_OPTIONS.map(({ type, label, days, desc, coinCost, amount, Icon, bg, border, accent }) => {
+        {activeBoostOptions.map(({ type, label, days, desc, coinCost, amount, Icon, bg, border, accent }) => {
           const remaining = remainingByType[type] ?? 0;
           const hasQuota = remaining > 0;
           const hasCoinBalance = canRedeemWithCoins(coinCost);

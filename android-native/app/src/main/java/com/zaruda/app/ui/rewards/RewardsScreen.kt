@@ -469,6 +469,9 @@ fun RewardsScreen(
     val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val darkTheme = ColorTokens.isDark
+    var showSpinWinModal by remember { mutableStateOf(false) }
+    var spinWinAmount by remember { mutableStateOf(0) }
+    var spinWinLabel by remember { mutableStateOf("") }
 
     // Always attempt to load on mount — ViewModel handles 401 internally.
     // Never pre-emptively show auth gate from token-buffer fluctuations.
@@ -629,6 +632,13 @@ fun RewardsScreen(
                             dismissButton = { TextButton(onClick = { redeemDialogType = null; redeemPostId = "" }) { Text(stringResource(R.string.rewards_cancel)) } },
                         )
                     }
+
+                    SpinWinCelebrationModal(
+                        show = showSpinWinModal,
+                        rewardAmount = spinWinAmount,
+                        rewardLabel = spinWinLabel,
+                        onDismiss = { showSpinWinModal = false },
+                    )
 
                     var selectedTab by remember { mutableStateOf(0) }
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -802,92 +812,115 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Daily Actions (Check-in + Spin + Scratch) ───
+                        // ─── Daily Streak & Check-In ───
                         if (selectedTab == 1) item {
                             val canCheckIn = engagement?.dailyCheckIn?.canClaim ?: true
-                            val canSpin = engagement?.spin?.canSpin ?: false
-                            val canScratch = engagement?.scratch?.canScratch ?: false
-                            val scratchCount = engagement?.scratch?.available ?: 0
                             val streak = engagement?.dailyCheckIn?.streak ?: user.visitStreak
                             val weekProgress = engagement?.dailyCheckIn?.weekProgress ?: emptyList()
                             val todayReward = engagement?.dailyCheckIn?.todayReward ?: 5
 
                             AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF1A2744) else Color(0xFFF8FAFF)) {
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text(stringResource(R.string.rewards_daily_actions), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFFA5B4FC) else Color(0xFF4F46E5), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
+                                        Text("DAILY STREAK & CHECK-IN", style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFFA5B4FC) else Color(0xFF4F46E5), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
                                         Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
-                                            Text("\uD83D\uDD25 $streak day streak", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                                            Text("\uD83D\uDD25 $streak day streak", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                         }
                                     }
-                                    // 7-day calendar
-                                    val days = listOf("M", "T", "W", "T", "F", "S", "S")
+                                    // 7-day calendar with reward values
+                                    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                                    val dayRewards = listOf("+5", "+10", "+15", "+20", "+25", "+30", "+50")
                                     val todayIndex = (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                         days.forEachIndexed { index, day ->
                                             val isCompleted = if (weekProgress.isNotEmpty()) weekProgress.getOrElse(index) { false } else index < todayIndex
                                             val isToday = index == todayIndex
                                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                                 Box(
-                                                    modifier = Modifier.size(32.dp).clip(CircleShape)
-                                                        .background(when { isCompleted -> MaterialTheme.colorScheme.primary; isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f); else -> MaterialTheme.colorScheme.surfaceVariant })
+                                                    modifier = Modifier.size(36.dp).clip(CircleShape)
+                                                        .background(when { isCompleted -> Color(0xFF10B981); isToday -> MaterialTheme.colorScheme.primary; else -> MaterialTheme.colorScheme.surfaceVariant })
                                                         .then(if (isToday && !isCompleted) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape) else Modifier),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     if (isCompleted) Text("\u2713", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
-                                                    else Text("${index + 1}", style = MaterialTheme.typography.labelSmall, color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    else Text(dayRewards[index], style = MaterialTheme.typography.labelSmall, color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                                 }
                                             }
                                         }
                                     }
-                                    // Action buttons
                                     PrimaryButton(
-                                        text = if (state.actionLoading == "checkin") "Claiming..." else if (canCheckIn) "Check in (+$todayReward \uD83E\uDE99)" else "Checked in \u2713",
+                                        text = if (state.actionLoading == "checkin") "Claiming Bonus..." else if (canCheckIn) "Claim Daily Check-in (+$todayReward 🪙)" else "Checked In Today ✓",
                                         onClick = { if (canCheckIn) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); viewModel.dailyCheckIn() } },
                                         enabled = canCheckIn && state.actionLoading == null,
                                     )
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        // Canvas Spin Wheel visual + button
-                                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            SpinWheelCanvas(
-    isSpinning = state.actionLoading == "spin",
-    canSpin = engagement?.spin?.canSpin ?: false,
-    onSpin = { viewModel.spinWheel() },
-    modifier = Modifier.fillMaxWidth(),
-)
-                                            OutlinedButton(
-                                                onClick = { viewModel.spinWheel() },
-                                                modifier = Modifier.fillMaxWidth().height(40.dp),
-                                                enabled = canSpin && state.actionLoading == null,
-                                                shape = RoundedCornerShape(12.dp),
-                                            ) {
-                                                if (state.actionLoading == "spin") {
-                                                    val spinTransition = rememberInfiniteTransition(label = "spinAnim")
-                                                    val spinRot by spinTransition.animateFloat(0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart), label = "spinRot")
-                                                    Text("🎰", modifier = Modifier.graphicsLayer(rotationZ = spinRot), style = MaterialTheme.typography.labelMedium)
-                                                } else {
-                                                    Text(if (canSpin) "🎰 Spin" else "🎰 Spun ✓", style = MaterialTheme.typography.labelMedium)
-                                                }
-                                            }
+                                }
+                            }
+                        }
+
+                        // ─── Spin & Win Wheel Card ───
+                        if (selectedTab == 1) item {
+                            val canSpin = engagement?.spin?.canSpin ?: false
+                            AccentTopCard(listOf(Color(0xFF8B5CF6), Color(0xFFEC4899)), if (darkTheme) Color(0xFF23173A) else Color(0xFFFAF5FF)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("SPIN & WIN WHEEL", style = MaterialTheme.typography.labelSmall, color = Color(0xFFA855F7), letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
+                                        Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFFA855F7).copy(alpha = 0.15f)) {
+                                            Text(if (canSpin) "🎰 1 Spin Available" else "🎰 Spun Today", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFFA855F7), fontWeight = FontWeight.Bold)
                                         }
-                                        // Scratch Card visual + button
-                                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            ScratchCardCanvas(rewardText = "₹${(scratchCount * 5 + 10)}", modifier = Modifier.fillMaxWidth())
-                                            OutlinedButton(
-                                                onClick = { viewModel.scratchCard() },
-                                                modifier = Modifier.fillMaxWidth().height(40.dp),
-                                                enabled = canScratch && state.actionLoading == null,
-                                                shape = RoundedCornerShape(12.dp),
-                                            ) {
-                                                if (state.actionLoading == "scratch") {
-                                                    val scratchTransition = rememberInfiniteTransition(label = "scratchAnim")
-                                                    val scratchScale by scratchTransition.animateFloat(0.9f, 1.1f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "scratchScale")
-                                                    Text("🎴", modifier = Modifier.graphicsLayer(scaleX = scratchScale, scaleY = scratchScale), style = MaterialTheme.typography.labelMedium)
-                                                } else {
-                                                    Text(if (canScratch) "🎴 Scratch ($scratchCount)" else "🎴 None", style = MaterialTheme.typography.labelMedium)
-                                                }
-                                            }
+                                    }
+                                    SpinWheelCanvas(
+                                        isSpinning = state.actionLoading == "spin",
+                                        canSpin = canSpin,
+                                        onSpin = { viewModel.spinWheel() },
+                                        onWin = { amount, label ->
+                                            spinWinAmount = amount
+                                            spinWinLabel = label
+                                            showSpinWinModal = true
+                                        },
+                                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                                    )
+                                    Button(
+                                        onClick = { viewModel.spinWheel() },
+                                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                                        enabled = canSpin && state.actionLoading == null,
+                                        shape = RoundedCornerShape(14.dp),
+                                    ) {
+                                        if (state.actionLoading == "spin") {
+                                            val spinTransition = rememberInfiniteTransition(label = "spinAnim")
+                                            val spinRot by spinTransition.animateFloat(0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart), label = "spinRot")
+                                            Text("🎰 Spinning...", modifier = Modifier.graphicsLayer(rotationZ = spinRot), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text(if (canSpin) "Spin Now 🎰" else "Already Spun Today ✓", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ─── Scratch & Win Mystery Card ───
+                        if (selectedTab == 1) item {
+                            val canScratch = engagement?.scratch?.canScratch ?: false
+                            val scratchCount = engagement?.scratch?.available ?: 0
+                            AccentTopCard(listOf(Color(0xFF0EA5E9), Color(0xFF10B981)), if (darkTheme) Color(0xFF0C2938) else Color(0xFFF0FDF4)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("SCRATCH & WIN MYSTERY CARD", style = MaterialTheme.typography.labelSmall, color = Color(0xFF0EA5E9), letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
+                                        Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFF0EA5E9).copy(alpha = 0.15f)) {
+                                            Text("🎴 $scratchCount Available", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF0EA5E9), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    ScratchCardCanvas(rewardText = "🪙 +${(scratchCount * 5 + 15)}", modifier = Modifier.fillMaxWidth().height(120.dp))
+                                    Button(
+                                        onClick = { viewModel.scratchCard() },
+                                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                                        enabled = canScratch && state.actionLoading == null,
+                                        shape = RoundedCornerShape(14.dp),
+                                    ) {
+                                        if (state.actionLoading == "scratch") {
+                                            Text("🎴 Revealing Scratch Reward...", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text(if (canScratch) "Scratch Card 🎴 ($scratchCount Available)" else "No Scratch Cards Remaining", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -1418,21 +1451,22 @@ fun SpinWheelCanvas(
     isSpinning: Boolean,
     canSpin: Boolean = true,
     onSpin: () -> Unit = {},
+    onWin: (Int, String) -> Unit = { _,_ -> },
     modifier: Modifier = Modifier,
 ) {
     val segments = remember {
         listOf(
-            "₹5" to Color(0xFFFF6B6B),
-            "₹10" to Color(0xFF4ECDC4),
-            "₹25" to Color(0xFF45B7D1),
-            "₹50" to Color(0xFF96CEB4),
-            "₹100" to Color(0xFFFFEAA7),
-            "₹15" to Color(0xFFF7AEF8),
-            "₹200" to Color(0xFF6BCB77),
-            "₹20" to Color(0xFFFF9F1C),
+            "+5" to Color(0xFFFF6B6B),
+            "+10" to Color(0xFF4ECDC4),
+            "+15" to Color(0xFF45B7D1),
+            "+25" to Color(0xFF96CEB4),
+            "+50" to Color(0xFFFFEAA7),
+            "💎100" to Color(0xFFF7AEF8),
+            "⚡200" to Color(0xFF6BCB77),
+            "🔥500" to Color(0xFFFF9F1C),
         )
     }
-    val segmentValues = remember { listOf(5, 10, 25, 50, 100, 15, 200, 20) }
+    val segmentValues = remember { listOf(5, 10, 15, 25, 50, 100, 200, 500) }
     val anglePerSegment = 360f / segments.size
 
     val rotation = remember { Animatable(0f) }
@@ -1462,6 +1496,7 @@ fun SpinWheelCanvas(
             )
             winningIndex = winSegment
             isAnimating = false
+            onWin(segmentValues[winSegment], segments[winSegment].first)
         }
     }
 
@@ -1484,9 +1519,37 @@ fun SpinWheelCanvas(
                 .background(Color(0xFF1E293B))
                 .clickable(enabled = canSpin && !isAnimating && !isSpinning) { onSpin() },
             contentAlignment = Alignment.Center,
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                segments.forEachIndexed { i, (_, color) ->
+        ) {                Canvas(modifier = Modifier.fillMaxSize()) {
+                val canvasSize = size.minDimension
+                // LED glow aura ring (outer)
+                drawCircle(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFFFF6B6B).copy(alpha = 0.4f),
+                            Color(0xFF45B7D1).copy(alpha = 0.4f),
+                            Color(0xFF96CEB4).copy(alpha = 0.4f),
+                            Color(0xFFFFEAA7).copy(alpha = 0.4f),
+                            Color(0xFFF7AEF8).copy(alpha = 0.4f),
+                            Color(0xFF6BCB77).copy(alpha = 0.4f),
+                            Color(0xFFFF9F1C).copy(alpha = 0.4f),
+                            Color(0xFFFF6B6B).copy(alpha = 0.4f),
+                        )
+                    ),
+                    radius = canvasSize * 0.52f,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 6f),
+                )
+                // LED glow aura ring (inner glow)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color(0xFFFFD700).copy(alpha = 0.08f),
+                        )
+                    ),
+                    radius = canvasSize * 0.5f,
+                )
+                // Draw segments with arcs
+                segments.forEachIndexed { i, (label, color) ->
                     val isWin = winningIndex == i && !isAnimating
                     drawArc(
                         color = if (isWin) Color(0xFFFFD700) else color,
@@ -1503,19 +1566,32 @@ fun SpinWheelCanvas(
                             useCenter = true,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f),
                         )
+                        // Extra glow pulse
+                        drawArc(
+                            color = Color(0xFFFFD700).copy(alpha = 0.3f),
+                            startAngle = i * anglePerSegment - 90f,
+                            sweepAngle = anglePerSegment - 3f,
+                            useCenter = true,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 12f),
+                        )
                     }
                 }
                 // Outer border ring
                 drawCircle(
-                    color = if (isDark) Color(0xFF334155) else Color(0xFFD1D5DB),
-                    radius = size.minDimension * 0.5f,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f),
+                    color = if (isDark) Color(0xFF334155) else Color(0xFF9CA3AF),
+                    radius = canvasSize * 0.50f,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f),
                 )
-                // Center hub
-                drawCircle(Color.White, radius = size.minDimension * 0.16f)
+                // Center hub with gradient
                 drawCircle(
-                    color = if (isDark) Color(0xFF334155) else Color(0xFF1F2937),
-                    radius = size.minDimension * 0.12f,
+                    brush = Brush.radialGradient(
+                        listOf(Color.White, if (isDark) Color(0xFF374151) else Color(0xFFE5E7EB))
+                    ),
+                    radius = canvasSize * 0.16f,
+                )
+                drawCircle(
+                    color = if (isDark) Color(0xFF1F2937) else Color(0xFF4B5563),
+                    radius = canvasSize * 0.12f,
                 )
             }
 
@@ -1530,7 +1606,6 @@ fun SpinWheelCanvas(
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
             )
-        }
 
         // Prize result shown below the wheel
         if (winningIndex >= 0 && !isAnimating) {
@@ -1557,6 +1632,7 @@ fun SpinWheelCanvas(
             }
         }
     }
+}
 }
 
 @Composable
@@ -1808,6 +1884,90 @@ fun ReferralTreeNodeView(
                 Column(modifier = Modifier.weight(1f)) {
                     for (child in node.children) {
                         ReferralTreeNodeView(child, depth + 1, statusMap, chainRules)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Spin Win Celebration Modal ──────────────────────────────────────────
+@Composable
+private fun SpinWinCelebrationModal(
+    show: Boolean,
+    rewardAmount: Int,
+    rewardLabel: String,
+    onDismiss: () -> Unit,
+) {
+    if (!show) return
+    val isDark = ColorTokens.isDark
+    val transition = rememberInfiniteTransition(label = "celebration")
+    val scale by transition.animateFloat(0.8f, 1.15f, infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
+    val glowAlpha by transition.animateFloat(0.3f, 0.8f, infiniteRepeatable(tween(1200, easing = LinearEasing), RepeatMode.Reverse), label = "glow")
+    
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+    ) {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(180.dp)
+                        .drawBehind {
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    listOf(Color(0xFFFFD700).copy(alpha = glowAlpha), Color.Transparent)
+                                ),
+                                radius = size.minDimension * 0.5f,
+                            )
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("🎉", fontSize = 64.sp, modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale))
+                }
+                
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF1E293B) else Color.White),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    modifier = Modifier.fillMaxWidth(0.85f),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text("🎊 Congratulations! 🎊", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFA500)))),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("💰", fontSize = 36.sp)
+                        }
+                        Text(
+                            text = "You earned $rewardLabel!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color(0xFFFFD700) else Color(0xFFB45309),
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = "+$rewardAmount coins added to your balance",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280),
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text("Awesome! 🚀", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

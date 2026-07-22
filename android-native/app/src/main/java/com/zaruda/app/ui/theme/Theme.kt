@@ -68,7 +68,7 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun MhubTheme(
+fun ZarudaTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
@@ -93,9 +93,9 @@ fun MhubTheme(
 
     MaterialTheme(
         colorScheme = colors,
-        typography = MhubTypography,
+        typography = ZarudaTypography,
     ) {
-        CompositionLocalProvider(LocalSpacing provides MhubSpacing()) {
+        CompositionLocalProvider(LocalSpacing provides ZarudaSpacing()) {
             content()
         }
     }

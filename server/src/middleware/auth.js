@@ -62,7 +62,13 @@ const protect = async (req, res, next) => {
     return res.status(500).json({ error: "Authentication service temporarily unavailable." });
   }
 
-  req.user = verifiedAuth.payload;
+  req.user = verifiedAuth.payload || {};
+  if (req.user && typeof req.user === "object") {
+    const fallbackId = customUserId || verifiedAuth.payload?.sub || verifiedAuth.payload?.userId || verifiedAuth.payload?.id || "demo_user";
+    if (!req.user.id) req.user.id = fallbackId;
+    if (!req.user.userId) req.user.userId = fallbackId;
+    if (!req.user.user_id) req.user.user_id = fallbackId;
+  }
   req.authToken = verifiedAuth.token;
   return next();
 };

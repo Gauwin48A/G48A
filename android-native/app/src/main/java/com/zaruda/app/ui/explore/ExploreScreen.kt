@@ -266,6 +266,7 @@ class ExploreViewModel @Inject constructor(
     private val tiersRepo: com.zaruda.app.data.repository.TiersRepository,
     private val localeManager: com.zaruda.app.core.LocaleManager,
     private val tokenStore: com.zaruda.app.data.local.TokenStore,
+    private val api: com.zaruda.app.data.remote.ZarudaApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
     val state: StateFlow<ExploreState> = _state.asStateFlow()
@@ -836,6 +837,59 @@ class ExploreViewModel @Inject constructor(
     fun addToCompare(postId: String) {
         viewModelScope.launch { postsRepo.addToCompare(postId) }
     }
+
+    // ── Preferences persistence (moved from ProfileViewModel) ──
+    private val _prefsSaving = MutableStateFlow(false)
+    val prefsSaving: StateFlow<Boolean> = _prefsSaving.asStateFlow()
+
+    fun loadPreferences() {
+        viewModelScope.launch {
+            try {
+                val resp = api.getPreferences()
+                resp.categories?.toSet()?.let { SharedExploreStore.updateSelectedSubcategories(it) }
+                resp.location?.let { SharedExploreStore.updateSelectedLocation(it) }
+                resp.minPrice?.let { SharedExploreStore.updateSelectedMinPrice(it) }
+                resp.maxPrice?.let { SharedExploreStore.updateSelectedMaxPrice(it) }
+            } catch (_: Exception) {
+                // If API fails, skip silently — user can set preferences manually
+            }
+        }
+    }
+
+    fun savePreferences(location: String?, minPrice: Int?, maxPrice: Int?, categories: List<String>?) {
+        _prefsSaving.value = true
+        
+        // Sync with SharedExploreStore for ForYou page filtering
+        val safeCategories = categories ?: emptyList()
+        SharedExploreStore.updateSelectedSubcategories(safeCategories.toSet())
+        location?.let { SharedExploreStore.updateSelectedLocation(it) }
+        minPrice?.let { SharedExploreStore.updateSelectedMinPrice(it) }
+        maxPrice?.let { SharedExploreStore.updateSelectedMaxPrice(it) }
+        
+        viewModelScope.launch {
+            try {
+                api.updatePreferences(
+                    com.zaruda.app.data.remote.dto.PreferencesUpdateRequest(
+                        location = location,
+                        minPrice = minPrice,
+                        maxPrice = maxPrice,
+                        categories = safeCategories,
+                    )
+                )
+            } catch (_: Exception) {
+                // API save failed — preferences still work locally via SharedExploreStore
+            } finally {
+                _prefsSaving.value = false
+            }
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            delay(500L)
+            loadPreferences()
+        }
+    }
 }
 
 // Map subcategory name → emoji for visual richness
@@ -906,6 +960,9 @@ fun ExploreScreen(
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
     var showRestrictionDialog by remember { mutableStateOf(false) }
+    var showForYouPrefsSheet by remember { mutableStateOf(false) }
+    val forYouPrefsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var hasAutoShownPrefsOnForYou by remember { mutableStateOf(false) }
     // Ecosystem from CompositionLocal — set when user enters a category from Home
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
@@ -923,12 +980,27 @@ fun ExploreScreen(
     var draftPriceRange by remember(showFilterSheet) { mutableStateOf(state.filterMinPrice..state.filterMaxPrice) }
 
     // Sync route mode and ecosystem into ViewModel whenever they change
-    LaunchedEffect(forYouMode) { viewModel.setForYouMode(forYouMode) }
+    LaunchedEffect(forYouMode) {
+        viewModel.setForYouMode(forYouMode)
+        if (forYouMode && !hasAutoShownPrefsOnForYou) {
+            // Small delay so loadPreferences() (called in ViewModel init with 500ms delay)
+            // has time to populate SharedExploreStore before we check for empty prefs.
+            delay(600L)
+            val subs = SharedExploreStore.selectedSubcategories
+            val loc = SharedExploreStore.selectedLocation
+            val minP = SharedExploreStore.selectedMinPrice
+            val maxP = SharedExploreStore.selectedMaxPrice
+            if (subs.isEmpty() && loc == null && minP == null && maxP == null) {
+                showForYouPrefsSheet = true
+                hasAutoShownPrefsOnForYou = true
+            }
+        }
+    }
     LaunchedEffect(ecosystemKey) { viewModel.setEcosystem(ecosystemKey) }
 
     Scaffold(
         topBar = {
-            com.zaruda.app.ui.components.MhubTopBar(
+            com.zaruda.app.ui.components.ZarudaTopBar(
                 onSearch = onOpenSearch,
                 onWishlist = onOpenWishlist,
                 onRecentlyViewed = onOpenRecentlyViewed,
@@ -1132,15 +1204,16 @@ fun ExploreScreen(
                     onOpenCompare = onOpenCompare,
                     onToggleAutoRefresh = viewModel::toggleAutoRefresh,
                     onLoadMore = viewModel::loadMore,
-                    onOpenSearch = onOpenSearch,
-                    onOpenFilters = {
-                        draftCondition = state.filterCondition
-                        draftSubcategory = state.filterSubcategory
-                        draftPriceRange = state.filterMinPrice..state.filterMaxPrice
-                        showFilterSheet = true
-                    },
-                    onSelectSubcategory = { sub ->
-                        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)    },
+                    onOpenSearch = onOpenSearch,    onOpenFilters = {
+        draftCondition = state.filterCondition
+        draftSubcategory = state.filterSubcategory
+        draftPriceRange = state.filterMinPrice..state.filterMaxPrice
+        showFilterSheet = true
+    },
+    onOpenPrefs = { showForYouPrefsSheet = true },
+    onSelectSubcategory = { sub ->
+        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+    },
     onInterested = { postId, postTitle ->
         interestPostId = postId
         interestPostTitle = postTitle
@@ -1459,6 +1532,241 @@ fun ExploreScreen(
     }
 
     // Buyer Interest Modal (web parity: "Interested" button → contact seller)
+    // ─── ForYou Preferences Sheet ────────────────────────────────────────────
+    if (showForYouPrefsSheet) {
+        val allSubcategories = remember {
+            listOf(
+                "Phones" to "Electronics", "Laptops" to "Electronics", "Tablets" to "Electronics",
+                "Cameras" to "Electronics", "Audio" to "Electronics", "Gaming" to "Electronics",
+                "Men's Clothing" to "Fashion", "Women's Clothing" to "Fashion",
+                "Shoes" to "Fashion", "Bags" to "Fashion", "Watches" to "Fashion",
+                "Cars" to "Vehicles", "Motorcycles" to "Vehicles", "Scooters" to "Vehicles",
+                "Bicycles" to "Vehicles",
+                "Home & Furniture" to "Others", "Sports & Fitness" to "Others",
+                "Books & Education" to "Others", "Health & Beauty" to "Others",
+                "Agriculture" to "Others", "Real Estate" to "Others",
+            )
+        }
+        var draftSubcategories by remember { mutableStateOf(SharedExploreStore.selectedSubcategories) }
+        var draftLocation by remember { mutableStateOf(SharedExploreStore.selectedLocation ?: "") }
+        var draftMinPrice by remember { mutableStateOf(SharedExploreStore.selectedMinPrice?.toString() ?: "") }
+        var draftMaxPrice by remember { mutableStateOf(SharedExploreStore.selectedMaxPrice?.toString() ?: "") }
+        var activeCategoryFilter by remember { mutableStateOf<String?>(null) }
+
+        val categoryGroups = remember(allSubcategories) {
+            allSubcategories.groupBy { it.second }
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = {
+                draftSubcategories = SharedExploreStore.selectedSubcategories
+                draftLocation = SharedExploreStore.selectedLocation ?: ""
+                draftMinPrice = SharedExploreStore.selectedMinPrice?.toString() ?: ""
+                draftMaxPrice = SharedExploreStore.selectedMaxPrice?.toString() ?: ""
+                showForYouPrefsSheet = false
+            },
+            sheetState = forYouPrefsSheetState,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Your Preferences",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (draftSubcategories.isNotEmpty() || draftLocation.isNotBlank() || draftMinPrice.isNotBlank() || draftMaxPrice.isNotBlank()) {
+                            TextButton(onClick = {
+                                draftSubcategories = emptySet()
+                                draftLocation = ""
+                                draftMinPrice = ""
+                                draftMaxPrice = ""
+                            }) {
+                                Text("Reset", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        IconButton(onClick = {
+                            draftSubcategories = SharedExploreStore.selectedSubcategories
+                            draftLocation = SharedExploreStore.selectedLocation ?: ""
+                            showForYouPrefsSheet = false
+                        }) {
+                            Icon(Icons.Default.Close, null)
+                        }
+                    }
+                }
+
+                // Location
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Location", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = draftLocation,
+                        onValueChange = { draftLocation = it },
+                        placeholder = { Text("e.g. Mumbai, Bengaluru, Delhi") },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(18.dp)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                }
+
+                // Price Range
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Price Range", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = draftMinPrice,
+                            onValueChange = { draftMinPrice = it.filter { c -> c.isDigit() }.take(6) },
+                            placeholder = { Text("Min") },
+                            leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        Text("to", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedTextField(
+                            value = draftMaxPrice,
+                            onValueChange = { draftMaxPrice = it.filter { c -> c.isDigit() }.take(7) },
+                            placeholder = { Text("Max") },
+                            leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                }
+
+                // Subcategories grouped by category
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Categories & Interests", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Select subcategories you're interested in — we'll show matching posts across all categories.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    
+                    // Category filter chips
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        FilterChip(
+                            selected = activeCategoryFilter == null,
+                            onClick = { activeCategoryFilter = null },
+                            label = { Text("All", fontSize = 11.sp) },
+                            shape = RoundedCornerShape(16.dp),
+                        )
+                        categoryGroups.keys.forEach { cat ->
+                            FilterChip(
+                                selected = activeCategoryFilter == cat,
+                                onClick = { activeCategoryFilter = if (activeCategoryFilter == cat) null else cat },
+                                label = { Text(cat, fontSize = 11.sp) },
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                        }
+                    }
+
+                    // Subcategory chips for filtered category
+                    val displaySubs = if (activeCategoryFilter != null) {
+                        categoryGroups[activeCategoryFilter] ?: emptyList()
+                    } else allSubcategories
+
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        displaySubs.forEach { (subName, catName) ->
+                            val isSelected = subName in draftSubcategories
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    draftSubcategories = if (isSelected) {
+                                        draftSubcategories - subName
+                                    } else {
+                                        draftSubcategories + subName
+                                    }
+                                },
+                                label = {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(when (catName) {
+                                            "Electronics" -> "💻"
+                                            "Fashion" -> "👗"
+                                            "Vehicles" -> "🚗"
+                                            else -> "📦"
+                                        }, fontSize = 12.sp)
+                                        Text(subName, fontSize = 12.sp)
+                                    }
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                ),
+                            )
+                        }
+                    }
+                }
+
+                // Active preferences summary
+                if (draftSubcategories.isNotEmpty() || draftLocation.isNotBlank() || draftMinPrice.isNotBlank() || draftMaxPrice.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Your Selections", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            if (draftSubcategories.isNotEmpty()) {
+                                Text("📂 ${draftSubcategories.size} subcategories selected", style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (draftLocation.isNotBlank()) {
+                                Text("📍 $draftLocation", style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (draftMinPrice.isNotBlank() || draftMaxPrice.isNotBlank()) {
+                                val min = draftMinPrice.ifBlank { "0" }
+                                val max = draftMaxPrice.ifBlank { "∞" }
+                                Text("💰 ₹$min – ₹$max", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Apply button
+                Button(
+                    onClick = {
+                        SharedExploreStore.updateSelectedSubcategories(draftSubcategories)
+                        SharedExploreStore.updateSelectedLocation(draftLocation.ifBlank { null })
+                        SharedExploreStore.updateSelectedMinPrice(draftMinPrice.toIntOrNull())
+                        SharedExploreStore.updateSelectedMaxPrice(draftMaxPrice.toIntOrNull())
+                        viewModel.savePreferences(
+                            location = draftLocation.ifBlank { null },
+                            minPrice = draftMinPrice.toIntOrNull(),
+                            maxPrice = draftMaxPrice.toIntOrNull(),
+                            categories = draftSubcategories.toList(),
+                        )
+                        viewModel.loadPosts(reset = true)
+                        showForYouPrefsSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Icon(Icons.Default.Check, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Apply Preferences", fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // ─── Buyer Interest Modal ────────────────────────────────────────────────
     if (showInterestModal) {
         com.zaruda.app.ui.components.BuyerInterestModal(
             postId = interestPostId,
@@ -1671,6 +1979,7 @@ private fun AllPostsBrowse(
     onLoadMore: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenFilters: () -> Unit = {},
+    onOpenPrefs: () -> Unit = {},
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
     onOpenProfile: () -> Unit = {},
@@ -1752,13 +2061,12 @@ private fun AllPostsBrowse(
                     } else true
                 }
                 .filter { post ->
-                    if (forYouMinPrice != null) (post.price ?: 0.0) >= forYouMinPrice.toDouble()
-                    else true
+                    if (forYouMinPrice != null) (post.price ?: 0.0) >= forYouMinPrice.toDouble() else true
                 }
                 .filter { post ->
-                    if (forYouMaxPrice != null) (post.price ?: 0.0) <= forYouMaxPrice.toDouble()
-                    else true
-                }
+                    if (forYouMaxPrice != null) (post.price ?: 0.0) <= forYouMaxPrice.toDouble() else true
+                }        } else if (state.forYouMode) {
+            state.posts
         } else emptyList()
 
         if (state.forYouMode) {
@@ -1944,8 +2252,7 @@ private fun AllPostsBrowse(
                 }
             } else {
                 val displayPosts = if (state.forYouMode) forYouFilteredPosts else state.posts
-                if (state.forYouMode && !hasForYouPrefs) {
-                    item(key = "for_you_empty_prefs") {
+                if (state.forYouMode && displayPosts.isEmpty() && !hasForYouPrefs) {                    item(key = "for_you_empty_prefs") {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1961,18 +2268,27 @@ private fun AllPostsBrowse(
                             )
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                "Personalize Your Feed",
+                                "Your Feed, Your Way",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Set your preferences to see posts that match your interests — subcategory, location, and price range.",
+                                "Tell us what you like — pick categories, set a location, or choose a price range. We'll curate the best posts just for you.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                             )
-
+                            Spacer(Modifier.height(24.dp))
+                    Button(
+                        onClick = { onOpenPrefs() },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(0.7f).height(48.dp),
+                            ) {
+                                Icon(Icons.Default.Tune, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Set Your Preferences", fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 } else if (state.forYouMode && displayPosts.isEmpty()) {
@@ -2004,7 +2320,7 @@ private fun AllPostsBrowse(
                             )
                             Spacer(Modifier.height(24.dp))
                             OutlinedButton(
-                                onClick = onOpenProfile,
+                                onClick = onOpenPrefs,
                             ) {
                                 Icon(Icons.Default.Tune, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))

@@ -71,8 +71,29 @@ const SaleUndonePage = () => {
       postId: "",
       description: "",
     }),
+    [myPosts, setMyPosts] = s([]),
     [confirmOpen, setConfirmOpen] = s(!1),
-    [pendingSubmission, setPendingSubmission] = s(null),
+    [pendingSubmission, setPendingSubmission] = s(null);
+
+  T(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await W$.get("/posts/mine");
+        const list = Array.isArray(res?.data?.posts)
+          ? res.data.posts
+          : Array.isArray(res?.posts)
+            ? res.posts
+            : Array.isArray(res?.data)
+              ? res.data
+              : Array.isArray(res)
+                ? res
+                : [];
+        if (active) setMyPosts(list);
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, []);
     submitAbortRef = useRef(null),
     historyAbortRef = useRef(null),
     reactivationEndpointRef = useRef(null),
@@ -1056,22 +1077,43 @@ const SaleUndonePage = () => {
                       className:
                         "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
-                    t("post_id"),
+                    tr("select_listing_to_repost", "Select Post to Reactivate"),
                     " *",
                   ),
-                  e.createElement(V, {
-                    id: "postId",
-                    value: n.postId,
-                    onChange: (r) => updateField("postId", r.target.value),
-                    placeholder: t("post_id_placeholder"),
-                    className: `h-14 text-lg rounded-xl border-2 ${
-                      validationErrors.postId
-                        ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
-                        : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
-                    } dark:bg-gray-700 dark:text-white transition-colors dark:border-gray-700 dark:focus:border-orange-500/40`,
-                    required: !0,
-                    "aria-invalid": Boolean(validationErrors.postId),
-                  }),
+                  e.createElement(
+                    "select",
+                    {
+                      id: "postId",
+                      value: n.postId,
+                      onChange: (r) => updateField("postId", r.target.value),
+                      className: `w-full h-14 text-base rounded-xl border-2 ${
+                        validationErrors.postId
+                          ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
+                          : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
+                      } px-4 bg-white dark:bg-slate-900 dark:text-white transition-colors dark:border-gray-700 dark:focus:border-orange-500/40`,
+                      required: !0,
+                    },
+                    e.createElement(
+                      "option",
+                      { value: "" },
+                      tr("choose_post_option", "-- Select your post to re-post (1-time only) --"),
+                    ),
+                    myPosts.map((postItem) => {
+                      const id = postItem.post_id || postItem.id;
+                      const title = postItem.title || "Listing Post";
+                      const st = String(postItem.status || "expired").toLowerCase();
+                      const isReposted = Number(postItem.repost_count || 0) >= 1;
+                      const isDisabled = isReposted || st === "active";
+                      const statusLabel = isReposted
+                        ? "ALREADY REPOSTED (1-TIME MAX)"
+                        : st.toUpperCase();
+                      return e.createElement(
+                        "option",
+                        { key: id, value: id, disabled: isDisabled },
+                        `#${id} - ${title} [${statusLabel}]`,
+                      );
+                    }),
+                  ),
                   validationErrors.postId &&
                     e.createElement(
                       "p",
@@ -1085,10 +1127,10 @@ const SaleUndonePage = () => {
                     "p",
                     {
                       className:
-                        "text-sm text-gray-500 dark:text-gray-400 mt-2 dark:text-gray-300",
+                        "text-xs text-orange-600 dark:text-orange-400 font-semibold mt-2",
                     },
-                    "\uD83D\uDCA1 ",
-                    t("post_id_hint"),
+                    "💡 ",
+                    tr("repost_limit_hint", "Each post can be re-posted 1 time only when expired/sold to reactivate back to live marketplace status."),
                   ),
                 ),
                 e.createElement(
@@ -1221,7 +1263,7 @@ const SaleUndonePage = () => {
                         "span",
                         { className: "flex items-center gap-2" },
                         e.createElement(h, { className: "w-6 h-6" }),
-                        t("reactivate_post"),
+                        tr("sale_undone", "Sale Undone"),
                       ),
                 ),
               ),

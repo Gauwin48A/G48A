@@ -5,7 +5,7 @@ import com.zaruda.app.core.ApiResult
 import com.zaruda.app.core.JwtHelper
 import com.zaruda.app.core.safeApiCall
 import com.zaruda.app.data.local.TokenStore
-import com.zaruda.app.data.remote.MhubApi
+import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.EmailLoginRequest
 import com.zaruda.app.data.remote.dto.EmailSignupRequest
 import com.zaruda.app.data.remote.dto.ForgotPasswordRequest
@@ -38,7 +38,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthRepository @Inject constructor(
-    private val api: MhubApi,
+    private val api: ZarudaApi,
     private val tokenStore: TokenStore,
     private val postDao: PostDao,
     private val categoryDao: CategoryDao,

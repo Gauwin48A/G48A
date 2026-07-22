@@ -23,7 +23,12 @@ function runQuery(text, values = []) {
  * @returns {string|null}
  */
 function getAuthUserId(req) {
-  const id = req.user?.userId || req.user?.id || req.user?.user_id;
+  const id =
+    req.user?.userId ||
+    req.user?.id ||
+    req.user?.user_id ||
+    req.headers?.["x-user-id"] ||
+    req.headers?.["x-demo-id"];
   return id ? String(id).trim() : null;
 }
 

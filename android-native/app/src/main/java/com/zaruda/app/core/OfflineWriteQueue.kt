@@ -11,7 +11,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.zaruda.app.data.local.OfflineQueueDao
 import com.zaruda.app.data.local.QueuedAction
-import com.zaruda.app.data.remote.MhubApi
+import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.SendMessageRequest
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -30,7 +30,7 @@ private const val TAG = "OfflineSync"
 @InstallIn(SingletonComponent::class)
 interface OfflineSyncEntryPoint {
     fun queueDao(): OfflineQueueDao
-    fun api(): MhubApi
+    fun api(): ZarudaApi
 }
 
 /**

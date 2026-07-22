@@ -273,13 +273,23 @@ const createChannelHandler = async (req, res) => {
       });
     }
 
-    const userChannels = await ChannelService.listUserChannels(userId);
-    if (userChannels.length >= 3)
-      return res.status(400).json({ error: "Channel limit reached" });
+    const category = String(req.body.category || req.body.type || "General").trim();
+
+    const existingInCat = await runQuery(
+      `SELECT channel_id FROM channels WHERE owner_id::text = $1 AND LOWER(category) = LOWER($2) LIMIT 1`,
+      [String(userId), category]
+    );
+
+    if (existingInCat.rows.length > 0) {
+      return res.status(400).json({
+        error: `You already have a page created for the "${category}" category. Creators are limited to 1 page per category.`,
+      });
+    }
 
     const channel = await ChannelService.createChannel({
       owner_id: userId,
       ...req.body,
+      category,
     });
     res.json(channel);
   } catch (err) {
@@ -1185,6 +1195,9 @@ router.get("/:channelId/analytics", protect, async (req, res) => {
     });
   } catch (err) {
     logger.error("Error fetching channel analytics:", err);
+    res.status(500).json({ error: "Failed to fetch channel analytics" });
+  }
+});
 /* ------------------------------------------------------------------ */
 /*  Creator Applications & Reels Extensions                            */
 /* ------------------------------------------------------------------ */

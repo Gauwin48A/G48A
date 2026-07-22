@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.sp
 
 private val base = FontFamily.SansSerif
 
-val MhubTypography = Typography(
+val ZarudaTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = base,
         fontWeight = FontWeight.ExtraBold,

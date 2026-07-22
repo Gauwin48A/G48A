@@ -3,6 +3,7 @@ package com.zaruda.app.data.remote
 import com.zaruda.app.data.local.TokenStore
 import okhttp3.Interceptor
 import okhttp3.Response
+import org.json.JSONObject
 
 /**
  * Adds `Authorization: Bearer <token>` when available.
@@ -25,6 +26,18 @@ class AuthInterceptor(
         val isRefreshEndpoint = original.url.encodedPath.contains("refresh-token")
         if (!token.isNullOrBlank() && original.header("Authorization") == null && !isRefreshEndpoint) {
             builder.header("Authorization", "Bearer $token")
+            val userId = try {
+                val parts = token.split(".")
+                if (parts.size == 3) {
+                    val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE), Charsets.UTF_8)
+                    JSONObject(payload).optString("sub", "")
+                } else ""
+            } catch (_: Exception) { "" }.let { id ->
+                if (id.isBlank() && token.contains("demo")) "demo_user" else if (id.isBlank()) token else id
+            }
+            builder.header("X-User-Id", userId)
+        } else if (original.header("X-User-Id") == null) {
+            builder.header("X-User-Id", "demo_user")
         }
         return chain.proceed(builder.build())
     }

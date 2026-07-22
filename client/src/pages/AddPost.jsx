@@ -234,6 +234,7 @@ const Xe = 2 * 1024 * 1024,
       [te, T] = n("idle"),
       [ae, w] = n(""),
       [ke, X] = n(!1),
+      [currentStep, setCurrentStep] = n(1),
       [i, se] = n({}),
       L = j(() => b.map((r) => URL.createObjectURL(r)), [b]);
     // Warn user before leaving with unsaved form data
@@ -956,7 +957,7 @@ const Xe = 2 * 1024 * 1024,
                   e.createElement("div", {
                     className:
                       "h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300 dark:bg-gradient-to-r",
-                    style: { width: `${Math.min(100, Math.max(5, f || 5))}%` },
+style: { width: `${Math.min(100, Math.max(5, f || 5))}%` },
                   }),
                 ),
               ),
@@ -966,1168 +967,645 @@ const Xe = 2 * 1024 * 1024,
           "div",
           {
             className:
-              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-sky-50 to-blue-100 dark:bg-gradient-to-br dark:from-sky-950 dark:to-blue-950",
+              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/40 text-slate-900 dark:text-slate-100",
           },
           e.createElement(
             "div",
-            { className: "max-w-[640px] mx-auto px-4 py-4 pb-40" },
-            " ",
+            { className: "max-w-2xl mx-auto px-4 py-6 pb-40" },
+
+            /* Hero Header */
             e.createElement(
               "div",
-              { className: "rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 overflow-hidden relative mb-6 dark:bg-gradient-to-br" },
+              {
+                className:
+                  "rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-6 shadow-xl shadow-indigo-500/20 relative overflow-hidden mb-6",
+              },
               e.createElement("div", {
-                className: "absolute inset-0 opacity-10",
-                style: { backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23fff\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E")' },
+                className: "absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none",
               }),
               e.createElement(
                 "div",
-                { className: "relative z-10 px-5 py-4 sm:py-5" },
+                { className: "relative z-10 flex items-center justify-between gap-4 mb-4" },
                 e.createElement(
                   Ue,
                   {
                     to: "/all-posts",
                     className:
-                      "inline-flex items-center text-white/80 hover:text-white mb-3 font-medium transition-colors duration-200 text-sm h-11 dark:text-white/80 dark:hover:text-white",
+                      "inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-white/25 transition-all",
                   },
-                  e.createElement(be, { className: "w-4 h-4 mr-2" }),
-                  a("back_to_browse"),
+                  e.createElement(be, { className: "w-4 h-4" }),
+                  a("back_to_browse", "Back"),
                 ),
                 e.createElement(
-                  "p",
-                  { className: "text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70" },
-                  "Create listing",
+                  H,
+                  {
+                    className: `${g?.color || "bg-emerald-500"} text-white text-xs px-3.5 py-1 rounded-full font-bold shadow-md shadow-black/10`,
+                  },
+                  g?.name ? `${g.name} Tier • Max ${g.maxImages} Photo(s)` : "Basic Plan",
                 ),
-                e.createElement(
-                  "div",
-                  { className: "flex items-center gap-3" },
-                  e.createElement(
-                    "h1",
-                    { className: "text-lg sm:text-xl font-bold text-white dark:text-white" },
-                    a("create_new_listing"),
-                  ),
-                  e.createElement(
-                    H,
-                    {
-                      className: `${g?.color || "bg-gray-400"} text-white text-xs px-3 py-1 shadow-lg shadow-current/20 rounded-lg font-bold dark:text-white`,
-                    },
-                    g?.icon
-                      ? e.createElement(g.icon, { className: "w-4 h-4 mr-1" })
-                      : null,
-                    g?.name ? `${g.name} ${a("tier")}` : a("tier"),
-                  ),
-                ),
-                e.createElement(
-                  "p",
-                  { className: "text-white/70 text-sm mt-1 dark:text-white/70" },
-                  a("fill_details"),
-                ),
+              ),
+              e.createElement(
+                "h1",
+                { className: "text-2xl sm:text-3xl font-extrabold tracking-tight" },
+                a("create_new_listing", "Create New Listing"),
+              ),
+              e.createElement(
+                "p",
+                { className: "text-blue-100 text-sm mt-1" },
+                "Step-by-step easy product listing for maximum buyer visibility",
               ),
             ),
-            Z &&
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border-amber-600/40 dark:bg-amber-950/20",
-                },
-                e.createElement(
-                  "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-200" },
-                  Z,
-                ),
-                e.createElement(
-                  v,
-                  {
-                    type: "button",
-                    variant: "outline",
-                    className: "border-amber-300 text-amber-800 dark:border-amber-600/40 dark:text-amber-200",
-                    onClick: () => xe((r) => r + 1),
-                  },
-                  "Retry",
-                ),
-              ),
-            oe &&
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2 dark:border-amber-600/40 dark:bg-amber-950/20",
-                },
-                e.createElement(
-                  "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-200" },
-                  oe,
-                ),
-                e.createElement(
-                  v,
-                  {
-                    type: "button",
-                    variant: "outline",
-                    className: "border-amber-300 text-amber-800 dark:border-amber-600/40 dark:text-amber-200",
-                    onClick: () => Ne((r) => r + 1),
-                  },
-                  "Retry",
-                ),
-              ),
+
+            /* Wizard Progress Stepper */
             e.createElement(
-              W,
-              {
-                className:
-                  "mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-600/40",
-              },
+              "div",
+              { className: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm mb-6" },
               e.createElement(
-                ce,
-                { className: "p-4" },
-                e.createElement(
-                  "div",
-                  { className: "flex items-center justify-between gap-3 mb-3" },
-                  e.createElement(
-                    "p",
+                "div",
+                { className: "flex items-center justify-between gap-2" },
+                [
+                  { num: 1, label: "Photos & Audio", icon: "📸" },
+                  { num: 2, label: "Details", icon: "📝" },
+                  { num: 3, label: "Price & Location", icon: "📍" },
+                  { num: 4, label: "Preview", icon: "🚀" },
+                ].map((step) => {
+                  const isActive = currentStep === step.num;
+                  const isDone = currentStep > step.num;
+                  return e.createElement(
+                    "button",
                     {
-                      className:
-                        "text-sm font-semibold text-sky-800 dark:text-sky-200",
-                    },
-                    a("pre_submit_checklist", "Pre-submit checklist"),
-                  ),
-                  e.createElement(
-                    H,
-                    {
-                      className: `${le === 0 ? "bg-emerald-600 shadow-sm shadow-emerald-200" : "bg-sky-600"} text-white transition-colors dark:text-white`,
-                    },
-                    de,
-                    "/",
-                    E.length,
-                    " complete",
-                  ),
-                ),
-                e.createElement(
-                  "div",
-                  { className: "grid grid-cols-1 md:grid-cols-2 gap-2" },
-                  E.map((r) =>
-                    e.createElement(
-                      "div",
-                      {
-                        key: r.key,
-                        className: `rounded-lg border px-3 py-2 text-xs transition-all duration-300 dark:border ${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
+                      key: step.num,
+                      type: "button",
+                      onClick: () => {
+                        if (isDone || (step.num === 4 && ke)) setCurrentStep(step.num);
                       },
-                      e.createElement(
-                        "p",
-                        {
-                          className: `font-semibold ${r.met ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300"}`,
-                        },
-                        r.met ? "Complete:" : "Pending:",
-                        " ",
-                        r.label,
-                      ),
-                      e.createElement(
-                        "p",
-                        { className: "text-slate-600 dark:text-slate-200" },
-                        r.hint,
-                      ),
-                    ),
-                  ),
-                ),
-                le > 0 &&
-                  e.createElement(
-                    "p",
-                    {
-                      className:
-                        "text-xs text-amber-700 dark:text-amber-300 mt-3",
+                      className: `flex-1 flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800 shadow-sm scale-105"
+                          : isDone
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-400 dark:text-slate-500 opacity-60"
+                      }`,
                     },
-                    a("complete_pending_hint", "Complete pending fields above to reduce submit errors and rework."),
-                  ),
+                    e.createElement(
+                      "span",
+                      {
+                        className: `w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                          isActive
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30"
+                            : isDone
+                              ? "bg-emerald-500 text-white"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                        }`,
+                      },
+                      isDone ? "✓" : step.icon,
+                    ),
+                    e.createElement("span", { className: "hidden sm:inline" }, step.label),
+                  );
+                }),
+              ),
+              /* Progress Bar */
+              e.createElement(
+                "div",
+                { className: "w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden" },
+                e.createElement("div", {
+                  className: "bg-gradient-to-r from-blue-500 to-indigo-600 h-full transition-all duration-300 rounded-full",
+                  style: { width: `${(currentStep / 4) * 100}%` },
+                }),
               ),
             ),
-            e.createElement(
-              W,
-              {
-                className:
-                  "mhub-premium-surface mhub-shine rounded-2xl overflow-hidden",
-              },
+
+            /* STEP 1: Photos & Audio Description */
+            currentStep === 1 &&
               e.createElement(
-                Te,
-                {
-                  className:
-                    "bg-gradient-to-r from-sky-500 to-blue-600 text-white dark:bg-gradient-to-r dark:text-white",
-                },
+                W,
+                { className: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden" },
                 e.createElement(
-                  Le,
-                  { className: "text-lg sm:text-xl font-bold" },
-                  a("mobile_phone_details"),
+                  Te,
+                  { className: "bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6" },
+                  e.createElement(Le, { className: "text-xl font-bold flex items-center gap-2" }, "📸 Step 1: Add Photos & Voice Note"),
+                  e.createElement(Pe, { className: "text-indigo-100 text-xs" }, "High quality photos get 5x more buyer responses"),
                 ),
                 e.createElement(
-                  Pe,
-                  { className: "text-sky-100 dark:text-sky-200" },
-                  a("provide_accurate_info"),
-                ),
-              ),
-              e.createElement(
-                ce,
-                { className: "p-5 sm:p-6 bg-gradient-to-br from-white to-slate-50/50 dark:from-gray-800 dark:to-gray-800 dark:bg-gradient-to-br" },
-                e.createElement(
-                  "div",
-                  { className: "space-y-6", role: "form", "aria-label": a("create_new_listing") },
+                  ce,
+                  { className: "p-6 space-y-6" },
+                  /* Drag & Drop Zone */
                   e.createElement(
                     "div",
-                    null,
+                    { className: "space-y-3" },
+                    e.createElement("div", { className: "flex items-center justify-between" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Product Photos *"),
+                      e.createElement("span", { className: "text-xs font-semibold text-slate-500" }, `${b.length} / ${g?.maxImages || 1} photo(s)`),
+                    ),
                     e.createElement(
-                      "h3",
+                      "label",
                       {
-                        className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
+                        className: `flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                          b.length >= (g?.maxImages || 1)
+                            ? "border-slate-200 dark:border-slate-800 opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900"
+                            : "border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-50 hover:border-indigo-500"
+                        }`,
                       },
-                      a("basic_information"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "title",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("title"),
-                          " *",
-                        ),
-                        e.createElement(h, {
-                          id: "title",
-                          name: "title",
-                          value: t.title,
-                          onChange: x,
-                          placeholder: "e.g., iPhone 14 Pro for Sale",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          maxLength: 100,
-                          minLength: 5,
-                          "aria-describedby": i.title ? "title-error" : undefined,
-                          "aria-invalid": !!i.title,
-                        }),
-                        i.title &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "title-error", "aria-live": "polite" },
-                            i.title,
-                          ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
-                          },
-                          "Use a clear title with brand + model. ",
-                          t.title.trim().length,
-                          "/100",
-                        ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("category"),
-                          " *",
-                        ),
-                        hasCategoryMode
-                          ? e.createElement(h, {
-                              name: "category",
-                              value: categoryModeCategory?.name || t.category,
-                              readOnly: !0,
-                              disabled: !0,
-                              className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-gray-700 dark:bg-gray-950",
-                            })
-                          : Y
-                          ? e.createElement(h, {
-                              name: "category",
-                              value: t.category,
-                              readOnly: !0,
-                              disabled: !0,
-                              className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed dark:border-gray-700 dark:bg-gray-950",
-                            })
-                          : e.createElement(
-                              F,
-                              {
-                                name: "category",
-                                value: t.category,
-                                onValueChange: B("category"),
-                                required: !0,
-                              },
-                              e.createElement(
-                                A,
-                                {
-                                  className:
-                                    "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                                },
-                                e.createElement(D, {
-                                  placeholder: "Select category",
-                                }),
-                              ),
-                              e.createElement(
-                                _,
-                                null,
-                                availableCategories.map((r) =>
-                                  e.createElement(
-                                    p,
-                                    { key: r.id || r, value: r.name || r },
-                                    r.name || r,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        i.category &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "category-error", "aria-live": "polite" },
-                            i.category,
-                          ),
-                      ),
-                      t.category &&
-                        e.createElement(
-                          "div",
-                          null,
-                          e.createElement(
-                            u,
-                            {
-                              className:
-                                "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                            },
-                            a("subcategory", "Subcategory"),
-                            Array.isArray(resolvedSubcategories) &&
-                              resolvedSubcategories.length > 0
-                              ? " *"
-                              : "",
-                          ),
-                          e.createElement(
-                            F,
-                            {
-                              name: "subcategory_id",
-                              value: t.subcategory_id,
-                              onValueChange: B("subcategory_id"),
-                              required:
-                                Array.isArray(resolvedSubcategories) &&
-                                resolvedSubcategories.length > 0,
-                              disabled:
-                                subcategoriesLoading ||
-                                !Array.isArray(resolvedSubcategories) ||
-                                resolvedSubcategories.length === 0,
-                            },
-                            e.createElement(
-                              A,
-                              {
-                                className:
-                                  "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                              },
-                              e.createElement(D, {
-                                placeholder:
-                                  subcategoriesLoading
-                                    ? "⏳ Loading subcategories..."
-                                    : a("select_subcategory") ||
-                                      "Select subcategory",
-                              }),
-                            ),
-                            e.createElement(
-                              _,
-                              null,
-                              Array.isArray(resolvedSubcategories) &&
-                                resolvedSubcategories.length > 0
-                                ? resolvedSubcategories.map((r) =>
-                                    e.createElement(
-                                      p,
-                                      {
-                                        key: r.subcategory_id || r.id || r.name,
-                                        value: String(r.subcategory_id || r.id),
-                                      },
-                                      r.name,
-                                    ),
-                                  )
-                                : e.createElement(
-                                    p,
-                                    { key: "no-subcategories", value: "none" },
-                                    a("no_subcategories", "No subcategories"),
-                                  ),
-                            ),
-                          ),
-                          subcategoriesError &&
-                            e.createElement(
-                              "div",
-                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert" },
-                              subcategoriesError,
-                            ),
-                          i.subcategory_id &&
-                            e.createElement(
-                              "div",
-                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "subcategory-error", "aria-live": "polite" },
-                              i.subcategory_id,
-                            ),
-                        ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("brand"),
-                          " *",
-                        ),
-                        e.createElement(
-                          F,
-                          {
-                            name: "brand",
-                            value: t.brand,
-                            onValueChange: B("brand"),
-                            required: !0,
-                          },
-                          e.createElement(
-                            A,
-                            {
-                              className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                            },
-                            e.createElement(D, {
-                              placeholder: a("select_brand"),
-                            }),
-                          ),
-                          e.createElement(
-                            _,
-                            null,
-                            ye.map((r) =>
-                              e.createElement(
-                                p,
-                                { key: r.id || r, value: r.name || r },
-                                r.name || r,
-                              ),
-                            ),
-                          ),
-                        ),
-                        i.brand &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "brand-error", "aria-live": "polite" },
-                            i.brand,
-                          ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "model",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("model"),
-                          " *",
-                        ),
-                        e.createElement(h, {
-                          id: "model",
-                          name: "model",
-                          value: t.model,
-                          onChange: x,
-                          placeholder: "e.g., iPhone 14 Pro, Galaxy S23",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          "aria-describedby": i.model ? "model-error" : undefined,
-                          "aria-invalid": !!i.model,
-                        }),
-                        i.model &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "model-error", "aria-live": "polite" },
-                            i.model,
-                          ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("condition"),
-                          " *",
-                        ),
-                        e.createElement(
-                          F,
-                          {
-                            value: t.condition || "",
-                            onValueChange: B("condition"),
-                          },
-                          e.createElement(
-                            A,
-                            {
-                              className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                            },
-                            e.createElement(D, {
-                              placeholder: a("select_condition"),
-                            }),
-                          ),
-                          e.createElement(
-                            _,
-                            null,
-                            e.createElement(p, { value: "new" }, "New"),
-                            e.createElement(
-                              p,
-                              { value: "like-new" },
-                              "Like New",
-                            ),
-                            e.createElement(
-                              p,
-                              { value: "excellent" },
-                              "Excellent",
-                            ),
-                            e.createElement(p, { value: "good" }, "Good"),
-                            e.createElement(p, { value: "fair" }, "Fair"),
-                          ),
-                        ),
-                        i.condition &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "condition-error", "aria-live": "polite" },
-                            i.condition,
-                          ),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    null,
-                    e.createElement(
-                      "h3",
-                      {
-                        className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 dark:text-gray-100",
-                      },
-                      e.createElement("span", { className: "inline-block h-4 w-1 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 dark:bg-gradient-to-b" }),
-                      a("additional_details"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "age",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("age_months"),
-                        ),
-                        e.createElement(h, {
-                          id: "age",
-                          name: "age",
-                          type: "number",
-                          value: t.age,
-                          onChange: x,
-                          placeholder: "0-48 months",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          min: "0",
-                          max: "48",
-                        }),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("warranty_status"),
-                        ),
-                        e.createElement(
-                          F,
-                          {
-                            value: t.warranty || "",
-                            onValueChange: B("warranty"),
-                          },
-                          e.createElement(
-                            A,
-                            {
-                              className:
-                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                            },
-                            e.createElement(D, {
-                              placeholder: "Warranty status",
-                            }),
-                          ),
-                          e.createElement(
-                            _,
-                            null,
-                            e.createElement(
-                              p,
-                              { value: "active" },
-                              "Under Warranty",
-                            ),
-                            e.createElement(
-                              p,
-                              { value: "expired" },
-                              "Warranty Expired",
-                            ),
-                            e.createElement(
-                              p,
-                              { value: "no-warranty" },
-                              "No Warranty",
-                            ),
-                          ),
-                        ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "dimensions",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          a("dimensions"),
-                        ),
-                        e.createElement(h, {
-                          id: "dimensions",
-                          name: "dimensions",
-                          value: t.dimensions,
-                          onChange: x,
-                          placeholder: "e.g., 6.1 inch",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                        }),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    null,
-                    e.createElement(
-                      "h3",
-                      {
-                        className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
-                      },
-                      a("pricing_location"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "price",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "Price (\u20B9) *",
-                        ),
-                        e.createElement(h, {
-                          id: "price",
-                          name: "price",
-                          type: "number",
-                          value: t.price,
-                          onChange: x,
-                          placeholder: "Enter price",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          "aria-describedby": i.price ? "price-error" : undefined,
-                          "aria-invalid": !!i.price,
-                        }),
-                        i.price &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "price-error", "aria-live": "polite" },
-                            i.price,
-                          ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
-                          },
-                          "Enter your expected final selling price.",
-                        ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "district",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "District *",
-                        ),
-                        e.createElement(h, {
-                          id: "district",
-                          name: "district",
-                          value: t.district,
-                          onChange: x,
-                          placeholder: "Enter district",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          "aria-describedby": i.district ? "district-error" : undefined,
-                          "aria-invalid": !!i.district,
-                        }),
-                        i.district &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "district-error", "aria-live": "polite" },
-                            i.district,
-                          ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "state",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "State *",
-                        ),
-                        e.createElement(h, {
-                          id: "state",
-                          name: "state",
-                          value: t.state,
-                          onChange: x,
-                          placeholder: "Enter state",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          "aria-describedby": i.state ? "state-error" : undefined,
-                          "aria-invalid": !!i.state,
-                        }),
-                        i.state &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "state-error", "aria-live": "polite" },
-                            i.state,
-                          ),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    null,
-                    e.createElement(
-                      "h3",
-                      {
-                        className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
-                      },
-                      "Contact & Images",
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "space-y-6" },
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "contactNumber",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "Contact Number *",
-                        ),
-                        e.createElement(h, {
-                          id: "contactNumber",
-                          name: "contactNumber",
-                          type: "tel",
-                          value: t.contactNumber,
-                          onChange: x,
-                          placeholder: "+91 XXXXXXXXXX",
-                          className:
-                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          required: !0,
-                          "aria-describedby": i.contactNumber ? "contactNumber-error" : undefined,
-                          "aria-invalid": !!i.contactNumber,
-                        }),
-                        i.contactNumber &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "contactNumber-error", "aria-live": "polite" },
-                            i.contactNumber,
-                          ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
-                          },
-                          "Use a 10-digit Indian number starting with 6-9.",
-                        ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "Images (1-",
-                          g?.maxImages || 1,
-                          " photos) *",
-                        ),
-                        e.createElement(
-                          "div",
-                          { className: "mt-2" },
-                          e.createElement(
-                            "div",
-                            {
-                              className:
-                                "border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 transition-all duration-300 hover:border-solid hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-xl hover:shadow-blue-500/10 active:scale-[0.98] dark:border-blue-600/40 dark:bg-gradient-to-br dark:hover:border-solid dark:hover:border-blue-600/40 dark:hover:bg-gradient-to-br",
-                              "aria-label": a("upload_images", { defaultValue: "Upload product images" }),
-                            },
-                            e.createElement(
-                              "div",
-                              { className: "text-center" },
-                              e.createElement(Be, {
-                                className:
-                                  "mx-auto h-12 w-12 text-sky-400 mb-4 dark:text-sky-200",
-                              }),
-                              e.createElement(
-                                "div",
-                                null,
-                                e.createElement(
-                                  "label",
-                                  {
-                                    htmlFor: "images",
-                                    className: "cursor-pointer",
-                                  },
-                                  e.createElement(
-                                    v,
-                                    {
-                                      type: "button",
-                                      className:
-                                        "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all duration-200 dark:bg-gradient-to-r",
-                                      onClick: () =>
-                                        document
-                                          .getElementById("images")
-                                          .click(),
-                                    },
-                                    "Upload Images",
-                                  ),
-                                  e.createElement("input", {
-                                    id: "images",
-                                    name: "images",
-                                    type: "file",
-                                    multiple: !0,
-                                    accept: "image/*",
-                                    onChange: we,
-                                    className: "sr-only",
-                                  }),
-                                ),
-                                e.createElement(
-                                  "p",
-                                  {
-                                    className:
-                                      "mt-1 text-xs text-gray-500 dark:text-gray-300",
-                                  },
-                                  "Selected: ",
-                                  b.length,
-                                  "/",
-                                  g?.maxImages || 1,
-                                ),
-                                e.createElement(
-                                  "p",
-                                  {
-                                    className:
-                                      "mt-2 text-sm text-gray-500 dark:text-gray-300",
-                                  },
-                                  "PNG, JPG up to 2MB each \u2022 Max ",
-                                  g?.maxImages || 1,
-                                  " images",
-                                ),
-                              ),
-                            ),
-                          ),
-                          b.length > 0 &&
-                            e.createElement(
-                              "div",
-                              {
-                                className:
-                                  "mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3",
-                              },
-                              b.map((r, o) =>
-                                e.createElement(
-                                  "div",
-                                  { key: o, className: "relative" },
-                                  e.createElement("img", {
-                                    src: L[o],
-                                    onError: (d) => {
-                                      (d.target.onerror = null),
-                                        (d.target.src = "/placeholder.svg");
-                                    },
-                                    alt: `Upload ${o + 1}`,
-                                    className:
-                                      "h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:ring-2 hover:ring-blue-400 transition-all duration-200 cursor-pointer dark:border-gray-700",
-                                  }),
-                                  e.createElement(
-                                    "button",
-                                    {
-                                      type: "button",
-                                      onClick: () => Ce(o),
-                                      className:
-                                        "absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 hover:scale-110 dark:bg-red-800/30 dark:text-white dark:hover:bg-red-950/20 dark:hover:text-red-300",
-                                    },
-                                    "\xD7",
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ),
-                        i.images &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-2 dark:text-red-300", role: "alert", id: "images-error", "aria-live": "polite" },
-                            i.images,
-                          ),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          u,
-                          {
-                            htmlFor: "description",
-                            className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200",
-                          },
-                          "Description *",
-                        ),
-                        e.createElement($e, {
-                          id: "description",
-                          name: "description",
-                          value: t.description,
-                          onChange: x,
-                          placeholder:
-                            "Add any additional details about your mobile phone...",
-                          className:
-                            "mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all duration-200 focus:ring-4 focus:ring-blue-400/30 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/10 dark:border-gray-700 dark:focus:border-blue-500/40",
-                          rows: 4,
-                          required: !0,
-                          minLength: 20,
-                          maxLength: 1e3,
-                          "aria-describedby": i.description ? "description-error" : undefined,
-                          "aria-invalid": !!i.description,
-                        }),
-                        i.description &&
-                          e.createElement(
-                            "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "description-error", "aria-live": "polite" },
-                            i.description,
-                          ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              `text-xs mt-1 transition-colors duration-300 ${t.description.trim().length > 900 ? "text-red-500 dark:text-red-400" : t.description.trim().length > 750 ? "text-amber-500 dark:text-amber-400" : "text-gray-500 dark:text-gray-400"}`,
-                          },
-                          "Share condition, accessories, and reason for selling. ",
-                          t.description.trim().length,
-                          "/1000",
-                        ),
-                      ),
-                      e.createElement(_e, {
-                        onAudioReady: (r) => he(r),
-                        existingAudio: null,
+                      e.createElement(Be, { className: "w-10 h-10 text-indigo-500 mb-2 animate-bounce" }),
+                      e.createElement("span", { className: "font-bold text-slate-800 dark:text-slate-200 text-sm" }, "Click or Drag Photos Here"),
+                      e.createElement("span", { className: "text-xs text-slate-500 mt-1" }, `Up to ${g?.maxImages || 1} photo(s) on your ${g?.name || "Basic"} plan (JPG, PNG, WEBP <2MB)`),
+                      e.createElement("input", {
+                        type: "file",
+                        accept: "image/jpeg,image/png,image/webp",
+                        multiple: (g?.maxImages || 1) > 1,
+                        onChange: we,
+                        disabled: b.length >= (g?.maxImages || 1),
+                        className: "hidden",
                       }),
+                    ),
+                    /* Photo Thumbnail Grid */
+                    b.length > 0 &&
                       e.createElement(
                         "div",
-                        {
-                          className:
-                            "flex flex-col gap-3 p-4 border-2 border-dashed border-orange-200 dark:border-orange-800/30 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 shadow-sm hover:shadow-md transition-all duration-200 dark:border-orange-600/40 dark:bg-gradient-to-br",
-                        },
-                        e.createElement(
-                          "div",
-                          { className: "flex items-center justify-between" },
+                        { className: "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2" },
+                        b.map((file, idx) =>
                           e.createElement(
                             "div",
-                            { className: "flex items-center gap-2" },
+                            { key: idx, className: "relative aspect-square rounded-2xl overflow-hidden border-2 border-indigo-400 group shadow-md" },
+                            e.createElement("img", {
+                              src: L[idx],
+                              alt: `Upload ${idx + 1}`,
+                              className: "w-full h-full object-cover",
+                            }),
+                            e.createElement(
+                              "button",
+                              {
+                                type: "button",
+                                onClick: () => Ce(idx),
+                                className: "absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 shadow-lg hover:bg-red-700 transition",
+                              },
+                              "✕",
+                            ),
                             e.createElement(
                               "span",
-                              { className: "text-xl" },
-                              "\u23F3",
+                              { className: "absolute bottom-2 left-2 bg-slate-900/80 text-white text-[10px] px-2 py-0.5 rounded-full font-bold" },
+                              `Photo ${idx + 1}`,
                             ),
-                            e.createElement(
-                              "div",
-                              null,
-                              e.createElement(
-                                "h3",
-                                {
-                                  className:
-                                    "text-sm font-semibold text-orange-800 dark:text-orange-200",
-                                },
-                                a("flash_sale_label", "24-Hour Flash Sale"),
-                              ),
-                              e.createElement(
-                                "p",
-                                {
-                                  className:
-                                    "text-xs text-gray-600 dark:text-gray-200",
-                                },
-                                "Auto-expires in 24 hours \u2022 Gets 2x visibility boost",
-                              ),
-                            ),
-                          ),
-                          e.createElement(
-                            "button",
-                            {
-                              type: "button",
-                              onClick: () => ve(!N),
-                              className: `relative inline-flex h-11 w-14 items-center rounded-full transition-colors ${N ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"}`,
-                            },
-                            e.createElement("span", {
-                              className: `inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform dark:bg-slate-900${N ? "translate-x-7" : "translate-x-1"}`,
-                            }),
                           ),
                         ),
-                        N &&
-                          e.createElement(
-                            "div",
-                            {
-                              className:
-                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg dark:text-orange-300 dark:bg-orange-950/20",
-                            },
-                            "\uD83D\uDD25 Your listing will appear at the TOP of feeds and auto-delete after 24 hours!",
-                          ),
                       ),
-                    ),
+                    i.images && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.images),
                   ),
+
+                  /* Audio Voice Note Section */
                   e.createElement(
                     "div",
-                    {
-                      className:
-                        "sticky bottom-0 z-[60] flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 pb-4 border-t border-gray-200/60 dark:border-gray-700/60 mt-8 mhub-premium-bar backdrop-blur-xl -mx-8 px-8 rounded-b-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.08)] dark:border-t",
-                    },
+                    { className: "pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3" },
+                    e.createElement("div", { className: "flex items-center gap-2" },
+                      e.createElement("span", { className: "text-lg" }, "🎙️"),
+                      e.createElement(u, { className: "font-bold text-sm" }, "Audio Description (Optional)"),
+                    ),
+                    e.createElement("p", { className: "text-xs text-slate-500" }, "Record a short voice note (up to 60s) describing your item features for buyers."),
+                    e.createElement(_e, { onRecordingComplete: (blob) => he(blob) }),
+                    re && e.createElement("p", { className: "text-xs text-emerald-600 font-bold flex items-center gap-1" }, "✓ Voice note recorded successfully!"),
+                  ),
+                ),
+              ),
+
+            /* STEP 2: Details & Category */
+            currentStep === 2 &&
+              e.createElement(
+                W,
+                { className: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden" },
+                e.createElement(
+                  Te,
+                  { className: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6" },
+                  e.createElement(Le, { className: "text-xl font-bold flex items-center gap-2" }, "📝 Step 2: Item Details & Category"),
+                  e.createElement(Pe, { className: "text-blue-100 text-xs" }, "Select the right category and describe your item"),
+                ),
+                e.createElement(
+                  ce,
+                  { className: "p-6 space-y-6" },
+                  /* Category Cards */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-3" },
+                    e.createElement(u, { className: "font-bold text-sm" }, "Choose Category *"),
                     e.createElement(
-                      v,
-                      {
-                        type: "button",
-                        onClick: Se,
-                        variant: "outline",
-                        className:
-                          "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold px-6 py-3 text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20",
-                        style: { minWidth: 120 },
-                      },
-                      e.createElement(qe, { className: "w-5 h-5 mr-2" }),
-                      "Preview",
+                      "div",
+                      { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
+                      availableCategories.map((catItem) => {
+                        const name = catItem?.name || catItem;
+                        const isSelected = t.category === name;
+                        return e.createElement(
+                          "button",
+                          {
+                            key: name,
+                            type: "button",
+                            onClick: () => B("category")(name),
+                            className: `p-3.5 rounded-2xl border-2 text-left flex flex-col items-center justify-center gap-1 transition-all ${
+                              isSelected
+                                ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 shadow-md scale-[1.03] font-bold text-indigo-700 dark:text-indigo-300"
+                                : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300"
+                            }`,
+                          },
+                          e.createElement("span", { className: "text-2xl mb-1" }, "📦"),
+                          e.createElement("span", { className: "text-xs font-semibold text-center line-clamp-1" }, name),
+                        );
+                      }),
+                    ),
+                    i.category && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.category),
+                  ),
+
+                  /* Subcategory Selection */
+                  Array.isArray(resolvedSubcategories) && resolvedSubcategories.length > 0 &&
+                    e.createElement(
+                      "div",
+                      { className: "space-y-2" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Subcategory *"),
+                      e.createElement(
+                        F,
+                        {
+                          name: "subcategory_id",
+                          value: t.subcategory_id,
+                          onValueChange: (val) => R((prev) => ({ ...prev, subcategory_id: val })),
+                        },
+                        e.createElement(A, { className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl" },
+                          e.createElement(D, { placeholder: "Select subcategory" }),
+                        ),
+                        e.createElement(_, null,
+                          resolvedSubcategories.map((sub) =>
+                            e.createElement(p, { key: sub.subcategory_id || sub.id, value: String(sub.subcategory_id || sub.id) }, sub.name || sub.title),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  /* Title Field with Auto-Suggest */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    e.createElement("div", { className: "flex items-center justify-between" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Title *"),
+                      e.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => {
+                            if (!t.category) {
+                              y({ title: "Select Category", description: "Select a category first to auto-generate a title.", variant: "destructive" });
+                              return;
+                            }
+                            const suggested = `Brand New ${t.category} Item (Excellent Condition)`;
+                            R((prev) => ({ ...prev, title: suggested }));
+                            y({ title: "✨ Title Auto-Filled", description: "Suggested title added!" });
+                          },
+                          className: "text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline",
+                        },
+                        "✨ Auto-Fill Title",
+                      ),
+                    ),
+                    e.createElement(h, {
+                      name: "title",
+                      value: t.title,
+                      onChange: x,
+                      placeholder: "e.g., iPhone 14 Pro 128GB Deep Purple",
+                      className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-base",
+                      maxLength: 100,
+                    }),
+                    e.createElement("p", { className: "text-xs text-slate-500 flex justify-between" },
+                      e.createElement("span", null, "Clear title with brand + model"),
+                      e.createElement("span", null, `${t.title.trim().length}/100`),
+                    ),
+                    i.title && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.title),
+                  ),
+
+                  /* Brand & Model */
+                  e.createElement(
+                    "div",
+                    { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
+                    e.createElement(
+                      "div",
+                      { className: "space-y-2" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Brand *"),
+                      e.createElement(h, {
+                        name: "brand",
+                        value: t.brand,
+                        onChange: x,
+                        placeholder: "e.g., Apple, Samsung, Nike",
+                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                      }),
+                      i.brand && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.brand),
                     ),
                     e.createElement(
-                      v,
-                      {
-                        onClick: me,
-                        className: `bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 font-bold px-6 py-3 text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:bg-gradient-to-r ${k ? "opacity-60 cursor-not-allowed" : ""}`,
-                        disabled: k,
-                        style: { minWidth: 140 },
-                        "aria-busy": k,
-                      },
-                      k
-                        ? e.createElement(
-                            "span",
-                            { className: "flex items-center justify-center" },
-                            e.createElement(
-                              "svg",
-                              {
-                                className:
-                                  "animate-spin mr-2 w-5 h-5 text-white dark:text-white",
-                                fill: "none",
-                                viewBox: "0 0 24 24",
-                                "aria-hidden": "true",
-                              },
-                              e.createElement("circle", {
-                                className: "opacity-25",
-                                cx: "12",
-                                cy: "12",
-                                r: "10",
-                                stroke: "currentColor",
-                                strokeWidth: "4",
-                              }),
-                              e.createElement("path", {
-                                className: "opacity-75",
-                                fill: "currentColor",
-                                d: "M4 12a8 8 0 018-8v8z",
-                              }),
-                            ),
-                            te === "processing"
-                              ? "Finalizing..."
-                              : "Publishing...",
-                          )
-                        : "Publish Post",
+                      "div",
+                      { className: "space-y-2" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Model *"),
+                      e.createElement(h, {
+                        name: "model",
+                        value: t.model,
+                        onChange: x,
+                        placeholder: "e.g., iPhone 14 Pro, Air Max",
+                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                      }),
+                      i.model && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.model),
                     ),
                   ),
+
+                  /* Condition Pills */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-3" },
+                    e.createElement(u, { className: "font-bold text-sm" }, "Condition *"),
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-2 sm:grid-cols-4 gap-2.5" },
+                      ["New", "Like New", "Used", "Refurbished"].map((cond) => {
+                        const isSelected = t.condition === cond;
+                        return e.createElement(
+                          "button",
+                          {
+                            key: cond,
+                            type: "button",
+                            onClick: () => B("condition")(cond),
+                            className: `py-3 px-4 rounded-xl border-2 text-xs font-bold transition-all ${
+                              isSelected
+                                ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105"
+                                : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                            }`,
+                          },
+                          cond,
+                        );
+                      }),
+                    ),
+                    i.condition && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.condition),
+                  ),
+
+                  /* Description */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    e.createElement(u, { className: "font-bold text-sm" }, "Description *"),
+                    e.createElement($e, {
+                      name: "description",
+                      value: t.description,
+                      onChange: x,
+                      placeholder: "Describe the item condition, accessories included, reason for selling...",
+                      className: "min-h-[120px] border-2 border-slate-200 dark:border-slate-800 rounded-xl text-base p-3 resize-none",
+                      maxLength: 1000,
+                    }),
+                    e.createElement("p", { className: "text-xs text-slate-500 flex justify-between" },
+                      e.createElement("span", null, "Detailed descriptions attract serious buyers"),
+                      e.createElement("span", null, `${t.description.trim().length}/1000`),
+                    ),
+                    i.description && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.description),
+                  ),
+                ),
+              ),
+
+            /* STEP 3: Price & Location */
+            currentStep === 3 &&
+              e.createElement(
+                W,
+                { className: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden" },
+                e.createElement(
+                  Te,
+                  { className: "bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6" },
+                  e.createElement(Le, { className: "text-xl font-bold flex items-center gap-2" }, "📍 Step 3: Pricing & Location"),
+                  e.createElement(Pe, { className: "text-emerald-100 text-xs" }, "Set a competitive price and your district location"),
+                ),
+                e.createElement(
+                  ce,
+                  { className: "p-6 space-y-6" },
+                  /* Price Input */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    e.createElement(u, { className: "font-bold text-sm" }, "Price (₹ INR) *"),
+                    e.createElement(
+                      "div",
+                      { className: "relative flex items-center" },
+                      e.createElement("span", { className: "absolute left-4 text-xl font-bold text-emerald-600 dark:text-emerald-400" }, "₹"),
+                      e.createElement(h, {
+                        name: "price",
+                        type: "number",
+                        value: t.price,
+                        onChange: x,
+                        placeholder: "e.g., 15000",
+                        className: "h-14 pl-10 text-xl font-bold border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-emerald-700 dark:text-emerald-300 focus:border-emerald-500",
+                      }),
+                    ),
+                    i.price && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.price),
+                  ),
+
+                  /* District & State */
+                  e.createElement(
+                    "div",
+                    { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
+                    e.createElement(
+                      "div",
+                      { className: "space-y-2" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "District / City *"),
+                      e.createElement(h, {
+                        name: "district",
+                        value: t.district,
+                        onChange: x,
+                        placeholder: "e.g., Mumbai, Bengaluru",
+                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                      }),
+                      i.district && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.district),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "space-y-2" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "State *"),
+                      e.createElement(h, {
+                        name: "state",
+                        value: t.state,
+                        onChange: x,
+                        placeholder: "e.g., Maharashtra, Karnataka",
+                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                      }),
+                      i.state && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.state),
+                    ),
+                  ),
+
+                  /* Contact Number */
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    e.createElement(u, { className: "font-bold text-sm" }, "Mobile Contact Number *"),
+                    e.createElement(h, {
+                      name: "contactNumber",
+                      value: t.contactNumber,
+                      onChange: x,
+                      placeholder: "10-digit mobile (e.g., 9876543210)",
+                      className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                      maxLength: 10,
+                    }),
+                    i.contactNumber && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.contactNumber),
+                  ),
+
+                  /* Flash Sale Highlight Toggle */
+                  e.createElement(
+                    "div",
+                    { className: "p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-4" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement("p", { className: "font-bold text-sm text-amber-900 dark:text-amber-200 flex items-center gap-1" }, "⚡ Flash Sale Highlight"),
+                      e.createElement("p", { className: "text-xs text-amber-700 dark:text-amber-300" }, "Highlight this listing as an urgent deal"),
+                    ),
+                    e.createElement("input", {
+                      type: "checkbox",
+                      checked: N,
+                      onChange: (e) => ve(e.target.checked),
+                      className: "w-6 h-6 rounded accent-amber-600 cursor-pointer",
+                    }),
+                  ),
+                ),
+              ),
+
+            /* STEP 4: Live Buyer Card Preview & Submit */
+            (currentStep === 4 || ke) &&
+              e.createElement(
+                W,
+                { className: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-3xl shadow-lg overflow-hidden" },
+                e.createElement(
+                  Te,
+                  { className: "bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6" },
+                  e.createElement(Le, { className: "text-xl font-bold flex items-center gap-2" }, "🚀 Step 4: Preview & Publish"),
+                  e.createElement(Pe, { className: "text-purple-100 text-xs" }, "Review your listing before making it live"),
+                ),
+                e.createElement(
+                  ce,
+                  { className: "p-6 space-y-6" },
+                  /* Live Marketplace Card Snippet */
+                  e.createElement(
+                    "div",
+                    { className: "border-2 border-indigo-200 dark:border-indigo-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/50 p-4 space-y-4" },
+                    e.createElement("div", { className: "flex flex-col sm:flex-row gap-4 items-center" },
+                      e.createElement("div", { className: "w-full sm:w-40 aspect-square rounded-xl overflow-hidden bg-slate-200 relative flex-shrink-0" },
+                        b[0]
+                          ? e.createElement("img", { src: L[0], alt: "Preview", className: "w-full h-full object-cover" })
+                          : e.createElement("div", { className: "w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold" }, "No Photo"),
+                        e.createElement(H, { className: "absolute top-2 left-2 bg-indigo-600 text-white text-[10px]" }, t.category || "General"),
+                      ),
+                      e.createElement("div", { className: "flex-1 space-y-2 w-full" },
+                        e.createElement("h3", { className: "font-extrabold text-lg text-slate-900 dark:text-slate-100 line-clamp-2" }, t.title || `${t.brand} ${t.model}`),
+                        e.createElement("p", { className: "text-2xl font-black text-emerald-600 dark:text-emerald-400" }, `₹${(Number(t.price) || 0).toLocaleString()}`),
+                        e.createElement("div", { className: "flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300" },
+                          e.createElement("span", { className: "bg-slate-200 dark:bg-slate-700 px-2.5 py-0.5 rounded-full font-semibold" }, `Condition: ${t.condition || "N/A"}`),
+                          e.createElement("span", { className: "bg-slate-200 dark:bg-slate-700 px-2.5 py-0.5 rounded-full font-semibold" }, `📍 ${t.district}, ${t.state}`),
+                        ),
+                      ),
+                    ),
+                    t.description && e.createElement("p", { className: "text-xs text-slate-600 dark:text-slate-300 line-clamp-3 italic bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800" }, `"${t.description}"`),
+                  ),
+
+                  /* Upload Progress Indicator */
                   k &&
                     e.createElement(
                       "div",
-                      {
-                        className:
-                          "rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3 dark:border-sky-600/40 dark:bg-sky-950/20",
-                      },
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1",
-                        },
-                        e.createElement(
-                          "span",
-                          null,
-                          ae || "Uploading media...",
-                        ),
-                        e.createElement("span", null, f > 0 ? `${f}%` : ""),
+                      { className: "p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2" },
+                      e.createElement("div", { className: "flex justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300" },
+                        e.createElement("span", null, ae || "Uploading media..."),
+                        e.createElement("span", null, `${f}%`),
                       ),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-950/20",
-                        },
-                        e.createElement("div", {
-                          className:
-                            "h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300 dark:bg-gradient-to-r",
-                          style: {
-                            width: `${Math.min(100, Math.max(5, f || 5))}%`,
-                          },
-                        }),
+                      e.createElement("div", { className: "w-full bg-indigo-100 dark:bg-indigo-950 h-2.5 rounded-full overflow-hidden" },
+                        e.createElement("div", { className: "bg-gradient-to-r from-blue-500 to-indigo-600 h-full transition-all duration-300 rounded-full", style: { width: `${Math.max(5, f)}%` } }),
                       ),
                     ),
+
+                  /* Final Submit Button */
+                  e.createElement(
+                    v,
+                    {
+                      onClick: me,
+                      disabled: k,
+                      className: "w-full h-14 text-lg font-extrabold bg-gradient-to-r from-emerald-500 via-teal-600 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white rounded-2xl shadow-xl shadow-emerald-500/25 transition-all transform hover:scale-[1.01] active:scale-[0.98]",
+                    },
+                    k ? (te === "processing" ? "Finalizing Listing..." : "Publishing...") : "🚀 Publish Listing Now",
+                  ),
                 ),
+              ),
+
+            /* Floating Bottom Navigation Controls Bar */
+            e.createElement(
+              "div",
+              { className: "fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-2xl" },
+              e.createElement(
+                "div",
+                { className: "max-w-2xl mx-auto flex items-center justify-between gap-3" },
+                e.createElement(
+                  v,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    disabled: currentStep === 1 || k,
+                    onClick: () => {
+                      if (currentStep > 1) {
+                        if (currentStep === 4) X(false);
+                        setCurrentStep((prev) => prev - 1);
+                      }
+                    },
+                    className: "px-5 h-12 rounded-xl font-bold border-2 border-slate-300 dark:border-slate-700",
+                  },
+                  "← Back",
+                ),
+                e.createElement(
+                  "span",
+                  { className: "text-xs font-extrabold text-slate-500 uppercase tracking-wider" },
+                  `Step ${currentStep} of 4`,
+                ),
+                currentStep < 4
+                  ? e.createElement(
+                      v,
+                      {
+                        type: "button",
+                        onClick: () => {
+                          if (currentStep === 1) {
+                            if (b.length === 0) {
+                              y({ title: "Photo Required", description: "Please upload at least 1 photo.", variant: "destructive" });
+                              return;
+                            }
+                            setCurrentStep(2);
+                          } else if (currentStep === 2) {
+                            if (!t.title || t.title.trim().length < 5) {
+                              y({ title: "Title Required", description: "Enter a valid title (min 5 characters).", variant: "destructive" });
+                              return;
+                            }
+                            if (!t.category) {
+                              y({ title: "Category Required", description: "Select a category.", variant: "destructive" });
+                              return;
+                            }
+                            if (!t.condition) {
+                              y({ title: "Condition Required", description: "Select condition.", variant: "destructive" });
+                              return;
+                            }
+                            setCurrentStep(3);
+                          } else if (currentStep === 3) {
+                            if (!t.price || isNaN(t.price) || Number(t.price) <= 0) {
+                              y({ title: "Price Required", description: "Enter a valid price in INR.", variant: "destructive" });
+                              return;
+                            }
+                            if (!t.contactNumber || !/^([6-9][0-9]{9})$/.test(t.contactNumber)) {
+                              y({ title: "Contact Number Required", description: "Valid 10-digit mobile number starting with 6-9 required.", variant: "destructive" });
+                              return;
+                            }
+                            X(true);
+                            setCurrentStep(4);
+                          }
+                        },
+                        className: "px-6 h-12 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20",
+                      },
+                      "Next Step →",
+                    )
+                  : e.createElement(
+                      v,
+                      {
+                        type: "button",
+                        onClick: me,
+                        disabled: k,
+                        className: "px-6 h-12 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20",
+                      },
+                      k ? "Publishing..." : "🚀 Submit",
+                    ),
               ),
             ),
           ),

@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
  * Unified spacing scale used throughout the app.
  * Provides consistent padding, margins, and gaps.
  */
-data class MhubSpacing(
+data class ZarudaSpacing(
     val xxxs: Dp = 2.dp,
     val xxs: Dp = 4.dp,
     val xs: Dp = 6.dp,
@@ -39,8 +39,8 @@ data class MhubSpacing(
     val radiusFull: Dp = 999.dp,
 )
 
-val LocalSpacing = staticCompositionLocalOf { MhubSpacing() }
+val LocalSpacing = staticCompositionLocalOf { ZarudaSpacing() }
 
 /** Convenience accessor for spacing from any composable. */
-val spacing: MhubSpacing
+val spacing: ZarudaSpacing
     @Composable get() = LocalSpacing.current

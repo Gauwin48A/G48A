@@ -455,7 +455,7 @@ class GetVerifiedViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             kotlinx.coroutines.delay(1200)
-            // Simulate: real impl calls MhubApi.startAadhaarOtp(aadhaar)
+            // Simulate: real impl calls ZarudaApi.startAadhaarOtp(aadhaar)
             val txnId = "TXN-${System.currentTimeMillis()}"
             _state.value = _state.value.copy(loading = false, step = 1, txnId = txnId)
         }
@@ -480,7 +480,7 @@ class GetVerifiedViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             kotlinx.coroutines.delay(1500)
-            // Real impl: call MhubApi.verifyAadhaarOtp(txnId, otp, fullName, dob, address)
+            // Real impl: call ZarudaApi.verifyAadhaarOtp(txnId, otp, fullName, dob, address)
             _state.value = _state.value.copy(loading = false, step = 3, verified = true)
         }
     }

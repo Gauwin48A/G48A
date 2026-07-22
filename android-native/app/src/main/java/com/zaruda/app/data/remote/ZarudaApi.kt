@@ -6,7 +6,7 @@ import com.zaruda.app.domain.model.User
 import okhttp3.RequestBody
 import retrofit2.http.*
 
-interface MhubApi {
+interface ZarudaApi {
 
     // ---- Health ----
     @GET("api/health")
@@ -313,6 +313,9 @@ interface MhubApi {
 
     @POST("api/coins/store-redeem")
     suspend fun storeRedeem(@Body body: StoreRedeemRequest): StoreRedeemResponse
+
+    @POST("api/coins/redeem")
+    suspend fun redeemCoins(@Body body: com.zaruda.app.data.remote.dto.RedeemCoinsRequest): MessageResponse
 
     @POST("api/coins/referral-milestones")
     suspend fun claimReferralMilestone(): MessageResponse

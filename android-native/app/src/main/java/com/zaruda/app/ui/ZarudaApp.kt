@@ -156,18 +156,18 @@ import com.zaruda.app.ui.social.FeedPostAddScreen
 import com.zaruda.app.ui.social.MyFeedScreen
 import com.zaruda.app.ui.social.PublicWallScreen
 import com.zaruda.app.ui.social.RatingsScreen
-import com.zaruda.app.ui.theme.MhubTheme
+import com.zaruda.app.ui.theme.ZarudaTheme
 import com.zaruda.app.ui.wishlist.WishlistScreen
 import com.zaruda.app.core.ConnectivityObserver
 import com.zaruda.app.ui.components.OfflineBanner
-import com.zaruda.app.ui.components.MhubTopBar
-import com.zaruda.app.ui.theme.MhubShapes
-import com.zaruda.app.ui.theme.MhubElevation
+import com.zaruda.app.ui.components.ZarudaTopBar
+import com.zaruda.app.ui.theme.ZarudaShapes
+import com.zaruda.app.ui.theme.ZarudaElevation
 import com.zaruda.app.ui.theme.MhubMotion
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import com.zaruda.app.ui.theme.MhubGradients
+import com.zaruda.app.ui.theme.ZarudaGradients
 import com.zaruda.app.ui.theme.MhubIconSize
 import com.zaruda.app.ui.theme.spacing
 import com.zaruda.app.data.local.ThemeMode
@@ -242,7 +242,7 @@ class SellFlowViewModel @Inject constructor(
 }
 
 @Composable
-fun MhubApp(
+fun ZarudaApp(
     onReady: () -> Unit = {},
     connectivityObserver: ConnectivityObserver? = null,
     deepLinkUri: String? = null,
@@ -251,7 +251,7 @@ fun MhubApp(
 ) {
     val themeVm: AppThemeViewModel = hiltViewModel()
     val themeMode by themeVm.themeMode.collectAsState()
-    MhubTheme(themeMode = themeMode) {
+    ZarudaTheme(themeMode = themeMode) {
         val navController = rememberNavController()
 
         // Navigation diagnostics
@@ -975,6 +975,12 @@ fun MhubApp(
                 }
             }
 
+            composable(Routes.CHAT) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    com.zaruda.app.ui.chat.ChatScreen(onBack = { navController.popBackStack() })
+                }
+            }
+
             composable(Routes.COMPLAINTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
                     ComplaintsScreen(onBack = { navController.popBackStack() })
@@ -1200,6 +1206,7 @@ fun MhubApp(
                         onOpenRewards = { drawerNav(Routes.REWARDS) },
                         onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                        onOpenChat = { drawerNav(Routes.CHAT) },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
                             showMoreDrawer = false
@@ -1272,7 +1279,7 @@ fun MainShell(
             topBar = {
                 if (showTopBar) {
                 val themeCtl = LocalThemeController.current
-                MhubTopBar(
+                ZarudaTopBar(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                     onRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
@@ -1296,7 +1303,7 @@ fun MainShell(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(elevation = MhubElevation.bottomBar, shape = MhubShapes.bottomBar),
+                        .shadow(elevation = ZarudaElevation.bottomBar, shape = ZarudaShapes.bottomBar),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                 ) {

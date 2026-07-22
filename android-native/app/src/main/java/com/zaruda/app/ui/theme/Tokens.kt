@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 /**
  * Unified shape definitions for cards, chips, buttons, modals.
  */
-object MhubShapes {
+object ZarudaShapes {
     val cardSmall = RoundedCornerShape(8.dp)
     val card = RoundedCornerShape(12.dp)
     val cardLarge = RoundedCornerShape(16.dp)
@@ -29,7 +29,7 @@ object MhubShapes {
 /**
  * Standard elevation levels.
  */
-object MhubElevation {
+object ZarudaElevation {
     val none = 0.dp
     val low = 1.dp
     val card = 2.dp
@@ -43,7 +43,7 @@ object MhubElevation {
 /**
  * Brand gradient brushes.
  */
-object MhubGradients {
+object ZarudaGradients {
     val primaryHorizontal: Brush
         get() = Brush.horizontalGradient(
             listOf(BrandPrimary, Color(0xFF4F5CF3)),

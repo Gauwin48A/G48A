@@ -657,6 +657,7 @@ exports.getRandomFeed = async (req, res) => {
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.status = 'active'
+        AND p.post_type = 'text'
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
       ${orderClause}
       LIMIT $1;
@@ -701,6 +702,7 @@ exports.getRandomFeed = async (req, res) => {
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         LEFT JOIN categories c ON p.category_id = c.category_id
         WHERE p.status = 'active'
+          AND p.post_type = 'text'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
         ${orderClause}
         LIMIT $1;
@@ -778,6 +780,7 @@ exports.getNearbyFeed = async (req, res) => {
         LEFT JOIN categories c ON p.category_id = c.category_id
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         WHERE p.status = 'active'
+          AND p.post_type = 'text'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND p.sold_at IS NULL
         ORDER BY p.tier_priority DESC, p.created_at DESC

@@ -41,6 +41,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.repository.BoostRepository
 import com.zaruda.app.data.repository.PostsRepository
+import com.zaruda.app.data.repository.RewardsRepository
 import com.zaruda.app.domain.model.Post
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.AppErrorState
@@ -100,6 +101,7 @@ data class MyPostsState(
 class MyPostsViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val boostRepo: BoostRepository,
+    private val rewardsRepo: RewardsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MyPostsState())
     val state: StateFlow<MyPostsState> = _state.asStateFlow()
@@ -141,9 +143,23 @@ class MyPostsViewModel @Inject constructor(
 
     fun promotePost(postId: String, tier: String, duration: Int, coinCost: Int) {
         viewModelScope.launch {
-            when (val result = boostRepo.boost(postId, tier, duration)) {
+            val apiTier = when (tier) {
+                "basic", "boost" -> "boost"
+                "featured" -> "featured"
+                "spotlight" -> "spotlight"
+                else -> tier
+            }
+            when (val result = rewardsRepo.redeemCoins(apiTier, postId)) {
                 is ApiResult.Success -> _promoteResult.value = "✅ Boosted! $coinCost coins spent. Lasts ${duration / 24} day(s)."
-                is ApiResult.Failure -> _promoteResult.value = "❌ ${result.error.message}. Check your coin balance."
+                is ApiResult.Failure -> {
+                    when (val boostQuota = boostRepo.boost(postId, apiTier, duration)) {
+                        is ApiResult.Success -> _promoteResult.value = "✅ Boosted via Plan Quota! Lasts ${duration / 24} day(s)."
+                        is ApiResult.Failure -> {
+                            val errStr = result.error.message ?: boostQuota.error.message ?: "Failed to promote"
+                            _promoteResult.value = "❌ $errStr. Check your coin balance."
+                        }
+                    }
+                }
             }
         }
     }
@@ -306,11 +322,20 @@ fun MyPostsScreen(
         var selectedTier by remember(promoteTarget) { mutableStateOf(0) }
         // Clear previous result when dialog opens for a new post
         LaunchedEffect(promoteTarget) { viewModel.clearPromoteResult() }
-        val tiers = listOf(
-            TierOption("⚡ Boost (24h)", 100, Color(0xFF059669), Color(0xFF10B981), "basic", 24),
-            TierOption("⭐ Top Placement (7d)", 500, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 168),
-            TierOption("🌟 Spotlight (30d)", 1000, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
-        )
+        val isPremiumUser = true // demo user has active premium plan
+        val tiers = if (isPremiumUser) {
+            listOf(
+                TierOption("⚡ Boost (24h)", 50, Color(0xFF059669), Color(0xFF10B981), "boost", 24),
+                TierOption("⭐ Top Placement (7d)", 200, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 168),
+                TierOption("🌟 Spotlight (30d)", 500, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
+            )
+        } else {
+            listOf(
+                TierOption("⚡ Boost (24h)", 100, Color(0xFF059669), Color(0xFF10B981), "boost", 24),
+                TierOption("⭐ Top Placement (7d)", 500, Color(0xFF7C3AED), Color(0xFF8B5CF6), "featured", 168),
+                TierOption("🌟 Spotlight (30d)", 1000, Color(0xFFD97706), Color(0xFFF59E0B), "spotlight", 720),
+            )
+        }
         AlertDialog(
             onDismissRequest = {
                 promoteTarget = null

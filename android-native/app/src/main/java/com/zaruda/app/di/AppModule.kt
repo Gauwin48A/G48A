@@ -8,7 +8,7 @@ import com.zaruda.app.data.local.TokenStore
 import com.zaruda.app.data.local.db.AddressDao
 import com.zaruda.app.data.local.db.CartItemDao
 import com.zaruda.app.data.local.db.CategoryDao
-import com.zaruda.app.data.local.db.MhubDatabase
+import com.zaruda.app.data.local.db.ZarudaDatabase
 import com.zaruda.app.data.local.db.PostDao
 import com.zaruda.app.data.local.db.RecentlyViewedDao
 import com.zaruda.app.data.local.db.WishlistItemDao
@@ -38,22 +38,22 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMhubDatabase(@ApplicationContext context: Context): MhubDatabase =
-        Room.databaseBuilder(context, MhubDatabase::class.java, "mhub.db")
+    fun provideZarudaDatabase(@ApplicationContext context: Context): ZarudaDatabase =
+        Room.databaseBuilder(context, ZarudaDatabase::class.java, "zaruda.db")
             .fallbackToDestructiveMigration()
             .build()
 
-    @Provides fun providePostDao(db: MhubDatabase): PostDao = db.postDao()
+    @Provides fun providePostDao(db: ZarudaDatabase): PostDao = db.postDao()
 
-    @Provides fun provideCategoryDao(db: MhubDatabase): CategoryDao = db.categoryDao()
+    @Provides fun provideCategoryDao(db: ZarudaDatabase): CategoryDao = db.categoryDao()
 
-    @Provides fun provideOfflineQueueDao(db: MhubDatabase): com.zaruda.app.data.local.OfflineQueueDao = db.offlineQueueDao()
+    @Provides fun provideOfflineQueueDao(db: ZarudaDatabase): com.zaruda.app.data.local.OfflineQueueDao = db.offlineQueueDao()
 
-    @Provides fun provideCartItemDao(db: MhubDatabase): CartItemDao = db.cartItemDao()
+    @Provides fun provideCartItemDao(db: ZarudaDatabase): CartItemDao = db.cartItemDao()
 
-    @Provides fun provideWishlistItemDao(db: MhubDatabase): WishlistItemDao = db.wishlistItemDao()
+    @Provides fun provideWishlistItemDao(db: ZarudaDatabase): WishlistItemDao = db.wishlistItemDao()
 
-    @Provides fun provideRecentlyViewedDao(db: MhubDatabase): RecentlyViewedDao = db.recentlyViewedDao()
+    @Provides fun provideRecentlyViewedDao(db: ZarudaDatabase): RecentlyViewedDao = db.recentlyViewedDao()
 
-    @Provides fun provideAddressDao(db: MhubDatabase): AddressDao = db.addressDao()
+    @Provides fun provideAddressDao(db: ZarudaDatabase): AddressDao = db.addressDao()
 }

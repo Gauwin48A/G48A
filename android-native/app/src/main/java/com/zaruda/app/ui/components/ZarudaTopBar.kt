@@ -85,7 +85,7 @@ class TopBarViewModel @Inject constructor(
 /* ── MhubTopBar ─────────────────────────────────────────────────────────── */
 
 @Composable
-fun MhubTopBar(
+fun ZarudaTopBar(
     onSearch: () -> Unit,
     onWishlist: () -> Unit = {},
     onRecentlyViewed: () -> Unit = {},

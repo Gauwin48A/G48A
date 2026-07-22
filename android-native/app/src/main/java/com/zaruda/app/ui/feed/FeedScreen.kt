@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package com.zaruda.app.ui.feed
 
@@ -811,47 +811,6 @@ private fun FeedCard(
                 )
             }
 
-            // Price badge (web parity: emerald badge for priced items)
-            post.price?.takeIf { it > 0 }?.let { price ->
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF059669).copy(alpha = 0.1f),
-                ) {
-                    Text(
-                        "₹${"%,.0f".format(price)}",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF059669),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    )
-                }
-            }
-
-            // Category/subcategory badges (web parity: shown below author row)
-            if (!post.categoryName.isNullOrBlank() || !post.subcategoryName.isNullOrBlank()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    post.categoryName?.takeIf { it.isNotBlank() }?.let { cat ->
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        ) {
-                            Text(cat, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                        }
-                    }
-                    post.subcategoryName?.takeIf { it.isNotBlank() }?.let { sub ->
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                        ) {
-                            Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                        }
-                    }
-                }
-            }
-
             if (!post.content.isNullOrBlank()) {
                 Column {
                     Text(
@@ -873,7 +832,7 @@ private fun FeedCard(
                 }
             }
 
-            // Action bar: pill buttons (web parity: Like | Share | Save | Views | View Details)
+            // Action bar: social pill buttons (Like | Share | Save | Views)
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -923,18 +882,6 @@ private fun FeedCard(
                             Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                             Text("$v", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                // View Details CTA (web parity: indigo pill button)
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.clickable(onClick = onOpenPost),
-                ) {
-                    Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                        Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
