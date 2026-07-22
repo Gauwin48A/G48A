@@ -893,6 +893,19 @@ class ExploreViewModel @Inject constructor(
 }
 
 // Map subcategory name → emoji for visual richness
+// All subcategories used by both the preferences sheet and inline chips
+private val allSubcategories: List<Pair<String, String>> = listOf(
+    "Phones" to "Electronics", "Laptops" to "Electronics", "Tablets" to "Electronics",
+    "Cameras" to "Electronics", "Audio" to "Electronics", "Gaming" to "Electronics",
+    "Men's Clothing" to "Fashion", "Women's Clothing" to "Fashion",
+    "Shoes" to "Fashion", "Bags" to "Fashion", "Watches" to "Fashion",
+    "Cars" to "Vehicles", "Motorcycles" to "Vehicles", "Scooters" to "Vehicles",
+    "Bicycles" to "Vehicles",
+    "Home & Furniture" to "Others", "Sports & Fitness" to "Others",
+    "Books & Education" to "Others", "Health & Beauty" to "Others",
+    "Agriculture" to "Others", "Real Estate" to "Others",
+)
+
 private fun subcategoryEmoji(name: String): String {
     return when (name) {
         "Phones" -> "📱"; "Laptops" -> "💻"; "Tablets" -> "📟"; "Cameras" -> "📷"
@@ -1177,8 +1190,16 @@ fun ExploreScreen(
                     }
                 }
             }
+        // Toggle handler for inline subcategory chips — updates SharedExploreStore instantly
+        val onToggleSubcategory: (String) -> Unit = { sub ->
+            val current = SharedExploreStore.selectedSubcategories.toMutableSet()
+            if (sub in current) current.remove(sub) else current.add(sub)
+            SharedExploreStore.updateSelectedSubcategories(current)
+            viewModel.loadPosts(reset = true)
+        }
 
             Box(Modifier.fillMaxSize()) {
+
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
                 onRefresh = { viewModel.refresh() },
@@ -1220,6 +1241,9 @@ fun ExploreScreen(
         showInterestModal = true
     },
     onOpenProfile = onOpenProfile,
+    allSubcategories = allSubcategories,
+    selectedSubcategories = SharedExploreStore.selectedSubcategories,
+    onToggleSubcategory = onToggleSubcategory,
 )
             }
 
@@ -1534,19 +1558,7 @@ fun ExploreScreen(
     // Buyer Interest Modal (web parity: "Interested" button → contact seller)
     // ─── ForYou Preferences Sheet ────────────────────────────────────────────
     if (showForYouPrefsSheet) {
-        val allSubcategories = remember {
-            listOf(
-                "Phones" to "Electronics", "Laptops" to "Electronics", "Tablets" to "Electronics",
-                "Cameras" to "Electronics", "Audio" to "Electronics", "Gaming" to "Electronics",
-                "Men's Clothing" to "Fashion", "Women's Clothing" to "Fashion",
-                "Shoes" to "Fashion", "Bags" to "Fashion", "Watches" to "Fashion",
-                "Cars" to "Vehicles", "Motorcycles" to "Vehicles", "Scooters" to "Vehicles",
-                "Bicycles" to "Vehicles",
-                "Home & Furniture" to "Others", "Sports & Fitness" to "Others",
-                "Books & Education" to "Others", "Health & Beauty" to "Others",
-                "Agriculture" to "Others", "Real Estate" to "Others",
-            )
-        }
+        // allSubcategories is defined at ExploreScreen composable level — no redefinition needed
         var draftSubcategories by remember { mutableStateOf(SharedExploreStore.selectedSubcategories) }
         var draftLocation by remember { mutableStateOf(SharedExploreStore.selectedLocation ?: "") }
         var draftMinPrice by remember { mutableStateOf(SharedExploreStore.selectedMinPrice?.toString() ?: "") }
@@ -1606,50 +1618,71 @@ fun ExploreScreen(
                     }
                 }
 
-                // Location
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Location", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                // ── Location Section ──
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Location", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = draftLocation,
+                    onValueChange = { draftLocation = it },
+                    placeholder = { Text("e.g. Mumbai, Bengaluru, Delhi", fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(18.dp)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                )
+
+                // ── Price Range Section ──
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Price Range", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = draftLocation,
-                        onValueChange = { draftLocation = it },
-                        placeholder = { Text("e.g. Mumbai, Bengaluru, Delhi") },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(18.dp)) },
+                        value = draftMinPrice,
+                        onValueChange = { draftMinPrice = it.filter { c -> c.isDigit() }.take(6) },
+                        placeholder = { Text("Min", fontSize = 13.sp) },
+                        leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text("to", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(
+                        value = draftMaxPrice,
+                        onValueChange = { draftMaxPrice = it.filter { c -> c.isDigit() }.take(7) },
+                        placeholder = { Text("Max", fontSize = 13.sp) },
+                        leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        textStyle = MaterialTheme.typography.bodyLarge,
                     )
                 }
 
-                // Price Range
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Price Range", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = draftMinPrice,
-                            onValueChange = { draftMinPrice = it.filter { c -> c.isDigit() }.take(6) },
-                            placeholder = { Text("Min") },
-                            leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                        )
-                        Text("to", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        OutlinedTextField(
-                            value = draftMaxPrice,
-                            onValueChange = { draftMaxPrice = it.filter { c -> c.isDigit() }.take(7) },
-                            placeholder = { Text("Max") },
-                            leadingIcon = { Text("₹", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                        )
-                    }
+                // ── Your Interests Section ──
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Your Interests", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 }
-
-                // Subcategories grouped by category
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Categories & Interests", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    Text("Select subcategories you're interested in — we'll show matching posts across all categories.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text("Select topics you'd like to see — matching posts will show first.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     // Category filter chips
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
@@ -1659,7 +1692,7 @@ fun ExploreScreen(
                             label = { Text("All", fontSize = 11.sp) },
                             shape = RoundedCornerShape(16.dp),
                         )
-                        categoryGroups.keys.forEach { cat ->
+                        for (cat in categoryGroups.keys) {
                             FilterChip(
                                 selected = activeCategoryFilter == cat,
                                 onClick = { activeCategoryFilter = if (activeCategoryFilter == cat) null else cat },
@@ -1677,10 +1710,10 @@ fun ExploreScreen(
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        displaySubs.forEach { (subName, catName) ->
+                        for ((subName, catName) in displaySubs) {
                             val isSelected = subName in draftSubcategories
                             FilterChip(
                                 selected = isSelected,
@@ -1692,24 +1725,23 @@ fun ExploreScreen(
                                     }
                                 },
                                 label = {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text(when (catName) {
                                             "Electronics" -> "💻"
                                             "Fashion" -> "👗"
                                             "Vehicles" -> "🚗"
                                             else -> "📦"
-                                        }, fontSize = 12.sp)
-                                        Text(subName, fontSize = 12.sp)
+                                        }, fontSize = 14.sp)
+                                        Text(subName, fontSize = 13.sp)
                                     }
                                 },
-                                shape = RoundedCornerShape(20.dp),
+                                shape = RoundedCornerShape(24.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 ),
                             )
                         }
                     }
-                }
 
                 // Active preferences summary
                 if (draftSubcategories.isNotEmpty() || draftLocation.isNotBlank() || draftMinPrice.isNotBlank() || draftMaxPrice.isNotBlank()) {
@@ -1983,6 +2015,9 @@ private fun AllPostsBrowse(
     onSelectSubcategory: (String) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
     onOpenProfile: () -> Unit = {},
+    allSubcategories: List<Pair<String, String>> = emptyList(),
+    selectedSubcategories: Set<String> = emptySet(),
+    onToggleSubcategory: (String) -> Unit = {},
 ) {
     val sortOptions = listOf(
         "newest" to "Newest",
@@ -2092,12 +2127,16 @@ private fun AllPostsBrowse(
             ) {
                 Column {
                     if (state.forYouMode) {
-                        ForYouRefineToolbar(
-                            activeQuickFilter = state.quickFilter,
-                            isGridView = isGridView,
-                            onSetQuickFilter = onSetQuickFilter,
-                            onOpenFilters = onOpenFilters,
-                            onToggleGrid = { isGridView = !isGridView },
+                    ForYouRefineToolbar(
+                        activeQuickFilter = state.quickFilter,
+                        isGridView = isGridView,
+                        onSetQuickFilter = onSetQuickFilter,
+                        onOpenFilters = onOpenFilters,
+                        onToggleGrid = { isGridView = !isGridView },
+                        onOpenPrefs = onOpenPrefs,
+                        allSubcategories = allSubcategories,
+                        selectedSubcategories = selectedSubcategories,
+                        onToggleSubcategory = onToggleSubcategory,
                         )
                     } else {
                         // Row 1: Sort options (horizontal scroll)
@@ -2568,6 +2607,10 @@ private fun ForYouRefineToolbar(
     onSetQuickFilter: (String?) -> Unit,
     onOpenFilters: () -> Unit,
     onToggleGrid: () -> Unit,
+    onOpenPrefs: () -> Unit = {},
+    allSubcategories: List<Pair<String, String>> = emptyList(),
+    selectedSubcategories: Set<String> = emptySet(),
+    onToggleSubcategory: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -2586,13 +2629,23 @@ private fun ForYouRefineToolbar(
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            IconButton(onClick = onToggleGrid, modifier = Modifier.size(34.dp)) {
-                Icon(
-                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                    contentDescription = "Toggle layout",
-                    modifier = Modifier.size(19.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = onOpenPrefs, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = "Preferences",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                IconButton(onClick = onToggleGrid, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                        contentDescription = "Toggle layout",
+                        modifier = Modifier.size(19.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
         FlowRow(
@@ -2603,6 +2656,39 @@ private fun ForYouRefineToolbar(
             ForYouRefineChip("Latest 10", activeQuickFilter == "latest10") { onSetQuickFilter("latest10") }
             ForYouRefineChip("Trending", activeQuickFilter == "trending") { onSetQuickFilter("trending") }
             ForYouRefineChip("More filters", false, onOpenFilters)
+        }
+        // Inline subcategory chips for quick toggling
+        if (allSubcategories.isNotEmpty()) {
+            androidx.compose.material3.Text(
+                "Your Interests",
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                allSubcategories.forEach { (subName, _) ->
+                    val isSelected = subName in selectedSubcategories
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onToggleSubcategory(subName) },
+                        label = {
+                            Text(
+                                subName,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                            )
+                        },
+                        leadingIcon = if (isSelected) {
+                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                }
+            }
         }
     }
 }
