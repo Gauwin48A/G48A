@@ -117,8 +117,17 @@ class CartViewModel @Inject constructor(
         }
     }
 
+    private val _categoryFilter = MutableStateFlow<String?>(null)
+    fun setCategoryFilter(cat: String?) { _categoryFilter.value = cat }
+
     private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
-        val mergedItems = mergeCartItems(remoteCartItems, SharedExploreStore.cartPosts)
+        val catFilter = _categoryFilter.value
+        val localPosts = if (catFilter != null) {
+            SharedExploreStore.cartPosts.filter { it.category == catFilter }
+        } else {
+            SharedExploreStore.cartPosts
+        }
+        val mergedItems = mergeCartItems(remoteCartItems, localPosts)
         _state.value = _state.value.copy(
             loading = loading,
             items = mergedItems,
@@ -283,10 +292,15 @@ private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
+fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Apply category filter when categoryKey changes
+    LaunchedEffect(categoryKey) {
+        viewModel.setCategoryFilter(categoryKey)
+    }
 
     // Fire-and-forget snackbar when an item is pending undo
     LaunchedEffect(state.pendingUndoItem) {

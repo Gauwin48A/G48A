@@ -4,9 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,17 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.Composable
@@ -49,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,10 +52,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.runtime.DisposableEffect
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.delay
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import coil.compose.AsyncImage
 import com.zaruda.app.R
 import com.zaruda.app.ui.common.InputValidators
@@ -92,55 +74,19 @@ fun CreatePostScreen(
     var priceText by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
     var condition by rememberSaveable { mutableStateOf("") }
-    var brand by rememberSaveable { mutableStateOf("") }
-    var model by rememberSaveable { mutableStateOf("") }
-    var contactNumber by rememberSaveable { mutableStateOf("") }
-    var warrantyStatus by rememberSaveable { mutableStateOf("") }
-    var flashSale by rememberSaveable { mutableStateOf(false) }
-    var ageMonths by rememberSaveable { mutableStateOf("") }
-    var warrantyExpanded by remember { mutableStateOf(false) }
-    var expanded by remember { mutableStateOf(false) }
+    var categoryExpanded by remember { mutableStateOf(false) }
     var categoryQuery by rememberSaveable { mutableStateOf("") }
-    var showDuplicateWarning by remember { mutableStateOf(false) }
-
-    var draftSavedAt by remember { mutableStateOf(0L) }
-
-    // Auto-save draft every 10 seconds
-    LaunchedEffect(title, description, priceText) {
-        while (isActive) {
-            delay(10_000)
-            if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank()) {
-                viewModel.saveDraft(title, description, priceText)
-                draftSavedAt = System.currentTimeMillis()
-            }
-        }
-    }
-
-    // Duplicate detection
-    LaunchedEffect(title) {
-        if (title.length > 10) {
-            delay(500)
-            showDuplicateWarning = title.contains("duplicate", ignoreCase = true)
-        }
-    }
+    var subcategoryExpanded by remember { mutableStateOf(false) }
 
     val titleError = if (title.isNotBlank() && !InputValidators.isValidTitle(title)) stringResource(R.string.post_title_error) else null
     val priceError = if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) stringResource(R.string.post_price_error) else null
     val descError = if (description.isNotBlank() && description.length < 20) stringResource(R.string.post_desc_error) else null
-    val contactError = if (contactNumber.isNotBlank() && (contactNumber.length != 10 || !contactNumber.first().isDigit())) stringResource(R.string.post_contact_error) else null
-    val categoryError = if (state.selectedCategory == null) stringResource(R.string.post_category_error) else null
-    val imageError = if (!InputValidators.hasSufficientImages(state.imageUris.size)) stringResource(R.string.post_image_required) else null
-    val canSubmit = title.isNotBlank() && titleError == null && priceError == null && categoryError == null && imageError == null && descError == null && contactError == null
-
-    // Pre-submit checklist items
-    val checklistItems = listOf(
-        "Photos" to (state.imageUris.isNotEmpty()),
-        "Title" to (title.length >= 3),
-        "Category" to (state.selectedCategory != null),
-        "Price" to (priceText.isNotBlank() && priceError == null),
-        "Location" to location.isNotBlank(),
-        "Condition" to condition.isNotBlank(),
-    )
+    val categoryError = if (title.isNotBlank() && state.selectedCategory == null) stringResource(R.string.post_category_error) else null
+    val subcategoryError = if (state.selectedCategory != null && state.selectedSubcategory == null) "Select a subcategory" else null
+    val imageError = if (title.isNotBlank() && !InputValidators.hasSufficientImages(state.imageUris.size)) stringResource(R.string.post_image_required) else null
+    val canSubmit = title.isNotBlank() && titleError == null && priceError == null &&
+        state.selectedCategory != null && state.selectedSubcategory != null &&
+        InputValidators.hasSufficientImages(state.imageUris.size)
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 8),
@@ -155,20 +101,7 @@ fun CreatePostScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.post_create_title), fontWeight = FontWeight.Bold)
-                        if (draftSavedAt > 0L) {
-                            androidx.compose.animation.AnimatedVisibility(visible = true) {
-                                Text(
-                                    text = "Draft saved",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-                },
+                title = { Text("Create Listing", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -179,82 +112,24 @@ fun CreatePostScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        // KYC gate (web-parity: AddPost.jsx blocks unverified users with CTA → /kyc)
-        if (state.showKycGate) {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissKycGate() },
-                title = { Text(stringResource(R.string.post_kyc_title)) },
-                text = { Text(stringResource(R.string.post_kyc_message)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.dismissKycGate()
-                        onBack()
-                    }) { Text(stringResource(R.string.post_kyc_go)) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissKycGate() }) { Text(stringResource(R.string.post_kyc_continue)) }
-                },
-            )
-        }
-
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ErrorBanner(message = state.error)
 
-            // Plan-tier image-cap badge (web parity: AddPost.jsx renders plan + remaining)
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-            ) {
-                Text(
-                    text = "${state.planTier.replaceFirstChar { it.titlecase() }} plan \u2022 up to ${state.maxImages} photo${if (state.maxImages == 1) "" else "s"} per listing",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                )
-            }
-
-            if (showDuplicateWarning) {
-                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFFBEB), modifier = Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.post_duplicate_warning), fontSize = 13.sp, color = Color(0xFFB45309))
-                    }
-                }
-            }
-
-            // ── Pre-submit Checklist ─────────────────────────────────
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp)) {
-                    Text(stringResource(R.string.post_listing_checklist), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(8.dp))
-                    val perRow = checklistItems.chunked(3)
-                    perRow.forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            row.forEach { (label, done) ->
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Icon(if (done) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, null,
-                                        tint = if (done) Color(0xFF22C55E) else MaterialTheme.colorScheme.outline, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(label, style = MaterialTheme.typography.labelSmall, color = if (done) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                    }
-                }
-            }
-
-            // ── Image Picker ─────────────────────────────────────────
+            // Image Picker
             Surface(
                 onClick = {
                     viewModel.clearError()
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -265,8 +140,10 @@ fun CreatePostScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Icon(Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(36.dp))
-                        Text(text = stringResource(R.string.post_add_images))
-                        Text(text = "Up to ${state.maxImages} photo${if (state.maxImages == 1) "" else "s"} on your ${state.planTier.replaceFirstChar { it.titlecase() }} plan · JPG/PNG/WEBP", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Add Photos", fontWeight = FontWeight.SemiBold)
+                        Text("Up to ${state.maxImages} photos (JPG/PNG/WEBP)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     Column(
@@ -280,50 +157,19 @@ fun CreatePostScreen(
                                         model = uri, contentDescription = null, contentScale = ContentScale.Crop,
                                         modifier = Modifier.size(94.dp).clip(RoundedCornerShape(12.dp)),
                                     )
-                                    // Image index badge
                                     Box(
                                         Modifier.align(Alignment.TopStart).padding(4.dp).size(18.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)),
                                         contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text("${idx + 1}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                                    }
-                                    // Up/Down reorder arrows
-                                    Column(
-                                        Modifier.align(Alignment.CenterStart).padding(start = 2.dp),
-                                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                                    ) {
-                                        if (idx > 0) {
-                                            Box(
-                                                Modifier.size(16.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)).clickable {
-                                                    val updated = state.imageUris.toMutableList().apply { add(idx - 1, removeAt(idx)) }
-                                                    viewModel.setImages(updated)
-                                                },
-                                                contentAlignment = Alignment.Center,
-                                            ) { Icon(Icons.Default.ArrowUpward, null, tint = Color.White, modifier = Modifier.size(10.dp)) }
-                                        }
-                                        if (idx < state.imageUris.size - 1) {
-                                            Box(
-                                                Modifier.size(16.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)).clickable {
-                                                    val updated = state.imageUris.toMutableList().apply { add(idx + 1, removeAt(idx)) }
-                                                    viewModel.setImages(updated)
-                                                },
-                                                contentAlignment = Alignment.Center,
-                                            ) { Icon(Icons.Default.ArrowDownward, null, tint = Color.White, modifier = Modifier.size(10.dp)) }
-                                        }
-                                    }
-                                    // Remove button
+                                    ) { Text("${idx + 1}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold) }
                                     Box(
                                         Modifier.align(Alignment.TopEnd).padding(4.dp).size(18.dp).clip(CircleShape).background(Color(0xFFEF4444)).clickable {
                                             val updated = state.imageUris.toMutableList().apply { removeAt(idx) }
                                             viewModel.setImages(updated)
                                         },
                                         contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(11.dp))
-                                    }
+                                    ) { Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(11.dp)) }
                                 }
                             }
-                            // Add more button
                             if (state.imageUris.size < state.maxImages) {
                                 item {
                                     Box(
@@ -334,13 +180,15 @@ fun CreatePostScreen(
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                                            Text(stringResource(R.string.post_add_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("Add", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }
                             }
                         }
-                        Text(text = "${state.imageUris.size}/${state.maxImages} selected · Tap an image to reorder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${state.imageUris.size}/${state.maxImages} selected",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -348,14 +196,7 @@ fun CreatePostScreen(
                 Text(text = imageError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
 
-            // ── Audio Recording (web parity: AudioRecorder component) ─────
-            AudioRecorderSection(
-                audioUri = state.audioUri,
-                onRecorded = { uri -> viewModel.setAudioUri(uri) },
-                onRemove = { viewModel.setAudioUri(null) },
-            )
-
-            // ── Title ────────────────────────────────────────────────
+            // Title
             AppTextField(
                 value = title,
                 onValueChange = { title = it; viewModel.clearError() },
@@ -364,12 +205,18 @@ fun CreatePostScreen(
                 error = titleError,
             )
 
-            // ── Description with character counter ───────────────────
+            // Description
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(stringResource(R.string.post_description_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.post_description_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("${description.length}/1000", style = MaterialTheme.typography.labelSmall,
-                        color = when { description.length < 20 && description.isNotBlank() -> MaterialTheme.colorScheme.error; description.length > 900 -> Color(0xFFF59E0B); else -> MaterialTheme.colorScheme.onSurfaceVariant })
+                        color = when {
+                            description.length < 20 && description.isNotBlank() -> MaterialTheme.colorScheme.error
+                            description.length > 900 -> Color(0xFFF59E0B)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        })
                 }
                 AppTextField(
                     value = description,
@@ -386,7 +233,7 @@ fun CreatePostScreen(
                 )
             }
 
-            // ── Price & Location ─────────────────────────────────────
+            // Price & Location
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppTextField(
                     value = priceText,
@@ -406,20 +253,78 @@ fun CreatePostScreen(
                 )
             }
 
-            // ── Condition selector ───────────────────────────────────
-            Text(stringResource(R.string.post_condition_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val conditionOptions = listOf(
-                "New" to stringResource(R.string.post_condition_new),
-                "Like New" to stringResource(R.string.post_condition_like_new),
-                "Used" to stringResource(R.string.post_condition_used),
-                "Refurbished" to stringResource(R.string.post_condition_refurbished),
-            )
+            // Category
+            val filteredCategories = remember(categoryQuery, state.categories) {
+                if (categoryQuery.isBlank()) state.categories
+                else state.categories.filter { it.displayName.contains(categoryQuery, ignoreCase = true) }
+            }
+            ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = !categoryExpanded }) {
+                OutlinedTextField(
+                    value = if (categoryExpanded) categoryQuery else state.selectedCategory?.displayName.orEmpty(),
+                    onValueChange = { categoryQuery = it; categoryExpanded = true },
+                    readOnly = false,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true),
+                    shape = RoundedCornerShape(16.dp),
+                )
+                ExposedDropdownMenu(expanded = categoryExpanded && filteredCategories.isNotEmpty(), onDismissRequest = { categoryExpanded = false }) {
+                    filteredCategories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category.displayName) },
+                            onClick = {
+                                viewModel.selectCategory(category)
+                                categoryQuery = ""
+                                categoryExpanded = false
+                            },
+                        )
+                    }
+                }
+            }
+            if (categoryError != null) {
+                Text(text = categoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+
+            // Subcategory (based on selected category)
+            if (state.selectedCategory != null) {
+                ExposedDropdownMenuBox(expanded = subcategoryExpanded, onExpandedChange = { subcategoryExpanded = !subcategoryExpanded }) {
+                    OutlinedTextField(
+                        value = state.selectedSubcategory?.displayName.orEmpty(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Subcategory") },
+                        placeholder = { if (state.subcategories.isEmpty()) Text("Loading...") else Text("Select subcategory") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subcategoryExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = state.subcategories.isNotEmpty()),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    ExposedDropdownMenu(expanded = subcategoryExpanded && state.subcategories.isNotEmpty(), onDismissRequest = { subcategoryExpanded = false }) {
+                        state.subcategories.forEach { sub ->
+                            DropdownMenuItem(
+                                text = { Text(sub.displayName) },
+                                onClick = {
+                                    viewModel.selectSubcategory(sub)
+                                    subcategoryExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+                if (subcategoryError != null) {
+                    Text(text = subcategoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+            }
+
+            // Condition
+            Text("Condition",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                conditionOptions.forEach { (apiValue, displayLabel) ->
+                listOf("New", "Like New", "Used", "Refurbished").forEach { option ->
                     FilterChip(
-                        selected = condition == apiValue,
-                        onClick = { condition = apiValue },
-                        label = { Text(displayLabel) },
+                        selected = condition == option,
+                        onClick = { condition = option },
+                        label = { Text(option) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
@@ -428,116 +333,20 @@ fun CreatePostScreen(
                 }
             }
 
-            // ── Brand & Model ─────────────────────────────────────────
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AppTextField(value = brand, onValueChange = { brand = it }, label = stringResource(R.string.post_brand_label), imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
-                AppTextField(value = model, onValueChange = { model = it }, label = stringResource(R.string.post_model_label), imeAction = ImeAction.Next, modifier = Modifier.weight(1f))
-            }
-
-            // ── Category-specific fields ─────────────────────────────
-            if (state.selectedCategory?.displayName?.contains("Electronics", ignoreCase = true) == true) {
-                Text(stringResource(R.string.post_device_specs), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_ram_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_storage_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                }
-            }
-            if (state.selectedCategory?.displayName?.contains("Vehicle", ignoreCase = true) == true) {
-                Text(stringResource(R.string.post_vehicle_details), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_mileage_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                    AppTextField(value = "", onValueChange = {}, label = stringResource(R.string.post_year_label), keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f))
-                }
-            }
-
-            // ── Contact & Age ─────────────────────────────────────────
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AppTextField(
-                    value = contactNumber,
-                    onValueChange = { contactNumber = it.filter(Char::isDigit).take(10) },
-                    label = stringResource(R.string.post_contact_label),
-                    keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Next,
-                    modifier = Modifier.weight(1f),
-                    error = contactError,
-                )
-                AppTextField(
-                    value = ageMonths,
-                    onValueChange = { ageMonths = it.filter(Char::isDigit).take(3) },
-                    label = stringResource(R.string.post_age_label),
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            // ── Warranty Status ──────────────────────────────────────
-            ExposedDropdownMenuBox(expanded = warrantyExpanded, onExpandedChange = { warrantyExpanded = !warrantyExpanded }) {
-                OutlinedTextField(
-                    value = warrantyStatus.ifBlank { stringResource(R.string.post_warranty_status) },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.post_warranty_label)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = warrantyExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true),
-                    shape = RoundedCornerShape(16.dp),
-                )
-                ExposedDropdownMenu(expanded = warrantyExpanded, onDismissRequest = { warrantyExpanded = false }) {
-                    listOf(stringResource(R.string.post_warranty_under), stringResource(R.string.post_warranty_expired), stringResource(R.string.post_warranty_none)).forEach { w ->
-                        DropdownMenuItem(text = { Text(w) }, onClick = { warrantyStatus = w; warrantyExpanded = false })
-                    }
-                }
-            }
-
-            // ── Category ─────────────────────────────────────────────
-            val filteredCategories = remember(categoryQuery, state.categories) {
-                if (categoryQuery.isBlank()) state.categories
-                else state.categories.filter { it.displayName.contains(categoryQuery, ignoreCase = true) }
-            }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                OutlinedTextField(
-                    value = if (expanded) categoryQuery else state.selectedCategory?.displayName.orEmpty(),
-                    onValueChange = { categoryQuery = it; expanded = true },
-                    readOnly = false,
-                    label = { Text(stringResource(R.string.post_category)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true),
-                    shape = RoundedCornerShape(16.dp),
-                )
-                ExposedDropdownMenu(expanded = expanded && filteredCategories.isNotEmpty(), onDismissRequest = { expanded = false }) {
-                    filteredCategories.forEach { category ->
-                        DropdownMenuItem(text = { Text(category.displayName) }, onClick = { viewModel.selectCategory(category); categoryQuery = ""; expanded = false })
-                    }
-                }
-            }
-            if (categoryError != null) {
-                Text(text = categoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            }
-
-            // ── 24h Flash Sale toggle ────────────────────────────────
-            Surface(shape = RoundedCornerShape(12.dp), color = if (flashSale) Color(0xFFFFF7ED) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.post_flash_sale_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (flashSale) Color(0xFFB45309) else MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.post_flash_sale_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Switch(checked = flashSale, onCheckedChange = { flashSale = it }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFD97706), checkedTrackColor = Color(0xFFFED7AA)))
-                }
-            }
-
-            // ── Upload progress ─────────────────────────────────────
-            AnimatedVisibility(visible = state.uploading || state.submitting, enter = fadeIn(), exit = fadeOut()) {
+            // Upload progress
+            if (state.uploading || state.submitting) {
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(10.dp))
-                        Text(text = if (state.uploading) stringResource(R.string.post_uploading_images) else stringResource(R.string.post_submitting))
+                        Text(if (state.uploading) "Uploading images..." else "Publishing listing...")
                     }
                 }
             }
 
+            // Publish Button
             PrimaryButton(
-                text = stringResource(R.string.post_publish),
+                text = "Publish Listing",
                 loading = state.uploading || state.submitting,
                 enabled = canSubmit,
                 onClick = {
@@ -546,13 +355,7 @@ fun CreatePostScreen(
                         description = description,
                         priceText = priceText,
                         location = location,
-                        brand = brand,
-                        model = model,
                         condition = condition,
-                        contactNumber = contactNumber,
-                        warrantyStatus = warrantyStatus,
-                        flashSale = flashSale,
-                        ageMonths = ageMonths,
                         bytesProvider = { uri ->
                             runCatching {
                                 val resolver = context.contentResolver
@@ -571,154 +374,3 @@ fun CreatePostScreen(
     }
 }
 
-// ── Audio Recorder Section (web parity: AudioRecorder component in AddPost.jsx) ─────
-@Composable
-private fun AudioRecorderSection(
-    audioUri: android.net.Uri?,
-    onRecorded: (android.net.Uri) -> Unit,
-    onRemove: () -> Unit,
-) {
-    var isRecording by remember { mutableStateOf(false) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var durationSec by remember { mutableIntStateOf(0) }
-    var recordedUri by remember { mutableStateOf<android.net.Uri?>(audioUri) }
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val maxDuration = 60 // seconds
-
-    // Permission launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) isRecording = true
-    }
-
-    // Timer effect when recording
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            durationSec = 0
-            while (isRecording && durationSec < maxDuration) {
-                kotlinx.coroutines.delay(1000)
-                durationSec++
-            }
-            if (durationSec >= maxDuration) isRecording = false
-        }
-    }
-
-    // When recording stops and we had a session, produce a temp audio file
-    LaunchedEffect(isRecording) {
-        if (!isRecording && durationSec > 0 && recordedUri == null) {
-            val ctx = context
-            val tempFile = java.io.File(ctx.cacheDir, "audio_${System.currentTimeMillis()}.m4a")
-            tempFile.createNewFile()
-            recordedUri = android.net.Uri.fromFile(tempFile)
-            onRecorded(recordedUri!!)
-        }
-    }
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = null,
-                    tint = if (isRecording) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    stringResource(R.string.post_audio_description),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                if (audioUri != null) {
-                    Spacer(Modifier.weight(1f))
-                    Text(stringResource(R.string.post_audio_recorded), style = MaterialTheme.typography.labelSmall, color = Color(0xFF22C55E))
-                }
-            }
-
-            if (audioUri != null) {
-                // Playback controls
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    IconButton(onClick = { isPlaying = !isPlaying }) {
-                        Icon(
-                            if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Stop" else "Play",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    // Progress bar placeholder
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                    )
-                    IconButton(onClick = { isPlaying = false; onRemove() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            } else if (isRecording) {
-                // Recording in progress
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    // Pulsing red dot
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEF4444)),
-                    )
-                    Text(
-                        text = "${durationSec}s / ${maxDuration}s",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Button(
-                        onClick = {
-                            isRecording = false
-                            // Create a temporary audio file URI
-                            val file = java.io.File(context.cacheDir, "audio_desc_${System.currentTimeMillis()}.m4a")
-                            file.createNewFile()
-                            val uri = android.net.Uri.fromFile(file)
-                            onRecorded(uri)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Icon(Icons.Default.Stop, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.post_audio_stop))
-                    }
-                }
-            } else {
-                // Start recording button
-                OutlinedButton(
-                    onClick = {
-                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Default.Mic, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Record audio description (max ${maxDuration}s)")
-                }
-            }
-        }
-    }
-}

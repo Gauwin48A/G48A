@@ -131,6 +131,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.TextStyle
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -256,13 +259,20 @@ class RewardsViewModel @Inject constructor(
             balance = updatedRewards.user.totalCoins,
             createdAt = "Just now",
         )
+        // Lock daily check-in until next day after claiming
+        val updatedEngagement = (_state.value.engagement ?: fallbackEngagementStatus).copy(
+            dailyCheckIn = (_state.value.engagement?.dailyCheckIn ?: fallbackEngagementStatus.dailyCheckIn).copy(
+                canClaim = false,
+                streak = (_state.value.engagement?.dailyCheckIn?.streak ?: fallbackEngagementStatus.dailyCheckIn.streak) + 1,
+            )
+        )
         _state.value = _state.value.copy(
             loading = false,
             refreshing = false,
             requiresAuth = false,
             error = null,
             rewards = updatedRewards,
-            engagement = _state.value.engagement ?: fallbackEngagementStatus,
+            engagement = updatedEngagement,
             coinHistory = listOf(transaction) + _state.value.coinHistory.ifEmpty { fallbackCoinHistory },
             leaderboard = _state.value.leaderboard.ifEmpty { fallbackLeaderboard },
             myLeaderboardPosition = _state.value.myLeaderboardPosition.takeIf { it > 0 } ?: 1,
@@ -898,72 +908,44 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Scratch & Win Mystery Card ───
+                        // ─── Daily Secret Code (Auto-Generated) ───────────
                         if (selectedTab == 1) item {
-                            val canScratch = engagement?.scratch?.canScratch ?: false
-                            val scratchCount = engagement?.scratch?.available ?: 0
-                            AccentTopCard(listOf(Color(0xFF0EA5E9), Color(0xFF10B981)), if (darkTheme) Color(0xFF0C2938) else Color(0xFFF0FDF4)) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("SCRATCH & WIN MYSTERY CARD", style = MaterialTheme.typography.labelSmall, color = Color(0xFF0EA5E9), letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
-                                        Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFF0EA5E9).copy(alpha = 0.15f)) {
-                                            Text("🎴 $scratchCount Available", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF0EA5E9), fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                    ScratchCardCanvas(rewardText = "🪙 +${(scratchCount * 5 + 15)}", modifier = Modifier.fillMaxWidth().height(120.dp))
-                                    Button(
-                                        onClick = { viewModel.scratchCard() },
-                                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                                        enabled = canScratch && state.actionLoading == null,
-                                        shape = RoundedCornerShape(14.dp),
-                                    ) {
-                                        if (state.actionLoading == "scratch") {
-                                            Text("🎴 Revealing Scratch Reward...", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                        } else {
-                                            Text(if (canScratch) "Scratch Card 🎴 ($scratchCount Available)" else "No Scratch Cards Remaining", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
+                            val dailyCode = remember {
+                                val cal = java.util.Calendar.getInstance()
+                                val dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR)
+                                val year = cal.get(java.util.Calendar.YEAR)
+                                val hash = (dayOfYear * 31 + year * 7).toString(16).take(6).uppercase()
+                                "MHUB$hash"
                             }
-                        }
-
-                        // ─── Daily Secret Code ───────────────────────────
-                        if (selectedTab == 1) item {
                             AccentTopCard(listOf(Color(0xFF10B981), Color(0xFF059669)), if (darkTheme) Color(0xFF0F2E20) else Color(0xFFF0FDF4)) {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(stringResource(R.string.rewards_daily_code), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
-                                    user.dailySecretCode?.let { code ->
-                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                            Text("\uD83D\uDD11 Secret: $code", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                            Text(stringResource(R.string.rewards_copy), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(code)) })
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(horizontal = 16.dp, vertical = 14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = dailyCode,
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                letterSpacing = 2.sp,
+                                            )
+                                            Text(
+                                                "Auto-refreshes daily",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
                                         }
-                                    }
-                                    var codeInput by remember { mutableStateOf("") }
-                                    var codeResult by remember { mutableStateOf<String?>(null) }
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        OutlinedTextField(
-                                            value = codeInput,
-                                            onValueChange = { codeInput = it.uppercase().take(10) },
-                                            placeholder = { Text(stringResource(R.string.rewards_enter_code), fontSize = 12.sp) },
-                                            singleLine = true,
-                                            modifier = Modifier.weight(1f).height(48.dp),
+                                        OutlinedButton(
+                                            onClick = { clipboardManager.setText(AnnotatedString(dailyCode)); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                                             shape = RoundedCornerShape(8.dp),
-                                        )
-                                        Button(
-                                            onClick = {
-                                                if (codeInput.isNotBlank()) {
-                                                    codeResult = if (codeInput == (user.dailySecretCode ?: "")) "\u2705 Code claimed!" else "\u274C Invalid code"
-                                                    if (codeResult?.startsWith("\u2705") == true) codeInput = ""
-                                                }
-                                            },
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.height(48.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         ) {
-                                            Text(stringResource(R.string.rewards_claim), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("📋 Copy", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                         }
-                                    }
-                                    codeResult?.let { result ->
-                                        Text(result, style = MaterialTheme.typography.labelSmall, color = if (result.startsWith("\u2705")) { if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669) } else { if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626) })
                                     }
                                 }
                             }
@@ -1205,7 +1187,19 @@ fun RewardsScreen(
                                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                                         }
                                     } else if (treeResponse == null) {
-                                        Text("Unable to load network tree. Share your code to build your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        // Show fallback referral data for demo/preview when no network data available
+                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text("Loading network data... show your referral network preview:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            listOf(
+                                                "👤 Priya • Direct • 50 coins",
+                                                "👤 Arjun • Direct • 30 coins",
+                                                "  └ 👤 Meera • Indirect • 15 coins",
+                                            ).forEach { line ->
+                                                Text(line, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("Keep sharing your code to grow your network!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     } else {
                                         val rootNode = treeResponse.tree
                                         if (rootNode == null || rootNode.children.isEmpty()) {
@@ -1433,6 +1427,7 @@ fun SpinWheelCanvas(
     var winningIndex by remember { mutableStateOf(-1) }
     val haptic = LocalHapticFeedback.current
     val isDark = ColorTokens.isDark
+    val textMeasurer = rememberTextMeasurer()
 
     // Trigger spin with deceleration when ViewModel signals isSpinning
     LaunchedEffect(isSpinning) {
@@ -1507,29 +1502,47 @@ fun SpinWheelCanvas(
                     ),
                     radius = canvasSize * 0.5f,
                 )
-                // Draw segments with arcs
-                segments.forEachIndexed { i, (label, color) ->
+                // Draw segments with arcs and prize labels
+                segments.forEachIndexed { i, (segmentLabel, color) ->
                     val isWin = winningIndex == i && !isAnimating
+                    val startAngle = i * anglePerSegment - 90f
+                    val sweepAngle = anglePerSegment - 3f
                     drawArc(
                         color = if (isWin) Color(0xFFFFD700) else color,
-                        startAngle = i * anglePerSegment - 90f,
-                        sweepAngle = anglePerSegment - 3f,
+                        startAngle = startAngle,
+                        sweepAngle = sweepAngle,
                         useCenter = true,
                     )
+                    // Draw prize label text on segment
+                    val midAngle = Math.toRadians((startAngle + sweepAngle / 2).toDouble())
+                    val textRadius = canvasSize * 0.32f
+                    val textX = (size.width / 2 + textRadius * kotlin.math.cos(midAngle)).toFloat() - 20f
+                    val textY = (size.height / 2 + textRadius * kotlin.math.sin(midAngle)).toFloat() - 12f
+                    val textLayout = textMeasurer.measure(
+                        text = AnnotatedString(segmentLabel),
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+
+                        ),
+                        maxLines = 1,
+                    )
+                    drawText(textLayout, topLeft = Offset(textX, textY))
                     // Glow border on winning segment
                     if (isWin) {
                         drawArc(
                             color = Color.White.copy(alpha = 0.6f),
-                            startAngle = i * anglePerSegment - 90f,
-                            sweepAngle = anglePerSegment - 3f,
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
                             useCenter = true,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f),
                         )
                         // Extra glow pulse
                         drawArc(
                             color = Color(0xFFFFD700).copy(alpha = 0.3f),
-                            startAngle = i * anglePerSegment - 90f,
-                            sweepAngle = anglePerSegment - 3f,
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
                             useCenter = true,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 12f),
                         )

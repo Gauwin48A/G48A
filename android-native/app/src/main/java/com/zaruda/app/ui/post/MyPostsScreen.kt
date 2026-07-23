@@ -12,8 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.*
@@ -267,6 +266,7 @@ fun MyPostsScreen(
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var showPostActionsSheet by remember { mutableStateOf(false) }
     var actionPost by remember { mutableStateOf<Post?>(null) }
+    var isGridView by remember { mutableStateOf(false) }
 
     // ── Bulk delete confirmation dialog ──
     if (showBulkDeleteDialog) {
@@ -310,7 +310,7 @@ fun MyPostsScreen(
                     },
                     enabled = !state.markSoldLoading,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                ) { Text(if (state.markSoldLoading) "Processing…" else "Yes, Mark Sold") }
+                ) { Text(if (state.markSoldLoading) "Processing\u2026" else "Yes, Mark Sold") }
             },
             dismissButton = { TextButton(onClick = { viewModel.showMarkSold(null) }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
@@ -455,7 +455,7 @@ fun MyPostsScreen(
                     },
                     enabled = !state.renewLoading,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                ) { Text(if (state.renewLoading) "Renewing…" else "Yes, Renew") }
+                ) { Text(if (state.renewLoading) "Renewing\u2026" else "Yes, Renew") }
             },
             dismissButton = { TextButton(onClick = { viewModel.showRenew(null) }) { Text(stringResource(R.string.action_cancel)) } },
             shape = RoundedCornerShape(22.dp),
@@ -485,7 +485,16 @@ fun MyPostsScreen(
                         }
                     },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
-                    actions = { IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") } },
+                    actions = {
+                        IconButton(onClick = { isGridView = !isGridView }) {
+                            Icon(
+                                if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle layout",
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                 )
             }
@@ -600,7 +609,7 @@ fun MyPostsScreen(
                                             }
                                         }
                                         Spacer(Modifier.height(6.dp))
-                                        Text("Tap ⋮ on any listing → Promote to get started!", fontSize = 10.sp, color = Color(0xFFA16207), fontWeight = FontWeight.Medium)
+                                        Text("Tap \u22ee on any listing \u2192 Promote to get started!", fontSize = 10.sp, color = Color(0xFFA16207), fontWeight = FontWeight.Medium)
                                     }
                                 }
                             }
@@ -610,7 +619,7 @@ fun MyPostsScreen(
                         item {
                             OutlinedTextField(
                                 value = searchQuery, onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search by title or location…") },
+                                placeholder = { Text("Search by title or location\u2026") },
                                 leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outline),
@@ -684,12 +693,12 @@ fun MyPostsScreen(
                                             Text("Here's how to get started:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
                                             listOf(
                                                 "📸 Tap + to create your first listing",
-                                                "🪙 Earn coins daily → check-in, spin & scratch",
+                                                "🪙 Earn coins daily \u2192 check-in, spin & scratch",
                                                 "⚡ Boost listings with coins for more buyers",
                                                 "💬 Chat with buyers & close deals fast",
                                             ).forEach { tip ->
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                    Text("•", fontSize = 14.sp, color = Color(0xFF0284C7))
+                                                    Text("\u2022", fontSize = 14.sp, color = Color(0xFF0284C7))
                                                     Text(tip, fontSize = 12.sp, color = Color(0xFF0F172A))
                                                 }
                                             }
@@ -721,63 +730,169 @@ fun MyPostsScreen(
                             item {
                                 Text("${filtered.size} listing${if (filtered.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             }
-                            items(filtered, key = { it.stableId }) { post ->
-                                Card(
-                                    onClick = { if (state.bulkMode) viewModel.toggleSelection(post.stableId) else onOpenPost(post.stableId) },
-                                    shape = RoundedCornerShape(0.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        if (state.bulkMode) {
-                                            Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
-                                        }
-                                        Box(modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                                            if (post.primaryImage != null) {
-                                                AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                            } else {
-                                                Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
-                                            }
-                                        }
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                            post.price?.let {
-                                                Text(text = "₹${"%,.0f".format(it)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                            }
-                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                post.status?.let { s ->
-                                                    val (bg, fg) = when (s.lowercase()) { "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary; "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary; else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant }
-                                                    Surface(shape = RoundedCornerShape(8.dp), color = bg) {
-                                                        Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            if (isGridView) {
+                                // ── 2-column grid view ──
+                                val chunked = filtered.chunked(2)
+                                items(chunked.size, key = { "grid_row_$it" }) { rowIdx ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        chunked[rowIdx].forEach { post ->
+                                            Card(
+                                                onClick = { if (state.bulkMode) viewModel.toggleSelection(post.stableId) else onOpenPost(post.stableId) },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface,
+                                                ),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                            ) {
+                                                Column {
+                                                    // Image section
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(130.dp)
+                                                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        if (post.primaryImage != null) {
+                                                            AsyncImage(
+                                                                model = post.primaryImage,
+                                                                contentDescription = null,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                            )
+                                                        } else {
+                                                            Icon(Icons.Outlined.ImageNotSupported, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                        // Status badge overlay
+                                                        post.status?.let { s ->
+                                                            if (s.lowercase() != "active") {
+                                                                Surface(
+                                                                    shape = RoundedCornerShape(4.dp),
+                                                                    color = Color.Black.copy(alpha = 0.6f),
+                                                                    modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+                                                                ) {
+                                                                    Text(
+                                                                        s.replaceFirstChar { it.uppercase() },
+                                                                        fontSize = 10.sp,
+                                                                        color = Color.White,
+                                                                        fontWeight = FontWeight.SemiBold,
+                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        // More menu on image
+                                                        IconButton(
+                                                            onClick = { actionPost = post; showPostActionsSheet = true },
+                                                            modifier = Modifier.align(Alignment.TopEnd).size(28.dp),
+                                                        ) {
+                                                            Icon(Icons.Default.MoreVert, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                                        }
+                                                    }
+                                                    // Content section
+                                                    Column(Modifier.padding(8.dp)) {
+                                                        Text(
+                                                            text = post.displayTitle,
+                                                            style = MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            maxLines = 2,
+                                                            overflow = TextOverflow.Ellipsis,
+                                                        )
+                                                        Spacer(Modifier.height(2.dp))
+                                                        post.price?.let {
+                                                            Text(
+                                                                text = "\u20B9${"%,.0f".format(it)}",
+                                                                style = MaterialTheme.typography.titleSmall,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                fontWeight = FontWeight.Bold,
+                                                            )
+                                                        }
+                                                        Spacer(Modifier.height(2.dp))
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            post.viewCount?.let { v ->
+                                                                Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                                                                Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                            }
+                                                            post.likeCount?.let { l ->
+                                                                Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp))
+                                                                Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                                post.viewCount?.let { v -> Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                                post.likeCount?.let { l -> Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp)); Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                            }
-                                            // 7-day sparkline
-                                            post.viewCount?.let { totalViews ->
-                                                val sparkData = remember(post.stableId) {
-                                                    val seed = post.stableId.hashCode().toLong(); val rng = java.util.Random(seed)
-                                                    List(7) { i -> (totalViews / 7 * (0.5 + rng.nextDouble())).toFloat().coerceAtLeast(0f) }
-                                                }
-                                                val maxVal = sparkData.maxOrNull()?.coerceAtLeast(1f) ?: 1f
-                                                val lineColor = MaterialTheme.colorScheme.primary
-                                                Canvas(modifier = Modifier.fillMaxWidth(0.6f).height(28.dp).padding(vertical = 4.dp)) {
-                                                    val step = size.width / (sparkData.size - 1).coerceAtLeast(1)
-                                                    for (i in 0 until sparkData.size - 1) {
-                                                        val x1 = i * step; val y1 = size.height - (sparkData[i] / maxVal * size.height)
-                                                        val x2 = (i + 1) * step; val y2 = size.height - (sparkData[i + 1] / maxVal * size.height)
-                                                        drawLine(color = lineColor, start = androidx.compose.ui.geometry.Offset(x1, y1), end = androidx.compose.ui.geometry.Offset(x2, y2), strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                                                    }
-                                                }
                                             }
                                         }
-                                        // 3-dot icon opens ModalBottomSheet (reliable touch handling, no DropdownMenu popup issues)
-                                        IconButton(onClick = { actionPost = post; showPostActionsSheet = true }, modifier = Modifier.size(34.dp)) {
-                                            Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                        // Fill empty slot if odd number
+                                        if (chunked[rowIdx].size < 2) {
+                                            Spacer(Modifier.weight(1f))
                                         }
                                     }
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                                }
+                            } else {
+                                // ── List view ──
+                                items(filtered, key = { it.stableId }) { post ->
+                                    Card(
+                                        onClick = { if (state.bulkMode) viewModel.toggleSelection(post.stableId) else onOpenPost(post.stableId) },
+                                        shape = RoundedCornerShape(0.dp),
+                                        colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            if (state.bulkMode) {
+                                                Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
+                                            }
+                                            Box(modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                                if (post.primaryImage != null) {
+                                                    AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                                } else {
+                                                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                                                }
+                                            }
+                                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                post.price?.let {
+                                                    Text(text = "\u20B9${"%,.0f".format(it)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                                }
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    post.status?.let { s ->
+                                                        val (bg, fg) = when (s.lowercase()) { "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary; "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary; else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant }
+                                                        Surface(shape = RoundedCornerShape(8.dp), color = bg) {
+                                                            Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                        }
+                                                    }
+                                                    post.viewCount?.let { v -> Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                    post.likeCount?.let { l -> Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp)); Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                }
+                                                // 7-day sparkline
+                                                post.viewCount?.let { totalViews ->
+                                                    val sparkData = remember(post.stableId) {
+                                                        val seed = post.stableId.hashCode().toLong(); val rng = java.util.Random(seed)
+                                                        List(7) { i -> (totalViews / 7 * (0.5 + rng.nextDouble())).toFloat().coerceAtLeast(0f) }
+                                                    }
+                                                    val maxVal = sparkData.maxOrNull()?.coerceAtLeast(1f) ?: 1f
+                                                    val lineColor = MaterialTheme.colorScheme.primary
+                                                    Canvas(modifier = Modifier.fillMaxWidth(0.6f).height(28.dp).padding(vertical = 4.dp)) {
+                                                        val step = size.width / (sparkData.size - 1).coerceAtLeast(1)
+                                                        for (i in 0 until sparkData.size - 1) {
+                                                            val x1 = i * step; val y1 = size.height - (sparkData[i] / maxVal * size.height)
+                                                            val x2 = (i + 1) * step; val y2 = size.height - (sparkData[i + 1] / maxVal * size.height)
+                                                            drawLine(color = lineColor, start = androidx.compose.ui.geometry.Offset(x1, y1), end = androidx.compose.ui.geometry.Offset(x2, y2), strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            // 3-dot icon opens ModalBottomSheet
+                                            IconButton(onClick = { actionPost = post; showPostActionsSheet = true }, modifier = Modifier.size(34.dp)) {
+                                                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                            }
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                                    }
                                 }
                             }
                         }
@@ -787,7 +902,7 @@ fun MyPostsScreen(
         }
     }
 
-    // ═══ Post Actions Bottom Sheet (ModalBottomSheet is more reliable than DropdownMenu) ═══
+    // ═══ Post Actions Bottom Sheet ═══
     if (showPostActionsSheet && actionPost != null) {
         val p = actionPost!!
         ModalBottomSheet(

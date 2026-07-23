@@ -316,6 +316,7 @@ fun RecentlyViewedScreen(
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     onLanguage: () -> Unit = {},
+    categoryKey: String? = null,
     viewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -344,9 +345,10 @@ fun RecentlyViewedScreen(
         )
     }
 
-    val filteredItems = remember(state.posts, searchQuery, sortBy, statusFilter) {
+    val filteredItems = remember(state.posts, searchQuery, sortBy, statusFilter, categoryKey) {
         state.posts
             .filter { post ->
+                (categoryKey == null || post.category == categoryKey) &&
                 (searchQuery.isBlank() ||
                     post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                     post.location?.contains(searchQuery, ignoreCase = true) == true ||
@@ -388,8 +390,9 @@ fun RecentlyViewedScreen(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         } else if (state.posts.isNotEmpty()) {
+                            val displayCount = if (categoryKey != null) filteredItems.size else state.posts.size
                             Text(
-                                text = "${state.posts.size} item${if (state.posts.size != 1) "s" else ""}",
+                                text = "$displayCount item${if (displayCount != 1) "s" else ""}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

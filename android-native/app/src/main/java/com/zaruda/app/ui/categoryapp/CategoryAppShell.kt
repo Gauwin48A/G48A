@@ -296,6 +296,7 @@ fun CategoryAppShell(
             composable(Routes.categoryCart(categoryKey)) {
                 com.zaruda.app.ui.commerce.CartScreen(
                     onBack = { innerNav.popBackStack() },
+                    categoryKey = categoryKey,
                 )
             }
 
@@ -303,6 +304,7 @@ fun CategoryAppShell(
                 WishlistScreen(
                     onBack = { innerNav.popBackStack() },
                     onOpenPost = onOpenPostDetail,
+                    categoryKey = categoryKey,
                 )
             }
 

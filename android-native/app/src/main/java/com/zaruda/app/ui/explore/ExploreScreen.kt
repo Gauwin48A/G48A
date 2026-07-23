@@ -2264,7 +2264,7 @@ private fun AllPostsBrowse(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Icon(
-                                Icons.Default.Tune,
+                                Icons.Default.AutoAwesome,
                                 contentDescription = null,
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
@@ -2595,7 +2595,7 @@ private fun ForYouRefineToolbar(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 IconButton(onClick = onOpenPrefs, modifier = Modifier.size(34.dp)) {
                     Icon(
-                        Icons.Default.Tune,
+                        Icons.Default.AutoAwesome,
                         contentDescription = "Preferences",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary,

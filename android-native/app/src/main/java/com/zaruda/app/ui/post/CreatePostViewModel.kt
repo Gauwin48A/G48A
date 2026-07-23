@@ -22,19 +22,17 @@ import javax.inject.Inject
 data class CreatePostState(
     val categories: List<Category> = emptyList(),
     val selectedCategory: Category? = null,
+    val subcategories: List<Category> = emptyList(),
+    val selectedSubcategory: Category? = null,
     val imageUris: List<Uri> = emptyList(),
     val uploadedUrls: List<String> = emptyList(),
     val uploading: Boolean = false,
     val submitting: Boolean = false,
     val success: Boolean = false,
     val error: String? = null,
-    val draftSaved: Boolean = false,
     /** Plan-tier-derived per-listing image cap (web-parity: basic=1, bronze=3, silver=5, gold/premium=10). */
     val maxImages: Int = 1,
     val planTier: String = "basic",
-    val kycVerified: Boolean = false,
-    val showKycGate: Boolean = false,
-    val audioUri: Uri? = null,
 ) {
     companion object {
         /** Mirror of web `client/src/utils/planLimits.js` image caps. */
@@ -73,15 +71,11 @@ class CreatePostViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     planTier = tier,
                     maxImages = CreatePostState.limitFor(tier),
-                    kycVerified = r.data.isKycVerified,
-                    showKycGate = !r.data.isKycVerified,
                 )
             }
             is ApiResult.Failure -> Unit // keep defaults; user may be logged-out
         }
     }
-
-    fun dismissKycGate() { _state.value = _state.value.copy(showKycGate = false) }
 
     private fun loadCategories() = viewModelScope.launch {
         when (val r = categoriesRepo.all()) {
@@ -90,24 +84,22 @@ class CreatePostViewModel @Inject constructor(
         }
     }
 
-    fun selectCategory(c: Category) { _state.value = _state.value.copy(selectedCategory = c, error = null) }
+    fun selectCategory(c: Category) {
+        _state.value = _state.value.copy(selectedCategory = c, selectedSubcategory = null, error = null)
+        loadSubcategories(c.stableId)
+    }
 
-    fun clearError() { _state.value = _state.value.copy(error = null) }
-
-    fun saveDraft(title: String, description: String, priceText: String) {
-        viewModelScope.launch {
-            draftRepo.save(com.zaruda.app.data.remote.dto.DraftRequest(
-                title = title.trim().ifBlank { null },
-                description = description.trim().ifBlank { null },
-                price = priceText.trim().toDoubleOrNull(),
-                categoryId = _state.value.selectedCategory?.stableId,
-            ))
+    private fun loadSubcategories(categoryId: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(subcategories = emptyList())
+        when (val r = categoriesRepo.subcategories(categoryId)) {
+            is ApiResult.Success -> _state.value = _state.value.copy(subcategories = r.data)
+            is ApiResult.Failure -> {} // silently ignore
         }
     }
 
-    fun setAudioUri(uri: Uri?) {
-        _state.value = _state.value.copy(audioUri = uri)
-    }
+    fun selectSubcategory(c: Category) { _state.value = _state.value.copy(selectedSubcategory = c, error = null) }
+
+    fun clearError() { _state.value = _state.value.copy(error = null) }
 
     fun setImages(uris: List<Uri>) {
         val cap = _state.value.maxImages.coerceAtLeast(1)
@@ -123,13 +115,7 @@ class CreatePostViewModel @Inject constructor(
         description: String,
         priceText: String,
         location: String,
-        brand: String = "",
-        model: String = "",
         condition: String = "",
-        contactNumber: String = "",
-        warrantyStatus: String = "",
-        flashSale: Boolean = false,
-        ageMonths: String = "",
         bytesProvider: suspend (Uri) -> Pair<ByteArray, String>?,
     ) {
         if (_state.value.submitting || _state.value.uploading) return
@@ -170,14 +156,9 @@ class CreatePostViewModel @Inject constructor(
                 price = price,
                 location = location.trim().ifBlank { null },
                 categoryId = snapshot.selectedCategory?.stableId,
+                subcategoryId = snapshot.selectedSubcategory?.stableId,
                 images = urls,
-                brand = brand.trim().ifBlank { null },
-                model = model.trim().ifBlank { null },
                 condition = condition.ifBlank { null },
-                contactNumber = contactNumber.trim().takeIf { it.length == 10 },
-                warrantyStatus = warrantyStatus.ifBlank { null },
-                flashSale = if (flashSale) true else null,
-                ageMonths = ageMonths.trim().toIntOrNull(),
             )
             when (val r = postsRepo.create(req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(submitting = false, success = true)
@@ -195,6 +176,9 @@ class CreatePostViewModel @Inject constructor(
         }
         if (_state.value.selectedCategory == null) {
             return "Select a category"
+        }
+        if (_state.value.selectedSubcategory == null) {
+            return "Select a subcategory"
         }
         if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) {
             return "Enter a valid price"

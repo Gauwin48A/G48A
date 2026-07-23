@@ -263,6 +263,7 @@ private enum class WishlistSort(val label: String) {
 fun WishlistScreen(
     onBack: () -> Unit = {},
     onOpenPost: (String) -> Unit,
+    categoryKey: String? = null,
     viewModel: WishlistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -291,9 +292,10 @@ fun WishlistScreen(
         )
     }
 
-    val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter) {
+    val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter, categoryKey) {
         state.items
             .filter { post ->
+                (categoryKey == null || post.category == categoryKey) &&
                 (searchQuery.isBlank() ||
                     post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                     post.location?.contains(searchQuery, ignoreCase = true) == true ||
@@ -322,8 +324,9 @@ fun WishlistScreen(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         } else if (state.items.isNotEmpty()) {
+                            val displayCount = if (categoryKey != null) filteredItems.size else state.items.size
                             Text(
-                                text = "${state.items.size} item${if (state.items.size != 1) "s" else ""}",
+                                text = "$displayCount item${if (displayCount != 1) "s" else ""}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
