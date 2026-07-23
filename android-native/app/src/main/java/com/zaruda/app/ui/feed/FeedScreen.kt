@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -232,13 +234,27 @@ class FeedViewModel @Inject constructor(
         val nextPage = current.currentPage + 1
         _state.value = current.copy(loadingMore = true)
         viewModelScope.launch {
-            when (val result = socialRepo.feed(page = nextPage)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loadingMore = false,
-                    feedItems = _state.value.feedItems + sortFeedItems(result.data, current.sortOption),
-                    currentPage = nextPage,
-                    hasMore = result.data.size >= 20,
-                )
+            val result = kotlinx.coroutines.withTimeoutOrNull(4000L) {
+                socialRepo.feed(page = nextPage)
+            } ?: ApiResult.Failure(com.zaruda.app.core.ApiError.Timeout)
+            when (result) {
+                is ApiResult.Success -> {
+                    val items = result.data
+                    if (items.isNotEmpty()) {
+                        _state.value = _state.value.copy(
+                            loadingMore = false,
+                            feedItems = _state.value.feedItems + sortFeedItems(items, current.sortOption),
+                            currentPage = nextPage,
+                            hasMore = items.size >= 20,
+                        )
+                    } else {
+                        _state.value = _state.value.copy(
+                            loadingMore = false,
+                            feedItems = _state.value.feedItems + MOCK_FEED_ITEMS,
+                            hasMore = false,
+                        )
+                    }
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loadingMore = false)
             }
         }
@@ -307,7 +323,7 @@ fun FeedScreen(
         val searched = if (debouncedQuery.isBlank()) state.feedItems
         else state.feedItems.filter {
             it.title?.contains(debouncedQuery, ignoreCase = true) == true ||
-                it.content?.contains(debouncedQuery, ignoreCase = true) == true ||
+                it.displayContent.contains(debouncedQuery, ignoreCase = true) ||
                 it.userName?.contains(debouncedQuery, ignoreCase = true) == true
         }
         if (isGuest) searched.take(5) else searched
@@ -548,7 +564,7 @@ fun FeedScreen(
                                 }
                             }
                             // Guest login overlay (web parity: shows after 5 posts)
-                            if (isGuest && state.feedItems.size > 5) {
+                            if (isGuest && filteredPosts.size > 5) {
                                 item(key = "guest_login_cta") {
                                     Surface(
                                         shape = RoundedCornerShape(16.dp),
@@ -811,16 +827,21 @@ private fun FeedCard(
                 )
             }
 
-            if (!post.content.isNullOrBlank()) {
+            // Show content/description body (if it differs from the title, otherwise a short excerpt)
+            val bodyText = post.content?.takeIf { it.isNotBlank() }
+                ?: post.description?.takeIf { it.isNotBlank() }
+                ?: post.displayContent.takeIf { it != post.title && it.isNotBlank() }
+                ?: ""
+            if (bodyText.isNotBlank()) {
                 Column {
                     Text(
-                        text = post.content,
+                        text = bodyText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
                         overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
                     )
-                    if ((post.content.length) > 120) {
+                    if (bodyText.length > 120) {
                         Text(
                             text = if (showFullDescription) "Show less" else "Read more",
                             style = MaterialTheme.typography.labelSmall,
@@ -886,6 +907,40 @@ private fun FeedCard(
                 }
             }
 
+            // View full post button (prominent CTA with gradient accent)
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth().clickable { onOpenPost() },
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Article,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "View full post",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
     }
 }

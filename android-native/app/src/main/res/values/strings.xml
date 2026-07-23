@@ -282,6 +282,9 @@
     <string name="rewards_tab_earn">Earn</string>
     <string name="rewards_tab_referrals">Referrals</string>
     <string name="rewards_tab_activity">Activity</string>
+    <string name="rewards_share_description">
+Share Zaruda with your friends and earn rewards.
+</string>
 
     <!-- Time Filters -->
     <string name="filter_today">Today</string>

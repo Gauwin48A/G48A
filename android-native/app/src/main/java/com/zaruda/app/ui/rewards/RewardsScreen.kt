@@ -996,38 +996,32 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Quick Share (proper deep links) ─────────────
+                        // ─── Referral Code (Copy) ────────────────────────
                         if (selectedTab == 2) item {
                             AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF1A2744) else Color(0xFFF8FAFF)) {
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text(stringResource(R.string.rewards_quick_share), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFFA5B4FC) else Color(0xFF4F46E5), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(stringResource(R.string.rewards_share_code), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                            OutlinedButton(onClick = {
-                                                val url = "https://wa.me/?text=${Uri.encode(inviteText)}"
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                            }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                                                Text("\uD83D\uDCAC", style = MaterialTheme.typography.labelMedium); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.rewards_whatsapp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-                                            }
-                                            OutlinedButton(onClick = {
-                                                val url = "https://t.me/share/url?url=${Uri.encode("https://mhub.app/invite/${user.referralCode ?: ""}")}&text=${Uri.encode(inviteText)}"
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                            }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF229ED9).copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                                                Text("\u2708\uFE0F", style = MaterialTheme.typography.labelMedium); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.rewards_telegram), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-                                            }
-                                        }
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                            OutlinedButton(onClick = { clipboardManager.setText(AnnotatedString(inviteText)) }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                                                Text("\uD83D\uDD17", style = MaterialTheme.typography.labelMedium); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.rewards_copy_link), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-                                            }
-                                            OutlinedButton(onClick = {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:?body=${Uri.encode(inviteText)}")))
-                                            }, modifier = Modifier.weight(1f).height(44.dp), shape = CircleShape, border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.6f)), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                                                Text("\uD83D\uDCF1", style = MaterialTheme.typography.labelMedium); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.rewards_sms), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-                                            }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)).padding(horizontal = 16.dp, vertical = 14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = user.referralCode ?: "MHUB",
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            letterSpacing = 2.sp,
+                                        )
+                                        OutlinedButton(
+                                            onClick = { clipboardManager.setText(AnnotatedString(user.referralCode ?: "MHUB")); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                            shape = RoundedCornerShape(8.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        ) {
+                                            Text("\uD83D\uDCCB Copy", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                         }
                                     }
+                                    Text("Share this code with friends to earn rewards!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                 }
                             }
                         }
@@ -1094,26 +1088,6 @@ fun RewardsScreen(
                         }
 
                         // ─── My Rewards ─────────────────────────────────
-                        if (selectedTab == 3) item {
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(R.string.rewards_my_rewards), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                    RewardStatRow("Level", max(user.level, 1).toString(), Icons.Filled.Star)
-                                    RewardStatRow("Rewards rank", user.rank ?: "Bronze", Icons.Outlined.EmojiEvents)
-                                    RewardStatRow("Membership plan", (user.currentPlan ?: user.membershipPlan ?: "basic").replaceFirstChar { it.uppercase() }, Icons.Outlined.Upgrade)
-                                    RewardStatRow("Successful referrals", user.successfulRefs.toString(), Icons.Outlined.Groups)
-                                    RewardStatRow("Chain rewards earned", "${user.chainEarnedPoints} coins", Icons.Outlined.Toll)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        PrimaryButton(text = "Invite friends", onClick = {
-                                            val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, inviteText) }
-                                            context.startActivity(Intent.createChooser(intent, "Invite friends"))
-                                        }, modifier = Modifier.weight(1f))
-                                        SecondaryButton(text = "Redeem coins", onClick = { redeemDialogType = "boost" }, modifier = Modifier.weight(1f))
-                                    }
-                                }
-                            }
-                        }
-
                         // ─── Coin History ────────────────────────────────
                         if (selectedTab == 3 && state.coinHistory.isNotEmpty()) {
                             item {
@@ -1161,31 +1135,7 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Leaderboard ─────────────────────────────────
-                        if (selectedTab == 3 && state.leaderboard.isNotEmpty()) {
-                            item {
-                                Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
-                                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.rewards_leaderboard), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                            if (state.myLeaderboardPosition > 0) {
-                                                Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFFF59E0B).copy(alpha = 0.12f)) {
-                                                    Text("#${state.myLeaderboardPosition}", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFFF59E0B), fontWeight = FontWeight.Bold)
-                                                }
-                                            }
-                                        }
-                                        state.leaderboard.forEachIndexed { index, entry ->
-                                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                                val medal = when (index) { 0 -> "\uD83E\uDD47"; 1 -> "\uD83E\uDD48"; 2 -> "\uD83E\uDD49"; else -> "${index + 1}" }
-                                                Text(medal, style = MaterialTheme.typography.titleMedium)
-                                                Text(entry.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                                Text("${entry.referrals} refs", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
 
                         // ─── Milestone Badges ────────────────────────────
                         if (selectedTab == 2) item {
@@ -1243,10 +1193,19 @@ fun RewardsScreen(
                                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text("Referral Network Tree", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                     val treeResponse = state.referralTree
-                                    if (treeResponse == null) {
+                                    var showTreeTimeout by remember { mutableStateOf(false) }
+                                    LaunchedEffect(treeResponse) {
+                                        if (treeResponse == null) {
+                                            kotlinx.coroutines.delay(5000L)
+                                            showTreeTimeout = true
+                                        }
+                                    }
+                                    if (treeResponse == null && !showTreeTimeout) {
                                         Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                                         }
+                                    } else if (treeResponse == null) {
+                                        Text("Unable to load network tree. Share your code to build your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     } else {
                                         val rootNode = treeResponse.tree
                                         if (rootNode == null || rootNode.children.isEmpty()) {

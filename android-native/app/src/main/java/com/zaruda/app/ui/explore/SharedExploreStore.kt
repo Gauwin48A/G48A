@@ -76,8 +76,16 @@ object SharedExploreStore {
         }
     }
 
+    // FeedItem-specific store for FeedDetailScreen fallback
+    private val _recentlyViewedFeedItems = MutableStateFlow<List<FeedItem>>(emptyList())
+    val recentlyViewedFeedItems: List<FeedItem> get() = _recentlyViewedFeedItems.value
+    val recentlyViewedFeedItemsFlow: StateFlow<List<FeedItem>> = _recentlyViewedFeedItems.asStateFlow()
+
     fun addRecentlyViewedFeed(item: FeedItem) {
         addRecentlyViewed(item.toRecentPost())
+        _recentlyViewedFeedItems.update { items ->
+            (listOf(item) + items.filterNot { it.stableId == item.stableId }).take(50)
+        }
     }
 
     fun removeRecentlyViewed(postId: String) {

@@ -24,6 +24,8 @@ import kotlinx.coroutines.launch
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.inject.Inject
+import android.util.Log
+
 
 @AndroidEntryPoint
 class ZarudaFirebaseMessagingService : FirebaseMessagingService() {
@@ -53,6 +55,8 @@ class ZarudaFirebaseMessagingService : FirebaseMessagingService() {
     /** Called when FCM delivers a new registration token. */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        Log.d("ZARUDA-FCM", "✅ FCM Token = $token")
+        
         if (tokenStore.isAuthenticated) {
             registerTokenWithServer(token)
         }
@@ -61,6 +65,11 @@ class ZarudaFirebaseMessagingService : FirebaseMessagingService() {
     /** Called when a message arrives while the app is in foreground or data-only message in background. */
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
+
+
+Log.d("ZARUDA-FCM", "✅ Push notification received")
+Log.d("ZARUDA-FCM", "Title = ${message.notification?.title}")
+Log.d("ZARUDA-FCM", "Data = ${message.data}")
 
         val title = message.notification?.title ?: message.data["title"] ?: "MHub Alert"
         val body  = message.notification?.body  ?: message.data["message"] ?: message.data["body"] ?: ""

@@ -1190,13 +1190,6 @@ fun ExploreScreen(
                     }
                 }
             }
-        // Toggle handler for inline subcategory chips — updates SharedExploreStore instantly
-        val onToggleSubcategory: (String) -> Unit = { sub ->
-            val current = SharedExploreStore.selectedSubcategories.toMutableSet()
-            if (sub in current) current.remove(sub) else current.add(sub)
-            SharedExploreStore.updateSelectedSubcategories(current)
-            viewModel.loadPosts(reset = true)
-        }
 
             Box(Modifier.fillMaxSize()) {
 
@@ -1243,7 +1236,6 @@ fun ExploreScreen(
     onOpenProfile = onOpenProfile,
     allSubcategories = allSubcategories,
     selectedSubcategories = SharedExploreStore.selectedSubcategories,
-    onToggleSubcategory = onToggleSubcategory,
 )
             }
 
@@ -2017,7 +2009,6 @@ private fun AllPostsBrowse(
     onOpenProfile: () -> Unit = {},
     allSubcategories: List<Pair<String, String>> = emptyList(),
     selectedSubcategories: Set<String> = emptySet(),
-    onToggleSubcategory: (String) -> Unit = {},
 ) {
     val sortOptions = listOf(
         "newest" to "Newest",
@@ -2136,7 +2127,6 @@ private fun AllPostsBrowse(
                         onOpenPrefs = onOpenPrefs,
                         allSubcategories = allSubcategories,
                         selectedSubcategories = selectedSubcategories,
-                        onToggleSubcategory = onToggleSubcategory,
                         )
                     } else {
                         // Row 1: Sort options (horizontal scroll)
@@ -2167,46 +2157,20 @@ private fun AllPostsBrowse(
                                     shape = RoundedCornerShape(20.dp),
                                 )
                             }
-                        }
-                        // Row 2: Category chips (horizontal scroll) — only when categories exist
-                        if (ecosystemSubcategories.isNotEmpty()) {
-                            val catScrollState = rememberScrollState()
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(catScrollState)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            // Grid/List view toggle
+                            IconButton(
+                                onClick = { isGridView = !isGridView },
+                                modifier = Modifier.size(34.dp),
                             ) {
-                                ecosystemSubcategories.forEach { sub ->
-                                    val isSelected = state.filterSubcategory == sub
-                                    val emoji = subcategoryEmoji(sub)
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { onSelectSubcategory(sub) },
-                                        label = {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(emoji, fontSize = 12.sp)
-                                                Text(sub, style = MaterialTheme.typography.labelSmall)
-                                            }
-                                        },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        ),
-                                        border = if (isSelected) null else FilterChipDefaults.filterChipBorder(
-                                            borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                            enabled = true,
-                                            selected = false,
-                                        ),
-                                        shape = RoundedCornerShape(20.dp),
-                                    )
-                                }
+                                Icon(
+                                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                    contentDescription = "Toggle layout",
+                                    modifier = Modifier.size(19.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
+
                     }
                 }
             }
@@ -2323,11 +2287,10 @@ private fun AllPostsBrowse(
                         onClick = { onOpenPrefs() },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(0.7f).height(48.dp),
-                            ) {
-                                Icon(Icons.Default.Tune, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Set Your Preferences", fontWeight = FontWeight.SemiBold)
-                            }
+                            ) {        Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Set Your Preferences", fontWeight = FontWeight.SemiBold)
+        }
                         }
                     }
                 } else if (state.forYouMode && displayPosts.isEmpty()) {
@@ -2356,15 +2319,15 @@ private fun AllPostsBrowse(
                                 "Try adjusting your subcategory, location, or price range selection.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,                                 textAlign = TextAlign.Center,
-                            )
-                            Spacer(Modifier.height(24.dp))
-                            OutlinedButton(
-                                onClick = onOpenPrefs,
-                            ) {
-                                Icon(Icons.Default.Tune, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Edit Preferences")
-                            }
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        OutlinedButton(
+                            onClick = onOpenPrefs,
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Edit Preferences")
+                        }
                         }
                     }
                 } else {

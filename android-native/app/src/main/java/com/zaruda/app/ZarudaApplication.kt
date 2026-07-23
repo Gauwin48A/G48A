@@ -1,34 +1,75 @@
 package com.zaruda.app
 
 import android.app.Application
+import android.util.Log
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import coil.decode.DataSource
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
-import coil.util.DebugLogger
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.messaging.FirebaseMessaging
+import com.zaruda.app.core.notifications.NotificationChannelHelper
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class ZarudaApplication : Application(), ImageLoaderFactory {
 
+    companion object {
+        private const val TAG = "ZARUDA-FCM"
+    }
+
     override fun onCreate() {
         super.onCreate()
-        com.zaruda.app.core.notifications.NotificationChannelHelper.createNotificationChannels(this)
-        // Init Firebase on a background thread to avoid blocking main thread at startup
-        Thread { initFirebaseSafely() }.also { it.isDaemon = true; it.start() }
+
+        Log.d(TAG, "🚀 Zaruda Application Started")
+
+        // Create notification channels
+        NotificationChannelHelper.createNotificationChannels(this)
+
+        // Initialize Firebase in background
+        Thread {
+            initFirebaseSafely()
+        }.apply {
+            isDaemon = true
+            start()
+        }
     }
 
     private fun initFirebaseSafely() {
         try {
             FirebaseApp.initializeApp(this)
-            FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
-        } catch (_: Exception) {
-            // Firebase init fails gracefully when google-services.json has placeholder values.
-            // App continues to work without crash reporting / analytics / FCM.
+
+            FirebaseCrashlytics
+                .getInstance()
+                .setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
+
+            Log.d(TAG, "✅ Firebase initialized successfully")
+
+            FirebaseMessaging.getInstance()
+                .token
+                .addOnCompleteListener { task ->
+
+                    if (!task.isSuccessful) {
+                        Log.e(
+                            TAG,
+                            "❌ Failed to obtain FCM Token",
+                            task.exception
+                        )
+                        return@addOnCompleteListener
+                    }
+
+                    val token = task.result
+
+                    Log.d(TAG, "==============================")
+                    Log.d(TAG, "FCM TOKEN:")
+                    Log.d(TAG, token)
+                    Log.d(TAG, "==============================")
+                }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Firebase initialization failed", e)
         }
     }
 
@@ -37,7 +78,7 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
             .memoryCachePolicy(CachePolicy.ENABLED)
             .memoryCache {
                 MemoryCache.Builder(this)
-                    .maxSizePercent(0.30)  // 30% of heap — aggressive cache for 10M users
+                    .maxSizePercent(0.30)
                     .strongReferencesEnabled(true)
                     .build()
             }
@@ -45,12 +86,12 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache"))
-                    .maxSizeBytes(150L * 1024 * 1024) // 150MB disk cache
+                    .maxSizeBytes(150L * 1024L * 1024L)
                     .build()
             }
-            .crossfade(150) // Fast crossfade (150ms)
-            .respectCacheHeaders(false) // Always use our cache policy — faster
             .networkCachePolicy(CachePolicy.ENABLED)
+            .respectCacheHeaders(false)
+            .crossfade(150)
             .build()
     }
 }

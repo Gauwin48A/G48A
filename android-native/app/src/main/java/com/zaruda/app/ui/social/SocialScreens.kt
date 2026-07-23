@@ -211,7 +211,13 @@ private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null, onPromote: (
 private val MOCK_FEED_MAP = mapOf(
     "mock_1" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_1", title = "How to negotiate the best price when buying a used car", content = "Buying a used car can be tricky. Here are 7 proven tips to get the best deal:\n\n1) Research market prices on MHub before visiting. Always know the average price range for the model you're looking at.\n\n2) Always inspect the vehicle in daylight — scratches and dents are much harder to see at night.\n\n3) Get a mechanic inspection before paying. A ₹500 inspection fee can save you ₹50,000 in repairs.\n\n4) Check the RC certificate, insurance, and service history documents carefully.\n\n5) Never pay in advance without meeting the seller in person.\n\n6) Negotiate confidently — most sellers expect a counter-offer.\n\n7) Use MHub's compare feature to check similar listings before finalizing.", userName = "AutoExpert_Ravi", createdAt = "2024-01-15T10:30:00Z", likeCount = 234, commentCount = 18, viewCount = 1850, categoryName = "Vehicles"),
     "mock_2" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_2", title = "Top 5 budget smartphones under ₹15,000 in 2024", content = "The budget smartphone market has exploded this year. Redmi, Realme and Poco are fighting hard for your money.\n\nHere's our analysis of the best bang-for-buck options available on MHub right now:\n\n• Redmi 13C – Best camera in segment\n• Realme C65 – Best battery life\n• POCO M6 Pro – Best performance\n• Samsung Galaxy M14 – Best display\n• Motorola G34 – Best after-sales support\n\nAll of these have pre-owned listings available on MHub at 30-40% below retail price. Check the 'Electronics → Phones' category to find great deals near you.", userName = "TechReview_Ananya", createdAt = "2024-01-14T14:22:00Z", likeCount = 567, commentCount = 45, viewCount = 4200, categoryName = "Electronics"),
+    "mock_3" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_3", title = "Is it worth buying pre-owned electronics on MHub?", content = "I've bought 3 refurbished items on MHub in the last year. My experience has been mostly positive but there are things to watch out for. Always check the seller rating, demand original receipts, and test everything on the spot before paying. Sellers appreciate serious buyers and are often willing to negotiate if you're prepared. The key is to be patient and not rush into a purchase.", userName = "SmartBuyer_Priya", createdAt = "2024-01-13T08:45:00Z", likeCount = 189, commentCount = 32, viewCount = 2100, categoryName = "Electronics"),
+    "mock_4" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_4", title = "Summer fashion trends 2024 — what's hot in India", content = "Cotton kurtis, palazzo sets, and breathable fabrics are dominating this summer. I found amazing deals on MHub from local designers who are selling premium quality at half the retail price. Here's what I picked up and why I think pre-owned fashion is the smart way to shop this season.", userName = "FashionFirst_Meera", createdAt = "2024-01-12T16:00:00Z", likeCount = 412, commentCount = 28, viewCount = 3300, categoryName = "Fashion"),
+    "mock_5" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_5", title = "Starting a small business? Here's what I learned selling on MHub", content = "I started selling handmade jewellery on MHub 6 months ago. First month was slow, but by month 3 I was getting 10+ inquiries daily. Key learnings: great photos matter most, respond within 1 hour, and price competitively. MHub's community is supportive and the platform makes it easy to connect with buyers.", userName = "Entrepreneur_Sunita", createdAt = "2024-01-11T11:15:00Z", likeCount = 892, commentCount = 76, viewCount = 6800, categoryName = "Fashion"),
+    "mock_6" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_6", title = "Guide to buying second-hand furniture in Bangalore", content = "Moving to Bangalore? Don't buy new furniture at inflated prices. MHub has hundreds of quality listings from people relocating. I furnished my entire 2BHK for under ₹40,000 by being patient and negotiating well. Here's exactly what I bought and how I approached each deal.", userName = "HomeDecor_Kiran", createdAt = "2024-01-10T09:30:00Z", likeCount = 654, commentCount = 89, viewCount = 5400, categoryName = "Home & Living"),
     "mock_7" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_7", title = "EV revolution in India: Should you buy an electric vehicle now?", content = "With petrol prices rising and EV subsidies available, more Indians are considering electric vehicles. I test drove 4 electric scooters last month.\n\nHere's my honest take:\n\nThe Good:\n• Daily commute costs drop by 80%\n• Government FAME II subsidy saves ₹15,000-25,000\n• Very low maintenance (no engine oil, fewer moving parts)\n\nThe Challenges:\n• Charging infrastructure still patchy in tier-2/3 cities\n• Range anxiety for trips beyond 80km\n• Resale value still uncertain\n\nVerdict: If your daily commute is under 50km and you have home charging, EVs make excellent financial sense in 2024.", userName = "GreenMobility_Arjun", createdAt = "2024-01-09T13:00:00Z", likeCount = 1203, commentCount = 145, viewCount = 9800, categoryName = "Vehicles"),
+    "mock_8" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_8", title = "How I sold my old MacBook for ₹5,000 more than expected", content = "Small tricks that helped me get top price: cleaned it thoroughly, took photos in good lighting, was honest about every scratch, and priced it ₹500 below similar listings to get quick inquiries. Sold in 2 days! The key is presentation and pricing strategy.", userName = "SellerTips_Vikram", createdAt = "2024-01-08T07:00:00Z", likeCount = 445, commentCount = 56, viewCount = 3900, categoryName = "Electronics"),
+    "mock_9" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_9", title = "Monthly market report: Used electronics prices in India (Jan 2024)", content = "iPhone 13 prices have stabilised at ₹42,000–₹48,000. Samsung S23 is available at ₹35,000. Laptops over 2 years old are seeing 20% price drops. Best time to buy gaming gear — stock is high and prices are soft. Here's the complete breakdown.", userName = "MarketWatch_MHub", createdAt = "2024-01-07T12:00:00Z", likeCount = 788, commentCount = 34, viewCount = 7200, categoryName = "Electronics"),
     "mock_10" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_10", title = "Safety tips when buying or selling on MHub", content = "Your safety matters. Here are essential tips for safe transactions:\n\n🔒 BUYING SAFETY\n• Meet in public places like malls, police stations, or busy coffee shops\n• Never share OTP or UPI PIN with anyone\n• Test electronics before paying — insist on a demo\n• For vehicles, verify RC in the Parivahan app before paying\n• Avoid advance payments to unverified sellers\n\n📦 SELLING SAFETY\n• Don't share your home address publicly in listings\n• Meet buyers in neutral locations for high-value items\n• Accept only bank transfers or UPI — no wallet-to-wallet for large amounts\n• Verify buyer identity before delivering\n• Screenshot all conversations for dispute resolution\n\n⚠️ RED FLAGS\n• Offers too good to be true\n• Pressure to transact quickly\n• Requests to pay outside MHub\n• Anyone asking for remote access to your device", userName = "SafetyFirst_MHub", createdAt = "2024-01-06T10:00:00Z", likeCount = 2100, commentCount = 234, viewCount = 18500),
 )
 
@@ -222,14 +228,12 @@ class FeedDetailViewModel @Inject constructor(private val repo: SocialRepository
     private val _state = MutableStateFlow(FeedDetailUiState())
     val state: StateFlow<FeedDetailUiState> = _state.asStateFlow()
     fun load(id: String) {
-        // Instant mock fallback for demo/offline
-        if (id.startsWith("mock_")) {
-            val mock = MOCK_FEED_MAP[id]
-            if (mock != null) {
-                _state.value = FeedDetailUiState(loading = false, item = mock, liked = false, likeCount = mock.likeCount)
-                SharedExploreStore.addRecentlyViewedFeed(mock)
-                return
-            }
+        // Tier 1: Check MOCK_FEED_MAP directly (handles mock_ prefixed IDs AND any that match a mock entry)
+        val directMock = MOCK_FEED_MAP[id] ?: MOCK_FEED_MAP.entries.find { (_, v) -> v.stableId == id }?.value
+        if (directMock != null) {
+            _state.value = FeedDetailUiState(loading = false, item = directMock, liked = false, likeCount = directMock.likeCount)
+            SharedExploreStore.addRecentlyViewedFeed(directMock)
+            return
         }
         viewModelScope.launch {
             val result = kotlinx.coroutines.withTimeoutOrNull(5000L) { repo.feedDetail(id) }
@@ -240,7 +244,25 @@ class FeedDetailViewModel @Inject constructor(private val repo: SocialRepository
                     SharedExploreStore.addRecentlyViewedFeed(result.data)
                     runCatching { repo.viewPost(id); repo.trackViewed(id) }
                 }
-                is ApiResult.Failure -> _state.value = FeedDetailUiState(loading = false, error = result.error.message)
+                is ApiResult.Failure -> {
+                    // Tier 2: Try locally stored FeedItem from SharedExploreStore (populated by recordViewed())
+                    val localFallback = SharedExploreStore.recentlyViewedFeedItems.find { it.stableId == id }
+                    if (localFallback != null) {
+                        _state.value = FeedDetailUiState(loading = false, item = localFallback, liked = false, likeCount = localFallback.likeCount)
+                        return@launch
+                    }
+                    // Tier 3: Fall back to any available mock entry so the screen is never empty
+                    val anyMock = MOCK_FEED_MAP.entries.firstOrNull()?.value
+                    if (anyMock != null) {
+                        val fallbackItem = anyMock.copy(
+                            title = "Post unavailable",
+                            content = "This post could not be loaded from the server. Here's a sample feed post instead:\n\n${anyMock.content}",
+                        )
+                        _state.value = FeedDetailUiState(loading = false, item = fallbackItem, liked = false, likeCount = anyMock.likeCount)
+                    } else {
+                        _state.value = FeedDetailUiState(loading = false, error = "Unable to load post details. Please check your connection and try again.")
+                    }
+                }
             }
         }
     }
@@ -315,11 +337,10 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
                                 }
                             }
                             // Share icon
-                            IconButton(onClick = {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}\n\n${item.content?.take(120) ?: ""}")
-                                }
+                            IconButton(onClick = {                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}\n\n${item.displayContent.take(120)}")
+                                    }
                                 context.startActivity(android.content.Intent.createChooser(intent, "Share"))
                             }) {
                                 Icon(Icons.Filled.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
