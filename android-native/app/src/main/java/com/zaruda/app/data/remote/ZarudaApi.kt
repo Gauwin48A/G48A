@@ -308,9 +308,6 @@ interface ZarudaApi {
     @POST("api/coins/spin")
     suspend fun spinWheel(): SpinResultResponse
 
-    @POST("api/coins/scratch")
-    suspend fun scratchCard(): ScratchResultResponse
-
     @POST("api/coins/store-redeem")
     suspend fun storeRedeem(@Body body: StoreRedeemRequest): StoreRedeemResponse
 
@@ -599,6 +596,40 @@ interface ZarudaApi {
 
     @GET("api/transactions/undone")
     suspend fun undoneHistory(): UndoneHistoryResponse
+
+    // ---- New Sale Flow (end-to-end) ----
+    @POST("api/sales/request")
+    suspend fun requestSale(@Body body: SaleRequest): SaleResponse
+
+    @GET("api/sales/pending")
+    suspend fun pendingSaleRequests(): SalesListResponse
+
+    @GET("api/sales/mine")
+    suspend fun myActiveSales(): SalesListResponse
+
+    @GET("api/sales/history")
+    suspend fun mySaleHistory(): SalesListResponse
+
+    @POST("api/sales/{id}/approve")
+    suspend fun approveSale(@Path("id") id: Int): MessageResponse
+
+    @POST("api/sales/{id}/reject")
+    suspend fun rejectSale(@Path("id") id: Int): MessageResponse
+
+    @POST("api/sales/{id}/order-received")
+    suspend fun orderReceived(@Path("id") id: Int): MessageResponse
+
+    @POST("api/sales/{id}/amount-received")
+    suspend fun amountReceived(@Path("id") id: Int): MessageResponse
+
+    @POST("api/sales/{id}/report-fraud")
+    suspend fun reportFraud(@Path("id") id: Int, @Body body: FraudReportRequest): MessageResponse
+
+    @POST("api/sales/{id}/respond")
+    suspend fun respondToFraudFlag(@Path("id") id: Int, @Body body: FraudResponseRequest): MessageResponse
+
+    @GET("api/user/suspension")
+    suspend fun mySuspensionStatus(): SuspensionStatusResponse
 
     // ---- Payments ----
     @GET("api/payments/upi-details")

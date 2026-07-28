@@ -319,7 +319,6 @@
   <string name="rewards_coins">monedas</string>
   <string name="rewards_daily_checkin">Check-in diario</string>
   <string name="rewards_spin_wheel">Girar la rueda</string>
-  <string name="rewards_scratch_card">Tarjeta rasca</string>
   <string name="rewards_sign_in_required">Inicia sesión para ver recompensas</string>
   <string name="notifications_title">Notificaciones</string>
   <string name="notifications_empty">Sin notificaciones aún</string>
@@ -1359,7 +1358,6 @@
     <string name="rewards_referral_challenge">REFERRAL CHALLENGE</string>
     <string name="rewards_referral_code">Code: %s</string>
     <string name="rewards_referral_network">Referral network</string>
-    <string name="rewards_scratch">Scratch</string>
     <string name="rewards_share_code">Share your referral code</string>
     <string name="rewards_sign_in_subtitle">Earn coins, unlock perks and track referral progress.</string>
     <string name="rewards_sign_in_title">Sign in to view Rewards</string>

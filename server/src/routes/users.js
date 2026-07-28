@@ -26,7 +26,7 @@ router.put("/preferred-language", protect, userController.updatePreferredLanguag
  */
 
 /** @route GET /tier - Get user's current tier */
-router.get("/tier", protect, userController.getTier);
+router.get("/tier", protect, userController.getTierStatus);
 
 /** @route POST /upgrade-tier - Request a tier upgrade */
 router.post("/upgrade-tier", protect, requireAdmin, userController.upgradeTier);

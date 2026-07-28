@@ -316,7 +316,6 @@ class RewardsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun rewardsConfig(): ApiResult<com.zaruda.app.data.remote.dto.RewardsConfigResponse> = safeApiCall { api.rewardsConfig() }
     suspend fun dailyCheckIn(): ApiResult<com.zaruda.app.data.remote.dto.DailyCheckInResponse> = safeApiCall { api.dailyCheckIn() }
     suspend fun spinWheel(): ApiResult<com.zaruda.app.data.remote.dto.SpinResultResponse> = safeApiCall { api.spinWheel() }
-    suspend fun scratchCard(): ApiResult<com.zaruda.app.data.remote.dto.ScratchResultResponse> = safeApiCall { api.scratchCard() }
     suspend fun storeRedeem(type: String, postId: String? = null): ApiResult<com.zaruda.app.data.remote.dto.StoreRedeemResponse> =
         safeApiCall { api.storeRedeem(com.zaruda.app.data.remote.dto.StoreRedeemRequest(type, postId)) }
     suspend fun redeemCoins(type: String, postId: String? = null): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
@@ -561,8 +560,8 @@ class PaymentsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun upiDetails(): ApiResult<PaymentUpiDetailsResponse> = safeApiCall { api.paymentUpiDetails() }
     suspend fun history(): ApiResult<List<PaymentHistoryItem>> = safeApiCall { api.paymentHistory().payments }
     suspend fun submit(req: SubmitPaymentRequest): ApiResult<Unit> = safeApiCall { api.submitPayment(req); Unit }
-    suspend fun createRazorpayOrder(amount: Double, tierId: String? = null): ApiResult<RazorpayOrderResponse> = safeApiCall {
-        api.createRazorpayOrder(RazorpayOrderRequest(amount = amount, tierId = tierId))
+    suspend fun createRazorpayOrder(amount: Double, tierId: String? = null, coinsToApply: Int = 0): ApiResult<RazorpayOrderResponse> = safeApiCall {
+        api.createRazorpayOrder(RazorpayOrderRequest(amount = amount, tierId = tierId, coinsToApply = coinsToApply))
     }
     suspend fun verifyRazorpayPayment(orderId: String, paymentId: String, signature: String): ApiResult<Unit> = safeApiCall {
         api.verifyRazorpayPayment(RazorpayVerifyRequest(orderId, paymentId, signature)); Unit
@@ -661,4 +660,21 @@ class DailyCodeRepository @Inject constructor(private val api: ZarudaApi) {
 @Singleton
 class ReferralTreeRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun tree(): ApiResult<ReferralTreeResponse> = safeApiCall { api.referralTree() }
+}
+
+@Singleton
+class SalesRepository @Inject constructor(private val api: ZarudaApi) {
+    suspend fun requestSale(body: SaleRequest): ApiResult<SaleResponse> = safeApiCall { api.requestSale(body) }
+    suspend fun pendingRequests(): ApiResult<List<SaleInfo>> = safeApiCall { api.pendingSaleRequests().sales }
+    suspend fun myActive(): ApiResult<List<SaleInfo>> = safeApiCall { api.myActiveSales().sales }
+    suspend fun myHistory(): ApiResult<List<SaleInfo>> = safeApiCall { api.mySaleHistory().sales }
+    suspend fun approve(id: Int): ApiResult<Unit> = safeApiCall { api.approveSale(id); Unit }
+    suspend fun reject(id: Int): ApiResult<Unit> = safeApiCall { api.rejectSale(id); Unit }
+    suspend fun orderReceived(id: Int): ApiResult<Unit> = safeApiCall { api.orderReceived(id); Unit }
+    suspend fun amountReceived(id: Int): ApiResult<Unit> = safeApiCall { api.amountReceived(id); Unit }
+    suspend fun reportFraud(id: Int, reportedParty: String, reason: String): ApiResult<Unit> =
+        safeApiCall { api.reportFraud(id, FraudReportRequest(reportedParty = reportedParty, reason = reason)); Unit }
+    suspend fun respondToFraud(id: Int, message: String): ApiResult<Unit> =
+        safeApiCall { api.respondToFraudFlag(id, FraudResponseRequest(message = message)); Unit }
+    suspend fun suspensionStatus(): ApiResult<SuspensionStatusResponse> = safeApiCall { api.mySuspensionStatus() }
 }

@@ -17,6 +17,9 @@ interface WishlistItemDao {
     @Query("SELECT COUNT(*) FROM wishlist_items")
     fun observeCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM wishlist_items WHERE category = :category")
+    fun observeCategoryCount(category: String): Flow<Int>
+
     @Query("SELECT EXISTS(SELECT 1 FROM wishlist_items WHERE postId = :postId)")
     fun observeContains(postId: String): Flow<Boolean>
 

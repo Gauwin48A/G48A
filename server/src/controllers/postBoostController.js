@@ -52,7 +52,7 @@ exports.boostPost = async (req, res) => {
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { postId } = req.params;
-    const boostType = String(req.body?.boostType || '').toLowerCase();
+    const boostType = String(req.body?.boostType || req.body?.tier || '').toLowerCase();
 
     if (!BOOST_CONFIG[boostType]) {
       return res.status(400).json({

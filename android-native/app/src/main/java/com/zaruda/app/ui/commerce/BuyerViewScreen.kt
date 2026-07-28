@@ -121,9 +121,9 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
             OutlinedTextField(
                 value = state.search, onValueChange = { viewModel.setSearch(it) },
                 placeholder = { Text(stringResource(R.string.commerce_search_bought)) },
-                leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true, shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant, focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
             )
             // Price filter chips
@@ -134,7 +134,7 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
                         onClick = { viewModel.setPriceRange(key) },
                         label = { Text(label, fontSize = 11.sp) },
                         shape = RoundedCornerShape(20.dp),
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
                     )
                 }
             }
@@ -153,13 +153,13 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
             }
             // Results
             when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
                 filtered.isEmpty() -> EmptyState(
-                    icon = { Icon(Icons.Filled.SearchOff, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                    icon = { Icon(Icons.Filled.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(64.dp)) },
                     title = "No listings found", subtitle = "Try adjusting your filters",
                 )
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item { Text("${filtered.size} listings", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                    item { Text("${filtered.size} listings", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     items(filtered, key = { it.stableId }) { post ->
                         BuyerPostCard(post)
                     }
@@ -171,20 +171,21 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
 
 @Composable
 private fun BuyerPostCard(post: Post) {
-    Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column {
             Box(Modifier.fillMaxWidth().height(160.dp)) {
                 if (post.primaryImage != null) {
                     AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)))
                 } else {
-                    Box(Modifier.fillMaxSize().background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(48.dp))
+                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
                     }
                 }
                 // Price overlay
                 if (post.price != null) {
-                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                    Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.9f) else Color(0xFF1E293B).copy(alpha = 0.85f),
                         modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)) {
                         Text("₹${post.price.toLong()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
@@ -192,19 +193,19 @@ private fun BuyerPostCard(post: Post) {
                 }
             }
             Column(Modifier.padding(12.dp)) {
-                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), maxLines = 2)
+                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (post.userName != null) {
-                        Icon(Icons.Filled.Person, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                        Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(post.userName ?: "", fontSize = 12.sp, color = Color(0xFF64748B))
+                        Text(post.userName ?: "", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(12.dp))
                     }
                     if (post.location != null) {
-                        Icon(Icons.Filled.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+                        Icon(Icons.Filled.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(2.dp))
-                        Text(post.location ?: "", fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1)
+                        Text(post.location ?: "", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }
                 }
                 post.status?.let { c ->
@@ -215,29 +216,3 @@ private fun BuyerPostCard(post: Post) {
         }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// SaleDoneScreen — 2-tab: Mark as Sold (seller initiate + buyer confirm)
-// ──────────────────────────────────────────────────────────────────────────────
-data class SaleDoneUiState(
-    val step: Int = 0,
-    val loading: Boolean = false,
-    val pending: List<PendingSale> = emptyList(),
-    val postId: String = "",
-    val buyerId: String = "",
-    val saleAmount: String = "",
-    val txnId: String = "",
-    val otp: String = "",
-    // initiate result
-    val initiatedTxnId: String? = null,
-    val initiatedOtp: String? = null,
-    val initiatedOtpExpiresIn: String? = null,
-    // confirm result
-    val completedReceipt: SaleReceiptInfo? = null,
-    val completedBuyer: SalePartyInfo? = null,
-    val completedItem: SaleItemInfo? = null,
-    val completedRewards: SaleRewardsInfo? = null,
-    val error: String? = null,
-    val success: Boolean = false,
-    val tab: String = "seller",      // seller | buyer
-)

@@ -43,3 +43,11 @@
 
 # Keep application class
 -keep class com.zaruda.app.MhubApplication { *; }
+
+# Razorpay SDK Proguard Rules
+-keep class com.razorpay.** { *; }
+-dontwarn com.razorpay.**
+-dontwarn proguard.annotation.Keep
+-dontwarn proguard.annotation.KeepClassMembers
+-dontwarn proguard.annotation.**
+

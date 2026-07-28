@@ -111,18 +111,6 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                         }
                     }
                 }
-                Spacer(Modifier.height(28.dp))
-                // Tier badge display
-                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Stars, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(stringResource(R.string.sell_free_plan), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF92400E))
-                            Text(stringResource(R.string.sell_upgrade_hint), fontSize = 11.sp, color = Color(0xFFB45309))
-                        }
-                    }
-                }
             }
             // ── Sticky bottom CTA ──
             Surface(shadowElevation = 8.dp, color = Color.White) {
@@ -157,13 +145,6 @@ data class EditPostUiState(
     val description: String = "",
     val price: String = "",
     val location: String = "",
-    val condition: String = "",
-    val brand: String = "",
-    val model: String = "",
-    val warranty: String = "",
-    val ageMonths: String = "",
-    val contactPreference: String = "call",
-    val flashSale: Boolean = false,
     val existingImages: List<String> = emptyList(),
     val fieldErrors: Map<String, String> = emptyMap(),
 )

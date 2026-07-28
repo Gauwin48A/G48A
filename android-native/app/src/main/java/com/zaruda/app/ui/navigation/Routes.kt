@@ -48,6 +48,8 @@ object Routes {
     const val SOLD_POSTS = "sold-posts"
     const val BUYER_VIEW = "buyer-view"
     const val SALE_DONE = "saledone"
+    const val SALE_DONE_WITH = "saledone/{postId}/{sellerId}"
+    fun saleDone(postId: String, sellerId: String): String = "saledone/$postId/$sellerId"
     const val SALE_UNDONE = "saleundone"
     const val PAYMENT = "payment"
     const val CART = "cart"
@@ -120,6 +122,8 @@ object Routes {
     const val CATEGORY_LISTING    = "cat/{catKey}/listing"
     const val CATEGORY_CART       = "cat/{catKey}/cart"
     const val CATEGORY_WISHLIST   = "cat/{catKey}/wishlist"
+    const val CATEGORY_RECENTLY_VIEWED = "cat/{catKey}/recently-viewed"
+    const val CATEGORY_COMPARE   = "cat/{catKey}/compare"
     const val CATEGORY_PROFILE    = "cat/{catKey}/profile"
     fun categoryHome(key: String)      = "cat/$key/home"
     fun categorySubcats(key: String)   = "cat/$key/subcategories"
@@ -127,6 +131,8 @@ object Routes {
     fun categoryListing(key: String)   = "cat/$key/listing"
     fun categoryCart(key: String)      = "cat/$key/cart"
     fun categoryWishlist(key: String)  = "cat/$key/wishlist"
+    fun categoryRecentlyViewed(key: String) = "cat/$key/recently-viewed"
+    fun categoryCompare(key: String)   = "cat/$key/compare"
     fun categoryProfileTab(key: String) = "cat/$key/profile"
 
     // ── Checkout Flow ──────────────────────────────────────────────────────
@@ -135,6 +141,9 @@ object Routes {
     const val CHECKOUT_REVIEW   = "checkout/review"
     const val CHECKOUT_CONFIRM  = "checkout/confirm"
     const val CHECKOUT_FAILED   = "checkout/failed"
+
+    // ── Rewards sub-screens ────────────────────────────────────────────────
+    const val REFERRAL_TREE = "referral-tree"
 
     // ── Profile sub-screens ──────────────────────────────────────────────────
     const val EDIT_PROFILE    = "profile/edit"

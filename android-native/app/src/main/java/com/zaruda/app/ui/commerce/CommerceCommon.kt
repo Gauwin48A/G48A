@@ -140,11 +140,12 @@ internal fun PostListItem(post: Post, onClick: () -> Unit) {
 
 @Composable
 internal fun StatusChip(status: String) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val (bg, fg) = when (status.lowercase()) {
-        "active" -> Color(0xFFDCFCE7) to Color(0xFF166534)
-        "sold" -> Color(0xFFDBEAFE) to Color(0xFF1D4ED8)
-        "pending" -> Color(0xFFFEF9C3) to Color(0xFF854D0E)
-        else -> Color(0xFFF1F5F9) to Color(0xFF475569)
+        "active" -> if (isDark) Color(0xFF064E3B) to Color(0xFF6EE7B7) else Color(0xFFDCFCE7) to Color(0xFF166534)
+        "sold" -> if (isDark) Color(0xFF1E3A5F) to Color(0xFF93C5FD) else Color(0xFFDBEAFE) to Color(0xFF1D4ED8)
+        "pending" -> if (isDark) Color(0xFF3A2A00) to Color(0xFFFCD34D) else Color(0xFFFEF9C3) to Color(0xFF854D0E)
+        else -> if (isDark) Color(0xFF1E293B) to Color(0xFFCBD5E1) else Color(0xFFF1F5F9) to Color(0xFF475569)
     }
     Surface(shape = RoundedCornerShape(20.dp), color = bg) {
         Text(status.replaceFirstChar { it.uppercase() }, fontSize = 11.sp, color = fg,

@@ -686,6 +686,7 @@ exports.redeemCoins = async (req, res) => {
     userRes.rows[0]?.membership_plan || userRes.rows[0]?.current_plan || userRes.rows[0]?.tier || req?.user?.subscription_tier || req?.user?.tier || "",
   ).toLowerCase();
   const isPremium = planName.includes("premium") || planName.includes("gold") || Boolean(req?.user?.is_demo) || Boolean(userId && String(userId).includes("demo"));
+  const isDemoUser = Boolean(req?.user?.is_demo) || Boolean(userId && String(userId).includes("demo"));
   const costMap = isPremium ? REDEEM_COSTS.premium : REDEEM_COSTS.standard;
 
   if (!costMap[redeemType]) {
@@ -708,6 +709,20 @@ exports.redeemCoins = async (req, res) => {
   const referenceId = idempotencyKey
     ? `redeem:${redeemType}:${idempotencyKey}`
     : `redeem:${redeemType}:${userId}:${postId}:${Date.now()}`;
+
+  // ── Demo user: skip DB checks, return mock success ──
+  if (isDemoUser) {
+    const expiresAt = new Date();
+    const BOOST_DURATIONS = { boost: 7, featured: 14, spotlight: 30 };
+    expiresAt.setDate(expiresAt.getDate() + (BOOST_DURATIONS[redeemType] || 7));
+    logger.info(`[Coins] Demo user ${userId} redeemed ${cost} coins for ${redeemType} on post ${postId} (mock)`);
+    return res.json({
+      success: true,
+      message: `${redeemType} applied using ${cost} coins!`,
+      newBalance: 99999,
+      boost: { type: redeemType, expiresAt, source: "coins" },
+    });
+  }
 
   try {
     const ownershipCheck = await runQuery(

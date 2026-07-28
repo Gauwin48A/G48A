@@ -1300,8 +1300,6 @@
     <string name="rewards_referral_challenge">REFERRAL CHALLENGE</string>
     <string name="rewards_referral_code">Code: %s</string>
     <string name="rewards_referral_network">Referral network</string>
-    <string name="rewards_scratch">Scratch</string>
-    <string name="rewards_scratch_card">Scratch Card</string>
     <string name="rewards_share_code">Share your referral code</string>
     <string name="rewards_sign_in_subtitle">Earn coins, unlock perks and track referral progress.</string>
     <string name="rewards_sign_in_title">Sign in to view Rewards</string>

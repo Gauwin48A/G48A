@@ -398,15 +398,6 @@ data class ConfirmSaleResponse(
     val receipt: SaleReceiptInfo? = null,
 )
 
-// Legacy — keep for backward compat with other callers
-@Serializable
-data class SaleResponse(
-    val success: Boolean = true,
-    @SerialName("transaction_id") val transactionId: String? = null,
-    @SerialName("receipt_id") val receiptId: String? = null,
-    val message: String? = null,
-)
-
 @Serializable
 data class PendingSale(
     val id: String? = null,
@@ -771,7 +762,6 @@ data class CoinTransaction(
 data class EngagementStatusResponse(
     val dailyCheckIn: DailyCheckInStatus = DailyCheckInStatus(),
     val spin: SpinStatus = SpinStatus(),
-    val scratch: ScratchStatus = ScratchStatus(),
     val referralMilestones: ReferralMilestoneStatus = ReferralMilestoneStatus(),
 )
 
@@ -779,21 +769,15 @@ data class EngagementStatusResponse(
 data class DailyCheckInStatus(
     val canClaim: Boolean = false,
     val streak: Int = 0,
-    val lastClaimDate: String? = null,
-    val todayReward: Int = 5,
+    @SerialName("lastCheckinDate") val lastClaimDate: String? = null,
+    @SerialName("nextReward") val todayReward: Int = 5,
     val weekProgress: List<Boolean> = emptyList(),
 )
 
 @Serializable
 data class SpinStatus(
     val canSpin: Boolean = false,
-    val lastSpinDate: String? = null,
-)
-
-@Serializable
-data class ScratchStatus(
-    val available: Int = 0,
-    val canScratch: Boolean = false,
+    @SerialName("spinDate") val lastSpinDate: String? = null,
 )
 
 @Serializable
@@ -814,13 +798,6 @@ data class DailyCheckInResponse(
 
 @Serializable
 data class SpinResultResponse(
-    val success: Boolean = false,
-    val reward: Int = 0,
-    val message: String? = null,
-)
-
-@Serializable
-data class ScratchResultResponse(
     val success: Boolean = false,
     val reward: Int = 0,
     val message: String? = null,
@@ -851,7 +828,6 @@ data class RewardsConfigResponse(
     val tiers: List<TierDto> = emptyList(),
     val referralLadder: List<RewardsChainRuleDto> = emptyList(),
     val spinPool: List<Int> = emptyList(),
-    val scratchPool: List<Int> = emptyList(),
     val storeItems: List<StoreItemDto> = emptyList(),
 )
 
@@ -1120,6 +1096,7 @@ data class CartItem(
     @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("seller_name") val sellerName: String? = null,
     val quantity: Int = 1,
+    val category: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: title.orEmpty()
 }
@@ -1599,6 +1576,7 @@ data class RazorpayOrderRequest(
     val amount: Double,
     val currency: String = "INR",
     @SerialName("tier_id") val tierId: String? = null,
+    @SerialName("coinsToApply") val coinsToApply: Int = 0,
 )
 
 @Serializable
@@ -1626,6 +1604,67 @@ data class SnoozeRequest(
 @Serializable
 data class SavedSearchNotificationRequest(
     val enabled: Boolean,
+)
+
+// -------- Sales (new end-to-end sale flow) --------
+@Serializable
+data class SaleRequest(
+    val postId: String,
+    val sellerId: String,
+)
+
+@Serializable
+data class SaleResponse(
+    val success: Boolean = false,
+    val sale: SaleInfo? = null,
+    val message: String? = null,
+)
+
+@Serializable
+data class SaleInfo(
+    val id: Int = 0,
+    val postId: String? = null,
+    val buyerId: String? = null,
+    val sellerId: String? = null,
+    val status: String? = null,
+    val reportedParty: String? = null,
+    val fraudReason: String? = null,
+    val adminNotified: Boolean = false,
+    val createdAt: String? = null,
+    val updatedAt: String? = null,
+    val postTitle: String? = null,
+    val postPrice: Double? = null,
+    val postImages: List<String>? = null,
+    val buyerName: String? = null,
+    val sellerName: String? = null,
+)
+
+@Serializable
+data class SalesListResponse(
+    val sales: List<SaleInfo> = emptyList(),
+)
+
+@Serializable
+data class FraudReportRequest(
+    val reportedParty: String,
+    val reason: String,
+)
+
+@Serializable
+data class FraudResponseRequest(
+    val message: String,
+)
+
+@Serializable
+data class SuspensionStatusResponse(
+    val suspended: Boolean = false,
+    val permanentlyLocked: Boolean = false,
+    val reason: String? = null,
+    val remainingHours: Int = 0,
+    val remainingMinutes: Int = 0,
+    val suspendedUntil: String? = null,
+    val responded: Boolean = false,
+    val message: String? = null,
 )
 
 // -------- Order / Checkout --------

@@ -465,11 +465,9 @@
   <string name="rewards_coins">सिक्के</string>
   <string name="rewards_daily_checkin">दैनिक चेक-इन</string>
   <string name="rewards_spin_wheel">स्पिन व्हील</string>
-  <string name="rewards_scratch_card">स्क्रैच कार्ड</string>
   <string name="rewards_streak">स्ट्रीक</string>
   <string name="rewards_check_in">चेक इन</string>
   <string name="rewards_spin">स्पिन</string>
-  <string name="rewards_scratch">स्क्रैच</string>
   <string name="rewards_browse_marketplace">मार्केटप्लेस ब्राउज़ करें</string>
   <string name="rewards_sign_in_required">पुरस्कार देखने के लिए साइन इन करें</string>
   <string name="notifications_title">सूचनाएँ</string>

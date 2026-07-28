@@ -44,6 +44,7 @@ const {
   wafRequestFilter,
 } = require("./middleware/wafEnforcement");
 const { riskRestrictionMiddleware } = require("./middleware/riskRestrictions");
+const { suspensionCheck } = require("./middleware/suspensionCheck");
 
 // ── Config & Services ────────────────────────────────────
 const cacheLayer = require("./config/redisCache");
@@ -92,6 +93,7 @@ const transactionsRoutes = require("./routes/transactions.js");
 const channelsRoutes = require("./routes/channels.js");
 const gdprRoutes = require("./routes/gdpr.js");
 const saleRoutes = require("./routes/sale.js");
+const salesRoutes = require("./routes/sales.js");
 const translationRoutes = require("./routes/translation.js");
 const contactsRoutes = require("./routes/contacts.js");
 const twoFactorRoutes = require("./routes/twoFactor.js");
@@ -556,6 +558,7 @@ app.use("/api", zeroTrustGate);
 app.use("/api", tenantContextGuard);
 app.use("/api", optionalAuth);
 app.use("/api", riskRestrictionMiddleware);
+app.use("/api", suspensionCheck);
 
 // Analytics fast-path (client telemetry)
 app.post(
@@ -698,6 +701,13 @@ const apiRouteMounts = [
     [
       requireCriticalTenantWriteContext("sale write operations"),
       saleRoutes,
+    ],
+  ],
+  [
+    "/api/sales",
+    [
+      requireCriticalTenantWriteContext("sale write operations"),
+      salesRoutes,
     ],
   ],
   [
@@ -968,6 +978,14 @@ const startBackgroundJobs = () => {
     initCronJobs();
   } catch (error) {
     logger.warn(`[Startup] Cron init failed: ${error?.message || error}`);
+  }
+
+  // Start suspension auto-lock cron
+  try {
+    const { startSuspensionCron } = require("./jobs/suspensionCron");
+    startSuspensionCron();
+  } catch (error) {
+    logger.warn(`[Startup] Suspension cron init failed: ${error?.message || error}`);
   }
 
   // Cache warming — run immediately on startup

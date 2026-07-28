@@ -84,8 +84,6 @@ class EditPostViewModel @Inject constructor(
                         description = p.description ?: "",
                         price = p.price?.toLong()?.toString() ?: "",
                         location = p.location ?: "",
-                        condition = p.condition ?: "",
-                        brand = p.brand ?: "",
                         existingImages = p.images,
                     )
                 }
@@ -108,12 +106,6 @@ class EditPostViewModel @Inject constructor(
                 description = s.description.ifBlank { null },
                 price = s.price.toDoubleOrNull(),
                 location = s.location.ifBlank { null },
-                condition = s.condition.ifBlank { null },
-                brand = s.brand.ifBlank { null },
-                model = s.model.ifBlank { null },
-                warrantyStatus = s.warranty.ifBlank { null },
-                ageMonths = s.ageMonths.toIntOrNull(),
-                flashSale = if (s.flashSale) true else null,
             )
             when (val r = repo.update(postId, req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(saving = false, success = true)
@@ -126,13 +118,6 @@ class EditPostViewModel @Inject constructor(
     fun setDescription(v: String) { _state.value = _state.value.copy(description = v.take(2000)) }
     fun setPrice(v: String) { _state.value = _state.value.copy(price = v.filter { it.isDigit() || it == '.' }.take(10), fieldErrors = _state.value.fieldErrors - "price") }
     fun setLocation(v: String) { _state.value = _state.value.copy(location = v) }
-    fun setCondition(v: String) { _state.value = _state.value.copy(condition = v) }
-    fun setBrand(v: String) { _state.value = _state.value.copy(brand = v) }
-    fun setModel(v: String) { _state.value = _state.value.copy(model = v) }
-    fun setWarranty(v: String) { _state.value = _state.value.copy(warranty = v) }
-    fun setAgeMonths(v: String) { _state.value = _state.value.copy(ageMonths = v.filter { it.isDigit() }.take(3)) }
-    fun setContactPreference(v: String) { _state.value = _state.value.copy(contactPreference = v) }
-    fun toggleFlashSale() { _state.value = _state.value.copy(flashSale = !_state.value.flashSale) }
 
     fun removeImage(idx: Int) {
         val imgs = _state.value.existingImages.toMutableList()
@@ -285,79 +270,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         maxLength = 10,
                         error = state.fieldErrors["price"],
                     )
-                    // Flash sale toggle
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.commerce_flash_sale), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                            Text(stringResource(R.string.commerce_flash_sale_show), fontSize = 11.sp, color = Color(0xFF64748B))
-                        }
-                        Switch(checked = state.flashSale, onCheckedChange = { viewModel.toggleFlashSale() })
-                    }
-
                     MhubTextField(stringResource(R.string.commerce_field_location), state.location, viewModel::setLocation)
-                    MhubTextField(stringResource(R.string.commerce_field_brand), state.brand, viewModel::setBrand)
-                    MhubTextField(stringResource(R.string.commerce_field_model), state.model, viewModel::setModel)
-
-                    // Warranty select
-                    Text(stringResource(R.string.commerce_warranty), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("No warranty", "3 months", "6 months", "1 year", "2+ years").forEach { w ->
-                            val sel = state.warranty == w
-                            Surface(
-                                onClick = { viewModel.setWarranty(if (sel) "" else w) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (sel) Color(0xFF2563EB) else Color.White,
-                                border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                            ) {
-                                Text(w, fontSize = 12.sp, color = if (sel) Color.White else Color(0xFF374151),
-                                    fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp))
-                            }
-                        }
-                    }
-
-                    // Age in months
-                    MhubTextFieldWithCounter("Age (months)", state.ageMonths, viewModel::setAgeMonths, maxLength = 3)
-
-                    // Condition selector
-                    Text(stringResource(R.string.commerce_condition), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("New", "Like New", "Good", "Fair").forEach { cond ->
-                            val selected = state.condition.equals(cond, ignoreCase = true)
-                            Surface(
-                                onClick = { viewModel.setCondition(cond) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (selected) Color(0xFF2563EB) else Color.White,
-                                border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text(cond, fontSize = 12.sp, color = if (selected) Color.White else Color(0xFF374151),
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                    textAlign = TextAlign.Center)
-                            }
-                        }
-                    }
-
-                    // Contact preference
-                    Text(stringResource(R.string.commerce_contact_pref), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("call" to "📞 Call", "chat" to "💬 Chat", "both" to "✅ Both").forEach { (key, label) ->
-                            val sel = state.contactPreference == key
-                            Surface(
-                                onClick = { viewModel.setContactPreference(key) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (sel) Color(0xFFEFF6FF) else Color.White,
-                                border = if (sel) ButtonDefaults.outlinedButtonBorder(enabled = true).copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder(enabled = true),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text(label, fontSize = 12.sp, color = if (sel) Color(0xFF2563EB) else Color(0xFF374151),
-                                    fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
-                                    textAlign = TextAlign.Center)
-                            }
-                        }
-                    }
 
                     Spacer(Modifier.height(8.dp))
                     Button(
@@ -405,5 +318,6 @@ data class TiersUiState(
     val bronzeClaimSuccess: Boolean = false,
     val coinBalance: Int = 0,
     val coinsApplied: Int = 0,
+    val coinsToApply: Int = 0,
     val subscribeLoading: String? = null,
 )

@@ -57,6 +57,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -119,6 +120,12 @@ class WishlistViewModel @Inject constructor(
     private var lastLocaleVersion = 0L
     private var remoteWishlistItems: List<Post> = emptyList()
 
+    private val _categoryFilter = MutableStateFlow<String?>(null)
+    fun setCategoryFilter(cat: String?) {
+        _categoryFilter.value = cat
+        syncWishlist(loading = false)
+    }
+
     init {
         load()
         viewModelScope.launch {
@@ -139,8 +146,14 @@ class WishlistViewModel @Inject constructor(
         refreshing: Boolean = false,
         error: String? = null,
     ) {
-        val mergedItems = (remoteWishlistItems + SharedExploreStore.wishlistPosts)
+        val catFilter = _categoryFilter.value
+        val allItems = (remoteWishlistItems + SharedExploreStore.wishlistPosts)
             .distinctBy { it.stableId }
+        val mergedItems = if (catFilter != null) {
+            allItems.filter { it.category == catFilter }
+        } else {
+            allItems
+        }
         _state.value = _state.value.copy(
             loading = loading,
             refreshing = refreshing,
@@ -273,6 +286,11 @@ fun WishlistScreen(
     var statusFilter by remember { mutableStateOf("all") } // all, active, sold, inactive
     var removeConfirmId by remember { mutableStateOf<String?>(null) }
     val focusManager = LocalFocusManager.current
+
+    // Apply category filter when categoryKey changes
+    LaunchedEffect(categoryKey) {
+        viewModel.setCategoryFilter(categoryKey)
+    }
 
     // Remove confirmation dialog
     removeConfirmId?.let { idToRemove ->

@@ -160,16 +160,7 @@ fun PostCard(
                     }
                 }
 
-                // Flash sale
-                if (post.isFlashSale == true) {
-                    Surface(Modifier.align(Alignment.BottomEnd).padding(12.dp), shape = RoundedCornerShape(8.dp), color = Color(0xFFDC2626)) {
-                        Row(Modifier.padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("\u26A1", fontSize = 11.sp)
-                            Text("FLASH", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                }
+
 
                 // Distance
                 if (distanceLabel != null) {

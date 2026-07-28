@@ -1,0 +1,72 @@
+﻿version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zaruda-backend
+    restart: always
+    ports:
+      - '5001:5001'
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=
+      - DB_USER=
+      - DB_PASSWORD=
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=
+      - R2_BUCKET_NAME=
+      - R2_ACCESS_KEY_ID=
+      - R2_SECRET_ACCESS_KEY=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - zaruda-net
+
+  postgres:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: zaruda-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=
+      - POSTGRES_USER=
+      - POSTGRES_PASSWORD=
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U  -d ']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zaruda-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zaruda-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 60 1 --loglevel notice
+    volumes:
+      - redis_data:/data
+    networks:
+      - zaruda-net
+
+networks:
+  zaruda-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

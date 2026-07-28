@@ -1450,7 +1450,7 @@ fun ProfileScreen(
                                 }
 
                                 // Referral code row
-                                val refCode = state.referralCode ?: user?.rewardsRank ?: "MHUB" + (user?.stableId?.take(4)?.uppercase() ?: "")
+                                val refCode = state.referralCode ?: user?.rewardsRank ?: "REF" + (user?.stableId?.take(4)?.uppercase() ?: "CODE")
                                 if (refCode.isNotBlank()) {
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                                     val clipboardManager = LocalClipboardManager.current
@@ -2037,7 +2037,7 @@ private fun profileReferralCode(explicitCode: String?, user: User?): String {
         ?.uppercase()
         ?.takeIf { it.isNotBlank() }
         ?: "USER"
-    return "MHUB$suffix"
+    return "REF$suffix"
 }
 
 private fun profileCompletion(user: User?): Int {

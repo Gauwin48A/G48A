@@ -1,157 +1,356 @@
 package com.zaruda.app.ui.commerce
 
-import android.content.Intent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil.compose.AsyncImage
 import com.zaruda.app.R
-import com.zaruda.app.ui.components.AppErrorState
 import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.remote.dto.*
 import com.zaruda.app.data.repository.*
-import com.zaruda.app.domain.model.Post
-import com.zaruda.app.ui.common.LinkColor
-import com.zaruda.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
+// UI State
+// ──────────────────────────────────────────────────────────────────────────────
+
+data class SaleDoneUiState(
+    val loading: Boolean = false,
+    val refreshing: Boolean = false,
+    val activeTab: Int = 0,
+    val error: String? = null,
+
+    // Request form
+    val sellerId: String = "",
+    val postId: String = "",
+    val requestSuccess: Boolean = false,
+
+    // Lists
+    val pendingRequests: List<SaleInfo> = emptyList(),
+    val activeSales: List<SaleInfo> = emptyList(),
+    val historySales: List<SaleInfo> = emptyList(),
+
+    // Suspension
+    val suspensionStatus: SuspensionStatusResponse? = null,
+    val suspensionCheckDone: Boolean = false,
+
+    // Action states
+    val actionLoading: Boolean = false,
+    val actionError: String? = null,
+    val actionSuccess: String? = null,
+
+    // Fraud report dialog
+    val showFraudDialog: Boolean = false,
+    val fraudSaleId: Int? = null,
+    val fraudReportedParty: String = "",
+    val fraudReason: String = "",
+
+    // Suspension respond
+    val showSuspensionRespond: Boolean = false,
+    val suspensionRespondMessage: String = "",
+    val suspensionRespondSuccess: Boolean = false,
+) {
+    val isSuspended: Boolean get() = suspensionStatus?.suspended == true
+    val isPermanentlyLocked: Boolean get() = suspensionStatus?.permanentlyLocked == true
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ViewModel
+// ──────────────────────────────────────────────────────────────────────────────
 
 @HiltViewModel
-class SaleDoneViewModel @Inject constructor(private val repo: TransactionsRepository) : ViewModel() {
+class SaleDoneViewModel @Inject constructor(
+    private val salesRepo: SalesRepository,
+    private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
+) : ViewModel() {
+
     private val _state = MutableStateFlow(SaleDoneUiState())
     val state: StateFlow<SaleDoneUiState> = _state.asStateFlow()
-    init { loadPending() }
-    fun loadPending() { viewModelScope.launch {
-        when (val r = repo.pending()) {
-            is ApiResult.Success -> _state.value = _state.value.copy(pending = r.data)
-            is ApiResult.Failure -> {}
+
+    init {
+        val prefillPostId = savedStateHandle.get<String>("postId")
+        val prefillSellerId = savedStateHandle.get<String>("sellerId")
+        if (!prefillSellerId.isNullOrBlank() && !prefillPostId.isNullOrBlank()) {
+            _state.update {
+                it.copy(
+                    sellerId = prefillSellerId,
+                    postId = prefillPostId,
+                    activeTab = 0,
+                )
+            }
         }
-    } }
-    fun setTab(t: String) { _state.value = _state.value.copy(tab = t, error = null) }
-    fun setPostId(v: String) { _state.value = _state.value.copy(postId = v) }
-    fun setBuyerId(v: String) { _state.value = _state.value.copy(buyerId = v) }
-    fun setSaleAmount(v: String) { _state.value = _state.value.copy(saleAmount = v) }
-    fun setTxnId(v: String) { _state.value = _state.value.copy(txnId = v) }
-    fun setOtp(v: String) { _state.value = _state.value.copy(otp = v) }
-    fun initiateSale() {
-        val s = _state.value
-        if (s.postId.isBlank() || s.buyerId.isBlank() || s.saleAmount.isBlank()) { _state.value = s.copy(error = "All fields are required: Post ID, Buyer ID, and Sale Amount"); return }
-        _state.value = s.copy(loading = true, error = null)
+        loadAll()
+    }
+
+    // ── Setters ────────────────────────────────────────────────────────────────
+
+    fun setSellerId(v: String) { _state.update { it.copy(sellerId = v, requestSuccess = false, error = null) } }
+    fun setPostId(v: String) { _state.update { it.copy(postId = v, requestSuccess = false, error = null) } }
+    fun setActiveTab(tab: Int) { _state.update { it.copy(activeTab = tab) } }
+
+    fun setFraudDialog(saleId: Int?, reportedParty: String) {
+        _state.update { it.copy(showFraudDialog = saleId != null, fraudSaleId = saleId, fraudReportedParty = reportedParty, fraudReason = "") }
+    }
+    fun setFraudReason(v: String) { _state.update { it.copy(fraudReason = v) } }
+    fun dismissFraudDialog() { _state.update { it.copy(showFraudDialog = false, fraudSaleId = null, fraudReason = "") } }
+
+    fun setSuspensionRespond(show: Boolean) { _state.update { it.copy(showSuspensionRespond = show, suspensionRespondMessage = "") } }
+    fun setSuspensionRespondMessage(v: String) { _state.update { it.copy(suspensionRespondMessage = v) } }
+
+    fun clearActionMessages() { _state.update { it.copy(actionError = null, actionSuccess = null) } }
+
+    // ── Load ───────────────────────────────────────────────────────────────────
+
+    fun loadAll() {
+        _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            when (val r = repo.initiate(InitiateSaleRequest(postId = s.postId, buyerId = s.buyerId, agreedPrice = s.saleAmount.toDoubleOrNull() ?: 0.0))) {
-                is ApiResult.Success -> {
-                    val txnId = r.data.transaction?.transactionId ?: ""
-                    val otp = r.data.transaction?.secretOTP
-                    val expiresIn = r.data.transaction?.otpExpiresIn
-                    _state.value = _state.value.copy(loading = false, initiatedTxnId = txnId, initiatedOtp = otp, initiatedOtpExpiresIn = expiresIn, txnId = txnId, step = 2, tab = "buyer")
-                }
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = mapSaleError(r.error.message))
+            // Load suspension status first
+            val suspensionResult = salesRepo.suspensionStatus()
+            val suspension = when (suspensionResult) {
+                is ApiResult.Success -> suspensionResult.data
+                else -> null
+            }
+            _state.update { it.copy(suspensionStatus = suspension, suspensionCheckDone = true) }
+
+            // Load sales data
+            val pendingResult = salesRepo.pendingRequests()
+            val activeResult = salesRepo.myActive()
+            val historyResult = salesRepo.myHistory()
+
+            val pending = when (pendingResult) {
+                is ApiResult.Success -> pendingResult.data
+                else -> emptyList()
+            }
+            val active = when (activeResult) {
+                is ApiResult.Success -> activeResult.data
+                else -> emptyList()
+            }
+            val history = when (historyResult) {
+                is ApiResult.Success -> historyResult.data
+                else -> emptyList()
+            }
+            val err = when {
+                pendingResult is ApiResult.Failure -> pendingResult.error.message
+                activeResult is ApiResult.Failure -> activeResult.error.message
+                historyResult is ApiResult.Failure -> historyResult.error.message
+                else -> null
+            }
+
+            _state.update {
+                it.copy(
+                    loading = false,
+                    pendingRequests = pending,
+                    activeSales = active,
+                    historySales = history,
+                    error = err,
+                )
             }
         }
     }
-    fun confirmSale() {
-        val s = _state.value
-        if (s.txnId.isBlank() || s.otp.isBlank()) { _state.value = s.copy(error = "Both Transaction ID and OTP are required"); return }
-        _state.value = s.copy(loading = true, error = null)
+
+    fun refresh() {
+        _state.update { it.copy(refreshing = true) }
         viewModelScope.launch {
-            when (val r = repo.confirm(ConfirmSaleRequest(transactionId = s.txnId, otp = s.otp))) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        loading = false, success = true, step = 4,
-                        completedReceipt = r.data.receipt,
-                        completedBuyer = r.data.buyer,
-                        completedItem = r.data.item,
-                        completedRewards = r.data.rewards,
-                    )
-                }
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = mapSaleError(r.error.message))
+            // Reload all
+            val pendingResult = salesRepo.pendingRequests()
+            val activeResult = salesRepo.myActive()
+            val historyResult = salesRepo.myHistory()
+            val suspensionResult = salesRepo.suspensionStatus()
+
+            _state.update {
+                it.copy(
+                    refreshing = false,
+                    pendingRequests = when (pendingResult) { is ApiResult.Success -> pendingResult.data else -> it.pendingRequests },
+                    activeSales = when (activeResult) { is ApiResult.Success -> activeResult.data else -> it.activeSales },
+                    historySales = when (historyResult) { is ApiResult.Success -> historyResult.data else -> it.historySales },
+                    suspensionStatus = when (suspensionResult) { is ApiResult.Success -> suspensionResult.data else -> it.suspensionStatus },
+                    suspensionCheckDone = true,
+                )
             }
         }
     }
-    private fun mapSaleError(msg: String?): String {
-        val m = (msg ?: "").lowercase()
-        return when {
-            m.contains("auth") || m.contains("401") || m.contains("login") -> "Please sign in again and retry this action."
-            m.contains("403") || m.contains("not authorized") -> "You are not authorized for this sale action."
-            m.contains("404") || m.contains("not found") -> "Record not found. Verify Post ID / Transaction ID and retry."
-            m.contains("otp") && m.contains("expired") -> "OTP expired. Seller must initiate a new sale."
-            m.contains("schema") || m.contains("missing sale columns") -> "Backend sale schema is incomplete. Please contact support."
-            else -> msg ?: "An error occurred. Please try again."
+
+    // ── Actions ────────────────────────────────────────────────────────────────
+
+    fun requestSale() {
+        val s = _state.value
+        if (s.sellerId.isBlank() || s.postId.isBlank()) {
+            _state.update { it.copy(error = "Both Seller ID and Post ID are required") }
+            return
+        }
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.requestSale(SaleRequest(postId = s.postId, sellerId = s.sellerId))) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(loading = false, requestSuccess = true, sellerId = "", postId = "", actionSuccess = r.data.message ?: "Sale request sent!") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(loading = false, error = r.error.message ?: "Failed to send sale request") }
+                }
+            }
         }
     }
-    fun resetForNewSale() {
-        _state.value = SaleDoneUiState()
-        loadPending()
+
+    fun approveSale(saleId: Int) {
+        _state.update { it.copy(actionLoading = true, actionError = null, actionSuccess = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.approve(saleId)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, actionSuccess = "Sale approved!") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to approve") }
+                }
+            }
+        }
+    }
+
+    fun rejectSale(saleId: Int) {
+        _state.update { it.copy(actionLoading = true, actionError = null, actionSuccess = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.reject(saleId)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, actionSuccess = "Sale rejected.") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to reject") }
+                }
+            }
+        }
+    }
+
+    fun markOrderReceived(saleId: Int) {
+        _state.update { it.copy(actionLoading = true, actionError = null, actionSuccess = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.orderReceived(saleId)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, actionSuccess = "Order received confirmed!") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to confirm order received") }
+                }
+            }
+        }
+    }
+
+    fun markAmountReceived(saleId: Int) {
+        _state.update { it.copy(actionLoading = true, actionError = null, actionSuccess = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.amountReceived(saleId)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, actionSuccess = "Amount received confirmed!") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to confirm amount received") }
+                }
+            }
+        }
+    }
+
+    fun submitFraudReport() {
+        val s = _state.value
+        val saleId = s.fraudSaleId ?: return
+        if (s.fraudReason.isBlank()) {
+            _state.update { it.copy(actionError = "Please describe the fraud reason") }
+            return
+        }
+        _state.update { it.copy(actionLoading = true, showFraudDialog = false) }
+        viewModelScope.launch {
+            when (val r = salesRepo.reportFraud(saleId, s.fraudReportedParty, s.fraudReason)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, actionSuccess = "Fraud reported. Admin will review.", fraudSaleId = null, fraudReason = "") }
+                    loadAll()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to report fraud") }
+                }
+            }
+        }
+    }
+
+    fun respondToFraudFlag() {
+        val s = _state.value
+        val suspension = s.suspensionStatus ?: return
+        val saleId = suspension.reason?.let { parseSaleId(it) } ?: return
+        if (s.suspensionRespondMessage.isBlank()) {
+            _state.update { it.copy(actionError = "Please write your response") }
+            return
+        }
+        _state.update { it.copy(actionLoading = true, actionError = null) }
+        viewModelScope.launch {
+            when (val r = salesRepo.respondToFraud(saleId, s.suspensionRespondMessage)) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(actionLoading = false, suspensionRespondSuccess = true, actionSuccess = "Response submitted! Admin will review within 24hrs.") }
+                    refresh()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(actionLoading = false, actionError = r.error.message ?: "Failed to submit response") }
+                }
+            }
+        }
+    }
+
+    fun resetForm() {
+        _state.update { SaleDoneUiState() }
+        loadAll()
+    }
+
+    private fun parseSaleId(reason: String?): Int? {
+        // Try to extract sale ID from suspension reason text like "Fraud reported on sale #42"
+        return reason?.let {
+            val match = Regex("""#(\d+)""").find(it)
+            match?.groupValues?.get(1)?.toIntOrNull()
+        }
     }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Screen Composables
+// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-    val steps = listOf(stringResource(R.string.commerce_step_listing_live), stringResource(R.string.commerce_step_deal_agreed), stringResource(R.string.commerce_step_payment), stringResource(R.string.commerce_step_confirmation), stringResource(R.string.commerce_step_complete))
-    var showTestingGuide by remember { mutableStateOf(false) }
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val backgroundBrush = if (isDark) {
         Brush.verticalGradient(listOf(Color(0xFF0D1B1E), Color(0xFF0A1412), Color(0xFF0D1B1E)))
     } else {
         Brush.verticalGradient(listOf(Color(0xFFF0FDF4), Color(0xFFECFDF5), Color(0xFFF0FDF4)))
     }
+
     Box(Modifier.fillMaxSize().background(backgroundBrush)) {
         Column(Modifier.fillMaxSize()) {
-            // Header with Back Button
+            // ── Header ───────────────────────────────────────────────────────
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,534 +368,621 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                     stringResource(R.string.commerce_mark_sold),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (isDark) Color.White else Color(0xFF1E293B)
+                    color = if (isDark) Color.White else Color(0xFF1E293B),
+                    modifier = Modifier.weight(1f),
+                )
+                // Refresh button
+                IconButton(onClick = { viewModel.refresh() }) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        tint = if (isDark) Color.White else Color(0xFF1E293B)
+                    )
+                }
+            }
+
+            if (!state.suspensionCheckDone && state.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                if (state.isSuspended) {
+                    SuspensionBanner(state, viewModel)
+                }
+
+                // ── Action Messages ──────────────────────────────────────────
+                state.actionSuccess?.let { msg ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isDark) Color(0xFF064E3B) else Color(0xFFDCFCE7),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            msg,
+                            color = if (isDark) Color(0xFF86EFAC) else Color(0xFF166534),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(12.dp),
+                        )
+                    }
+                    LaunchedEffect(msg) {
+                        delay(4000)
+                        viewModel.clearActionMessages()
+                    }
+                }
+                state.actionError?.let { msg ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isDark) Color(0xFF450A0A) else Color(0xFFFEE2E2),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            msg,
+                            color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF991B1B),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(12.dp),
+                        )
+                    }
+                }
+
+                // ── Tabs ────────────────────────────────────────────────────
+                val tabs = listOf("Request", "Pending", "Active", "History")
+                TabRow(
+                    selectedTabIndex = state.activeTab,
+                    containerColor = Color.Transparent,
+                    contentColor = if (isDark) Color.White else Color(0xFF1E293B),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = state.activeTab == index,
+                            onClick = { viewModel.setActiveTab(index) },
+                            text = {
+                                val count = when (index) {
+                                    1 -> state.pendingRequests.size
+                                    2 -> state.activeSales.size
+                                    3 -> state.historySales.size
+                                    else -> null
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(title, fontWeight = if (state.activeTab == index) FontWeight.Bold else FontWeight.Normal, fontSize = 13.sp)
+                                    if (count != null && count > 0) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primary) {
+                                            Text("$count", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
+
+                // ── Tab Content ─────────────────────────────────────────────
+                when (state.activeTab) {
+                    0 -> RequestTab(state, viewModel)
+                    1 -> PendingTab(state, viewModel)
+                    2 -> ActiveTab(state, viewModel)
+                    3 -> HistoryTab(state, viewModel)
+                }
+            }
+        }
+
+        // ── Loading overlay ──────────────────────────────────────────────────
+        if (state.actionLoading) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    }
+
+    // ── Fraud Report Dialog ────────────────────────────────────────────────────
+    if (state.showFraudDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissFraudDialog() },
+            title = { Text("Report Fraud", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Reporting: ${state.fraudReportedParty}", fontSize = 13.sp, color = Color.Gray)
+                    OutlinedTextField(
+                        value = state.fraudReason,
+                        onValueChange = viewModel::setFraudReason,
+                        label = { Text("Describe the fraud issue") },
+                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        maxLines = 5,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.submitFraudReport() }, enabled = state.fraudReason.isNotBlank() && !state.actionLoading) {
+                    Text("Report")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissFraudDialog() }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Suspension Banner
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SuspensionBanner(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val suspension = state.suspensionStatus ?: return
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Surface(
+        shape = RoundedCornerShape(0.dp),
+        color = if (isDark) Color(0xFF450A0A) else Color(0xFFFEF2F2),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.Warning, null, tint = if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626), modifier = Modifier.size(24.dp))
+                Text(
+                    if (state.isPermanentlyLocked) "Account Permanently Locked" else "Account Suspended",
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF991B1B),
+                    fontSize = 16.sp,
                 )
             }
-            // Hero gradient card (web parity: mhub-hero-card "Sale Confirmation")
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF16A34A), Color(0xFF059669), Color(0xFF0D9488)))),
+            Spacer(Modifier.height(8.dp))
+            Text(
+                suspension.reason ?: "Suspension reason not specified",
+                color = if (isDark) Color(0xFFFCA5A5).copy(alpha = 0.85f) else Color(0xFF7F1D1D),
+                fontSize = 13.sp,
+            )
+            if (!state.isPermanentlyLocked) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Time remaining: ${suspension.remainingHours}h ${suspension.remainingMinutes}m",
+                    color = if (isDark) Color(0xFFF87171) else Color(0xFFB91C1C),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (!state.suspensionRespondSuccess && !state.showSuspensionRespond) {
+                    OutlinedButton(onClick = { viewModel.setSuspensionRespond(true) }) {
+                        Text("Respond to Suspension")
+                    }
+                }
+                if (state.showSuspensionRespond && !state.suspensionRespondSuccess) {
+                    OutlinedTextField(
+                        value = state.suspensionRespondMessage,
+                        onValueChange = viewModel::setSuspensionRespondMessage,
+                        label = { Text("Explain your situation") },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        maxLines = 4,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { viewModel.respondToFraudFlag() }, enabled = state.suspensionRespondMessage.isNotBlank()) {
+                            Text("Submit Response")
+                        }
+                        TextButton(onClick = { viewModel.setSuspensionRespond(false) }) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+                if (state.suspensionRespondSuccess) {
+                    Text(
+                        "Response submitted! Admin will review.",
+                        color = Color(0xFF166534),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Only the Sale Done page is accessible during suspension.",
+                color = Color(0xFF6B7280),
+                fontSize = 11.sp,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+            )
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tab: Request
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            "Request a Sale",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isDark) Color.White else Color(0xFF1E293B),
+        )
+        Text(
+            "Enter the Seller's ID and the Post ID to initiate a sale request.",
+            fontSize = 13.sp,
+            color = if (isDark) Color.Gray else Color(0xFF64748B),
+        )
+
+        if (state.requestSuccess) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.commerce_sale_verification_label), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White.copy(alpha = 0.7f))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                        Text(stringResource(R.string.commerce_sale_confirmation_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
-                    }
-                    Text(stringResource(R.string.commerce_sale_confirmation_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf(
-                            stringResource(R.string.commerce_badge_secure),
-                            stringResource(R.string.commerce_badge_rewarded),
-                            stringResource(R.string.commerce_badge_verified),
-                        ).forEach { badge ->
-                            Surface(shape = RoundedCornerShape(8.dp), color = Color.White.copy(alpha = 0.15f)) {
-                                Text(badge, fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                            }
-                        }
-                    }
-                }
-            }
-            // Premium Stepper with connecting lines
-            Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                        steps.forEachIndexed { i, label ->
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                Box(
-                                    Modifier.size(32.dp).clip(CircleShape).background(
-                                        when {
-                                            i < state.step -> Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF22C55E)))
-                                            i == state.step -> Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))
-                                            else -> Brush.linearGradient(listOf(Color(0xFFE2E8F0), Color(0xFFE2E8F0)))
-                                        }
-                                    ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    if (i < state.step) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                    else Text("${i + 1}", fontSize = 12.sp, color = if (i == state.step) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(label, fontSize = 8.sp, color = if (i <= state.step) Color(0xFF16A34A) else Color(0xFF94A3B8), maxLines = 2, textAlign = TextAlign.Center, fontWeight = if (i == state.step) FontWeight.Bold else FontWeight.Normal)
-                            }
-                        }
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("✅", fontSize = 36.sp)
+                    Text(
+                        "Sale Request Sent!",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF14532D),
+                    )
+                    Text(
+                        "The seller will review your request.",
+                        fontSize = 13.sp,
+                        color = if (isDark) Color.Gray else Color(0xFF475569),
+                    )
+                    OutlinedButton(onClick = { viewModel.resetForm() }) {
+                        Text("Send Another")
                     }
                 }
             }
-            // Seller / Buyer tabs (web parity: Saledone.jsx)
-            Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Row(Modifier.padding(4.dp)) {
-                    listOf(
-                        "seller" to stringResource(R.string.commerce_tab_seller),
-                        "buyer" to stringResource(R.string.commerce_tab_buyer_confirm),
-                    ).forEach { (key, label) ->
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (state.tab == key) { if (isDark) Color(0xFF0F172A) else Color.White } else Color.Transparent,
-                            shadowElevation = if (state.tab == key) 2.dp else 0.dp,
-                            modifier = Modifier.weight(1f).clickable { viewModel.setTab(key) },
-                        ) {
-                            Text(label, fontSize = 12.sp, fontWeight = if (state.tab == key) FontWeight.Bold else FontWeight.Normal, color = if (state.tab == key) Color(0xFF22C55E) else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp), maxLines = 1)
+        } else {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    MhubTextField(
+                        label = "Seller ID",
+                        value = state.sellerId,
+                        onValueChange = viewModel::setSellerId,
+                    )
+                    MhubTextField(
+                        label = "Post ID",
+                        value = state.postId,
+                        onValueChange = viewModel::setPostId,
+                    )
+
+                    state.error?.let { err ->
+                        Text(err, color = Color(0xFFDC2626), fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = { viewModel.requestSale() },
+                        enabled = state.sellerId.isNotBlank() && state.postId.isNotBlank() && !state.loading,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        if (state.loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                        } else {
+                            Icon(Icons.Default.Send, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Send Sale Request")
                         }
                     }
                 }
-            }
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                state.error?.let {
-                    Surface(shape = RoundedCornerShape(12.dp), color = ColorTokens.RedContainer) {
-                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Error, null, tint = ColorTokens.RedText, modifier = Modifier.size(18.dp))
-                            Text(it, color = ColorTokens.RedText, fontSize = 13.sp)
-                        }
-                    }
-                }
-                // Testing Guide (web parity: collapsible "How to test this page")
-                if (!state.success) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF), border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().clickable { showTestingGuide = !showTestingGuide }.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(Icons.Filled.Info, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                                Text("How to test this page — tap to expand", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8), modifier = Modifier.weight(1f))
-                                Icon(if (showTestingGuide) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                            }
-                            if (showTestingGuide) {
-                                Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    listOf(
-                                        "Step 1 — Find your Post ID" to "Go to My Home → tap any active listing → copy the Post ID from the URL.",
-                                        "Step 2 — Get Buyer's User ID" to "Ask the buyer to share their User ID from Profile → Settings → Account Info.",
-                                        "Step 3 — Seller initiates" to "Enter Post ID, Buyer ID and agreed amount → tap Initiate Sale. Share Transaction ID + OTP with buyer.",
-                                        "Step 4 — Buyer confirms" to "Switch to 'Confirm Purchase' tab. Enter Transaction ID + OTP → tap Confirm Purchase. Post moves to Sold.",
-                                    ).forEach { (title, desc) ->
-                                        Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF26324A) else Color.White, modifier = Modifier.fillMaxWidth()) {
-                                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
-                                                Text(desc, fontSize = 11.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
-                                            }
-                                        }
-                                    }
-                                    Text("OTPs expire in 24 hours. If expired, seller must re-initiate.", fontSize = 10.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
-                                }
-                            }
-                        }
-                    }
-                }
-                if (state.tab == "seller") {
-                    if (state.success) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Success animation card
-                            Surface(shape = RoundedCornerShape(24.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                    Box(Modifier.size(88.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(52.dp))
-                                    }
-                                    Text(stringResource(R.string.commerce_sale_completed), fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF14532D))
-                                    Text(stringResource(R.string.commerce_sale_confirmed_msg), fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), textAlign = TextAlign.Center)
-                                }
-                            }
-                            // Receipt card
-                            Surface(shape = RoundedCornerShape(20.dp), color = ColorTokens.GreenContainer, border = BorderStroke(1.dp, ColorTokens.GreenText.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Icon(Icons.Filled.Receipt, null, tint = ColorTokens.GreenText, modifier = Modifier.size(18.dp))
-                                        Text(stringResource(R.string.commerce_transaction_receipt), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ColorTokens.GreenText, letterSpacing = 1.sp)
-                                    }
-                                    HorizontalDivider(color = ColorTokens.GreenText.copy(alpha = 0.3f))
-                                    // Item title
-                                    state.completedItem?.title?.let { title ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Item", fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading, modifier = Modifier.weight(1f, fill = false), textAlign = TextAlign.End)
-                                        }
-                                    }
-                                    // Buyer name
-                                    state.completedBuyer?.name?.let { name ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Buyer", fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
-                                        }
-                                    }
-                                    // Receipt ID
-                                    state.completedReceipt?.receiptId?.let { rid ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.commerce_receipt_id), fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Text(rid, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
-                                        }
-                                    }
-                                    // Transaction ID with copy
-                                    val txId = state.completedReceipt?.transactionId ?: state.initiatedTxnId
-                                    if (txId != null) {
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                            Text(stringResource(R.string.commerce_transaction), fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(txId, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = ColorTokens.TextHeading)
-                                                IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(txId)) }, modifier = Modifier.size(20.dp)) {
-                                                    Icon(Icons.Default.ContentCopy, null, tint = ColorTokens.TextSecondary, modifier = Modifier.size(12.dp))
-                                                }
-                                            }
-                                        }
-                                    }
-                                    // Amount
-                                    val amount = state.completedReceipt?.amount ?: state.saleAmount.toDoubleOrNull()
-                                    if (amount != null) {
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(stringResource(R.string.commerce_amount), fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Text("₹${amount.toLong()}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ColorTokens.GreenText)
-                                        }
-                                    }
-                                    // Completed at
-                                    state.completedReceipt?.completedAt?.let { ts ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Completed", fontSize = 13.sp, color = ColorTokens.TextSecondary)
-                                            Text(ts.take(19).replace("T", " "), fontSize = 11.sp, color = ColorTokens.TextSecondary)
-                                        }
-                                    }
-                                }
-                            }
-                            // Reward earned card — show actual points from API
-                            val rewardsInfo = state.completedRewards
-                            val totalPoints = rewardsInfo?.totalPoints ?: 0
-                            if (totalPoints > 0) {
-                            Surface(shape = RoundedCornerShape(20.dp), color = ColorTokens.AmberContainer, border = BorderStroke(1.dp, ColorTokens.AmberText.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("✅", fontSize = 22.sp)
-                                        Text("Rewards Earned!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.AmberText)
-                                    }
-                                    // 4-metric breakdown (web parity)
-                                    val metricsRow1 = listOf(
-                                        "Seller Points" to (rewardsInfo?.sellerPoints ?: 0),
-                                        "Buyer Points" to (rewardsInfo?.buyerPoints ?: 0),
-                                    )
-                                    val metricsRow2 = listOf(
-                                        "Bonus Points" to (rewardsInfo?.bonusPoints ?: 0),
-                                        "Referral Points" to ((rewardsInfo?.referralPoints ?: 0) + (rewardsInfo?.chainPoints ?: 0)),
-                                    )
-                                    listOf(metricsRow1, metricsRow2).forEach { row ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            row.forEach { (label, pts) ->
-                                                Surface(shape = RoundedCornerShape(10.dp), color = if (isDark) Color(0xFF2D1F00) else Color(0xFFFEF3C7), modifier = Modifier.weight(1f)) {
-                                                    Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                        Text("+$pts", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = ColorTokens.AmberText)
-                                                        Text(label, fontSize = 10.sp, color = ColorTokens.AmberText, textAlign = TextAlign.Center)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            }
-                            // Sold Item Card (web parity)
-                            state.completedItem?.let { item ->
-                                Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
-                                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Icon(Icons.Filled.Inventory2, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
-                                            Text("Sold Item", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color.White else Color(0xFF1E293B))
-                                        }
-                                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                                            // Item image
-                                            item.imageUrl?.let { url ->
-                                                AsyncImage(
-                                                    model = url,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                                    contentScale = ContentScale.Crop,
-                                                )
-                                            } ?: Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0), modifier = Modifier.size(60.dp)) {
-                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                    Icon(Icons.Filled.Image, null, tint = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8), modifier = Modifier.size(28.dp))
-                                                }
-                                            }
-                                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                item.title?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color.White else Color(0xFF0F172A), maxLines = 2) }
-                                                item.categoryName?.let { cat ->
-                                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Text(cat, fontSize = 11.sp, color = ColorTokens.TextSecondary)
-                                                        item.subcategoryName?.let { sub -> Text("· $sub", fontSize = 11.sp, color = ColorTokens.TextSecondary) }
-                                                    }
-                                                }
-                                                item.location?.let { Text("📍 $it", fontSize = 11.sp, color = ColorTokens.TextSecondary) }
-                                                // Agreed vs listing price
-                                                val agreed = item.agreedPrice ?: item.price
-                                                val listing = item.listingPrice ?: item.price
-                                                if (agreed != null) {
-                                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                        Text("₹${agreed.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText)
-                                                        if (listing != null && listing != agreed) {
-                                                            Text("₹${listing.toLong()}", fontSize = 12.sp, color = ColorTokens.TextSecondary, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            // Buyer Details Card (web parity)
-                            state.completedBuyer?.let { buyer ->
-                                Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
-                                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Icon(Icons.Filled.Person, null, tint = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
-                                            Text("Buyer Details", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color.White else Color(0xFF1E293B))
-                                        }
-                                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            // Avatar circle
-                                            val purpleColor = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED)
-                                            Surface(shape = CircleShape, color = purpleColor.copy(alpha = 0.15f), modifier = Modifier.size(48.dp)) {
-                                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                                    Text(buyer.name?.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = purpleColor)
-                                                }
-                                            }
-                                            Column(Modifier.weight(1f)) {
-                                                buyer.name?.let { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color.White else Color(0xFF0F172A)) }
-                                                buyer.username?.let { Text("@$it", fontSize = 12.sp, color = ColorTokens.TextSecondary) }
-                                                val buyerIdDisplay = buyer.userId ?: buyer.id
-                                                buyerIdDisplay?.let { uid ->
-                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Text("ID: $uid", fontSize = 11.sp, color = ColorTokens.TextSecondary)
-                                                        IconButton(onClick = { clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(uid)) }, modifier = Modifier.size(18.dp)) {
-                                                            Icon(Icons.Default.ContentCopy, null, tint = ColorTokens.TextSecondary, modifier = Modifier.size(12.dp))
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            // Receipt Actions row (web parity: copy/share)
-                            val btnContent = if (isDark) Color.White else Color.Unspecified
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                // Copy receipt
-                                OutlinedButton(
-                                    onClick = {
-                                        val receiptText = buildString {
-                                            append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
-                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
-                                        }
-                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(receiptText))
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Icon(Icons.Default.ContentCopy, null, tint = btnContent, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Copy", style = MaterialTheme.typography.labelMedium, color = btnContent)
-                                }
-                                // Share receipt
-                                OutlinedButton(
-                                    onClick = {
-                                        val shareText = buildString {
-                                            append("MHub Sale Receipt\n")
-                                            append("Transaction: ${state.completedReceipt?.transactionId ?: state.initiatedTxnId ?: ""}\n")
-                                            append("Amount: ₹${state.completedReceipt?.amount?.toLong() ?: state.saleAmount}")
-                                        }
-                                        val intent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(Intent.EXTRA_TEXT, shareText)
-                                            putExtra(Intent.EXTRA_SUBJECT, "Sale Receipt")
-                                        }
-                                        context.startActivity(Intent.createChooser(intent, "Share Receipt"))
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Icon(Icons.Outlined.Share, null, tint = btnContent, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Share", style = MaterialTheme.typography.labelMedium, color = btnContent)
-                                }
-                            }
-                            // Next Steps Section (web parity)
-                            Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF), border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)), modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("Next Steps", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
-                                    listOf(
-                                        "📦" to "View your post in My Home → Sold tab",
-                                        "⭐" to "Leave a review for the buyer",
-                                        "🚀" to "List more items to grow your sales",
-                                    ).forEach { (emoji, text) ->
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                                            Text(emoji, fontSize = 14.sp)
-                                            Text(text, fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1E40AF))
-                                        }
-                                    }
-                                }
-                            }
-                            // Action buttons
-                            OutlinedButton(
-                                onClick = { viewModel.resetForNewSale() },
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                                border = BorderStroke(1.5.dp, Color(0xFF16A34A)),
-                            ) {
-                                Icon(Icons.Default.Add, null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Confirm Another Sale", fontWeight = FontWeight.SemiBold, color = Color(0xFF16A34A))
-                            }
-                            OutlinedButton(
-                                onClick = onBack,
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                                border = BorderStroke(1.5.dp, Color(0xFF6366F1)),
-                            ) {
-                                Icon(Icons.Filled.Star, null, tint = Color(0xFF6366F1), modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Leave Feedback", fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
-                            }
-                            Button(onClick = onBack, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)), modifier = Modifier.fillMaxWidth().height(50.dp), elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
-                                Icon(Icons.Filled.Home, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("View My Listings", fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-                    } else {
-                        // Seller initiation form
-                        Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Surface(shape = CircleShape, color = if (isDark) Color(0xFF064E3B) else Color(0xFFDCFCE7), modifier = Modifier.size(36.dp)) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            Icon(Icons.Filled.Sell, null, tint = ColorTokens.GreenText, modifier = Modifier.size(18.dp))
-                                        }
-                                    }
-                                    Text("Initiate Sale", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
-                                }
-                                MhubTextField(stringResource(R.string.commerce_field_post_id), state.postId, viewModel::setPostId)
-                                MhubTextField(stringResource(R.string.commerce_field_buyer_id), state.buyerId, viewModel::setBuyerId)
-                                MhubTextField(stringResource(R.string.commerce_field_sale_amount), state.saleAmount, viewModel::setSaleAmount)
-                                Button(
-                                    onClick = { viewModel.initiateSale() },
-                                    enabled = !state.loading,
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                                ) {
-                                    if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                    else {
-                                        Icon(Icons.Filled.Favorite, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(stringResource(R.string.commerce_initiate_sale), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
-                                    }
-                                }
-                            }
-                        }
-                        // Blue info card: show transaction ID + OTP after successful initiation (web parity: initiatedSale card in Saledone.jsx)
-                        if (state.initiatedTxnId != null) {
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
-                                border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFBFDBFE)),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("Transaction Created", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8))
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Transaction ID:", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF2563EB))
-                                        Text(state.initiatedTxnId!!, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF), modifier = Modifier.weight(1f, fill = false), maxLines = 1)
-                                    }
-                                    if (state.initiatedOtp != null) {
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("OTP to share with buyer:", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF2563EB))
-                                            Text(state.initiatedOtp!!, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E40AF))
-                                        }
-                                    } else {
-                                        Text("OTP sent to buyer's notification channel.", fontSize = 12.sp, color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF3B82F6))
-                                    }
-                                    state.initiatedOtpExpiresIn?.let { expiry ->
-                                        Text("Expires in: $expiry", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF60A5FA))
-                                    }
-                                    Text("Switch to 'Confirm Purchase' tab to complete the sale.", fontSize = 11.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF93C5FD))
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Buyer confirmation form
-                    Surface(shape = RoundedCornerShape(20.dp), color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Surface(shape = CircleShape, color = if (isDark) Color(0xFF2D1B4E) else Color(0xFFEDE9FE), modifier = Modifier.size(36.dp)) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            Icon(Icons.Filled.Verified, null, tint = ColorTokens.CardPurpleText, modifier = Modifier.size(18.dp))
-                                        }
-                                    }
-                                    Text("Confirm Purchase", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
-                                }
-                            MhubTextField(stringResource(R.string.commerce_field_txn_id), state.txnId, viewModel::setTxnId)
-                            MhubTextField(stringResource(R.string.commerce_field_otp), state.otp, viewModel::setOtp)
-                            Button(
-                                onClick = { viewModel.confirmSale() },
-                                enabled = !state.loading,
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                            ) {
-                                if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                else {
-                                    Icon(Icons.Filled.Verified, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.commerce_confirm_sale), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-                // Pending sales
-                if (state.pending.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Filled.PendingActions, null, tint = ColorTokens.PremiumAmber, modifier = Modifier.size(20.dp))
-                        Text(stringResource(R.string.commerce_pending_sales), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.TextHeading)
-                    }
-                    state.pending.forEach { sale ->
-                        Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Surface(shape = RoundedCornerShape(10.dp), color = ColorTokens.PremiumAmberContainer, modifier = Modifier.size(40.dp)) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Icon(Icons.Filled.Timer, null, tint = ColorTokens.PremiumAmber, modifier = Modifier.size(20.dp))
-                                    }
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(sale.postTitle ?: stringResource(R.string.commerce_listing), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = ColorTokens.TextHeading)
-                                    Text(stringResource(R.string.commerce_buyer_label) + (sale.buyerName ?: stringResource(R.string.commerce_unknown_buyer)), fontSize = 12.sp, color = ColorTokens.TextSecondary)
-                                }
-                                Surface(shape = RoundedCornerShape(8.dp), color = ColorTokens.GreenContainer) {
-                                    Text("₹${sale.amount.toLong()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(60.dp))
             }
         }
     }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SaleUndoneScreen — 5-step stepper with undo form + history
+// Tab: Pending (seller view — pending incoming requests)
 // ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PendingTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    if (state.loading && state.pendingRequests.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (state.pendingRequests.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.Inbox, null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                Spacer(Modifier.height(8.dp))
+                Text("No pending requests", color = Color.Gray, fontSize = 14.sp)
+            }
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(state.pendingRequests, key = { it.id }) { sale ->
+            PendingRequestCard(sale, state, viewModel, isDark)
+        }
+    }
+}
+
+@Composable
+private fun PendingRequestCard(sale: SaleInfo, state: SaleDoneUiState, viewModel: SaleDoneViewModel, isDark: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth().animateContentSize(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(sale.buyerName ?: "Unknown Buyer", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("wants to buy:", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+            Text(sale.postTitle ?: "Unknown Post", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            if (sale.postPrice != null) {
+                Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+            }
+            HorizontalDivider()
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { viewModel.approveSale(sale.id) },
+                    enabled = !state.actionLoading,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                ) {
+                    Text("Approve", color = Color.White)
+                }
+                OutlinedButton(
+                    onClick = { viewModel.rejectSale(sale.id) },
+                    enabled = !state.actionLoading,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                ) {
+                    Text("Reject")
+                }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tab: Active (buyer & seller views)
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ActiveTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    if (state.loading && state.activeSales.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (state.activeSales.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                Spacer(Modifier.height(8.dp))
+                Text("No active sales", color = Color.Gray, fontSize = 14.sp)
+            }
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(state.activeSales, key = { it.id }) { sale ->
+            ActiveSaleCard(sale, state, viewModel, isDark)
+        }
+    }
+}
+
+@Composable
+private fun ActiveSaleCard(sale: SaleInfo, state: SaleDoneUiState, viewModel: SaleDoneViewModel, isDark: Boolean) {
+    // Determine user role based on sale status and fields
+    val isBuyerView = sale.status == "received" // If order is already marked received, buyer has acted
+    val statusLabel = when (sale.status) {
+        "requested" -> "Pending Approval"
+        "approved" -> "Approved — Awaiting Confirmation"
+        "received" -> "Order Received (waiting for seller)"
+        "settled" -> "Completed"
+        "fraud" -> "⚠️ Fraud Reported"
+        "rejected" -> "Rejected"
+        else -> sale.status ?: "Unknown"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth().animateContentSize(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Description, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(sale.postTitle ?: "Post #${sale.id}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Sale #${sale.id} — ${sale.sellerName ?: "Seller"}", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+            if (sale.postPrice != null) {
+                Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+            }
+            Surface(shape = RoundedCornerShape(6.dp), color = statusColor(sale.status).copy(alpha = 0.1f)) {
+                Text(statusLabel, fontSize = 11.sp, color = statusColor(sale.status), fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+            }
+
+            // Action buttons based on status
+            if (sale.status == "approved") {
+                HorizontalDivider()
+                Text("Actions:", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+                // Buyer row: Order Received + fraud
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = { viewModel.markOrderReceived(sale.id) },
+                        enabled = !state.actionLoading,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    ) {
+                        Text("✅ Order Received", color = Color.White, fontSize = 10.sp)
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.setFraudDialog(sale.id, "seller") },
+                        enabled = !state.actionLoading,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                    ) {
+                        Icon(Icons.Default.Flag, null, modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("⬇ Not Received", fontSize = 10.sp, color = Color(0xFFDC2626))
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                // Seller row: Amount Received + fraud
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = { viewModel.markAmountReceived(sale.id) },
+                        enabled = !state.actionLoading,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                    ) {
+                        Text("💰 Amount Received", color = Color.White, fontSize = 10.sp)
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.setFraudDialog(sale.id, "buyer") },
+                        enabled = !state.actionLoading,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                    ) {
+                        Icon(Icons.Default.Flag, null, modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("💰 Not Received", fontSize = 10.sp, color = Color(0xFFDC2626))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun statusColor(status: String?): Color = when (status) {
+    "requested" -> Color(0xFFF59E0B)
+    "approved" -> Color(0xFF2563EB)
+    "received" -> Color(0xFF8B5CF6)
+    "settled" -> Color(0xFF16A34A)
+    "fraud" -> Color(0xFFDC2626)
+    "rejected" -> Color(0xFF6B7280)
+    else -> Color(0xFF6B7280)
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tab: History
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun HistoryTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    if (state.loading && state.historySales.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (state.historySales.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.History, null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                Spacer(Modifier.height(8.dp))
+                Text("No sale history yet", color = Color.Gray, fontSize = 14.sp)
+            }
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(state.historySales, key = { it.id }) { sale ->
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(sale.postTitle ?: "Post #${sale.id}", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                        Text(
+                            when (sale.status) {
+                                "settled" -> "✅ Settled"
+                                "fraud" -> "⚠️ Fraud — " + (sale.fraudReason ?: "")
+                                "rejected" -> "❌ Rejected"
+                                else -> sale.status ?: ""
+                            },
+                            fontSize = 11.sp,
+                            color = statusColor(sale.status),
+                        )
+                    }
+                    if (sale.postPrice != null) {
+                        Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SaleUndoneUiState — required by SaleUndoneScreen.kt
+// ──────────────────────────────────────────────────────────────────────────────
+
 data class SaleUndoneUiState(
     val loading: Boolean = false,
     val postId: String = "",
     val reason: String = "",
     val description: String = "",
-    val history: List<UndoneRecord> = emptyList(),
     val success: Boolean = false,
-    val transactionId: String? = null,
     val error: String? = null,
+    val transactionId: String? = null,
+    val history: List<com.zaruda.app.data.remote.dto.UndoneRecord> = emptyList(),
 )

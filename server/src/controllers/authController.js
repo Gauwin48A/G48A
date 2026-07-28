@@ -327,6 +327,21 @@ exports.signup = async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: 'Valid phone number is required' });
     }
+
+    // ── KYC blacklist check: reject signup if phone is blacklisted ──
+    const phoneHash = crypto.createHash('sha256').update(phoneNumber).digest('hex');
+    const blacklistCheck = await runQuery(
+      `SELECT id, reason FROM kyc_blacklist WHERE mobile_hash = $1 LIMIT 1`,
+      [phoneHash]
+    );
+    if (blacklistCheck.rows.length > 0) {
+      logger.warn(`[SIGNUP] Blocked blacklisted phone: ${phoneNumber.substring(0, 4)}******`);
+      return res.status(403).json({
+        error: 'This phone number is blacklisted due to a previous unresolved fraud report. Contact support for assistance.',
+        code: 'KYC_BLACKLISTED',
+      });
+    }
+
     const strength = zxcvbn(password || '');
     if (strength.score < 2) {
       return res

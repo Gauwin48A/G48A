@@ -4,9 +4,86 @@ const logger = require("../utils/logger");
 
 const DEFAULT_FEEDBACK_LIMIT = 50;
 const MAX_FEEDBACK_LIMIT = 200;
+const AUTO_CREATE_FEEDBACK_TABLE =
+  process.env.AUTO_CREATE_FEEDBACK_TABLE !== "false";
 
 // Cached schema inspection — only runs once
 let feedbackIdColumnAvailablePromise = null;
+let feedbackTableAvailablePromise = null;
+let feedbackSchemaReadyPromise = null;
+let feedbackTableMissingLogged = false;
+
+/**
+ * Check whether the `feedback` table exists. Result is cached.
+ * @returns {Promise<boolean>}
+ */
+async function isFeedbackTableAvailable() {
+  if (!feedbackTableAvailablePromise) {
+    feedbackTableAvailablePromise = runQuery(
+      `SELECT to_regclass('public.feedback') IS NOT NULL AS available`
+    )
+      .then((result) => Boolean(result?.rows?.[0]?.available))
+      .catch((err) => {
+        logger.warn("[Feedback] Failed to verify feedback table availability", {
+          message: err.message,
+        });
+        return false;
+      });
+  }
+  return feedbackTableAvailablePromise;
+}
+
+/**
+ * Run one-time schema setup if the feedback table is missing.
+ * The promise is cached so creation executes at most once per process.
+ * @returns {Promise<boolean>} true if schema is ready
+ */
+async function ensureFeedbackSchema() {
+  if (!feedbackSchemaReadyPromise) {
+    feedbackSchemaReadyPromise = (async () => {
+      let tableAvailable = await isFeedbackTableAvailable();
+      if (!tableAvailable && AUTO_CREATE_FEEDBACK_TABLE) {
+        try {
+          await runQuery(
+            `CREATE TABLE IF NOT EXISTS feedback (
+              feedback_id BIGSERIAL PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              message TEXT NOT NULL,
+              rating INT DEFAULT 5,
+              category TEXT DEFAULT 'general',
+              status TEXT DEFAULT 'open',
+              created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )`
+          );
+          logger.info("[Feedback] feedback table created automatically.");
+          feedbackTableAvailablePromise = Promise.resolve(true);
+          feedbackIdColumnAvailablePromise = Promise.resolve(false);
+          tableAvailable = true;
+        } catch (createErr) {
+          logger.warn("[Feedback] Unable to auto-create feedback table", {
+            message: createErr.message,
+          });
+        }
+      }
+
+      if (!tableAvailable) {
+        if (!feedbackTableMissingLogged) {
+          logger.warn(
+            "[Feedback] feedback table missing; read endpoints will return empty results."
+          );
+          feedbackTableMissingLogged = true;
+        }
+        return false;
+      }
+
+      return true;
+    })().catch((err) => {
+      logger.warn("[Feedback] Schema setup skipped", { message: err.message });
+      return false;
+    });
+  }
+  return feedbackSchemaReadyPromise;
+}
 
 async function hasFeedbackIdColumn() {
   if (!feedbackIdColumnAvailablePromise) {
@@ -48,6 +125,11 @@ exports.getFeedback = async (req, res) => {
       return res.status(403).json({ error: "Admin or moderator access required" });
     }
 
+    const schemaReady = await ensureFeedbackSchema();
+    if (!schemaReady) {
+      return res.json([]);
+    }
+
     const page = parsePositiveInt(req.query.page, 1);
     const limit = parsePositiveInt(req.query.limit, DEFAULT_FEEDBACK_LIMIT, MAX_FEEDBACK_LIMIT);
     const offset = (page - 1) * limit;
@@ -74,6 +156,11 @@ exports.getFeedback = async (req, res) => {
  */
 exports.getMyFeedback = async (req, res) => {
   try {
+    const schemaReady = await ensureFeedbackSchema();
+    if (!schemaReady) {
+      return res.json({ feedback: [] });
+    }
+
     const hasIdColumn = await hasFeedbackIdColumn();
     const userId = getAuthUserId(req);
     if (!userId) {
@@ -102,6 +189,14 @@ exports.getMyFeedback = async (req, res) => {
  */
 exports.createFeedback = async (req, res) => {
   try {
+    const schemaReady = await ensureFeedbackSchema();
+    if (!schemaReady) {
+      return res.status(503).json({
+        error: "Feedback service unavailable",
+        details: "Feedback table is not initialized",
+      });
+    }
+
     const hasIdColumn = await hasFeedbackIdColumn();
     const userId = getAuthUserId(req);
     if (!userId) {

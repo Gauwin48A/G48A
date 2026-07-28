@@ -189,6 +189,61 @@ async function ensureOffersOptionalColumns() {
  * Auto-provision user_settings table for push/email notification toggles.
  * @returns {Promise<boolean>}
  */
+/**
+ * Create the sales, suspensions, and kyc_blacklist tables if they don't exist.
+ */
+async function ensureSalesTables() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS sales (
+        id SERIAL PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        buyer_id TEXT NOT NULL,
+        seller_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested','approved','received','settled','fraud','rejected')),
+        reported_party TEXT,
+        fraud_reason TEXT,
+        admin_notified BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS suspensions (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        sale_id INTEGER REFERENCES sales(id),
+        reason TEXT NOT NULL,
+        suspended_until TIMESTAMPTZ NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        responded BOOLEAN DEFAULT false,
+        response_message TEXT,
+        responded_at TIMESTAMPTZ,
+        permanently_locked BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS kyc_blacklist (
+        id SERIAL PRIMARY KEY,
+        aadhaar_hash TEXT,
+        mobile_hash TEXT,
+        pan_hash TEXT,
+        user_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(user_id)
+      )
+    `);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to create sales/suspension tables", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
 async function ensureUserSettingsTable() {
   try {
     await runQuery(`
@@ -528,6 +583,8 @@ async function ensurePaymentTables() {
       )
     `);
     await runQuery(`CREATE INDEX IF NOT EXISTS idx_payment_order_id ON payment_transactions(razorpay_order_id)`);
+    // Add coins_deducted column for coin-based plan discounts (migration)
+    await runQuery(`ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS coins_deducted INT DEFAULT 0`);
     return true;
   } catch (error) {
     logger.warn("[SchemaGuard] Unable to auto-provision Payment tables", { message: error.message });
@@ -549,12 +606,76 @@ async function ensurePaymentTables() {
  * @param {boolean} [options.autoCreatePostsOptionalColumns=true]
  * @returns {Promise<object>} Schema report.
  */
+/**
+ * Auto-provision core missing tables and columns for schema contract validation.
+ */
+async function ensureCoreTablesAndColumns() {
+  try {
+    // Add missing user columns
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'");
+    await runQuery("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()");
+
+    // Profiles table
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        user_id TEXT PRIMARY KEY,
+        full_name VARCHAR(100),
+        phone VARCHAR(20),
+        address TEXT,
+        avatar_url TEXT,
+        bio TEXT,
+        verified BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Preferences table
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS preferences (
+        user_id TEXT PRIMARY KEY,
+        location TEXT,
+        min_price DECIMAL(10,2) DEFAULT 0,
+        max_price DECIMAL(10,2) DEFAULT 100000,
+        categories JSONB DEFAULT '[]',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Channels table
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS channels (
+        channel_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        owner_id TEXT NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        category VARCHAR(50) DEFAULT 'General',
+        logo_url TEXT,
+        cover_url TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Add missing post columns
+    await runQuery("ALTER TABLE posts ADD COLUMN IF NOT EXISTS category_id TEXT");
+    await runQuery("ALTER TABLE posts ADD COLUMN IF NOT EXISTS description TEXT");
+    await runQuery("ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT");
+    await runQuery("ALTER TABLE posts ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) DEFAULT 0");
+    await runQuery("ALTER TABLE posts ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'");
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision core tables/columns", { message: error.message });
+    return false;
+  }
+}
+
 async function ensureSchemaPreflight({
   strict = false,
   autoCreateTwoFactorFallback = true,
   autoCreateUsersTwoFactorColumns = true,
   autoCreatePostsOptionalColumns = true,
 } = {}) {
+  await ensureCoreTablesAndColumns();
   if (autoCreatePostsOptionalColumns) {
     await ensurePostsOptionalColumns();
   }
@@ -563,6 +684,7 @@ async function ensureSchemaPreflight({
   await ensureUserSettingsTable();
   await ensureUsersStatusColumns();
   await ensureKycTables();
+  await ensureSalesTables();
   await ensureSubscriptionTables();
   await ensurePaymentTables();
 
@@ -601,8 +723,8 @@ module.exports = {
   ensureTransactionsOptionalColumns,
   ensureOffersOptionalColumns,
   ensureUserSettingsTable,
-  ensureUsersStatusColumns,
-  ensureKycTables,
-  ensureSubscriptionTables,
-  ensurePaymentTables,
+  ensureUsersStatusColumns,    ensureKycTables,
+    ensureSalesTables,
+    ensureSubscriptionTables,
+    ensurePaymentTables,
 };

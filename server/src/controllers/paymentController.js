@@ -20,7 +20,7 @@ function getRazorpayCredentials() {
 exports.createRazorpayOrder = async (req, res) => {
   try {
     const userId = getAuthUserId(req);
-    const { planId } = req.body;
+    const { planId, coinsToApply } = req.body;
 
     if (!userId) return res.status(401).json({ error: "Authentication required" });
     if (!planId) return res.status(400).json({ error: "planId is required" });
@@ -36,7 +36,43 @@ exports.createRazorpayOrder = async (req, res) => {
     }
 
     const plan = planResult.rows[0];
-    const amountInr = Number(plan.price);
+    let amountInr = Number(plan.price);
+    let coinsDeducted = 0;
+
+    // ── Coin discount ────────────────────────────────────────────────────
+    if (coinsToApply && coinsToApply > 0) {
+      // Get user's current coin balance
+      const balanceResult = await runQuery(
+        `SELECT post_credits FROM users WHERE user_id::text = $1`,
+        [userId]
+      );
+      const currentBalance = balanceResult.rows.length > 0 ? Number(balanceResult.rows[0].post_credits || 0) : 0;
+
+      // Max discount % based on tier (same as Android TierSelectionScreen)
+      const tierName = plan.plan_name?.toLowerCase() || "";
+      const maxDiscountPct = ["premium", "silver", "gold"].includes(tierName) ? 30 : 50;
+      const maxCoinDiscount = Math.floor(amountInr * maxDiscountPct / 100);
+
+      const coinsToUse = Math.min(coinsToApply, currentBalance, maxCoinDiscount);
+      if (coinsToUse > 0) {
+        amountInr = Math.max(0, amountInr - coinsToUse);
+        coinsDeducted = coinsToUse;
+
+        // Deduct coins now
+        await runQuery(
+          `UPDATE users SET post_credits = GREATEST(0, post_credits - $1) WHERE user_id::text = $2`,
+          [coinsToUse, userId]
+        );
+
+        // Record coin deduction
+        await runQuery(
+          `INSERT INTO coin_transactions (user_id, amount, action, description)
+           VALUES ($1, $2, 'plan_discount', $3)`,
+          [userId, -coinsToUse, `Applied ${coinsToUse} coins towards ${plan.plan_name} plan`]
+        );
+      }
+    }
+
     const amountPaise = Math.round(amountInr * 100);
     const receipt = `order_${userId.replace(/-/g, "").substring(0, 8)}_${Date.now()}`;
 
@@ -54,14 +90,14 @@ exports.createRazorpayOrder = async (req, res) => {
       razorpayOrderId = response.data.id;
       mock = false;
     } else {
-      logger.info(`[PAYMENT MOCK] Created mock order for plan ${plan.plan_name}`);
+      logger.info(`[PAYMENT MOCK] Created mock order for plan ${plan.plan_name} with ${coinsDeducted} coin(s) off`);
     }
 
     // Insert into payment_transactions
     await runQuery(
-      `INSERT INTO payment_transactions (user_id, plan_id, razorpay_order_id, amount, status)
-       VALUES ($1, $2, $3, $4, 'CREATED')`,
-      [userId, planId, razorpayOrderId, amountInr]
+      `INSERT INTO payment_transactions (user_id, plan_id, razorpay_order_id, amount, status, coins_deducted)
+       VALUES ($1, $2, $3, $4, 'CREATED', $5)`,
+      [userId, planId, razorpayOrderId, amountInr, coinsDeducted]
     );
 
     return res.json({
@@ -69,6 +105,7 @@ exports.createRazorpayOrder = async (req, res) => {
       orderId: razorpayOrderId,
       amount: amountPaise,
       currency: "INR",
+      coinsDeducted,
       mock
     });
   } catch (err) {
@@ -104,7 +141,7 @@ exports.handleWebhook = async (req, res) => {
 
     // Find the transaction
     const txResult = await runQuery(
-      `SELECT transaction_id, user_id, plan_id, status FROM payment_transactions WHERE razorpay_order_id = $1`,
+      `SELECT transaction_id, user_id, plan_id, status, coins_deducted FROM payment_transactions WHERE razorpay_order_id = $1`,
       [orderId]
     );
 
@@ -171,6 +208,21 @@ exports.handleWebhook = async (req, res) => {
          WHERE transaction_id = $2`,
         [req.body, tx.transaction_id]
       );
+
+      // Refund coins if any were deducted for this order
+      const coinsUsed = Number(tx.coins_deducted || 0);
+      if (coinsUsed > 0) {
+        await runQuery(
+          `UPDATE users SET post_credits = COALESCE(post_credits, 0) + $1 WHERE user_id::text = $2`,
+          [coinsUsed, tx.user_id]
+        );
+        await runQuery(
+          `INSERT INTO coin_transactions (user_id, amount, action, description)
+           VALUES ($1, $2, 'refund', $3)`,
+          [tx.user_id, coinsUsed, `Refunded ${coinsUsed} coins — payment failed for order ${orderId}`]
+        );
+        logger.info(`[WEBHOOK] Refunded ${coinsUsed} coins to user ${tx.user_id} after failed payment`);
+      }
     }
 
     return res.json({ status: "ok" });

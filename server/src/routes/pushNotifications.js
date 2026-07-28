@@ -1,4 +1,5 @@
 const express = require("express");
+const admin = require("../config/firebase");
 const router = express.Router();
 const fcm = require("../services/fcm");
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");

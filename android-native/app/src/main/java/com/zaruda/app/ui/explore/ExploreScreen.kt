@@ -167,14 +167,14 @@ private val MOCK_EXPLORE_POSTS = listOf(
     Post(id="mp-e1", title="iPhone 14 Pro Max 256GB – Deep Purple", description="1 year old, excellent condition. Original box, charger and earphones included. No scratches. Battery health 94%. Face ID working perfectly.", price=68000.0, originalPrice=89000.0, imageUrl="https://picsum.photos/seed/iph14pro/400/300", category="electronics", subcategory="Phones", brand="Apple", condition="Used", city="Mumbai", location="Mumbai, MH", sellerName="Rohit K.", viewCount=342, likeCount=28, interestedBuyers=12, createdAt="2024-01-20", sellerVerified=true, boostLevel=3, promoLabel="spotlight", tier="premium", isPremium=true, isNegotiable=true),
     Post(id="mp-e2", title="Samsung Galaxy S23 Ultra – Phantom Black 12/256GB", description="6 months old. 200MP camera, 12GB RAM. S-Pen included. Excellent condition. No dents or scratches. Full set with box.", price=82000.0, imageUrl="https://picsum.photos/seed/s23ultra/400/300", category="electronics", subcategory="Phones", brand="Samsung", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Priya S.", viewCount=215, likeCount=19, interestedBuyers=8, sellerVerified=true, boostLevel=2, promoLabel="featured", tier="silver"),
     Post(id="mp-e3", title="OnePlus 12 – Silky Black 16/512GB", description="3 months old. Snapdragon 8 Gen 3, 50W wireless charging. 100W wired. Pristine. Original box included.", price=59000.0, imageUrl="https://picsum.photos/seed/oneplus12/400/300", category="electronics", subcategory="Phones", brand="OnePlus", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Kiran R.", viewCount=189, likeCount=22, boostLevel=1, promoLabel="boost", isNegotiable=true),
-    Post(id="mp-e4", title="Google Pixel 8 Pro – Bay Color 128GB", description="4 months old. Google AI features, best Android camera. 7 years of OS updates guaranteed. Mint condition.", price=72000.0, originalPrice=84999.0, imageUrl="https://picsum.photos/seed/pixel8pro/400/300", category="electronics", subcategory="Phones", brand="Google", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Sneha R.", viewCount=156, likeCount=17, isFlashSale=true),
+    Post(id="mp-e4", title="Google Pixel 8 Pro – Bay Color 128GB", description="4 months old. Google AI features, best Android camera. 7 years of OS updates guaranteed. Mint condition.", price=72000.0, originalPrice=84999.0, imageUrl="https://picsum.photos/seed/pixel8pro/400/300", category="electronics", subcategory="Phones", brand="Google", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Sneha R.", viewCount=156, likeCount=17),
     // ── ELECTRONICS — Laptops ──────────────────────────────────────────────────
     Post(id="mp-e5", title="MacBook Air M2 13\" – Starlight 8GB/256GB", description="4 months old, pristine. AppleCare+ valid till 2025. No dents. Original packaging. Perfect for students and professionals.", price=105000.0, imageUrl="https://picsum.photos/seed/macm2/400/300", category="electronics", subcategory="Laptops", brand="Apple", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Vikram T.", viewCount=490, likeCount=45, interestedBuyers=21, sellerVerified=true),
     Post(id="mp-e6", title="Dell XPS 15 – i7 13th Gen 16GB RAM 512GB SSD", description="8 months old, barely used. 15.6\" OLED display. Comes with original charger and sleeve. Perfect for designers.", price=95000.0, imageUrl="https://picsum.photos/seed/dellxps15/400/300", category="electronics", subcategory="Laptops", brand="Dell", condition="Like New", city="Hyderabad", location="Hyderabad, TS", sellerName="Arjun M.", viewCount=178, likeCount=22, interestedBuyers=6),
     Post(id="mp-e7", title="Lenovo ThinkPad X1 Carbon – i5 16GB 512GB", description="1 year old. Business ultrabook, very durable. Thunderbolt 4, backlit keyboard. No issues.", price=78000.0, imageUrl="https://picsum.photos/seed/thinkpadx1/400/300", category="electronics", subcategory="Laptops", brand="Lenovo", condition="Used", city="Pune", location="Pune, MH", sellerName="Anand K.", viewCount=134, likeCount=18),
-    // ── ELECTRONICS — Audio ───────────────────────────────────────────────────
-    Post(id="mp-e8", title="Sony WH-1000XM5 Noise Cancelling Headphones", description="6 months old. Best-in-class ANC, 30hr battery. Comes with carry case and cables. No ear pad wear.", price=22000.0, imageUrl="https://picsum.photos/seed/sonymxm5/400/300", category="electronics", subcategory="Audio", brand="Sony", condition="Used", city="Chennai", location="Chennai, TN", sellerName="Aditya B.", viewCount=156, likeCount=18),
-    Post(id="mp-e9", title="Apple AirPods Pro 2nd Gen – Lightning", description="3 months old. Adaptive Transparency, H2 chip. Both earbuds and case in perfect condition. With original box.", price=18500.0, imageUrl="https://picsum.photos/seed/airpodspro2/400/300", category="electronics", subcategory="Audio", brand="Apple", condition="Like New", city="Mumbai", location="Mumbai, MH", sellerName="Ritika S.", viewCount=201, likeCount=24, interestedBuyers=9),
+    // ── ELECTRONICS — Headphones ───────────────────────────────────────────────────
+    Post(id="mp-e8", title="Sony WH-1000XM5 Noise Cancelling Headphones", description="6 months old. Best-in-class ANC, 30hr battery. Comes with carry case and cables. No ear pad wear.", price=22000.0, imageUrl="https://picsum.photos/seed/sonymxm5/400/300", category="electronics", subcategory="Headphones", brand="Sony", condition="Used", city="Chennai", location="Chennai, TN", sellerName="Aditya B.", viewCount=156, likeCount=18),
+    Post(id="mp-e9", title="Apple AirPods Pro 2nd Gen – Lightning", description="3 months old. Adaptive Transparency, H2 chip. Both earbuds and case in perfect condition. With original box.", price=18500.0, imageUrl="https://picsum.photos/seed/airpodspro2/400/300", category="electronics", subcategory="Headphones", brand="Apple", condition="Like New", city="Mumbai", location="Mumbai, MH", sellerName="Ritika S.", viewCount=201, likeCount=24, interestedBuyers=9),
     // ── ELECTRONICS — Gaming ───────────────────────────────────────────────────
     Post(id="mp-e10", title="PlayStation 5 + 2 Controllers + 3 Top Games", description="Purchased 2023. God of War Ragnarok, FIFA 24, Spider-Man 2. All working perfectly. No disc scratches.", price=46000.0, imageUrl="https://picsum.photos/seed/ps5bundle/400/300", category="electronics", subcategory="Gaming", brand="Sony", condition="Used", city="Ahmedabad", location="Ahmedabad, GJ", sellerName="Rajan V.", viewCount=380, likeCount=52, interestedBuyers=19),
     Post(id="mp-e11", title="Xbox Series X 1TB – Black, With Controller", description="8 months old. 4K gaming, 120fps, Xbox Game Pass ready. One owner. Minimal use.", price=39000.0, imageUrl="https://picsum.photos/seed/xboxseriesx/400/300", category="electronics", subcategory="Gaming", brand="Microsoft", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Dev N.", viewCount=245, likeCount=31),
@@ -637,12 +637,12 @@ class ExploreViewModel @Inject constructor(
                 is ApiResult.Failure -> {
                     // Keep hardcoded fallback
                     val fallback = when (key) {
-                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
+                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming", "Accessories")
                         "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
                         "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
                         "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
                         else -> listOf(
-            "Phones", "Laptops", "Cameras", "Audio", "Gaming",
+            "Phones", "Laptops", "Cameras", "Gaming",
             "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
             "Cars", "Motorcycles", "Scooters", "Bicycles",
             "Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate",
@@ -896,7 +896,7 @@ class ExploreViewModel @Inject constructor(
 // All subcategories used by both the preferences sheet and inline chips
 private val allSubcategories: List<Pair<String, String>> = listOf(
     "Phones" to "Electronics", "Laptops" to "Electronics", "Tablets" to "Electronics",
-    "Cameras" to "Electronics", "Audio" to "Electronics", "Gaming" to "Electronics",
+    "Cameras" to "Electronics", "Gaming" to "Electronics",
     "Men's Clothing" to "Fashion", "Women's Clothing" to "Fashion",
     "Shoes" to "Fashion", "Bags" to "Fashion", "Watches" to "Fashion",
     "Cars" to "Vehicles", "Motorcycles" to "Vehicles", "Scooters" to "Vehicles",
@@ -909,7 +909,7 @@ private val allSubcategories: List<Pair<String, String>> = listOf(
 private fun subcategoryEmoji(name: String): String {
     return when (name) {
         "Phones" -> "📱"; "Laptops" -> "💻"; "Tablets" -> "📟"; "Cameras" -> "📷"
-        "Audio" -> "🎧"; "Gaming" -> "🎮"; "Accessories" -> "🔌"
+        "Gaming" -> "🎮"; "Accessories" -> "🔌"
         "Men's Clothing" -> "👔"; "Women's Clothing" -> "👗"; "Shoes" -> "👟"
         "Bags" -> "👜"; "Watches" -> "⌚"; "Jewellery" -> "💍"
         "Cars" -> "🚗"; "Motorcycles" -> "🏍️"; "Bicycles" -> "🚲"
@@ -980,11 +980,11 @@ fun ExploreScreen(
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
         state.subcategories.isNotEmpty() -> state.subcategories
-        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Audio", "Gaming", "Accessories")
+        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming", "Accessories")
         ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
         ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
         ecosystemKey == "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
-        else -> listOf("Phones", "Laptops", "Cameras", "Audio", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Books & Education", "Sports & Fitness", "Health & Beauty", "Agriculture", "Real Estate", "Services")
+        else -> listOf("Phones", "Laptops", "Cameras", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Books & Education", "Sports & Fitness", "Health & Beauty", "Agriculture", "Real Estate", "Services")
     }
 
     // Draft filter state for the bottom sheet
@@ -1241,8 +1241,13 @@ fun ExploreScreen(
 
             // Plan expiry / expired banner
             if (state.showPlanExpiryBanner) {
-                val bannerColor = if (state.planExpired) Color(0xFFDC2626) else Color(0xFFF59E0B)
-                val bannerBg = if (state.planExpired) Color(0xFFFEF2F2) else Color(0xFFFFFBEB)
+                val bannerIsDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val bannerColor = if (state.planExpired) {
+                    if (bannerIsDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+                } else {
+                    if (bannerIsDark) Color(0xFFFDE68A) else Color(0xFFF59E0B)
+                }
+                val bannerBg = if (state.planExpired) if (bannerIsDark) Color(0xFF450A0A) else Color(0xFFFEF2F2) else if (bannerIsDark) Color(0xFF2D1F00) else Color(0xFFFFFBEB)
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -1870,12 +1875,6 @@ private val bannerSlides = listOf(
         badge = "VERIFIED SELLERS", badgeIcon = "✅",
         title = "Shop with Confidence", subtitle = "Trusted sellers with top ratings & reviews",
         ctaText = "Browse", emoji = "🛡️", discount = "100% TRUSTED",
-    ),
-    BannerSlide(
-        gradientColors = listOf(Color(0xFFEA580C), Color(0xFFF97316), Color(0xFFFBBF24)),
-        badge = "FLASH SALE", badgeIcon = "⚡",
-        title = "Flash Sale Live!", subtitle = "Limited stock at incredible prices — hurry!",
-        ctaText = "Grab Now", emoji = "⚡", discount = "UP TO 80% OFF",
     ),
 )
 
@@ -2967,12 +2966,6 @@ fun AllPostCard(
                             }
                             Surface(shape = RoundedCornerShape(6.dp), color = condColor) {
                                 Text(condLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                            }
-                        }
-                        // Flash Sale badge
-                        if (post.isFlashSale == true) {
-                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFDC2626)) {
-                                Text("🔥 FLASH SALE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                             }
                         }
                         // Negotiable badge

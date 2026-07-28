@@ -147,6 +147,7 @@ import com.zaruda.app.ui.profile.EditProfileScreen
 import com.zaruda.app.ui.profile.ProfileScreen
 import com.zaruda.app.ui.profile.ProfileViewModel
 import com.zaruda.app.ui.rewards.RewardsScreen
+import com.zaruda.app.ui.rewards.ReferralTreeScreen
 import com.zaruda.app.ui.search.SearchScreen
 import com.zaruda.app.ui.settings.SettingsScreen
 import com.zaruda.app.ui.social.ComplaintsScreen
@@ -609,7 +610,14 @@ fun ZarudaApp(
                                 }
                             },
                             onBrowseMarketplace = { navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true } },
+                            onOpenReferralTree = { navController.navigate(Routes.REFERRAL_TREE) { launchSingleTop = true } },
                         )
+                    }
+                }
+
+                composable(Routes.REFERRAL_TREE) {
+                    MainShell(navController = navController, selected = BottomTab.REWARDS) {
+                        ReferralTreeScreen(onBack = { navController.popBackStack() })
                     }
                 }
 
@@ -675,7 +683,8 @@ fun ZarudaApp(
 
                 composable(Routes.WISHLIST) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                        WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } })
+                        val catKey = LocalActiveCategoryKey.current
+                        WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } }, categoryKey = catKey)
                     }
                 }
             }
@@ -690,6 +699,9 @@ fun ZarudaApp(
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                     onOpenCategory = { key -> openCategoryInAllPosts(key) },
                     onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
+                    onOpenSale = { postId, sellerId ->
+                        navController.navigate(Routes.saleDone(postId, sellerId)) { launchSingleTop = true }
+                    },
                 )
             }
 
@@ -888,6 +900,23 @@ fun ZarudaApp(
                 }
             }
 
+            composable(
+                route = Routes.SALE_DONE_WITH,
+                arguments = listOf(
+                    navArgument("postId") { type = NavType.StringType },
+                    navArgument("sellerId") { type = NavType.StringType },
+                ),
+            ) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    SaleDoneScreen(onBack = {
+                        navController.navigate(Routes.ALL_POSTS) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    })
+                }
+            }
+
             composable(Routes.SALE_UNDONE) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
                     SaleUndoneScreen(onBack = {
@@ -905,11 +934,13 @@ fun ZarudaApp(
 
             composable(Routes.CART) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    CartScreen(onBack = { navController.popBackStack() })
+                    val catKey = LocalActiveCategoryKey.current
+                    CartScreen(onBack = { navController.popBackStack() }, categoryKey = catKey)
                 }
             }
 
             composable(Routes.RECENTLY_VIEWED) {
+                val catKey = LocalActiveCategoryKey.current
                 RecentlyViewedScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -921,6 +952,7 @@ fun ZarudaApp(
                     currentThemeMode = themeMode,
                     onToggleTheme = toggleTheme,
                     onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                    categoryKey = catKey,
                 )
             }
 

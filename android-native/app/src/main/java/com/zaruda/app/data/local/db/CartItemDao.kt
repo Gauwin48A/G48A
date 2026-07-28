@@ -18,6 +18,9 @@ interface CartItemDao {
     @Query("SELECT COUNT(*) FROM cart_items")
     fun observeCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM cart_items WHERE category = :category")
+    fun observeCategoryCount(category: String): Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: CartItemEntity)
 

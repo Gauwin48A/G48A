@@ -974,6 +974,13 @@ router.post(
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
+    const userTier = await getUserTier(userId);
+    if (userTier !== "premium") {
+      return res.status(403).json({
+        error: "Active Premium Plan subscription is required to publish creator posts",
+      });
+    }
+
     await ChannelService.ensureChannelPostsTable?.();
 
     if (!description && !image_url && !video_url) {
@@ -1001,12 +1008,33 @@ router.post(
     if (!ownerCheck.rows.length)
       return res.status(403).json({ error: "Not channel owner" });
 
+    if (image_url) {
+      const todayImageCheck = await runQuery(
+        `SELECT COUNT(*)::int AS count FROM channel_posts WHERE owner_id::text = $1 AND image_url IS NOT NULL AND created_at >= NOW()::date`,
+        [String(userId)]
+      );
+      if (Number.parseInt(todayImageCheck.rows[0]?.count || 0, 10) >= 1) {
+        return res.status(429).json({
+          error: "Daily image post quota reached (1 image post per day limit)",
+        });
+      }
+    }
+
     if (video_url) {
+      const weekVideoCheck = await runQuery(
+        `SELECT COUNT(*)::int AS count FROM channel_posts WHERE owner_id::text = $1 AND video_url IS NOT NULL AND created_at >= date_trunc('week', NOW())`,
+        [String(userId)]
+      );
+      if (Number.parseInt(weekVideoCheck.rows[0]?.count || 0, 10) >= 1) {
+        return res.status(429).json({
+          error: "Weekly video post quota reached (1 video post per week limit)",
+        });
+      }
       const videoCount = await runQuery(
         "SELECT COUNT(*)::int AS count FROM channel_posts WHERE channel_id = $1 AND video_url IS NOT NULL",
         [channelId]
       );
-      if (Number.parseInt(videoCount.rows[0].count, 10) >= 3) {
+      if (Number.parseInt(videoCount.rows[0]?.count, 10) >= 3) {
         return res.status(400).json({ error: "Video limit reached" });
       }
     }

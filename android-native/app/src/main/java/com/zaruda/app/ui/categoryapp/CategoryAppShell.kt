@@ -72,13 +72,18 @@ import androidx.navigation.navArgument
 import com.zaruda.app.data.local.AppPreferences
 import com.zaruda.app.data.local.db.CartItemDao
 import com.zaruda.app.data.local.db.WishlistItemDao
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 import com.zaruda.app.ui.navigation.Routes
 import com.zaruda.app.ui.wishlist.WishlistScreen
+import com.zaruda.app.ui.commerce.CompareScreen
+import com.zaruda.app.ui.commerce.RecentlyViewedScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -101,17 +106,29 @@ internal enum class CategoryTab {
     HOME, CATEGORIES, CART, WISHLIST, PROFILE
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CategoryShellViewModel @Inject constructor(
     private val cartItemDao: CartItemDao,
     private val wishlistItemDao: WishlistItemDao,
     private val appPreferences: AppPreferences,
 ) : ViewModel() {
-    val cartCount: StateFlow<Int> = cartItemDao.observeCount()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    private val _currentCategory = MutableStateFlow<String?>(null)
 
-    val wishlistCount: StateFlow<Int> = wishlistItemDao.observeCount()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    /** Call whenever the active category changes to scope the badge counts. */
+    fun setCurrentCategory(cat: String?) {
+        _currentCategory.value = cat
+    }
+
+    val cartCount: StateFlow<Int> = _currentCategory.flatMapLatest { cat ->
+        if (cat != null) cartItemDao.observeCategoryCount(cat)
+        else cartItemDao.observeCount()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    val wishlistCount: StateFlow<Int> = _currentCategory.flatMapLatest { cat ->
+        if (cat != null) wishlistItemDao.observeCategoryCount(cat)
+        else wishlistItemDao.observeCount()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     internal suspend fun loadLastTab(categoryKey: String): CategoryTab {
         val saved = appPreferences.lastCategoryTabValue(categoryKey)
@@ -177,6 +194,7 @@ fun CategoryAppShell(
     }
 
     LaunchedEffect(categoryKey) {
+        viewModel.setCurrentCategory(categoryKey)
         viewModel.persistCategory(categoryKey)
         // Always start on HOME tab when entering a category (don't restore old tab)
         selectedTab = CategoryTab.HOME
@@ -254,6 +272,16 @@ fun CategoryAppShell(
                             launchSingleTop = true
                         }
                     },
+                    onOpenRecentlyViewed = {
+                        innerNav.navigate(Routes.categoryRecentlyViewed(categoryKey)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenCompare = {
+                        innerNav.navigate(Routes.categoryCompare(categoryKey)) {
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
 
@@ -304,6 +332,21 @@ fun CategoryAppShell(
                 WishlistScreen(
                     onBack = { innerNav.popBackStack() },
                     onOpenPost = onOpenPostDetail,
+                    categoryKey = categoryKey,
+                )
+            }
+
+            composable(Routes.categoryRecentlyViewed(categoryKey)) {
+                RecentlyViewedScreen(
+                    onBack = { innerNav.popBackStack() },
+                    onOpenPost = onOpenPostDetail,
+                    categoryKey = categoryKey,
+                )
+            }
+
+            composable(Routes.categoryCompare(categoryKey)) {
+                CompareScreen(
+                    onBack = { innerNav.popBackStack() },
                     categoryKey = categoryKey,
                 )
             }

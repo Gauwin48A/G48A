@@ -11,10 +11,14 @@ jest.mock('../src/utils/logger', () => ({
 jest.mock('../src/controllers/userController', () => ({
   getProfile: jest.fn((req, res) => res.json({})),
   updateProfile: jest.fn((req, res) => res.json({})),
+  updatePreferredLanguage: jest.fn((req, res) => res.json({})),
   upgradeTier: jest.fn((req, res) => res.json({})),
   getTierStatus: jest.fn((req, res) => res.json({})),
   submitKYC: jest.fn((req, res) => res.json({})),
   getKYCStatus: jest.fn((req, res) => res.json({})),
+  verifyPan: jest.fn((req, res) => res.json({})),
+  generateAadhaarOtp: jest.fn((req, res) => res.json({})),
+  verifyAadhaarOtp: jest.fn((req, res) => res.json({})),
   deleteAccount: jest.fn((req, res) => res.json({ success: true }))
 }));
 
@@ -29,7 +33,8 @@ jest.mock('../src/middleware/auth', () => ({
       role: req.headers['x-test-role'] || null
     };
     return next();
-  }
+  },
+  requireActivePlan: (req, res, next) => next()
 }));
 
 jest.mock('../src/middleware/upload', () => ({

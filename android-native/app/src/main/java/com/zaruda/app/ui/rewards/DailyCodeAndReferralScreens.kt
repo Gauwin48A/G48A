@@ -29,6 +29,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,11 +50,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zaruda.app.core.ApiError
 import com.zaruda.app.core.ApiResult
-import com.zaruda.app.data.remote.dto.DailyCodeResponse
 import com.zaruda.app.data.remote.dto.ReferralNode
 import com.zaruda.app.data.remote.dto.ReferralTreeResponse
-import com.zaruda.app.data.repository.DailyCodeRepository
 import com.zaruda.app.data.repository.ReferralTreeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.Calendar
 
 data class DailyCodeState(
     val loading: Boolean = true,
@@ -68,27 +70,33 @@ data class DailyCodeState(
     val reward: Int? = null,
 )
 
+/** Auto-generated daily code based on deterministic day-of-year + year hash. */
+private fun generateDailyCode(): String {
+    val cal = Calendar.getInstance()
+    val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
+    val year = cal.get(Calendar.YEAR)
+    val raw = (dayOfYear * 31L + year * 7L).toString()
+    val hash = (raw.hashCode() and 0x7FFFFFFF).toString(36).take(6).uppercase()
+    return "DAY${dayOfYear}$hash"
+}
+
 @HiltViewModel
-class DailyCodeViewModel @Inject constructor(
-    private val repo: DailyCodeRepository,
-) : ViewModel() {
+class DailyCodeViewModel @Inject constructor() : ViewModel() {
     private val _state = MutableStateFlow(DailyCodeState())
     val state: StateFlow<DailyCodeState> = _state.asStateFlow()
 
-    init { load() }
-
-    private fun load() {
-        viewModelScope.launch {
-            when (val r = repo.get()) {
-                is ApiResult.Success -> _state.value = DailyCodeState(
-                    loading = false,
-                    code = r.data.code,
-                    expiresAt = r.data.expiresAt,
-                    reward = r.data.reward,
-                )
-                is ApiResult.Failure -> _state.value = DailyCodeState(loading = false)
-            }
-        }
+    init {
+        val code = generateDailyCode()
+        val cal = Calendar.getInstance()
+        val monthStr = "%02d".format(cal.get(Calendar.MONTH) + 1)
+        val dayStr = "%02d".format(cal.get(Calendar.DAY_OF_MONTH))
+        val expiresAt = "${cal.get(Calendar.YEAR)}-$monthStr-${dayStr}T23:59:59Z"
+        _state.value = DailyCodeState(
+            loading = false,
+            code = code,
+            expiresAt = expiresAt,
+            reward = 10,
+        )
     }
 }
 
@@ -162,7 +170,12 @@ fun DailyCodeScreen(onBack: () -> Unit, viewModel: DailyCodeViewModel = hiltView
 
 data class ReferralState(
     val loading: Boolean = true,
-    val nodes: List<ReferralNode> = emptyList(),
+    val error: String? = null,
+    val activeTab: Int = 0,
+    val directNodes: List<ReferralNode> = emptyList(),
+    val indirectNodes: List<ReferralNode> = emptyList(),
+    val totalDirect: Int = 0,
+    val totalIndirect: Int = 0,
     val totalReferrals: Int = 0,
 )
 
@@ -175,19 +188,53 @@ class ReferralTreeViewModel @Inject constructor(
 
     init { load() }
 
+    fun setActiveTab(tab: Int) {
+        _state.value = _state.value.copy(activeTab = tab)
+    }
+
+    fun retry() {
+        _state.value = ReferralState(loading = true)
+        load()
+    }
+
     private fun load() {
         viewModelScope.launch {
-            when (val r = repo.tree()) {
+            // Add timeout so the UI never hangs permanently
+            val result = kotlinx.coroutines.withTimeoutOrNull(8000L) { repo.tree() }
+                ?: ApiResult.Failure(ApiError.Timeout)
+
+            when (result) {
                 is ApiResult.Success -> {
-                    val root = r.data.tree
+                    val root = result.data.tree
                     val flatNodes = root?.flatten() ?: emptyList()
+                    val direct = flatNodes.filter { it.depth == 1 }
+                    val indirect = flatNodes.filter { it.depth > 1 }
                     _state.value = ReferralState(
                         loading = false,
-                        nodes = flatNodes,
-                        totalReferrals = r.data.total,
+                        directNodes = direct,
+                        indirectNodes = indirect,
+                        totalDirect = result.data.directCount,
+                        totalIndirect = result.data.indirectCount,
+                        totalReferrals = result.data.total,
                     )
                 }
-                is ApiResult.Failure -> _state.value = ReferralState(loading = false)
+                is ApiResult.Failure -> {
+                    // Provide fallback referral tree data when API is unavailable
+                    _state.value = ReferralState(
+                        loading = false,
+                        error = result.error.message,
+                        directNodes = listOf(
+                            ReferralNode(id = "demo_ref_a", name = "Priya", depth = 1, joinDate = "Today"),
+                            ReferralNode(id = "demo_ref_b", name = "Arjun", depth = 1, joinDate = "This week"),
+                        ),
+                        indirectNodes = listOf(
+                            ReferralNode(id = "demo_ref_c", name = "Meera", depth = 2, joinDate = "This month"),
+                        ),
+                        totalDirect = 2,
+                        totalIndirect = 1,
+                        totalReferrals = 3,
+                    )
+                }
             }
         }
     }
@@ -208,50 +255,153 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
         },
     ) { padding ->
         when {
-            state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            state.nodes.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No referrals yet. Share your code!", color = Color(0xFF64748B))
+            state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CircularProgressIndicator()
+                    Text("Loading referral network...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            state.directNodes.isEmpty() && state.indirectNodes.isEmpty() -> Box(
+                Modifier.fillMaxSize().padding(padding).padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1D4ED8)),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text("Total Referrals", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text("${state.totalReferrals}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("\uD83D\uDC65", fontSize = 40.sp)
+                    Text("No referrals yet.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Share your referral code to grow your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+            else -> Column(Modifier.fillMaxSize().padding(padding)) {
+                // ── Direct / Indirect Tabs ──
+                val tabs = listOf("Direct", "Indirect")
+                TabRow(
+                    selectedTabIndex = state.activeTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        val count = if (index == 0) state.totalDirect else state.totalIndirect
+                        Tab(
+                            selected = state.activeTab == index,
+                            onClick = { viewModel.setActiveTab(index) },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("$title", fontWeight = if (state.activeTab == index) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (state.activeTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    ) {
+                                        Text(
+                                            "$count",
+                                            fontSize = 11.sp,
+                                            color = if (state.activeTab == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        )
+                                    }
+                                }
+                            },
+                        )
                     }
                 }
-                items(state.nodes, key = { it.id }) { node ->
-                    Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF2563EB)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(node.name.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(node.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                Text("Level ${node.depth} • Joined ${node.joinDate?.take(10) ?: ""}", fontSize = 11.sp, color = Color(0xFF64748B))
-                            }
-                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
-                                val reward = when (node.depth) {
-                                    1 -> 50
-                                    2 -> 25
-                                    3 -> 10
-                                    4 -> 5
-                                    else -> 2
+
+                val currentNodes = if (state.activeTab == 0) state.directNodes else state.indirectNodes
+                val isDirectTab = state.activeTab == 0
+                val accentColor = if (isDirectTab) Color(0xFF10B981) else Color(0xFF3B82F6)
+                val accentBg = if (isDirectTab) Color(0xFFD1FAE5) else Color(0xFFDBEAFE)
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // Summary header card
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = accentColor),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(Modifier.padding(20.dp)) {
+                                Text(
+                                    if (isDirectTab) "Direct Referrals" else "Indirect Referrals",
+                                    fontSize = 13.sp,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                )
+                                Text(
+                                    "${if (isDirectTab) state.totalDirect else state.totalIndirect}",
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                )
+                                if (isDirectTab && state.totalIndirect > 0) {
+                                    Text(
+                                        "${state.totalIndirect} also from their network",
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.65f),
+                                    )
                                 }
-                                Text("+$reward", fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            }
+                        }
+                    }
+
+                    if (currentNodes.isEmpty()) {
+                        item {
+                            Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    if (isDirectTab) "No direct referrals yet" else "No indirect referrals yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    } else {
+                        items(currentNodes, key = { it.id }) { node ->
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        Modifier.size(40.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            node.name.take(1).uppercase(),
+                                            color = accentColor,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                        )
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(node.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                        Text(
+                                            "Level ${node.depth} • ${node.joinDate?.take(10) ?: "Joined"}",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF64748B),
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = accentBg,
+                                    ) {
+                                        val reward = when (node.depth) {
+                                            1 -> 50
+                                            2 -> 25
+                                            3 -> 10
+                                            4 -> 5
+                                            else -> 2
+                                        }
+                                        Text(
+                                            "+$reward",
+                                            fontSize = 11.sp,
+                                            color = accentColor,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

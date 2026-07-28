@@ -1,10 +1,6 @@
 package com.zaruda.app.ui.commerce
 
 import android.content.Intent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -68,7 +64,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import androidx.compose.ui.graphics.vector.ImageVector
 import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -80,13 +75,6 @@ data class CartUiState(
     val pendingUndoItem: CartItem? = null,
     val total: Double = 0.0,
     val error: String? = null,
-    val selectedIds: Set<String> = emptySet(),
-    val deliveryAddress: String = "",
-    val selectedPayment: String = "cod",
-    val couponCode: String = "",
-    val couponApplied: Boolean = false,
-    val couponDiscount: Double = 0.0,
-    val couponMessage: String? = null,
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -98,6 +86,7 @@ class CartViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(CartUiState())
     val state: StateFlow<CartUiState> = _state.asStateFlow()
+    private val _categoryFilter = MutableStateFlow<String?>(null)
     private var lastLocaleVersion = 0L
     private var remoteCartItems: List<CartItem> = emptyList()
 
@@ -117,17 +106,25 @@ class CartViewModel @Inject constructor(
         }
     }
 
-    private val _categoryFilter = MutableStateFlow<String?>(null)
-    fun setCategoryFilter(cat: String?) { _categoryFilter.value = cat }
+    fun setCategoryFilter(cat: String?) {
+        _categoryFilter.value = cat
+        syncCartItems(loading = false)
+    }
 
     private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
         val catFilter = _categoryFilter.value
+        // Filter remote cart items by category too (CartItem now has category field)
+        val filteredRemote = if (catFilter != null) {
+            remoteCartItems.filter { it.category == catFilter }
+        } else {
+            remoteCartItems
+        }
         val localPosts = if (catFilter != null) {
             SharedExploreStore.cartPosts.filter { it.category == catFilter }
         } else {
             SharedExploreStore.cartPosts
         }
-        val mergedItems = mergeCartItems(remoteCartItems, localPosts)
+        val mergedItems = mergeCartItems(filteredRemote, localPosts)
         _state.value = _state.value.copy(
             loading = loading,
             items = mergedItems,
@@ -210,46 +207,6 @@ class CartViewModel @Inject constructor(
         if (qty < 1 || qty > 10) return
         viewModelScope.launch { repo.updateQty(postId, qty) }
     }
-    fun setCouponCode(v: String) { _state.value = _state.value.copy(couponCode = v) }
-    fun setPayment(v: String) { _state.value = _state.value.copy(selectedPayment = v) }
-    fun setDeliveryAddress(v: String) { _state.value = _state.value.copy(deliveryAddress = v) }
-    fun applyCoupon() {
-        val code = _state.value.couponCode.trim()
-        if (code.isBlank()) return
-        viewModelScope.launch {
-            when (val r = repo.applyCoupon(code)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    couponApplied = r.data.success, couponDiscount = r.data.discount,
-                    couponMessage = r.data.message ?: if (r.data.success) "Coupon applied!" else "Invalid coupon")
-                is ApiResult.Failure -> _state.value = _state.value.copy(couponMessage = "Failed to apply coupon")
-            }
-        }
-    }
-    val subtotal: Double get() = _state.value.items.sumOf { (it.price ?: 0.0) * it.quantity }
-    val shipping: Double get() = if (subtotal > 500) 0.0 else 49.0
-    val grandTotal: Double get() = subtotal + shipping - _state.value.couponDiscount
-    fun toggleSelect(postId: String) {
-        val cur = _state.value.selectedIds
-        _state.value = _state.value.copy(selectedIds = if (postId in cur) cur - postId else cur + postId)
-    }
-    fun toggleSelectAll() {
-        val allIds = _state.value.items.mapNotNull { it.postId }.toSet()
-        _state.value = _state.value.copy(selectedIds = if (_state.value.selectedIds == allIds) emptySet() else allIds)
-    }
-    fun bulkRemove() {
-        val ids = _state.value.selectedIds
-        ids.forEach { removeLocalCartItem(it) }
-        _state.value = _state.value.copy(selectedIds = emptySet())
-        viewModelScope.launch { ids.forEach { repo.remove(it) } }
-    }
-    fun bulkSaveForLater() {
-        val ids = _state.value.selectedIds
-        val (toSave, keep) = _state.value.items.partition { (it.postId ?: "") in ids }
-        remoteCartItems = remoteCartItems.filterNot { (it.postId ?: it.id ?: it.stableId) in ids }
-        ids.forEach { SharedExploreStore.removeCart(it) }
-        _state.value = _state.value.copy(items = keep, savedForLater = _state.value.savedForLater + toSave, selectedIds = emptySet())
-        syncCartItems(loading = false)
-    }
 }
 
 private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
@@ -260,6 +217,7 @@ private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
     imageUrl = primaryImage,
     sellerName = sellerName ?: userName ?: location,
     quantity = quantity,
+    category = category,
 )
 
 private fun CartItem.toPost(): Post = Post(
@@ -269,6 +227,7 @@ private fun CartItem.toPost(): Post = Post(
     currency = currency,
     imageUrl = imageUrl,
     sellerName = sellerName,
+    category = category,
 )
 
 private fun CartItem.matchesPostId(postId: String): Boolean =
@@ -361,53 +320,12 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                     ) {
                         AppEmptyState(
                             icon = Icons.Default.ShoppingCart,
-                            title = "Your cart is empty",
-                            subtitle = "Add items to proceed to checkout",
+                            title = "Your shortlist is empty",
+                            subtitle = "Save items you're interested in from any category",
                         )
                     }
 
                     else -> {
-                        // Bulk selection toolbar
-                        if (state.items.isNotEmpty()) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 1.dp,
-                            ) {
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    val allIds = state.items.mapNotNull { it.postId }.toSet()
-                                    Checkbox(
-                                        checked = state.selectedIds == allIds && allIds.isNotEmpty(),
-                                        onCheckedChange = { viewModel.toggleSelectAll() },
-                                    )
-                                    Text(
-                                        if (state.selectedIds.isEmpty()) "Select All"
-                                        else "${state.selectedIds.size} selected",
-                                        fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    if (state.selectedIds.isNotEmpty()) {
-                                        TextButton(onClick = { viewModel.bulkSaveForLater() }) {
-                                            Text(stringResource(R.string.commerce_save_for_later), fontSize = 12.sp)
-                                        }
-                                        TextButton(
-                                            onClick = { viewModel.bulkRemove() },
-                                            colors = ButtonDefaults.textButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            ),
-                                        ) {
-                                            Text(stringResource(R.string.btn_remove), fontSize = 12.sp)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         LazyColumn(
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(16.dp),
@@ -416,16 +334,12 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                             // Cart items section
                             if (state.items.isNotEmpty()) {
                                 item(key = "cart_header") {
-                                    SectionLabelWithCount("Cart", state.items.size)
+                                    SectionLabelWithCount("Saved Items", state.items.size)
                                 }
                                 items(state.items, key = { it.stableId }) { item ->
-                                    val isChecked = (item.postId ?: "") in state.selectedIds
-                                    SwipeToDismissCartItem(
+                                    ShortlistItemCard(
                                         item = item,
-                                        isSelected = isChecked,
-                                        onToggleSelect = { viewModel.toggleSelect(item.postId ?: "") },
                                         onRemove = { viewModel.removeWithUndo(item.postId ?: "") },
-                                        onQtyChange = { qty -> viewModel.updateQty(item.postId ?: "", qty) },
                                         onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
                                     )
                                 }
@@ -445,166 +359,35 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                                     )
                                 }
                             }
+                        }
 
-                            // Checkout sections
-                            if (state.items.isNotEmpty()) {
-                                // Delivery address
-                                item(key = "delivery") {
-                                    CheckoutSectionCard(
-                                        title = "Delivery Address",
-                                        icon = Icons.Filled.LocationOn,
+                        // Contact seller prompt at bottom
+                        if (state.items.isNotEmpty()) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 3.dp,
+                                shadowElevation = 8.dp,
+                            ) {
+                                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
-                                        OutlinedTextField(
-                                            value = state.deliveryAddress,
-                                            onValueChange = { viewModel.setDeliveryAddress(it) },
-                                            placeholder = { Text(stringResource(R.string.commerce_delivery_address_hint)) },
-                                            maxLines = 2,
-                                            minLines = 2,
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                            ),
-                                            modifier = Modifier.fillMaxWidth(),
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.CompareArrows, null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                        Text(
+                                            "Interested in an item? Contact the seller directly to ask questions or arrange a meetup.",
+                                            fontSize = 13.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight = 18.sp,
+                                            modifier = Modifier.weight(1f),
                                         )
                                     }
                                 }
-
-                                // Payment method
-                                item(key = "payment") {
-                                    CheckoutSectionCard(
-                                        title = "Payment Method",
-                                        icon = Icons.Filled.Payment,
-                                    ) {
-                                        Row(
-                                            Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            listOf(
-                                                Triple("upi", "UPI", Icons.Filled.AccountBalance),
-                                                Triple("card", "Card", Icons.Filled.CreditCard),
-                                                Triple("cod", "Cash", Icons.Filled.Money),
-                                            ).forEach { (key, label, icon) ->
-                                                val sel = state.selectedPayment == key
-                                                Surface(
-                                                    onClick = { viewModel.setPayment(key) },
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    color = if (sel) MaterialTheme.colorScheme.primaryContainer
-                                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                                    border = if (sel) BorderStroke(
-                                                        2.dp, MaterialTheme.colorScheme.primary
-                                                    ) else BorderStroke(
-                                                        1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                                                    ),
-                                                    modifier = Modifier.weight(1f),
-                                                ) {
-                                                    Column(
-                                                        Modifier.padding(12.dp),
-                                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                                                    ) {
-                                                        Icon(
-                                                            icon, null,
-                                                            tint = if (sel) MaterialTheme.colorScheme.primary
-                                                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(22.dp),
-                                                        )
-                                                        Text(
-                                                            label,
-                                                            fontSize = 12.sp,
-                                                            fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
-                                                            color = if (sel) MaterialTheme.colorScheme.primary
-                                                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Coupon
-                                item(key = "coupon") {
-                                    CheckoutSectionCard(
-                                        title = "Have a coupon?",
-                                        icon = Icons.Filled.ConfirmationNumber,
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            OutlinedTextField(
-                                                value = state.couponCode,
-                                                onValueChange = { viewModel.setCouponCode(it) },
-                                                placeholder = { Text(stringResource(R.string.commerce_enter_code)) },
-                                                singleLine = true,
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.weight(1f),
-                                                colors = OutlinedTextFieldDefaults.colors(
-                                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                                ),
-                                            )
-                                            Button(
-                                                onClick = { viewModel.applyCoupon() },
-                                                shape = RoundedCornerShape(12.dp),
-                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                                            ) {
-                                                Text(stringResource(R.string.commerce_apply))
-                                            }
-                                        }
-                                        state.couponMessage?.let { msg ->
-                                            Spacer(Modifier.height(6.dp))
-                                            Text(
-                                                msg,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = if (state.couponApplied) MaterialTheme.colorScheme.tertiary
-                                                        else MaterialTheme.colorScheme.error,
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Delivery ETA
-                                item(key = "eta") {
-                                    Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Row(
-                                            Modifier.padding(14.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Icon(
-                                                Icons.Filled.LocalShipping, null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(22.dp),
-                                            )
-                                            Spacer(Modifier.width(10.dp))
-                                            Column {
-                                                Text(
-                                                    "Estimated Delivery",
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 14.sp,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                )
-                                                Text(
-                                                    "3-5 business days",
-                                                    fontSize = 12.sp,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
                             }
-                        }
-
-                        // Summary footer
-                        if (state.items.isNotEmpty()) {
-                            CartSummaryFooter(viewModel)
                         }
                     }
                 }
@@ -649,114 +432,19 @@ private fun SectionLabelWithCount(label: String, count: Int) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// CheckoutSectionCard — reusable card for delivery, payment, coupon sections
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun CheckoutSectionCard(
-    title: String,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    icon, null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    title,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            content()
-        }
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// SwipeToDismissCartItem — cart item card with swipe-to-dismiss
-// ──────────────────────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SwipeToDismissCartItem(
-    item: CartItem,
-    isSelected: Boolean,
-    onToggleSelect: () -> Unit,
-    onRemove: () -> Unit,
-    onQtyChange: (Int) -> Unit,
-    onSaveForLater: () -> Unit = {},
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onRemove()
-                true
-            } else false
-        },
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.error),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(
-                    Icons.Filled.Delete, null,
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.padding(end = 20.dp).size(24.dp),
-                )
-            }
-        },
-        modifier = Modifier.clip(RoundedCornerShape(16.dp)),
-    ) {
-        CartItemCard(
-            item = item,
-            isSelected = isSelected,
-            onToggleSelect = onToggleSelect,
-            onRemove = onRemove,
-            onQtyChange = onQtyChange,
-            onSaveForLater = onSaveForLater,
-        )
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
 // CartItemCard — compact, Wishlist-grade card with inline selection
 // ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CartItemCard(
+private fun ShortlistItemCard(
     item: CartItem,
-    isSelected: Boolean,
-    onToggleSelect: () -> Unit,
     onRemove: () -> Unit,
-    onQtyChange: (Int) -> Unit,
     onSaveForLater: () -> Unit = {},
 ) {
     Card(
-        onClick = onToggleSelect,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                           else MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth(),
@@ -768,13 +456,6 @@ private fun CartItemCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            // Selection checkbox
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onToggleSelect() },
-                modifier = Modifier.size(24.dp),
-            )
-
             // Image
             Box(
                 modifier = Modifier
@@ -793,24 +474,6 @@ private fun CartItemCard(
                 } else {
                     Icon(Icons.Outlined.ImageNotSupported, contentDescription = null,
                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                // Quantity badge
-                if (item.quantity > 1) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp),
-                    ) {
-                        Text(
-                            "×${item.quantity}",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                        )
-                    }
                 }
             }
 
@@ -848,80 +511,12 @@ private fun CartItemCard(
 
                 // Price
                 item.price?.let { price ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "₹%,.0f".format(price),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        if (item.quantity > 1) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "×${item.quantity} = ₹${"%,.0f".format(price * item.quantity)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(4.dp))
-
-                // Quantity row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Qty: ",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.size(30.dp).clickable(enabled = item.quantity > 1) {
-                                onQtyChange(item.quantity - 1)
-                            },
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Text(
-                                    "−",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = if (item.quantity > 1) MaterialTheme.colorScheme.onSurface
-                                            else MaterialTheme.colorScheme.outline,
-                                )
-                            }
-                        }
-                        Text(
-                            "${item.quantity}",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.size(30.dp).clickable(enabled = item.quantity < 10) {
-                                onQtyChange(item.quantity + 1)
-                            },
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Text(
-                                    "+",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = if (item.quantity < 10) MaterialTheme.colorScheme.onSurface
-                                            else MaterialTheme.colorScheme.outline,
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        "₹%,.0f".format(price),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
 
                 // Action buttons
@@ -932,6 +527,7 @@ private fun CartItemCard(
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(
                         onClick = onSaveForLater,
@@ -1041,103 +637,6 @@ private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove
                     ),
                 ) {
                     Text("Remove", fontSize = 10.sp)
-                }
-            }
-        }
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// CartSummaryFooter — polished checkout footer with gradient progress
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun CartSummaryFooter(viewModel: CartViewModel) {
-    val state by viewModel.state.collectAsState()
-
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            // Price breakdown
-            Row(Modifier.fillMaxWidth()) {
-                Text("Subtotal", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.weight(1f))
-                Text("₹${viewModel.subtotal.toLong()}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                Text("Shipping", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.weight(1f))
-                Text(
-                    if (viewModel.shipping == 0.0) "Free" else "₹${viewModel.shipping.toLong()}",
-                    fontSize = 14.sp,
-                    fontWeight = if (viewModel.shipping == 0.0) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (viewModel.shipping == 0.0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            if (state.couponDiscount > 0) {
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                    Text("Discount", fontSize = 14.sp, color = MaterialTheme.colorScheme.tertiary)
-                    Spacer(Modifier.weight(1f))
-                    Text("-₹${state.couponDiscount.toLong()}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.tertiary)
-                }
-            }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 10.dp))
-            Row(Modifier.fillMaxWidth()) {
-                Text("Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.weight(1f))
-                Text("₹${viewModel.grandTotal.toLong()}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
-            }
-            if (viewModel.shipping > 0) {
-                Spacer(Modifier.height(10.dp))
-                val freeThreshold = 500
-                val pct = (viewModel.subtotal / freeThreshold).toFloat().coerceIn(0f, 1f)
-                val animatedPct by animateFloatAsState(targetValue = pct, animationSpec = spring(), label = "ship")
-                LinearProgressIndicator(progress = { animatedPct }, color = MaterialTheme.colorScheme.tertiary, trackColor = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)))
-                Spacer(Modifier.height(6.dp))
-                Text("Add ₹${(freeThreshold - viewModel.subtotal).toLong()} more for free shipping", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(14.dp))
-            Button(
-                onClick = {},
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                val paymentIcon = when (state.selectedPayment) { "upi" -> Icons.Filled.AccountBalance; "card" -> Icons.Filled.CreditCard; else -> Icons.Filled.Money }
-                val paymentLabel = when (state.selectedPayment) { "upi" -> "Pay via UPI"; "card" -> "Pay via Card"; else -> "Place Order (COD)" }
-                Icon(paymentIcon, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(paymentLabel, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-            }
-
-            // Trust badges
-            Spacer(Modifier.height(14.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                listOf(
-                    Icons.Filled.Lock to "Secure",
-                    Icons.Filled.VerifiedUser to "Protected",
-                    Icons.Filled.Replay to "Easy Returns",
-                ).forEach { (icon, label) ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            icon, null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            label,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
             }
         }

@@ -126,7 +126,7 @@ private val MOCK_SUGGESTED_POSTS = listOf(
     com.zaruda.app.domain.model.Post(id="mock_sug_p2", title="Samsung Galaxy Book 4 Ultra – i9 32GB 1TB", description="16\" 3K AMOLED, RTX 4070. Perfect for creators and professionals. 1 month old.", price=185000.0, category="electronics", subcategory="Laptops", brand="Samsung", condition="Like New", location="Bengaluru, KA", imageUrl="https://picsum.photos/seed/galbook4/400/300", tier="silver", viewCount=8900, likeCount=198, boostLevel=2, promoLabel="featured", sellerVerified=true, city="Bengaluru", sellerName="TechHub"),
     com.zaruda.app.domain.model.Post(id="mock_sug_p3", title="Royal Enfield Himalayan 450 – 2024 Model", description="5,000 km only. First owner. All accessories included. Excellent condition.", price=285000.0, category="vehicles", subcategory="Motorcycles", brand="Royal Enfield", condition="Like New", location="Pune, MH", imageUrl="https://picsum.photos/seed/himalayan450/400/300", tier="gold", viewCount=12300, likeCount=276, boostLevel=1, promoLabel="boost", sellerVerified=true, city="Pune", sellerName="RE Rider"),
     com.zaruda.app.domain.model.Post(id="mock_sug_p4", title="Louis Vuitton Neverfull GM – Damier Azur", description="Authentic LV. Gently used. Original dust bag and box included. Price negotiable.", price=165000.0, category="fashion", subcategory="Bags", brand="Louis Vuitton", condition="Used", location="Delhi, DL", imageUrl="https://picsum.photos/seed/lvneverfull2/400/300", tier="premium", isPremium=true, viewCount=28400, likeCount=612, sellerVerified=true, city="Delhi", sellerName="Luxury Closet"),
-    com.zaruda.app.domain.model.Post(id="mock_sug_p5", title="Bose QuietComfort Ultra Headphones", description="Best-in-class ANC. Immersive spatial audio. 24hr battery. 2 weeks old.", price=28500.0, category="electronics", subcategory="Audio", brand="Bose", condition="Like New", location="Chennai, TN", imageUrl="https://picsum.photos/seed/boseqcu/400/300", tier="silver", viewCount=6700, likeCount=145, boostLevel=3, promoLabel="spotlight", sellerVerified=true, city="Chennai", sellerName="AudioPhile"),
+    com.zaruda.app.domain.model.Post(id="mock_sug_p5", title="Bose QuietComfort Ultra Headphones", description="Best-in-class ANC. Immersive spatial audio. 24hr battery. 2 weeks old.", price=28500.0, category="electronics", subcategory="Headphones", brand="Bose", condition="Like New", location="Chennai, TN", imageUrl="https://picsum.photos/seed/boseqcu/400/300", tier="silver", viewCount=6700, likeCount=145, boostLevel=3, promoLabel="spotlight", sellerVerified=true, city="Chennai", sellerName="AudioPhile"),
     com.zaruda.app.domain.model.Post(id="mock_sug_p6", title="Mercedes-Benz GLC 300 – 2022 Model", description="18,000 km. Sunroof, 360° camera, ambient lighting. Full service history. Single owner.", price=5800000.0, category="vehicles", subcategory="Cars", brand="Mercedes-Benz", condition="Used", location="Mumbai, MH", imageUrl="https://picsum.photos/seed/glc300/400/300", tier="premium", isPremium=true, viewCount=34200, likeCount=789, boostLevel=2, promoLabel="featured", sellerVerified=true, city="Mumbai", sellerName="AutoLux"),
     com.zaruda.app.domain.model.Post(id="mock_sug_p7", title="Sony Alpha 7 IV + 24-70mm GM II", description="Full-frame 33MP. 4K 60fps. Kit lens included. 3 months old. No shutter count.", price=265000.0, category="electronics", subcategory="Cameras", brand="Sony", condition="Like New", location="Hyderabad, TS", imageUrl="https://picsum.photos/seed/sonya7iv/400/300", tier="gold", viewCount=9800, likeCount=234, boostLevel=1, sellerVerified=true, city="Hyderabad", sellerName="ShutterBug"),
     com.zaruda.app.domain.model.Post(id="mock_sug_p8", title="Nike Air Force 1 '07 – White UK 10", description="Limited edition 'White on White'. Worn once. 100% authentic. Comes with box.", price=8500.0, category="fashion", subcategory="Shoes", brand="Nike", condition="Like New", location="Bengaluru, KA", imageUrl="https://picsum.photos/seed/nikeaf1/400/300", viewCount=4500, likeCount=98, sellerVerified=true, city="Bengaluru", sellerName="SneakerHead"),
@@ -364,6 +364,7 @@ fun PostDetailScreen(
     onOpenPost: (String) -> Unit = {},
     onOpenCategory: (String) -> Unit = {},
     onOpenCentre: (String) -> Unit = {},
+    onOpenSale: (postId: String, sellerId: String) -> Unit = { _, _ -> },
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -420,7 +421,7 @@ fun PostDetailScreen(
                     Spacer(Modifier.width(8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1E3A8A),
+                    containerColor = if (isDark) Color(0xFF0F1B4D) else Color(0xFF1E3A8A),
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White,
@@ -573,12 +574,7 @@ fun PostDetailScreen(
                                             Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
                                     }
-                                    // Flash Sale badge
-                                    if (post.isFlashSale == true) {
-                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFDC2626)) {
-                                            Text("🔥 FLASH SALE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                        }
-                                    }
+
                                     // Negotiable badge
                                     if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
                                         Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669)) {
@@ -589,7 +585,7 @@ fun PostDetailScreen(
                                     PromoBadgeRow(
                                         boostLevel = post.boostLevel,
                                         promoLabel = post.promoLabel,
-                                        isHotDeal = post.isFlashSale == true,
+                                        isHotDeal = false,
                                         isJustListed = (post.viewCount ?: 0) < 10,
                                         expiresAt = post.expiresAt,
                                     )
@@ -1102,6 +1098,25 @@ fun PostDetailScreen(
                                     Spacer(Modifier.width(6.dp))
                                     Text(if (state.inCart) "In Cart" else "Add")
                                 }
+                            }
+                            // Initiate Sale button — full-width, prominent
+                            Spacer(Modifier.height(6.dp))
+                            Button(
+                                onClick = {
+                                    post.userId?.let { sellerId ->
+                                        onOpenSale(post.stableId, sellerId)
+                                    }
+                                },
+                                enabled = post.userId != null,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF7C3AED)
+                                )
+                            ) {
+                                Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Initiate Sale — Buy with Sale Done", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

@@ -14,7 +14,6 @@ router.post("/redeem", authenticateToken, coinController.redeemCoins);
 router.get("/engagement", authenticateToken, coinController.getEngagementStatus);
 router.post("/daily-checkin", authenticateToken, coinController.claimDailyCheckIn);
 router.post("/spin", authenticateToken, coinController.spinWheel);
-router.post("/scratch", authenticateToken, coinController.claimScratchCard);
 router.post("/store-redeem", authenticateToken, coinController.redeemStoreReward);
 router.post("/referral-milestones", authenticateToken, coinController.claimReferralMilestones);
 

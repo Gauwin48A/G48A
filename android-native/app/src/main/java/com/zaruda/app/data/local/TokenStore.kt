@@ -116,9 +116,19 @@ class TokenStore @Inject constructor(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    /** Persist last spin date (YYYY-MM-DD) so it survives process death. */
+    fun getLastSpinDate(): String? = prefs.getString(KEY_LAST_SPIN_DATE, null)
+
+    fun saveLastSpinDate(date: String?) {
+        prefs.edit().apply {
+            if (date != null) putString(KEY_LAST_SPIN_DATE, date) else remove(KEY_LAST_SPIN_DATE)
+        }.apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "mhub_secure_prefs"
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
+        const val KEY_LAST_SPIN_DATE = "last_spin_date"
     }
 }

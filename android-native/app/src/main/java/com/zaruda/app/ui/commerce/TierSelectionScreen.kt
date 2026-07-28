@@ -158,10 +158,15 @@ class TiersViewModel @Inject constructor(
         data class Failure(val error: String) : RazorpayVerifyState()
     }
 
+    fun setCoinsToApply(coins: Int) {
+        _state.value = _state.value.copy(coinsToApply = coins, error = null)
+    }
+
     fun initiateRazorpayCheckout(tierId: String, amount: Double) {
+        val coinsToApply = _state.value.coinsToApply
         _state.value = _state.value.copy(subscribeLoading = tierId, error = null)
         viewModelScope.launch {
-            when (val r = paymentsRepo.createRazorpayOrder(amount = amount, tierId = tierId)) {
+            when (val r = paymentsRepo.createRazorpayOrder(amount = amount, tierId = tierId, coinsToApply = coinsToApply)) {
                 is ApiResult.Success -> {
                     val order = r.data
                     if (order.orderId != null && order.key != null) {
@@ -482,18 +487,20 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 else -> ""
                             },
                             coinBalance = state.coinBalance,
+                            coinsToApply = state.coinsToApply,
                             maxDiscountPct = when (tier.id?.lowercase()) { "premium", "silver", "gold" -> 30; else -> 50 },
                             isLoading = state.subscribeLoading == tier.id,
                             onSelect = {
                                 val tId = tier.id ?: ""
                                 if (tier.price > 0 && tId != "starter") {
-                                    // Use Razorpay checkout for paid plans
+                                    // Use Razorpay checkout for paid plans (coins auto-applied from state)
                                     viewModel.initiateRazorpayCheckout(tId, tier.price)
                                 } else {
                                     // Free or starter flow
                                     viewModel.subscribe(tId)
                                 }
                             },
+                            onCoinsChange = { viewModel.setCoinsToApply(it) },
                         )
                     }
 
@@ -556,7 +563,7 @@ private data class PlanTheme(
 )
 
 @Composable
-private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, maxDiscountPct: Int, isLoading: Boolean, onSelect: () -> Unit) {
+private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, coinsToApply: Int = 0, maxDiscountPct: Int, isLoading: Boolean, onSelect: () -> Unit, onCoinsChange: (Int) -> Unit = {}) {
     val isDark = ColorTokens.isDark
     val tierId = tier.id?.lowercase() ?: ""
     // Color tokens map for each tier — dark-mode aware via ColorTokens
@@ -695,11 +702,77 @@ private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, maxDisco
                 }
             }
 
-            // Coin discount hint
+            // Coin discount slider (interactive)
             if (coinBalance > 0 && tier.price > 0) {
-                Spacer(Modifier.height(6.dp))
-                val maxSave = (tier.price * maxDiscountPct / 100.0).toLong().coerceAtMost(coinBalance.toLong())
-                Text("🪙 Save up to ₹$maxSave with your coins ($maxDiscountPct% max)", fontSize = 10.sp, color = ColorTokens.CardAmberSubtext)
+                val maxCoinDiscount = (tier.price * maxDiscountPct / 100.0).toInt().coerceAtMost(coinBalance)
+                val discountedPrice = (tier.price - coinsToApply).coerceAtLeast(0.0)
+                val coinSavings = coinsToApply
+
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = ColorTokens.CardAmberBadge.copy(alpha = 0.15f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.MonetizationOn, null, tint = ColorTokens.AmberText, modifier = Modifier.size(16.dp))
+                                Text("Coins", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = ColorTokens.CardAmberText)
+                            }
+                            Text(
+                                "$coinsToApply / $maxCoinDiscount",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = if (coinsToApply > 0) ColorTokens.VerifiedGreen else ColorTokens.CardAmberText,
+                            )
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+                        Slider(
+                            value = coinsToApply.toFloat(),
+                            onValueChange = { onCoinsChange(it.toInt().coerceIn(0, maxCoinDiscount)) },
+                            valueRange = 0f..maxCoinDiscount.toFloat(),
+                            steps = if (maxCoinDiscount > 1) maxCoinDiscount - 1 else 0,
+                            modifier = Modifier.fillMaxWidth().height(24.dp),
+                            colors = SliderDefaults.colors(
+                                thumbColor = ColorTokens.AmberText,
+                                activeTrackColor = ColorTokens.AmberText,
+                                inactiveTrackColor = ColorTokens.CardAmberBadge.copy(alpha = 0.3f),
+                            ),
+                        )
+
+                        if (coinsToApply > 0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    "You save ₹$coinSavings",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp,
+                                    color = ColorTokens.VerifiedGreen,
+                                )
+                                Text(
+                                    "₹${tier.price.toLong()} → ₹${discountedPrice.toLong()}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = ColorTokens.CardAmberText,
+                                )
+                            }
+                        } else {
+                            Text(
+                                "Slide to use coins and save up to ₹$maxCoinDiscount",
+                                fontSize = 10.sp,
+                                color = ColorTokens.CardAmberSubtext,
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(18.dp))

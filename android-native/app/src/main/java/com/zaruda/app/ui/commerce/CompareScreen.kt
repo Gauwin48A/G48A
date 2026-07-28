@@ -71,6 +71,12 @@ class CompareViewModel @Inject constructor(private val repo: PostsRepository) : 
     private val _state = MutableStateFlow(PostListUiState())
     val state: StateFlow<PostListUiState> = _state.asStateFlow()
     private var remoteComparePosts: List<Post> = emptyList()
+    private val _categoryFilter = MutableStateFlow<String?>(null)
+
+    fun setCategoryFilter(cat: String?) {
+        _categoryFilter.value = cat
+        syncCompare(loading = false)
+    }
 
     init {
         syncCompare(loading = SharedExploreStore.comparePosts.isEmpty())
@@ -83,13 +89,17 @@ class CompareViewModel @Inject constructor(private val repo: PostsRepository) : 
     }
 
     private fun syncCompare(loading: Boolean = _state.value.loading, error: String? = null) {
-        val mergedPosts = (remoteComparePosts + SharedExploreStore.comparePosts)
+        val catFilter = _categoryFilter.value
+        var allPosts = (remoteComparePosts + SharedExploreStore.comparePosts)
             .distinctBy { it.stableId }
             .take(4)
+        if (catFilter != null) {
+            allPosts = allPosts.filter { it.category == catFilter }
+        }
         _state.value = PostListUiState(
             loading = loading,
-            posts = mergedPosts,
-            error = if (mergedPosts.isEmpty()) error else null,
+            posts = allPosts,
+            error = if (allPosts.isEmpty()) error else null,
         )
     }
 
@@ -128,8 +138,14 @@ class CompareViewModel @Inject constructor(private val repo: PostsRepository) : 
 
 
 @Composable
-fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, viewModel: CompareViewModel = hiltViewModel()) {
+fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, categoryKey: String? = null, viewModel: CompareViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+
+    // Apply category filter when categoryKey changes
+    LaunchedEffect(categoryKey) {
+        viewModel.setCategoryFilter(categoryKey)
+    }
+
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
             ScreenTopBar(stringResource(R.string.compare_title), onBack)

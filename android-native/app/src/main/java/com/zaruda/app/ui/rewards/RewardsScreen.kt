@@ -55,6 +55,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -117,7 +119,6 @@ import com.zaruda.app.data.remote.dto.RewardsOverviewResponse
 import com.zaruda.app.data.remote.dto.RewardsChainRuleDto
 import com.zaruda.app.data.remote.dto.RewardsReferralNodeDto
 import com.zaruda.app.data.remote.dto.RewardsUserDto
-import com.zaruda.app.data.remote.dto.ScratchStatus
 import com.zaruda.app.data.remote.dto.SpinStatus
 import com.zaruda.app.data.repository.RewardsRepository
 import com.zaruda.app.ui.components.AppErrorState
@@ -153,6 +154,7 @@ data class RewardsUiState(
     val referralTree: com.zaruda.app.data.remote.dto.ReferralTreeResponse? = null,
     val chainStatus: com.zaruda.app.data.remote.dto.ReferralChainStatusResponse? = null,
     val activePosts: List<com.zaruda.app.domain.model.Post> = emptyList(),
+    val processedReferrals: List<RewardsReferralNodeDto> = emptyList(),
 )
 
 private val fallbackRewardsOverview = RewardsOverviewResponse(
@@ -199,7 +201,6 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
 private val fallbackEngagementStatus = EngagementStatusResponse(
     dailyCheckIn = DailyCheckInStatus(canClaim = true, streak = 3, todayReward = 5, weekProgress = listOf(true, true, true, false, false, false, false)),
     spin = SpinStatus(canSpin = true),
-    scratch = ScratchStatus(available = 1, canScratch = true),
     referralMilestones = ReferralMilestoneStatus(canClaim = false, currentReferrals = 2, target = 3, reward = 50),
 )
 
@@ -215,6 +216,21 @@ private val fallbackLeaderboard = listOf(
     LeaderboardEntry(name = "Arjun", referrals = 1, position = 3),
 )
 
+private val fallbackProcessedReferrals = listOf(
+    RewardsReferralNodeDto(id = "demo_ref_1", name = "Priya", depth = 1, type = "Direct", coins = 50, joinDate = "Today"),
+    RewardsReferralNodeDto(id = "demo_ref_2", name = "Arjun", depth = 1, type = "Direct", coins = 30, joinDate = "This week"),
+    RewardsReferralNodeDto(id = "demo_ref_3", name = "Meera", depth = 2, type = "Indirect", coins = 15, joinDate = "This month"),
+)
+
+private val fallbackReferralTree = com.zaruda.app.data.remote.dto.ReferralTreeResponse(
+    userId = "demo", maxDepth = 3, total = 3, directCount = 2, indirectCount = 1,
+    tree = com.zaruda.app.data.remote.dto.ReferralNode(id = "root", name = "You", depth = 0, children = listOf(
+        com.zaruda.app.data.remote.dto.ReferralNode(id = "demo_ref_1", name = "Priya", depth = 1),
+        com.zaruda.app.data.remote.dto.ReferralNode(id = "demo_ref_2", name = "Arjun", depth = 1),
+        com.zaruda.app.data.remote.dto.ReferralNode(id = "demo_ref_3", name = "Meera", depth = 2),
+    ))
+)
+
 @HiltViewModel
 class RewardsViewModel @Inject constructor(
     private val rewardsRepository: RewardsRepository,
@@ -226,12 +242,25 @@ class RewardsViewModel @Inject constructor(
 
     private fun showFallbackRewards(actionResult: String? = null) {
         val current = _state.value
+        val baseRewards = current.rewards ?: fallbackRewardsOverview
+        // Always merge fallback referral chain into rewards so referral tab has demo data
+        val mergedRewards = if (baseRewards.referralChain.isEmpty()) {
+            baseRewards.copy(referralChain = fallbackRewardsOverview.referralChain, chainRules = fallbackRewardsOverview.chainRules)
+        } else baseRewards
+        // Also populate fallback referral tree for the stats grid
+        val mergedTree = current.referralTree ?: fallbackReferralTree
+        // Populate processed referrals from fallback
+        val mergedProcessed = if (current.processedReferrals.isEmpty()) {
+            fallbackProcessedReferrals
+        } else current.processedReferrals
         _state.value = current.copy(
             loading = false,
             refreshing = false,
             requiresAuth = false,
             error = null,
-            rewards = current.rewards ?: fallbackRewardsOverview,
+            rewards = mergedRewards,
+            referralTree = mergedTree,
+            processedReferrals = mergedProcessed,
             engagement = current.engagement ?: fallbackEngagementStatus,
             coinHistory = current.coinHistory.ifEmpty { fallbackCoinHistory },
             leaderboard = current.leaderboard.ifEmpty { fallbackLeaderboard },
@@ -241,7 +270,36 @@ class RewardsViewModel @Inject constructor(
         )
     }
 
-    private fun awardFallbackCoins(amount: Int, message: String) {
+    companion object {
+        /** Process-scoped cache — set true on first spin today, reset on app process death.
+         *  Also persists the spin date in TokenStore so multiple spins are prevented even after
+         *  process death or ViewModel recreation. */
+        @Volatile
+        private var _hasSpunLocallyToday = false
+        /** Day-of-year of the last spin, used to auto-reset the flag on calendar rollover. */
+        @Volatile
+        private var _spinLocalDate: Int? = null
+    }
+
+    /** On initialization, restore the persisted spin date from TokenStore so the lock
+     *  survives process death. If the stored date matches today, lock immediately. */
+    init {
+        val storedDate = tokenStore.getLastSpinDate()
+        if (storedDate != null) {
+            val cal = java.util.Calendar.getInstance()
+            val todayStr = "%04d-%02d-%02d".format(
+                cal.get(java.util.Calendar.YEAR),
+                cal.get(java.util.Calendar.MONTH) + 1,
+                cal.get(java.util.Calendar.DAY_OF_MONTH),
+            )
+            if (storedDate == todayStr) {
+                _hasSpunLocallyToday = true
+                _spinLocalDate = cal.get(java.util.Calendar.DAY_OF_YEAR)
+            }
+        }
+    }
+
+    private fun awardFallbackCoins(amount: Int, message: String, lockSpin: Boolean = false) {
         val currentRewards = _state.value.rewards ?: fallbackRewardsOverview
         val currentUser = currentRewards.user
         val updatedRewards = currentRewards.copy(
@@ -264,7 +322,8 @@ class RewardsViewModel @Inject constructor(
             dailyCheckIn = (_state.value.engagement?.dailyCheckIn ?: fallbackEngagementStatus.dailyCheckIn).copy(
                 canClaim = false,
                 streak = (_state.value.engagement?.dailyCheckIn?.streak ?: fallbackEngagementStatus.dailyCheckIn.streak) + 1,
-            )
+            ),
+            spin = if (lockSpin) (_state.value.engagement?.spin ?: fallbackEngagementStatus.spin).copy(canSpin = false) else _state.value.engagement?.spin ?: fallbackEngagementStatus.spin,
         )
         _state.value = _state.value.copy(
             loading = false,
@@ -295,7 +354,10 @@ class RewardsViewModel @Inject constructor(
         )
         viewModelScope.launch {
             // Load overview first (critical for fallback logic); secondary data fires concurrently
-            when (val result = rewardsRepository.overview()) {
+            // Wrap with timeout so the UI never hangs permanently if server is unreachable
+            val overviewResult = kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.overview() }
+                ?: ApiResult.Failure(ApiError.Timeout)
+            when (val result = overviewResult) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         loading = false, refreshing = false, rewards = result.data,
@@ -345,14 +407,32 @@ class RewardsViewModel @Inject constructor(
     /** Fire engagement, coin history, leaderboard, referral tree, and chain status concurrently. */
     private suspend fun loadSecondaryData() {
         coroutineScope {
-            val engDef = async { rewardsRepository.engagementStatus() }
-            val histDef = async { rewardsRepository.coinHistory() }
-            val lbDef  = async { rewardsRepository.referralLeaderboard() }
-            val treeDef = async { rewardsRepository.referralTree() }
-            val statusDef = async { rewardsRepository.referralChainStatus() }
+            val engDef = async { kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.engagementStatus() } ?: ApiResult.Failure(ApiError.Timeout) }
+            val histDef = async { kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.coinHistory() } ?: ApiResult.Failure(ApiError.Timeout) }
+            val lbDef  = async { kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.referralLeaderboard() } ?: ApiResult.Failure(ApiError.Timeout) }
+            val treeDef = async { kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.referralTree() } ?: ApiResult.Failure(ApiError.Timeout) }
+            val statusDef = async { kotlinx.coroutines.withTimeoutOrNull(5000L) { rewardsRepository.referralChainStatus() } ?: ApiResult.Failure(ApiError.Timeout) }
 
             when (val eng = engDef.await()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(engagement = eng.data)
+                is ApiResult.Success -> {
+                    // Server doesn't send canSpin field, so compute it:
+                    // false if lastSpinDate is today (already spun) OR flagged locally
+                    val serverSpin = eng.data.spin
+                    val lastDate = serverSpin.lastSpinDate?.take(10) // "YYYY-MM-DD"
+                    val cal = java.util.Calendar.getInstance()
+                    val todayStr = "%04d-%02d-%02d".format(
+                        cal.get(java.util.Calendar.YEAR),
+                        cal.get(java.util.Calendar.MONTH) + 1,
+                        cal.get(java.util.Calendar.DAY_OF_MONTH),
+                    )
+                    val alreadySpunFromServer = lastDate == todayStr
+                    val fixedSpin = serverSpin.copy(
+                        canSpin = !alreadySpunFromServer && !_hasSpunLocallyToday
+                    )
+                    _state.value = _state.value.copy(
+                        engagement = eng.data.copy(spin = fixedSpin)
+                    )
+                }
                 is ApiResult.Failure -> { }
             }
             when (val hist = histDef.await()) {
@@ -367,8 +447,48 @@ class RewardsViewModel @Inject constructor(
                 is ApiResult.Failure -> { }
             }
             when (val tree = treeDef.await()) {
-                is ApiResult.Success -> _state.value = _state.value.copy(referralTree = tree.data)
-                is ApiResult.Failure -> { }
+                is ApiResult.Success -> {
+                    val treeData = tree.data
+                    // Flatten the hierarchical tree into a flat list of RewardsReferralNodeDto for the referral tab
+                    val flatList = treeData.tree?.flatten()?.map { node ->
+                        RewardsReferralNodeDto(
+                            id = node.id,
+                            name = node.name,
+                            depth = node.depth,
+                            type = if (node.depth == 1) "Direct" else "Indirect",
+                            coins = 0,
+                            joinDate = node.joinDate,
+                        )
+                    } ?: emptyList()
+                    // Enrich coin data from the overview referralChain if available
+                    val existingChain = _state.value.rewards?.referralChain ?: emptyList()
+                    val coinMap = existingChain.filter { it.coins > 0 }.associateBy { it.id ?: it.name ?: "" }
+                    val enriched = flatList.map { node ->
+                        val match = coinMap[node.id] ?: coinMap[node.name]
+                        if (match != null) node.copy(coins = match.coins) else node
+                    }
+                    val merged = when {
+                        enriched.isNotEmpty() -> enriched
+                        existingChain.isNotEmpty() -> existingChain
+                        else -> fallbackProcessedReferrals
+                    }
+                    _state.value = _state.value.copy(
+                        referralTree = treeData,
+                        processedReferrals = merged,
+                    )
+                }
+                is ApiResult.Failure -> {
+                    // Ensure referral tree fallback is populated
+                    if (_state.value.referralTree == null) {
+                        _state.value = _state.value.copy(referralTree = fallbackReferralTree)
+                    }
+                    // Also populate processed referrals from fallback if still empty
+                    if (_state.value.processedReferrals.isEmpty()) {
+                        _state.value = _state.value.copy(
+                            processedReferrals = fallbackProcessedReferrals
+                        )
+                    }
+                }
             }
             when (val status = statusDef.await()) {
                 is ApiResult.Success -> _state.value = _state.value.copy(chainStatus = status.data)
@@ -394,33 +514,82 @@ class RewardsViewModel @Inject constructor(
     }
 
     fun spinWheel() {
-        _state.value = _state.value.copy(actionLoading = "spin")
-        viewModelScope.launch {
-            when (val r = rewardsRepository.spinWheel()) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        actionLoading = null,
-                        actionResult = "\uD83C\uDF89 Won ${r.data.reward} coins!",
-                    )
-                    load(refresh = true)
-                }
-                is ApiResult.Failure -> awardFallbackCoins(10, "\uD83C\uDF89 Won 10 coins!")
+        // Clear any stale action result from previous actions (e.g. daily check-in) to avoid redundant popups
+        _state.value = _state.value.copy(actionResult = null)
+
+        // Reset the local spin flag when a new calendar day starts
+        val cal = java.util.Calendar.getInstance()
+        val today = cal.get(java.util.Calendar.DAY_OF_YEAR)
+        if (_spinLocalDate != null && _spinLocalDate != today) {
+            _hasSpunLocallyToday = false
+        }
+        _spinLocalDate = today
+
+        // Also check the persisted spin date (survives process death)
+        val persistedDate = tokenStore.getLastSpinDate()
+        if (persistedDate != null) {
+            val todayStr = "%04d-%02d-%02d".format(
+                cal.get(java.util.Calendar.YEAR),
+                cal.get(java.util.Calendar.MONTH) + 1,
+                cal.get(java.util.Calendar.DAY_OF_MONTH),
+            )
+            if (persistedDate == todayStr && !_hasSpunLocallyToday) {
+                // Restore the lock from persistence
+                _hasSpunLocallyToday = true
             }
         }
-    }
 
-    fun scratchCard() {
-        _state.value = _state.value.copy(actionLoading = "scratch")
+        // Prevent multiple spins per day — check both the persistent local flag AND the engagement state
+        val alreadyLocked = _state.value.engagement?.spin?.canSpin == false
+        if (_hasSpunLocallyToday || alreadyLocked) {
+            _state.value = _state.value.copy(
+                actionLoading = null,
+            )
+            return
+        }
+
+        // Persist the spin date FIRST before any API call so the lock survives even if
+        // the app crashes between here and the API response.
+        val todayPersist = "%04d-%02d-%02d".format(
+            cal.get(java.util.Calendar.YEAR),
+            cal.get(java.util.Calendar.MONTH) + 1,
+            cal.get(java.util.Calendar.DAY_OF_MONTH),
+        )
+        tokenStore.saveLastSpinDate(todayPersist)
+
+        // Lock immediately BEFORE launching coroutine to prevent race conditions from rapid double-clicks
+        _hasSpunLocallyToday = true
+        _state.value = _state.value.copy(actionLoading = "spin")
+
         viewModelScope.launch {
-            when (val r = rewardsRepository.scratchCard()) {
+            // The flag was already set to true above, so proceed directly to the API.
+            // No need to re-check — the outer guard already validated the lock state.
+            when (val r = rewardsRepository.spinWheel()) {
                 is ApiResult.Success -> {
+                    // Lock spin locally even on success (belt-and-suspenders with server)
+                    val currentEng = _state.value.engagement ?: fallbackEngagementStatus
                     _state.value = _state.value.copy(
                         actionLoading = null,
-                        actionResult = "\uD83C\uDF8A Scratched ${r.data.reward} coins!",
+                        // actionResult deliberately null — Canvas onWin callback already shows celebration modal
+                        // Never set a redundant +N popup here — the SpinWinCelebrationModal handles display.
+                        engagement = currentEng.copy(
+                            spin = currentEng.spin.copy(canSpin = false)
+                        ),
                     )
                     load(refresh = true)
                 }
-                is ApiResult.Failure -> awardFallbackCoins(15, "\uD83C\uDF8A Scratched 15 coins!")
+                is ApiResult.Failure -> {
+                    // Lock spin for the day regardless — no fallback coins or popups
+                    val currentEng = _state.value.engagement ?: fallbackEngagementStatus
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        actionLoading = null,
+                        actionResult = null,
+                        engagement = currentEng.copy(
+                            spin = currentEng.spin.copy(canSpin = false)
+                        ),
+                    )
+                }
             }
         }
     }
@@ -472,6 +641,7 @@ fun RewardsScreen(
     isAuthenticated: Boolean,
     onSignInRequired: () -> Unit,
     onBrowseMarketplace: () -> Unit,
+    onOpenReferralTree: () -> Unit = {},
     viewModel: RewardsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -829,6 +999,45 @@ fun RewardsScreen(
                             val weekProgress = engagement?.dailyCheckIn?.weekProgress ?: emptyList()
                             val todayReward = engagement?.dailyCheckIn?.todayReward ?: 5
 
+                            // ── Countdown to next claim ──
+                            var countdownTxt by remember { mutableStateOf("") }
+                            LaunchedEffect(canCheckIn) {
+                                while (true) {
+                                    if (!canCheckIn) {
+                                        val cal = java.util.Calendar.getInstance()
+                                        val now = cal.timeInMillis
+                                        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                        cal.set(java.util.Calendar.MINUTE, 0)
+                                        cal.set(java.util.Calendar.SECOND, 0)
+                                        cal.set(java.util.Calendar.MILLISECOND, 0)
+                                        cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                                        val midnight = cal.timeInMillis
+                                        val diff = midnight - now
+                                        val h = diff / 3600000
+                                        val m = (diff % 3600000) / 60000
+                                        val s = (diff % 60000) / 1000
+                                        countdownTxt = "Next claim in %02d:%02d:%02d".format(h, m, s)
+                                    } else {
+                                        countdownTxt = ""
+                                    }
+                                    kotlinx.coroutines.delay(1000)
+                                }
+                            }
+
+                            // ── Celebration state ──
+                            var showCheckinCelebration by remember { mutableStateOf(false) }
+                            var claimedAmount by remember { mutableStateOf(0) }
+                            val checkinActionResult = state.actionResult
+                            LaunchedEffect(checkinActionResult) {
+                                if (checkinActionResult != null && state.actionLoading != "checkin") {
+                                    val amt = """(\d+)""".toRegex().find(checkinActionResult)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: todayReward
+                                    claimedAmount = amt
+                                    showCheckinCelebration = true
+                                    kotlinx.coroutines.delay(2500)
+                                    showCheckinCelebration = false
+                                }
+                            }
+
                             AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF1A2744) else Color(0xFFF8FAFF)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -837,33 +1046,97 @@ fun RewardsScreen(
                                             Text("\uD83D\uDD25 $streak day streak", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                         }
                                     }
+                                    // Streak milestones
+                                    if (streak == 7) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFD700).copy(alpha = 0.15f), modifier = Modifier.fillMaxWidth()) {
+                                            Text("\uD83C\uDFC6 7-Day Streak Complete! +50 bonus coins!", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                        }
+                                    } else if (streak % 3 == 0 && streak > 0) {
+                                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF10B981).copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
+                                            Text("\uD83D\uDD25 $streak-day milestone! Keep going!", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                                        }
+                                    }
                                     // 7-day calendar with reward values
                                     val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                                     val dayRewards = listOf("+5", "+10", "+15", "+20", "+25", "+30", "+50")
-                                    val todayIndex = (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+                                    val todayCal = java.util.Calendar.getInstance()
+                                    val todayIndex = (todayCal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                         days.forEachIndexed { index, day ->
-                                            val isCompleted = if (weekProgress.isNotEmpty()) weekProgress.getOrElse(index) { false } else index < todayIndex
+                                            val isCompleted = if (weekProgress.isNotEmpty()) weekProgress.getOrElse(index) { false } else index < streak
                                             val isToday = index == todayIndex
+                                            val isMilestone = listOf(2, 4, 6).contains(index)
                                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                                 Box(
-                                                    modifier = Modifier.size(36.dp).clip(CircleShape)
-                                                        .background(when { isCompleted -> Color(0xFF10B981); isToday -> MaterialTheme.colorScheme.primary; else -> MaterialTheme.colorScheme.surfaceVariant })
-                                                        .then(if (isToday && !isCompleted) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape) else Modifier),
+                                                    modifier = Modifier.size(38.dp).clip(CircleShape)
+                                                        .background(when {
+                                                            isCompleted -> Color(0xFF10B981)
+                                                            isToday && !isCompleted -> Color(0xFF4F46E5)
+                                                            isMilestone -> Color(0xFFFFD700).copy(alpha = 0.3f)
+                                                            else -> MaterialTheme.colorScheme.surfaceVariant
+                                                        })
+                                                        .then(if (isToday && !isCompleted) Modifier.border(2.dp, Color(0xFF4F46E5), CircleShape) else Modifier)
+                                                        .then(if (isMilestone && !isCompleted && !isToday) Modifier.border(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f), CircleShape) else Modifier),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     if (isCompleted) Text("\u2713", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
-                                                    else Text(dayRewards[index], style = MaterialTheme.typography.labelSmall, color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                    else {
+                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            Text(dayRewards[index], style = MaterialTheme.typography.labelSmall, color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                        }
+                                                    }
+                                                }
+                                                if (isMilestone) {
+                                                    val bonus = when (index) { 2 -> "\uD83C\uDFC5"; 4 -> "\uD83C\uDF96"; 6 -> "\uD83C\uDFC6"; else -> "" }
+                                                    Text(bonus, fontSize = 8.sp)
                                                 }
                                             }
                                         }
                                     }
-                                    PrimaryButton(
-                                        text = if (state.actionLoading == "checkin") "Claiming Bonus..." else if (canCheckIn) "Claim Daily Check-in (+$todayReward 🪙)" else "Checked In Today ✓",
-                                        onClick = { if (canCheckIn) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); viewModel.dailyCheckIn() } },
-                                        enabled = canCheckIn && state.actionLoading == null,
-                                    )
+                                    // Countdown and claim button
+                                    if (!canCheckIn && countdownTxt.isNotEmpty()) {
+                                        Text(countdownTxt, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                                    }
+                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                        PrimaryButton(
+                                            text = when {
+                                                state.actionLoading == "checkin" -> "\u23F3 Claiming..."
+                                                canCheckIn -> "\u2705 Check In (+$todayReward \uD83E\uDE99)"
+                                                else -> "\u2705 Checked In Today"
+                                            },
+                                            onClick = {
+                                                if (canCheckIn) {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    viewModel.dailyCheckIn()
+                                                }
+                                            },
+                                            enabled = canCheckIn && state.actionLoading == null,
+                                        )
+                                    }
+                                }
+                            }
+
+                            // ── Check-in celebration overlay ──
+                            if (showCheckinCelebration) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color(0xFF10B981).copy(alpha = 0.9f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        val celebScale = remember { Animatable(0f) }
+                                        LaunchedEffect(Unit) {
+                                            celebScale.animateTo(1.2f, spring(dampingRatio = 0.3f, stiffness = 300f))
+                                            celebScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 200f))
+                                        }
+                                        Text("\uD83C\uDF89", fontSize = 48.sp, modifier = Modifier.graphicsLayer(scaleX = celebScale.value, scaleY = celebScale.value))
+                                        Text("+$claimedAmount coins earned!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text("Day $streak streak", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
+                                    }
                                 }
                             }
                         }
@@ -1169,49 +1442,220 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Referral Tree Visualizer ────────────────────
+                        // ─── Referral Network Tabs (Direct / Indirect) ────
                         if (selectedTab == 2) item {
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(3.dp), modifier = Modifier.fillMaxWidth().border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.18f) else Color(0xFFE2E8F0).copy(alpha = 0.6f), RoundedCornerShape(20.dp))) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("Referral Network Tree", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                    val treeResponse = state.referralTree
-                                    var showTreeTimeout by remember { mutableStateOf(false) }
-                                    LaunchedEffect(treeResponse) {
-                                        if (treeResponse == null) {
-                                            kotlinx.coroutines.delay(5000L)
-                                            showTreeTimeout = true
+                            val referralChainNodes = state.processedReferrals.ifEmpty { rewards.referralChain }
+                            val directNodes = referralChainNodes.filter { it.type == "Direct" }
+                            val indirectNodes = referralChainNodes.filter { it.type == "Indirect" }
+                            var referralTabIndex by remember { mutableStateOf(0) }
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
+                                elevation = CardDefaults.cardElevation(3.dp),
+                                modifier = Modifier.fillMaxWidth().border(1.dp, if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.18f) else Color(0xFFE2E8F0).copy(alpha = 0.6f), RoundedCornerShape(20.dp)),
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    // ── Tab Row ────────────────────────────────
+                                    val tabTitles = listOf("Direct", "Indirect")
+                                    TabRow(
+                                        selectedTabIndex = referralTabIndex,
+                                        containerColor = Color.Transparent,
+                                        contentColor = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    ) {
+                                        tabTitles.forEachIndexed { idx, title ->
+                                            val tabCount = if (idx == 0) directNodes.size else indirectNodes.size
+                                            Tab(
+                                                selected = referralTabIndex == idx,
+                                                onClick = { referralTabIndex = idx },
+                                                text = {
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        Text(title, fontWeight = if (referralTabIndex == idx) FontWeight.Bold else FontWeight.Normal, fontSize = 13.sp)
+                                                        Surface(
+                                                            shape = RoundedCornerShape(12.dp),
+                                                            color = if (referralTabIndex == idx) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                                        ) {
+                                                            Text(
+                                                                "$tabCount",
+                                                                fontSize = 11.sp,
+                                                                color = if (referralTabIndex == idx) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                            )
                                         }
                                     }
-                                    if (treeResponse == null && !showTreeTimeout) {
-                                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                        }
-                                    } else if (treeResponse == null) {
-                                        // Show fallback referral data for demo/preview when no network data available
-                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Text("Loading network data... show your referral network preview:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            listOf(
-                                                "👤 Priya • Direct • 50 coins",
-                                                "👤 Arjun • Direct • 30 coins",
-                                                "  └ 👤 Meera • Indirect • 15 coins",
-                                            ).forEach { line ->
-                                                Text(line, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                    // ── Summary Header Card ───────────────────
+                                    val isDirectTab = referralTabIndex == 0
+                                    val tabAccent = if (isDirectTab) Color(0xFF10B981) else Color(0xFF3B82F6)
+                                    val tabAccentBg = if (isDirectTab) Color(0xFFD1FAE5) else Color(0xFFDBEAFE)
+                                    val currentNodes = if (isDirectTab) directNodes else indirectNodes
+
+                                    Column(Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = tabAccent,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Row(
+                                                Modifier.padding(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                            ) {
+                                                Column {
+                                                    Text(
+                                                        if (isDirectTab) "Direct Referrals" else "Indirect Referrals",
+                                                        fontSize = 11.sp,
+                                                        color = Color.White.copy(alpha = 0.75f),
+                                                    )
+                                                    Text(
+                                                        "${currentNodes.size}",
+                                                        fontSize = 28.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White,
+                                                    )
+                                                }
+                                                if (isDirectTab && indirectNodes.isNotEmpty()) {
+                                                    Text(
+                                                        "${indirectNodes.size} also\nfrom network",
+                                                        fontSize = 11.sp,
+                                                        color = Color.White.copy(alpha = 0.65f),
+                                                        lineHeight = 14.sp,
+                                                        textAlign = TextAlign.End,
+                                                    )
+                                                }
+                                                if (!isDirectTab && directNodes.isNotEmpty()) {
+                                                    Text(
+                                                        "${directNodes.size} direct\nreferrals",
+                                                        fontSize = 11.sp,
+                                                        color = Color.White.copy(alpha = 0.65f),
+                                                        lineHeight = 14.sp,
+                                                        textAlign = TextAlign.End,
+                                                    )
+                                                }
                                             }
-                                            Spacer(Modifier.height(4.dp))
-                                            Text("Keep sharing your code to grow your network!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+
+                                    // ── Referral Nodes List ───────────────────
+                                    if (currentNodes.isEmpty()) {
+                                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text(
+                                                    if (isDirectTab) "\uD83D\uDC65" else "\uD83D\uDD17",
+                                                    fontSize = 28.sp,
+                                                )
+                                                Text(
+                                                    if (isDirectTab) "No direct referrals yet" else "No indirect referrals yet",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                )
+                                                Text(
+                                                    if (isDirectTab) "Share your code to invite friends!" else "Indirect referrals come when your direct referrals invite others.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    textAlign = TextAlign.Center,
+                                                )
+                                            }
                                         }
                                     } else {
-                                        val rootNode = treeResponse.tree
-                                        if (rootNode == null || rootNode.children.isEmpty()) {
-                                            Text("No referrals yet. Share your link to grow your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        } else {
-                                            val statusMap = remember(state.chainStatus) {
-                                                state.chainStatus?.referrals?.associateBy { it.userId } ?: emptyMap()
-                                            }
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                for (childNode in rootNode.children) {
-                                                    ReferralTreeNodeView(childNode, 1, statusMap, chainRules = rewards.chainRules)
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            currentNodes.take(5).forEach { node ->
+                                                val nodeAccent = if (isDirectTab) Color(0xFF059669) else Color(0xFF2563EB)
+                                                val nodeBg = if (isDirectTab) Color(0xFF10B981).copy(alpha = 0.06f) else Color(0xFF3B82F6).copy(alpha = 0.06f)
+                                                Surface(
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    color = nodeBg,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(12.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier.size(36.dp).clip(CircleShape).background(nodeAccent.copy(alpha = 0.2f)),
+                                                            contentAlignment = Alignment.Center,
+                                                        ) {
+                                                            Text(
+                                                                (node.name?.firstOrNull()?.uppercaseChar() ?: '?').toString(),
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = nodeAccent,
+                                                                fontSize = 14.sp,
+                                                            )
+                                                        }
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text(node.name ?: "Unknown", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                                            Text(
+                                                                "Level ${node.depth} \u2022 ${node.joinDate?.take(10) ?: "Joined"}",
+                                                                fontSize = 11.sp,
+                                                                color = Color(0xFF64748B),
+                                                            )
+                                                        }
+                                                        Surface(
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            color = tabAccentBg,
+                                                        ) {
+                                                            Text(
+                                                                "+${node.coins.coerceAtLeast(10)}",
+                                                                fontSize = 11.sp,
+                                                                color = nodeAccent,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                            )
+                                                        }
+                                                    }
                                                 }
+                                            }
+
+                                            if (currentNodes.size > 5) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    onClick = onOpenReferralTree,
+                                                ) {
+                                                    Text(
+                                                        "+${currentNodes.size - 5} more \u2014 View Full Network \u2192",
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        textAlign = TextAlign.Center,
+                                                        modifier = Modifier.padding(vertical = 12.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // ── View Full Network Button ──────────────
+                                    if (referralChainNodes.isNotEmpty()) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Surface(
+                                            onClick = onOpenReferralTree,
+                                            shape = RoundedCornerShape(0.dp, 0.dp, 20.dp, 20.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Row(
+                                                Modifier.padding(vertical = 14.dp),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Text(
+                                                    "View Full Referral Network",
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("\u2192", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                                             }
                                         }
                                     }
@@ -1659,204 +2103,6 @@ fun ScratchCardCanvas(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     val scratchDark = ColorTokens.isDark
                     Text("✋ Scratch here!", color = if (scratchDark) Color(0xFF94A3B8) else Color(0xFF4B5563), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ReferralTreeNodeView(
-    node: com.zaruda.app.data.remote.dto.ReferralNode,
-    depth: Int = 1,
-    statusMap: Map<String, com.zaruda.app.data.remote.dto.ReferralChainMember> = emptyMap(),
-    chainRules: List<RewardsChainRuleDto> = emptyList(),
-) {
-    var expanded by remember { mutableStateOf(depth < 2) }
-    val hasChildren = node.children.isNotEmpty()
-    val colorIdx = (depth - 1) % 5
-
-    val levelColors = listOf(
-        Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF4F46E5))),
-        Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0D9488))),
-        Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))),
-        Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFFD946EF))),
-        Brush.linearGradient(listOf(Color(0xFFF43F5E), Color(0xFFEC4899)))
-    )
-
-    val levelBgs = listOf(
-        Color(0xFFEFF6FF),
-        Color(0xFFECFDF5),
-        Color(0xFFFEF3C7),
-        Color(0xFFF5F3FF),
-        Color(0xFFFFF1F2)
-    )
-    val levelBgsDark = listOf(
-        Color(0xFF1E3A8A).copy(alpha = 0.15f),
-        Color(0xFF064E3B).copy(alpha = 0.15f),
-        Color(0xFF78350F).copy(alpha = 0.15f),
-        Color(0xFF581C87).copy(alpha = 0.15f),
-        Color(0xFF881337).copy(alpha = 0.15f)
-    )
-
-    val levelTexts = listOf(
-        Color(0xFF1D4ED8),
-        Color(0xFF047857),
-        Color(0xFFB45309),
-        Color(0xFF6D28D9),
-        Color(0xFFBE123C)
-    )
-
-    val darkTheme = ColorTokens.isDark
-    val bg = if (darkTheme) levelBgsDark[colorIdx] else levelBgs[colorIdx]
-    val borderCol = if (darkTheme) levelTexts[colorIdx].copy(alpha = 0.3f) else levelTexts[colorIdx].copy(alpha = 0.2f)
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(bg)
-                .border(1.dp, borderCol, RoundedCornerShape(12.dp))
-                .clickable(enabled = hasChildren) { expanded = !expanded }
-                .padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Expand/collapse indicator
-            Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) {
-                if (hasChildren) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = levelTexts[colorIdx],
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(levelColors[colorIdx]),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = node.name.take(1).uppercase(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            // Info
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = node.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (darkTheme) Color.White else Color(0xFF1E293B)
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(999.dp),
-                        color = levelTexts[colorIdx].copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = "L$depth",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = levelTexts[colorIdx],
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Status Badge if available
-                    val memberStatus = statusMap[node.id]
-                    if (memberStatus != null) {
-                        val status = memberStatus.status.lowercase()
-                        val badgeColor = when (status) {
-                            "rewarded" -> Color(0xFF10B981)
-                            "qualified" -> Color(0xFFF59E0B)
-                            else -> if (darkTheme) Color(0xFF94A3B8) else Color(0xFF64748B)
-                        }
-                        val badgeBg = badgeColor.copy(alpha = 0.12f)
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = badgeBg
-                        ) {
-                            Text(
-                                text = status.replaceFirstChar { it.lowercase() },
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = badgeColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                val joinDateFormatted = node.joinDate?.take(10) ?: ""
-                val memberStatus = statusMap[node.id]
-                val activityInfo = if (memberStatus != null) {
-                    if (memberStatus.transactionCount > 0) "${memberStatus.transactionCount} txns"
-                    else if (memberStatus.postCount > 0) "${memberStatus.postCount} posts"
-                    else ""
-                } else ""
-
-                if (joinDateFormatted.isNotEmpty() || activityInfo.isNotEmpty()) {
-                    Text(
-                        text = listOfNotNull(
-                            if (joinDateFormatted.isNotEmpty()) "Joined $joinDateFormatted" else null,
-                            if (activityInfo.isNotEmpty()) activityInfo else null
-                        ).joinToString(" • "),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Reward amount (multi-tier) L1: 100, L2: 40, L3: 20, L4: 10, L5: 5
-            if (depth in 1..5) {
-                val reward = chainRules.firstOrNull { it.depth == depth }?.points?.toInt()
-                    ?: when (depth) {
-                        1 -> 50
-                        2 -> 25
-                        3 -> 10
-                        else -> 2
-                    }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("🎁", fontSize = 14.sp)
-                    Text(
-                        text = "+$reward",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF59E0B)
-                    )
-                }
-            }
-        }
-
-        // Render children recursively with indentation
-        if (expanded && hasChildren) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Spacer(modifier = Modifier.width(16.dp))
-                // Connector vertical line
-                Box(
-                    modifier = Modifier
-                        .width(2.dp)
-                        .height(30.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    for (child in node.children) {
-                        ReferralTreeNodeView(child, depth + 1, statusMap, chainRules)
-                    }
                 }
             }
         }

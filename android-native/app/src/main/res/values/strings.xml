@@ -604,11 +604,9 @@ Share Zaruda with your friends and earn rewards.
     <string name="rewards_coins">coins</string>
     <string name="rewards_daily_checkin">Daily Check-In</string>
     <string name="rewards_spin_wheel">Spin Wheel</string>
-    <string name="rewards_scratch_card">Scratch Card</string>
     <string name="rewards_streak">Streak</string>
     <string name="rewards_check_in">Check In</string>
     <string name="rewards_spin">Spin</string>
-    <string name="rewards_scratch">Scratch</string>
     <string name="rewards_browse_marketplace">Browse Marketplace</string>
     <string name="rewards_sign_in_required">Sign in to access Rewards</string>
 

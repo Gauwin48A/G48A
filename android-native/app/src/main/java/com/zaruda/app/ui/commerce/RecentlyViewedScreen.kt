@@ -67,6 +67,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -130,6 +131,12 @@ class RecentlyViewedViewModel @Inject constructor(
     private var lastLocaleVersion = 0L
     private var remoteRecentPosts: List<Post> = emptyList()
 
+    private val _categoryFilter = MutableStateFlow<String?>(null)
+    fun setCategoryFilter(cat: String?) {
+        _categoryFilter.value = cat
+        syncRecentlyViewed(loading = false)
+    }
+
     init {
         syncRecentlyViewed(loading = SharedExploreStore.recentlyViewedPosts.isEmpty())
         load()
@@ -151,14 +158,19 @@ class RecentlyViewedViewModel @Inject constructor(
         refreshing: Boolean = false,
         error: String? = null,
     ) {
-        val mergedPosts = (SharedExploreStore.recentlyViewedPosts + remoteRecentPosts)
+        val catFilter = _categoryFilter.value
+        val allPosts = (SharedExploreStore.recentlyViewedPosts + remoteRecentPosts)
             .distinctBy { it.stableId }
             .take(50)
+        val mergedPosts = if (catFilter != null) {
+            allPosts.filter { it.category == catFilter }
+        } else {
+            allPosts
+        }
         _state.value = _state.value.copy(
             loading = loading,
             refreshing = refreshing,
             posts = mergedPosts,
-            // Only show error if there's absolutely no data (local + remote)
             error = if (mergedPosts.isEmpty()) error else null,
         )
     }
@@ -326,6 +338,11 @@ fun RecentlyViewedScreen(
     var statusFilter by remember { mutableStateOf("all") }
     var removeConfirmId by remember { mutableStateOf<String?>(null) }
     val focusManager = LocalFocusManager.current
+
+    // Apply category filter when categoryKey changes
+    LaunchedEffect(categoryKey) {
+        viewModel.setCategoryFilter(categoryKey)
+    }
 
     // Remove confirmation dialog
     removeConfirmId?.let { idToRemove ->
