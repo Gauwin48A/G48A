@@ -123,3 +123,6 @@ _codex_backups/
 
 # Secrets — never commit
 /server/src/config/serviceAccountKey.json
+
+# Kotlin build sessions/caches
+android-native/.kotlin/
