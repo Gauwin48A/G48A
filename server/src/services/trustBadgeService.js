@@ -146,21 +146,31 @@ const attachTrustToPosts = async (posts = []) => {
   });
 };
 
+const cacheService = require("./cacheService");
+const TRUST_SNAPSHOT_TTL_SECONDS = 60;
+
 const getTrustSnapshot = async (userId) => {
   const normalizedUserId = normalizeUserId(userId);
   if (!normalizedUserId) return null;
 
-  const [trust, riskState] = await Promise.all([
-    computeTrustScore(normalizedUserId).catch(() => null),
-    getUserRiskState(normalizedUserId).catch(() => null),
-  ]);
+  const cacheKey = `trust_snapshot:${normalizedUserId}`;
+  return cacheService.getOrSetWithStampedeProtection(
+    cacheKey,
+    async () => {
+      const [trust, riskState] = await Promise.all([
+        computeTrustScore(normalizedUserId).catch(() => null),
+        getUserRiskState(normalizedUserId).catch(() => null),
+      ]);
 
-  if (!trust) return null;
-  return {
-    ...trust,
-    risk_state: riskState,
-    under_review: isComplaintRiskState(riskState),
-  };
+      if (!trust) return null;
+      return {
+        ...trust,
+        risk_state: riskState,
+        under_review: isComplaintRiskState(riskState),
+      };
+    },
+    TRUST_SNAPSHOT_TTL_SECONDS
+  );
 };
 
 module.exports = {

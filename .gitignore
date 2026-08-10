@@ -120,3 +120,6 @@ _codex_backups/
 /client/audit-screenshots/
 /client/test-results/
 /client/dev/
+
+# Secrets — never commit
+/server/src/config/serviceAccountKey.json

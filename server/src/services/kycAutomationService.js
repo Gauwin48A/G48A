@@ -71,15 +71,22 @@ function normalizePan(panNumber) {
 }
 
 /**
- * Validate Aadhaar and PAN inputs, returning errors and risk flags.
+ * Validate Aadhaar and/or PAN inputs, returning errors and risk flags.
+ *
+ * The validation is docType-aware: when a single document type is submitted
+ * (native app flow — one doc number + front/back images), only that type is
+ * validated. When no docType is supplied (web flow — both numbers), both are
+ * checked. Passport / driving license routes always to manual review.
  * @param {string} aadhaarNumber
  * @param {string} panNumber
  * @param {object} documents - Must contain at least { front }.
+ * @param {string} [docType=null] - Optional "aadhaar" | "pan" | "passport" | "driving_license"
  * @returns {{ normalizedAadhaar: string|null, normalizedPan: string|null, aadhaarValid: boolean, panValid: boolean, errors: string[], riskFlags: string[] }}
  */
-function validateKycInputs(aadhaarNumber, panNumber, documents = {}) {
+function validateKycInputs(aadhaarNumber, panNumber, documents = {}, docType = null) {
   const errors = [];
   const riskFlags = [];
+  const normalizedType = String(docType || "").trim().toLowerCase();
 
   const normalizedAadhaar = normalizeAadhaar(aadhaarNumber);
   const normalizedPan = normalizePan(panNumber);
@@ -87,17 +94,26 @@ function validateKycInputs(aadhaarNumber, panNumber, documents = {}) {
   const aadhaarValid = Boolean(normalizedAadhaar && /^\d{12}$/.test(normalizedAadhaar));
   const panValid = Boolean(normalizedPan && /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(normalizedPan));
 
-  if (!aadhaarValid) {
+  // Only validate the doc type(s) actually submitted.
+  const checkAadhaar = !normalizedType || normalizedType === "aadhaar";
+  const checkPan = !normalizedType || normalizedType === "pan";
+
+  if (checkAadhaar && normalizedAadhaar && !aadhaarValid) {
     errors.push("Invalid Aadhaar format. Expected 12 digits.");
     riskFlags.push("invalid_aadhaar_format");
-  } else if (/^(\d)\1{11}$/.test(normalizedAadhaar)) {
+  } else if (checkAadhaar && aadhaarValid && /^(\d)\1{11}$/.test(normalizedAadhaar)) {
     errors.push("Aadhaar number appears invalid.");
     riskFlags.push("aadhaar_repeating_digits");
   }
 
-  if (!panValid) {
+  if (checkPan && normalizedPan && !panValid) {
     errors.push("Invalid PAN format. Expected ABCDE1234F.");
     riskFlags.push("invalid_pan_format");
+  }
+
+  // Passport / DL can't be auto-validated locally → manual review.
+  if (normalizedType && normalizedType !== "aadhaar" && normalizedType !== "pan") {
+    riskFlags.push("manual_review_document_type");
   }
 
   if (!documents.front) {
@@ -151,30 +167,56 @@ function buildOcrExtractionResult({ normalizedAadhaar, normalizedPan, documents,
 
 /**
  * Decide the KYC routing: auto_approved, manual_review, or auto_rejected.
+ *
+ * Rules:
+ *  - Passport / driving license → manual_review (no local OCR provider).
+ *  - A valid Aadhaar with high confidence & no risk flags → auto_approved.
+ *  - PAN-only or medium confidence → manual_review.
+ *  - Invalid / unverifiable → auto_rejected.
  * @param {object} params
  * @param {object} params.validation
  * @param {number} params.ocrConfidence
+ * @param {string} [params.docType=null]
  * @returns {{ decision: string, reason: string }}
  */
-function decideKycRoute({ validation, ocrConfidence }) {
-  if (!validation.aadhaarValid || !validation.panValid) {
+function decideKycRoute({ validation, ocrConfidence, docType = null }) {
+  const normalizedType = String(docType || "").trim().toLowerCase();
+  const isManualType =
+    normalizedType && normalizedType !== "aadhaar" && normalizedType !== "pan";
+
+  // Passport / DL / any other type cannot be auto-verified locally.
+  if (isManualType) {
     return {
-      decision: "auto_rejected",
-      reason: validation.errors.join(" "),
+      decision: "manual_review",
+      reason: "This document type requires manual review by our verification team.",
     };
   }
 
-  if (ocrConfidence >= DEFAULT_AUTO_APPROVE_THRESHOLD && validation.riskFlags.length === 0) {
+  const hasValidDoc = validation.aadhaarValid || validation.panValid;
+  if (!hasValidDoc) {
+    return {
+      decision: "auto_rejected",
+      reason: validation.errors.join(" ") || "No valid document number provided.",
+    };
+  }
+
+  // Auto-approve only when a verifiable Aadhaar is present with high confidence.
+  const autoApprovalEligible =
+    validation.aadhaarValid &&
+    ocrConfidence >= DEFAULT_AUTO_APPROVE_THRESHOLD &&
+    validation.riskFlags.length === 0;
+
+  if (autoApprovalEligible) {
     return {
       decision: "auto_approved",
       reason: "KYC validated automatically with high confidence.",
     };
   }
 
-  if (ocrConfidence >= DEFAULT_MANUAL_REVIEW_THRESHOLD) {
+  if (ocrConfidence >= DEFAULT_MANUAL_REVIEW_THRESHOLD || validation.panValid) {
     return {
       decision: "manual_review",
-      reason: "Manual review required due to medium confidence or minor risk flags.",
+      reason: "Manual review required due to medium confidence, PAN-only submission, or minor risk flags.",
     };
   }
 
@@ -236,40 +278,61 @@ async function ensureSchema() {
 /* ------------------------------------------------------------------ */
 
 /**
- * Apply a KYC decision to the users table.
+ * Apply a KYC decision to the users table AND sync the kyc_verifications
+ * row so GET /api/users/kyc/status reflects the latest outcome.
  * @param {string} userId
  * @param {string} decision
  * @param {string|null} reason
  * @returns {Promise<string>} New aadhaar_status value.
  */
 async function applyDecisionToUser(userId, decision, reason = null) {
+  let status = "PENDING";
+
   if (decision === "auto_approved" || decision === "manual_approved") {
+    status = "VERIFIED";
     await runQuery(
       `UPDATE users
-       SET aadhaar_status = 'VERIFIED', rejection_reason = NULL
+       SET aadhaar_status = 'VERIFIED', kyc_status = 'VERIFIED', kyc_verified = true, rejection_reason = NULL
        WHERE user_id::text = $1`,
       [String(userId)]
     );
-    return "VERIFIED";
-  }
-
-  if (decision === "auto_rejected" || decision === "manual_rejected") {
+  } else if (decision === "auto_rejected" || decision === "manual_rejected") {
+    status = "REJECTED";
     await runQuery(
       `UPDATE users
-       SET aadhaar_status = 'REJECTED', rejection_reason = $2
+       SET aadhaar_status = 'REJECTED', kyc_status = 'REJECTED', kyc_verified = false, rejection_reason = $2
        WHERE user_id::text = $1`,
       [String(userId), reason || "KYC verification failed. Please resubmit valid documents."]
     );
-    return "REJECTED";
+  } else {
+    await runQuery(
+      `UPDATE users
+       SET aadhaar_status = 'PENDING', kyc_status = 'PENDING', kyc_verified = false, rejection_reason = NULL
+       WHERE user_id::text = $1`,
+      [String(userId)]
+    );
   }
 
-  await runQuery(
-    `UPDATE users
-     SET aadhaar_status = 'PENDING', rejection_reason = NULL
-     WHERE user_id::text = $1`,
-    [String(userId)]
-  );
-  return "PENDING";
+  // Keep kyc_verifications in sync so /kyc/status shows the new state.
+  try {
+    await runQuery(
+      `INSERT INTO kyc_verifications (user_id, status, verified_at, updated_at)
+       VALUES ($1, $2, CASE WHEN $2 = 'VERIFIED' THEN NOW() ELSE NULL END, NOW())
+       ON CONFLICT (user_id)
+       DO UPDATE SET
+         status = EXCLUDED.status,
+         verified_at = CASE WHEN EXCLUDED.status = 'VERIFIED' THEN NOW() ELSE kyc_verifications.verified_at END,
+         updated_at = NOW()`,
+      [String(userId), status]
+    );
+  } catch (err) {
+    logger.warn("[KYC] Failed to sync kyc_verifications", {
+      userId,
+      message: err.message,
+    });
+  }
+
+  return status;
 }
 
 /**
@@ -385,13 +448,25 @@ async function enqueueKycDecision({
  * Process a full KYC submission: validate, OCR, route, persist, notify.
  * @param {object} params
  * @param {string} params.userId
+ * @param {string} [params.docType=null] - "aadhaar" | "pan" | "passport" | "driving_license"
  * @param {string} params.aadhaarNumber
  * @param {string} params.panNumber
- * @param {object} params.documents - { front, back? }
+ * @param {object} params.documents - { front, back?, selfie? }
  * @returns {Promise<object>} Processing result with decision, confidence, flags.
  */
-async function processKycSubmission({ userId, aadhaarNumber, panNumber, documents }) {
-  const validation = validateKycInputs(aadhaarNumber, panNumber, documents || {});
+async function processKycSubmission({
+  userId,
+  docType = null,
+  aadhaarNumber,
+  panNumber,
+  documents,
+}) {
+  const validation = validateKycInputs(
+    aadhaarNumber,
+    panNumber,
+    documents || {},
+    docType
+  );
 
   const ocrResult = buildOcrExtractionResult({
     normalizedAadhaar: validation.normalizedAadhaar,
@@ -403,6 +478,7 @@ async function processKycSubmission({ userId, aadhaarNumber, panNumber, document
   const routing = decideKycRoute({
     validation,
     ocrConfidence: ocrResult.confidence,
+    docType,
   });
 
   const queueResult = await enqueueKycDecision({
@@ -466,7 +542,7 @@ async function listReviewQueue({ status = "pending", page = 1, limit = 50 }) {
     `SELECT
        COUNT(*) OVER()::int AS total_count,
        queue_id, user_id, aadhaar_number_masked, pan_number_masked,
-       confidence, risk_flags, decision, decision_reason,
+       documents, ocr_data, confidence, risk_flags, decision, decision_reason,
        status, reviewed_by, review_notes, reviewed_at,
        created_at, processed_at
      FROM kyc_review_queue
@@ -544,21 +620,42 @@ async function reviewQueueItem({ queueId, reviewerId, decision, notes }) {
       [mappedDecision, reason, String(reviewerId), reviewNotes, queueId]
     );
 
+    // Apply the decision consistently (users + kyc_verifications) so the
+    // user's GET /kyc/status reflects the outcome immediately.
     if (mappedDecision === "manual_approved") {
       await client.query(
         `UPDATE users
-         SET aadhaar_status = 'VERIFIED', rejection_reason = NULL
+         SET aadhaar_status = 'VERIFIED', kyc_status = 'VERIFIED', kyc_verified = true, rejection_reason = NULL
          WHERE user_id::text = $1`,
         [String(queueItem.user_id)]
       );
     } else {
       await client.query(
         `UPDATE users
-         SET aadhaar_status = 'REJECTED', rejection_reason = $2
+         SET aadhaar_status = 'REJECTED', kyc_status = 'REJECTED', kyc_verified = false, rejection_reason = $2
          WHERE user_id::text = $1`,
         [String(queueItem.user_id), reason]
       );
     }
+
+    await client.query(
+      `INSERT INTO kyc_verifications (user_id, status, verified_at, updated_at)
+       VALUES ($1, $2, CASE WHEN $2 = 'VERIFIED' THEN NOW() ELSE NULL END, NOW())
+       ON CONFLICT (user_id)
+       DO UPDATE SET
+         status = EXCLUDED.status,
+         verified_at = CASE WHEN EXCLUDED.status = 'VERIFIED' THEN NOW() ELSE kyc_verifications.verified_at END,
+         updated_at = NOW()`,
+      [
+        String(queueItem.user_id),
+        mappedDecision === "manual_approved" ? "VERIFIED" : "REJECTED",
+      ]
+    ).catch((err) => {
+      logger.warn("[KYC] Failed to sync kyc_verifications after manual review", {
+        userId: queueItem.user_id,
+        message: err.message,
+      });
+    });
 
     await client.query("COMMIT");
     await sendKycNotification(queueItem.user_id, mappedDecision, reason);

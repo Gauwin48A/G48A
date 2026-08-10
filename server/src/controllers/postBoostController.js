@@ -192,8 +192,8 @@ exports.getSponsoredPosts = async (req, res) => {
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       LEFT JOIN LATERAL (
         SELECT
           boost_type,
@@ -345,8 +345,8 @@ exports.getPremiumRecommendations = async (req, res) => {
       FROM posts p
       JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE p.status = 'active'
         AND p.post_id::text != $1
         AND (p.expires_at IS NULL OR p.expires_at > NOW())

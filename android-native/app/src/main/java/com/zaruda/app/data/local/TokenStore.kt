@@ -125,10 +125,20 @@ class TokenStore @Inject constructor(context: Context) {
         }.apply()
     }
 
+    /** Latest FCM token from the push service — cached so it can be registered once auth succeeds. */
+    fun getFcmToken(): String? = prefs.getString(KEY_FCM_TOKEN, null)
+
+    fun saveFcmToken(token: String?) {
+        prefs.edit().apply {
+            if (token != null) putString(KEY_FCM_TOKEN, token) else remove(KEY_FCM_TOKEN)
+        }.apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "mhub_secure_prefs"
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
         const val KEY_LAST_SPIN_DATE = "last_spin_date"
+        const val KEY_FCM_TOKEN = "fcm_token"
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -55,6 +56,7 @@ fun PostCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isWishlisted: Boolean = false,
+    onUserClick: (() -> Unit)? = null,
     onToggleWishlist: (() -> Unit)? = null,
     isCompared: Boolean = false,
     onToggleCompare: (() -> Unit)? = null,
@@ -179,14 +181,24 @@ fun PostCard(
             Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                // Seller row
+                // Seller row — tap the name/avatar to open the seller's sold-posts trust page
+                val sellerClickable = onUserClick != null && !post.userId.isNullOrBlank()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val sellerName = post.sellerName ?: post.userName ?: "MHub"
                     val initial = sellerName.firstOrNull()?.uppercaseChar()?.toString() ?: "M"
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(28.dp)) {
-                        Box(contentAlignment = Alignment.Center) { Text(initial, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = if (sellerClickable) Modifier.weight(1f, fill = false).clip(RoundedCornerShape(8.dp)).clickable { onUserClick?.invoke() } else Modifier.weight(1f, fill = false),
+                    ) {
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(28.dp)) {
+                            Box(contentAlignment = Alignment.Center) { Text(initial, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                        }
+                        Text(sellerName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (sellerClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Text(sellerName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (sellerClickable) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    }
                     if (post.sellerVerified == true) {
                         Surface(shape = RoundedCornerShape(4.dp), color = VerifiedBadge.copy(alpha = 0.1f)) {
                             Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -377,6 +389,7 @@ fun PostCardCompact(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isWishlisted: Boolean = false,
+    onUserClick: (() -> Unit)? = null,
     onToggleWishlist: (() -> Unit)? = null,
 ) {
     Card(onClick = onClick, shape = RoundedCornerShape(14.dp),

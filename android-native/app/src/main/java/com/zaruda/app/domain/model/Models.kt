@@ -106,6 +106,8 @@ data class Post(
     @SerialName("listing_id") val listingId: String? = null,
     @SerialName("expires_at") val expiresAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
+    // Contact number shared by the seller (shown when viewer has KYC + active plan)
+    @SerialName("contact_number") val contactNumber: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()

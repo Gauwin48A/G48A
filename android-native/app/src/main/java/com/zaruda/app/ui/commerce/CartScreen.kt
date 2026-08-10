@@ -82,6 +82,7 @@ data class CartUiState(
 @HiltViewModel
 class CartViewModel @Inject constructor(
     private val repo: CartRepository,
+    private val cartItemDao: com.zaruda.app.data.local.db.CartItemDao,
     private val localeManager: com.zaruda.app.core.LocaleManager,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CartUiState())
@@ -89,9 +90,11 @@ class CartViewModel @Inject constructor(
     private val _categoryFilter = MutableStateFlow<String?>(null)
     private var lastLocaleVersion = 0L
     private var remoteCartItems: List<CartItem> = emptyList()
+    private var roomCartItems: List<CartItem> = emptyList()
 
     init {
         syncCartItems(loading = SharedExploreStore.cartPosts.isEmpty())
+        loadLocalRoomItems()
         load()
         viewModelScope.launch {
             SharedExploreStore.cartFlow.collect {
@@ -111,6 +114,14 @@ class CartViewModel @Inject constructor(
         syncCartItems(loading = false)
     }
 
+    /** Load Room-persisted cart items so items added offline/from category apps survive restart. */
+    private fun loadLocalRoomItems() {
+        viewModelScope.launch {
+            roomCartItems = cartItemDao.getAll().map { it.toCartItem() }
+            syncCartItems(loading = false)
+        }
+    }
+
     private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
         val catFilter = _categoryFilter.value
         // Filter remote cart items by category too (CartItem now has category field)
@@ -124,7 +135,7 @@ class CartViewModel @Inject constructor(
         } else {
             SharedExploreStore.cartPosts
         }
-        val mergedItems = mergeCartItems(filteredRemote, localPosts)
+        val mergedItems = mergeCartItems(filteredRemote, localPosts, roomCartItems)
         _state.value = _state.value.copy(
             loading = loading,
             items = mergedItems,
@@ -153,7 +164,9 @@ class CartViewModel @Inject constructor(
 
     private fun removeLocalCartItem(postId: String) {
         remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        roomCartItems = roomCartItems.filterNot { it.matchesPostId(postId) }
         SharedExploreStore.removeCart(postId)
+        viewModelScope.launch { runCatching { cartItemDao.delete(postId) } }
         syncCartItems(loading = false)
     }
 
@@ -170,9 +183,14 @@ class CartViewModel @Inject constructor(
 
     fun undoRemove() {
         val item = _state.value.pendingUndoItem ?: return
-        SharedExploreStore.addCart(item.toPost())
+        val post = item.toPost()
+        SharedExploreStore.addCart(post)
+        roomCartItems = roomCartItems + item
         _state.value = _state.value.copy(pendingUndoItem = null)
         syncCartItems(loading = false)
+        viewModelScope.launch {
+            runCatching { cartItemDao.insert(item.toCartEntity()) }
+        }
     }
 
     fun commitRemove() {
@@ -184,28 +202,45 @@ class CartViewModel @Inject constructor(
     fun saveForLater(postId: String) {
         val item = _state.value.items.find { it.matchesPostId(postId) } ?: return
         remoteCartItems = remoteCartItems.filterNot { it.matchesPostId(postId) }
+        roomCartItems = roomCartItems.filterNot { it.matchesPostId(postId) }
         SharedExploreStore.removeCart(postId)
         _state.value = _state.value.copy(
             items = _state.value.items.filterNot { it.matchesPostId(postId) },
             savedForLater = _state.value.savedForLater + item,
         )
         syncCartItems(loading = false)
-        viewModelScope.launch { repo.remove(postId) }
+        viewModelScope.launch {
+            runCatching { cartItemDao.delete(postId) }
+            repo.remove(postId)
+        }
     }
 
     fun moveToCart(postId: String) {
         val item = _state.value.savedForLater.find { it.matchesPostId(postId) } ?: return
-        SharedExploreStore.addCart(item.toPost())
+        val post = item.toPost()
+        SharedExploreStore.addCart(post)
+        roomCartItems = roomCartItems + item
         _state.value = _state.value.copy(
             savedForLater = _state.value.savedForLater.filterNot { it.matchesPostId(postId) },
         )
         syncCartItems(loading = false)
-        viewModelScope.launch { repo.add(postId) }
+        viewModelScope.launch {
+            runCatching { cartItemDao.insert(item.toCartEntity()) }
+            repo.add(postId)
+        }
     }
 
     fun updateQty(postId: String, qty: Int) {
         if (qty < 1 || qty > 10) return
-        viewModelScope.launch { repo.updateQty(postId, qty) }
+        val item = _state.value.items.find { it.matchesPostId(postId) }
+        if (item != null) {
+            roomCartItems = roomCartItems.map { if (it.matchesPostId(postId)) it.copy(quantity = qty) else it }
+            syncCartItems(loading = false)
+        }
+        viewModelScope.launch {
+            runCatching { cartItemDao.updateQuantity(postId, qty) }
+            repo.updateQty(postId, qty)
+        }
     }
 }
 
@@ -233,15 +268,41 @@ private fun CartItem.toPost(): Post = Post(
 private fun CartItem.matchesPostId(postId: String): Boolean =
     this.postId == postId || id == postId || stableId == postId
 
-private fun mergeCartItems(remoteItems: List<CartItem>, localPosts: List<Post>): List<CartItem> {
-    val remoteIds = remoteItems.map { it.postId ?: it.id ?: it.stableId }.toSet()
-    val localItems = localPosts
-        .filterNot { post ->
-            listOfNotNull(post.stableId, post.postId, post.id).any { it in remoteIds }
-        }
-        .map { it.toCartItem() }
-    return remoteItems + localItems
+private fun mergeCartItems(remoteItems: List<CartItem>, localPosts: List<Post>, roomItems: List<CartItem> = emptyList()): List<CartItem> {
+    // Dedupe across ALL sources by stableId — the same item may exist in Room,
+    // SharedExploreStore, and the remote API (category screens write to both).
+    return (remoteItems + roomItems + localPosts.map { it.toCartItem() })
+        .distinctBy { it.stableId }
 }
+
+/** Convert a Room cart entity into the UI CartItem model. */
+private fun com.zaruda.app.data.local.db.CartItemEntity.toCartItem(): CartItem = CartItem(
+    id = id,
+    postId = postId.ifBlank { id },
+    title = title,
+    price = price,
+    currency = null,
+    imageUrl = imageUrl,
+    sellerName = brand,
+    quantity = quantity,
+    category = category,
+)
+
+/** Convert a UI CartItem back into a Room cart entity (for undo / move-to-cart persistence). */
+private fun CartItem.toCartEntity(): com.zaruda.app.data.local.db.CartItemEntity = com.zaruda.app.data.local.db.CartItemEntity(
+    id = postId ?: id ?: stableId,
+    postId = postId ?: id ?: stableId,
+    title = title.orEmpty(),
+    price = price ?: 0.0,
+    originalPrice = price ?: 0.0,
+    imageUrl = imageUrl.orEmpty(),
+    category = category.orEmpty(),
+    brand = sellerName.orEmpty(),
+    selectedColor = "",
+    selectedSize = "",
+    quantity = quantity,
+    inStock = true,
+)
 
 private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.quantity }
 

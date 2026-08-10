@@ -93,8 +93,23 @@ const FeedPostCard = memo(function FeedPostCard({ post }) {
         <div className="text-gray-700 mb-2 whitespace-pre-line text-base md:text-lg">
           {post.description || <span className="italic text-gray-400">{t("no_description")}</span>}
         </div>
-        <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-          <span>{t("posted_by_user", { userId: post.user_id })}</span>
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+          {sellerId ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/user/${sellerId}/sold-posts`);
+              }}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold truncate max-w-[60%] text-left cursor-pointer"
+              title={t("view_seller_items", "View seller's sold items & trust profile")}
+            >
+              by {post.author_name || post.seller_name || post.username || post.user_name || "Seller"}
+            </button>
+          ) : (
+            <span>by {post.author_name || post.seller_name || post.username || "Seller"}</span>
+          )}
           <span>{formatDate(post.created_at)}</span>
         </div>
         <div className="flex items-center justify-end">

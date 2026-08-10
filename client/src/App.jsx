@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import PwaEnhancements from "./components/PwaEnhancements.jsx";
 import VPNBlocker from "./components/VPNBlocker.jsx";
+import NetworkStatusBanner from "./components/NetworkStatusBanner.jsx";
 import { useRouteTracker } from "@/utils/navigation";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
@@ -213,6 +214,10 @@ const NotFoundPage = lazyWithRetry(
 const AccountDeletionPage = lazyWithRetry(
   () => import("./pages/AccountDeletion.jsx"),
   "AccountDeletion",
+);
+const UserSoldPostsPage = lazyWithRetry(
+  () => import("./pages/UserSoldPosts.jsx"),
+  "UserSoldPosts",
 );
 
 function RouteBoundary() {
@@ -666,6 +671,7 @@ function AppShell() {
                   <Route path="/centre/:id" element={<PageEnhancer config={PAGE_CONFIGS["centre-detail"]}><RequireAuth><ChannelPage variant="centre" /></RequireAuth></PageEnhancer>} />
                   <Route path="/kyc" element={<PageEnhancer config={PAGE_CONFIGS["kyc"]}><RequireAuth><KycVerificationPage /></RequireAuth></PageEnhancer>} />
                   <Route path="/payment" element={<PageEnhancer config={PAGE_CONFIGS["payment"]}><RequireAuth><PaymentPage /></RequireAuth></PageEnhancer>} />
+                  <Route path="/user/:userId/sold-posts" element={<PageEnhancer config={{ title: "Seller's Sold Posts", layout: "default", skeleton: "list" }}><UserSoldPostsPage /></PageEnhancer>} />
 
                   <Route path="*" element={<PageEnhancer config={PAGE_CONFIGS["not-found"]}><NotFoundPage /></PageEnhancer>} />
                 </Route>
@@ -674,6 +680,7 @@ function AppShell() {
           </main>
           </PullToRefreshWrapper>
           <Toaster />
+          <NetworkStatusBanner />
         </>
       )}
     </div>

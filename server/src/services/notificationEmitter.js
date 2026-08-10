@@ -64,8 +64,8 @@ async function emitNotification(receiverId, payload = {}) {
   // 2. Persist in PostgreSQL and Queue Push Notification asynchronously
   try {
     const dbRes = await pool.query(
-      `INSERT INTO notifications (receiver_id, sender_id, type, title, message, image_url, deep_link, data, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+      `INSERT INTO notifications (receiver_id, user_id, sender_id, type, category, title, message, image_url, deep_link, data, status)
+       VALUES ($1, $1, $2, $3, $3, $4, $5, $6, $7, $8, 'pending')
        RETURNING notification_id, created_at`,
       [receiverId, sender_id, type, title, message, image_url, deep_link, JSON.stringify(data)]
     );

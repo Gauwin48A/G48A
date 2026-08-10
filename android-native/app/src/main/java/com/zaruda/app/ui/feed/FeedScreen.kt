@@ -111,18 +111,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import javax.inject.Inject
 
-private val MOCK_FEED_ITEMS: List<FeedItem> = listOf(
-    FeedItem(id = "mock_1", title = "How to negotiate the best price when buying a used car", content = "Buying a used car can be tricky. Here are 7 proven tips to get the best deal: 1) Research market prices on MHub before visiting. 2) Always inspect the vehicle in daylight. 3) Get a mechanic inspection before paying...", userName = "AutoExpert_Ravi", userAvatar = null, createdAt = "2024-01-15T10:30:00Z", likeCount = 234, commentCount = 18, viewCount = 1850, categoryName = "Vehicles"),
-    FeedItem(id = "mock_2", title = "Top 5 budget smartphones under ₹15,000 in 2024", content = "The budget smartphone market has exploded this year. Redmi, Realme and Poco are fighting hard for your money. Here's our analysis of the best bang-for-buck options available on MHub right now...", userName = "TechReview_Ananya", userAvatar = null, createdAt = "2024-01-14T14:22:00Z", likeCount = 567, commentCount = 45, viewCount = 4200, categoryName = "Electronics"),
-    FeedItem(id = "mock_3", title = "Is it worth buying pre-owned electronics on MHub?", content = "I've bought 3 refurbished items on MHub in the last year. My experience has been mostly positive but there are things to watch out for. Always check the seller rating, demand original receipts, and test everything on the spot...", userName = "SmartBuyer_Priya", userAvatar = null, createdAt = "2024-01-13T08:45:00Z", likeCount = 189, commentCount = 32, viewCount = 2100, categoryName = "Electronics"),
-    FeedItem(id = "mock_4", title = "Summer fashion trends 2024 — what's hot in India", content = "Cotton kurtis, palazzo sets, and breathable fabrics are dominating this summer. I found amazing deals on MHub from local designers who are selling premium quality at half the retail price. Here's what I picked up...", userName = "FashionFirst_Meera", userAvatar = null, createdAt = "2024-01-12T16:00:00Z", likeCount = 412, commentCount = 28, viewCount = 3300, categoryName = "Fashion"),
-    FeedItem(id = "mock_5", title = "Starting a small business? Here's what I learned selling on MHub", content = "I started selling handmade jewellery on MHub 6 months ago. First month was slow, but by month 3 I was getting 10+ inquiries daily. Key learnings: great photos matter most, respond within 1 hour, and price competitively...", userName = "Entrepreneur_Sunita", userAvatar = null, createdAt = "2024-01-11T11:15:00Z", likeCount = 892, commentCount = 76, viewCount = 6800, categoryName = "Fashion"),
-    FeedItem(id = "mock_6", title = "Guide to buying second-hand furniture in Bangalore", content = "Moving to Bangalore? Don't buy new furniture at inflated prices. MHub has hundreds of quality listings from people relocating. I furnished my entire 2BHK for under ₹40,000. Here's exactly what I bought and how I negotiated...", userName = "HomeDecor_Kiran", userAvatar = null, createdAt = "2024-01-10T09:30:00Z", likeCount = 654, commentCount = 89, viewCount = 5400),
-    FeedItem(id = "mock_7", title = "EV revolution in India: Should you buy an electric vehicle now?", content = "With petrol prices rising and EV subsidies available, more Indians are considering electric vehicles. I test drove 4 electric scooters last month. Here's my honest take: charging infrastructure is still a challenge but daily commute costs drop by 80%...", userName = "GreenMobility_Arjun", userAvatar = null, createdAt = "2024-01-09T13:00:00Z", likeCount = 1203, commentCount = 145, viewCount = 9800, categoryName = "Vehicles"),
-    FeedItem(id = "mock_8", title = "How I sold my old MacBook for ₹5,000 more than expected", content = "Small tricks that helped me get top price: cleaned it thoroughly, took photos in good lighting, was honest about every scratch, and priced it ₹500 below similar listings to get quick inquiries. Sold in 2 days!", userName = "SellerTips_Vikram", userAvatar = null, createdAt = "2024-01-08T07:00:00Z", likeCount = 445, commentCount = 56, viewCount = 3900, categoryName = "Electronics"),
-    FeedItem(id = "mock_9", title = "Monthly market report: Used electronics prices in India (Jan 2024)", content = "iPhone 13 prices have stabilised at ₹42,000–₹48,000. Samsung S23 is available at ₹35,000. Laptops over 2 years old are seeing 20% price drops. Best time to buy gaming gear — stock is high and prices are soft...", userName = "MarketWatch_MHub", userAvatar = null, createdAt = "2024-01-07T12:00:00Z", likeCount = 788, commentCount = 34, viewCount = 7200),
-    FeedItem(id = "mock_10", title = "Safety tips when buying or selling on MHub", content = "1) Always meet in public places like malls or police stations for high-value items. 2) Never share OTP or UPI PIN. 3) Test electronics before paying. 4) For vehicles, transfer RC immediately. 5) Avoid advance payments to unverified sellers...", userName = "SafetyFirst_MHub", userAvatar = null, createdAt = "2024-01-06T10:00:00Z", likeCount = 2100, commentCount = 234, viewCount = 18500),
-)
+
 
 @Stable
 data class FeedState(
@@ -173,30 +162,21 @@ class FeedViewModel @Inject constructor(
             } ?: ApiResult.Failure(com.zaruda.app.core.ApiError.Timeout)
             when (result) {
                 is ApiResult.Success -> {
-                    // KEY FIX: If API returns success but empty, fall back to mock data
-                    val items = result.data
-                    if (items.isNotEmpty()) {
-                        _state.value = _state.value.copy(
-                            loading = false,
-                            refreshing = false,
-                            feedItems = sortFeedItems(items, _state.value.sortOption),
-                            currentPage = 1,
-                            hasMore = items.size >= 20,
-                        )
-                    } else {
-                        _state.value = _state.value.copy(
-                            loading = false,
-                            refreshing = false,
-                            feedItems = MOCK_FEED_ITEMS,
-                            error = null,
-                        )
-                    }
+                    // Honest empty state: real feed only — never inject mock posts
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        refreshing = false,
+                        feedItems = sortFeedItems(result.data, _state.value.sortOption),
+                        currentPage = 1,
+                        hasMore = result.data.size >= 20,
+                        error = null,
+                    )
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
-                    feedItems = MOCK_FEED_ITEMS,
-                    error = null, // show mock data silently instead of error
+                    feedItems = emptyList(),
+                    error = result.error.message, // show error + retry instead of fake content
                 )
             }
         }
@@ -239,21 +219,12 @@ class FeedViewModel @Inject constructor(
             } ?: ApiResult.Failure(com.zaruda.app.core.ApiError.Timeout)
             when (result) {
                 is ApiResult.Success -> {
-                    val items = result.data
-                    if (items.isNotEmpty()) {
-                        _state.value = _state.value.copy(
-                            loadingMore = false,
-                            feedItems = _state.value.feedItems + sortFeedItems(items, current.sortOption),
-                            currentPage = nextPage,
-                            hasMore = items.size >= 20,
-                        )
-                    } else {
-                        _state.value = _state.value.copy(
-                            loadingMore = false,
-                            feedItems = _state.value.feedItems + MOCK_FEED_ITEMS,
-                            hasMore = false,
-                        )
-                    }
+                    _state.value = _state.value.copy(
+                        loadingMore = false,
+                        feedItems = _state.value.feedItems + sortFeedItems(result.data, current.sortOption),
+                        currentPage = nextPage,
+                        hasMore = result.data.size >= 20,
+                    )
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(loadingMore = false)
             }

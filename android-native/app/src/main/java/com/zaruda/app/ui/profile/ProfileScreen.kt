@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.outlined.Lock
@@ -471,7 +472,7 @@ class ProfileViewModel @Inject constructor(
             bio = "This is a demo account for preview purposes.",
             username = "demo_user",
             currentPlan = "premium",
-            kycStatus = null,
+            kycStatus = "verified",
             role = "seller",
             pictureUrl = null,
             coverImage = null,
@@ -735,6 +736,7 @@ fun ProfileScreen(
     onOpenMyPosts: () -> Unit,
     onOpenNotifications: () -> Unit = {},
     onOpenSecurity: () -> Unit = {},
+    onOpenPayout: () -> Unit = {},
 
     onOpenAccountDelete: () -> Unit = {},
     onOpenPost: (String) -> Unit = {},
@@ -1508,7 +1510,7 @@ fun ProfileScreen(
                                         // Selling subgroup
                                         Text("Selling", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 6.dp))
                                         ProfileMenuItemCompact(icon = Icons.AutoMirrored.Filled.ListAlt, label = "My Listings", subtitle = "Manage your active posts", onClick = onOpenMyPosts)
-                                        
+                                        ProfileMenuItemCompact(icon = Icons.Filled.AccountBalance, label = "Payout Account", subtitle = "UPI & bank details for payouts", onClick = onOpenPayout)
 
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 4.dp))
 

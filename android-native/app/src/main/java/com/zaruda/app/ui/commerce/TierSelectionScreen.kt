@@ -154,7 +154,7 @@ class TiersViewModel @Inject constructor(
     )
 
     sealed class RazorpayVerifyState {
-        data class Success(val message: String) : RazorpayVerifyState()
+        data class Success(val message: String, val title: String = "✅ Payment Successful!") : RazorpayVerifyState()
         data class Failure(val error: String) : RazorpayVerifyState()
     }
 
@@ -169,12 +169,14 @@ class TiersViewModel @Inject constructor(
             when (val r = paymentsRepo.createRazorpayOrder(amount = amount, tierId = tierId, coinsToApply = coinsToApply)) {
                 is ApiResult.Success -> {
                     val order = r.data
-                    if (order.orderId != null && order.key != null) {
+                    val orderId = order.orderId
+                    val keyId = order.keyId
+                    if (orderId != null && keyId != null) {
                         _checkoutEvent.send(RazorpayCheckoutEvent(
-                            orderId = order.orderId,
+                            orderId = orderId,
                             amount = order.amount,
                             currency = order.currency,
-                            keyId = order.key,
+                            keyId = keyId,
                             tierId = tierId,
                         ))
                     } else {
@@ -238,13 +240,18 @@ class TiersViewModel @Inject constructor(
     }
 
     fun claimTrial() {
-        _state.value = _state.value.copy(subscribeLoading = "trial_claim")
+        _state.value = _state.value.copy(subscribeLoading = "trial_claim", error = null)
         viewModelScope.launch {
-            // Web Parity: 1-week free trial for any new user
-            when (val r = repo.subscribe(SubscribeRequest(tierId = "trial_week"))) {
+            // Server-side 7-day Premium free trial (one per user, enforced by /api/subscriptions/claim-trial)
+            when (val r = repo.activateTrial()) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(subscribeLoading = null)
+                    _state.value = _state.value.copy(subscribeLoading = null, coinsApplied = 0)
+                    _verifyResult.value = RazorpayVerifyState.Success(
+                        message = "🎉 7-Day Premium trial activated! Enjoy free access.",
+                        title = "🎁 Trial Activated!",
+                    )
                     loadSubscriptionData()
+                    loadCoinBalance()
                 }
                 is ApiResult.Failure -> {
                     _state.value = _state.value.copy(subscribeLoading = null, error = r.error.message)
@@ -385,7 +392,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
             is TiersViewModel.RazorpayVerifyState.Success -> {
                 AlertDialog(
                     onDismissRequest = { viewModel.dismissVerifyResult() },
-                    title = { Text("✅ Payment Successful!", fontWeight = FontWeight.Bold) },
+                    title = { Text(state.title, fontWeight = FontWeight.Bold) },
                     text = { Text(state.message, fontSize = 14.sp, color = ColorTokens.TextSecondary) },
                     confirmButton = {
                         Button(onClick = { viewModel.dismissVerifyResult() }) {
@@ -492,11 +499,11 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             isLoading = state.subscribeLoading == tier.id,
                             onSelect = {
                                 val tId = tier.id ?: ""
-                                if (tier.price > 0 && tId != "starter") {
-                                    // Use Razorpay checkout for paid plans (coins auto-applied from state)
+                                if (tier.price > 0) {
+                                    // Use Razorpay checkout for all paid plans (coins auto-applied from state)
                                     viewModel.initiateRazorpayCheckout(tId, tier.price)
                                 } else {
-                                    // Free or starter flow
+                                    // Truly free plan flow
                                     viewModel.subscribe(tId)
                                 }
                             },

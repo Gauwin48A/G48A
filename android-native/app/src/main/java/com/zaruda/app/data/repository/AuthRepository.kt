@@ -23,6 +23,7 @@ import com.zaruda.app.data.remote.dto.AadhaarOtpResponse
 import com.zaruda.app.data.remote.dto.AadhaarVerifyResponse
 import com.zaruda.app.data.remote.dto.PreferredLanguageRequest
 import com.zaruda.app.data.remote.dto.MessageResponse
+import com.zaruda.app.data.remote.dto.PushTokenRequest
 import com.zaruda.app.data.local.db.PostDao
 import com.zaruda.app.data.local.db.CategoryDao
 import com.zaruda.app.data.local.db.WishlistItemDao
@@ -68,6 +69,9 @@ class AuthRepository @Inject constructor(
             .put("role", "user")
             .put("name", "Demo User")
             .put("email", "demo@mhub.local")
+            .put("kyc_verified", true)
+            .put("current_plan", "premium")
+            .put("tier", "premium")
             .put("exp", nowSec + 30L * 24 * 60 * 60)
             .toString()
         val token = "${header.toBase64Url()}.${payload.toBase64Url()}.demo"
@@ -79,6 +83,7 @@ class AuthRepository @Inject constructor(
         val res = api.googleSignIn(GoogleAuthRequest(idToken))
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
+        registerPushTokenIfCached()
         res.user
     }
 
@@ -89,6 +94,7 @@ class AuthRepository @Inject constructor(
         if (res.requireOtp) return@safeApiCall res // OTP challenge needed
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
+        registerPushTokenIfCached()
         res
     }
 
@@ -98,6 +104,7 @@ class AuthRepository @Inject constructor(
         val res = api.verifyOtp(VerifyOtpRequest(phone = phone, otp = otp))
         if (res.token != null) {
             tokenStore.save(res.token, res.refreshToken)
+            registerPushTokenIfCached()
         }
         res
     }
@@ -114,6 +121,7 @@ class AuthRepository @Inject constructor(
         val res = api.emailSignup(EmailSignupRequest(fullName, email, phone, password))
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
+        registerPushTokenIfCached()
         res.user
     }
 
@@ -126,6 +134,18 @@ class AuthRepository @Inject constructor(
         wishlistItemDao.clearAll()
         cartItemDao.clearAll()
         Unit
+    }
+
+    /** Register the cached FCM token (if any) with the server now that the user is authenticated.
+     *  Fills the gap where the token is obtained before login (fresh install) — onNewToken only
+     *  fires when the token actually changes, so login-time registration is required too. */
+    private suspend fun registerPushTokenIfCached() {
+        val fcmToken = tokenStore.getFcmToken() ?: return
+        runCatching {
+            api.registerPushToken(
+                PushTokenRequest(token = fcmToken, deviceType = "android", deviceName = android.os.Build.MODEL)
+            )
+        }
     }
 
     /** Proactively refresh an expired access token using the stored refresh token.
@@ -210,6 +230,7 @@ class AuthRepository @Inject constructor(
         val res = api.completeAadhaarSignup(CompleteAadhaarSignupRequest(signupToken = signupToken, password = password, confirmPassword = password, panNumber = pan, referralCode = referral))
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
+        registerPushTokenIfCached()
         res.user
     }
 

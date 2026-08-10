@@ -1,13 +1,28 @@
 package com.zaruda.app.ui.post
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.location.LocationManager
+import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
+import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,28 +51,38 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,11 +94,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.zaruda.app.domain.model.Category
 import com.zaruda.app.ui.common.InputValidators
 import com.zaruda.app.ui.components.ErrorBanner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import java.io.File
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.coroutines.resume
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -85,20 +121,142 @@ fun CreatePostScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
 
     // ── Local form state ────────────────────────────────────────────────
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var priceText by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
-    var categoryExpanded by rememberSaveable { mutableStateOf(false) }
-    var categoryQuery by rememberSaveable { mutableStateOf("") }
-    var subcategoryExpanded by rememberSaveable { mutableStateOf(false) }
+    var categorySearch by rememberSaveable { mutableStateOf("") }
+    var brandExpanded by rememberSaveable { mutableStateOf(false) }
+
+    // Wizard step state
+    var currentStep by rememberSaveable { mutableStateOf(1) }
+    var stepError by remember { mutableStateOf<String?>(null) }
+    var detectingLocation by remember { mutableStateOf(false) }
 
     // Focus / touched tracking for validation-on-blur
     var titleTouched by rememberSaveable { mutableStateOf(false) }
     var descTouched by rememberSaveable { mutableStateOf(false) }
     var priceTouched by rememberSaveable { mutableStateOf(false) }
+
+    // ── Voice note recorder state ───────────────────────────────────────
+    var elapsedSeconds by rememberSaveable { mutableStateOf(0) }
+    var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var lastAudioFile by remember { mutableStateOf<File?>(null) }
+
+    fun doStartRecording() {
+        if (state.recording) return
+        val file = File(context.cacheDir, "voice_${System.currentTimeMillis()}.m4a")
+        val r: MediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(context).apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(file)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(file.path)
+            }
+        }
+        runCatching { r.prepare() }.onFailure { runCatching { r.release() }; return }
+        runCatching { r.start() }.onFailure { runCatching { r.release() }; return }
+        lastAudioFile = file
+        recorder = r
+        viewModel.setRecording(true)
+        stepError = null
+    }
+
+    fun stopRecording() {
+        val r = recorder ?: return
+        recorder = null
+        viewModel.setRecording(false)
+        runCatching { r.stop() }
+        runCatching { r.release() }
+        lastAudioFile?.let { viewModel.setAudioUri(Uri.fromFile(it), elapsedSeconds) }
+    }
+
+    val recordPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) doStartRecording() }
+
+    fun startRecording() {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        } else {
+            doStartRecording()
+        }
+    }
+
+    // 60s max recording timer
+    LaunchedEffect(state.recording) {
+        if (state.recording) {
+            elapsedSeconds = 0
+            while (state.recording && elapsedSeconds < 60) {
+                delay(1000)
+                elapsedSeconds++
+            }
+            if (elapsedSeconds >= 60 && state.recording) stopRecording()
+        }
+    }
+
+    // Always release the recorder when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            runCatching { recorder?.stop() }
+            runCatching { recorder?.release() }
+            recorder = null
+        }
+    }
+
+    // ── GPS location detection ──────────────────────────────────────────
+    fun detectLocation() {
+        if (detectingLocation) return
+        scope.launch {
+            detectingLocation = true
+            val loc = withTimeoutOrNull(10_000) { fetchCurrentLocation(context) }
+            if (loc != null) {
+                val label = reverseGeocodeCityState(context, loc.latitude, loc.longitude)
+                if (!label.isNullOrBlank()) {
+                    location = label
+                    stepError = null
+                } else {
+                    stepError = "Found your location but couldn't resolve the city — please type it."
+                }
+            } else {
+                stepError = "Couldn't detect your location. Check GPS is on, or enter it manually."
+            }
+            detectingLocation = false
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            detectLocation()
+        } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            detectLocation()
+        } else {
+            stepError = "Location permission is needed to auto-detect. You can type your city instead."
+        }
+    }
+
+    fun onDetectLocation() {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            detectLocation()
+        }
+    }
 
     // ── Draft restore ───────────────────────────────────────────────────
     LaunchedEffect(state.draftData) {
@@ -107,12 +265,24 @@ fun CreatePostScreen(
             if (description.isBlank() && !draft.description.isNullOrBlank()) description = draft.description ?: ""
             if (priceText.isBlank() && draft.price != null && draft.price > 0) priceText = draft.price.toString()
             if (location.isBlank() && !draft.location.isNullOrBlank()) location = draft.location ?: ""
+            if (draft.condition != null && state.condition == null) viewModel.selectCondition(draft.condition)
+            if (state.brand.isBlank() && !draft.brand.isNullOrBlank()) viewModel.setBrand(draft.brand)
+            if (state.model.isBlank() && !draft.model.isNullOrBlank()) viewModel.setModel(draft.model)
+            if (state.contactNumber.isBlank() && !draft.contactNumber.isNullOrBlank()) viewModel.setContactNumber(draft.contactNumber)
+            if (state.ageMonths == null && draft.ageMonths != null) viewModel.setAgeMonths(draft.ageMonths)
+            if (draft.isNegotiable == true && !state.isNegotiable) viewModel.toggleNegotiable()
         }
     }
 
     // ── Auto-save draft with 2s debounce ────────────────────────────────
-    LaunchedEffect(title, description, priceText, location, state.selectedCategory?.stableId) {
-        if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank() || location.isNotBlank()) {
+    LaunchedEffect(
+        title, description, priceText, location,
+        state.selectedCategory?.stableId, state.brand, state.model, state.condition,
+        state.contactNumber, state.ageMonths, state.isNegotiable,
+    ) {
+        if (title.isNotBlank() || description.isNotBlank() || priceText.isNotBlank() || location.isNotBlank() ||
+            state.brand.isNotBlank() || state.model.isNotBlank() || state.condition != null
+        ) {
             delay(2000)
             viewModel.saveDraft(
                 title = title.ifBlank { null },
@@ -130,9 +300,58 @@ fun CreatePostScreen(
     val categoryError = if (titleTouched && state.selectedCategory == null && title.isNotBlank()) "Select a category" else null
     val subcategoryError = if (state.selectedCategory != null && state.selectedSubcategory == null && titleTouched) "Select a subcategory" else null
     val imageError = if (state.imageUris.isEmpty() && titleTouched && title.isNotBlank()) "Add at least one photo" else null
-    val canSubmit = title.isNotBlank() && titleError == null &&
-        state.selectedCategory != null && state.selectedSubcategory != null &&
-        state.imageUris.isNotEmpty()
+    val contactError = if (state.contactNumber.isNotBlank() && !InputValidators.isValidIndianMobile(state.contactNumber)) {
+        "Enter a valid 10-digit mobile number"
+    } else null
+
+    // ── Per-step gating ─────────────────────────────────────────────────
+    fun stepGate(step: Int): String? = when (step) {
+        1 -> if (state.imageUris.isEmpty()) "Add at least one photo to continue." else null
+        2 -> when {
+            state.selectedCategory == null -> "Select a category to continue."
+            state.selectedSubcategory == null -> "Select a subcategory to continue."
+            else -> null
+        }
+        3 -> when {
+            title.isBlank() || titleError != null -> titleError ?: "Enter a title (3–120 characters)."
+            state.condition == null -> "Select a condition to continue."
+            else -> null
+        }
+        4 -> when {
+            priceText.isBlank() && !state.isNegotiable -> "Enter a price or mark it negotiable."
+            priceError != null -> priceError ?: "Enter a valid price."
+            state.contactNumber.isBlank() -> "Enter your 10-digit contact number."
+            contactError != null -> contactError ?: "Enter a valid 10-digit mobile number."
+            else -> null
+        }
+        else -> null
+    }
+
+    fun goNext() {
+        if (currentStep >= 5) return
+        // Never carry a live recording into the next step
+        if (state.recording) stopRecording()
+        when (currentStep) {
+            1 -> titleTouched = true
+            2 -> titleTouched = true
+            3 -> titleTouched = true
+            4 -> priceTouched = true
+        }
+        val gate = stepGate(currentStep)
+        if (gate != null) {
+            stepError = gate
+            return
+        }
+        stepError = null
+        currentStep++
+    }
+
+    fun goBack() {
+        if (currentStep > 1) {
+            currentStep--
+            stepError = null
+        }
+    }
 
     // ── Image picker ────────────────────────────────────────────────────
     val multiplePicker = rememberLauncherForActivityResult(
@@ -169,7 +388,17 @@ fun CreatePostScreen(
                 title = {
                     Column {
                         Text("Create Listing", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Fill in the details below", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            when (currentStep) {
+                                1 -> "Photos & voice note"
+                                2 -> "Choose your category"
+                                3 -> "Describe your item"
+                                4 -> "Price, location & contact"
+                                else -> "Review & publish"
+                            },
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
                 navigationIcon = {
@@ -187,83 +416,38 @@ fun CreatePostScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding(),
+        ) {
 
             // ═════════════════════════════════════════════════════════════
-            // Main scrollable content
+            // Wizard content
             // ═════════════════════════════════════════════════════════════
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Spacer(Modifier.height(0.dp))
+            AnimatedContent(
+                targetState = currentStep,
+                transitionSpec = { (fadeIn(tween(260)) togetherWith fadeOut(tween(160))) },
+                label = "wizardStep",
+            ) { step ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 104.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Spacer(Modifier.height(0.dp))
 
-                // Error banner
-                ErrorBanner(message = state.error)
+                    ErrorBanner(message = state.error)
 
-                // Draft indicator
-                AnimatedVisibility(visible = draftMessage != null, enter = fadeIn(), exit = fadeOut()) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            if (state.savingDraft) {
-                                CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                            }
-                            Text(draftMessage.orEmpty(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        }
-                    }
-                }
-
-                // ── Section 1: Photos ───────────────────────────────────
-                FormSectionCard {
-                    SectionHeader(
-                        icon = Icons.Default.AddAPhoto,
-                        title = "Photos",
-                        subtitle = "${state.imageUris.size}/${state.maxImages} · JPG/PNG",
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    if (state.imageUris.isEmpty()) {
-                        ImagePickerEmptyState(
-                            maxImages = state.maxImages,
-                            onClick = { viewModel.clearError(); imagePickerLauncher() },
-                        )
-                    } else {
-                        ImageGrid(
-                            uris = state.imageUris,
-                            maxImages = state.maxImages,
-                            onAddClick = { imagePickerLauncher() },
-                            onRemoveClick = { idx ->
-                                val updated = state.imageUris.toMutableList().apply { removeAt(idx) }
-                                viewModel.setImages(updated)
-                            },
-                        )
-                    }
-
-                    if (imageError != null) {
-                        Text(imageError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp))
-                    }
-
-                    // Upgrade prompt for basic plan
-                    if (state.maxImages <= 1 && state.imageUris.isEmpty()) {
-                        Spacer(Modifier.height(8.dp))
+                    // Draft indicator
+                    AnimatedVisibility(visible = draftMessage != null, enter = fadeIn(), exit = fadeOut()) {
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFFFFF3E0),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(
@@ -271,262 +455,695 @@ fun CreatePostScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Icon(Icons.Default.Info, null, Modifier.size(16.dp), tint = Color(0xFFE65100))
-                                Text("Upgrade to upload more photos per listing",
-                                    style = MaterialTheme.typography.labelSmall, color = Color(0xFFBF360C))
+                                if (state.savingDraft) {
+                                    CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                }
+                                Text(draftMessage.orEmpty(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                             }
                         }
                     }
-                }
 
-                // ── Section 2: Details ──────────────────────────────────
-                FormSectionCard {
-                    SectionHeader(icon = Icons.Default.Sell, title = "Listing Details")
-                    Spacer(Modifier.height(16.dp))
-
-                    // Title
-                    CharCountField(
-                        value = title,
-                        onValueChange = { title = it; viewModel.clearError() },
-                        onFocusChanged = { focused -> if (!focused) titleTouched = true },
-                        label = "Title",
-                        placeholder = "e.g., iPhone 14 Pro Max 256GB",
-                        leadingIcon = Icons.Default.Title,
-                        error = titleError,
-                        maxLength = 120,
-                        imeAction = ImeAction.Next,
+                    // Step indicator
+                    StepIndicator(
+                        currentStep = step,
+                        totalSteps = 5,
+                        labels = listOf("Photos", "Category", "Details", "Price", "Publish"),
                     )
 
-                    Spacer(Modifier.height(14.dp))
-
-                    // Description
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text("Description", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "${description.length}/1000",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = when {
-                                description.length < 20 && description.isNotBlank() -> MaterialTheme.colorScheme.error
-                                description.length > 900 -> Color(0xFFF59E0B)
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    FormTextField(
-                        value = description,
-                        onValueChange = { if (it.length <= 1000) { description = it; viewModel.clearError() } },
-                        onFocusChanged = { focused -> if (!focused) descTouched = true },
-                        label = "Description",
-                        placeholder = "Describe your item — condition, features, reason for selling…",
-                        leadingIcon = Icons.Default.Description,
-                        singleLine = false,
-                        imeAction = ImeAction.None,
-                        error = descError,
-                        minLines = 3,
-                    )
-                }
-
-                // ── Section 3: Pricing & Location ───────────────────────
-                FormSectionCard {
-                    SectionHeader(icon = Icons.Default.PriceChange, title = "Pricing & Location")
-                    Spacer(Modifier.height(16.dp))
-
-                    // Price with ₹ prefix and strict decimal validation
-                    PriceField(
-                        value = priceText,
-                        onValueChange = { priceText = it; viewModel.clearError() },
-                        onFocusChanged = { focused -> if (!focused) priceTouched = true },
-                        error = priceError,
-                    )
-
-                    Spacer(Modifier.height(14.dp))
-
-                    // Location
-                    FormTextField(
-                        value = location,
-                        onValueChange = { location = it },
-                        label = "Location",
-                        placeholder = "City, State",
-                        leadingIcon = Icons.Default.LocationOn,
-                        imeAction = ImeAction.Done,
-                    )
-                }
-
-                // ── Section 4: Category ─────────────────────────────────
-                FormSectionCard {
-                    SectionHeader(icon = Icons.Default.Category, title = "Category")
-                    Spacer(Modifier.height(16.dp))
-
-                    // Category dropdown
-                    val filteredCategories = remember(categoryQuery, state.categories) {
-                        if (categoryQuery.isBlank()) state.categories
-                        else state.categories.filter { it.displayName.contains(categoryQuery, ignoreCase = true) }
-                    }
-
-                    ExposedDropdownMenuBox(
-                        expanded = categoryExpanded,
-                        onExpandedChange = { categoryExpanded = !categoryExpanded },
-                    ) {
-                        OutlinedTextField(
-                            value = if (categoryExpanded) categoryQuery else state.selectedCategory?.displayName.orEmpty(),
-                            onValueChange = { categoryQuery = it; categoryExpanded = true },
-                            readOnly = false,
-                            label = { Text("Category") },
-                            placeholder = { Text("Choose a category") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                            textStyle = MaterialTheme.typography.bodyMedium,
-                            shape = RoundedCornerShape(14.dp),
-                            colors = FormFieldColors(),
-                            modifier = Modifier.fillMaxWidth().menuAnchor(
-                                type = MenuAnchorType.PrimaryEditable,
-                                enabled = true,
-                            ),
-                        )
-                        ExposedDropdownMenu(
-                            expanded = categoryExpanded && filteredCategories.isNotEmpty(),
-                            onDismissRequest = { categoryExpanded = false },
+                    // Per-step error
+                    val gateError = if (step == currentStep) stepError else null
+                    AnimatedVisibility(visible = gateError != null, enter = fadeIn(), exit = fadeOut()) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            filteredCategories.forEach { cat ->
-                                DropdownMenuItem(
-                                    text = { Text(cat.displayName) },
-                                    onClick = {
-                                        viewModel.selectCategory(cat)
-                                        categoryQuery = ""
-                                        categoryExpanded = false
-                                    },
-                                )
-                            }
-                            if (filteredCategories.isEmpty() && categoryQuery.isNotBlank()) {
-                                DropdownMenuItem(
-                                    text = { Text("No matches for \"$categoryQuery\"", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                    onClick = { categoryExpanded = false },
+                            Row(
+                                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Default.Info, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
+                                Text(
+                                    gateError.orEmpty(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
                                 )
                             }
                         }
                     }
-                    if (categoryError != null) {
-                        Text(categoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp))
-                    }
 
-                    // Subcategory (animated)
-                    AnimatedVisibility(visible = state.selectedCategory != null, enter = fadeIn(), exit = fadeOut()) {
-                        Column {
-                            Spacer(Modifier.height(14.dp))
-                            ExposedDropdownMenuBox(
-                                expanded = subcategoryExpanded,
-                                onExpandedChange = { subcategoryExpanded = !subcategoryExpanded },
-                            ) {
+                    when (step) {
+                        // ── STEP 1: Photos & Voice note ─────────────────
+                        1 -> {
+                            FormSectionCard {
+                                SectionHeader(
+                                    icon = Icons.Default.AddAPhoto,
+                                    title = "Photos",
+                                    subtitle = "${state.imageUris.size}/${state.maxImages} · JPG/PNG",
+                                )
+                                Spacer(Modifier.height(12.dp))
+
+                                if (state.imageUris.isEmpty()) {
+                                    ImagePickerEmptyState(
+                                        maxImages = state.maxImages,
+                                        onClick = { viewModel.clearError(); imagePickerLauncher() },
+                                    )
+                                } else {
+                                    ImageGrid(
+                                        uris = state.imageUris,
+                                        maxImages = state.maxImages,
+                                        onAddClick = { imagePickerLauncher() },
+                                        onRemoveClick = { idx ->
+                                            val updated = state.imageUris.toMutableList().apply { removeAt(idx) }
+                                            viewModel.setImages(updated)
+                                        },
+                                    )
+                                }
+
+                                if (imageError != null) {
+                                    Text(imageError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+                                }
+
+                                if (state.maxImages <= 1 && state.imageUris.isEmpty()) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0xFFFFF3E0),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Icon(Icons.Default.Info, null, Modifier.size(16.dp), tint = Color(0xFFE65100))
+                                            Text("Upgrade to upload more photos per listing",
+                                                style = MaterialTheme.typography.labelSmall, color = Color(0xFFBF360C))
+                                        }
+                                    }
+                                }
+                            }
+
+                            FormSectionCard {
+                                SectionHeader(
+                                    icon = Icons.Default.GraphicEq,
+                                    title = "Voice Note",
+                                    subtitle = "Optional — helps buyers trust your listing",
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                VoiceNoteRecorder(
+                                    hasAudio = state.audioUri != null,
+                                    isRecording = state.recording,
+                                    elapsedSeconds = elapsedSeconds,
+                                    onRecord = { startRecording() },
+                                    onStop = { stopRecording() },
+                                    onRemove = { viewModel.clearAudio() },
+                                )
+                            }
+                        }
+
+                        // ── STEP 2: Category & Subcategory ───────────────
+                        2 -> {
+                            FormSectionCard {
+                                SectionHeader(
+                                    icon = Icons.Default.Category,
+                                    title = "Category",
+                                    subtitle = "Helps buyers find your listing",
+                                )
+                                Spacer(Modifier.height(12.dp))
+
+                                // Searchable category cards
+                                val filteredCategories = remember(state.categories, categorySearch) {
+                                    if (categorySearch.isBlank()) state.categories
+                                    else state.categories.filter { it.displayName.contains(categorySearch, ignoreCase = true) }
+                                }
+
                                 OutlinedTextField(
-                                    value = state.selectedSubcategory?.displayName.orEmpty(),
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Subcategory") },
-                                    placeholder = {
-                                        Text(
-                                            if (state.subcategories.isEmpty()) "Loading…" else "Choose subcategory",
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    value = categorySearch,
+                                    onValueChange = { categorySearch = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text("Search category") },
+                                    placeholder = { Text("e.g., Mobiles, Vehicles, Fashion…") },
+                                    leadingIcon = { Icon(Icons.Default.Category, null, modifier = Modifier.size(18.dp)) },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = FormFieldColors(),
+                                )
+                                Spacer(Modifier.height(12.dp))
+
+                                if (state.categories.isEmpty() && state.categoriesLoading) {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(10.dp))
+                                        Text("Loading categories…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                } else if (state.categories.isEmpty()) {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text("Couldn't load categories. Check your connection.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(Modifier.width(8.dp))
+                                        TextButton(onClick = { viewModel.retryCategories() }) {
+                                            Text("Retry", fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                } else if (filteredCategories.isEmpty()) {
+                                    Text("No categories match \"$categorySearch\"", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                } else {
+                                    CategoryCardGrid(
+                                        categories = filteredCategories,
+                                        selected = state.selectedCategory,
+                                        onSelect = { viewModel.selectCategory(it); categorySearch = "" },
+                                    )
+                                }
+
+                                if (categoryError != null) {
+                                    Text(categoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+                                }
+                            }
+
+                            // Subcategory chips (animated reveal)
+                            AnimatedVisibility(visible = state.selectedCategory != null, enter = fadeIn(), exit = fadeOut()) {
+                                FormSectionCard {
+                                    SectionHeader(
+                                        icon = Icons.Default.Category,
+                                        title = "Subcategory",
+                                        subtitle = state.selectedCategory?.displayName,
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    if (state.subcategories.isEmpty() && state.subcategoriesLoading) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                            Spacer(Modifier.width(10.dp))
+                                            Text("Loading subcategories…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    } else if (state.subcategories.isEmpty()) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text("Couldn't load subcategories.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Spacer(Modifier.width(8.dp))
+                                            TextButton(onClick = { state.selectedCategory?.let { viewModel.selectCategory(it) } }) {
+                                                Text("Retry", fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    } else {
+                                        SubcategoryChips(
+                                            subcategories = state.subcategories,
+                                            selected = state.selectedSubcategory,
+                                            onSelect = { viewModel.selectSubcategory(it) },
                                         )
-                                    },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subcategoryExpanded) },
+                                    }
+                                    if (subcategoryError != null) {
+                                        Text(subcategoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── STEP 3: Details ──────────────────────────────
+                        3 -> {
+                            FormSectionCard {
+                                SectionHeader(icon = Icons.Default.Description, title = "Listing Details")
+                                Spacer(Modifier.height(16.dp))
+
+                                // Title
+                                CharCountField(
+                                    value = title,
+                                    onValueChange = { title = it; viewModel.clearError() },
+                                    onFocusChanged = { focused -> if (!focused) titleTouched = true },
+                                    label = "Title",
+                                    placeholder = "e.g., iPhone 14 Pro Max 256GB",
+                                    leadingIcon = Icons.Default.Title,
+                                    error = titleError,
+                                    maxLength = 120,
+                                    imeAction = ImeAction.Next,
+                                )
+
+                                Spacer(Modifier.height(14.dp))
+
+                                // Brand + Model row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    val brandFiltered = remember(state.brand, state.brandSuggestions) {
+                                        if (state.brand.isBlank()) state.brandSuggestions.take(15)
+                                        else state.brandSuggestions.filter { it.contains(state.brand, ignoreCase = true) }.take(15)
+                                    }
+                                    ExposedDropdownMenuBox(
+                                        expanded = brandExpanded && brandFiltered.isNotEmpty(),
+                                        onExpandedChange = { if (brandFiltered.isNotEmpty()) brandExpanded = !brandExpanded },
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        OutlinedTextField(
+                                            value = state.brand,
+                                            onValueChange = { viewModel.setBrand(it); brandExpanded = true },
+                                            modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable),
+                                            label = { Text("Brand") },
+                                            placeholder = { Text("Apple") },
+                                            leadingIcon = { Icon(Icons.Default.Sell, null, modifier = Modifier.size(18.dp)) },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = FormFieldColors(),
+                                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                        )
+                                        ExposedDropdownMenu(expanded = brandExpanded && brandFiltered.isNotEmpty(), onDismissRequest = { brandExpanded = false }) {
+                                            brandFiltered.forEach { b ->
+                                                DropdownMenuItem(
+                                                    text = { Text(b) },
+                                                    onClick = { viewModel.setBrand(b); brandExpanded = false },
+                                                )
+                                            }
+                                        }
+                                    }
+                                    OutlinedTextField(
+                                        value = state.model,
+                                        onValueChange = { viewModel.setModel(it) },
+                                        modifier = Modifier.weight(1f),
+                                        label = { Text("Model") },
+                                        placeholder = { Text("iPhone 14") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = FormFieldColors(),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                    )
+                                }
+
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                Spacer(Modifier.height(16.dp))
+
+                                // Condition chips
+                                Text("Condition", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(8.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    CreatePostState.CONDITIONS.forEach { c ->
+                                        val selected = state.condition == c
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = { viewModel.selectCondition(c) },
+                                            label = { Text(c, fontSize = 13.sp) },
+                                            leadingIcon = if (selected) {{ Icon(Icons.Filled.Check, null, Modifier.size(16.dp)) }} else null,
+                                            shape = RoundedCornerShape(20.dp),
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                            ),
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                                selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                                enabled = true,
+                                                selected = selected,
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                Spacer(Modifier.height(16.dp))
+
+                                // Age chips
+                                Text("Item Age", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(8.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    val ageOptions = listOf(0, 1, 3, 6, 12, 24, 36, 60, 120)
+                                    ageOptions.forEach { months ->
+                                        val label = when (months) {
+                                            0 -> "New"
+                                            1 -> "1m"
+                                            3 -> "3m"
+                                            6 -> "6m"
+                                            12 -> "1y"
+                                            24 -> "2y"
+                                            36 -> "3y"
+                                            60 -> "5y"
+                                            120 -> "10y+"
+                                            else -> "${months}m"
+                                        }
+                                        val selected = state.ageMonths == months
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = { viewModel.setAgeMonths(if (selected) null else months) },
+                                            label = { Text(label, fontSize = 12.sp) },
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                Spacer(Modifier.height(16.dp))
+
+                                // Description
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text("Description", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        "${description.length}/1000",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = when {
+                                            description.length < 20 && description.isNotBlank() -> MaterialTheme.colorScheme.error
+                                            description.length > 900 -> Color(0xFFF59E0B)
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                FormTextField(
+                                    value = description,
+                                    onValueChange = { if (it.length <= 1000) { description = it; viewModel.clearError() } },
+                                    onFocusChanged = { focused -> if (!focused) descTouched = true },
+                                    label = "Description",
+                                    placeholder = "Describe your item — condition, features, reason for selling…",
+                                    leadingIcon = Icons.Default.Description,
+                                    singleLine = false,
+                                    imeAction = ImeAction.None,
+                                    error = descError,
+                                    minLines = 3,
+                                )
+                            }
+                        }
+
+                        // ── STEP 4: Price, Location, Contact, Flash Sale ─
+                        4 -> {
+                            FormSectionCard {
+                                SectionHeader(icon = Icons.Default.PriceChange, title = "Pricing")
+                                Spacer(Modifier.height(16.dp))
+
+                                PriceField(
+                                    value = priceText,
+                                    onValueChange = { priceText = it; viewModel.clearError() },
+                                    onFocusChanged = { focused -> if (!focused) priceTouched = true },
+                                    error = priceError,
+                                )
+
+                                if (state.isNegotiable && priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) != null) {
+                                    Spacer(Modifier.height(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Icon(Icons.Default.Sell, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Text(
+                                                "₹${priceText.trim()} or Best Offer",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.Sell, null, tint = if (state.isNegotiable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                        Column {
+                                            Text("Price Negotiable", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                            Text("Buyers can make offers", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                    Switch(
+                                        checked = state.isNegotiable,
+                                        onCheckedChange = { viewModel.toggleNegotiable() },
+                                    )
+                                }
+                            }
+
+                            FormSectionCard {
+                                SectionHeader(
+                                    icon = Icons.Default.LocationOn,
+                                    title = "Location",
+                                    subtitle = "Buyers filter listings by city",
+                                )
+                                Spacer(Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("Item location", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    OutlinedButton(
+                                        onClick = { onDetectLocation() },
+                                        enabled = !detectingLocation,
+                                        shape = RoundedCornerShape(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                                    ) {
+                                        if (detectingLocation) {
+                                            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+                                            Spacer(Modifier.width(6.dp))
+                                        } else {
+                                            Icon(Icons.Default.MyLocation, null, Modifier.size(14.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                        }
+                                        Text(if (detectingLocation) "Detecting…" else "Detect my location", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                FormTextField(
+                                    value = location,
+                                    onValueChange = { location = it },
+                                    label = "Location",
+                                    placeholder = "City, State",
+                                    leadingIcon = Icons.Default.LocationOn,
+                                    imeAction = ImeAction.Done,
+                                )
+                            }
+
+                            FormSectionCard {
+                                SectionHeader(icon = Icons.Default.Phone, title = "Contact Information")
+                                Spacer(Modifier.height(16.dp))
+
+                                Text("Contact Number", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(4.dp))
+                                OutlinedTextField(
+                                    value = state.contactNumber,
+                                    onValueChange = { viewModel.setContactNumber(it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text("Phone (required)") },
+                                    placeholder = { Text("98765 43210") },
+                                    leadingIcon = { Text("+91", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    singleLine = true,
                                     textStyle = MaterialTheme.typography.bodyMedium,
                                     shape = RoundedCornerShape(14.dp),
                                     colors = FormFieldColors(),
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(
-                                        type = MenuAnchorType.PrimaryNotEditable,
-                                        enabled = state.subcategories.isNotEmpty(),
-                                    ),
+                                    isError = contactError != null,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
+                                    supportingText = {
+                                        Text(
+                                            if (contactError != null) contactError
+                                            else "Buyers will see this number on your listing",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (contactError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    },
                                 )
-                                ExposedDropdownMenu(
-                                    expanded = subcategoryExpanded && state.subcategories.isNotEmpty(),
-                                    onDismissRequest = { subcategoryExpanded = false },
+                            }
+
+                            FormSectionCard {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
-                                    state.subcategories.forEach { sub ->
-                                        DropdownMenuItem(
-                                            text = { Text(sub.displayName) },
-                                            onClick = {
-                                                viewModel.selectSubcategory(sub)
-                                                subcategoryExpanded = false
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(Color(0xFFFFF3E0)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(Icons.Default.Bolt, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                                        }
+                                        Column {
+                                            Text("Flash Sale Highlight", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            Text("Highlight this listing as an urgent deal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                    Switch(
+                                        checked = state.flashSale,
+                                        onCheckedChange = { viewModel.setFlashSale(it) },
+                                    )
+                                }
+                            }
+                        }
+
+                        // ── STEP 5: Preview & Publish ────────────────────
+                        else -> {
+                            LiveListingPreview(
+                                title = title,
+                                description = description,
+                                priceText = priceText,
+                                location = location,
+                                condition = state.condition,
+                                negotiable = state.isNegotiable,
+                                flashSale = state.flashSale,
+                                hasAudio = state.audioUri != null,
+                                imageUri = state.imageUris.firstOrNull(),
+                                category = state.selectedCategory?.displayName,
+                                brand = state.brand,
+                                model = state.model,
+                                imageCount = state.imageUris.size,
+                            )
+
+                            // Upload progress
+                            AnimatedVisibility(visible = state.uploading || state.submitting, enter = fadeIn(), exit = fadeOut()) {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                        Text(
+                                            when {
+                                                state.audioUploading -> "Uploading voice note…"
+                                                state.uploading -> "Uploading images…"
+                                                else -> "Publishing listing…"
                                             },
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
                                     }
                                 }
                             }
-                            if (subcategoryError != null) {
-                                Text(subcategoryError, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(start = 4.dp, top = 2.dp))
-                            }
-                        }
-                    }
-                }
 
-                // ── Upload progress ─────────────────────────────────────
-                AnimatedVisibility(visible = state.uploading || state.submitting, enter = fadeIn(), exit = fadeOut()) {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                             Text(
-                                if (state.uploading) "Uploading images…" else "Publishing listing…",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                "By publishing you agree buyers may contact you on the number shown.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
-                }
 
-                // ── Publish button ──────────────────────────────────────
-                Button(
-                    onClick = {
-                        // Mark all fields touched so all errors show
-                        titleTouched = true; descTouched = true; priceTouched = true
-                        focusManager.clearFocus()
-                        viewModel.uploadImagesAndSubmit(
-                            title = title,
-                            description = description,
-                            priceText = priceText,
-                            location = location,
-                            bytesProvider = { uri ->
-                                runCatching {
-                                    val resolver = context.contentResolver
-                                    val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
-                                    val mime = resolver.getType(uri) ?: "image/jpeg"
-                                    bytes to mime
-                                }.getOrNull()
-                            },
-                        )
-                    },
-                    enabled = canSubmit && !state.uploading && !state.submitting,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(56.dp).animateContentSize(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                    contentPadding = PaddingValues(0.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 8.dp),
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════
+            // Bottom wizard navigation
+            // ═════════════════════════════════════════════════════════════
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (state.uploading || state.submitting) {
-                        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp, color = MaterialTheme.colorScheme.onPrimary)
+                    OutlinedButton(
+                        onClick = { goBack() },
+                        enabled = currentStep > 1 && !state.uploading && !state.submitting,
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    ) {
+                        Text("← Back", fontWeight = FontWeight.Bold)
+                    }
+
+                    Text(
+                        "Step $currentStep of 5",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    if (currentStep < 5) {
+                        Button(
+                            onClick = { goNext() },
+                            enabled = !state.uploading && !state.submitting,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                        ) {
+                            Text("Next →", fontWeight = FontWeight.Bold)
+                        }
                     } else {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.Sell, null, Modifier.size(20.dp))
-                            Text("Publish Listing", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Button(
+                            onClick = {
+                                titleTouched = true; descTouched = true; priceTouched = true
+                                focusManager.clearFocus()
+                                viewModel.uploadImagesAndSubmit(
+                                    title = title,
+                                    description = description,
+                                    priceText = priceText,
+                                    location = location,
+                                    bytesProvider = { uri ->
+                                        runCatching {
+                                            val resolver = context.contentResolver
+                                            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
+                                            val mime = resolver.getType(uri) ?: "image/jpeg"
+                                            bytes to mime
+                                        }.getOrNull()
+                                    },
+                                    audioBytesProvider = { uri ->
+                                        runCatching {
+                                            val resolver = context.contentResolver
+                                            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
+                                            val mime = resolver.getType(uri)?.takeIf { it.startsWith("audio/") } ?: "audio/mp4"
+                                            bytes to mime
+                                        }.getOrNull()
+                                    },
+                                )
+                            },
+                            enabled = !state.uploading && !state.submitting,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                        ) {
+                            Text("🚀 Publish", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
-
-                Spacer(Modifier.height(32.dp))
             }
 
             // ═════════════════════════════════════════════════════════════
@@ -564,6 +1181,418 @@ fun CreatePostScreen(
 // Sub-components
 // ═════════════════════════════════════════════════════════════════════════════
 
+// ── Step indicator ──────────────────────────────────────────────────────────
+
+@Composable
+private fun StepIndicator(currentStep: Int, totalSteps: Int, labels: List<String>) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                labels.take(totalSteps).forEachIndexed { idx, label ->
+                    val stepNum = idx + 1
+                    val isActive = currentStep == stepNum
+                    val isDone = currentStep > stepNum
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        isActive -> MaterialTheme.colorScheme.primary
+                                        isDone -> Color(0xFF34D399)
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (isDone) {
+                                Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = Color.White)
+                            } else {
+                                Text(
+                                    "$stepNum",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isActive) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            label,
+                            fontSize = 9.sp,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                    if (idx < totalSteps - 1) {
+                        Box(
+                            Modifier
+                                .weight(0.35f)
+                                .height(2.dp)
+                                .clip(RoundedCornerShape(1.dp))
+                                .background(if (stepNum <= currentStep - 1) Color(0xFF34D399) else MaterialTheme.colorScheme.surfaceVariant),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { (currentStep - 1) / (totalSteps - 1f) },
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
+    }
+}
+
+// ── Category card grid ──────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CategoryCardGrid(
+    categories: List<Category>,
+    selected: Category?,
+    onSelect: (Category) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        categories.forEach { cat ->
+            val isSelected = selected?.stableId == cat.stableId
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    )
+                    .border(
+                        width = 1.5.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .clickable { onSelect(cat) }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(categoryEmoji(cat.displayName), fontSize = 22.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    cat.displayName,
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+// ── Subcategory chips ───────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SubcategoryChips(
+    subcategories: List<Category>,
+    selected: Category?,
+    onSelect: (Category) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        subcategories.forEach { sub ->
+            val isSelected = selected?.stableId == sub.stableId
+            FilterChip(
+                selected = isSelected,
+                onClick = { onSelect(sub) },
+                label = { Text(sub.displayName, fontSize = 13.sp) },
+                leadingIcon = if (isSelected) {{ Icon(Icons.Filled.Check, null, Modifier.size(15.dp)) }} else null,
+                shape = RoundedCornerShape(18.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                    enabled = true,
+                    selected = isSelected,
+                ),
+            )
+        }
+    }
+}
+
+// ── Voice note recorder ─────────────────────────────────────────────────────
+
+@Composable
+private fun VoiceNoteRecorder(
+    hasAudio: Boolean,
+    isRecording: Boolean,
+    elapsedSeconds: Int,
+    onRecord: () -> Unit,
+    onStop: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+        label = "pulseAlpha",
+    )
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (isRecording) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            when {
+                isRecording -> {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .scale(1f + 0.18f * pulse)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEF4444).copy(alpha = 0.15f + 0.35f * pulse)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.Stop, null, Modifier.size(20.dp), tint = Color(0xFFDC2626))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Recording…", fontWeight = FontWeight.Bold, color = Color(0xFFB91C1C))
+                        Text(
+                            "0:%02d".format(elapsedSeconds) + " / 0:60 · tap stop when done",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFB91C1C),
+                        )
+                    }
+                    Button(
+                        onClick = onStop,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Text("Stop", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                hasAudio -> {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDCFCE7)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.CheckCircle, null, Modifier.size(22.dp), tint = Color(0xFF16A34A))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Voice note recorded", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "0:%02d".format(elapsedSeconds) + " · added to your listing",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = onRecord) { Text("Re-record", fontWeight = FontWeight.Bold) }
+                    IconButton(onClick = onRemove) {
+                        Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.Mic, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Record a voice note", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Optional — up to 60s describing your item",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Button(
+                        onClick = onRecord,
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Default.Mic, null, Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Record", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Live listing preview ────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LiveListingPreview(
+    title: String,
+    description: String,
+    priceText: String,
+    location: String,
+    condition: String?,
+    negotiable: Boolean,
+    flashSale: Boolean,
+    hasAudio: Boolean,
+    imageUri: Uri?,
+    category: String?,
+    brand: String,
+    model: String,
+    imageCount: Int,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        shadowElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "Live preview — what buyers see",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(92.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (imageUri != null) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)),
+                        )
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.AddAPhoto, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(4.dp))
+                            Text("No photo", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    category?.let {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+                        ) {
+                            Text(it, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
+                }
+
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        title.ifBlank { listOf(brand, model).filter { it.isNotBlank() }.joinToString(" ").ifBlank { "Your listing title" } },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 2,
+                    )
+                    val parsed = InputValidators.parsePositiveAmount(priceText)
+                    Text(
+                        if (parsed != null) "₹${NumberFormat.getNumberInstance(Locale.ENGLISH).format(parsed)}"
+                        else if (negotiable) "₹ Best Offer"
+                        else "₹ —",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF059669),
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        listOfNotNull(
+                            condition?.let { "Condition: $it" },
+                            location.ifBlank { null }?.let { "📍 $it" },
+                            negotiable.takeIf { it }?.let { "₹ Negotiable" },
+                            flashSale.takeIf { it }?.let { "⚡ Flash Sale" },
+                            hasAudio.takeIf { it }?.let { "🎙️ Voice note" },
+                        ).forEach { chip ->
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            ) {
+                                Text(chip, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (description.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "\"$description\"",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)).padding(10.dp),
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Default.CheckCircle, null, Modifier.size(14.dp), tint = Color(0xFF16A34A))
+                Text(
+                    "$imageCount photo(s) · listed by a verified seller",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
 // ── Image grid (FlowRow) ────────────────────────────────────────────────────
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -592,7 +1621,6 @@ private fun ImageGrid(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)),
                     )
-                    // Index badge
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -604,7 +1632,6 @@ private fun ImageGrid(
                     ) {
                         Text("${idx + 1}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
-                    // Remove button
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -619,7 +1646,6 @@ private fun ImageGrid(
                     }
                 }
             }
-            // Add-more cell
             if (uris.size < maxImages) {
                 Box(
                     modifier = Modifier
@@ -632,7 +1658,7 @@ private fun ImageGrid(
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.AddCircle, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
                         Text("Add", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -696,7 +1722,6 @@ private fun PriceField(
         OutlinedTextField(
             value = value,
             onValueChange = { newVal ->
-                // Allow only: empty, digits, single dot with up to 2 decimal places
                 if (newVal.isEmpty() || newVal.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
                     onValueChange(newVal)
                 }
@@ -861,3 +1886,80 @@ private fun FormFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
     errorBorderColor = MaterialTheme.colorScheme.error,
 )
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═════════════════════════════════════════════════════════════════════════════
+
+private fun categoryEmoji(name: String): String = when {
+    name.contains("mobile", true) || name.contains("phone", true) -> "📱"
+    name.contains("electron", true) -> "💻"
+    name.contains("vehicle", true) || name.contains("car", true) -> "🚗"
+    name.contains("bike", true) || name.contains("motor", true) -> "🏍️"
+    name.contains("fashion", true) || name.contains("cloth", true) || name.contains("apparel", true) -> "👗"
+    name.contains("furniture", true) || name.contains("home", true) -> "🛋️"
+    name.contains("appliance", true) -> "🔌"
+    name.contains("book", true) -> "📚"
+    name.contains("toy", true) -> "🧸"
+    name.contains("sport", true) -> "⚽"
+    name.contains("watch", true) -> "⌚"
+    name.contains("game", true) || name.contains("gaming", true) -> "🎮"
+    name.contains("beauty", true) -> "💄"
+    name.contains("grocery", true) || name.contains("food", true) -> "🛒"
+    name.contains("gadget", true) -> "⌚"
+    name.contains("job", true) || name.contains("service", true) -> "🛠️"
+    else -> "📦"
+}
+
+/** Fetch the device location — last known first, single-update as a fallback. */
+private suspend fun fetchCurrentLocation(context: Context): android.location.Location? =
+    suspendCancellableCoroutine { cont ->
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        if (lm == null) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .filter { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
+
+        // Fast path: a recent last-known fix
+        providers.firstNotNullOfOrNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }?.let {
+            cont.resume(it)
+            return@suspendCancellableCoroutine
+        }
+
+        if (providers.isEmpty()) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+
+        // Slow path: request a single fresh fix (callback arrives on the main looper)
+        val listener = object : android.location.LocationListener {
+            override fun onLocationChanged(loc: android.location.Location) {
+                if (cont.isActive) {
+                    runCatching { lm.removeUpdates(this) }
+                    cont.resume(loc)
+                }
+            }
+        }
+        val scheduled = runCatching {
+            providers.forEach { lm.requestSingleUpdate(it, listener, Looper.getMainLooper()) }
+        }.isSuccess
+        if (!scheduled) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        cont.invokeOnCancellation { runCatching { lm.removeUpdates(listener) } }
+    }
+
+/** Reverse-geocode coordinates into a "City, State" label (best effort). */
+private suspend fun reverseGeocodeCityState(context: Context, latitude: Double, longitude: Double): String? =
+    withContext(Dispatchers.IO) {
+        runCatching {
+            val addresses = Geocoder(context, Locale.getDefault()).getFromLocation(latitude, longitude, 1)
+            val a = addresses?.firstOrNull() ?: return@withContext null
+            val city = a.locality ?: a.subLocality ?: a.subAdminArea
+            val state = a.adminArea
+            listOfNotNull(city, state).distinct().joinToString(", ").ifBlank { null }
+        }.getOrNull()
+    }

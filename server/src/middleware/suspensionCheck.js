@@ -10,11 +10,15 @@
 const { runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 
-// Paths that are always allowed even when suspended
+// Paths that are always allowed even when suspended.
+// Includes the order-dispute routes so parties frozen by an ORDER dispute can still
+// view the dispute thread, add messages, upload evidence, and view their order.
 const ALLOWED_PATHS = [
   "/api/sales",
   "/api/sale",
   "/api/user/suspension",
+  "/api/disputes",
+  "/api/orders",
   "/api/auth",
   "/health",
   "/api/health",

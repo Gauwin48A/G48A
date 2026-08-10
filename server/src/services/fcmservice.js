@@ -50,30 +50,27 @@ async function registerToken(
         INSERT INTO device_tokens
         (
             user_id,
-            token,
-            device_type,
-            device_name,
+            fcm_token,
+            platform,
             is_active,
             created_at,
             updated_at
         )
         VALUES
         (
-            $1,$2,$3,$4,true,NOW(),NOW()
+            $1,$2,$3,true,NOW(),NOW()
         )
-        ON CONFLICT (token)
+        ON CONFLICT (fcm_token)
         DO UPDATE SET
             user_id = EXCLUDED.user_id,
-            device_type = EXCLUDED.device_type,
-            device_name = EXCLUDED.device_name,
+            platform = EXCLUDED.platform,
             is_active = true,
             updated_at = NOW()
         `,
         [
             userId,
             token,
-            deviceType,
-            deviceName
+            deviceType
         ]
     );
 
@@ -91,7 +88,7 @@ async function unregisterToken(token, userId) {
             is_active = false,
             updated_at = NOW()
         WHERE
-            token = $1
+            fcm_token = $1
         AND
             user_id = $2
         `,
@@ -115,38 +112,38 @@ async function sendPushNotification(
 ) {
 
     const message = {
-
         token,
-
         notification: {
             title,
             body
         },
-
         android: {
-
             priority: "high",
-
             notification: {
-
                 channelId: resolveChannel(data.type),
-
                 sound: "default"
-
             }
-
         },
-
         data: Object.fromEntries(
             Object.entries(data).map(([k, v]) => [
                 k,
                 String(v)
             ])
         )
-
     };
 
-    const response = await admin.messaging().send(message);
+    if (!admin.messaging) {
+        console.log("======================================");
+        console.log("⚠️ [FCM MOCK] Firebase not configured - Logging Push Notification");
+        console.log("To         :", token);
+        console.log("Title      :", title);
+        console.log("Body       :", body);
+        console.log("Data       :", JSON.stringify(data));
+        console.log("======================================");
+        return "mock-message-id-" + Date.now();
+    }
+
+    const response = await admin.messaging.send(message);
 
     console.log("======================================");
     console.log("✅ PUSH SENT");
@@ -167,7 +164,7 @@ async function sendToUser(
 
     const result = await pool.query(
         `
-        SELECT token
+        SELECT fcm_token AS token
         FROM device_tokens
         WHERE
             user_id = $1
@@ -180,71 +177,41 @@ async function sendToUser(
     );
 
     if (result.rows.length === 0) {
-
         return {
-
             success: false,
-
             reason: "No active device"
-
         };
-
     }
 
     const responses = [];
 
     for (const row of result.rows) {
-
         try {
-
             const messageId = await sendPushNotification(
-
                 row.token,
-
                 title,
-
                 body,
-
                 data
-
             );
-
             responses.push({
-
                 token: row.token,
-
                 success: true,
-
                 messageId
-
             });
-
         } catch (e) {
-
             responses.push({
-
                 token: row.token,
-
                 success: false,
-
                 error: e.message
-
             });
-
         }
-
     }
 
     return {
-
         success: true,
-
         total: responses.length,
-
         responses
-
     };
-
 }
 
 async function sendToMultiple(
@@ -257,69 +224,38 @@ async function sendToMultiple(
     const results = [];
 
     for (const token of tokens) {
-
         try {
-
             const messageId = await sendPushNotification(
-
                 token,
-
                 title,
-
                 body,
-
                 data
-
             );
-
             results.push({
-
                 token,
-
                 success: true,
-
                 messageId
-
             });
-
         } catch (e) {
-
             results.push({
-
                 token,
-
                 success: false,
-
                 error: e.message
-
             });
-
         }
-
     }
 
     return {
-
         success: true,
-
         total: tokens.length,
-
         results
-
     };
-
 }
 
 module.exports = {
-
     registerToken,
-
     unregisterToken,
-
     sendPushNotification,
-
     sendToUser,
-
     sendToMultiple
-
 };

@@ -59,12 +59,41 @@ router.post('/send-otp', async (req, res) => {
     if (!aadhaar || !/^\d{12}$/.test(aadhaar)) {
       return res.status(400).json({ success: false, message: 'Invalid Aadhaar number' });
     }
+
+    const userId = getAuthUserId(req);
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+
+    const crypto = require("crypto");
+    const parsedAadhaar = String(aadhaar).replace(/\D/g, "");
+    const aadhaarHash = crypto.createHash("sha256").update(parsedAadhaar).digest("hex");
+
+    // Check blacklist first
+    const blacklistCheck = await runQuery(
+      "SELECT reason FROM kyc_blacklist WHERE aadhaar_hash = $1 LIMIT 1",
+      [aadhaarHash]
+    );
+    if (blacklistCheck.rows.length > 0) {
+      return res.status(403).json({
+        success: false,
+        message: "This document is blacklisted due to verification violations: " + blacklistCheck.rows[0].reason
+      });
+    }
+
+    // Check duplicates
+    const duplicateCheck = await runQuery(
+      "SELECT user_id FROM kyc_verifications WHERE aadhaar_hash = $1 AND status = 'VERIFIED' AND user_id::text != $2",
+      [aadhaarHash, userId]
+    );
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "This Aadhaar card is already verified with another account" });
+    }
+
     const { txnId, masked, encrypted } = await AadhaarService.sendOtp(aadhaar);
     // Log attempt (do not log aadhaar/otp)
     logAadhaarVerification(null, txnId, 'OTP', 'sent');
     res.json({ success: true, txnId });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to send OTP' });
+    res.status(500).json({ success: false, message: err.message || 'Failed to send OTP' });
   }
 });
 
@@ -75,18 +104,61 @@ router.post('/verify-otp', async (req, res) => {
     if (!aadhaar || !otp || !txnId) {
       return res.status(400).json({ success: false, message: 'Missing fields' });
     }
+
+    const userId = getAuthUserId(req);
+    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+
+    const crypto = require("crypto");
+    const parsedAadhaar = String(aadhaar).replace(/\D/g, "");
+    const aadhaarHash = crypto.createHash("sha256").update(parsedAadhaar).digest("hex");
+    const lastFour = parsedAadhaar.slice(-4);
+
+    // Check blacklist first
+    const blacklistCheck = await runQuery(
+      "SELECT reason FROM kyc_blacklist WHERE aadhaar_hash = $1 LIMIT 1",
+      [aadhaarHash]
+    );
+    if (blacklistCheck.rows.length > 0) {
+      return res.status(403).json({
+        success: false,
+        message: "This document is blacklisted due to verification violations: " + blacklistCheck.rows[0].reason
+      });
+    }
+
+    // Check duplicates
+    const duplicateCheck = await runQuery(
+      "SELECT user_id FROM kyc_verifications WHERE aadhaar_hash = $1 AND status = 'VERIFIED' AND user_id::text != $2",
+      [aadhaarHash, userId]
+    );
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "This Aadhaar card is already verified with another account" });
+    }
+
     const result = await AadhaarService.verifyOtp(aadhaar, otp, txnId);
     // Log attempt
     logAadhaarVerification(null, txnId, 'Verification', result.verified ? 'success' : 'failure');
+    
     if (result.verified) {
-      const userId = getAuthUserId(req);
-      if (userId) {
-        await updateVerifiedStatus(userId);
-      }
+      // 1. Persist in kyc_verifications
+      await runQuery(
+        `INSERT INTO kyc_verifications (user_id, status, aadhaar_hash, aadhaar_last_four, surepass_aadhaar_client_id, verified_at, updated_at)
+         VALUES ($1, 'VERIFIED', $2, $3, $4, NOW(), NOW())
+         ON CONFLICT (user_id)
+         DO UPDATE SET status = 'VERIFIED',
+                       aadhaar_hash = COALESCE(EXCLUDED.aadhaar_hash, kyc_verifications.aadhaar_hash),
+                       aadhaar_last_four = COALESCE(EXCLUDED.aadhaar_last_four, kyc_verifications.aadhaar_last_four),
+                       surepass_aadhaar_client_id = EXCLUDED.surepass_aadhaar_client_id,
+                       verified_at = NOW(),
+                       updated_at = NOW()`,
+        [userId, aadhaarHash, lastFour, txnId]
+      );
+
+      // 2. Update user verified status
+      await updateVerifiedStatus(userId);
     }
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, message: 'OTP verification failed' });
+    res.status(500).json({ success: false, message: err.message || 'OTP verification failed' });
   }
 });
 

@@ -155,6 +155,7 @@ data class RewardsUiState(
     val chainStatus: com.zaruda.app.data.remote.dto.ReferralChainStatusResponse? = null,
     val activePosts: List<com.zaruda.app.domain.model.Post> = emptyList(),
     val processedReferrals: List<RewardsReferralNodeDto> = emptyList(),
+    val spinReward: Int? = null,
 )
 
 private val fallbackRewardsOverview = RewardsOverviewResponse(
@@ -566,25 +567,20 @@ class RewardsViewModel @Inject constructor(
             // No need to re-check — the outer guard already validated the lock state.
             when (val r = rewardsRepository.spinWheel()) {
                 is ApiResult.Success -> {
-                    // Lock spin locally even on success (belt-and-suspenders with server)
                     val currentEng = _state.value.engagement ?: fallbackEngagementStatus
                     _state.value = _state.value.copy(
-                        actionLoading = null,
-                        // actionResult deliberately null — Canvas onWin callback already shows celebration modal
-                        // Never set a redundant +N popup here — the SpinWinCelebrationModal handles display.
+                        spinReward = r.data.reward,
                         engagement = currentEng.copy(
                             spin = currentEng.spin.copy(canSpin = false)
                         ),
                     )
-                    load(refresh = true)
                 }
                 is ApiResult.Failure -> {
-                    // Lock spin for the day regardless — no fallback coins or popups
                     val currentEng = _state.value.engagement ?: fallbackEngagementStatus
                     _state.value = _state.value.copy(
                         loading = false,
                         actionLoading = null,
-                        actionResult = null,
+                        spinReward = null,
                         engagement = currentEng.copy(
                             spin = currentEng.spin.copy(canSpin = false)
                         ),
@@ -592,6 +588,14 @@ class RewardsViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun completeSpin() {
+        _state.value = _state.value.copy(
+            actionLoading = null,
+            spinReward = null
+        )
+        load(refresh = true)
     }
 
     fun redeemStore(type: String, postId: String? = null) {
@@ -1049,7 +1053,7 @@ fun RewardsScreen(
                                     // Streak milestones
                                     if (streak == 7) {
                                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFD700).copy(alpha = 0.15f), modifier = Modifier.fillMaxWidth()) {
-                                            Text("\uD83C\uDFC6 7-Day Streak Complete! +50 bonus coins!", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                                            Text("🏆 7-Day Streak Complete! Keep checking in daily!", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
                                         }
                                     } else if (streak % 3 == 0 && streak > 0) {
                                         Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF10B981).copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
@@ -1058,7 +1062,7 @@ fun RewardsScreen(
                                     }
                                     // 7-day calendar with reward values
                                     val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                                    val dayRewards = listOf("+5", "+10", "+15", "+20", "+25", "+30", "+50")
+                                    val dayRewards = listOf("+10", "+10", "+10", "+10", "+10", "+10", "+10")
                                     val todayCal = java.util.Calendar.getInstance()
                                     val todayIndex = (todayCal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -1154,12 +1158,14 @@ fun RewardsScreen(
                                     }
                                     SpinWheelCanvas(
                                         isSpinning = state.actionLoading == "spin",
+                                        targetReward = state.spinReward,
                                         canSpin = canSpin,
                                         onSpin = { viewModel.spinWheel() },
                                         onWin = { amount, label ->
                                             spinWinAmount = amount
                                             spinWinLabel = label
                                             showSpinWinModal = true
+                                            viewModel.completeSpin()
                                         },
                                         modifier = Modifier.fillMaxWidth().height(200.dp),
                                     )
@@ -1846,6 +1852,7 @@ private fun ConfettiAnimation() {
 @Composable
 fun SpinWheelCanvas(
     isSpinning: Boolean,
+    targetReward: Int? = null,
     canSpin: Boolean = true,
     onSpin: () -> Unit = {},
     onWin: (Int, String) -> Unit = { _,_ -> },
@@ -1853,17 +1860,16 @@ fun SpinWheelCanvas(
 ) {
     val segments = remember {
         listOf(
-            "+5" to Color(0xFFFF6B6B),
-            "+10" to Color(0xFF4ECDC4),
-            "+15" to Color(0xFF45B7D1),
             "+25" to Color(0xFF96CEB4),
-            "+50" to Color(0xFFFFEAA7),
-            "💎100" to Color(0xFFF7AEF8),
-            "⚡200" to Color(0xFF6BCB77),
-            "🔥500" to Color(0xFFFF9F1C),
+            "+15" to Color(0xFF45B7D1),
+            "+10" to Color(0xFF4ECDC4),
+            "+5" to Color(0xFFFFEAA7),
+            "0" to Color(0xFF9CA3AF),
+            "-25" to Color(0xFFFF6B6B),
+            "-50" to Color(0xFFEF4444),
         )
     }
-    val segmentValues = remember { listOf(5, 10, 15, 25, 50, 100, 200, 500) }
+    val segmentValues = remember { listOf(25, 15, 10, 5, 0, -25, -50) }
     val anglePerSegment = 360f / segments.size
 
     val rotation = remember { Animatable(0f) }
@@ -1873,17 +1879,17 @@ fun SpinWheelCanvas(
     val isDark = ColorTokens.isDark
     val textMeasurer = rememberTextMeasurer()
 
-    // Trigger spin with deceleration when ViewModel signals isSpinning
-    LaunchedEffect(isSpinning) {
-        if (isSpinning && !isAnimating) {
+    // Trigger spin with deceleration when ViewModel returns targetReward
+    LaunchedEffect(targetReward) {
+        if (targetReward != null && !isAnimating) {
             isAnimating = true
             winningIndex = -1
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
-            val winSegment = (0 until segments.size).random()
+            val targetIdx = segmentValues.indexOf(targetReward).coerceAtLeast(0)
             val fullRotations = (3..5).random() * 360f
-            val segmentCenter = winSegment * anglePerSegment + anglePerSegment * 0.3f
-            val targetAngle = rotation.value + fullRotations + segmentCenter
+            val segmentCenter = targetIdx * anglePerSegment + anglePerSegment * 0.5f
+            val targetAngle = rotation.value + fullRotations + (270f - segmentCenter)
 
             rotation.animateTo(
                 targetValue = targetAngle,
@@ -1892,9 +1898,9 @@ fun SpinWheelCanvas(
                     easing = FastOutSlowInEasing,
                 )
             )
-            winningIndex = winSegment
+            winningIndex = targetIdx
             isAnimating = false
-            onWin(segmentValues[winSegment], segments[winSegment].first)
+            onWin(segmentValues[targetIdx], segments[targetIdx].first)
         }
     }
 

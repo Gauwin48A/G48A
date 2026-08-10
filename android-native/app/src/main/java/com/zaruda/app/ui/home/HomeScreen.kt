@@ -815,6 +815,7 @@ fun HomeScreen(
     onOpenRecentlyViewed: () -> Unit = {},
     isGuest: Boolean = false,
     onNavigateToLogin: () -> Unit = {},
+    onOpenUser: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -1709,6 +1710,7 @@ fun HomeScreen(
                                     GridPostCard(
                                         post = post,
                                         onClick = { onOpenPost(post.stableId) },
+                                        onUserClick = { post.userId?.let(onOpenUser) },
                                         modifier = Modifier.weight(1f),
                                         pageDensity = pageDensity,
                                     )
@@ -1721,6 +1723,7 @@ fun HomeScreen(
                             ListPostCard(
                                 post = post,
                                 onClick = { onOpenPost(post.stableId) },
+                                onUserClick = { post.userId?.let(onOpenUser) },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                                 onShare = {
                                     sharePostId = post.stableId
@@ -1939,6 +1942,7 @@ fun ListPostCard(
     onInterested: (() -> Unit)? = null,
     onCompare: (() -> Unit)? = null,
     onPromote: (() -> Unit)? = null,
+    onUserClick: (() -> Unit)? = null,
     isOwner: Boolean = false,
     isInCompare: Boolean = false,
     pageDensity: PageDensity = PageDensity.NORMAL,
@@ -1960,7 +1964,8 @@ fun ListPostCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Column {
-            // Seller header row
+            // Seller header row — tap the seller name to open their sold-posts trust page
+            val sellerClickable = onUserClick != null && !post.userId.isNullOrBlank()
             if (post.sellerName != null || post.userName != null) {
                 val name = post.sellerName ?: post.userName ?: "Seller"
                 Row(
@@ -1968,7 +1973,10 @@ fun ListPostCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = if (sellerClickable) Modifier.clip(RoundedCornerShape(8.dp)).clickable { onUserClick?.invoke() } else Modifier,
+                    ) {
                         Box(
                             modifier = Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center,
@@ -1976,11 +1984,14 @@ fun ListPostCard(
                             Text(name.take(1).uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Spacer(Modifier.width(6.dp))
-                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp))
+                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp), color = if (sellerClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         if (post.sellerName != null) {
                             Spacer(Modifier.width(4.dp))
                             Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
                         }
+                    }
+                    if (sellerClickable) {
+                        Text(stringResource(R.string.explore_view_seller_sales), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(Modifier.weight(1f))
                 }
@@ -2122,6 +2133,7 @@ fun GridPostCard(
     post: Post,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onUserClick: (() -> Unit)? = null,
     pageDensity: PageDensity = PageDensity.NORMAL,
 ) {
     var wishlisted by remember { mutableStateOf(false) }
@@ -2155,7 +2167,8 @@ fun GridPostCard(
                         }
                     }
                     post.sellerName?.let {
-                        Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp))
+                        val clickableMod = if (onUserClick != null && !post.userId.isNullOrBlank()) Modifier.clickable { onUserClick?.invoke() } else Modifier
+                        Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp).then(clickableMod))
                     }
                 }
                 post.location?.let {

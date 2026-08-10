@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   useParams,
   useNavigate,
@@ -61,6 +61,7 @@ import {
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
   FileText as Ce,
+  X as CloseIcon,
 } from "lucide-react";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 
@@ -101,6 +102,49 @@ function PostDetail() {
     [zoomOpen, setZoomOpen] = useState(!1),
     [sponsoredStatus, setSponsoredStatus] = useState({ loading: !0, count: null }),
     [premiumStatus, setPremiumStatus] = useState({ loading: !0, count: null }),
+
+    [sellerPassportOpen, setSellerPassportOpen] = useState(!1),
+    [sellerPassportLoading, setSellerPassportLoading] = useState(!1),
+    [sellerPassportData, setSellerPassportData] = useState(null),
+    [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all"),
+
+    openSellerPassport = useCallback(async (sellerId) => {
+      if (!sellerId) return;
+      setSellerPassportLoading(!0);
+      setSellerPassportOpen(!0);
+      setSelectedCategoryFilter("all");
+      try {
+        const response = await re.get(`/sales/user/${sellerId}/sold-posts`);
+        if (response.data) {
+          setSellerPassportData(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to load seller trust passport", err);
+        toast({
+          title: tr("error", "Error"),
+          description: tr("failed_load_passport", "Failed to load seller trust passport"),
+          variant: "destructive",
+        });
+        setSellerPassportOpen(!1);
+      } finally {
+        setSellerPassportLoading(!1);
+      }
+    }, [tr, toast]),
+
+    uniqueCategories = useMemo(() => {
+      if (!sellerPassportData?.success || !Array.isArray(sellerPassportData.data)) return [];
+      const cats = new Set();
+      sellerPassportData.data.forEach((item) => {
+        if (item.category) cats.add(item.category);
+      });
+      return Array.from(cats);
+    }, [sellerPassportData]),
+
+    filteredSoldPosts = useMemo(() => {
+      if (!sellerPassportData?.success || !Array.isArray(sellerPassportData.data)) return [];
+      if (selectedCategoryFilter === "all") return sellerPassportData.data;
+      return sellerPassportData.data.filter((item) => item.category === selectedCategoryFilter);
+    }, [sellerPassportData, selectedCategoryFilter]),
 
     [activeSection, setActiveSection] = useState("overview"),
     
@@ -363,7 +407,11 @@ function PostDetail() {
                 toRemove.forEach(k => localStorage.removeItem(k));
               }
             } catch {}
-            u(T)
+            u(T);
+            // Clear the loading flag on success — otherwise the component stays
+            // stuck on "Loading product..." for direct deep links to /post/{id}
+            // (no navigation state), leaving the media gallery empty.
+            c(!1);
           } catch (a) {
             if (abortCtrl.signal.aborted) return;
             if (import.meta.env.DEV) console.error("Error fetching post data:", a);
@@ -2076,6 +2124,29 @@ function PostDetail() {
                     o.id,
                   ),
                 ),
+                React.createElement(
+                  "div",
+                  { className: "mt-3 flex flex-wrap items-center gap-2" },
+                  React.createElement(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => openSellerPassport(o.id),
+                      className: "inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 transition-all shadow-sm cursor-pointer",
+                    },
+                    React.createElement(ye, { className: "w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" }),
+                    tr("view_seller_passport", "View Trust Passport")
+                  ),
+                  React.createElement(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => y(`/user/${o.id}/sold-posts`),
+                      className: "inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-900/40 transition-all shadow-sm cursor-pointer",
+                    },
+                    tr("view_sold_history", "View Sold History")
+                  ),
+                ),
               ),
             ),
           ),
@@ -2087,51 +2158,91 @@ function PostDetail() {
                 "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl mhub-ready-cta-card dark:border-0",
             },
             React.createElement(CardContent,
-              { className: "p-5 space-y-4" },
+              { className: "p-5 space-y-3.5" },
               React.createElement(
                 "div",
                 {
                   className:
-                    "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200",
+                    "flex items-center justify-between text-sm font-bold text-slate-800 dark:text-slate-100",
                 },
-                React.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
-                tr("ready_to_buy", "Ready to buy?"),
+                React.createElement(
+                  "span",
+                  { className: "flex items-center gap-1.5" },
+                  React.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
+                  tr("purchase_options", "Purchase Options"),
+                ),
+                React.createElement(
+                  "span",
+                  { className: "text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full" },
+                  "KYC Verified Seller"
+                ),
               ),
+
+              /* 1. Buy with App (In-App Escrow Protection) */
+              React.createElement(Button,
+                {
+                  onClick: () => {
+                    if (!C) {
+                      toast({ title: tr("login_required", "Login Required"), description: tr("login_to_buy", "Please login to purchase items."), variant: "destructive" });
+                      U("/login", { state: { returnTo: location.pathname } });
+                      return;
+                    }
+                    U(`/saledone?postId=${J}`);
+                  },
+                  disabled: contactCtaDisabled,
+                  title: contactCtaDisabled ? contactCtaReason : undefined,
+                  className: `w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                },
+                React.createElement("span", { className: "text-lg mr-2" }, "🛡️"),
+                tr("buy_with_app", "Buy with App (Escrow Protected)"),
+              ),
+
+              /* 2. Direct Call / Chat (Outside Deal) */
               React.createElement(Button,
                 {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3.5 text-sm rounded-xl shadow-md transition-all cursor-pointer ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
-                React.createElement(fe, { className: "w-6 h-6 mr-3" }),
-                tr(
-                  "interested_contact_seller",
-                  "I'm Interested - Contact Seller",
-                ),
+                React.createElement(fe, { className: "w-4 h-4 mr-2" }),
+                tr("direct_call_chat", "Direct Call / Chat with Seller"),
               ),
+
+              /* 3. Make an Offer */
               React.createElement(Button,
                 {
                   onClick: handleMakeOffer,
                   variant: "outline",
                   disabled: offerCtaDisabled,
                   title: offerCtaDisabled ? offerCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full border-2 border-amber-300 dark:border-amber-700 bg-amber-50/50 hover:bg-amber-100 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 font-bold py-3 text-sm rounded-xl transition-all cursor-pointer ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
-                React.createElement(ke, { className: "w-5 h-5 mr-2" }),
+                React.createElement(ke, { className: "w-4 h-4 mr-2" }),
                 tr("make_an_offer", "Make an Offer"),
               ),
+
+              /* Direct Deal Disclaimer Banner */
               React.createElement(
-                "p",
+                "div",
                 {
                   className:
-                    "text-center text-xs text-gray-500 dark:text-gray-300",
+                    "p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1",
                 },
-                tr(
-                  "secure_contact_details_hint",
-                  "Share your contact details securely with only this seller",
+                React.createElement(
+                  "p",
+                  { className: "font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1" },
+                  "ℹ️ Transaction Freedom & Safety Notice"
                 ),
+                React.createElement(
+                  "p",
+                  null,
+                  "Direct deals outside the platform are independent. For 100% money-back escrow protection, hold guarantee & dispute locking, tap ",
+                  React.createElement("strong", { className: "text-emerald-600 dark:text-emerald-400" }, "Buy with App"),
+                  "."
+                )
               ),
+
               React.createElement(
                 "div",
                 {
@@ -2529,6 +2640,184 @@ function PostDetail() {
       url: shareUrl,
       title: tr("share_post", "Share post"),
     }),
+    sellerPassportOpen &&
+      React.createElement(
+        "div",
+        {
+          className: "fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300",
+        },
+        React.createElement(
+          "div",
+          {
+            className: "bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200",
+          },
+          // Header
+          React.createElement(
+            "div",
+            { className: "flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800" },
+            React.createElement(
+              "h3",
+              { className: "text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5" },
+              React.createElement(ye, { className: "w-5 h-5 text-emerald-500" }),
+              tr("seller_trust_passport", "Seller Trust Passport")
+            ),
+            React.createElement(
+              "button",
+              {
+                onClick: () => setSellerPassportOpen(false),
+                className: "p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-500 dark:text-gray-400 transition-colors",
+              },
+              React.createElement(CloseIcon, { className: "w-5 h-5" })
+            )
+          ),
+          // Scrollable Body
+          React.createElement(
+            "div",
+            { className: "flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin" },
+            sellerPassportLoading
+              ? React.createElement(
+                  "div",
+                  { className: "py-20 flex flex-col items-center justify-center gap-3" },
+                  React.createElement("div", { className: "animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent" }),
+                  React.createElement("span", { className: "text-sm text-gray-500 font-semibold" }, tr("loading", "Loading..."))
+                )
+              : sellerPassportData
+                ? React.createElement(
+                    React.Fragment,
+                    null,
+                    // Seller profile card
+                    React.createElement(
+                      "div",
+                      { className: "p-4 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/10 dark:to-teal-950/10 border border-emerald-100 dark:border-emerald-950/30 flex items-center gap-4" },
+                      React.createElement(Avatar,
+                        { className: "h-14 w-14 shadow-md border-2 border-white dark:border-slate-800" },
+                        React.createElement(AvatarFallback,
+                          { className: "bg-emerald-500 text-white font-bold text-lg" },
+                          (sellerPassportData.seller?.seller_name || sellerPassportData.seller?.username || "S").charAt(0).toUpperCase()
+                        )
+                      ),
+                      React.createElement(
+                        "div",
+                        null,
+                        React.createElement(
+                          "h4",
+                          { className: "font-bold text-gray-900 dark:text-gray-100 text-base" },
+                          sellerPassportData.seller?.seller_name || sellerPassportData.seller?.username
+                        ),
+                        React.createElement(
+                          "div",
+                          { className: "flex items-center gap-1.5 mt-0.5" },
+                          React.createElement(ye, { className: "w-4 h-4 text-emerald-500" }),
+                          React.createElement(
+                            "span",
+                            { className: "text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider" },
+                            sellerPassportData.seller?.kyc_status === "VERIFIED" || sellerPassportData.seller?.kyc_status === "APPROVED"
+                              ? tr("kyc_verified", "KYC Verified")
+                              : tr("kyc_pending", "Pending KYC")
+                          )
+                        )
+                      )
+                    ),
+                    // Stats metrics row
+                    React.createElement(
+                      "div",
+                      { className: "grid grid-cols-3 gap-3" },
+                      React.createElement(
+                        "div",
+                        { className: "p-3 rounded-xl bg-gray-50 dark:bg-slate-800/40 text-center border border-gray-100 dark:border-slate-800/80" },
+                        React.createElement("span", { className: "block text-xl font-black text-emerald-600 dark:text-emerald-400" }, sellerPassportData.stats?.total_sold || 0),
+                        React.createElement("span", { className: "text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold" }, tr("total_sales", "Total Sales"))
+                      ),
+                      React.createElement(
+                        "div",
+                        { className: "p-3 rounded-xl bg-gray-50 dark:bg-slate-800/40 text-center border border-gray-100 dark:border-slate-800/80" },
+                        React.createElement(
+                          "span",
+                          { className: "block text-xl font-black text-amber-500 flex items-center justify-center gap-0.5" },
+                          React.createElement(ue, { className: "w-4 h-4 fill-current text-amber-500" }),
+                          parseFloat(sellerPassportData.stats?.avg_rating || 0).toFixed(1)
+                        ),
+                        React.createElement("span", { className: "text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold" }, tr("avg_rating", "Avg Rating"))
+                      ),
+                      React.createElement(
+                        "div",
+                        { className: "p-3 rounded-xl bg-gray-50 dark:bg-slate-800/40 text-center border border-gray-100 dark:border-slate-800/80" },
+                        React.createElement("span", { className: "block text-xl font-black text-rose-500" }, sellerPassportData.stats?.dispute_count || 0),
+                        React.createElement("span", { className: "text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold" }, tr("disputes", "Disputes"))
+                      )
+                    ),
+                    // Category Filter Pills (Category specific display, ensuring no other category is mixed)
+                    uniqueCategories.length > 0 &&
+                      React.createElement(
+                        "div",
+                        { className: "flex flex-wrap items-center gap-1.5 py-1 border-y border-gray-100 dark:border-slate-800" },
+                        React.createElement(
+                          "button",
+                          {
+                            onClick: () => setSelectedCategoryFilter("all"),
+                            className: `px-3 py-1 rounded-full text-xs font-semibold transition-all ${selectedCategoryFilter === "all" ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"}`,
+                          },
+                          tr("all_categories", "All")
+                        ),
+                        uniqueCategories.map((cat, idx) =>
+                          React.createElement(
+                            "button",
+                            {
+                              key: idx,
+                              onClick: () => setSelectedCategoryFilter(cat),
+                              className: `px-3 py-1 rounded-full text-xs font-semibold transition-all ${selectedCategoryFilter === cat ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"}`,
+                            },
+                            tr(`cat_${String(cat).toLowerCase()}`, cat)
+                          )
+                        )
+                      ),
+                    // Sold posts list
+                    React.createElement(
+                      "div",
+                      { className: "space-y-3" },
+                      React.createElement("h5", { className: "text-sm font-bold text-gray-700 dark:text-gray-300" }, tr("sold_history_reviews", "Transaction Reviews")),
+                      filteredSoldPosts.length === 0
+                        ? React.createElement("p", { className: "text-xs text-gray-500 dark:text-gray-400 italic py-4 text-center" }, tr("no_reviews_in_category", "No transactions found in this category."))
+                        : filteredSoldPosts.map((sale, idx) =>
+                            React.createElement(
+                              "div",
+                              { key: idx, className: "p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30" },
+                              React.createElement(
+                                "div",
+                                { className: "flex justify-between items-start" },
+                                React.createElement("h6", { className: "font-bold text-xs text-gray-900 dark:text-gray-100" }, sale.post_title),
+                                React.createElement("span", { className: "text-xs font-bold text-gray-900 dark:text-gray-100" }, `₹${parseFloat(sale.post_price).toLocaleString("en-IN")}`)
+                              ),
+                              sale.buyer_rating > 0
+                                ? React.createElement(
+                                    React.Fragment,
+                                    null,
+                                    React.createElement(
+                                      "div",
+                                      { className: "flex items-center gap-1.5" },
+                                      React.createElement(
+                                        "div",
+                                        { className: "flex items-center gap-0.5" },
+                                        Array.from({ length: 5 }).map((_, sIdx) =>
+                                          React.createElement(ue, {
+                                            key: sIdx,
+                                            className: `w-3 h-3 ${sIdx < sale.buyer_rating ? "text-amber-400 fill-current" : "text-gray-200 dark:text-gray-700"}`
+                                          })
+                                        )
+                                      ),
+                                      React.createElement("span", { className: "text-[10px] text-gray-400 font-semibold" }, tr("rated_by", "by") + " " + (sale.buyer_name || tr("anonymous", "Anonymous")))
+                                    ),
+                                    React.createElement("p", { className: "text-xs text-gray-600 dark:text-gray-400 italic" }, `"${sale.buyer_comment || tr("no_comment_left", "No review comment left")}"`)
+                                  )
+                                : React.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-500 italic" }, tr("waiting_for_rating", "Transaction completed (pending buyer review)"))
+                            )
+                          )
+                    )
+                  )
+                : null
+          )
+        )
+      ),
   );
 }
 export { PostDetail as default };

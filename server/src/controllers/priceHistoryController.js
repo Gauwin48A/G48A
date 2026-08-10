@@ -103,8 +103,8 @@ const getRecentPriceDrops = async (req, res) => {
       JOIN posts p ON ph.post_id = p.post_id
       LEFT JOIN users u ON p.user_id = u.user_id
       LEFT JOIN profiles pr ON p.user_id = pr.user_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ph.changed_at >= NOW() - INTERVAL '1 day' * $1
         AND ph.percentage_change <= -$2
         AND p.status = 'active'

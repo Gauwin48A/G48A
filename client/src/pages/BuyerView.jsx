@@ -593,7 +593,7 @@ const normalizePrice = (value) => {
                       {
                         className:
                           "btn btn-primary flex-1 min-w-[110px] h-9 px-3 text-xs sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
-                        onClick: () => navigate("/all-posts"),
+                        onClick: () => navigate(`/post/${listing.id}`),
                       },
                       tr("view_details", "View Details"),
                     ),

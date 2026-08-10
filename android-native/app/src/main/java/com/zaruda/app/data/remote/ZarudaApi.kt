@@ -91,6 +91,7 @@ interface ZarudaApi {
         @Query("sort") sort: String? = null,
         @Query("condition") condition: String? = null,
         @Query("subcategory") subcategory: String? = null,
+        @Query("author") author: String? = null,
     ): PostsResponse
 
     @GET("api/posts/{id}")
@@ -174,15 +175,26 @@ interface ZarudaApi {
     @POST("api/uploads/post-image")
     suspend fun uploadPostImage(@Body body: RequestBody): UploadResponse
 
+    // ---- Uploads (raw audio body, Content-Type: audio/* — voice notes) ----
+    @POST("api/uploads/audio")
+    suspend fun uploadAudio(@Body body: RequestBody): UploadResponse
+
     // ---- KYC (Surepass Integration) ----
     @POST("api/users/kyc/aadhaar/generate")
-    suspend fun generateAadhaarOtp(@Body body: AadhaarGenerateRequest): MessageResponse
+    suspend fun generateAadhaarOtp(@Body body: AadhaarGenerateRequest): AadhaarOtpResponse
 
     @POST("api/users/kyc/aadhaar/verify")
     suspend fun verifyAadhaarOtp(@Body body: AadhaarVerifyRequest): AadhaarVerifyResponse
 
     @POST("api/users/kyc/pan/verify")
     suspend fun verifyPan(@Body body: PanVerifyRequest): PanVerifyResponse
+
+    @Multipart
+    @POST("api/users/kyc/upload")
+    suspend fun uploadKycDoc(@Part file: okhttp3.MultipartBody.Part): KycUploadResponse
+
+    @POST("api/users/kyc/submit")
+    suspend fun kycSubmit(@Body body: KycSubmitRequest): KycSubmitResponse
 
     @GET("api/users/kyc/status")
     suspend fun kycStatus(): KycStatusResponse
@@ -333,6 +345,13 @@ interface ZarudaApi {
 
     @POST("api/profile/preferences/update")
     suspend fun updatePreferences(@Body body: PreferencesUpdateRequest): PreferencesResponse
+
+    // ---- Seller Payout Linking (Razorpay) ----
+    @POST("api/profile/payout-link")
+    suspend fun linkPayoutAccount(@Body body: PayoutLinkRequest): PayoutLinkResponse
+
+    @GET("api/profile/payout-status")
+    suspend fun payoutStatus(): PayoutStatusResponse
 
     // ---- Dashboard ----
     @GET("api/dashboard")
@@ -613,6 +632,9 @@ interface ZarudaApi {
     @POST("api/sales/{id}/approve")
     suspend fun approveSale(@Path("id") id: Int): MessageResponse
 
+    @POST("api/sales/{id}/cancel")
+    suspend fun cancelSale(@Path("id") id: Int): MessageResponse
+
     @POST("api/sales/{id}/reject")
     suspend fun rejectSale(@Path("id") id: Int): MessageResponse
 
@@ -622,11 +644,20 @@ interface ZarudaApi {
     @POST("api/sales/{id}/amount-received")
     suspend fun amountReceived(@Path("id") id: Int): MessageResponse
 
+    @POST("api/sales/{id}/mark-shipped")
+    suspend fun markShipped(@Path("id") id: Int, @Body body: com.zaruda.app.data.remote.dto.MarkShippedRequest): MessageResponse
+
     @POST("api/sales/{id}/report-fraud")
     suspend fun reportFraud(@Path("id") id: Int, @Body body: FraudReportRequest): MessageResponse
 
     @POST("api/sales/{id}/respond")
     suspend fun respondToFraudFlag(@Path("id") id: Int, @Body body: FraudResponseRequest): MessageResponse
+
+    @POST("api/sales/{id}/rate")
+    suspend fun rateCompletedSale(@Path("id") id: Int, @Body body: SaleRateRequest): MessageResponse
+
+    @GET("api/sales/my/review-status")
+    suspend fun myReviewStatus(@Query("post_id") postId: String): com.zaruda.app.data.remote.dto.MyReviewStatusResponse
 
     @GET("api/user/suspension")
     suspend fun mySuspensionStatus(): SuspensionStatusResponse
@@ -645,7 +676,7 @@ interface ZarudaApi {
     suspend fun createRazorpayOrder(@Body body: RazorpayOrderRequest): RazorpayOrderResponse
 
     @POST("api/payments/razorpay/verify")
-    suspend fun verifyRazorpayPayment(@Body body: RazorpayVerifyRequest): MessageResponse
+    suspend fun verifyRazorpayPayment(@Body body: RazorpayVerifyRequest): SalePaymentVerifyResponse
 
     // ---- Reviews extended ----
     @GET("api/reviews/user/{userId}")
@@ -667,17 +698,22 @@ interface ZarudaApi {
     @GET("api/subscriptions/my")
     suspend fun mySubscription(): MySubscriptionResponse
 
+    // Activate the 7-day Premium free trial (server enforces one-per-user).
+    @POST("api/subscriptions/claim-trial")
+    suspend fun claimTrial(): MessageResponse
+
     // ---- Legal / CMS ----
-    @GET("api/cms/terms")
+    // NOTE: Server routes these under /api/cms/pages/:slug (web parity)
+    @GET("api/cms/pages/terms")
     suspend fun termsContent(): CmsContentResponse
 
-    @GET("api/cms/privacy")
+    @GET("api/cms/pages/privacy")
     suspend fun privacyContent(): CmsContentResponse
 
-    @GET("api/cms/refund")
+    @GET("api/cms/pages/refund")
     suspend fun refundContent(): CmsContentResponse
 
-    @GET("api/cms/support-policy")
+    @GET("api/cms/pages/support-policy")
     suspend fun supportPolicyContent(): CmsContentResponse
 
     // ---- Invite ----

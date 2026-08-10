@@ -63,13 +63,13 @@ exports.getSubcategories = async (req, res) => {
             c.name AS category_name,
             COALESCE(pc.post_count, 0)::int AS post_count
           FROM subcategories s
-          JOIN categories c ON s.category_id = c.category_id
+          JOIN categories c ON s.category_id::text = c.category_id::text
           LEFT JOIN (
             SELECT subcategory_id, COUNT(*)::int AS post_count
             FROM posts
             WHERE status = 'active'
             GROUP BY subcategory_id
-          ) pc ON pc.subcategory_id = s.subcategory_id
+          ) pc ON pc.subcategory_id::text = s.subcategory_id::text
           WHERE s.is_active = TRUE
         `;
         const params = [];
@@ -125,13 +125,13 @@ exports.getSubcategoriesGrouped = async (req, res) => {
             c.name AS category_name,
             COALESCE(pc.post_count, 0)::int AS post_count
           FROM subcategories s
-          JOIN categories c ON s.category_id = c.category_id
+          JOIN categories c ON s.category_id::text = c.category_id::text
           LEFT JOIN (
             SELECT subcategory_id, COUNT(*)::int AS post_count
             FROM posts
             WHERE status = 'active'
             GROUP BY subcategory_id
-          ) pc ON pc.subcategory_id = s.subcategory_id
+          ) pc ON pc.subcategory_id::text = s.subcategory_id::text
           WHERE s.is_active = TRUE
           ORDER BY c.name ASC, s.display_order ASC, s.name ASC
         `);
@@ -209,13 +209,13 @@ exports.getTrendingSubcategories = async (req, res) => {
             ${CATEGORY_GROUP_SQL} AS category_group,
             COALESCE(pc.post_count, 0)::int AS post_count
           FROM subcategories s
-          JOIN categories c ON s.category_id = c.category_id
+          JOIN categories c ON s.category_id::text = c.category_id::text
           LEFT JOIN (
             SELECT subcategory_id, COUNT(*)::int AS post_count
             FROM posts
             WHERE status = 'active'
             GROUP BY subcategory_id
-          ) pc ON pc.subcategory_id = s.subcategory_id
+          ) pc ON pc.subcategory_id::text = s.subcategory_id::text
           WHERE s.is_active = TRUE
           ORDER BY
             COALESCE(NULLIF(to_jsonb(s)->>'featured', '')::boolean, FALSE) DESC,

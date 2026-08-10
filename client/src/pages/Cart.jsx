@@ -62,14 +62,8 @@ const Cart = () => {
   );
 
   const displayItems = useMemo(
-    () =>
-      (items || []).filter((item) =>
-        matchesCategoryModeItem(item, {
-          activeCategory: activeCategory?.name ? activeCategory : null,
-          activeAppMatcher,
-        }),
-      ),
-    [items, activeCategory, activeAppMatcher],
+    () => items || [],
+    [items],
   );
 
   const displayCount = useMemo(

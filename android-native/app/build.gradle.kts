@@ -30,7 +30,11 @@ fun localProp(key: String, fallback: String = "") =
     (System.getenv(key.replace(".", "_")) ?: localProps.getProperty(key) ?: fallback)
 
 android {
-    val stagingApiBaseUrl = System.getenv("ZARUDA_STAGING_API_BASE_URL") ?: System.getenv("MHUB_STAGING_API_BASE_URL") ?: ""
+    // Priority: env override → local.properties → emulator fallback (http://10.0.2.2:5001/)
+    // An empty URL crashes the app at startup (OkHttp "no scheme found"), so never default to "".
+    val stagingApiBaseUrl = System.getenv("ZARUDA_STAGING_API_BASE_URL")
+        ?: System.getenv("MHUB_STAGING_API_BASE_URL")
+        ?: localProp("ZARUDA_API_BASE_URL", localProp("MHUB_API_BASE_URL", "http://10.0.2.2:5001/"))
     namespace = "com.zaruda.app"
     compileSdk = 35
 
@@ -48,7 +52,7 @@ android {
         buildConfigField(
             "String",
             "DEFAULT_API_BASE_URL",
-            "\"${localProp("ZARUDA_API_BASE_URL", localProp("MHUB_API_BASE_URL", "http://10.0.2.2:5001/"))}\""
+            "\"$stagingApiBaseUrl\""
         )
         // Google OAuth 2.0 Web Client ID — set GOOGLE_WEB_CLIENT_ID in local.properties
         buildConfigField(
@@ -109,7 +113,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
         freeCompilerArgs += listOf(
-            "-Xjvm-default=all",
+            "-Xjvm-default=all-compatibility",
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=androidx.compose.runtime.ExperimentalComposeApi",
         )

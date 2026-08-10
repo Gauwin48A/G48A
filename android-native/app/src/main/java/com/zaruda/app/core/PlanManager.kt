@@ -74,6 +74,7 @@ private const val CHANNEL_NAME = "Plan & Subscription"
 @InstallIn(SingletonComponent::class)
 interface PlanNotificationEntryPoint {
     fun tiersRepository(): com.zaruda.app.data.repository.TiersRepository
+    fun authRepository(): com.zaruda.app.data.repository.AuthRepository
 }
 
 class PlanExpiryNotificationWorker(
@@ -87,6 +88,9 @@ class PlanExpiryNotificationWorker(
             PlanNotificationEntryPoint::class.java,
         )
         val tiersRepo = entryPoint.tiersRepository()
+
+        // Demo sessions have premium enabled by design — never send plan-expiry notifications
+        if (entryPoint.authRepository().isDemoSession) return Result.success()
 
         val result = try {
             tiersRepo.mySubscription()

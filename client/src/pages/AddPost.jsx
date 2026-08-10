@@ -1181,58 +1181,104 @@ style: { width: `${Math.min(100, Math.max(5, f || 5))}%` },
                 e.createElement(
                   ce,
                   { className: "p-6 space-y-6" },
-                  /* Category Cards */
+                  /* Category Selection Banner / Cards */
                   e.createElement(
                     "div",
                     { className: "space-y-3" },
-                    e.createElement(u, { className: "font-bold text-sm" }, "Choose Category *"),
-                    e.createElement(
-                      "div",
-                      { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
-                      availableCategories.map((catItem) => {
-                        const name = catItem?.name || catItem;
-                        const isSelected = t.category === name;
-                        return e.createElement(
-                          "button",
-                          {
-                            key: name,
-                            type: "button",
-                            onClick: () => B("category")(name),
-                            className: `p-3.5 rounded-2xl border-2 text-left flex flex-col items-center justify-center gap-1 transition-all ${
-                              isSelected
-                                ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 shadow-md scale-[1.03] font-bold text-indigo-700 dark:text-indigo-300"
-                                : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300"
-                            }`,
-                          },
-                          e.createElement("span", { className: "text-2xl mb-1" }, "📦"),
-                          e.createElement("span", { className: "text-xs font-semibold text-center line-clamp-1" }, name),
-                        );
-                      }),
-                    ),
+                    t.category
+                      ? e.createElement(
+                          "div",
+                          { className: "p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-between gap-4" },
+                          e.createElement(
+                            "div",
+                            { className: "flex items-center gap-3" },
+                            e.createElement("span", { className: "text-3xl" }, "📦"),
+                            e.createElement(
+                              "div",
+                              null,
+                              e.createElement("span", { className: "text-xs font-bold uppercase tracking-wider text-indigo-500" }, "Selected Category"),
+                              e.createElement("h4", { className: "text-base font-extrabold text-indigo-900 dark:text-indigo-200" }, t.category),
+                            ),
+                          ),
+                          e.createElement(
+                            "button",
+                            {
+                              type: "button",
+                              onClick: () => B("category")(""),
+                              className: "text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline px-3 py-1.5 rounded-lg bg-indigo-100/60 dark:bg-indigo-900/40",
+                            },
+                            "Change Category",
+                          ),
+                        )
+                      : e.createElement(
+                          "div",
+                          { className: "space-y-3" },
+                          e.createElement(u, { className: "font-bold text-sm" }, "Choose Category *"),
+                          e.createElement(
+                            "div",
+                            { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
+                            availableCategories.map((catItem) => {
+                              const name = catItem?.name || catItem;
+                              const isSelected = t.category === name;
+                              return e.createElement(
+                                "button",
+                                {
+                                  key: name,
+                                  type: "button",
+                                  onClick: () => B("category")(name),
+                                  className: `p-3.5 rounded-2xl border-2 text-left flex flex-col items-center justify-center gap-1 transition-all ${
+                                    isSelected
+                                      ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 shadow-md scale-[1.03] font-bold text-indigo-700 dark:text-indigo-300"
+                                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300"
+                                  }`,
+                                },
+                                e.createElement("span", { className: "text-2xl mb-1" }, "📦"),
+                                e.createElement("span", { className: "text-xs font-semibold text-center line-clamp-1" }, name),
+                              );
+                            }),
+                          ),
+                        ),
                     i.category && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.category),
                   ),
 
-                  /* Subcategory Selection */
+                  /* Subcategory Selection: 1-Tap Chip Pills + Dropdown Fallback */
                   Array.isArray(resolvedSubcategories) && resolvedSubcategories.length > 0 &&
                     e.createElement(
                       "div",
-                      { className: "space-y-2" },
-                      e.createElement(u, { className: "font-bold text-sm" }, "Subcategory *"),
+                      { className: "space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800" },
                       e.createElement(
-                        F,
-                        {
-                          name: "subcategory_id",
-                          value: t.subcategory_id,
-                          onValueChange: (val) => R((prev) => ({ ...prev, subcategory_id: val })),
-                        },
-                        e.createElement(A, { className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl" },
-                          e.createElement(D, { placeholder: "Select subcategory" }),
-                        ),
-                        e.createElement(_, null,
-                          resolvedSubcategories.map((sub) =>
-                            e.createElement(p, { key: sub.subcategory_id || sub.id, value: String(sub.subcategory_id || sub.id) }, sub.name || sub.title),
-                          ),
-                        ),
+                        "div",
+                        { className: "flex items-center justify-between" },
+                        e.createElement(u, { className: "font-bold text-sm" }, "Select Subcategory *"),
+                        e.createElement("span", { className: "text-xs text-slate-500 font-medium" }, `${resolvedSubcategories.length} subcategory options available`),
+                      ),
+                      /* Visual Subcategory Chip Pills */
+                      e.createElement(
+                        "div",
+                        { className: "flex flex-wrap gap-2" },
+                        resolvedSubcategories.map((sub) => {
+                          const subId = String(sub.subcategory_id || sub.id || "");
+                          const isSelected = String(t.subcategory_id) === subId;
+                          const name = sub.name || sub.title || sub.subcategory_name;
+                          return e.createElement(
+                            "button",
+                            {
+                              key: subId,
+                              type: "button",
+                              onClick: () => {
+                                R((prev) => ({ ...prev, subcategory_id: subId }));
+                                selectSubcategoryMode(sub);
+                              },
+                              className: `px-3.5 py-2 rounded-xl text-xs font-bold border-2 transition-all flex items-center gap-1.5 ${
+                                isSelected
+                                  ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/25 scale-[1.02]"
+                                  : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:border-indigo-300"
+                              }`,
+                            },
+                            isSelected && e.createElement("span", null, "✓"),
+                            name,
+                          );
+                        }),
                       ),
                     ),
 
@@ -1393,35 +1439,81 @@ style: { width: `${Math.min(100, Math.max(5, f || 5))}%` },
                     i.price && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.price),
                   ),
 
-                  /* District & State */
+                  /* District & State + GPS Auto-Detect Button */
                   e.createElement(
                     "div",
-                    { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
+                    { className: "space-y-3" },
                     e.createElement(
                       "div",
-                      { className: "space-y-2" },
-                      e.createElement(u, { className: "font-bold text-sm" }, "District / City *"),
-                      e.createElement(h, {
-                        name: "district",
-                        value: t.district,
-                        onChange: x,
-                        placeholder: "e.g., Mumbai, Bengaluru",
-                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
-                      }),
-                      i.district && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.district),
+                      { className: "flex items-center justify-between" },
+                      e.createElement(u, { className: "font-bold text-sm" }, "Item Location *"),
+                      e.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => {
+                            if (!navigator.geolocation) {
+                              y({ title: "GPS Unavailable", description: "Geolocation is not supported by your browser.", variant: "destructive" });
+                              return;
+                            }
+                            y({ title: "📍 Detecting Location...", description: "Fetching your current location..." });
+                            navigator.geolocation.getCurrentPosition(
+                              async (pos) => {
+                                try {
+                                  const { latitude, longitude } = pos.coords;
+                                  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                                  const data = await res.json();
+                                  const city = data?.address?.city || data?.address?.town || data?.address?.state_district || data?.address?.county || "";
+                                  const state = data?.address?.state || "";
+                                  if (city || state) {
+                                    R((prev) => ({ ...prev, district: city || prev.district, state: state || prev.state }));
+                                    y({ title: "📍 Location Detected!", description: `Set to ${city}${city && state ? ', ' : ''}${state}` });
+                                  } else {
+                                    y({ title: "Location Detected", description: "Coordinates found. Please confirm City/State." });
+                                  }
+                                } catch {
+                                  y({ title: "GPS Error", description: "Could not resolve city name. Please enter manually." });
+                                }
+                              },
+                              (err) => {
+                                y({ title: "GPS Access Denied", description: "Please enter your city and state manually.", variant: "destructive" });
+                              }
+                            );
+                          },
+                          className: "text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 hover:underline px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800",
+                        },
+                        "📍 Detect My Location",
+                      ),
                     ),
                     e.createElement(
                       "div",
-                      { className: "space-y-2" },
-                      e.createElement(u, { className: "font-bold text-sm" }, "State *"),
-                      e.createElement(h, {
-                        name: "state",
-                        value: t.state,
-                        onChange: x,
-                        placeholder: "e.g., Maharashtra, Karnataka",
-                        className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
-                      }),
-                      i.state && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.state),
+                      { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
+                      e.createElement(
+                        "div",
+                        { className: "space-y-2" },
+                        e.createElement(u, { className: "font-bold text-sm" }, "District / City *"),
+                        e.createElement(h, {
+                          name: "district",
+                          value: t.district,
+                          onChange: x,
+                          placeholder: "e.g., Mumbai, Bengaluru",
+                          className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                        }),
+                        i.district && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.district),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "space-y-2" },
+                        e.createElement(u, { className: "font-bold text-sm" }, "State *"),
+                        e.createElement(h, {
+                          name: "state",
+                          value: t.state,
+                          onChange: x,
+                          placeholder: "e.g., Maharashtra, Karnataka",
+                          className: "h-12 border-2 border-slate-200 dark:border-slate-800 rounded-xl",
+                        }),
+                        i.state && e.createElement("p", { className: "text-xs text-red-500 font-semibold" }, i.state),
+                      ),
                     ),
                   ),
 

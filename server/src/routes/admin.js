@@ -1173,5 +1173,481 @@ router.get("/kyc/queue", adminDocController.listKycReviewQueue);
 router.post("/kyc/queue/:queueId/review", adminDocController.reviewKycQueueItem);
 
 // ---------------------------------------------------------------------------
+// Settlement & Fee Management
+// ---------------------------------------------------------------------------
+
+/**
+ * @route   GET /admin/settlements
+ * @desc    List all settlements across all sellers (admin view)
+ * @access  Admin (read)
+ */
+router.get("/settlements", async (req, res) => {
+  try {
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, 20, 100);
+    const offset = (page - 1) * limit;
+    const status = parseOptionalString(req.query.status);
+
+    let whereClause = "";
+    const params = [];
+    if (status) {
+      params.push(status);
+      whereClause = `WHERE s.status = $${params.length}`;
+    }
+
+    const [rowsResult, countResult] = await Promise.all([
+      runQuery(
+        `SELECT s.*, COALESCE(p.full_name, u.username) AS seller_name, u.email AS seller_email
+         FROM settlement_records s
+         LEFT JOIN users u ON u.user_id::text = s.seller_id::text
+         LEFT JOIN profiles p ON p.user_id::text = s.seller_id::text
+         ${whereClause}
+         ORDER BY s.created_at DESC
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, limit, offset]
+      ),
+      runQuery(
+        `SELECT COUNT(*)::int AS total FROM settlement_records s ${whereClause}`,
+        params
+      ),
+    ]);
+
+    const total = Number.parseInt(countResult.rows[0]?.total, 10) || 0;
+
+    // Log admin action
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_VIEW_SETTLEMENTS",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ filters: { status }, page, limit }),
+      ]
+    ).catch(() => {});
+
+    res.json({
+      success: true,
+      settlements: rowsResult.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    logger.error("[Admin] List settlements error:", err);
+    res.status(500).json({ error: "Failed to load settlements" });
+  }
+});
+
+/**
+ * @route   GET /admin/settlements/:id
+ * @desc    View settlement details
+ * @access  Admin (read)
+ */
+router.get("/settlements/:id", async (req, res) => {
+  try {
+    const result = await runQuery(
+      `SELECT s.*, COALESCE(p.full_name, u.username) AS seller_name, u.email AS seller_email
+       FROM settlement_records s
+       LEFT JOIN users u ON u.user_id::text = s.seller_id::text
+       LEFT JOIN profiles p ON p.user_id::text = s.seller_id::text
+       WHERE s.settlement_id::text = $1`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Settlement not found" });
+    res.json({ success: true, settlement: result.rows[0] });
+  } catch (err) {
+    logger.error("[Admin] Get settlement error:", err);
+    res.status(500).json({ error: "Failed to fetch settlement" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Platform Fee Rules Management
+// ---------------------------------------------------------------------------
+
+/**
+ * @route   GET /admin/fee-rules
+ * @desc    List all platform fee rules
+ * @access  Admin (read)
+ */
+router.get("/fee-rules", async (req, res) => {
+  try {
+    const includeInactive = req.query.include_inactive === "true";
+    const result = await runQuery(
+      `SELECT * FROM platform_fee_rules
+       ${includeInactive ? "" : "WHERE is_active = true"}
+       ORDER BY effective_from DESC`
+    );
+    res.json({ success: true, rules: result.rows });
+  } catch (err) {
+    logger.error("[Admin] List fee rules error:", err);
+    res.status(500).json({ error: "Failed to load fee rules" });
+  }
+});
+
+/**
+ * @route   POST /admin/fee-rules
+ * @desc    Create a new platform fee rule
+ * @access  Admin (write)
+ */
+router.post("/fee-rules", requireAdminWrite, async (req, res) => {
+  const { percentage, minimum_fee, maximum_fee, applies_to_category, effective_from, effective_until, description } = req.body;
+
+  if (percentage === undefined || percentage === null) {
+    return res.status(400).json({ error: "percentage is required" });
+  }
+
+  try {
+    const result = await runQuery(
+      `INSERT INTO platform_fee_rules (percentage, minimum_fee, maximum_fee, applies_to_category, effective_from, effective_until, description, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING *`,
+      [
+        parseFloat(percentage),
+        minimum_fee ? parseFloat(minimum_fee) : 0,
+        maximum_fee ? parseFloat(maximum_fee) : null,
+        applies_to_category || null,
+        effective_from ? new Date(effective_from) : new Date(),
+        effective_until ? new Date(effective_until) : null,
+        description || null,
+      ]
+    );
+
+    // Log admin action
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_CREATE_FEE_RULE",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ rule_id: result.rows[0].rule_id, percentage }),
+      ]
+    ).catch(() => {});
+
+    res.status(201).json({ success: true, rule: result.rows[0] });
+  } catch (err) {
+    logger.error("[Admin] Create fee rule error:", err);
+    res.status(500).json({ error: "Failed to create fee rule" });
+  }
+});
+
+/**
+ * @route   PATCH /admin/fee-rules/:id
+ * @desc    Update a platform fee rule
+ * @access  Admin (write)
+ */
+router.patch("/fee-rules/:id", requireAdminWrite, async (req, res) => {
+  const { percentage, minimum_fee, maximum_fee, applies_to_category, effective_from, effective_until, is_active, description } = req.body;
+
+  try {
+    const existing = await runQuery(
+      `SELECT * FROM platform_fee_rules WHERE rule_id::text = $1`,
+      [req.params.id]
+    );
+    if (existing.rows.length === 0) return res.status(404).json({ error: "Fee rule not found" });
+
+    const current = existing.rows[0];
+    const updatedPercentage = percentage !== undefined ? parseFloat(percentage) : current.percentage;
+    const updatedMinFee = minimum_fee !== undefined ? parseFloat(minimum_fee) : current.minimum_fee;
+    const updatedMaxFee = maximum_fee !== undefined ? (maximum_fee !== null ? parseFloat(maximum_fee) : null) : current.maximum_fee;
+
+    const result = await runQuery(
+      `UPDATE platform_fee_rules
+       SET percentage = $1, minimum_fee = $2, maximum_fee = $3,
+           applies_to_category = $4, effective_from = $5, effective_until = $6,
+           is_active = $7, description = $8
+       WHERE rule_id::text = $9 RETURNING *`,
+      [
+        updatedPercentage,
+        updatedMinFee,
+        updatedMaxFee,
+        applies_to_category !== undefined ? applies_to_category : current.applies_to_category,
+        effective_from ? new Date(effective_from) : current.effective_from,
+        effective_until !== undefined ? (effective_until ? new Date(effective_until) : null) : current.effective_until,
+        is_active !== undefined ? is_active : current.is_active,
+        description !== undefined ? description : current.description,
+        req.params.id,
+      ]
+    );
+
+    // Log admin action
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_UPDATE_FEE_RULE",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ rule_id: req.params.id, changes: { percentage: updatedPercentage, is_active } }),
+      ]
+    ).catch(() => {});
+
+    res.json({ success: true, rule: result.rows[0] });
+  } catch (err) {
+    logger.error("[Admin] Update fee rule error:", err);
+    res.status(500).json({ error: "Failed to update fee rule" });
+  }
+});
+
+/**
+ * @route   DELETE /admin/fee-rules/:id
+ * @desc    Deactivate a platform fee rule
+ * @access  Admin (write)
+ */
+router.delete("/fee-rules/:id", requireAdminWrite, async (req, res) => {
+  try {
+    const result = await runQuery(
+      `UPDATE platform_fee_rules SET is_active = false WHERE rule_id::text = $1 RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Fee rule not found" });
+
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_DEACTIVATE_FEE_RULE",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ rule_id: req.params.id }),
+      ]
+    ).catch(() => {});
+
+    res.json({ success: true, message: "Fee rule deactivated" });
+  } catch (err) {
+    logger.error("[Admin] Deactivate fee rule error:", err);
+    res.status(500).json({ error: "Failed to deactivate fee rule" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Payout Management (Phase 6, item 30) — view payout records, manual retry
+// ---------------------------------------------------------------------------
+
+/**
+ * @route   GET /admin/payouts
+ * @desc    List payout records (filters: status, seller_id) with pagination
+ * @access  Admin (read)
+ */
+router.get("/payouts", async (req, res) => {
+  try {
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, 20, 100);
+    const offset = (page - 1) * limit;
+    const status = parseOptionalString(req.query.status);
+    const sellerId = parseOptionalString(req.query.seller_id || req.query.sellerId);
+
+    const params = [];
+    const conditions = [];
+
+    if (status) {
+      params.push(status);
+      conditions.push(`pr.status = $${params.length}`);
+    }
+    if (sellerId) {
+      params.push(sellerId);
+      conditions.push(`pr.seller_id::text = $${params.length}`);
+    }
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const [rowsResult, countResult] = await Promise.all([
+      runQuery(
+        `SELECT pr.*, COALESCE(p.full_name, u.username) AS seller_name
+         FROM payout_records pr
+         LEFT JOIN users u ON u.user_id::text = pr.seller_id::text
+         LEFT JOIN profiles p ON p.user_id::text = pr.seller_id::text
+         ${whereClause}
+         ORDER BY pr.created_at DESC
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, limit, offset]
+      ),
+      runQuery(
+        `SELECT COUNT(*)::int AS total FROM payout_records pr ${whereClause}`,
+        params
+      ),
+    ]);
+
+    const total = Number.parseInt(countResult.rows[0]?.total, 10) || 0;
+
+    // Log admin action
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_VIEW_PAYOUTS",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ filters: { status, seller_id: sellerId }, page, limit }),
+      ]
+    ).catch(() => {});
+
+    res.json({
+      success: true,
+      payouts: rowsResult.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    logger.error("[Admin] List payouts error:", err);
+    res.status(500).json({ error: "Failed to load payouts" });
+  }
+});
+
+/**
+ * @route   GET /admin/payouts/:id
+ * @desc    View a single payout record
+ * @access  Admin (read)
+ */
+router.get("/payouts/:id", async (req, res) => {
+  try {
+    const result = await runQuery(
+      `SELECT pr.*, COALESCE(p.full_name, u.username) AS seller_name, u.email AS seller_email
+       FROM payout_records pr
+       LEFT JOIN users u ON u.user_id::text = pr.seller_id::text
+       LEFT JOIN profiles p ON p.user_id::text = pr.seller_id::text
+       WHERE pr.payout_id::text = $1`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Payout not found" });
+    res.json({ success: true, payout: result.rows[0] });
+  } catch (err) {
+    logger.error("[Admin] Get payout error:", err);
+    res.status(500).json({ error: "Failed to fetch payout" });
+  }
+});
+
+/**
+ * @route   POST /admin/payouts/:id/retry
+ * @desc    Manually re-enqueue a failed/stuck payout via BullMQ
+ * @access  Admin (write)
+ */
+router.post("/payouts/:id/retry", requireAdminWrite, async (req, res) => {
+  try {
+    const payoutRes = await runQuery(
+      `SELECT * FROM payout_records WHERE payout_id::text = $1`,
+      [req.params.id]
+    );
+    if (payoutRes.rows.length === 0) {
+      return res.status(404).json({ error: "Payout not found" });
+    }
+
+    const payout = payoutRes.rows[0];
+    if (payout.status === "PAYOUT_SUCCESS") {
+      return res.status(400).json({ error: "Payout already succeeded" });
+    }
+    if (!payout.seller_id || !payout.amount) {
+      return res.status(400).json({ error: "Payout record is missing seller_id or amount" });
+    }
+
+    // Reset to retryable state then re-enqueue
+    await runQuery(
+      `UPDATE payout_records SET status = 'PAYOUT_PENDING', last_error = NULL, updated_at = NOW()
+       WHERE payout_id = $1`,
+      [payout.payout_id]
+    );
+
+    let enqueueResult = { success: false, error: "Queue unavailable" };
+    try {
+      const { enqueuePayoutJob } = require("../services/payoutQueue");
+      enqueueResult = await enqueuePayoutJob({
+        referenceId: payout.reference_id,
+        sellerId: payout.seller_id,
+        amount: parseFloat(payout.amount),
+        currency: payout.currency || "INR",
+        payoutRecordId: payout.payout_id,
+      });
+    } catch (queueErr) {
+      logger.error("[Admin] Payout retry enqueue error:", queueErr.message);
+      enqueueResult = { success: false, error: queueErr.message };
+    }
+
+    // Log admin action
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_RETRY_PAYOUT",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ payout_id: payout.payout_id, reference_id: payout.reference_id, enqueued: enqueueResult.success }),
+      ]
+    ).catch(() => {});
+
+    if (!enqueueResult.success) {
+      return res.status(500).json({ success: false, error: enqueueResult.error || "Failed to re-enqueue payout" });
+    }
+
+    res.json({ success: true, message: "Payout re-enqueued for processing", jobId: enqueueResult.jobId || null });
+  } catch (err) {
+    logger.error("[Admin] Payout retry error:", err);
+    res.status(500).json({ error: "Failed to retry payout" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Financial Alerts Management (Phase 6, item 54)
+// ---------------------------------------------------------------------------
+
+/**
+ * @route   GET /admin/financial-alerts
+ * @desc    List financial alerts (unresolved by default)
+ * @access  Admin (read)
+ */
+router.get("/financial-alerts", async (req, res) => {
+  try {
+    const { listFinancialAlerts } = require("../services/financialAlertsService");
+    const unresolvedOnly = req.query.all === "true" ? false : true;
+    const limit = parsePositiveInt(req.query.limit, 100, 500);
+    const result = await listFinancialAlerts({ unresolvedOnly, limit });
+    if (!result.success) {
+      return res.status(500).json({ error: result.error || "Failed to load financial alerts" });
+    }
+    res.json({ success: true, alerts: result.alerts });
+  } catch (err) {
+    logger.error("[Admin] List financial alerts error:", err);
+    res.status(500).json({ error: "Failed to load financial alerts" });
+  }
+});
+
+/**
+ * @route   POST /admin/financial-alerts/:id/resolve
+ * @desc    Mark a financial alert as resolved
+ * @access  Admin (write)
+ */
+router.post("/financial-alerts/:id/resolve", requireAdminWrite, async (req, res) => {
+  try {
+    const { resolveFinancialAlert } = require("../services/financialAlertsService");
+    const result = await resolveFinancialAlert({
+      alertId: req.params.id,
+      resolvedBy: getRequestUserId(req) || "unknown",
+    });
+    if (!result.success) {
+      return res.status(result.error === "Alert not found" ? 404 : 500).json({ error: result.error });
+    }
+
+    await runQuery(
+      `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details, created_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`,
+      [
+        getRequestUserId(req) || "unknown",
+        "ADMIN_RESOLVE_FINANCIAL_ALERT",
+        getClientIP(req),
+        req.headers["user-agent"] || "unknown",
+        JSON.stringify({ alert_id: req.params.id }),
+      ]
+    ).catch(() => {});
+
+    res.json({ success: true, alert: result.alert });
+  } catch (err) {
+    logger.error("[Admin] Resolve financial alert error:", err);
+    res.status(500).json({ error: "Failed to resolve financial alert" });
+  }
+});
+
+// ---------------------------------------------------------------------------
 
 module.exports = router;

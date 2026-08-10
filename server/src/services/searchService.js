@@ -42,8 +42,8 @@ const searchPosts = async ({
         sc.name AS subcategory_name
       FROM base
       LEFT JOIN posts p ON base.post_id = p.post_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ($10::text IS NULL OR p.subcategory_id::text = $10::text)
       `,
       [
@@ -84,8 +84,8 @@ const fuzzySearchPosts = async ({ query, limit = 20, offset = 0, threshold = 0.2
               c.name AS category_name, sc.name AS subcategory_name,
               similarity(p.title, $1) AS sim_score
        FROM posts p
-       LEFT JOIN categories c ON p.category_id = c.category_id
-       LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+       LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+       LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
        WHERE p.status = 'active'
          AND (similarity(p.title, $1) > $4 OR similarity(p.description, $1) > $4)
        ORDER BY sim_score DESC
@@ -133,8 +133,8 @@ const getNearbyPosts = async ({
         sc.name AS subcategory_name
       FROM base
       LEFT JOIN posts p ON base.post_id = p.post_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ($6::text IS NULL OR p.subcategory_id::text = $6::text)
       `,
       [lat, lng, radius, categoryId, limit, subcategoryId]

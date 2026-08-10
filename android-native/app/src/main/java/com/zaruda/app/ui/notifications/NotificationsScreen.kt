@@ -250,6 +250,13 @@ class NotificationsViewModel @Inject constructor(
 
 private data class NotifIconStyle(val icon: ImageVector, val tint: Color, val bg: Color)
 
+/** Maps a sale-notification type to the Sale Done hub tab (0=Start, 1=Pending, 2=Active, 3=History). */
+private fun saleTabForType(type: String): Int = when {
+    type.contains("request") -> 1   // seller: incoming requests to approve/reject
+    type.contains("rejected") || type.contains("cancelled") || type.contains("completed") -> 3
+    else -> 2                        // approved / shipped / received / paid -> Active
+}
+
 private fun notifStyle(type: String?): NotifIconStyle {
     val t = type?.lowercase() ?: ""
     return when {
@@ -285,6 +292,7 @@ private fun notifStyle(type: String?): NotifIconStyle {
 fun NotificationsScreen(
     onOpenPost: (String) -> Unit,
     onAcceptOffer: (String) -> Unit = {},
+    onOpenSale: (Int) -> Unit = {},
     viewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -605,7 +613,11 @@ fun NotificationsScreen(
                                                 viewModel.toggleSelected(notif.stableId)
                                             } else {
                                                 viewModel.markRead(notif.stableId)
-                                                notif.postId?.let { onOpenPost(it) }
+                                                val type = notif.type?.lowercase() ?: ""
+                                                when {
+                                                    type.startsWith("sale") -> onOpenSale(saleTabForType(type))
+                                                    notif.postId != null -> onOpenPost(notif.postId)
+                                                }
                                             }
                                         },
                                         onAcceptOffer = { onAcceptOffer(notif.stableId) },
@@ -679,7 +691,8 @@ fun NotificationRow(
 ) {
     val style = notifStyle(notification.type)
     val isOfferNotification = notification.type?.lowercase()?.contains("offer") == true
-    val hasActions = isOfferNotification || notification.postId != null
+    val isSaleNotification = notification.type?.lowercase()?.startsWith("sale") == true
+    val hasActions = isOfferNotification || (notification.postId != null && !isSaleNotification)
     
     Card(
         onClick = { if (!hasActions) onClick() },
@@ -809,7 +822,7 @@ fun NotificationRow(
                             Text(stringResource(R.string.notif_accept_offer), fontSize = 13.sp)
                         }
                     }
-                    if (notification.postId != null) {
+                    if (notification.postId != null && !isSaleNotification) {
                         OutlinedButton(
                             onClick = onClick,
                             modifier = Modifier.weight(1f),

@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { AiFillStar } from "react-icons/ai";
+import { useNavigate } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 import { getApiOriginBase } from "@/lib/networkConfig";
@@ -15,11 +16,13 @@ import {
 
 const ProductCard = memo(function ProductCard({ product }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isValidProduct = product && typeof product === "object";
   const safeProduct = isValidProduct ? product : {};
 
   // Defensive: Ensure rating is a number
   const rating = typeof safeProduct.rating === "number" ? safeProduct.rating : 0;
+  const sellerName = safeProduct.seller_name || safeProduct.username || safeProduct.user?.name || safeProduct.user?.username || "Seller";
   const sellerId =
     safeProduct.seller_id ||
     safeProduct.sellerId ||
@@ -110,6 +113,21 @@ const ProductCard = memo(function ProductCard({ product }) {
           ))}
           <span className="ml-2 text-sm text-dark">{Number(rating).toFixed(1)}</span>
         </div>
+        {/* Seller name - clickable to view seller's sold posts & trust profile */}
+        {sellerId ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              navigate(`/user/${sellerId}/sold-posts`);
+            }}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium mb-2 block truncate max-w-full text-left cursor-pointer"
+            title={t("view_seller_posts", "View seller's sold items & trust passport")}
+          >
+            {t("by_seller", { name: sellerName, defaultValue: `by ${sellerName}` })}
+          </button>
+        ) : null}
         {trustLabel || isFrozen || underReview ? (
           <div className="flex flex-wrap items-center gap-1 mb-2 text-xs">
             {trustLabel ? (

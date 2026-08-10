@@ -9,6 +9,7 @@ import com.zaruda.app.data.remote.dto.CreatePostRequest
 import com.zaruda.app.data.remote.dto.DraftRequest
 import com.zaruda.app.data.remote.dto.DraftResponse
 import com.zaruda.app.data.repository.AuthRepository
+import com.zaruda.app.data.repository.BrandsRepository
 import com.zaruda.app.data.repository.CategoriesRepository
 import com.zaruda.app.data.repository.DraftRepository
 import com.zaruda.app.data.repository.PostsRepository
@@ -40,6 +41,24 @@ data class CreatePostState(
     val draftData: DraftResponse? = null,
     val savingDraft: Boolean = false,
     val draftSaved: Boolean = false,
+    // ── New fields ─────────────────────────────────────────────────────
+    val condition: String? = null,
+    val brand: String = "",
+    val model: String = "",
+    val brandSuggestions: List<String> = emptyList(),
+    val contactNumber: String = "",
+    val ageMonths: Int? = null,
+    val isNegotiable: Boolean = false,
+    val loadingBrands: Boolean = false,
+    val categoriesLoading: Boolean = false,
+    val subcategoriesLoading: Boolean = false,
+    // ── Voice note & flash sale ────────────────────────────────────────
+    val audioUri: Uri? = null,
+    val audioUrl: String? = null,
+    val audioDurationSeconds: Int = 0,
+    val recording: Boolean = false,
+    val audioUploading: Boolean = false,
+    val flashSale: Boolean = false,
 ) {
     companion object {
         /** Image caps per plan tier (mirrors web client/src/utils/planLimits.js). */
@@ -52,6 +71,9 @@ data class CreatePostState(
             "platinum" to 10,
         )
         fun limitFor(tier: String?): Int = IMAGE_LIMIT[tier?.lowercase()?.trim()] ?: 1
+
+        /** Condition options for the chip selector. */
+        val CONDITIONS: List<String> = listOf("New", "Like New", "Used", "Refurbished")
     }
 }
 
@@ -62,6 +84,7 @@ class CreatePostViewModel @Inject constructor(
     private val uploadRepo: UploadRepository,
     private val authRepo: AuthRepository,
     private val draftRepo: DraftRepository,
+    private val brandsRepo: BrandsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreatePostState())
     val state: StateFlow<CreatePostState> = _state.asStateFlow()
@@ -69,33 +92,76 @@ class CreatePostViewModel @Inject constructor(
     init {
         loadCategories()
         loadUserPlan()
+        loadBrands()
         loadDraft()
+        prefillContactNumber()
     }
 
     // ── Loading ──────────────────────────────────────────────────────────
 
     private fun loadUserPlan() = viewModelScope.launch {
+        if (authRepo.isDemoSession) {
+            _state.value = _state.value.copy(maxImages = CreatePostState.limitFor("premium"))
+            return@launch
+        }
         when (val r = authRepo.me()) {
             is ApiResult.Success -> {
                 val tier = r.data.currentPlan?.lowercase()?.trim() ?: "basic"
                 _state.value = _state.value.copy(maxImages = CreatePostState.limitFor(tier))
             }
-            is ApiResult.Failure -> Unit // keep defaults
+            is ApiResult.Failure -> Unit
         }
     }
 
     private fun loadCategories() = viewModelScope.launch {
+        _state.value = _state.value.copy(categoriesLoading = true)
         when (val r = categoriesRepo.all()) {
-            is ApiResult.Success -> _state.value = _state.value.copy(categories = r.data)
-            is ApiResult.Failure -> _state.value = _state.value.copy(error = r.error.userFacingMessage("load listing categories"))
+            is ApiResult.Success -> _state.value = _state.value.copy(categories = r.data, categoriesLoading = false)
+            is ApiResult.Failure -> _state.value = _state.value.copy(
+                categoriesLoading = false,
+                error = r.error.userFacingMessage("load listing categories"),
+            )
         }
     }
 
+    /** Retry loading the category list after a transient failure. */
+    fun retryCategories() = loadCategories()
+
     private fun loadSubcategories(categoryId: String) = viewModelScope.launch {
-        _state.value = _state.value.copy(subcategories = emptyList())
+        _state.value = _state.value.copy(subcategories = emptyList(), subcategoriesLoading = true)
         when (val r = categoriesRepo.subcategories(categoryId)) {
-            is ApiResult.Success -> _state.value = _state.value.copy(subcategories = r.data)
-            is ApiResult.Failure -> {} // silently ignore
+            is ApiResult.Success -> _state.value = _state.value.copy(subcategories = r.data, subcategoriesLoading = false)
+            is ApiResult.Failure -> _state.value = _state.value.copy(
+                subcategoriesLoading = false,
+                error = r.error.userFacingMessage("load subcategories"),
+            )
+        }
+    }
+
+    /** Prefill the contact number from the user's profile phone when available. */
+    private fun prefillContactNumber() = viewModelScope.launch {
+        if (_state.value.contactNumber.isNotBlank()) return@launch
+        if (authRepo.isDemoSession) return@launch
+        when (val r = authRepo.me()) {
+            is ApiResult.Success -> {
+                // Re-check after the await so we never overwrite user input typed meanwhile.
+                if (_state.value.contactNumber.isBlank()) {
+                    val digits = r.data.phone.orEmpty().filter { it.isDigit() }.takeLast(10)
+                    if (digits.isNotEmpty()) _state.value = _state.value.copy(contactNumber = digits)
+                }
+            }
+            is ApiResult.Failure -> Unit
+        }
+    }
+
+    private fun loadBrands() = viewModelScope.launch {
+        _state.value = _state.value.copy(loadingBrands = true)
+        when (val r = brandsRepo.list()) {
+            is ApiResult.Success -> _state.value = _state.value.copy(
+                brandSuggestions = r.data.map { it.name }.filterNotNull(),
+                loadingBrands = false,
+            )
+            is ApiResult.Failure -> _state.value = _state.value.copy(loadingBrands = false)
         }
     }
 
@@ -104,15 +170,12 @@ class CreatePostViewModel @Inject constructor(
             is ApiResult.Success -> {
                 val draft = r.data
                 _state.value = _state.value.copy(draftData = draft)
-                // Auto-select category if draft has one
                 if (draft.categoryId != null && draft.categoryId.isNotBlank()) {
                     val cat = _state.value.categories.find { it.stableId == draft.categoryId }
-                    if (cat != null) {
-                        selectCategory(cat)
-                    }
+                    if (cat != null) selectCategory(cat)
                 }
             }
-            is ApiResult.Failure -> {} // no saved draft
+            is ApiResult.Failure -> {}
         }
     }
 
@@ -124,6 +187,33 @@ class CreatePostViewModel @Inject constructor(
     }
 
     fun selectSubcategory(c: Category) { _state.value = _state.value.copy(selectedSubcategory = c, error = null) }
+    fun selectCondition(c: String) {
+        _state.value = _state.value.copy(
+            condition = if (_state.value.condition == c) null else c,
+        )
+    }
+    fun setBrand(value: String) { _state.value = _state.value.copy(brand = value) }
+    fun setModel(value: String) { _state.value = _state.value.copy(model = value) }
+    fun setContactNumber(value: String) {
+        // Allow only digits, max 10
+        val digits = value.filter { it.isDigit() }.take(10)
+        _state.value = _state.value.copy(contactNumber = digits)
+    }
+    fun setAgeMonths(value: Int?) { _state.value = _state.value.copy(ageMonths = value) }
+    fun toggleNegotiable() { _state.value = _state.value.copy(isNegotiable = !_state.value.isNegotiable) }
+    fun setFlashSale(value: Boolean) { _state.value = _state.value.copy(flashSale = value) }
+    fun setRecording(value: Boolean) { _state.value = _state.value.copy(recording = value) }
+    fun setAudioUri(uri: Uri, durationSeconds: Int) {
+        _state.value = _state.value.copy(
+            audioUri = uri,
+            audioUrl = null,
+            audioDurationSeconds = durationSeconds,
+            error = null,
+        )
+    }
+    fun clearAudio() {
+        _state.value = _state.value.copy(audioUri = null, audioUrl = null, audioDurationSeconds = 0)
+    }
     fun clearError() { _state.value = _state.value.copy(error = null) }
 
     fun setImages(uris: List<Uri>) {
@@ -142,17 +232,23 @@ class CreatePostViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(savingDraft = true, draftSaved = false)
             val price = priceText?.takeIf { it.isNotBlank() }?.let(InputValidators::parsePositiveAmount)
+            val cur = _state.value
             val req = DraftRequest(
                 title = title?.trim()?.takeIf { it.isNotBlank() },
                 description = description?.trim()?.takeIf { it.isNotBlank() },
                 price = price,
-                categoryId = _state.value.selectedCategory?.stableId,
+                categoryId = cur.selectedCategory?.stableId,
                 location = location?.trim()?.takeIf { it.isNotBlank() },
+                condition = cur.condition,
+                brand = cur.brand.trim().ifBlank { null },
+                model = cur.model.trim().ifBlank { null },
+                contactNumber = cur.contactNumber.ifBlank { null },
+                ageMonths = cur.ageMonths,
+                isNegotiable = cur.isNegotiable.takeIf { it },
             )
             when (draftRepo.save(req)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(savingDraft = false, draftSaved = true)
-                    // Auto-clear "Draft saved" indicator after 3s
                     launch {
                         delay(3000)
                         _state.value = _state.value.copy(draftSaved = false)
@@ -178,8 +274,13 @@ class CreatePostViewModel @Inject constructor(
         priceText: String,
         location: String,
         bytesProvider: suspend (Uri) -> Pair<ByteArray, String>?,
+        audioBytesProvider: suspend (Uri) -> Pair<ByteArray, String>? = bytesProvider,
     ) {
         if (_state.value.submitting || _state.value.uploading) return
+        if (_state.value.recording) {
+            _state.value = _state.value.copy(error = "Stop the voice note recording before publishing")
+            return
+        }
         val validationError = validateSubmission(title, priceText)
         if (validationError != null) {
             _state.value = _state.value.copy(error = validationError)
@@ -191,6 +292,30 @@ class CreatePostViewModel @Inject constructor(
         _state.value = snapshot.copy(error = null, uploading = true)
 
         viewModelScope.launch {
+            // Upload the voice note first (single file) so a failure doesn't waste image uploads
+            var audioUrl: String? = null
+            if (snapshot.audioUri != null) {
+                _state.value = _state.value.copy(audioUploading = true)
+                val audioPair = audioBytesProvider(snapshot.audioUri)
+                if (audioPair == null) {
+                    _state.value = _state.value.copy(audioUploading = false, uploading = false, error = "Could not read the voice note")
+                    return@launch
+                }
+                val (audioBytes, audioMime) = audioPair
+                when (val r = uploadRepo.uploadAudio(audioBytes, audioMime)) {
+                    is ApiResult.Success -> audioUrl = r.data
+                    is ApiResult.Failure -> {
+                        _state.value = _state.value.copy(
+                            audioUploading = false,
+                            uploading = false,
+                            error = r.error.userFacingMessage("upload your voice note"),
+                        )
+                        return@launch
+                    }
+                }
+                _state.value = _state.value.copy(audioUploading = false, audioUrl = audioUrl)
+            }
+
             val urls = mutableListOf<String>()
             for (uri in snapshot.imageUris) {
                 val pair = bytesProvider(uri)
@@ -213,10 +338,19 @@ class CreatePostViewModel @Inject constructor(
                 title = title.trim(),
                 description = description.trim().ifBlank { null },
                 price = price,
+                currency = "INR",
                 location = location.trim().ifBlank { null },
                 categoryId = snapshot.selectedCategory?.stableId,
                 subcategoryId = snapshot.selectedSubcategory?.stableId,
                 images = urls,
+                condition = snapshot.condition,
+                brand = snapshot.brand.trim().ifBlank { null },
+                model = snapshot.model.trim().ifBlank { null },
+                contactNumber = snapshot.contactNumber.ifBlank { null },
+                ageMonths = snapshot.ageMonths,
+                flashSale = snapshot.flashSale.takeIf { it },
+                audioUrl = audioUrl,
+                isNegotiable = snapshot.isNegotiable.takeIf { it },
             )
             when (val r = postsRepo.create(req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(submitting = false, success = true)
@@ -230,7 +364,13 @@ class CreatePostViewModel @Inject constructor(
         if (!InputValidators.hasSufficientImages(_state.value.imageUris.size)) return "Add at least one photo"
         if (_state.value.selectedCategory == null) return "Select a category"
         if (_state.value.selectedSubcategory == null) return "Select a subcategory"
+        if (_state.value.condition == null) return "Select a condition"
+        if (_state.value.contactNumber.isBlank()) return "Enter your 10-digit contact number"
+        if (!InputValidators.isValidIndianMobile(_state.value.contactNumber)) {
+            return "Enter a valid 10-digit mobile number"
+        }
         if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) return "Enter a valid price"
+        if (priceText.isBlank() && !_state.value.isNegotiable) return "Enter a price or mark as negotiable"
         return null
     }
-}
+}

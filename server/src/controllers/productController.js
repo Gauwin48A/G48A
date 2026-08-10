@@ -54,7 +54,7 @@ exports.searchProducts = async (req, res) => {
              p.price, COALESCE(u.rating, 0) AS rating
       FROM posts p
       LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
       WHERE p.status = 'active'
     `;
     let params = [];

@@ -20,6 +20,10 @@ const {
 } = require("../utils/categoryGroupSql");
 
 const logger = require("../utils/logger");
+const {
+  TEST_USER_EXCLUSION,
+  TEST_USER_CONDITION,
+} = require("../queries/testDataExclusion");
 
 const checkUserAccessFull = async (userId) => {
   if (!userId) return false;
@@ -508,6 +512,19 @@ function normalizePostListQuery(query) {
     parseOptionalStringScalar(query.subcategory) ||
     parseOptionalStringScalar(query.subcategory_id);
 
+  // Multi-subcategory filter (For You preferences): comma-separated list of
+  // subcategory IDs or names, e.g. subcategory_ids=12,45 or subcategory_ids=Cars,Phones
+  const subcategoryIdsRaw =
+    parseOptionalStringScalar(query.subcategory_ids) ||
+    parseOptionalStringScalar(query.subcategoryIds) ||
+    null;
+  const subcategoryIds = subcategoryIdsRaw
+    ? subcategoryIdsRaw
+        .split(",")
+        .map((s) => String(s).trim())
+        .filter(Boolean)
+    : null;
+
   const categoryGroup = normalizeCategoryGroup(
     query.category_group || query.categoryGroup || query.group
   );
@@ -527,6 +544,7 @@ function normalizePostListQuery(query) {
       category: category && category.toLowerCase() !== "all" ? category : null,
       categoryGroup,
       subcategory: subcategory && subcategory.toLowerCase() !== "all" ? subcategory : null,
+      subcategoryIds,
       location: parseOptionalStringScalar(query.location),
       minPrice,
       maxPrice,
@@ -602,11 +620,11 @@ function buildPostWhereClause(filters) {
         c.name ILIKE ${catPlaceholder}
         OR (c.name IS NULL AND EXISTS (
           SELECT 1 FROM subcategories sc2 
-          WHERE sc2.name ILIKE ${catPlaceholder} AND sc2.subcategory_id = p.subcategory_id
+          WHERE sc2.name ILIKE ${catPlaceholder} AND sc2.subcategory_id::text = p.subcategory_id::text
         ))
         OR EXISTS (
           SELECT 1 FROM subcategories sc3 
-          WHERE sc3.name ILIKE ${catPlaceholder} AND sc3.subcategory_id = p.subcategory_id
+          WHERE sc3.name ILIKE ${catPlaceholder} AND sc3.subcategory_id::text = p.subcategory_id::text
         )
       )`);
       categoryResolution = "name_or_subcategory";
@@ -622,6 +640,19 @@ function buildPostWhereClause(filters) {
       } else {
         conditions.push(`sc.name ILIKE ${addParam(rawSubcategory)}`);
       }
+    }
+  }
+  // Multi-subcategory filter (For You preferences) — comma-separated IDs or names
+  if (Array.isArray(filters.subcategoryIds) && filters.subcategoryIds.length > 0) {
+    const idList = filters.subcategoryIds.filter((s) => /^\d+$/.test(s));
+    const nameList = filters.subcategoryIds.filter((s) => !/^\d+$/.test(s));
+    const idConditions = idList.map((id) => `p.subcategory_id::text = ${addParam(id)}`);
+    const nameConditions = nameList.map(
+      (name) => `LOWER(sc.name) = LOWER(${addParam(name)})`
+    );
+    const allSub = [...idConditions, ...nameConditions];
+    if (allSub.length > 0) {
+      conditions.push(`(${allSub.join(" OR ")})`);
     }
   }
   if (filters.location) {
@@ -656,6 +687,10 @@ function buildPostWhereClause(filters) {
   if (filters.verifiedOnly === true || filters.verifiedOnly === 'true') {
     conditions.push(`COALESCE(pr.verified, false) = true`);
   }
+
+  // Exclude posts from known test / e2e accounts (identity-based — their seeded
+  // titles are realistic and would bypass any title-based filter).
+  conditions.push(TEST_USER_CONDITION);
 
   return { params, clause: `WHERE ${conditions.join(" AND ")}` };
 }
@@ -830,8 +865,8 @@ exports.getUserPosts = async (req, res) => {
           sc.name AS subcategory_name,
           COUNT(*) OVER() AS total_count
         FROM filtered_posts fp
-        LEFT JOIN categories c ON fp.category_id = c.category_id
-        LEFT JOIN subcategories sc ON fp.subcategory_id = sc.subcategory_id
+        LEFT JOIN categories c ON fp.category_id::text = c.category_id::text
+        LEFT JOIN subcategories sc ON fp.subcategory_id::text = sc.subcategory_id::text
         WHERE (
           $4::text IS NULL OR
           ($4::text = 'others' AND ${CATEGORY_GROUP_SQL} NOT IN ('electronics', 'fashion', 'vehicles')) OR
@@ -872,8 +907,8 @@ exports.getUserPosts = async (req, res) => {
           sc.name AS subcategory_name,
           COUNT(*) OVER() AS total_count
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+        LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
         WHERE p.user_id::text = $1::text
           AND ($2::text IS NULL OR p.status = $2::text)
           AND ($3::text IS NULL OR p.category_id::text = $3::text)
@@ -968,7 +1003,7 @@ exports.getUserPostTotals = async (req, res) => {
         filtered_posts AS (
           SELECT up.post_id, up.status, up.ownership, up.category_id
           FROM user_posts up
-          LEFT JOIN categories c ON up.category_id = c.category_id
+          LEFT JOIN categories c ON up.category_id::text = c.category_id::text
           WHERE ($2::text IS NULL OR up.category_id::text = $2::text)
             AND (
               $3::text IS NULL OR
@@ -1000,7 +1035,7 @@ exports.getUserPostTotals = async (req, res) => {
           COUNT(*) FILTER (WHERE p.status = 'sold')::int AS sold,
           COUNT(*)::int AS total
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
         WHERE p.user_id::text = $1::text
           AND ($2::text IS NULL OR p.category_id::text = $2::text)
           AND (
@@ -1049,6 +1084,7 @@ exports.getAllPosts = async (req, res) => {
     const hasFullAccess = await checkUserAccessFull(userId);
     const restrictedMode = !hasFullAccess;
 
+    const offset = (pageNumber - 1) * limitNumber;
     let finalLimit = limitNumber;
     let finalOffset = offset;
     if (restrictedMode) {
@@ -1094,8 +1130,8 @@ exports.getAllPosts = async (req, res) => {
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       ${whereClause}
     `;
 
@@ -1201,6 +1237,24 @@ exports.createPost = async (req, res) => {
       req.body?.model_name ??
       req.body?.modelName ??
       null;
+    const rawCondition =
+      req.body?.condition ??
+      req.body?.item_condition ??
+      null;
+    /* Normalize to filter format (e.g. "Like New" -> "like_new") so search filters match. */
+    const normalizedCondition = rawCondition
+      ? String(rawCondition).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")
+      : null;
+    const rawContactNumber =
+      req.body?.contact_number ??
+      req.body?.contactNumber ??
+      req.body?.phone ??
+      null;
+    const rawAgeMonths = parseOptionalStringScalar(
+      req.body?.age_months ?? req.body?.ageMonths ?? null
+    );
+    const rawIsNegotiable =
+      req.body?.is_negotiable ?? req.body?.isNegotiable ?? req.body?.negotiable ?? false;
     const images = req.files?.images || [];
     const audioFile = req.files?.audio?.[0] || req.file;
 
@@ -1338,23 +1392,26 @@ exports.createPost = async (req, res) => {
     ).filter(Boolean);
     const imagesJson = JSON.stringify(normalizedImages);
 
-    /* Audio file */
+    /* Audio file (multipart) or pre-uploaded audio URL (JSON create — Android voice note) */
     const audioUrl = audioFile
       ? normalizeUploadsPath(`/uploads/${audioFile.filename}`) ||
         normalizeUploadsPath(audioFile.path) ||
         normalizeUploadsPath(audioFile.filename) ||
         null
-      : null;
+      : typeof req.body?.audio_url === "string" && req.body.audio_url.trim()
+        ? req.body.audio_url.trim()
+        : null;
 
     /* Insert the post */
     const insertResult = await client.query(
       `INSERT INTO posts (
         user_id, category_id, subcategory_id, title, description, price, location,
         post_type, images, status, created_at, views_count, likes, shares,
-        is_flash_sale, expires_at, tier_priority, brand, model
+        is_flash_sale, expires_at, tier_priority, brand, model, condition,
+        contact_number, age_months, is_negotiable
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-              $9::JSONB, 'active', NOW(), 0, 0, 0, $10, $11, $12, $13, $14)
+              $9::JSONB, 'active', NOW(), 0, 0, 0, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING post_id`,
       [
         user_id,
@@ -1371,6 +1428,10 @@ exports.createPost = async (req, res) => {
         rules.priority,
         rawBrand || null,
         rawModel || null,
+        normalizedCondition,
+        rawContactNumber || null,
+        rawAgeMonths != null ? (parseInt(rawAgeMonths, 10) || 0) : null,
+        rawIsNegotiable === true || rawIsNegotiable === "true" || rawIsNegotiable === "1",
       ]
     );
     const post_id = insertResult.rows[0]?.post_id;
@@ -1555,6 +1616,12 @@ exports.getPostById = async (req, res) => {
         up.is_flash_sale,
         up.expires_at,
         up.tier_priority,
+        up.condition,
+        up.brand,
+        up.model,
+        up.contact_number,
+        up.age_months,
+        up.is_negotiable,
         up.created_at,
         up.updated_at,
         COALESCE(u.username, 'Unknown') AS author,
@@ -1577,8 +1644,8 @@ exports.getPostById = async (req, res) => {
       FROM updated_post up
       LEFT JOIN users u ON up.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON u.user_id::text = pr.user_id::text
-      LEFT JOIN categories c ON up.category_id = c.category_id
-      LEFT JOIN subcategories sc ON up.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON up.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON up.subcategory_id::text = sc.subcategory_id::text
       `,
       [postId]
     );
@@ -1642,8 +1709,8 @@ exports.getNearbyPosts = async (req, res) => {
         sc.name AS subcategory_name
       FROM base
       LEFT JOIN posts p ON base.post_id = p.post_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ($4::text IS NULL OR p.category_id::text = $4::text)
         AND ($5::text IS NULL OR p.subcategory_id::text = $5::text)
       `,
@@ -1750,15 +1817,18 @@ exports.getSimilarPosts = async (req, res) => {
         p.subcategory_id,
         c.name AS category_name,
         sc.name AS subcategory_name,
-        u.name as seller_name, u.avatar_url
+        COALESCE(pr.full_name, u.username) as seller_name,
+        pr.avatar_url
       FROM posts p
-      LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN users u ON p.user_id::text = u.user_id::text
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE p.category_id = $1
         AND p.price BETWEEN $2 AND $3
         AND p.post_id != $4
         AND p.status = 'active'
+      ${TEST_USER_EXCLUSION}
       ORDER BY
         ABS(p.price - $5) ASC,  -- Closest price first
         p.created_at DESC
@@ -2175,5 +2245,91 @@ exports.renewPost = async (req, res) => {
   } catch (err) {
     logError("[RenewPost] Error:", err.message);
     return res.status(500).json({ error: "Failed to renew post" });
+  }
+};
+
+/**
+ * GET /api/posts/user/:userId/sold
+ * Retrieve a user's sold posts with aggregate ratings per post.
+ */
+exports.getUserSoldPosts = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ error: "User ID required" });
+
+    const category = parseOptionalStringScalar(req.query.category);
+    const page = parsePositiveIntStrict(req.query.page, 1);
+    const limit = parsePositiveIntStrict(req.query.limit, 20, 100);
+    const offset = (page - 1) * limit;
+
+    const params = [String(userId)];
+    let categoryClause = "";
+    if (category) {
+      categoryClause = ` AND (p.category_id::text = $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
+      params.push(category);
+    }
+    params.push(limit, offset);
+
+    const result = await runQuery(
+      `
+      SELECT
+        p.post_id,
+        p.post_id AS id,
+        p.user_id,
+        p.title,
+        p.description,
+        p.price,
+        p.images,
+        p.location,
+        p.status,
+        p.created_at,
+        p.updated_at,
+        p.sold_at,
+        c.name AS category_name,
+        sc.name AS subcategory_name,
+        COALESCE(pr.full_name, u.username) AS sellerName,
+        u.username AS userName,
+        u.rating AS seller_rating,
+        COALESCE(p.views_count, p.views, 0) AS views_count,
+        COALESCE(p.likes, 0) AS likes,
+        COALESCE(p.shares, 0) AS shares,
+        COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS avg_rating,
+        COUNT(r.review_id) AS review_count
+      FROM posts p
+      LEFT JOIN users u ON p.user_id::text = u.user_id::text
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
+      LEFT JOIN reviews r ON p.post_id::text = r.post_id::text AND r.verified_purchase = true
+      WHERE p.user_id::text = $1::text
+        AND p.status = 'sold'
+        ${categoryClause}
+      GROUP BY
+        p.post_id, p.user_id, p.title, p.description, p.price, p.images,
+        p.location, p.status, p.created_at, p.updated_at, p.sold_at,
+        c.name, sc.name, pr.full_name, u.username, u.rating,
+        p.views_count, p.views, p.likes, p.shares
+      ORDER BY p.sold_at DESC NULLS LAST, p.updated_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+      `,
+      params
+    );
+
+    const posts = result.rows.map((row) => ({
+      ...row,
+      price: row.price !== null && row.price !== undefined ? Number(row.price) : null,
+      images: normalizeImagesPayload(row.images),
+      image_url:
+        normalizeUploadsPath(row.image_url) ||
+        (normalizeImagesPayload(row.images)[0]) ||
+        "/placeholder.svg",
+      avg_rating: Number(row.avg_rating) || 0,
+      review_count: Number(row.review_count) || 0,
+    }));
+
+    res.json({ posts, total: result.rows.length, page, limit });
+  } catch (err) {
+    logError("[getUserSoldPosts] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

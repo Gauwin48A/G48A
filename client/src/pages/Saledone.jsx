@@ -532,6 +532,69 @@ const SaleDone = () => {
   const saleRewards = completedSale?.rewards || null;
   const saleReceipt = completedSale?.receipt || null;
 
+  // ── Buyer Rating State ──
+  const [showRating, setShowRating] = useState(false);
+  const [buyerRating, setBuyerRating] = useState(0);
+  const [buyerRatingHover, setBuyerRatingHover] = useState(0);
+  const [buyerComment, setBuyerComment] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+
+  const handleSubmitBuyerRating = async () => {
+    if (buyerRating < 1 || buyerRating > 5) {
+      setRatingError(tr("select_rating", "Please select a rating between 1 and 5 stars"));
+      return;
+    }
+    // Try to get the sale ID from completedSale
+    const saleId = completedSale?.id || completedSale?.sale_id || completedSale?.transactionId || "";
+    if (!saleId) {
+      setRatingError(tr("sale_id_required", "Sale ID not found. Please try again."));
+      return;
+    }
+    setIsSubmittingRating(true);
+    setRatingError("");
+    try {
+      // Try primary endpoint /api/sales/:id/rate first; fallback to the transaction-based path
+      let response;
+      try {
+        response = await api.post(`/sales/${saleId}/rate`, {
+          rating: buyerRating,
+          comment: buyerComment.trim() || "",
+        });
+      } catch (err) {
+        // Fallback: try /api/transactions/:id/rate
+        if (err?.response?.status === 404) {
+          response = await api.post(`/transactions/${saleId}/rate`, {
+            rating: buyerRating,
+            comment: buyerComment.trim() || "",
+          });
+        } else {
+          throw err;
+        }
+      }
+      if (response?.data?.success) {
+        setRatingSubmitted(true);
+        toast({
+          title: tr("rating_submitted", "Rating Submitted"),
+          description: tr("rating_submitted_desc", "Thank you for your feedback! Your rating helps build trust in the community."),
+        });
+      } else {
+        setRatingError(response?.data?.error || tr("rating_failed", "Failed to submit rating"));
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || tr("rating_error", "Something went wrong");
+      setRatingError(msg);
+      toast({
+        title: tr("rating_failed_title", "Rating Failed"),
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+
   if (completedSale) {
     return (
       <div className="mhub-page-saledone min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-[#0b1220] dark:via-[#102a29] dark:to-[#0b1220] relative overflow-hidden dark:bg-gradient-to-br">
@@ -810,6 +873,147 @@ const SaleDone = () => {
                 </div>
               )}
 
+              {/* ── Buyer Rating Section (only when NOT submitted yet) ── */}
+              {completedSale && !ratingSubmitted && (
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 mb-6 text-left dark:border-amber-600/40 dark:bg-amber-950/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                      {tr("rate_your_purchase", "Rate Your Purchase")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowRating(!showRating)}
+                      className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                    >
+                      {showRating ? tr("cancel", "Cancel") : tr("rate_now", "Rate Now")}
+                    </button>
+                  </div>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">
+                    {tr("buyer_only_rating", "Only the buyer of this transaction can rate the seller.")}
+                  </p>
+
+                  {showRating && (
+                    <div className="space-y-4">
+                      {/* Star Rating Selector */}
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                          {tr("your_rating", "Your Rating")}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setBuyerRating(star)}
+                              onMouseEnter={() => setBuyerRatingHover(star)}
+                              onMouseLeave={() => setBuyerRatingHover(0)}
+                              className="p-1 transition-transform hover:scale-110 focus:outline-none"
+                              aria-label={`${star} star`}
+                            >
+                              <Star
+                                className={`w-8 h-8 ${
+                                  star <= (buyerRatingHover || buyerRating)
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300 dark:text-gray-600"
+                                } transition-colors`}
+                              />
+                            </button>
+                          ))}
+                          {buyerRating > 0 && (
+                            <span className="ml-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+                              {buyerRating}/5
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Comment Input */}
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                          {tr("your_review", "Your Review (Optional)")}
+                        </p>
+                        <textarea
+                          value={buyerComment}
+                          onChange={(e) => setBuyerComment(e.target.value)}
+                          placeholder={tr("write_review_placeholder", "Share your experience with this seller...")}
+                          className="w-full h-20 rounded-xl border border-amber-200 dark:border-amber-700 bg-white dark:bg-slate-800 p-3 text-sm resize-none focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+                          maxLength={500}
+                        />
+                        <p className="text-xs text-gray-400 mt-1 text-right">
+                          {buyerComment.length}/500
+                        </p>
+                      </div>
+
+                      {/* Error Message */}
+                      {ratingError && (
+                        <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                          {ratingError}
+                        </p>
+                      )}
+
+                      {/* Submit Button */}
+                      <Button
+                        type="button"
+                        onClick={handleSubmitBuyerRating}
+                        disabled={isSubmittingRating || buyerRating === 0}
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-md disabled:opacity-50"
+                      >
+                        {isSubmittingRating ? (
+                          <span className="flex items-center gap-2">
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            {tr("submitting", "Submitting...")}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <Star className="w-4 h-4" />
+                            {tr("submit_rating", "Submit Rating")}
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Rating Confirmed State ── */}
+              {ratingSubmitted && (
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 mb-6 text-left dark:border-emerald-600/40 dark:bg-emerald-950/20">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                        {tr("rating_confirmed_title", "Rating Submitted! ✓")}
+                      </p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                        {tr("rating_confirmed_desc", "Your review helps the community make informed decisions.")}
+                      </p>
+                    </div>
+                  </div>
+                  {buyerRating > 0 && (
+                    <div className="flex items-center gap-1 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= buyerRating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300 dark:text-gray-600"
+                          }`}
+                        />
+                      ))}
+                      <span className="ml-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                        {buyerRating}/5
+                      </span>
+                    </div>
+                  )}
+                  {buyerComment && (
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1 italic">
+                      &ldquo;{buyerComment}&rdquo;
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Next steps */}
               <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 text-left mb-8 dark:border-emerald-600/40 dark:bg-emerald-950/20">
                 <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 mb-3">
@@ -818,7 +1022,7 @@ const SaleDone = () => {
                 <div className="space-y-2">
                   {[
                     { icon: Home, text: tr("next_view_sold", "View your post in My Home → Sold tab") },
-                    { icon: Star, text: tr("next_leave_review", "Leave a review for the buyer") },
+                    { icon: Star, text: tr("next_leave_review", "Rate the seller for this transaction") },
                     { icon: TrendingUp, text: tr("next_list_more", "List more items to grow your sales") },
                   ].map(({ icon: Icon, text }, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
@@ -966,102 +1170,56 @@ const SaleDone = () => {
           </CardHeader>
 
           <CardContent className="p-6 space-y-5">
-            {/* -- Testing Guide -- */}
-            <details className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden dark:border-blue-600/40 dark:bg-blue-950/20">
-              <summary className="flex items-center gap-2 cursor-pointer px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200 select-none">
-                <Info className="w-4 h-4 shrink-0" />
-                {tr(
-                  "testing_guide_title",
-                  "How to test this page — click to expand",
-                )}
-              </summary>
-              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-200">
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
-                  <p className="font-bold">
-                    {tr("sale_test_step1_title", "Step 1 — Find your Post ID")}
-                  </p>
-                  <p>
-                    {tr("sale_test_step1_prefix", "Go to")}{" "}
-                    <strong>{tr("my_home", "My Home")}</strong>{" "}
-                    {tr(
-                      "sale_test_step1_middle",
-                      "— tap any of your active listings — the URL ends in",
-                    )}{" "}
-                    <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded dark:bg-blue-950/20">
-                      /post/&#123;post_id&#125;
-                    </code>
-                    . {tr("sale_test_step1_suffix", "Copy that number.")}
-                  </p>
+            {/* -- Visual Transaction Flow Guide -- */}
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-800 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-900 dark:text-blue-100">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  {tr("how_deals_work_title", "How 1-Tap Deals Work — 4 Simple Steps")}
                 </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
-                  <p className="font-bold">
-                    {tr(
-                      "sale_test_step2_title",
-                      "Step 2 — Find the Buyer's User ID",
-                    )}
-                  </p>
-                  <p>
-                    {tr("sale_test_step2_prefix", "Ask the buyer to open")}{" "}
-                    <strong>
-                      {tr(
-                        "profile_settings_account_info",
-                        "Profile — Settings — Account Info",
-                      )}
-                    </strong>{" "}
-                    {tr(
-                      "sale_test_step2_suffix",
-                      "and share their User ID. In dev mode you can also check the browser console after login.",
-                    )}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
-                  <p className="font-bold">
-                    {tr("sale_test_step3_title", "Step 3 — Seller initiates")}
-                  </p>
-                  <p>
-                    {tr(
-                      "sale_test_step3_prefix",
-                      "Enter Post ID, Buyer User ID and agreed sale amount, then tap",
-                    )}{" "}
-                    <strong>{tr("initiate_sale", "Initiate Sale")}</strong>.{" "}
-                    {tr(
-                      "sale_test_step3_suffix",
-                      "A Transaction ID and OTP will appear — share both with the buyer.",
-                    )}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
-                  <p className="font-bold">
-                    {tr("sale_test_step4_title", "Step 4 — Buyer confirms")}
-                  </p>
-                  <p>
-                    {tr(
-                      "sale_test_step4_prefix",
-                      "Switch to the",
-                    )}{" "}
-                    <strong>{tr("im_the_buyer", "I am the Buyer")}</strong>{" "}
-                    {tr(
-                      "sale_test_step4_middle",
-                      "tab (or the buyer opens this page). Enter the Transaction ID and OTP, then tap",
-                    )}{" "}
-                    <strong>
-                      {tr("confirm_purchase", "Confirm Purchase")}
-                    </strong>
-                    .{" "}
-                    {tr(
-                      "sale_test_step4_suffix",
-                      "The post moves to Sold automatically.",
-                    )}
-                  </p>
-                </div>
-                <p className="text-xs text-blue-600 dark:text-blue-300 pt-1">
-                  {tr(
-                    "sale_test_otp_expiry",
-                    "OTPs expire in 24 hours. If expired, seller must re-initiate.",
-                  )}
-                </p>
+                <span className="text-xs font-semibold text-blue-600 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2.5 py-1 rounded-full">
+                  Instant & Secure
+                </span>
               </div>
-            </details>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 p-3 flex flex-col justify-between">
+                  <div className="font-extrabold text-blue-600 dark:text-blue-400 mb-1 flex items-center justify-between">
+                    <span>1. Agree Price</span>
+                    <span className="text-sm">🤝</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px]">
+                    Buyer & seller agree on final item price via chat or phone.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 p-3 flex flex-col justify-between">
+                  <div className="font-extrabold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center justify-between">
+                    <span>2. Record Deal</span>
+                    <span className="text-sm">📝</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px]">
+                    Seller enters Post ID & agreed price, then taps <strong>Record Deal</strong>.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 p-3 flex flex-col justify-between">
+                  <div className="font-extrabold text-amber-600 dark:text-amber-400 mb-1 flex items-center justify-between">
+                    <span>3. Share Code</span>
+                    <span className="text-sm">🔑</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px]">
+                    A 6-digit verification code is generated — seller shares code with buyer.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 p-3 flex flex-col justify-between">
+                  <div className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center justify-between">
+                    <span>4. Confirm & Earn</span>
+                    <span className="text-sm">🎉</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px]">
+                    Buyer enters code → Deal complete, post marked sold + both earn reward coins!
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <Tabs
               value={activeTab}

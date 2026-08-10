@@ -437,7 +437,7 @@ data class GetVerifiedState(
 
 @HiltViewModel
 class GetVerifiedViewModel @Inject constructor(
-    private val authRepo: com.zaruda.app.data.repository.AuthRepository,
+    private val kycRepo: KycRepository,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(GetVerifiedState())
     val state: kotlinx.coroutines.flow.StateFlow<GetVerifiedState> = _state.asStateFlow()
@@ -449,43 +449,71 @@ class GetVerifiedViewModel @Inject constructor(
     fun setAddress(v: String) { _state.value = _state.value.copy(address = v) }
 
     fun requestOtp() {
-        if (_state.value.aadhaar.length != 12) {
-            _state.value = _state.value.copy(error = "Enter a valid 12-digit Aadhaar number"); return
+        val s = _state.value
+        if (s.aadhaar.length != 12) {
+            _state.value = s.copy(error = "Enter a valid 12-digit Aadhaar number"); return
         }
-        _state.value = _state.value.copy(loading = true, error = null)
+        _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            kotlinx.coroutines.delay(1200)
-            // Simulate: real impl calls ZarudaApi.startAadhaarOtp(aadhaar)
-            val txnId = "TXN-${System.currentTimeMillis()}"
-            _state.value = _state.value.copy(loading = false, step = 1, txnId = txnId)
+            when (val r = safeCall {
+                kycRepo.aadhaarSendOtp(
+                    com.zaruda.app.data.remote.dto.AadhaarSendOtpRequest(aadhaarNumber = s.aadhaar)
+                )
+            }) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    loading = false,
+                    step = 1,
+                    txnId = r.data.txnId ?: "",
+                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    loading = false,
+                    error = r.error.message ?: "Failed to send OTP",
+                )
+            }
         }
     }
 
     fun verifyOtp() {
-        if (_state.value.otp.length != 6) {
-            _state.value = _state.value.copy(error = "Enter the 6-digit OTP"); return
+        val s = _state.value
+        if (s.otp.length != 6) {
+            _state.value = s.copy(error = "Enter the 6-digit OTP"); return
         }
-        _state.value = _state.value.copy(loading = true, error = null)
+        _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            kotlinx.coroutines.delay(1000)
-            _state.value = _state.value.copy(loading = false, step = 2)
+            when (val r = safeCall {
+                kycRepo.aadhaarVerifyOtp(
+                    com.zaruda.app.data.remote.dto.AadhaarVerifyOtpRequest(
+                        aadhaarNumber = s.aadhaar,
+                        otp = s.otp,
+                        txnId = s.txnId,
+                    )
+                )
+            }) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, step = 2)
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    loading = false,
+                    error = r.error.message ?: "OTP verification failed",
+                )
+            }
         }
     }
 
     fun submitDetails() {
         val st = _state.value
         if (st.fullName.isBlank() || st.dob.isBlank()) {
-            _state.value = _state.value.copy(error = "Full name and date of birth are required"); return
+            _state.value = st.copy(error = "Full name and date of birth are required"); return
         }
-        _state.value = _state.value.copy(loading = true, error = null)
-        viewModelScope.launch {
-            kotlinx.coroutines.delay(1500)
-            // Real impl: call ZarudaApi.verifyAadhaarOtp(txnId, otp, fullName, dob, address)
-            _state.value = _state.value.copy(loading = false, step = 3, verified = true)
-        }
+        // Identity was already verified server-side when the OTP was confirmed;
+        // this step only captures the confirmation details (web parity).
+        _state.value = st.copy(step = 3, verified = true)
     }
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
+
+    private suspend fun <T> safeCall(block: suspend () -> ApiResult<T>): ApiResult<T> {
+        return try { block() }
+        catch (e: Exception) { ApiResult.Failure(com.zaruda.app.core.ApiError.Unknown(e.message ?: "Unknown error")) }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

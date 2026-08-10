@@ -249,7 +249,7 @@ const getPostPerformance = async (req, res) => {
                 COALESCE(ic.inquiry_count, 0) as inquiry_count,
                 COALESCE(oc.offer_count, 0) as offer_count
             FROM user_posts up
-            LEFT JOIN categories c ON c.category_id = up.category_id
+            LEFT JOIN categories c ON c.category_id::text = up.category_id::text
             LEFT JOIN inquiry_counts ic ON ic.post_id = up.post_id
             LEFT JOIN offer_counts oc ON oc.post_id = up.post_id
             ORDER BY up.views_count DESC
@@ -297,7 +297,7 @@ const getCategoryBreakdown = async (req, res) => {
                 COALESCE(SUM(p.views_count), 0)::bigint as total_views,
                 COUNT(CASE WHEN p.status = 'sold' THEN 1 END)::int as sold_count
             FROM posts p
-            LEFT JOIN categories c ON c.category_id = p.category_id
+            LEFT JOIN categories c ON c.category_id::text = p.category_id::text
             WHERE p.user_id::text = $1
             GROUP BY c.category_id, c.name
             ORDER BY post_count DESC

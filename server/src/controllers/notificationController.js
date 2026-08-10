@@ -2,6 +2,81 @@ const pool = require("../config/db");
 const logger = require("../utils/logger");
 const { enqueueNotification } = require("../services/notificationQueue");
 
+/**
+ * All notification preference keys the web + app clients may toggle.
+ * (Union of the 017 web schema keys and the 050 granular-push keys.)
+ */
+const NOTIFICATION_PREF_KEYS = [
+  "push_enabled",
+  "email_enabled",
+  "sms_enabled",
+  "likes_enabled",
+  "comments_enabled",
+  "follows_enabled",
+  "mentions_enabled",
+  "order_updates_enabled",
+  "marketing_enabled",
+  "security_enabled",
+  "system_enabled",
+  "price_drop_enabled",
+  "message_enabled",
+];
+
+const DEFAULT_PREFERENCES = {
+  push_enabled: true,
+  email_enabled: true,
+  sms_enabled: false,
+  likes_enabled: true,
+  comments_enabled: true,
+  follows_enabled: true,
+  mentions_enabled: true,
+  order_updates_enabled: true,
+  marketing_enabled: true,
+  security_enabled: true,
+  system_enabled: true,
+  price_drop_enabled: true,
+  message_enabled: true,
+};
+
+/**
+ * Self-heal the notification_preferences table so both schema shapes
+ * (017 web shape + 050 granular-push shape) coexist, and user_id is unique.
+ * Mirrors the ensure*Column helpers used elsewhere in the codebase.
+ */
+async function ensureNotificationPreferenceSchema() {
+  const columnStatements = NOTIFICATION_PREF_KEYS.map(
+    (key) => `ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS ${key} BOOLEAN DEFAULT true`
+  );
+  for (const sql of columnStatements) {
+    try {
+      await pool.query(sql);
+    } catch (err) {
+      logger.warn(`[NotificationPrefs] Column ensure failed (${sql.split(" ")[4]}):`, err.message);
+    }
+  }
+  // Ensure user_id is unique so the merge-based upsert is deterministic.
+  // Postgres has no ADD CONSTRAINT IF NOT EXISTS, so we probe information_schema
+  // first and only attempt the constraint when no unique index/constraint exists.
+  try {
+    const uniqCheck = await pool.query(
+      `SELECT 1 FROM pg_indexes WHERE tablename = 'notification_preferences' AND indexdef ILIKE '%UNIQUE%' LIMIT 1`
+    );
+    if (uniqCheck.rows.length === 0) {
+      try {
+        await pool.query(
+          `ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_user_id_key UNIQUE (user_id)`
+        );
+        logger.info("[NotificationPrefs] Added UNIQUE(user_id) constraint");
+      } catch (err) {
+        // Likely duplicate rows from a legacy category-based schema.
+        logger.warn("[NotificationPrefs] UNIQUE(user_id) add failed — duplicate rows may exist:", err.message);
+      }
+    }
+  } catch (err) {
+    logger.warn("[NotificationPrefs] Unique-index probe failed:", err.message);
+  }
+}
+
 function getAuthUser(req, res) {
   if (!req.user) {
     res.status(401).json({ error: "Authentication required" });
@@ -28,18 +103,16 @@ async function registerFcmToken(req, res) {
     const { token, device_type = 'android', device_name = null, app_version = null } = req.body;
     if (!token) return res.status(400).json({ error: "FCM token is required" });
 
+    // Schema: device_tokens(user_id, fcm_token, platform, is_active, ...)
     await pool.query(
-      `INSERT INTO device_tokens (user_id, token, device_type, device_name, app_version, is_active, last_active_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
-       ON CONFLICT (token)
+      `INSERT INTO device_tokens (user_id, fcm_token, platform, is_active, updated_at)
+       VALUES ($1, $2, $3, true, NOW())
+       ON CONFLICT (fcm_token)
        DO UPDATE SET user_id = EXCLUDED.user_id,
-                     device_type = EXCLUDED.device_type,
-                     device_name = EXCLUDED.device_name,
-                     app_version = EXCLUDED.app_version,
+                     platform = EXCLUDED.platform,
                      is_active = true,
-                     last_active_at = NOW(),
                      updated_at = NOW()`,
-      [userId, token, device_type, device_name, app_version]
+      [userId, token, device_type]
     );
 
     return res.json({ success: true, message: "FCM token registered successfully" });
@@ -61,7 +134,7 @@ async function unregisterFcmToken(req, res) {
     if (!token) return res.status(400).json({ error: "Token is required" });
 
     await pool.query(
-      "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE token = $1 AND user_id = $2",
+      "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE fcm_token = $1 AND user_id = $2",
       [token, userId]
     );
 
@@ -173,32 +246,23 @@ async function getPreferences(req, res) {
     const userId = getAuthUser(req, res);
     if (!userId) return;
 
+    await ensureNotificationPreferenceSchema();
+
     let result = await pool.query(
-      "SELECT * FROM notification_preferences WHERE user_id = $1",
+      "SELECT * FROM notification_preferences WHERE user_id = $1 LIMIT 1",
       [userId]
     );
 
     if (result.rows.length === 0) {
       return res.json({
         success: true,
-        preferences: {
-          user_id: userId,
-          push_enabled: true,
-          email_enabled: true,
-          sms_enabled: false,
-          likes_enabled: true,
-          comments_enabled: true,
-          follows_enabled: true,
-          mentions_enabled: true,
-          order_updates_enabled: true,
-          marketing_enabled: true,
-          security_enabled: true,
-          system_enabled: true
-        }
+        preferences: { user_id: userId, ...DEFAULT_PREFERENCES }
       });
     }
 
-    return res.json({ success: true, preferences: result.rows[0] });
+    // Merge stored row with defaults so every key the client toggles is present.
+    const preferences = { ...DEFAULT_PREFERENCES, ...result.rows[0] };
+    return res.json({ success: true, preferences });
   } catch (err) {
     logger.error("[NotificationController] Error fetching preferences:", err);
     return res.status(500).json({ error: "Failed to fetch preferences" });
@@ -207,51 +271,58 @@ async function getPreferences(req, res) {
 
 /**
  * Update user notification preference toggles
+ *
+ * Merge-based: only the keys the client sends are changed; every other toggle
+ * keeps its current stored value (or its default). This prevents toggling one
+ * switch from silently resetting the rest to true.
  */
 async function updatePreferences(req, res) {
   try {
     const userId = getAuthUser(req, res);
     if (!userId) return;
 
-    const {
-      push_enabled = true,
-      email_enabled = true,
-      sms_enabled = false,
-      likes_enabled = true,
-      comments_enabled = true,
-      follows_enabled = true,
-      mentions_enabled = true,
-      order_updates_enabled = true,
-      marketing_enabled = true,
-      security_enabled = true,
-      system_enabled = true
-    } = req.body;
+    await ensureNotificationPreferenceSchema();
+
+    const body = req.body || {};
+    const incoming = {};
+    for (const key of NOTIFICATION_PREF_KEYS) {
+      if (typeof body[key] === "boolean") {
+        incoming[key] = body[key];
+      }
+    }
+
+    // Load current stored preferences (fall back to defaults when absent).
+    const currentRes = await pool.query(
+      "SELECT * FROM notification_preferences WHERE user_id = $1 LIMIT 1",
+      [userId]
+    );
+    const merged = {
+      ...DEFAULT_PREFERENCES,
+      ...(currentRes.rows[0] || {}),
+      ...incoming,
+    };
+
+    // Build parameterized upsert over the full key set.
+    const keys = NOTIFICATION_PREF_KEYS;
+    const values = keys.map((key) => merged[key]);
+    const insertCols = ["user_id", ...keys].join(", ");
+    const insertPlaceholders = ["$1", ...keys.map((_, i) => `$${i + 2}`)].join(", ");
+    const updateSet = keys
+      .map((key, i) => `${key} = EXCLUDED.${key}`)
+      .concat("updated_at = NOW()")
+      .join(", ");
 
     const result = await pool.query(
-      `INSERT INTO notification_preferences (
-        user_id, push_enabled, email_enabled, sms_enabled, likes_enabled,
-        comments_enabled, follows_enabled, mentions_enabled, order_updates_enabled,
-        marketing_enabled, security_enabled, system_enabled, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+      `INSERT INTO notification_preferences (${insertCols})
+       VALUES (${insertPlaceholders})
        ON CONFLICT (user_id)
-       DO UPDATE SET
-        push_enabled = EXCLUDED.push_enabled,
-        email_enabled = EXCLUDED.email_enabled,
-        sms_enabled = EXCLUDED.sms_enabled,
-        likes_enabled = EXCLUDED.likes_enabled,
-        comments_enabled = EXCLUDED.comments_enabled,
-        follows_enabled = EXCLUDED.follows_enabled,
-        mentions_enabled = EXCLUDED.mentions_enabled,
-        order_updates_enabled = EXCLUDED.order_updates_enabled,
-        marketing_enabled = EXCLUDED.marketing_enabled,
-        security_enabled = EXCLUDED.security_enabled,
-        system_enabled = EXCLUDED.system_enabled,
-        updated_at = NOW()
+       DO UPDATE SET ${updateSet}
        RETURNING *`,
-      [userId, push_enabled, email_enabled, sms_enabled, likes_enabled, comments_enabled, follows_enabled, mentions_enabled, order_updates_enabled, marketing_enabled, security_enabled, system_enabled]
+      [userId, ...values]
     );
 
-    return res.json({ success: true, preferences: result.rows[0] });
+    const preferences = { user_id: userId, ...(result.rows[0] || merged) };
+    return res.json({ success: true, preferences });
   } catch (err) {
     logger.error("[NotificationController] Error updating preferences:", err);
     return res.status(500).json({ error: "Failed to update preferences" });
@@ -271,8 +342,8 @@ async function sendNotification(req, res) {
     const msgContent = message || body;
 
     const dbRes = await pool.query(
-      `INSERT INTO notifications (receiver_id, sender_id, type, title, message, image_url, deep_link, data, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+      `INSERT INTO notifications (receiver_id, user_id, sender_id, type, category, title, message, image_url, deep_link, data, status)
+       VALUES ($1, $1, $2, $3, $3, $4, $5, $6, $7, $8, 'pending')
        RETURNING notification_id, created_at`,
       [receiver_id, sender_id, type, title, msgContent, image_url || null, deep_link || null, JSON.stringify(data)]
     );

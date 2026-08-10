@@ -2,6 +2,7 @@ const { Worker } = require("bullmq");
 const pool = require("../config/db");
 const logger = require("../utils/logger");
 const { sendFcmMulticast } = require("../services/fcmAdminService");
+const { sendToMultiple: sendWebPush } = require("../services/fcm");
 
 const redisHost = process.env.REDIS_HOST || "127.0.0.1";
 const redisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
@@ -49,6 +50,9 @@ async function isNotificationAllowed(userId, type) {
   }
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isUuid = (id) => typeof id === "string" && UUID_REGEX.test(id);
+
 let notificationWorker = null;
 
 try {
@@ -60,7 +64,7 @@ try {
       logger.info(`[NotificationWorker] Processing job ${job.id} for notification #${notification_id} to user #${receiver_id}`);
 
       // 1. Update status to 'processing'
-      if (notification_id) {
+      if (isUuid(notification_id)) {
         await pool.query(
           "UPDATE notifications SET status = 'processing', delivery_attempts = delivery_attempts + 1, updated_at = NOW() WHERE notification_id = $1",
           [notification_id]
@@ -71,7 +75,7 @@ try {
       const allowed = await isNotificationAllowed(receiver_id, type);
       if (!allowed) {
         logger.info(`[NotificationWorker] Push skipped for user #${receiver_id} - notification type '${type}' disabled in preferences`);
-        if (notification_id) {
+        if (isUuid(notification_id)) {
           await pool.query(
             "UPDATE notifications SET status = 'sent', updated_at = NOW() WHERE notification_id = $1",
             [notification_id]
@@ -81,14 +85,22 @@ try {
       }
 
       // 3. Fetch active FCM tokens for recipient
-      const tokenRes = await pool.query(
-        "SELECT token FROM device_tokens WHERE user_id = $1 AND is_active = true",
+      let tokenRes;
+    try {
+      tokenRes = await pool.query(
+        "SELECT fcm_token AS token, COALESCE(platform, 'android') AS device_type FROM device_tokens WHERE user_id = $1 AND is_active = true",
         [receiver_id]
-      );
+      );      } catch (err) {
+        // Legacy schema without a platform column — fall back to the old behavior.
+        tokenRes = await pool.query(
+          "SELECT fcm_token AS token FROM device_tokens WHERE user_id = $1 AND is_active = true",
+          [receiver_id]
+        );
+      }
 
       if (tokenRes.rows.length === 0) {
         logger.info(`[NotificationWorker] No active FCM device tokens found for user #${receiver_id}`);
-        if (notification_id) {
+        if (isUuid(notification_id)) {
           await pool.query(
             "UPDATE notifications SET status = 'sent', updated_at = NOW() WHERE notification_id = $1",
             [notification_id]
@@ -97,38 +109,58 @@ try {
         return { status: "no_active_devices" };
       }
 
-      const tokens = tokenRes.rows.map(r => r.token);
+      const androidTokens = tokenRes.rows.filter(r => r.device_type !== "web").map(r => r.token);
+      const webTokens = tokenRes.rows.filter(r => r.device_type === "web").map(r => r.token);
 
-      // 4. Send FCM Push Notification via FCM Admin SDK
-      const pushResult = await sendFcmMulticast(tokens, {
-        notification_id,
-        type,
-        title,
-        message: message || body,
-        image_url: image_url || image,
-        deep_link,
-        data
-      });
+      // 4. Send Android pushes via Firebase Admin FCM (FCM device tokens only)
+      const pushResult = androidTokens.length
+        ? await sendFcmMulticast(androidTokens, {
+            notification_id,
+            type,
+            title,
+            message: message || body,
+            image_url: image_url || image,
+            deep_link,
+            data
+          })
+        : { success: true, successCount: 0, invalidTokens: [] };
+
+      // 4b. Send web pushes via VAPID web-push (subscription JSONs are NOT FCM tokens)
+      let webPushResult = { successCount: 0 };
+      if (webTokens.length) {
+        try {
+          webPushResult = await sendWebPush(webTokens, title, message || body, {
+            notification_id: String(notification_id || ""),
+            type: type || "system",
+            deep_link: deep_link || "",
+            image_url: image_url || image || "",
+            ...(data || {})
+          });
+        } catch (err) {
+          logger.warn(`[NotificationWorker] Web push send failed for user #${receiver_id}:`, err.message);
+        }
+      }
 
       // Deactivate invalid/unregistered tokens if any
       if (pushResult.invalidTokens && pushResult.invalidTokens.length > 0) {
         await pool.query(
-          "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE token = ANY($1::text[])",
+          "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE fcm_token = ANY($1::text[])",
           [pushResult.invalidTokens]
         );
         logger.info(`[NotificationWorker] Deactivated ${pushResult.invalidTokens.length} stale FCM device tokens`);
       }
 
       // 5. Update notification record status
-      if (notification_id) {
-        const finalStatus = pushResult.successCount > 0 || pushResult.reason === 'fcm_not_configured' ? 'sent' : 'failed';
+      if (isUuid(notification_id)) {
+        const sentAny = pushResult.successCount > 0 || (webPushResult && webPushResult.successCount > 0);
+        const finalStatus = sentAny || pushResult.reason === 'fcm_not_configured' ? 'sent' : 'failed';
         await pool.query(
           "UPDATE notifications SET status = $1, updated_at = NOW() WHERE notification_id = $2",
           [finalStatus, notification_id]
         );
       }
 
-      return { status: "completed", successCount: pushResult.successCount, totalCount: tokens.length };
+      return { status: "completed", successCount: pushResult.successCount, totalCount: tokenRes.rows.length };
     },
     { connection, concurrency: 10 }
   );
@@ -139,7 +171,7 @@ try {
 
   notificationWorker.on("failed", async (job, err) => {
     logger.error(`[NotificationWorker] Job ${job?.id} failed on attempt ${job?.attemptsMade}:`, err.message);
-    if (job?.data?.notification_id && job?.attemptsMade >= (job?.opts?.attempts || 5)) {
+    if (isUuid(job?.data?.notification_id) && job?.attemptsMade >= (job?.opts?.attempts || 5)) {
       try {
         await pool.query(
           "UPDATE notifications SET status = 'failed', updated_at = NOW() WHERE notification_id = $1",

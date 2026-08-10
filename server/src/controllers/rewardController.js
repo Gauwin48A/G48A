@@ -133,19 +133,16 @@ exports.getMyRewards = async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Authentication required" });
 
   try {
-    await ensureRewardLogTable();
-    const hasRewardLogId = await hasRewardLogIdColumn();
     const normalizedUserId = await resolveCanonicalUserId(userId);
 
-    const [rewardsRes, logRes] = await Promise.all([
+    const [userRes, logRes] = await Promise.all([
       runQuery(
-        "SELECT points, tier FROM rewards WHERE user_id::text = $1",
+        "SELECT coins FROM users WHERE user_id::text = $1",
         [normalizedUserId]
       ),
       runQuery(
-        `SELECT ${getRewardLogIdSelectExpression(hasRewardLogId)},
-                action, points, description, created_at
-         FROM reward_log
+        `SELECT id, type AS action, amount AS points, description, created_at
+         FROM coin_transactions
          WHERE user_id::text = $1
          ORDER BY created_at DESC
          LIMIT 20`,
@@ -153,13 +150,16 @@ exports.getMyRewards = async (req, res) => {
       ),
     ]);
 
-    const rewards = rewardsRes.rows[0] || { points: 0, tier: "Bronze" };
-    const history = logRes.rows;
+    const coins = Number(userRes.rows[0]?.coins || 0);
+    let tier = "Bronze";
+    if (coins >= 5000) tier = "Platinum";
+    else if (coins >= 2000) tier = "Gold";
+    else if (coins >= 500) tier = "Silver";
 
     res.json({
-      points: rewards.points || 0,
-      tier: rewards.tier || "Bronze",
-      history,
+      points: coins,
+      tier: tier,
+      history: logRes.rows,
     });
   } catch (err) {
     logger.error("Get rewards error:", err);
@@ -168,90 +168,8 @@ exports.getMyRewards = async (req, res) => {
 };
 
 /**
- * POST /rewards/redeem — Redeem reward points for post credits.
- * Points must be a positive multiple of 100. Supports idempotency
- * keys to guard against duplicate redemptions.
- * @param {import("express").Request} req
- * @param {import("express").Response} res
+ * POST /rewards/redeem — Redeems coins (deprecated stub, replaced by coins controller redeems)
  */
 exports.redeemRewards = async (req, res) => {
-  const userId = getAuthUserId(req);
-  if (!userId) return res.status(401).json({ error: "Authentication required" });
-
-  const requestedPoints = parsePositiveInt(req.body?.points, 0);
-  if (!requestedPoints) {
-    return res.status(400).json({ error: "Valid points amount required" });
-  }
-  if (requestedPoints % 100 !== 0) {
-    return res.status(400).json({ error: "Redemption points must be in multiples of 100" });
-  }
-
-  try {
-    const normalizedUserId = await resolveCanonicalUserId(userId);
-    const credits = Math.floor(requestedPoints / 100);
-
-    const idempotencyKey = parseOptionalString(
-      (typeof req.get === "function" ? req.get("x-idempotency-key") : null) ||
-        req.body?.idempotencyKey ||
-        req.body?.requestId
-    );
-
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-
-      const rewardChange = await applyRewardDeltaInTransaction({
-        client,
-        userId: normalizedUserId,
-        pointsDelta: -requestedPoints,
-        action: "redemption",
-        description: `Points redeemed for ${credits} post credits`,
-        idempotencyKey,
-      });
-
-      if (rewardChange.applied && credits > 0) {
-        await client.query({
-          text: "UPDATE users SET post_credits = post_credits + $1 WHERE user_id::text = $2",
-          values: [credits, normalizedUserId],
-          query_timeout: DB_QUERY_TIMEOUT_MS,
-        });
-      }
-
-      await client.query("COMMIT");
-
-      if (rewardChange.applied) {
-        afterCommitRewardMutation(rewardChange);
-      }
-
-      const duplicateMessage = "Redemption request already processed";
-      res.json({
-        message: rewardChange.duplicate
-          ? duplicateMessage
-          : `Redeemed ${requestedPoints} points for ${credits} post credits`,
-        creditsGranted: credits,
-        remainingPoints: rewardChange.pointsAfter,
-        duplicate: rewardChange.duplicate,
-      });
-    } catch (txErr) {
-      try {
-        await client.query("ROLLBACK");
-      } catch {
-        /* rollback best-effort */
-      }
-      throw txErr;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    if (err instanceof InsufficientPointsError) {
-      return res.status(400).json({
-        error: `Insufficient points. Available: ${err.availablePoints}`,
-      });
-    }
-    if (err instanceof InvalidRewardInputError) {
-      return res.status(400).json({ error: "Invalid reward input" });
-    }
-    logger.error("Redeem error:", err);
-    return res.status(500).json({ error: "Failed to redeem rewards" });
-  }
+  res.status(400).json({ error: "Points redemption is deprecated. Please spend your coins directly in the MHub Store." });
 };

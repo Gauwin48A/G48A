@@ -123,7 +123,7 @@ exports.getListingsPerformance = async (req, res) => {
         p.created_at, p.expires_at,
         c.name AS category_name
       FROM posts p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
       WHERE p.user_id::text = $1
         AND p.created_at > NOW() - $2::interval
       ORDER BY COALESCE(p.views_count, 0) DESC
@@ -219,7 +219,7 @@ exports.exportCSV = async (req, res) => {
         c.name AS category,
         p.created_at, p.expires_at
       FROM posts p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
       WHERE p.user_id::text = $1
         AND p.created_at > NOW() - $2::interval
       ORDER BY p.created_at DESC

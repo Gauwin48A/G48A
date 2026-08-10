@@ -166,7 +166,8 @@ fun ProductListingScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
-    val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
+    // Wishlist state — real, persisted via the ViewModel (Room + SharedExploreStore + server)
+    val wishlistedIds by viewModel.wishlistedIds.collectAsState()
     val compareItems = vmState.compareItems
     var showCompareDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -528,14 +529,10 @@ fun ProductListingScreen(
                             Box {
                                 EnhancedProductCard(
                                     product = product,
-                                    isWishlisted = wishlistedIds.value.contains(product.id),
+                                    isWishlisted = wishlistedIds.contains(product.id),
                                     onTap = { onOpenProduct(product.id) },
-                                    onAddToCart = { /* cart via parent */ },
-                                    onToggleWishlist = {
-                                        wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
-                                            wishlistedIds.value - product.id
-                                        else wishlistedIds.value + product.id
-                                    },
+                                    onAddToCart = { viewModel.addToCart(product) },
+                                    onToggleWishlist = { viewModel.toggleWishlist(product) },
                                 )
                                 // Compare checkbox overlay
                                 Surface(

@@ -17,6 +17,7 @@ const logger = require("../utils/logger");
 const { runQuery, getAuthUserId, isAdmin } = require("../utils/dbHelpers");
 const { parseNumberOrNull, parseBoundedInt } = require("../utils/parseHelpers");
 const { attachTrustToPosts } = require("../services/trustBadgeService");
+const { emitNotification } = require("../services/notificationEmitter");
 
 const MAX_SEARCH_RADIUS_KM = 500;
 const DEFAULT_SEARCH_LIMIT = 20;
@@ -34,11 +35,19 @@ function requireAdminRead(req, res, next) {
   return next();
 }
 
+const salesController = require("../controllers/salesController");
+
 /**
  * GET /all
  * Retrieve all posts (public).
  */
 router.get("/all", publicReadSlowDown, postController.getAllPosts);
+
+/**
+ * GET /user/:userId/sold — Seller's sold posts (alias for Android/Web clients)
+ */
+router.get("/user/:userId/sold", publicReadSlowDown, salesController.getSellerSoldPosts);
+router.get("/user/:sellerId/sold-posts", publicReadSlowDown, salesController.getSellerSoldPosts);
 
 /**
  * GET /mine
@@ -623,6 +632,26 @@ router.post("/:postId/like", protect, async (req, res) => {
           "UPDATE posts SET likes = COALESCE(likes, 0) + 1 WHERE post_id = $1",
           [postId]
         );
+
+        // Notify post owner about the like (skip self-likes, non-blocking)
+        try {
+          const postOwner = await runQuery(
+            "SELECT user_id, title FROM posts WHERE post_id = $1 LIMIT 1",
+            [postId]
+          );
+          const ownerId = postOwner.rows[0]?.user_id;
+          const postTitle = postOwner.rows[0]?.title || "your post";
+          if (ownerId && String(ownerId) !== String(userId)) {
+            emitNotification(String(ownerId), {
+              title: "Someone liked your post!",
+              message: `Your listing "${postTitle.substring(0, 50)}" received a new like.`,
+              type: "like",
+              sender_id: userId,
+              deep_link: `/post/${postId}`,
+            }).catch(() => {});
+          }
+        } catch (_notifErr) { /* non-blocking */ }
+
         return res.json({ liked: true, message: "Post liked" });
       }
     } catch (tableErr) {
@@ -791,6 +820,10 @@ router.put(
     subcategory_id: rawSubcategoryId,
     brand,
     model,
+    condition,
+    contact_number: contactNumber,
+    age_months: ageMonths,
+    is_negotiable: isNegotiable,
   } = req.body;
 
   if (!userId) {
@@ -887,6 +920,23 @@ router.put(
       mergedImages = JSON.stringify([...kept, ...uploaded]);
     }
 
+    const normalizedCondition =
+      condition !== undefined && condition !== null && String(condition).trim() !== ""
+        ? String(condition).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")
+        : undefined;
+    const normalizedContact =
+      contactNumber !== undefined && contactNumber !== null && String(contactNumber).trim() !== ""
+        ? String(contactNumber).trim()
+        : undefined;
+    const normalizedAge =
+      ageMonths !== undefined && ageMonths !== null && String(ageMonths).trim() !== ""
+        ? (parseInt(ageMonths, 10) || 0)
+        : undefined;
+    const normalizedNegotiable =
+      isNegotiable !== undefined
+        ? isNegotiable === true || isNegotiable === "true" || isNegotiable === "1"
+        : undefined;
+
     const result = await runQuery(
       `UPDATE posts SET
         title = COALESCE($1, title),
@@ -899,6 +949,10 @@ router.put(
         images = COALESCE($9, images),
         brand = COALESCE($10, brand),
         model = COALESCE($11, model),
+        condition = COALESCE($12, condition),
+        contact_number = COALESCE($13, contact_number),
+        age_months = COALESCE($14, age_months),
+        is_negotiable = COALESCE($15, is_negotiable),
         updated_at = NOW()
       WHERE post_id = $8
       RETURNING
@@ -916,6 +970,9 @@ router.put(
         location,
         brand,
         model,
+        contact_number,
+        age_months,
+        is_negotiable,
         created_at,
         updated_at`,
       [
@@ -930,6 +987,10 @@ router.put(
         mergedImages,
         brand || null,
         model || null,
+        normalizedCondition,
+        normalizedContact,
+        normalizedAge,
+        normalizedNegotiable,
       ]
     );
 

@@ -66,7 +66,6 @@ fun CategoryHomeScreen(
     onOpenListing: () -> Unit,
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
-    onAddToCart: (String) -> Unit = {},
     viewModel: CategoryAppViewModel = hiltViewModel(),
     subcatViewModel: SubcategoryListViewModel = hiltViewModel(),
 ) {
@@ -85,8 +84,8 @@ fun CategoryHomeScreen(
     val newArrivals = remember(allProducts) { allProducts.filter { it.isNewArrival }.take(8).ifEmpty { MockDataProvider.newArrivalsFor(categoryKey) } }
     val featured    = remember(allProducts) { allProducts.take(6) }
 
-    // Wishlist state (flows from ViewModel in future)
-    val wishlistedIds = remember { mutableStateOf(setOf<String>()) }
+    // Wishlist state — real, persisted via the ViewModel (Room + SharedExploreStore + server)
+    val wishlistedIds by viewModel.wishlistedIds.collectAsState()
 
     val onRefresh: () -> Unit = {
         scope.launch {
@@ -169,14 +168,10 @@ fun CategoryHomeScreen(
                         items(deals, key = { it.id }) { product ->
                             EnhancedProductCard(
                                 product = product,
-                                isWishlisted = wishlistedIds.value.contains(product.id),
+                                isWishlisted = wishlistedIds.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { onAddToCart(product.id) },
-                                onToggleWishlist = {
-                                    wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
-                                        wishlistedIds.value - product.id
-                                    else wishlistedIds.value + product.id
-                                },
+                                onAddToCart = { viewModel.addToCart(product) },
+                                onToggleWishlist = { viewModel.toggleWishlist(product) },
                                 modifier = Modifier.fillParentMaxWidth(0.44f),
                             )
                         }
@@ -193,12 +188,13 @@ fun CategoryHomeScreen(
             item(key = "featured_grid") {
                 ProductGrid2Col(
                     products = featured,
-                    wishlistedIds = wishlistedIds.value,
+                    wishlistedIds = wishlistedIds,
                     onOpenProduct = onOpenProduct,
                     onToggleWishlist = { id ->
-                        wishlistedIds.value = if (wishlistedIds.value.contains(id))
-                            wishlistedIds.value - id
-                        else wishlistedIds.value + id
+                        featured.firstOrNull { it.id == id }?.let { viewModel.toggleWishlist(it) }
+                    },
+                    onAddToCart = { id ->
+                        featured.firstOrNull { it.id == id }?.let { viewModel.addToCart(it) }
                     },
                 )
                 Spacer(Modifier.height(20.dp))
@@ -218,14 +214,10 @@ fun CategoryHomeScreen(
                         items(trending, key = { it.id }) { product ->
                             EnhancedProductCard(
                                 product = product,
-                                isWishlisted = wishlistedIds.value.contains(product.id),
+                                isWishlisted = wishlistedIds.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { onAddToCart(product.id) },
-                                onToggleWishlist = {
-                                    wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
-                                        wishlistedIds.value - product.id
-                                    else wishlistedIds.value + product.id
-                                },
+                                onAddToCart = { viewModel.addToCart(product) },
+                                onToggleWishlist = { viewModel.toggleWishlist(product) },
                                 modifier = Modifier.fillParentMaxWidth(0.44f),
                             )
                         }
@@ -248,14 +240,10 @@ fun CategoryHomeScreen(
                         items(newArrivals, key = { it.id }) { product ->
                             EnhancedProductCard(
                                 product = product,
-                                isWishlisted = wishlistedIds.value.contains(product.id),
+                                isWishlisted = wishlistedIds.contains(product.id),
                                 onTap = { onOpenProduct(product.id) },
-                                onAddToCart = { onAddToCart(product.id) },
-                                onToggleWishlist = {
-                                    wishlistedIds.value = if (wishlistedIds.value.contains(product.id))
-                                        wishlistedIds.value - product.id
-                                    else wishlistedIds.value + product.id
-                                },
+                                onAddToCart = { viewModel.addToCart(product) },
+                                onToggleWishlist = { viewModel.toggleWishlist(product) },
                                 modifier = Modifier.fillParentMaxWidth(0.44f),
                             )
                         }

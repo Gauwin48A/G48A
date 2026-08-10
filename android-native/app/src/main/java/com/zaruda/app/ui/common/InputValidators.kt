@@ -7,6 +7,7 @@ object InputValidators {
         pattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
     )
     private val tenDigitPhoneRegex = Regex("^[0-9]{10}$")
+    private val indianMobileRegex = Regex("^[6-9][0-9]{9}$")
     private val baseUrlRegex = Regex("^https?://[A-Za-z0-9._:-]+/?$")
     private val aadhaarRegex = Regex("^\\d{12}$")
     private val panRegex = Regex("^[A-Z]{5}\\d{4}[A-Z]$")
@@ -18,6 +19,8 @@ object InputValidators {
     fun normalizePhone(value: String): String = value.filter { it.isDigit() }.takeLast(10)
 
     fun isValidPhone(value: String): Boolean = tenDigitPhoneRegex.matches(normalizePhone(value))
+
+    fun isValidIndianMobile(value: String): Boolean = indianMobileRegex.matches(value.filter { it.isDigit() }.takeLast(10))
 
     fun isValidEmailOrPhone(value: String): Boolean {
         val trimmed = value.trim()

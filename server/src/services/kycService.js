@@ -45,8 +45,7 @@ async function logKycAudit(userId, action, responseCode, status, errorMessage = 
  * Generate HMAC Hash for identifiers (PAN/Aadhaar)
  */
 function generateHash(identifier) {
-  const secret = process.env.KYC_HASH_SECRET || "default_kyc_secret";
-  return crypto.createHmac("sha256", secret).update(String(identifier).trim().toUpperCase()).digest("hex");
+  return crypto.createHash("sha256").update(String(identifier).trim().toUpperCase()).digest("hex");
 }
 
 /**
@@ -56,14 +55,19 @@ async function verifyPan(userId, panNumber) {
   const normalizedPan = String(panNumber).trim().toUpperCase();
   const panHash = generateHash(normalizedPan);
   
-  if (KYC_MODE !== "production" || !isSurepassConfigured()) {
-    logger.info(`[KYC MOCK] PAN verify for: ${normalizedPan}`);
-    if (normalizedPan.startsWith("F")) {
-      await logKycAudit(userId, 'VERIFY_PAN', 'MOCK_FAIL', 'FAILED', 'Mock invalid PAN');
-      return { verified: false, error: "PAN verification failed: Invalid PAN number", mock: true };
-    }
+  // ⚠️ SECURITY: Mock mode ONLY allowed when BOTH conditions are true:
+  //   1. KYC_MODE is explicitly NOT "production"
+  //   2. NODE_ENV is NOT "production"
+  // This prevents mock bypass from EVER running in a production deployment.
+  const allowMock = KYC_MODE !== "production" && process.env.NODE_ENV !== "production" && !isSurepassConfigured();
+  if (allowMock) {
+    logger.warn(`[KYC MOCK] ⚠️ Running PAN verify in MOCK MODE for: ${normalizedPan.substring(0, 4)}****`);
     await logKycAudit(userId, 'VERIFY_PAN', 'MOCK_SUCCESS', 'SUCCESS');
     return { verified: true, name: "Demo Seller Name", panHash, refId: 'mock-pan-ref', mock: true };
+  }
+  if (!isSurepassConfigured()) {
+    logger.error('[KYC] FATAL: Surepass not configured but mock mode disabled. Cannot verify PAN.');
+    throw new Error('KYC provider not configured. Contact support.');
   }
 
   try {
@@ -136,14 +140,22 @@ async function sendAadhaarOtp(userId, aadhaarNumber) {
  * Verify Aadhaar OTP via Surepass
  */
 async function verifyAadhaarOtp(userId, otp, txnId) {
-  if (KYC_MODE !== "production" || !isSurepassConfigured()) {
-    logger.info(`[KYC MOCK] Aadhaar verify OTP. Code: ${otp}, Txn: ${txnId}`);
+  // ⚠️ SECURITY: Mock OTP acceptance ONLY allowed when BOTH conditions are true:
+  //   1. KYC_MODE is explicitly NOT "production"
+  //   2. NODE_ENV is NOT "production"
+  const allowMock = KYC_MODE !== "production" && process.env.NODE_ENV !== "production" && !isSurepassConfigured();
+  if (allowMock) {
+    logger.warn(`[KYC MOCK] ⚠️ Running Aadhaar OTP verify in MOCK MODE. Txn: ${txnId}`);
     if (otp === "999999" || otp === "123456") {
       await logKycAudit(userId, 'AADHAAR_OTP_SUBMIT', 'MOCK_SUCCESS', 'SUCCESS');
       return { verified: true, name: "Demo User Name", mock: true };
     }
     await logKycAudit(userId, 'AADHAAR_OTP_SUBMIT', 'MOCK_FAIL', 'FAILED', 'Invalid OTP code');
     return { verified: false, error: "Invalid OTP code", mock: true };
+  }
+  if (!isSurepassConfigured()) {
+    logger.error('[KYC] FATAL: Surepass not configured but mock mode disabled. Cannot verify Aadhaar OTP.');
+    throw new Error('KYC provider not configured. Contact support.');
   }
 
   try {

@@ -188,6 +188,23 @@ exports.deleteUserData = async (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
+    // ── Financial-activity guard (Phase 7, item 50): never hard-delete a
+    //    user who has active escrow, pending payouts, open disputes, or a
+    //    financial liability. Deactivation is the safe alternative. ──
+    try {
+      const { checkAccountFinancialExposure } = require('../services/accountFinancialGuardService');
+      const exposure = await checkAccountFinancialExposure(normalizedUserId);
+      if (exposure.blocked) {
+        return res.status(409).json({
+          error: 'Cannot permanently delete your account while financial activity is pending.',
+          reasons: exposure.reasons,
+          suggestion: 'Please DEACTIVATE your account instead (keeps financial history intact), or resolve the items above first.',
+        });
+      }
+    } catch (guardErr) {
+      logger.warn('[GDPR] Financial guard error (fail-open):', guardErr.message);
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');

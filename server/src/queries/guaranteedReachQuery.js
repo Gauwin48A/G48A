@@ -1,3 +1,5 @@
+const { TEST_USER_EXCLUSION } = require("./testDataExclusion");
+
 /**
  * Guaranteed-reach feed query.
  *
@@ -85,6 +87,7 @@ all_posts_scored AS (
     FROM posts p
     WHERE p.status = 'active'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
+      AND (p.title IS NULL OR (p.title NOT ILIKE 'Test Product%' AND p.title NOT ILIKE 'E2E%'))
       AND (
           (SELECT uid FROM config) IS NULL
           OR (SELECT uid FROM config) = ''
@@ -92,6 +95,7 @@ all_posts_scored AS (
           OR (SELECT uid FROM config) = 'null'
           OR p.user_id::text != (SELECT uid FROM config)  -- Don't show own posts
       )
+      ${TEST_USER_EXCLUSION}
 ),
 -- Apply author diversity constraints
 ranked_posts AS (
@@ -134,8 +138,8 @@ SELECT
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM ranked_posts r
 LEFT JOIN profiles pr ON r.author_id::text = pr.user_id::text
-LEFT JOIN categories c ON r.category_id = c.category_id
-LEFT JOIN subcategories sc ON r.subcategory_id = sc.subcategory_id
+LEFT JOIN categories c ON r.category_id::text = c.category_id::text
+LEFT JOIN subcategories sc ON r.subcategory_id::text = sc.subcategory_id::text
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 3     -- Max 3 posts per category
 ORDER BY
@@ -181,10 +185,11 @@ SELECT
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM posts p
 LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-LEFT JOIN categories c ON p.category_id = c.category_id
-LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
 WHERE p.status = 'active'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
+  AND (p.title IS NULL OR (p.title NOT ILIKE 'Test Product%' AND p.title NOT ILIKE 'E2E%'))
   AND (
       $2::text IS NULL
       OR $2::text = ''
@@ -192,6 +197,7 @@ WHERE p.status = 'active'
       OR $2::text = 'null'
       OR p.user_id::text != $2::text
   )
+  ${TEST_USER_EXCLUSION}
 ORDER BY
     -- Promotion first (Spotlight > Featured > Boost)
     COALESCE(p.boost_level, 0) DESC,

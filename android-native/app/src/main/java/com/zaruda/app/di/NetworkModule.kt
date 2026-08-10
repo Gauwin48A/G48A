@@ -9,6 +9,7 @@ import com.zaruda.app.data.remote.AppCookieJar
 import com.zaruda.app.data.remote.AuthInterceptor
 import com.zaruda.app.data.remote.LocaleInterceptor
 import com.zaruda.app.data.remote.ZarudaApi
+import com.zaruda.app.data.remote.ZarudaApiV1
 import com.zaruda.app.data.remote.RetryInterceptor
 import com.zaruda.app.data.remote.SecurityHeadersInterceptor
 import com.zaruda.app.data.remote.TokenRefreshAuthenticator
@@ -123,6 +124,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideApi(retrofit: Retrofit): ZarudaApi = retrofit.create(ZarudaApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideApiV1(retrofit: Retrofit): ZarudaApiV1 = retrofit.create(ZarudaApiV1::class.java)
 }
 
 private class ApiVersionInterceptor : Interceptor {

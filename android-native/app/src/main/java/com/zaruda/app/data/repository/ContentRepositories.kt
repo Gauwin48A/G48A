@@ -129,6 +129,10 @@ class PostsRepository @Inject constructor(
         api.post(id).post ?: error("Post not found")
     }
 
+    /** Public list of a seller's currently-active listings (for the seller trust page). */
+    suspend fun postsByAuthor(author: String, page: Int = 1, limit: Int = 50): ApiResult<List<Post>> =
+        safeApiCall { api.posts(page, limit, null, null, null, null, null, author).allItems }
+
     suspend fun create(req: CreatePostRequest): ApiResult<String> = safeApiCall {
         api.createPost(req).id ?: error("No id returned")
     }
@@ -245,21 +249,58 @@ class UploadRepository @Inject constructor(private val api: ZarudaApi) {
         api.uploadPostImage(body).url ?: error("Upload failed: no URL")
     }
 
+    /** Upload a listing voice-note (audio bytes) and return the public URL. */
+    suspend fun uploadAudio(bytes: ByteArray, mime: String): ApiResult<String> = safeApiCall {
+        val body: RequestBody = bytes.toRequestBody(mime.toMediaType())
+        api.uploadAudio(body).url ?: error("Upload failed: no URL")
+    }
+
+    /**
+     * Upload a KYC document image (front / back / selfie) to the server.
+     * Returns the uploaded URL which is then passed to kycSubmit() as the doc key.
+     */
     suspend fun uploadKycDoc(bytes: ByteArray, mime: String, slot: String): ApiResult<String> = safeApiCall {
-        // Upload not used in new Surepass KYC flow; return placeholder
-        "upload_placeholder"
+        val body: RequestBody = bytes.toRequestBody(mime.toMediaType())
+        val part = okhttp3.MultipartBody.Part.createFormData(
+            "file",
+            "kyc_${slot}_${System.currentTimeMillis()}.jpg",
+            body,
+        )
+        val resp = api.uploadKycDoc(part)
+        resp.url?.takeIf { it.isNotBlank() }
+            ?: resp.key.takeIf { it.isNotBlank() }
+            ?: error("Upload failed: no URL")
     }
 }
 
 @Singleton
 class KycRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun status(): ApiResult<KycStatusResponse> = safeApiCall { api.kycStatus() }
+
+    /** Submit KYC documents (docType + docNumber + uploaded doc URLs) to the server. */
     suspend fun submit(req: KycSubmitRequest): ApiResult<KycSubmitResponse> =
-        safeApiCall { api.kycStatus().let { KycSubmitResponse(success = true, status = it.kycStatus) } }
+        safeApiCall { api.kycSubmit(req) }
+
+    /** Request an Aadhaar OTP via the KYC flow (/api/users/kyc/aadhaar/generate). */
     suspend fun aadhaarSendOtp(req: AadhaarSendOtpRequest): ApiResult<AadhaarOtpResponse> =
-        safeApiCall { api.aadhaarSendOtp(req) }
+        safeApiCall {
+            api.generateAadhaarOtp(
+                com.zaruda.app.data.remote.dto.AadhaarGenerateRequest(
+                    aadhaarNumber = req.aadhaarNumber,
+                ),
+            )
+        }
+
+    /** Verify an Aadhaar OTP via the KYC flow (/api/users/kyc/aadhaar/verify). */
     suspend fun aadhaarVerifyOtp(req: AadhaarVerifyOtpRequest): ApiResult<AadhaarVerifyResponse> =
-        safeApiCall { api.aadhaarVerifyOtp(req) }
+        safeApiCall {
+            api.verifyAadhaarOtp(
+                com.zaruda.app.data.remote.dto.AadhaarVerifyRequest(
+                    otp = req.otp,
+                    txnId = req.txnId ?: "",
+                ),
+            )
+        }
 }
 
 @Singleton
@@ -466,6 +507,29 @@ class AccountRepository @Inject constructor(private val api: ZarudaApi) {
 }
 
 @Singleton
+class PayoutRepository @Inject constructor(private val api: ZarudaApi) {
+    /** Current payout linking status (linked methods, Razorpay IDs). */
+    suspend fun status(): ApiResult<PayoutStatusResponse> = safeApiCall {
+        api.payoutStatus()
+    }
+
+    /** Link a UPI VPA as the payout method. */
+    suspend fun linkUpi(upiId: String): ApiResult<PayoutLinkResponse> = safeApiCall {
+        api.linkPayoutAccount(PayoutLinkRequest(type = "upi", upiId = upiId))
+    }
+
+    /** Link a bank account as the payout method. */
+    suspend fun linkBankAccount(number: String, ifsc: String, beneficiary: String): ApiResult<PayoutLinkResponse> = safeApiCall {
+        api.linkPayoutAccount(
+            PayoutLinkRequest(
+                type = "bank_account",
+                bankAccount = PayoutBankDetails(accountNumber = number, ifsc = ifsc, beneficiaryName = beneficiary),
+            )
+        )
+    }
+}
+
+@Singleton
 class TiersRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Tier>> = safeApiCall {
         api.getSubscriptionPlans().plans.map { plan ->
@@ -474,7 +538,7 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
                 name = plan.name,
                 price = plan.priceINR.toDouble(),
                 currency = "INR",
-                duration = 30,
+                duration = plan.durationDays,
                 features = plan.features,
                 popular = false,
             )
@@ -484,9 +548,10 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
         // Subscribe endpoint replaced by payment order flow
         api.createRazorpayOrder(RazorpayOrderRequest(amount = 0.0, tierId = req.tierId)); Unit
     }
+
+    /** Activate the 7-day Premium free trial via /api/subscriptions/claim-trial. */
     suspend fun activateTrial(): ApiResult<Unit> = safeApiCall {
-        // Trial activation not available in new API; return success
-        Unit
+        api.claimTrial(); Unit
     }
     suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall {
         // Cancel not available in new API; return success
@@ -560,11 +625,32 @@ class PaymentsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun upiDetails(): ApiResult<PaymentUpiDetailsResponse> = safeApiCall { api.paymentUpiDetails() }
     suspend fun history(): ApiResult<List<PaymentHistoryItem>> = safeApiCall { api.paymentHistory().payments }
     suspend fun submit(req: SubmitPaymentRequest): ApiResult<Unit> = safeApiCall { api.submitPayment(req); Unit }
-    suspend fun createRazorpayOrder(amount: Double, tierId: String? = null, coinsToApply: Int = 0): ApiResult<RazorpayOrderResponse> = safeApiCall {
-        api.createRazorpayOrder(RazorpayOrderRequest(amount = amount, tierId = tierId, coinsToApply = coinsToApply))
+    suspend fun createRazorpayOrder(
+        amount: Double,
+        tierId: String? = null,
+        coinsToApply: Int = 0,
+        saleId: Int? = null,
+    ): ApiResult<RazorpayOrderResponse> = safeApiCall {
+        api.createRazorpayOrder(
+            RazorpayOrderRequest(
+                amount = amount,
+                tierId = tierId,
+                coinsToApply = coinsToApply,
+                saleId = saleId?.toString(),
+            ),
+        )
     }
     suspend fun verifyRazorpayPayment(orderId: String, paymentId: String, signature: String): ApiResult<Unit> = safeApiCall {
         api.verifyRazorpayPayment(RazorpayVerifyRequest(orderId, paymentId, signature)); Unit
+    }
+
+    /** Create a Razorpay order for an in-app sale purchase (escrow). */
+    suspend fun createSaleOrder(saleId: Int, amount: Double): ApiResult<RazorpayOrderResponse> =
+        createRazorpayOrder(amount = amount, saleId = saleId)
+
+    /** Verify an in-app sale payment; returns the sale payment status. */
+    suspend fun verifySalePayment(orderId: String, paymentId: String, signature: String): ApiResult<SalePaymentVerifyResponse> = safeApiCall {
+        api.verifyRazorpayPayment(RazorpayVerifyRequest(orderId, paymentId, signature))
     }
 }
 
@@ -670,11 +756,21 @@ class SalesRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun myHistory(): ApiResult<List<SaleInfo>> = safeApiCall { api.mySaleHistory().sales }
     suspend fun approve(id: Int): ApiResult<Unit> = safeApiCall { api.approveSale(id); Unit }
     suspend fun reject(id: Int): ApiResult<Unit> = safeApiCall { api.rejectSale(id); Unit }
+    suspend fun cancel(id: Int): ApiResult<Unit> = safeApiCall { api.cancelSale(id); Unit }
+    suspend fun markShipped(id: Int, trackingNumber: String? = null, courierName: String? = null): ApiResult<Unit> =
+        safeApiCall {
+            api.markShipped(id, com.zaruda.app.data.remote.dto.MarkShippedRequest(trackingNumber = trackingNumber, courierName = courierName)); Unit
+        }
     suspend fun orderReceived(id: Int): ApiResult<Unit> = safeApiCall { api.orderReceived(id); Unit }
     suspend fun amountReceived(id: Int): ApiResult<Unit> = safeApiCall { api.amountReceived(id); Unit }
     suspend fun reportFraud(id: Int, reportedParty: String, reason: String): ApiResult<Unit> =
         safeApiCall { api.reportFraud(id, FraudReportRequest(reportedParty = reportedParty, reason = reason)); Unit }
     suspend fun respondToFraud(id: Int, message: String): ApiResult<Unit> =
         safeApiCall { api.respondToFraudFlag(id, FraudResponseRequest(message = message)); Unit }
+    suspend fun rateCompletedSale(id: Int, rating: Int, comment: String? = null): ApiResult<MessageResponse> =
+        safeApiCall { api.rateCompletedSale(id, com.zaruda.app.data.remote.dto.SaleRateRequest(rating, comment)) }
+    /** Whether the current user is the buyer of a completed, unrated sale for a post. */
+    suspend fun myReviewStatus(postId: String): ApiResult<com.zaruda.app.data.remote.dto.MyReviewStatusResponse> =
+        safeApiCall { api.myReviewStatus(postId) }
     suspend fun suspensionStatus(): ApiResult<SuspensionStatusResponse> = safeApiCall { api.mySuspensionStatus() }
 }

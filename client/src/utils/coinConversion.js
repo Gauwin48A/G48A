@@ -17,19 +17,7 @@ export function setCoinsPerRupee(rate) {
   }
 }
 
-/**
- * Get current conversion rate.
- * @param {boolean|string} [planOrIsPremium=false]
- */
 export function getCoinsPerRupee(planOrIsPremium = false) {
-  const isPremium =
-    typeof planOrIsPremium === "boolean"
-      ? planOrIsPremium
-      : String(planOrIsPremium || "").toLowerCase().includes("premium");
-
-  if (isPremium) {
-    return 20; // 100 coins = ₹5 (5x multiplier)
-  }
   return _configCoinsPerRupee || DEFAULT_COINS_PER_RUPEE; // 100 coins = ₹1
 }
 

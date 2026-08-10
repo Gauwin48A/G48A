@@ -23,11 +23,11 @@ function awardCoinOnPostCreate(req, res, next) {
         // Fire and forget — don't block the response
         setImmediate(async () => {
           try {
-            const { addCoins } = require("../controllers/coinController");
+            const { addCoins, EARN_AMOUNTS } = require("../controllers/coinController");
             await addCoins(
-              userId, 1, "post",
+              userId, EARN_AMOUNTS.post, "post",
               `post_create:${postId}`,
-              "Earned 1 coin for creating a listing",
+              `Earned ${EARN_AMOUNTS.post} coins for creating a listing`,
             );
             const { applyReferralJoinCoinRewards } = require("../services/referralJoinRewards");
             await applyReferralJoinCoinRewards({
@@ -52,7 +52,7 @@ function awardCoinOnPostCreate(req, res, next) {
 }
 
 /**
- * Express middleware: Award 3 coins to seller after successful sale marking
+ * Express middleware: Award coins to seller after successful sale marking
  */
 function awardCoinOnSale(req, res, next) {
   const originalJson = res.json.bind(res);
@@ -63,11 +63,11 @@ function awardCoinOnSale(req, res, next) {
       if (userId && postId) {
         setImmediate(async () => {
           try {
-            const { addCoins } = require("../controllers/coinController");
+            const { addCoins, EARN_AMOUNTS } = require("../controllers/coinController");
             await addCoins(
-              userId, 3, "sale",
+              userId, EARN_AMOUNTS.sale, "sale",
               `sale:${postId}:${userId}`,
-              "Earned 3 coins for completing a sale",
+              `Earned ${EARN_AMOUNTS.sale} coins for completing a sale`,
             );
             const { applyReferralJoinCoinRewards } = require("../services/referralJoinRewards");
             await applyReferralJoinCoinRewards({

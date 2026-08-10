@@ -246,6 +246,7 @@ exports.getProfile = async (req, res) => {
   try {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.query.userId ?? authenticatedUserId);
+    const isDemo = Boolean(req.user?.is_demo);
     const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
 
     if (!requestedUserId) {
@@ -255,6 +256,41 @@ exports.getProfile = async (req, res) => {
 
     if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
       return;
+    }
+
+    // ── Demo / non-DB user fallback ──────────────────────────────
+    if (isDemo) {
+      const demoProfile = {
+        user_id: requestedUserId,
+        full_name: req.user?.name || "Demo User",
+        name: req.user?.name || "Demo User",
+        phone: "+91-9876543210",
+        address: "Hyderabad, India",
+        avatar_url: "",
+        bio: "This is a demo account for preview purposes.",
+        verified: true,
+        email_verified: true,
+        phone_verified: true,
+        kyc_verified: true,
+        email: "demo@mhub.app",
+        role: "user",
+        tier: "premium",
+        current_plan: "premium",
+        subscription_expiry: null,
+        post_credits: 50,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        trust: {
+          score: 100,
+          level: "gold",
+          label: "Trusted Seller",
+          risk_state: null,
+          under_review: false,
+        },
+        risk_state: null,
+        under_review: false,
+      };
+      return res.json(demoProfile);
     }
 
     const cacheKey = buildProfileCacheKey(requestedUserId);
@@ -305,7 +341,9 @@ exports.getProfile = async (req, res) => {
              p.avatar_url,
              p.bio,
              ${hasUpdatedAtColumn ? "p.updated_at," : "NULL::timestamptz AS updated_at,"}
-             COALESCE(p.verified, false) AS verified
+             COALESCE(p.verified, false) AS verified,
+             p.payout_upi_id,
+             p.payout_bank_details
            FROM users u
            LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
            WHERE u.user_id::text = $1
@@ -355,6 +393,8 @@ exports.getProfile = async (req, res) => {
           current_plan: resolvedPlan,
           subscription_expiry: parseOptionalString(row.subscription_expiry),
           post_credits: parseOptionalNumber(row.post_credits) || 0,
+          payout_upi_id: row.payout_upi_id || "",
+          payout_bank_details: row.payout_bank_details || {},
           created_at: row.created_at,
           updated_at: row.updated_at || null,
           trust: trustSnapshot,
@@ -397,7 +437,7 @@ exports.updateProfile = async (req, res) => {
   try {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
-    const { full_name, phone, address, avatar_url, bio } = req.body;
+    const { full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details } = req.body;
     const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
 
     if (!requestedUserId) {
@@ -414,6 +454,16 @@ exports.updateProfile = async (req, res) => {
       parseOptionalString(req.user?.username) ||
       "User";
 
+    // Security validation for payout UPI ID format
+    let sanitizedUpiId = parseOptionalString(payout_upi_id);
+    if (sanitizedUpiId) {
+      sanitizedUpiId = sanitizedUpiId.trim();
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9]{2,64}$/;
+      if (!upiRegex.test(sanitizedUpiId)) {
+        return res.status(400).json({ error: "Invalid UPI ID format. Expected format: username@bank (e.g. name@upi)" });
+      }
+    }
+
     const queryParams = [
       requestedUserId,
       normalizedFullName,
@@ -421,37 +471,43 @@ exports.updateProfile = async (req, res) => {
       parseOptionalString(address),
       parseOptionalString(avatar_url),
       parseOptionalString(bio),
+      sanitizedUpiId,
+      payout_bank_details ? (typeof payout_bank_details === "string" ? payout_bank_details : JSON.stringify(payout_bank_details)) : null,
     ];
 
     const returningFields = hasUpdatedAtColumn
       ? `profile_id, user_id, full_name, phone, address,
-             avatar_url, bio, verified, created_at, updated_at`
+             avatar_url, bio, verified, created_at, updated_at, payout_upi_id, payout_bank_details`
       : `profile_id, user_id, full_name, phone, address,
-             avatar_url, bio, verified, created_at`;
+             avatar_url, bio, verified, created_at, payout_upi_id, payout_bank_details`;
 
     let result;
 
     try {
       result = await runQuery(
         hasUpdatedAtColumn
-          ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, NOW())
+          ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
              ON CONFLICT (user_id) DO UPDATE
              SET full_name   = COALESCE(EXCLUDED.full_name,   profiles.full_name),
                  phone       = COALESCE(EXCLUDED.phone,       profiles.phone),
                  address     = COALESCE(EXCLUDED.address,     profiles.address),
                  avatar_url  = COALESCE(EXCLUDED.avatar_url,  profiles.avatar_url),
                  bio         = COALESCE(EXCLUDED.bio,         profiles.bio),
+                 payout_upi_id = COALESCE(EXCLUDED.payout_upi_id, profiles.payout_upi_id),
+                 payout_bank_details = COALESCE(EXCLUDED.payout_bank_details, profiles.payout_bank_details),
                  updated_at  = NOW()
              RETURNING ${returningFields}`
-          : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio)
-             VALUES ($1, $2, $3, $4, $5, $6)
+          : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              ON CONFLICT (user_id) DO UPDATE
              SET full_name   = COALESCE(EXCLUDED.full_name,   profiles.full_name),
                  phone       = COALESCE(EXCLUDED.phone,       profiles.phone),
                  address     = COALESCE(EXCLUDED.address,     profiles.address),
                  avatar_url  = COALESCE(EXCLUDED.avatar_url,  profiles.avatar_url),
-                 bio         = COALESCE(EXCLUDED.bio,         profiles.bio)
+                 bio         = COALESCE(EXCLUDED.bio,         profiles.bio),
+                 payout_upi_id = COALESCE(EXCLUDED.payout_upi_id, profiles.payout_upi_id),
+                 payout_bank_details = COALESCE(EXCLUDED.payout_bank_details, profiles.payout_bank_details)
              RETURNING ${returningFields}`,
         queryParams
       );
@@ -477,6 +533,8 @@ exports.updateProfile = async (req, res) => {
                  address     = COALESCE($4, address),
                  avatar_url  = COALESCE($5, avatar_url),
                  bio         = COALESCE($6, bio),
+                 payout_upi_id = COALESCE($7, payout_upi_id),
+                 payout_bank_details = COALESCE($8, payout_bank_details),
                  updated_at  = NOW()
              WHERE user_id::text = $1
              RETURNING ${returningFields}`
@@ -485,7 +543,9 @@ exports.updateProfile = async (req, res) => {
                  phone       = COALESCE($3, phone),
                  address     = COALESCE($4, address),
                  avatar_url  = COALESCE($5, avatar_url),
-                 bio         = COALESCE($6, bio)
+                 bio         = COALESCE($6, bio),
+                 payout_upi_id = COALESCE($7, payout_upi_id),
+                 payout_bank_details = COALESCE($8, payout_bank_details)
              WHERE user_id::text = $1
              RETURNING ${returningFields}`,
         queryParams
@@ -497,11 +557,11 @@ exports.updateProfile = async (req, res) => {
         try {
           result = await runQuery(
             hasUpdatedAtColumn
-              ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, NOW())
+              ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
                  RETURNING ${returningFields}`
-              : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio)
-                 VALUES ($1, $2, $3, $4, $5, $6)
+              : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                  RETURNING ${returningFields}`,
             queryParams
           );
@@ -516,6 +576,8 @@ exports.updateProfile = async (req, res) => {
                        address     = COALESCE($4, address),
                        avatar_url  = COALESCE($5, avatar_url),
                        bio         = COALESCE($6, bio),
+                       payout_upi_id = COALESCE($7, payout_upi_id),
+                       payout_bank_details = COALESCE($8, payout_bank_details),
                        updated_at  = NOW()
                    WHERE user_id::text = $1
                    RETURNING ${returningFields}`
@@ -524,7 +586,9 @@ exports.updateProfile = async (req, res) => {
                        phone       = COALESCE($3, phone),
                        address     = COALESCE($4, address),
                        avatar_url  = COALESCE($5, avatar_url),
-                       bio         = COALESCE($6, bio)
+                       bio         = COALESCE($6, bio),
+                       payout_upi_id = COALESCE($7, payout_upi_id),
+                       payout_bank_details = COALESCE($8, payout_bank_details)
                    WHERE user_id::text = $1
                    RETURNING ${returningFields}`,
               queryParams
@@ -803,5 +867,182 @@ exports.uploadAvatar = async (req, res) => {
   } catch (err) {
     logger.error("Error uploading avatar:", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// PAYOUT ACCOUNT LINKING (Razorpay)
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Ensure the `profiles` table carries all payout columns used by the linking
+ * flow (idempotent, self-healing on older schemas).
+ */
+async function ensurePayoutColumns() {
+  const stmts = [
+    `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS payout_upi_id VARCHAR(100)`,
+    `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS payout_bank_details JSONB DEFAULT '{}'::jsonb`,
+    `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS razorpay_contact_id VARCHAR(100)`,
+    `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS razorpay_fund_account_id VARCHAR(100)`,
+  ];
+  for (const sql of stmts) {
+    try {
+      await runQuery(sql);
+    } catch (err) {
+      logger.warn("[PAYOUT_LINK] ensurePayoutColumns stmt failed:", err.message);
+    }
+  }
+}
+
+/**
+ * POST /profile/payout-link
+ * Link a Razorpay payout account (bank account or UPI) for the authenticated user.
+ * This creates a Razorpay Contact + Fund Account so the platform can pay out.
+ *
+ * Body params:
+ *   - type: "bank_account" | "upi"
+ *   - bank_account: { account_number, ifsc, beneficiary_name } (for bank_account type)
+ *   - upi_id: string (for upi type)
+ */
+exports.linkPayoutAccount = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  const { type, bank_account, upi_id } = req.body;
+
+  if (!type || !["bank_account", "upi"].includes(type)) {
+    return res.status(400).json({ error: "type must be 'bank_account' or 'upi'" });
+  }
+
+  try {
+    await ensurePayoutColumns();
+
+    // Step 1: Ensure the user has a Razorpay contact
+    const razorpayService = require("../services/razorpayService");
+    const contactResult = await razorpayService.ensureContact(userId);
+
+    if (!contactResult.success) {
+      return res.status(502).json({ error: "Failed to create Razorpay contact", details: contactResult.error });
+    }
+
+    // Step 2: Create fund account based on type
+    let fundAccountResult;
+
+    if (type === "bank_account") {
+      if (!bank_account || !bank_account.account_number || !bank_account.ifsc || !bank_account.beneficiary_name) {
+        return res.status(400).json({ error: "bank_account requires account_number, ifsc, and beneficiary_name" });
+      }
+
+      fundAccountResult = await razorpayService.createFundAccount({
+        contactId: contactResult.contactId,
+        accountType: "bank_account",
+        accountDetails: {
+          account_number: bank_account.account_number,
+          ifsc: bank_account.ifsc,
+          beneficiary_name: bank_account.beneficiary_name,
+        },
+      });
+    } else {
+      // UPI
+      if (!upi_id) {
+        return res.status(400).json({ error: "upi_id is required for UPI type" });
+      }
+
+      fundAccountResult = await razorpayService.createFundAccount({
+        contactId: contactResult.contactId,
+        accountType: "vpa",
+        // Razorpay VPA fund-account schema requires { address }, not { vpa }.
+        accountDetails: {
+          address: upi_id,
+        },
+      });
+    }
+
+    if (!fundAccountResult.success) {
+      return res.status(502).json({ error: "Failed to link payout account", details: fundAccountResult.error });
+    }
+
+    // Step 3: Store the linked account details in profiles
+    const payoutDetails = type === "bank_account"
+      ? JSON.stringify({ type: "bank_account", account_number: `XXXX${bank_account.account_number.slice(-4)}`, ifsc: bank_account.ifsc })
+      : JSON.stringify({ type: "upi", upi_id });
+
+    await runQuery(
+      `UPDATE profiles SET
+         razorpay_contact_id = $1,
+         razorpay_fund_account_id = $2,
+         payout_upi_id = $3,
+         payout_bank_details = $4::jsonb
+       WHERE user_id::text = $5`,
+      [
+        contactResult.contactId,
+        fundAccountResult.fundAccountId,
+        type === "upi" ? upi_id : null,
+        payoutDetails,
+        userId,
+      ]
+    );
+
+    invalidateProfileCache(userId);
+
+    logger.info(`[PAYOUT_LINK] User ${userId} linked ${type} payout account (fund_account: ${fundAccountResult.fundAccountId})`);
+
+    res.json({
+      success: true,
+      message: "Payout account linked successfully",
+      sandbox: fundAccountResult.sandbox || false,
+      payout_method: type,
+    });
+  } catch (err) {
+    logger.error("[PAYOUT_LINK] Error linking payout account:", err);
+    res.status(500).json({ error: "Failed to link payout account" });
+  }
+};
+
+/**
+ * GET /profile/payout-status
+ * Get the user's current payout account linking status.
+ */
+exports.getPayoutStatus = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    await ensurePayoutColumns();
+
+    const result = await runQuery(
+      `SELECT
+         payout_upi_id,
+         payout_bank_details,
+         razorpay_contact_id,
+         razorpay_fund_account_id
+       FROM profiles
+       WHERE user_id::text = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ linked: false, payout_methods: [] });
+    }
+
+    const profile = result.rows[0];
+    const methods = [];
+
+    if (profile.payout_upi_id) {
+      methods.push({ type: "upi", upi_id: profile.payout_upi_id, linked: true });
+    }
+    if (profile.payout_bank_details && Object.keys(profile.payout_bank_details).length > 0) {
+      methods.push({ type: "bank_account", details: profile.payout_bank_details, linked: true });
+    }
+
+    res.json({
+      linked: methods.length > 0,
+      payout_methods: methods,
+      razorpay_contact_id: profile.razorpay_contact_id || null,
+      razorpay_fund_account_id: profile.razorpay_fund_account_id || null,
+    });
+  } catch (err) {
+    logger.error("[PAYOUT_LINK] Error fetching payout status:", err);
+    res.status(500).json({ error: "Failed to fetch payout status" });
   }
 };

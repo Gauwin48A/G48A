@@ -6,6 +6,10 @@ import com.zaruda.app.domain.model.Post
 import com.zaruda.app.domain.model.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 // -------- Health --------
 @Serializable
@@ -563,7 +567,9 @@ data class CreatePostRequest(
     @SerialName("contact_number") val contactNumber: String? = null,
     @SerialName("warranty_status") val warrantyStatus: String? = null,
     @SerialName("flash_sale") val flashSale: Boolean? = null,
+    @SerialName("audio_url") val audioUrl: String? = null,
     @SerialName("age_months") val ageMonths: Int? = null,
+    @SerialName("is_negotiable") val isNegotiable: Boolean? = null,
 )
 
 // -------- Categories --------
@@ -588,13 +594,24 @@ data class KycSubmitRequest(
 @Serializable
 data class KycSubmitResponse(
     val success: Boolean = true,
-    val submissionId: String? = null,
+    @SerialName("queue_id") val submissionId: String? = null,
     val status: String? = null,
+    @SerialName("user_status") val userStatus: String? = null,
+    val decision: String? = null,
+    @SerialName("decision_reason") val decisionReason: String? = null,
+    @SerialName("validation_errors") val validationErrors: List<String> = emptyList(),
     val mock: Boolean = false,
-)
+) {
+    /** Effective status for UI — prefers server user_status, falls back to status. */
+    val effectiveStatus: String? get() = userStatus ?: status
+}
 
 @Serializable
-data class KycUploadResponse(val key: String, val size: Long? = null)
+data class KycUploadResponse(
+    val key: String = "",
+    val url: String? = null,
+    val size: Long? = null,
+)
 
 @Serializable
 data class KycStatusResponse(
@@ -880,6 +897,51 @@ data class ProfileUpdateRequest(
     @SerialName("social_links") val socialLinks: Map<String, String>? = null,
     @SerialName("cover_image") val coverImage: String? = null,
     @SerialName("avatar") val avatar: String? = null,
+)
+
+// -------- Seller Payout DTOs (Razorpay payout linking) --------
+
+@Serializable
+data class PayoutBankDetails(
+    @SerialName("account_number") val accountNumber: String? = null,
+    val ifsc: String? = null,
+    @SerialName("beneficiary_name") val beneficiaryName: String? = null,
+)
+
+@Serializable
+data class PayoutLinkRequest(
+    val type: String = "upi", // "upi" | "bank_account"
+    @SerialName("upi_id") val upiId: String? = null,
+    @SerialName("bank_account") val bankAccount: PayoutBankDetails? = null,
+)
+
+@Serializable
+data class PayoutLinkResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val sandbox: Boolean = false,
+    @SerialName("payout_method") val payoutMethod: String? = null,
+)
+
+@Serializable
+data class PayoutMethodItem(
+    val type: String? = null, // "upi" | "bank_account"
+    @SerialName("upi_id") val upiId: String? = null,
+    // Free-form JSONB from the server: { type, account_number, ifsc, upi_id, ... }
+    val details: Map<String, String>? = null,
+    val linked: Boolean = false,
+) {
+    val accountNumberDisplay: String? get() = details?.get("account_number")
+    val ifscDisplay: String? get() = details?.get("ifsc")
+    val upiDisplay: String? get() = upiId ?: details?.get("upi_id")
+}
+
+@Serializable
+data class PayoutStatusResponse(
+    val linked: Boolean = false,
+    @SerialName("payout_methods") val payoutMethods: List<PayoutMethodItem> = emptyList(),
+    @SerialName("razorpay_contact_id") val razorpayContactId: String? = null,
+    @SerialName("razorpay_fund_account_id") val razorpayFundAccountId: String? = null,
 )
 
 @Serializable
@@ -1325,13 +1387,27 @@ data class SubscribeRequest(
 )
 
 // -------- Legal / CMS --------
+// Server returns { success, slug, content, updatedAt, fallback } where content is JSONB.
 @Serializable
 data class CmsContentResponse(
-    val content: String? = null,
-    val html: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null,
+    val success: Boolean = true,
+    val slug: String? = null,
+    val content: JsonElement? = null,
+    val updatedAt: String? = null,
+    val fallback: Boolean = false,
 ) {
-    val displayContent: String get() = content ?: html ?: ""
+    val displayContent: String get() {
+        if (content is JsonPrimitive) {
+            return content.contentOrNull ?: ""
+        }
+        if (content is JsonObject) {
+            return content.values
+                .filterIsInstance<JsonPrimitive>()
+                .firstNotNullOfOrNull { it.contentOrNull }
+                ?: ""
+        }
+        return ""
+    }
 }
 
 // -------- Invite --------
@@ -1374,6 +1450,10 @@ data class DraftResponse(
     val location: String? = null,
     val condition: String? = null,
     val brand: String? = null,
+    val model: String? = null,
+    @SerialName("contact_number") val contactNumber: String? = null,
+    @SerialName("age_months") val ageMonths: Int? = null,
+    @SerialName("is_negotiable") val isNegotiable: Boolean? = null,
 )
 
 @Serializable
@@ -1385,6 +1465,10 @@ data class DraftRequest(
     val location: String? = null,
     val condition: String? = null,
     val brand: String? = null,
+    val model: String? = null,
+    @SerialName("contact_number") val contactNumber: String? = null,
+    @SerialName("age_months") val ageMonths: Int? = null,
+    @SerialName("is_negotiable") val isNegotiable: Boolean? = null,
 )
 
 // -------- Notification Preferences --------
@@ -1576,6 +1660,8 @@ data class RazorpayOrderRequest(
     val amount: Double,
     val currency: String = "INR",
     @SerialName("tier_id") val tierId: String? = null,
+    @SerialName("plan_id") val planId: String? = null,
+    @SerialName("sale_id") val saleId: String? = null,
     @SerialName("coinsToApply") val coinsToApply: Int = 0,
 )
 
@@ -1583,15 +1669,30 @@ data class RazorpayOrderRequest(
 data class RazorpayOrderResponse(
     @SerialName("order_id") val orderId: String? = null,
     val amount: Double = 0.0,
+    @SerialName("amount_paise") val amountPaise: Long? = null,
     val currency: String = "INR",
-    val key: String? = null,
-)
+    @SerialName("key_id") val keyId: String? = null,
+    @SerialName("sale_id") val saleId: String? = null,
+    val mock: Boolean = false,
+) {
+    /** Back-compat alias used by the tier checkout. */
+    val key: String? get() = keyId
+}
 
 @Serializable
 data class RazorpayVerifyRequest(
     @SerialName("razorpay_order_id") val orderId: String,
     @SerialName("razorpay_payment_id") val paymentId: String,
     @SerialName("razorpay_signature") val signature: String,
+)
+
+@Serializable
+data class SalePaymentVerifyResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+    @SerialName("sale_id") val saleId: String? = null,
+    @SerialName("sale_status") val saleStatus: String? = null,
+    @SerialName("payment_status") val paymentStatus: String? = null,
 )
 
 // -------- Notifications snooze --------
@@ -1611,6 +1712,8 @@ data class SavedSearchNotificationRequest(
 data class SaleRequest(
     val postId: String,
     val sellerId: String,
+    /** "IN_APP" (escrow) or "OUTSIDE" (direct cash/UPI) — omitted defaults to IN_APP on the server. */
+    val paymentMode: String? = null,
 )
 
 @Serializable
@@ -1627,6 +1730,11 @@ data class SaleInfo(
     val buyerId: String? = null,
     val sellerId: String? = null,
     val status: String? = null,
+    @SerialName("payment_mode") val paymentMode: String? = null,
+    @SerialName("payment_status") val paymentStatus: String? = null,
+    @SerialName("agreed_price") val agreedPrice: Double? = null,
+    @SerialName("razorpay_order_id") val razorpayOrderId: String? = null,
+    @SerialName("razorpay_payment_id") val razorpayPaymentId: String? = null,
     val reportedParty: String? = null,
     val fraudReason: String? = null,
     val adminNotified: Boolean = false,
@@ -1637,7 +1745,16 @@ data class SaleInfo(
     val postImages: List<String>? = null,
     val buyerName: String? = null,
     val sellerName: String? = null,
-)
+    @SerialName("buyer_rating") val buyerRating: Int? = null,
+    @SerialName("buyer_comment") val buyerComment: String? = null,
+    @SerialName("rated_at") val ratedAt: String? = null,
+    @SerialName("shipping_tracking") val shippingTracking: String? = null,
+    @SerialName("shipping_courier") val shippingCourier: String? = null,
+) {
+    val isInApp: Boolean get() = paymentMode.equals("IN_APP", ignoreCase = true)
+    val isPaid: Boolean get() = paymentStatus.equals("PAID", ignoreCase = true)
+    val payableAmount: Double get() = agreedPrice ?: postPrice ?: 0.0
+}
 
 @Serializable
 data class SalesListResponse(
@@ -1648,6 +1765,33 @@ data class SalesListResponse(
 data class FraudReportRequest(
     val reportedParty: String,
     val reason: String,
+)
+
+@Serializable
+data class SaleRateRequest(
+    val rating: Int,
+    val comment: String? = null,
+)
+
+/** Body for POST /api/sales/:id/mark-shipped — shipment evidence captured in-app. */
+@Serializable
+data class MarkShippedRequest(
+    @SerialName("trackingNumber") val trackingNumber: String? = null,
+    @SerialName("courierName") val courierName: String? = null,
+    @SerialName("evidenceUrls") val evidenceUrls: List<String>? = null,
+)
+
+/** Server response for GET /api/sales/my/review-status — buyer's rating eligibility for one post. */
+@Serializable
+data class MyReviewStatusResponse(
+    val success: Boolean = false,
+    val eligible: Boolean = false,
+    val rated: Boolean = false,
+    val saleId: Int? = null,
+    val status: String? = null,
+    val buyerRating: Int? = null,
+    val buyerComment: String? = null,
+    val ratedAt: String? = null,
 )
 
 @Serializable
@@ -1723,15 +1867,681 @@ data class PublicWallLeaderboardResponse(
 data class SubscriptionPlan(
     val id: String,
     val name: String,
-    val displayName: String,
-    val priceINR: Int,
+    val displayName: String = "",
+    val priceINR: Int = 0,
     val features: List<String> = emptyList(),
     val maxListings: Int? = null,
     val maxImages: Int = 1,
-    val dailyLimit: Int = 1
+    val dailyLimit: Int = 1,
+    @SerialName("duration_days") val durationDays: Int = 30,
+    val slug: String? = null,
 )
 
 @Serializable
 data class SubscriptionPlansResponse(
     val plans: List<SubscriptionPlan>
 )
+
+// =====================================================================
+// V1 SUBSCRIPTION DTOS
+// =====================================================================
+
+@Serializable
+data class SubscriptionFeature(
+    val feature_code: String = "",
+    val feature_name: String = "",
+    val description: String? = null,
+    val feature_type: String = "boolean",
+    val value: String = "false",
+    val overage_price: Double? = null,
+)
+
+@Serializable
+data class SubscriptionPlanV1(
+    val plan_id: String = "",
+    val plan_name: String = "",
+    val slug: String? = null,
+    val description: String? = null,
+    val price: Double = 0.0,
+    val currency: String = "INR",
+    val billing_period: String = "monthly",
+    val duration_days: Int = 30,
+    val gst_rate: Double = 18.00,
+    val sort_order: Int = 0,
+    val features: List<SubscriptionFeature> = emptyList(),
+)
+
+@Serializable
+data class MySubscriptionResponseV1(
+    val subscription: ActiveSubscriptionV1? = null,
+    val currentPlan: String = "BASIC",
+    val features: List<SubscriptionFeature> = emptyList(),
+    val isExpired: Boolean = false,
+    val expiresInDays: Int = 0,
+)
+
+@Serializable
+data class ActiveSubscriptionV1(
+    val sub_id: String? = null,
+    val plan_id: String? = null,
+    val plan_name: String? = null,
+    val slug: String? = null,
+    val status: String? = null,
+    val start_date: String? = null,
+    val end_date: String? = null,
+    val price: Double? = null,
+    val duration_days: Int? = null,
+)
+
+@Serializable
+data class CreateSubscriptionOrderRequest(
+    val plan_id: String,
+)
+
+@Serializable
+data class CreateSubscriptionOrderResponse(
+    val success: Boolean = false,
+    val sandbox: Boolean = false,
+    val order: RazorpayOrder? = null,
+    val plan: SubscriptionPlanV1? = null,
+)
+
+@Serializable
+data class RazorpayOrder(
+    val id: String = "",
+    val amount: Int = 0,
+    val currency: String = "INR",
+    val receipt: String? = null,
+)
+
+@Serializable
+data class VerifySubscriptionPaymentRequest(
+    val razorpay_order_id: String,
+    val razorpay_payment_id: String,
+    val razorpay_signature: String,
+    val plan_id: String,
+)
+
+@Serializable
+data class VerifySubscriptionPaymentResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val currentPlan: String? = null,
+    val subscription: ActiveSubscriptionV1? = null,
+)
+
+@Serializable
+data class SubscriptionHistoryResponseV1(
+    val success: Boolean = false,
+    val history: List<ActiveSubscriptionV1> = emptyList(),
+)
+
+@Serializable
+data class SubscriptionFeaturesResponse(
+    val success: Boolean = false,
+    val currentPlan: String = "BASIC",
+    val features: List<SubscriptionFeature> = emptyList(),
+)
+
+@Serializable
+data class CheckFeatureResponse(
+    val success: Boolean = false,
+    val allowed: Boolean = false,
+    val featureCode: String = "",
+    val currentPlan: String = "BASIC",
+    val limit: Int? = null,
+    val overagePrice: Double? = null,
+)
+
+// =====================================================================
+// V1 ORDER DTOS
+// =====================================================================
+
+@Serializable
+data class OrderV1(
+    val order_id: String = "",
+    val order_number: String = "",
+    val buyer_id: String = "",
+    val seller_id: String = "",
+    val product_id: String = "",
+    val total_amount: Double = 0.0,
+    val status: String = "PENDING",
+    val payment_status: String = "PENDING",
+    val created_at: String? = null,
+    val product_title: String? = null,
+    val product_price: Double? = null,
+)
+
+@Serializable
+data class OrdersListResponse(
+    val success: Boolean = false,
+    val orders: List<OrderV1> = emptyList(),
+)
+
+@Serializable
+data class CreateOrderRequestV1(
+    val product_id: String,
+    val seller_id: String,
+    val variant_id: String? = null,
+    val quantity: Int = 1,
+)
+
+@Serializable
+data class CreateOrderResponseV1(
+    val success: Boolean = false,
+    val order: OrderV1? = null,
+)
+
+@Serializable
+data class OrderDetailResponse(
+    val success: Boolean = false,
+    val order: OrderV1? = null,
+)
+
+@Serializable
+data class UpdateOrderStatusRequest(
+    val status: String,
+)
+
+@Serializable
+data class OrderStatusHistory(
+    val history_id: String = "",
+    val order_id: String = "",
+    val old_status: String? = null,
+    val new_status: String = "",
+    val created_at: String? = null,
+)
+
+// =====================================================================
+// V1 DISPUTE DTOS
+// =====================================================================
+
+@Serializable
+data class Dispute(
+    val dispute_id: String = "",
+    val order_id: String = "",
+    val raised_by: String = "",
+    val raised_against: String = "",
+    val dispute_type: String = "",
+    val description: String = "",
+    val status: String = "OPEN",
+    val created_at: String? = null,
+    val order_number: String? = null,
+)
+
+@Serializable
+data class DisputesListResponse(
+    val success: Boolean = false,
+    val disputes: List<Dispute> = emptyList(),
+)
+
+@Serializable
+data class CreateDisputeRequest(
+    val order_id: String,
+    val dispute_type: String,
+    val description: String,
+    val raised_against: String,
+)
+
+@Serializable
+data class CreateDisputeResponse(
+    val success: Boolean = false,
+    val dispute: Dispute? = null,
+)
+
+@Serializable
+data class DisputeMessage(
+    val message_id: String = "",
+    val dispute_id: String = "",
+    val sender_id: String = "",
+    val message: String = "",
+    val created_at: String? = null,
+)
+
+@Serializable
+data class DisputeEvidence(
+    val evidence_id: String = "",
+    val dispute_id: String = "",
+    val submitted_by: String = "",
+    val evidence_type: String = "",
+    val object_key: String? = null,
+    val content: String? = null,
+    val description: String? = null,
+    val created_at: String? = null,
+)
+
+@Serializable
+data class DisputeDetailResponse(
+    val success: Boolean = false,
+    val dispute: Dispute? = null,
+    val messages: List<DisputeMessage> = emptyList(),
+    val evidence: List<DisputeEvidence> = emptyList(),
+)
+
+@Serializable
+data class AddDisputeMessageRequest(
+    val message: String,
+)
+
+@Serializable
+data class AddDisputeEvidenceRequest(
+    val evidence_type: String,
+    val object_key: String? = null,
+    val content: String? = null,
+    val description: String? = null,
+)
+
+// =====================================================================
+// V1 SHIPMENT DTOS
+// =====================================================================
+
+@Serializable
+data class Shipment(
+    val shipment_id: String = "",
+    val order_id: String = "",
+    val carrier: String? = null,
+    val tracking_number: String? = null,
+    val lr_number: String? = null,
+    val status: String = "PENDING",
+    val created_at: String? = null,
+    val order_number: String? = null,
+)
+
+@Serializable
+data class ShipmentsListResponse(
+    val success: Boolean = false,
+    val shipments: List<Shipment> = emptyList(),
+)
+
+@Serializable
+data class CreateShipmentRequest(
+    val order_id: String,
+    val carrier: String? = null,
+    val tracking_number: String? = null,
+    val lr_number: String? = null,
+)
+
+@Serializable
+data class CreateShipmentResponse(
+    val success: Boolean = false,
+    val shipment: Shipment? = null,
+)
+
+@Serializable
+data class ShipmentDetailResponse(
+    val success: Boolean = false,
+    val shipment: Shipment? = null,
+)
+
+@Serializable
+data class UpdateShipmentStatusRequest(
+    val status: String,
+    val location: String? = null,
+    val description: String? = null,
+)
+
+@Serializable
+data class ConfirmDeliveryRequest(
+    val notes: String? = null,
+)
+
+// =====================================================================
+// V1 PAGE DTOS
+// =====================================================================
+
+@Serializable
+data class Page(
+    val page_id: String = "",
+    val owner_id: String = "",
+    val name: String = "",
+    val slug: String = "",
+    val description: String? = null,
+    val avatar_url: String? = null,
+    val cover_url: String? = null,
+    val category: String? = null,
+    val is_verified: Boolean = false,
+    val follower_count: Int = 0,
+    val created_at: String? = null,
+)
+
+@Serializable
+data class PagesListResponse(
+    val success: Boolean = false,
+    val pages: List<Page> = emptyList(),
+)
+
+@Serializable
+data class CreatePageRequest(
+    val name: String,
+    val description: String? = null,
+    val category: String? = null,
+)
+
+@Serializable
+data class CreatePageResponse(
+    val success: Boolean = false,
+    val page: Page? = null,
+)
+
+@Serializable
+data class PageDetailResponse(
+    val success: Boolean = false,
+    val page: Page? = null,
+)
+
+@Serializable
+data class UpdatePageRequest(
+    val name: String? = null,
+    val description: String? = null,
+    val avatar_url: String? = null,
+    val cover_url: String? = null,
+    val category: String? = null,
+)
+
+@Serializable
+data class PagePost(
+    val post_id: String = "",
+    val page_id: String = "",
+    val author_id: String = "",
+    val content: String = "",
+    val is_pinned: Boolean = false,
+    val status: String = "PUBLISHED",
+    val created_at: String? = null,
+    val author_name: String? = null,
+)
+
+@Serializable
+data class PagePostsListResponse(
+    val success: Boolean = false,
+    val posts: List<PagePost> = emptyList(),
+)
+
+@Serializable
+data class CreatePagePostRequest(
+    val content: String,
+    val media: String? = null,
+)
+
+@Serializable
+data class CreatePagePostResponse(
+    val success: Boolean = false,
+    val post: PagePost? = null,
+)
+
+// =====================================================================
+// V1 MEDIA DTOS
+// =====================================================================
+
+@Serializable
+data class MediaItem(
+    val media_id: String = "",
+    val post_id: String? = null,
+    val user_id: String = "",
+    val object_key: String = "",
+    val media_type: String = "image",
+    val mime_type: String? = null,
+    val file_size: Int? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val status: String = "READY",
+    val created_at: String? = null,
+)
+
+@Serializable
+data class RecordMediaUploadRequest(
+    val post_id: String? = null,
+    val object_key: String,
+    val media_type: String,
+    val mime_type: String? = null,
+    val file_size: Int? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val duration: Int? = null,
+)
+
+@Serializable
+data class RecordMediaUploadResponse(
+    val success: Boolean = false,
+    val media: MediaItem? = null,
+)
+
+@Serializable
+data class MediaDetailResponse(
+    val success: Boolean = false,
+    val media: MediaItem? = null,
+)
+
+// =====================================================================
+// V1 SEARCH DTOS
+// =====================================================================
+
+@Serializable
+data class SearchProduct(
+    val product_id: String = "",
+    val title: String = "",
+    val description: String? = null,
+    val price: Double = 0.0,
+    val condition: String? = null,
+    val category_name: String? = null,
+    val category_slug: String? = null,
+    val primary_image: String? = null,
+    val created_at: String? = null,
+)
+
+@Serializable
+data class SearchPagination(
+    val page: Int = 1,
+    val limit: Int = 20,
+    val total: Int = 0,
+    val totalPages: Int = 0,
+)
+
+@Serializable
+data class SearchProductsResponse(
+    val success: Boolean = false,
+    val products: List<SearchProduct> = emptyList(),
+    val pagination: SearchPagination? = null,
+)
+
+@Serializable
+data class SearchPost(
+    val post_id: String = "",
+    val title: String = "",
+    val description: String? = null,
+    val price: Double? = null,
+    val created_at: String? = null,
+)
+
+@Serializable
+data class SearchPostsResponse(
+    val success: Boolean = false,
+    val posts: List<SearchPost> = emptyList(),
+    val pagination: SearchPagination? = null,
+)
+
+@Serializable
+data class SearchPagesResponse(
+    val success: Boolean = false,
+    val pages: List<Page> = emptyList(),
+)
+
+@Serializable
+data class SearchUser(
+    val user_id: String = "",
+    val username: String = "",
+    val email: String = "",
+)
+
+@Serializable
+data class SearchUsersResponse(
+    val success: Boolean = false,
+    val users: List<SearchUser> = emptyList(),
+)
+
+// =====================================================================
+// V1 REFUND DTOS
+// =====================================================================
+
+@Serializable
+data class Refund(
+    val refund_id: String = "",
+    val transaction_id: String = "",
+    val amount: Double = 0.0,
+    val reason: String? = null,
+    val status: String = "PENDING",
+    val created_at: String? = null,
+)
+
+@Serializable
+data class RefundsListResponse(
+    val success: Boolean = false,
+    val refunds: List<Refund> = emptyList(),
+)
+
+@Serializable
+data class RequestRefundRequest(
+    val transaction_id: String,
+    val amount: Double,
+    val reason: String? = null,
+)
+
+@Serializable
+data class RequestRefundResponse(
+    val success: Boolean = false,
+    val refund: Refund? = null,
+)
+
+@Serializable
+data class RefundDetailResponse(
+    val success: Boolean = false,
+    val refund: Refund? = null,
+)
+
+// =====================================================================
+// V1 SETTLEMENT DTOS
+// =====================================================================
+
+@Serializable
+data class SettlementRecord(
+    val settlement_id: String = "",
+    val period_start: String = "",
+    val period_end: String = "",
+    val total_orders: Int = 0,
+    val gross_amount: Double = 0.0,
+    val platform_fees: Double = 0.0,
+    val net_amount: Double = 0.0,
+    val status: String = "PENDING",
+    val created_at: String? = null,
+)
+
+@Serializable
+data class SettlementsListResponse(
+    val success: Boolean = false,
+    val settlements: List<SettlementRecord> = emptyList(),
+)
+
+@Serializable
+data class CurrentSettlement(
+    val total_orders: Int = 0,
+    val gross_amount: Double = 0.0,
+    val total_fees: Double = 0.0,
+    val estimated_payout: Double = 0.0,
+)
+
+@Serializable
+data class CurrentSettlementResponse(
+    val success: Boolean = false,
+    val current: CurrentSettlement? = null,
+)
+
+@Serializable
+data class SettlementDetailResponse(
+    val success: Boolean = false,
+    val settlement: SettlementRecord? = null,
+)
+
+// =====================================================================
+// V1 RESPONSE DTOS (for ZarudaApiV1)
+// =====================================================================
+
+@Serializable
+data class SubscriptionPlansResponseV1(
+    val success: Boolean = false,
+    val plans: List<SubscriptionPlanV1> = emptyList(),
+)
+
+// =====================================================================
+// PURCHASE REVIEW / USER SOLD POSTS DTOS
+// =====================================================================
+
+@Serializable
+data class PurchaseReviewRequestV1(
+    @SerialName("sale_id") val saleId: String,
+    @SerialName("post_id") val postId: String,
+    val rating: Int,
+    val comment: String? = null,
+)
+
+@Serializable
+data class UserSoldPostsResponseV1(
+    val success: Boolean = false,
+    // Server returns the list under `sold_posts` (see server salesController.getSellerSoldPosts).
+    // `posts` kept for backward-compat with any older shape.
+    @SerialName("sold_posts") val soldPosts: List<UserSoldPostV1> = emptyList(),
+    val posts: List<UserSoldPostV1> = emptyList(),
+    // Seller trust-passport summary
+    @SerialName("seller_id") val sellerId: String? = null,
+    @SerialName("seller_name") val sellerName: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("is_kyc_verified") val isKycVerified: Boolean = false,
+    @SerialName("total_sold") val totalSold: Int = 0,
+    @SerialName("average_rating") val averageRating: Double = 0.0,
+    @SerialName("star_string") val starString: String? = null,
+    @SerialName("trust_score") val trustScore: Int = 0,
+    @SerialName("trust_badge") val trustBadge: String? = null,
+    val total: Int = 0,
+    val page: Int = 1,
+    val limit: Int = 20,
+) {
+    val items: List<UserSoldPostV1> get() = if (soldPosts.isNotEmpty()) soldPosts else posts
+}
+
+@Serializable
+data class UserSoldPostV1(
+    // Sale / transaction identifiers
+    @SerialName("sale_id") val saleId: String? = null,
+    @SerialName("post_id") val postId: String? = null,
+    val id: String? = null,
+    @SerialName("user_id") val userId: String? = null,
+    // Post details (server sends post_title / post_price for the public endpoint)
+    val title: String? = null,
+    @SerialName("post_title") val postTitle: String? = null,
+    val description: String? = null,
+    val price: Double? = null,
+    @SerialName("post_price") val postPrice: Double? = null,
+    val images: List<String>? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    val location: String? = null,
+    val status: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("sold_at") val soldAt: String? = null,
+    @SerialName("sale_date") val saleDate: String? = null,
+    @SerialName("category_name") val categoryName: String? = null,
+    val category: String? = null,
+    @SerialName("sellerName") val sellerName: String? = null,
+    @SerialName("userName") val userName: String? = null,
+    @SerialName("avg_rating") val avgRating: Double = 0.0,
+    @SerialName("review_count") val reviewCount: Int = 0,
+    @SerialName("views_count") val viewsCount: Int = 0,
+    val likes: Int = 0,
+    val shares: Int = 0,
+    // Buyer rating & review left by the buyer on the completed sale (the trust signal)
+    @SerialName("buyer_rating") val buyerRating: Double? = null,
+    @SerialName("buyer_comment") val buyerComment: String? = null,
+    @SerialName("buyer_name") val buyerName: String? = null,
+    @SerialName("rated_at") val ratedAt: String? = null,
+    @SerialName("rating_stars") val ratingStars: String? = null,
+) {
+    val displayTitle: String get() = postTitle ?: title ?: "Sold item"
+    val displayPrice: Double get() = postPrice ?: price ?: 0.0
+}

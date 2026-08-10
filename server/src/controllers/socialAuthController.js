@@ -161,8 +161,11 @@ exports.googleAuth = async (req, res) => {
       // Create notification preferences
       try {
         await runQuery(
-          `INSERT INTO notification_preferences (user_id, email_notifications, push_notifications, sms_notifications, sound_enabled)
-           VALUES ($1, true, true, false, true)
+          `INSERT INTO notification_preferences (user_id, push_enabled, email_enabled, sms_enabled,
+             likes_enabled, comments_enabled, follows_enabled, mentions_enabled,
+             order_updates_enabled, marketing_enabled, security_enabled, system_enabled,
+             price_drop_enabled, message_enabled)
+           VALUES ($1, true, true, false, true, true, true, true, true, true, true, true, true, true)
            ON CONFLICT (user_id) DO NOTHING`,
           [user.user_id]
         );

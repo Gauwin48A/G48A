@@ -46,8 +46,12 @@ object Routes {
     // Commerce
     const val BOUGHT_POSTS = "bought-posts"
     const val SOLD_POSTS = "sold-posts"
+    const val USER_SOLD_POSTS = "user/{userId}/sold-posts"
+    fun userSoldPosts(userId: String): String = "user/$userId/sold-posts"
     const val BUYER_VIEW = "buyer-view"
-    const val SALE_DONE = "saledone"
+    const val SALE_DONE = "saledone?tab={tab}"
+    /** Sale hub route — optional tab: 0=Start, 1=Pending, 2=Active, 3=History. */
+    fun saleDoneTab(tab: Int = 0): String = "saledone?tab=$tab"
     const val SALE_DONE_WITH = "saledone/{postId}/{sellerId}"
     fun saleDone(postId: String, sellerId: String): String = "saledone/$postId/$sellerId"
     const val SALE_UNDONE = "saleundone"
@@ -78,6 +82,7 @@ object Routes {
     const val ACCOUNT_DELETE = "account/delete"
     const val VERIFICATION = "verification"
     const val ANALYTICS = "analytics"
+    const val PAYOUT = "payout"
 
     // Channels
     const val CHANNELS = "channels"

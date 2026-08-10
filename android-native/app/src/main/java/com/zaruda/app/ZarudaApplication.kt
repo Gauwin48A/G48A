@@ -1,6 +1,7 @@
 package com.zaruda.app
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
 import coil.ImageLoader
 import coil.ImageLoaderFactory
@@ -11,7 +12,15 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zaruda.app.core.notifications.NotificationChannelHelper
+import com.zaruda.app.data.local.TokenStore
+import com.zaruda.app.data.remote.ZarudaApi
+import com.zaruda.app.data.remote.dto.PushTokenRequest
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltAndroidApp
 class ZarudaApplication : Application(), ImageLoaderFactory {
@@ -19,6 +28,11 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
     companion object {
         private const val TAG = "ZARUDA-FCM"
     }
+
+    @Inject lateinit var api: ZarudaApi
+    @Inject lateinit var tokenStore: TokenStore
+
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -66,6 +80,24 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
                     Log.d(TAG, "FCM TOKEN:")
                     Log.d(TAG, token)
                     Log.d(TAG, "==============================")
+
+                    // Cache the token so it can be registered after a later login, and
+                    // register immediately when a session already exists (onNewToken alone
+                    // does not fire on a fresh install — this closes that gap).
+                    tokenStore.saveFcmToken(token)
+                    if (tokenStore.isAuthenticated) {
+                        appScope.launch {
+                            runCatching {
+                                api.registerPushToken(
+                                    PushTokenRequest(
+                                        token = token,
+                                        deviceType = "android",
+                                        deviceName = Build.MODEL,
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
 
         } catch (e: Exception) {

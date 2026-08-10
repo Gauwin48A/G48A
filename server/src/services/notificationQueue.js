@@ -2,6 +2,7 @@ const { Queue } = require("bullmq");
 const logger = require("../utils/logger");
 const pool = require("../config/db");
 const { sendFcmMulticast } = require("./fcmAdminService");
+const { sendToMultiple: sendWebPush } = require("./fcm");
 
 const redisHost = process.env.REDIS_HOST || "127.0.0.1";
 const redisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
@@ -55,10 +56,19 @@ async function fallbackDirectDispatch(jobData) {
   const { notification_id, receiver_id, type, title, message, body, image_url, image, deep_link, data } = jobData;
 
   try {
-    const tokenRes = await pool.query(
-      "SELECT token FROM device_tokens WHERE user_id = $1 AND is_active = true",
-      [receiver_id]
-    );
+    let tokenRes;
+    try {
+      tokenRes = await pool.query(
+        "SELECT fcm_token AS token, COALESCE(platform, 'android') AS device_type FROM device_tokens WHERE user_id = $1 AND is_active = true",
+        [receiver_id]
+      );
+    } catch (err) {
+      // Legacy schema without a platform column — fall back to the old behavior.
+      tokenRes = await pool.query(
+        "SELECT fcm_token AS token FROM device_tokens WHERE user_id = $1 AND is_active = true",
+        [receiver_id]
+      );
+    }
 
     if (tokenRes.rows.length === 0) {
       if (notification_id) {
@@ -70,26 +80,47 @@ async function fallbackDirectDispatch(jobData) {
       return { success: true, status: "no_active_devices" };
     }
 
-    const tokens = tokenRes.rows.map(r => r.token);
-    const pushResult = await sendFcmMulticast(tokens, {
-      notification_id,
-      type,
-      title,
-      message: message || body,
-      image_url: image_url || image,
-      deep_link,
-      data
-    });
+    const androidTokens = tokenRes.rows.filter(r => r.device_type !== "web").map(r => r.token);
+    const webTokens = tokenRes.rows.filter(r => r.device_type === "web").map(r => r.token);
+
+    const pushResult = androidTokens.length
+      ? await sendFcmMulticast(androidTokens, {
+          notification_id,
+          type,
+          title,
+          message: message || body,
+          image_url: image_url || image,
+          deep_link,
+          data
+        })
+      : { success: true, successCount: 0, invalidTokens: [] };
+
+    // Web VAPID subscription JSONs are NOT FCM tokens — send via web-push instead
+    let webPushResult = { successCount: 0 };
+    if (webTokens.length) {
+      try {
+        webPushResult = await sendWebPush(webTokens, title, message || body, {
+          notification_id: String(notification_id || ""),
+          type: type || "system",
+          deep_link: deep_link || "",
+          image_url: image_url || image || "",
+          ...(data || {})
+        });
+      } catch (err) {
+        logger.warn(`[NotificationQueue] Web push send failed for user #${receiver_id}:`, err.message);
+      }
+    }
 
     if (pushResult.invalidTokens && pushResult.invalidTokens.length > 0) {
       await pool.query(
-        "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE token = ANY($1::text[])",
+        "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE fcm_token = ANY($1::text[])",
         [pushResult.invalidTokens]
       );
     }
 
     if (notification_id) {
-      const finalStatus = pushResult.successCount > 0 || pushResult.reason === 'fcm_not_configured' ? 'sent' : 'failed';
+      const sentAny = pushResult.successCount > 0 || (webPushResult && webPushResult.successCount > 0);
+      const finalStatus = sentAny || pushResult.reason === 'fcm_not_configured' ? 'sent' : 'failed';
       await pool.query(
         "UPDATE notifications SET status = $1, updated_at = NOW() WHERE notification_id = $2",
         [finalStatus, notification_id]
@@ -114,16 +145,30 @@ async function fallbackDirectDispatch(jobData) {
  * @param {Object} jobData - Notification payload data
  */
 async function enqueueNotification(jobData) {
-  if (notificationQueue && isRedisAvailable) {
-    try {
-      const job = await notificationQueue.add("send-push", jobData, {
-        jobId: `notif-${jobData.notification_id || Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-      });
-      logger.info(`[NotificationQueue] Job ${job.id} enqueued for user ${jobData.receiver_id}`);
-      return { success: true, jobId: job.id };
-    } catch (err) {
-      isRedisAvailable = false;
-      logger.warn(`[NotificationQueue] Queue add failed (${err.message}) - falling back to direct dispatch`);
+  if (notificationQueue) {
+    if (!isRedisAvailable) {
+      try {
+        await Promise.race([
+          notificationQueue.client,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timeout")), 1500))
+        ]);
+        isRedisAvailable = true;
+      } catch {
+        isRedisAvailable = false;
+      }
+    }
+
+    if (isRedisAvailable) {
+      try {
+        const job = await notificationQueue.add("send-push", jobData, {
+          jobId: `notif-${jobData.notification_id || Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+        });
+        logger.info(`[NotificationQueue] Job ${job.id} enqueued for user ${jobData.receiver_id}`);
+        return { success: true, jobId: job.id };
+      } catch (err) {
+        isRedisAvailable = false;
+        logger.warn(`[NotificationQueue] Queue add failed (${err.message}) - falling back to direct dispatch`);
+      }
     }
   }
 

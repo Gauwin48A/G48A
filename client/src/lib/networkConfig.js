@@ -1,6 +1,6 @@
 ﻿// Dev-only fallback origin - resolved at runtime, not embedded in production builds
 const DEFAULT_DEV_API_ORIGIN = import.meta.env.DEV
-  ? (import.meta.env.VITE_DEV_API_ORIGIN || `http://${["local", "host"].join("")}:${[5, 0, 0, 1].join("")}`)
+  ? (import.meta.env.VITE_DEV_API_ORIGIN || `http://localhost:5001`)
   : "";
 const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 const FORCE_ABSOLUTE_LOCAL_API_ORIGIN =

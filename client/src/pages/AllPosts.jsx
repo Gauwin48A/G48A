@@ -58,6 +58,10 @@ import AllPostsQuickFilters from "@/components/allposts/QuickFilters";
 import AllPostsFilterPanel from "@/components/allposts/FilterPanel";
 import AllPostsGreatDealsBanner from "@/components/allposts/GreatDealsBanner";
 import PostPromoBadges from "@/components/PostPromoBadges";
+import FilterBar from "@/components/allposts/FilterBar";
+import ForYouPosts from "@/components/allposts/ForYouPosts";
+import RegularPosts from "@/components/allposts/RegularPosts";
+import FeedHeader from "@/components/allposts/FeedHeader";
 import {
   normalizeMediaList as ctm,
   resolveMediaUrl as utm,
@@ -67,8 +71,9 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
-import { getDemoPosts } from "@/utils/demoPosts";
+import { getDemoPosts, getDemoCategoryList } from "@/utils/demoPosts";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
+import { fetchUserPreferencesCached } from "@/services/preferencesService";
 const ve = 5,
   SHOW_POST_ID_CHIP = !1,
   LOAD_MORE_COOLDOWN_MS = 1200,
@@ -500,15 +505,30 @@ const ve = 5,
         if (Array.isArray(categoryModeSubcategories)) {
           categoryModeSubcategories.forEach((entry) => addEntry(entry, null));
         }
-        if (Array.isArray(categoryModeCategories)) {
-          categoryModeCategories.forEach((category) => {
+        // When the backend catalog is unavailable/empty (e.g. demo login, empty DB),
+        // fall back to the mock category+subcategory catalog so preferred subcategory
+        // NAMES still resolve to IDs. Without this, subcategory_ids is never appended
+        // and the feed stays unfiltered (cars leak into Electronics, etc.).
+        // Gated on !categoryModeLoading so mock IDs are never sent to a real backend
+        // during the transient loading window before the real catalog arrives.
+        const realCatalogReady =
+          !categoryModeLoading &&
+          Array.isArray(categoryModeCategories) &&
+          categoryModeCategories.length > 0;
+        const categorySource = realCatalogReady
+          ? categoryModeCategories
+          : !categoryModeLoading
+            ? getDemoCategoryList()
+            : [];
+        if (Array.isArray(categorySource)) {
+          categorySource.forEach((category) => {
             (Array.isArray(category?.subcategories) ? category.subcategories : []).forEach(
               (entry) => addEntry(entry, category),
             );
           });
         }
         return map;
-      }, [categoryModeSubcategories, categoryModeCategories]),
+      }, [categoryModeSubcategories, categoryModeCategories, categoryModeLoading]),
       preferredCategoryId = useMemo(() => {
         const directId = categoryModeCategory?.id || categoryModeCategory?.category_id || null;
         if (directId != null && directId !== "") return String(directId);
@@ -973,6 +993,35 @@ const ve = 5,
       carouselTrackRefs = useRef({}),
       C = useMemo(() => rt($), [$]);
     const currentUserId = tt($);
+    // Server-side preference subcategories for For You mode. Profile.jsx only
+    // writes the localStorage "userPreferences" key for the DEMO user; real
+    // users' preferences are stored on the server (/profile/preferences). Without
+    // merging these here, subcategory_ids is never appended for real users and the
+    // backend returns the full unfiltered feed (cars leak into Electronics, etc.).
+    const [serverPrefSubcats, setServerPrefSubcats] = useState([]);
+    useEffect(() => {
+      if (!isForYouMode || !C || !currentUserId) {
+        setServerPrefSubcats([]);
+        return;
+      }
+      let active = true;
+      fetchUserPreferencesCached({ userId: currentUserId })
+        .then((data) => {
+          if (!active) return;
+          const subs = Array.isArray(data?.subcategories)
+            ? data.subcategories
+            : Array.isArray(data?.categories)
+              ? data.categories
+              : [];
+          setServerPrefSubcats(Array.isArray(subs) ? subs : []);
+        })
+        .catch(() => {
+          if (active) setServerPrefSubcats([]);
+        });
+      return () => {
+        active = false;
+      };
+    }, [isForYouMode, C, currentUserId]);
     const {
       addItem: addCartItem,
       removeItem: removeCartItem,
@@ -990,7 +1039,8 @@ const ve = 5,
       [showAllQuickFilters, setShowAllQuickFilters] = useState(!1),
       [compareItems, setCompareItems] = useState([]),
       [showComparePanel, setShowComparePanel] = useState(!1),
-      [isStalledLoading, setIsStalledLoading] = useState(!1);
+      [isStalledLoading, setIsStalledLoading] = useState(!1),
+      [forYouHeroExpanded, setForYouHeroExpanded] = useState(!1);
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = useRef(l);
     const stalledLoadingStartedAtRef = useRef(null);
@@ -1552,12 +1602,18 @@ const ve = 5,
         }
         return rawLabel;
       })(),
-      activeCategoryId = hasActiveCategory
-        ? categoryModeCategory?.id ||
-          categoryModeCategory?.category_id ||
-          ce[normalizeName(effectiveCategoryLabel)] ||
-          ""
-        : "",
+      activeCategoryId = (() => {
+        if (!hasActiveCategory) return "";
+        const directId = categoryModeCategory?.id || categoryModeCategory?.category_id;
+        if (directId != null && directId !== "") return String(directId);
+        const mapId = ce[normalizeName(effectiveCategoryLabel)];
+        if (mapId != null && mapId !== "") return String(mapId);
+        const normLabel = normalizeName(effectiveCategoryLabel);
+        const match = (Array.isArray(categoryList) ? categoryList : []).find(
+          (entry) => normalizeName(entry?.name || entry?.title || entry?.label || entry?.category_name) === normLabel,
+        );
+        return match?.category_id || match?.id || "";
+      })(),
       activeAppMatcher = useMemo(
         () => buildActiveAppMatcher(t.categoryGroup, categoryModeCategories),
         [t.categoryGroup, categoryModeCategories],
@@ -1576,11 +1632,16 @@ const ve = 5,
         });
       }, [categoryList, activeAppMatcher]),
       allPostsSubcategoryBarList = useMemo(() => {
+        const normActiveLabel = normalizeName(effectiveCategoryLabel);
         const scopedCategories = (Array.isArray(appScopedCategoryList) ? appScopedCategoryList : []).filter(
           (entry) => {
-            if (!activeCategoryId) return !0;
+            if (!hasActiveCategory) return !0;
             const id = entry?.category_id || entry?.id || null;
-            return String(id || "") === String(activeCategoryId);
+            if (activeCategoryId && id != null && String(id) === String(activeCategoryId)) {
+              return !0;
+            }
+            const name = normalizeName(entry?.name || entry?.title || entry?.label || "");
+            return normActiveLabel && name === normActiveLabel;
           },
         );
         const flattenedFromCategories = scopedCategories
@@ -1607,8 +1668,12 @@ const ve = 5,
             : (Array.isArray(sortedSubcategories) ? sortedSubcategories : [])
                 .filter((entry) => {
                   const categoryId = entry?.category_id || null;
-                  if (activeCategoryId) {
-                    return String(categoryId || "") === String(activeCategoryId);
+                  if (hasActiveCategory) {
+                    if (activeCategoryId && String(categoryId || "") === String(activeCategoryId)) {
+                      return !0;
+                    }
+                    const categoryName = normalizeName(entry?.category_name || "");
+                    return normActiveLabel && categoryName === normActiveLabel;
                   }
                   if (!activeAppMatcher?.activeApp) return !0;
                   if (categoryId != null && activeAppMatcher.categoryIds.has(String(categoryId))) {
@@ -1840,24 +1905,59 @@ const ve = 5,
               }
             }
           } catch (_) {}
-          if (userSubcats.length > 0) {
-            const activeCategoryFilter = (a && a !== "All") ? a : (t.categoryGroup || null);
-            if (activeCategoryFilter) {
-              const normActiveCat = normalizeName(activeCategoryFilter);
-              const scopedSubcats = userSubcats.filter((subName) => {
-                const foundSub = sortedSubcategories.find(
-                  (s) => normalizeName(s.name) === normalizeName(subName)
-                );
-                if (!foundSub || !foundSub.category_name) return true;
-                const subCatNorm = normalizeName(foundSub.category_name);
-                return subCatNorm === normActiveCat || subCatNorm.includes(normActiveCat) || normActiveCat.includes(subCatNorm);
-              });
-              if (scopedSubcats.length > 0) {
-                e.append("subcategory_ids", scopedSubcats.join(","));
+          // Merge server-side preferences (real users) with the demo/local value so
+          // subcategory_ids is always appended — otherwise the feed stays unfiltered.
+          if (Array.isArray(serverPrefSubcats) && serverPrefSubcats.length > 0) {
+            const seen = new Set(userSubcats.map((subName) => normalizeName(subName)));
+            serverPrefSubcats.forEach((subName) => {
+              if (typeof subName !== "string") return;
+              const key = normalizeName(subName);
+              if (key && !seen.has(key)) {
+                seen.add(key);
+                userSubcats.push(subName);
               }
-            } else {
-              e.append("subcategory_ids", userSubcats.join(","));
+            });
+          }
+          if (userSubcats.length > 0) {
+            // ── Category-scoped preference resolution (FIX) ────────────────────────
+            // Resolve each preferred subcategory NAME against the full category catalog
+            // (subcategoryCandidatesByName is built from categoryModeSubcategories AND
+            // every category's nested subcategories, each carrying its parent categoryId).
+            // This works even in pure For You mode where categoryModeSubcategories is
+            // empty because no single category is active. Only subcategories whose parent
+            // category matches the active category / app scope are sent — so cars can
+            // never leak into Electronics, and Other-category subs never show elsewhere.
+            const activeCatId = activeCategoryId ? String(activeCategoryId) : "";
+            const hasAppScope = activeAppCategoryIds && activeAppCategoryIds.size > 0;
+            const resolvedIds = [];
+            const seenIds = new Set();
+            userSubcats.forEach((subName) => {
+              const candidates = subcategoryCandidatesByName[normalizeName(subName)] || [];
+              candidates.forEach((cand) => {
+                if (!cand || !cand.id) return;
+                const candCatId = cand.categoryId ? String(cand.categoryId) : "";
+                // Category-scoped: when a specific category is active, only include
+                // subcategories belonging to that exact category.
+                if (activeCatId) {
+                  if (candCatId !== activeCatId) return;
+                } else if (hasAppScope) {
+                  // App-scoped: only include subcategories within the active app's
+                  // categories (electronics / fashion / vehicles / others).
+                  if (!candCatId || !activeAppCategoryIds.has(candCatId)) return;
+                }
+                const idKey = String(cand.id);
+                if (!seenIds.has(idKey)) {
+                  seenIds.add(idKey);
+                  resolvedIds.push(idKey);
+                }
+              });
+            });
+            if (resolvedIds.length > 0) {
+              e.append("subcategory_ids", resolvedIds.join(","));
             }
+            // Note: when no category/app is active (pure For You), all resolved
+            // preferred subcategories are sent — only the user's chosen subcats,
+            // never posts from unrelated categories.
           }
         }
 
@@ -1912,6 +2012,10 @@ const ve = 5,
       }, [
         ce,
         subcategoryIdByName,
+        subcategoryCandidatesByName,
+        activeCategoryId,
+        activeAppCategoryIds,
+        serverPrefSubcats,
         L,
         latestWindow,
         requestLimit,
@@ -1974,22 +2078,6 @@ const ve = 5,
             const sortByParam = n.get("sortBy");
             if (sortByParam !== "shuffle" && !n.has("refresh")) {
               n.append("refresh", String(Date.now()));
-            }
-            // Demo mode guard: if user is in demo mode, skip the API call entirely
-            // and inject mock posts directly so sorting/filtering always works.
-            if (typeof window !== 'undefined') {
-              try {
-                if (window.localStorage.getItem('authSession') === 'true') {
-                  const demo = getDemoPosts();
-                  if (demo && demo.length > 0) {
-                    if (typeof console !== 'undefined') console.log('[AllPosts] Demo mode: injecting mock posts (bypassing API)');
-                    O(demo);
-                    z(null);
-                    if (L === 1) ee(!1);
-                    return;
-                  }
-                }
-              } catch (_) {}
             }
             const endpoint = isForYouMode ? "/posts/for-you" : "/posts";
             const i = await A.get(`${endpoint}?${n.toString()}`, {
@@ -2103,24 +2191,7 @@ const ve = 5,
             }
           } catch (n) {
             if (n?.name === "AbortError") {
-              if (typeof window !== 'undefined') {
-                try {
-                  if (window.localStorage.getItem('authSession') === 'true') {
-                    const demo = getDemoPosts();
-                    if (demo && demo.length > 0) {
-                      O(demo);
-                      z(null);
-                      if (L === 1) ee(!1);
-                      return;
-                    }
-                  }
-                } catch (_) {}
-              }
-              if (didTimeout && e === P.current) {
-                const timeoutMessage = tr("home_load_error", "Unable to load posts right now.");
-                z(timeoutMessage);
-                if (L === 1) ee(!1);
-              }
+              // AbortError is normal during fast tab/filter changes — retain real DB posts in state.
               return;
             }
             if (e !== P.current) return;
@@ -2136,24 +2207,6 @@ const ve = 5,
               normalized.includes("too many")
             ) {
               loadMoreCooldownRef.current = Date.now() + RATE_LIMIT_COOLDOWN_MS;
-            }
-            // Demo mode fallback: on ANY error, if the user is in demo mode (authSession in localStorage),
-            // inject mock posts so sorting/filtering can still be tested.
-            // This handles 401, 403, 500, network errors, etc. — any case where the backend is unavailable.
-            // filtering/sorting is handled client-side by filteredPosts useMemo with fresh filter state.
-            if (typeof window !== 'undefined') {
-              try {
-                const session = window.localStorage.getItem('authSession');
-                if (session === 'true') {
-                  const demo = getDemoPosts();
-                  if (demo && demo.length > 0) {
-                    O(demo);
-                    z(null);
-                    if (L === 1) ee(!1);
-                    return;
-                  }
-                }
-              } catch (_) {}
             }
             z(message);
             if (L === 1) {
@@ -2732,67 +2785,72 @@ const ve = 5,
         y(`/complaints?postId=${encodeURIComponent(a)}`);
       },
       toggleSave = async (e) => {
-        const a = I(e);
+        const rawId = typeof e === "object" && e !== null ? e?.post_id || e?.id || e?._id : e;
+        const a = I(rawId);
         if (!a) return;
         if (!C) {
-          M("Please login to save posts"),
-            setTimeout(() => M(""), 2e3),
-            y("/login", { state: { returnTo } });
+          M(s("login_to_save", { defaultValue: "Please login to save posts" }));
+          setTimeout(() => M(""), 2e3);
+          setLoginPromptOpen(!0);
           return;
         }
         const o = !!savedPosts[a],
           n = !o;
-        setSavedPosts((i) => ({ ...i, [a]: n })), setSavedPostStatus(a, n);
+        setSavedPosts((i) => ({ ...i, [a]: n }));
+        setSavedPostStatus(a, n);
         try {
           n
             ? await A.post("/wishlist", { postId: a })
             : await A.delete(`/wishlist/${a}`);
+          M(n ? s("added_to_wishlist", { defaultValue: "Saved to wishlist" }) : s("removed_from_wishlist", { defaultValue: "Removed from wishlist" }));
         } catch {
-          setSavedPosts((n) => ({ ...n, [a]: o })),
-            setSavedPostStatus(a, o),
-            M(o ? "Failed to remove saved post" : "Failed to save post"),
-            setTimeout(() => M(""), 2e3);
+          setSavedPosts((n) => ({ ...n, [a]: o }));
+          setSavedPostStatus(a, o);
+          M(o ? "Failed to remove saved post" : "Failed to save post");
         }
+        setTimeout(() => M(""), 2e3);
       },
       handleCartToggle = useCallback(
         (e) => {
-          const a = I(e?.post_id || e?.id);
+          const rawId = typeof e === "object" && e !== null ? e?.post_id || e?.id || e?._id : e;
+          const a = I(rawId);
           if (!a) return;
           if (!C) {
             setLoginPromptOpen(!0);
             return;
           }
+          const postObj = typeof e === "object" && e !== null ? e : f.find((item) => I(item?.post_id || item?.id) === a) || {};
           if (isInCartItem(a)) {
             removeCartItem(a);
             M(s("removed", { defaultValue: "Removed from cart" }));
           } else {
             addCartItem({
               id: a,
-              title: e?.title || s("title", { defaultValue: "Item" }),
-              price: e?.price || 0,
-              image: Ne(e),
-              seller: e?.user?.name || e?.user_name || e?.username || "Unknown",
-              location: e?.location || e?.city || e?.area || "",
+              title: postObj?.title || s("title", { defaultValue: "Item" }),
+              price: postObj?.price || 0,
+              image: Ne(postObj),
+              seller: postObj?.user?.name || postObj?.user_name || postObj?.username || "Unknown",
+              location: postObj?.location || postObj?.city || postObj?.area || "",
               category_id:
-                e?.category_id ||
-                e?.categoryId ||
-                e?.category?.category_id ||
-                e?.category?.id ||
+                postObj?.category_id ||
+                postObj?.categoryId ||
+                postObj?.category?.category_id ||
+                postObj?.category?.id ||
                 "",
               category_name:
-                e?.category_name ||
-                e?.categoryName ||
-                e?.category_title ||
-                e?.categoryTitle ||
-                (typeof e?.category === "object"
-                  ? e?.category?.name || e?.category?.title || e?.category?.label
-                  : e?.category) ||
+                postObj?.category_name ||
+                postObj?.categoryName ||
+                postObj?.category_title ||
+                postObj?.categoryTitle ||
+                (typeof postObj?.category === "object"
+                  ? postObj?.category?.name || postObj?.category?.title || postObj?.category?.label
+                  : postObj?.category) ||
                 "",
               category_group:
-                e?.category_group ||
-                e?.categoryGroup ||
-                e?.category?.category_group ||
-                e?.category?.categoryGroup ||
+                postObj?.category_group ||
+                postObj?.categoryGroup ||
+                postObj?.category?.category_group ||
+                postObj?.category?.categoryGroup ||
                 activeApp ||
                 "",
             });
@@ -2800,7 +2858,7 @@ const ve = 5,
           }
           setTimeout(() => M(""), 2e3);
         },
-        [C, addCartItem, isInCartItem, removeCartItem, s, activeApp],
+        [C, addCartItem, isInCartItem, removeCartItem, s, activeApp, f],
       ),
       toggleCompare = useCallback(
         (post) => {
@@ -3349,11 +3407,10 @@ const ve = 5,
               ),
             ),
         ),
-      ),
-      contentTopOffset = 0,
-      feedHeaderCompact = !showModeBanner,
-      showFeedTitle = showModeBanner,
-    Fe = useCallback(() => {
+      );
+      const feedHeaderCompact = !showModeBanner;
+      const showFeedTitle = showModeBanner;
+    const Fe = useCallback(() => {
       setIsLiveSyncing(!0);
       if (C && canShuffle) {
         setShuffleSeed(Date.now());
@@ -3421,1278 +3478,169 @@ const ve = 5,
       const e = setTimeout(() => setUpdatedPulse(!1), 900);
       return () => clearTimeout(e);
     }, [updatedPulse]);
-    return React.createElement(
-      "div",
-      {
-          className:
-            `mhub-page-allposts ${isForYouMode ? "mhub-page-foryou" : ""} mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`,
-          "data-feed-mode": isForYouMode ? "for-you" : "all-posts",
-      },
-      showModeBanner &&
-        React.createElement(
-          "div",
-          {
-            className: "w-full flex justify-center px-3 sm:px-4 pt-3 pb-3",
-            style: { paddingTop: `${contentTopOffset}px` },
-          },
-          React.createElement(
-            "div",
-            {
-              className: `w-full ${pageMaxWidthClass} mhub-premium-surface rounded-2xl p-3 sm:p-3.5`,
-            },
-            React.createElement(
-              "div",
-              { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" },
-              React.createElement(
-                "div",
-                {
-                  className:
-                    "text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200",
-                },
-                hasCategoryMode
-                  ? `${tr("category_mode", "Category mode")}: ${categoryModeLabel}`
-                  : `${tr("app_world", "App world")}: ${activeAppLabel}`,
-              ),
-              React.createElement(
-                "button",
-                {
-                  type: "button",
-                  className:
-                    "inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
-                  onClick: () => y(hasCategoryMode ? "/category-mode" : "/category-hub"),
-                },
-                hasCategoryMode
-                  ? tr("switch_category", "Switch category")
-                  : tr("switch_app", "Switch app"),
-              ),
-            ),
-            categoryModeLoading
-              ? React.createElement(
-                  "div",
-                  {
-                    className:
-                      "mt-1.5 text-xs text-slate-500 dark:text-slate-300",
-                  },
-                  tr("loading", "Loading"),
-                )
-              : hasCategoryMode && allPostsSubcategoryBarList.length > 0 &&
-                React.createElement(
-                  "div",
-                  {
-                    className:
-                      "mt-1.5 text-xs text-slate-500 dark:text-slate-300",
-                  },
-                  `${allPostsSubcategoryBarList.length} `,
-                  tr("subcategories", "subcategories"),
-            ),
-          ),
-        ),
-      forYouHeroNode,
-      !showModeBanner &&
-        !isForYouMode &&
-        React.createElement(
-          "section",
-          {
-            className: "w-full mhub-allposts-hero",
-            "data-density": "extra",
-            style: { paddingTop: `${contentTopOffset}px` },
-          },
-          React.createElement(
-            "div",
-            { className: `w-full ${pageMaxWidthClass} mx-auto px-3 sm:px-4` },
-            React.createElement(
-              "div",
-              { className: "mhub-allposts-hero-card" },
-              React.createElement(
-                "div",
-                { className: "mhub-allposts-hero-grid" },
-                React.createElement(
-                  "div",
-                  { className: "mhub-allposts-hero-main" },
-                  React.createElement(
-                    "div",
-                    { className: "mhub-allposts-hero-kicker" },
-                    heroContextLabel,
-                  ),
-                  React.createElement(
-                    "h1",
-                    { className: "mhub-allposts-hero-title" },
-                    heroTitle,
-                  ),
-                  React.createElement(
-                    "p",
-                    { className: "mhub-allposts-hero-subtitle" },
-                    heroSubtitle,
-                  ),
-                  React.createElement(
-                    "div",
-                    {
-                      className:
-                        "mt-3 flex flex-wrap items-center gap-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300",
-                    },
-                    React.createElement(
-                      "span",
-                      {
-                        className:
-                          "inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-600 px-3 py-2 dark:bg-blue-500/10 dark:text-blue-300",
-                      },
-                      tr("marketplace_listings", "Marketplace listings"),
-                    ),
-                    React.createElement(
-                      "button",
-                      {
-                        type: "button",
-                        onClick: () => y("/feed"),
-                        className:
-                          "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-2 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10",
-                      },
-                      tr("community_feed", "Community Feed"),
-                      React.createElement(Bo, { className: "w-4 h-4" }),
-                    ),
-                    React.createElement(
-                      "span",
-                      { className: "text-xs text-slate-500 dark:text-slate-400" },
-                      tr("feed_updates_hint", "news & updates"),
-                    ),
-                  ),
-                  /* Stats row */
-                  React.createElement(
-                    "div",
-                    {
-                      className:
-                        "allposts-hero-stats mt-2 flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1",
-                    },
-                    resultsCount > 0 && React.createElement(
-                      "span",
-                      { className: "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap" },
-                      "\uD83D\uDCE6 " + resultsCount + " " + tr("items_available", "items"),
-                    ),
-                    React.createElement(
-                      "span",
-                      { className: "inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap" },
-                      "\u26A1 " + tr("live_marketplace", "Live marketplace"),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      React.createElement(
-        "div",
-        {
-          className: "w-full sticky z-30 mhub-premium-bar mhub-allposts-toolbar",
-          ref: secondaryStickyRef,
-          style: { top: `${secondaryStickyTop}px` },
-        },
-        // ── Inline search input ────────────────
-        React.createElement(
-          "div",
-          { className: "px-3 pt-1.5 pb-0" },
-          React.createElement(
-            "div",
-            { className: "relative flex items-center w-full" },
-            React.createElement(
-              "svg",
-              { className: "absolute left-3 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
-              React.createElement("path", { d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" })
-            ),
-            React.createElement("input", {
-              type: "text",
-              value: t.search || "",
-              onChange: (e) => b({ search: e.target.value }),
-              placeholder: s("search_products", { defaultValue: "Search by title, description or subcategory..." }),
-              className: "w-full h-10 pl-9 pr-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-slate-400 transition-all",
-            }),
-            t.search ? React.createElement(
-              "button",
-              {
-                type: "button",
-                onClick: (e) => { e.stopPropagation(); b({ search: "" }); },
-                className: "absolute right-2 p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 transition-colors",
-              },
-              React.createElement(
-                "svg",
-                { className: "w-4 h-4", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
-                React.createElement("path", { d: "M18 6L6 18M6 6l12 12" })
-              )
-            ) : null
-          )
-        ),
-        toolbarQuickFiltersNode,
-        React.createElement(AllPostsCategoryBar, {
-          categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
-            ? appScopedCategoryList.map((c) => ({
-                id: c?.category_id || c?.id || c?.name,
-                name: c?.name || "",
-                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
-                display_order: c?.display_order ?? 0,
-              }))
-            : (Array.isArray(categoryList) ? categoryList : []).map((c) => ({
-                id: c?.category_id || c?.id || c?.name,
-                name: c?.name || "",
-                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
-              })),
-          activeCategory: activeCategoryBarLabel,
-          onSelectAll: handleCategoryBarSelectAll,
-          onSelectCategory: handleCategoryBarSelect,
-          subcategories: showSubcategoryRail ? allPostsSubcategoryBarList : [],
-          activeSubcategory: activeSubcategoryLabel || "All",
-          onSelectAllSubcategories: Ee,
-          onSelectSubcategory: handleSubcategoryBarSelect,
-          translate: tr,
-          icons: Le,
-          iconResolver: (name) => Le[name] || "\uD83D\uDCE6",
-          subcategoryIconResolver: () => "\uD83C\uDFF7\uFE0F",
-          maxWidthClass: pageMaxWidthClass,
-          compact: !0,
-          showCategoryCounts: !1,
-        })
-,
-      ),
-      dealsBannerNode,
-        React.createElement(
-          "div",
-          {
-            id: "all-posts-feed",
-            className: `mhub-allposts-feed w-full flex flex-col items-center mb-4 transition-opacity duration-200 ${filterPulse ? "opacity-90" : "opacity-100"}`,
-          },
-        React.createElement(
-          "div",
-          {
-            className: `w-full ${feedMaxWidthClass} mx-auto px-3 ${feedHeaderCompact ? "pb-2 pt-2" : "pb-3 pt-4"} md:px-0`,
-          },
-          React.createElement(
-            "div",
-            {
-              className: `mhub-feed-header mhub-allposts-header flex flex-col gap-1 ${feedHeaderCompact ? "is-compact" : ""}`,
-            },
-            showFeedTitle
-              ? React.createElement(
-                  showModeBanner ? "h1" : "h2",
-                  {
-                    id: "all-posts-feed-title",
-                    className:
-                      showModeBanner
-                        ? "text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100"
-                        : "text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100",
-                  },
-                  feedTitle,
-                )
-              : React.createElement("span", { className: "sr-only" }, feedTitle),
-            !E &&
-              !V &&
-              !isStalledLoading &&
-              React.createElement(
-                "div",
-                {
-                  className:
-                    `mhub-feed-summary-line ${feedHeaderCompact ? "text-xs font-semibold text-slate-600 dark:text-slate-300" : "text-sm font-semibold text-slate-600 dark:text-slate-300"}`,
-                },
-                feedSummaryLine,
-              ),
-          ),
-        ),
-        React.createElement(
-          "div",
-          {
-            className: `w-full ${feedMaxWidthClass} mx-auto px-2 pt-2 md:px-0`,
-          },
-          React.createElement(
-            "div",
-            {
-              className: "order-1 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 w-full min-w-0 mhub-allposts-feed-grid mhub-product-grid",
-            },
-            E && f.length === 0 && !isStalledLoading
-              ? Array.from({ length: 4 }).map((e, a) =>
-                  React.createElement(Card,
-                    {
-                      key: `all-posts-skeleton-${a}`,
-                      className:
-                        "rounded-xl border border-slate-200/80 dark:border-gray-700/70 mhub-premium-surface p-2 shadow-sm animate-pulse dark:border-slate-700/80",
-                    },
-                    React.createElement("div", {
-                      className:
-                        "h-28 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-2 dark:bg-gray-900",
-                    }),
-                    React.createElement("div", {
-                      className:
-                        "h-3 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-1.5 dark:bg-gray-900",
-                    }),
-                    React.createElement("div", {
-                      className:
-                        "h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded dark:bg-gray-900",
-                    }),
-                  ),
-                )
-              : V || isStalledLoading
-                ? React.createElement(Card,
-                    {
-                      className:
-                        "col-span-full md:col-span-2 border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border-red-600/40 dark:bg-red-950/20",
-                    },
-                    React.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm text-red-700 dark:text-red-300 mb-3",
-                      },
-                      V || tr("home_load_error", "Unable to load posts right now."),
-                    ),
-                    React.createElement(
-                      "div",
-                      { className: "flex flex-wrap gap-2" },
-                      React.createElement(Button,
-                        {
-                          type: "button",
-                          className: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700/40 dark:text-white dark:hover:bg-red-700/40",
-                          onClick: Fe,
-                        },
-                        tr("retry", "Retry"),
-                      ),
-                      ue &&
-                        React.createElement(Button,
-                          {
-                            type: "button",
-                            variant: "outline",
-                            className: "border-red-200 text-red-700 dark:border-red-600/40 dark:text-red-300",
-                            onClick: Y,
-                          },
-                          tr("reset_filters", "Reset filters"),
-                        ),
-                    ),
-                  )
-                : K.length === 0
-                  ? React.createElement(Card,
-                      {
-                        className:
-                          "col-span-full md:col-span-2 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
-                      },
-                      React.createElement(
-                        "h3",
-                        {
-                          className:
-                            "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2",
-                        },
-                        activeSubcategoryLabel !== "All"
-                          ? tr(
-                              "no_results_in_subcategory",
-                              `No posts in ${activeSubcategoryLabel} right now`,
-                            )
-                          : hasActiveCategory
-                            ? tr(
-                                "no_results_in_category",
-                                `No posts in ${effectiveCategoryLabel} right now`,
-                              )
-                            : tr("no_results", "No results for the current filters"),
-                      ),
-                      React.createElement(
-                        "p",
-                        {
-                          className:
-                            "text-sm text-blue-700 dark:text-blue-300 mb-4",
-                        },
-                        activeSubcategoryLabel !== "All"
-                          ? tr(
-                              "try_other_subcategory",
-                              `Try another subcategory in ${effectiveCategoryLabel || tr("this_category", "this category")} or clear the subcategory filter.`,
-                            )
-                          : tr(
-                              "try_broader_keyword",
-                              "Try broadening search terms, changing category, or clearing filters.",
-                            ),
-                      ),
-                      React.createElement(
-                        "div",
-                        { className: "flex flex-wrap justify-center gap-2" },
-                        activeSubcategoryLabel !== "All" &&
-                          React.createElement(Button,
-                            {
-                              type: "button",
-                              variant: "outline",
-                              className: "border-indigo-200 text-indigo-700 dark:border-indigo-600/40 dark:text-indigo-300",
-                              onClick: () => {
-                                clearSubcategoryMode();
-                                b({ subcategory: "All" });
-                              },
-                            },
-                            tr("show_all_in_category", "Show all in category"),
-                          ),
-                        React.createElement(Button,
-                          {
-                            type: "button",
-                            className:
-                              "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
-                            onClick: Y,
-                          },
-                          tr("reset_filters", "Reset filters"),
-                        ),
-                        React.createElement(Button,
-                          {
-                            type: "button",
-                            variant: "outline",
-                            className: "border-blue-200 text-blue-700 dark:border-blue-600/40 dark:text-blue-300",
-                            onClick: () => y(browseOtherSubcategoriesPath),
-                          },
-                          activeSubcategoryLabel !== "All"
-                            ? tr("browse_other_subcategories", "Browse other subcategories")
-                            : tr("explore_subcategories", "Browse subcategories"),
-                        ),
-                      ),
-                    )
-                  : K.map((e, index) => {
-                      const a = I(e.post_id || e.id),
-                        o =
-                          e.user?.name ||
-                          e.user_name ||
-                          e.username ||
-                          s("unknown", { defaultValue: "Unknown" }),
-                        n = String(o || "U")
-                          .charAt(0)
-                          .toUpperCase(),
-                        subcategoryNameRaw =
-                          e.subcategory_name ||
-                          e.subcategory ||
-                          e.subcategoryName ||
-                          "",
-                        subcategoryIdRaw =
-                          e.subcategory_id ??
-                          e.subcategoryId ??
-                          e.subcategoryID ??
-                          null,
-                        resolvedSubcategoryLabel = (() => {
-                          const direct = String(subcategoryNameRaw || "").trim();
-                          if (direct && direct !== "All") {
-                            if (/^\d+$/.test(direct)) {
-                              const mapped = subcategoryNameById[String(direct)];
-                              if (mapped) return mapped;
-                            }
-                            return direct;
-                          }
-                          const id =
-                            subcategoryIdRaw != null && subcategoryIdRaw !== ""
-                              ? String(subcategoryIdRaw).trim()
-                              : "";
-                          if (!id) return "";
-                          return subcategoryNameById[String(id)] || "";
-                        })(),
-                        subcategoryLabel =
-                          resolvedSubcategoryLabel || tr("general", "General"),
-                        F = !!(
-                          e.user?.isVerified ||
-                          e.is_verified ||
-                          e.aadhaar_verified ||
-                          e.pan_verified
-                        ),
-                        he = nt(e.created_at || e.createdAt, l),
-                        we = e.location || e.city || e.area || "",
-                        title =
-                          e.title || e.name || s("untitled", { defaultValue: "Untitled post" }),
-                        isOwnerPost = isPostOwnedByUser(e, currentUserId),
-                        resolvedPriceValue = resolvePostPriceValue(e),
-                        priceValue =
-                          resolvedPriceValue > 0
-                            ? formatCurrency(resolvedPriceValue)
-                            : tr("price_on_request", "Price on request"),
-                        imageList = collectPostImageUrls(e),
-                        activeImageIndex = getCarouselIndex(
-                          a,
-                          imageList.length,
-                        ),
-                        inCart = isInCartItem(a);
-                      const subcategoryChip = subcategoryLabel
-                        ? {
-                            key: "subcategory",
-                            label: subcategoryLabel,
-                            className:
-                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full text-blue-700 dark:text-blue-300 font-medium",
-                          }
-                        : null;
-                      const locationChip = we
-                        ? {
-                            key: "location",
-                            label: we,
-                            className:
-                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full",
-                          }
-                        : null;
-                      const postedChip = he
-                        ? {
-                            key: "posted",
-                            label: `${s("posted", { defaultValue: "Posted" })} ${he}`,
-                            className:
-                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full",
-                          }
-                        : null;
-                      const postIdChip =
-                        SHOW_POST_ID_CHIP && a
-                          ? {
-                              key: "post-id",
-                              label: `${s("post_id", { defaultValue: "Post ID" })}: ${a}`,
-                              className:
-                                "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
-                            }
-                          : null;
-                      const visibleMetaChips = [subcategoryChip, locationChip].filter(
-                        Boolean,
-                      );
-                      const hiddenMetaChips = [postedChip, postIdChip].filter(
-                        Boolean,
-                      );
-                      const metaChips = [
-                        ...visibleMetaChips,
-                        ...hiddenMetaChips,
-                      ];
-                      const hiddenMetaTitle = hiddenMetaChips
-                        .map((X) => X.label)
-                        .join(" \u2022 ");
-                      const isMetaExpanded = expandedMetaPostId === a;
-                      const shownMetaChips = isMetaExpanded
-                        ? metaChips
-                        : visibleMetaChips;
-                      const card = React.createElement(Card,
-                          {
-                            key: a || `post-card-${index}`,
-                            ref: (X) => {
-                              de.current[a] = X;
-                            },
-                            "data-post-id": a,
-                            className:
-                              "mhub-allposts-card mhub-surface rounded-2xl flex flex-col p-0 overflow-hidden hover:-translate-y-0.5 transition-all duration-300",
-                          },
-                        React.createElement(
-                          "div",
-                          {
-                            className:
-                              "flex items-start gap-3 px-3 pt-3 pb-2.5 relative sm:px-4",
-                          },
-                          React.createElement(Avatar,
-                            {
-                              className: "w-9 h-9 shrink-0 sm:w-10 sm:h-10",
-                            },
-                            React.createElement(AvatarFallback,
-                              {
-                                className:
-                                  "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-xs dark:bg-[var(--surface-2)] dark:text-slate-200",
-                              },
-                              n || "U",
-                            ),
-                          ),
-                          React.createElement(
-                            "div",
-                            { className: "flex-1 min-w-0 pr-12" },
-                            React.createElement(
-                              "div",
-                              { className: "flex flex-wrap items-center gap-2" },
-                              React.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base md:text-base truncate",
-                                },
-                                o,
-                              ),
-                              F &&
-                                React.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 shadow-sm",
-                                    title: `Verified Seller${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
-                                  },
-                                  React.createElement(
-                                    "svg",
-                                    {
-                                      className: "w-3.5 h-3.5 text-blue-500 dark:text-blue-400",
-                                      fill: "currentColor",
-                                      viewBox: "0 0 20 20",
-                                    },
-                                    React.createElement("path", {
-                                      fillRule: "evenodd",
-                                      d: "M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                      clipRule: "evenodd",
-                                    }),
-                                  ),
-                                  s("verified", { defaultValue: "Verified" }),
-                                ),
-                              /* Trust/reliability/response badges removed from cards — only shown on PostDetail */
-                              React.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold sm:ml-auto",
-                                },
-                                React.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "uppercase tracking-wide text-xs text-emerald-600/80 dark:text-emerald-300/80",
-                                  },
-                                  tr("price", "Price"),
-                                ),
-                                React.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "font-bold text-emerald-900 dark:text-emerald-100 text-sm sm:text-base dark:text-emerald-200",
-                                  },
-                                  priceValue,
-                                ),
-                              ),
-                            ),
-                          React.createElement(
-                            "h3",
-                            {
-                              className:
-                                "mhub-card-title mt-1.5 text-base sm:text-lg md:text-xl leading-snug line-clamp-2",
-                            },
-                            title,
-                          ),
-                          e.rating || e.seller_rating || (e.user && e.user.rating) ? React.createElement(
-                            "div",
-                            { className: "flex items-center gap-1.5 mt-2" },
-                            React.createElement(
-                              "span",
-                              { className: "text-amber-400 text-sm" },
-                              "★",
-                            ),
-                            React.createElement(
-                              "span",
-                              { className: "text-xs font-semibold text-slate-600 dark:text-slate-300" },
-                              Number(e.rating || e.seller_rating || (e.user && e.user.rating) || 0).toFixed(1),
-                            ),
-                          ) : null,
-                          React.createElement(
-                            "div",
-                            {
-                              className:
-                                "mhub-card-meta mt-1.5 flex flex-wrap items-center gap-1.5 text-xs",
-                            },
-                            shownMetaChips.map((X) =>
-                              React.createElement(
-                                "span",
-                                { key: X.key, className: X.className },
-                                X.label,
-                              ),
-                            ),
-                            hiddenMetaChips.length > 0 &&
-                              !isMetaExpanded &&
-                              React.createElement(
-                                "button",
-                                {
-                                  className:
-                                    "mhub-chip inline-flex items-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-full font-semibold text-[13px] text-gray-600 dark:text-gray-200",
-                                  title: hiddenMetaTitle,
-                                  onClick: () =>
-                                    setExpandedMetaPostId((X) =>
-                                      X === a ? null : a,
-                                    ),
-                                  "aria-expanded": !1,
-                                  "aria-label": `${tr(
-                                    "show_more_meta",
-                                    "Show more details",
-                                  )}: ${hiddenMetaTitle}`,
-                                },
-                                `+${hiddenMetaChips.length} more`,
-                              ),
-                            hiddenMetaChips.length > 0 &&
-                              isMetaExpanded &&
-                              React.createElement(
-                                "button",
-                                {
-                                  className:
-                                    "mhub-chip inline-flex items-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-full font-semibold text-[13px] text-gray-600 dark:text-gray-200",
-                                  onClick: () => setExpandedMetaPostId(null),
-                                  "aria-expanded": !0,
-                                  "aria-label": tr(
-                                    "hide_details",
-                                    "Hide details",
-                                  ),
-                                },
-                                tr("less", "Less"),
-                              ),
-                          ),
-                          ),
-                          React.createElement(
-                            DropdownMenu,
-                            {
-                              open: menuPostId === a,
-                              onOpenChange: (X) => setMenuPostId(X ? a : null),
-                            },
-                            React.createElement(
-                              DropdownMenuTrigger,
-                              { asChild: !0 },
-                              React.createElement(
-                                "button",
-                                {
-                                  type: "button",
-                                  onClick: (X) => X.stopPropagation(),
-                                  className:
-                                    "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:bg-[var(--surface-2)] sm:right-4 sm:top-4 sm:p-2 dark:text-gray-300 dark:hover:bg-[var(--surface-2)]",
-                                  title: tr("more_options", "More options"),
-                                  "aria-label": tr("more_options", "More options"),
-                                },
-                                React.createElement(To, { className: "w-4 h-4" }),
-                              ),
-                            ),
-                            React.createElement(
-                              DropdownMenuContent,
-                              {
-                                align: "end",
-                                className:
-                                  "w-44 rounded-xl border border-gray-200 dark:border-gray-700 mhub-premium-surface shadow-lg p-1 dark:border",
-                              },
-                              React.createElement(
-                                DropdownMenuItem,
-                                {
-                                  onSelect: () => handleSharePost(a),
-                                  className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
-                                },
-                                s("share", { defaultValue: "Share" }),
-                              ),
-                              React.createElement(
-                                DropdownMenuItem,
-                                {
-                                  onSelect: () => toggleSave(a),
-                                  className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
-                                },
-                                savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                              ),
-                              isOwnerPost &&
-                                React.createElement(
-                                  DropdownMenuItem,
-                                  {
-                                    onSelect: () => {
-                                      openPromote(a, title);
-                                      setMenuPostId(null);
-                                    },
-                                    className:
-                                      "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
-                                  },
-                                  tr("promote", "Promote"),
-                                ),
-                              React.createElement(
-                                DropdownMenuItem,
-                                {
-                                  onSelect: () => handleCartToggle(e),
-                                  className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
-                                },
-                                inCart
-                                  ? s("in_cart", { defaultValue: "In Cart" })
-                                  : s("add_to_cart", { defaultValue: "Add to Cart" }),
-                              ),
-                              React.createElement(
-                                DropdownMenuItem,
-                                {
-                                  onSelect: () => toggleCompare(e),
-                                  className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
-                                },
-                                isInCompare(a)
-                                  ? s("in_compare", { defaultValue: "In Compare" })
-                                  : s("compare", { defaultValue: "Compare" }),
-                              ),
-                              React.createElement(
-                                DropdownMenuItem,
-                                {
-                                  onSelect: () => handleReportPost(a),
-                                  className:
-                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-red-300 dark:hover:bg-red-950/20",
-                                },
-                                s("report", { defaultValue: "Report" }),
-                              ),
-                            ),
-                          ),
-                        ),
-                        React.createElement(
-                          "div",
-                          {
-                            className:
-                              "relative w-full bg-[var(--surface-2)] border-y border-[var(--chip-border)] mhub-media-frame dark:bg-[var(--surface-2)] dark:border-[var(--chip-border)]",
-                          },
-                          React.createElement(PostPromoBadges, {
-                            post: e,
-                            t: s,
-                            size: "xs",
-                            className: "absolute left-3 top-3 z-10",
-                          }),
-                          React.createElement(
-                            "div",
-                            {
-                              ref: (X) => setCarouselTrackRef(a, X),
-                              onScroll: (X) =>
-                                handleCarouselScroll(a, X, imageList.length),
-                              className:
-                                "flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide",
-                            },
-                            imageList.map((X, _t) =>
-                              React.createElement(
-                                "div",
-                                {
-                                  key: `${a}-media-${_t}`,
-                                  className:
-                                    "w-full shrink-0 snap-center bg-[var(--surface-2)] dark:bg-[var(--surface-2)]",
-                                },
-                                React.createElement("img", {
-                                  src: X,
-                                  alt: `${e.title || s("post", { defaultValue: "Post" })} ${s("image", { defaultValue: "image" })} ${_t + 1}`,
-                                  loading: index < 2 && _t === 0 ? "eager" : "lazy",
-                                  fetchpriority:
-                                    index === 0 && _t === 0 ? "high" : "auto",
-                                  decoding: "async",
-                                  ref: (Nt) => {
-                                    if (!Nt) return;
-                                    if (Nt.complete && Nt.naturalWidth > 0) {
-                                      Nt.dataset.loaded = "true";
-                                      const frame = Nt.closest(".mhub-media-frame");
-                                      frame && frame.setAttribute("data-loaded", "true");
-                                    } else if (Nt.complete && Nt.naturalWidth === 0 && Nt.src !== D) {
-                                      Nt.src = D;
-                                      Nt.dataset.loaded = "true";
-                                      const frame = Nt.closest(".mhub-media-frame");
-                                      frame && frame.setAttribute("data-loaded", "true");
-                                    }
-                                  },
-                                  className:
-                                    "mhub-media-img w-full h-[200px] sm:h-[240px] md:h-[280px] object-cover object-center",
-                                  onLoad: (Nt) => {
-                                    Nt.currentTarget.dataset.loaded = "true";
-                                    const frame = Nt.currentTarget.closest(".mhub-media-frame");
-                                    frame && frame.setAttribute("data-loaded", "true");
-                                  },
-                                  onError: (Nt) => {
-                                    Nt.currentTarget.src = D;
-                                    Nt.currentTarget.dataset.loaded = "true";
-                                    const frame = Nt.currentTarget.closest(".mhub-media-frame");
-                                    frame && frame.setAttribute("data-loaded", "true");
-                                  },
-                                }),
-                              ),
-                            ),
-                          ),
-                          imageList.length > 1 &&
-                            React.createElement(
-                              React.Fragment,
-                              null,
-                              React.createElement(
-                                "button",
-                                {
-                                  type: "button",
-                                  onClick: (X) =>
-                                    moveCarousel(a, -1, imageList.length, X),
-                                  className:
-                                    "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
-                                  "aria-label":
-                                    tr("previous_image", "Previous image"),
-                                },
-                                React.createElement(Lo, { className: "w-4 h-4" }),
-                              ),
-                              React.createElement(
-                                "button",
-                                {
-                                  type: "button",
-                                  onClick: (X) =>
-                                    moveCarousel(a, 1, imageList.length, X),
-                                  className:
-                                    "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
-                                  "aria-label": tr("next_image", "Next image"),
-                                },
-                                React.createElement(Co, { className: "w-4 h-4" }),
-                              ),
-                              React.createElement(
-                                "div",
-                                {
-                                  className:
-                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white font-medium dark:bg-black/55 dark:text-white",
-                                  style: { fontSize: "14px" },
-                                },
-                                activeImageIndex + 1,
-                                "/",
-                                imageList.length,
-                              ),
-                              React.createElement(
-                                "div",
-                                {
-                                  className:
-                                    "absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full dark:bg-black/40",
-                                },
-                                imageList.map((X, _t) =>
-                                  React.createElement("button", {
-                                    key: `${a}-dot-${_t}`,
-                                    type: "button",
-                                    onClick: (Nt) => {
-                                      Nt.preventDefault();
-                                      Nt.stopPropagation();
-                                      scrollCarouselToIndex(
-                                        a,
-                                        _t,
-                                        imageList.length,
-                                      );
-                                    },
-                                    className: `h-3 w-3 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-5 scale-110" : "bg-white/50"}`,
-                                    "aria-label": `${tr("go_to_image", "Go to image")} ${_t + 1}`,
-                                  }),
-                                ),
-                              ),
-                            ),
-                        ),
-                        React.createElement(
-                          "div",
-                          {
-                            className:
-                              "px-3 pb-3 pt-2 border-t border-[var(--chip-border)] dark:border-[var(--chip-border)]",
-                          },
-                        React.createElement(
-                          "div",
-                          {
-                            className:
-                              "post-action-row flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-hide",
-                          },
-                          React.createElement(
-                            "button",
-                              {
-                                type: "button",
-                                className:
-                                  `shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[13px] font-semibold focus:outline-none dark:bg-[var(--chip-bg)] ${savedPosts[a] ? "text-indigo-600 dark:text-indigo-300" : ""}`,
-                                onClick: () => toggleSave(a),
-                                "aria-label": savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                                title: savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                              },
-                              savedPosts[a]
-                                ? React.createElement(He, {
-                                    className: "w-4 h-4 text-indigo-500 dark:text-indigo-300",
-                                  })
-                                : React.createElement(qe, {
-                                    className:
-                                      "w-4 h-4 text-black dark:text-slate-100",
-                                  }),
-                              React.createElement(
-                                "span",
-                                { className: "hidden sm:inline" },
-                                savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                              ),
-                            ),
-                            React.createElement(
-                              "button",
-                              {
-                                className:
-                                  "shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[13px] font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
-                                onClick: () => {
-                                  ie(e), le(!0);
-                                },
-                              },
-                              React.createElement(Ye, { className: "w-4 h-4" }),
-                              React.createElement(
-                                "span",
-                                { className: "hidden sm:inline" },
-                                s("interested", { defaultValue: "Interested" }),
-                              ),
-                            ),
-                            React.createElement(
-                              "span",
-                              {
-                                className:
-                                  "mhub-chip shrink-0 inline-flex h-11 items-center gap-1.5 px-3.5 rounded-full text-gray-600 dark:text-gray-300 text-[13px] font-semibold",
-                              },
-                              React.createElement(Qe, { className: "w-4 h-4" }),
-                              De[a] || 0,
-                            ),
-                            React.createElement(Button,
-                              {
-                                size: "sm",
-                                className:
-                                  "mhub-cta shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 text-xs sm:text-sm font-semibold ml-auto w-auto",
-                                onClick: () => je(a),
-                              },
-                              React.createElement(Bo, { className: "w-3.5 h-3.5" }),
-                              React.createElement(
-                                "span",
-                                null,
-                                s("view_details", { defaultValue: "View Details" }),
-                              ),
-                            ),
-                          ),
-                        ));
-                      return card;
-                    }),
-          ),
-        ),
-        !latestWindow &&
-          C &&
-          React.createElement("div", {
-            ref: loadMoreSentinelRef,
-            "aria-hidden": "true",
-            className: "w-full h-1",
-          }),
-        C &&
-          H &&
-          !latestWindow &&
-          !E &&
-          !V &&
-          K.length > 0 &&
-          React.createElement(Button,
-            {
-              type: "button",
-              variant: "outline",
-              className:
-                "mt-5 border-blue-300 text-blue-700 inline-flex items-center gap-1.5 dark:border-blue-600/40 dark:text-blue-300",
-              onClick: J,
-            },
-            React.createElement(zo, { className: "w-3.5 h-3.5" }),
-            s("load_more_posts", { defaultValue: "Load more posts" }),
-          ),
-        guestPreviewLimited &&
-          React.createElement(Card,
-            {
-              className:
-                `w-full ${feedMaxWidthClass} mt-3 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600/40 dark:bg-blue-950/20`,
-            },
-            React.createElement(
-              "div",
-              {
-                className:
-                  "flex flex-col md:flex-row md:items-center md:justify-between gap-3",
-              },
-              React.createElement(
-                "div",
-                null,
-                React.createElement(
-                  "p",
-                  {
-                    className: "font-semibold text-blue-900 dark:text-blue-200",
-                  },
-                  s("unlock_more_posts", { defaultValue: "Unlock more posts" }),
-                ),
-                React.createElement(
-                  "p",
-                  { className: "text-sm text-blue-700 dark:text-blue-300" },
-                  s("login_for_full_feed", { defaultValue: "Sign in to browse the full feed, save searches, and get personalized recommendations." }),
-                ),
-              ),
-              React.createElement(Button,
-                {
-                  className:
-                    "bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5 h-11 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
-                  onClick: () => y("/login", { state: { returnTo } }),
-                },
-                React.createElement(zo, { className: "w-3.5 h-3.5" }),
-                s("login", { defaultValue: "Login" }),
-              ),
-            ),
-          ),
-        showBackToTop &&
-          React.createElement(
-            "button",
-            {
-              type: "button",
-              className:
-                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+4.5rem)] right-4 z-50 inline-flex items-center gap-2 rounded-full mhub-premium-surface px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-lg hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
-              onClick: () => {
-                if (typeof window !== "undefined") {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }
-              },
-              "aria-label": tr("back_to_top", "Back to top"),
-            },
-            React.createElement(Uo, { className: "w-3.5 h-3.5" }),
-            tr("back_to_top", "Back to top"),
-          ),
-        ne &&
-          React.createElement(
-            "div",
-            {
-              className:
-                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+8px)] left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[60] dark:bg-blue-700/40 dark:text-white",
-            },
-            ne,
-          ),
-        React.createElement(BuyerInterestModal, {
-          isOpen: Ie,
-          onClose: () => {
-            le(!1), ie(null);
-          },
-          postId: G?.post_id || G?.id,
-          postTitle: G?.title,
-        }),
-        React.createElement(PromoteDialog, {
-          open: Boolean(promotePostId),
-          onOpenChange: (e) => {
-            if (!e) closePromote();
-          },
-          postId: promotePostId,
-          postTitle: promotePostTitle,
-        }),
-        React.createElement(AllPostsFilterPanel, {
-          open: filterPanelOpen,
-          onClose: () => setFilterPanelOpen(!1),
-          filters: t,
-          onApplyFilters: handleApplyFilters,
-          onClearFilters: Y,
-          activeFilterCount: activeFiltersCount,
-        }),
-        React.createElement(LoginPromptModal, {
-          isOpen: loginPromptOpen,
-          onClose: () => setLoginPromptOpen(!1),
-        }),
-        React.createElement(pt, {
-          open: shareDialogOpen,
-          onOpenChange: setShareDialogOpen,
-          url: shareDialogUrl,
-          title: s("share", { defaultValue: "Share post" }),
-        }),
-        compareItems.length > 0 &&
-          React.createElement(
-            "div",
-            {
-              className:
-                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+80px)] left-1/2 -translate-x-1/2 z-[9998] bg-purple-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 dark:bg-purple-700",
-            },
-            React.createElement(CompareIcon, { className: "w-4 h-4" }),
-            React.createElement(
-              "span",
-              { className: "text-sm font-semibold" },
-              `${compareItems.length} ${s("items_to_compare", { defaultValue: "items selected" })}`,
-            ),
-            (() => { const sub = String(compareItems[0]?.subcategory_name || compareItems[0]?.subcategory || "").trim(); return sub ? React.createElement("span", { className: "text-xs bg-white/20 rounded-full px-2.5 py-1 font-medium" }, sub) : null; })(),
-            React.createElement(
-              "button",
-              {
-                type: "button",
-                onClick: () => { try { sessionStorage.setItem('compareItems', JSON.stringify(compareItems)); } catch {} y('/compare', { state: { compareItems: compareItems } }); },
-                className:
-                  "px-3 py-1.5 bg-white text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-50 transition",
-              },
-              s("compare_now", { defaultValue: "Compare" }),
-            ),
-            React.createElement(
-              "button",
-              {
-                type: "button",
-                onClick: () => setCompareItems([]),
-                className: "ml-1 p-1 hover:bg-purple-500 rounded-full transition",
-                "aria-label": "Clear compare",
-              },
-              React.createElement(Jo, { className: "w-4 h-4" }),
-            ),
-          ),
-        showComparePanel &&
-          compareItems.length > 0 &&
-          React.createElement(
-            "div",
-            {
-              className: "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center",
-              onClick: (ev) => { if (ev.target === ev.currentTarget) setShowComparePanel(!1); },
-            },
-            React.createElement(
-              "div",
-              {
-                className:
-                  "mhub-premium-surface w-full max-w-[640px] max-h-[90vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-8 sm:m-4",
-              },
-              React.createElement(
-                "div",
-                { className: "flex items-center justify-between mb-6" },
-                React.createElement(
-                  "h2",
-                  { className: "text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2" },
-                  React.createElement(CompareIcon, { className: "w-5 h-5 text-purple-500" }),
-                  s("compare_products", { defaultValue: "Compare Products" }),
-                  React.createElement("span", { className: "text-sm font-normal text-gray-500 dark:text-gray-400 ml-2" }, `(${compareItems.length})`),
-                ),
-                React.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => setShowComparePanel(!1),
-                    className: "p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition",
-                  },
-                  React.createElement(Jo, { className: "w-5 h-5" }),
-                ),
-              ),
-              React.createElement(
-                "div",
-                { className: "grid gap-4", style: { gridTemplateColumns: `repeat(${compareItems.length}, minmax(200px, 1fr))` } },
-                compareItems.map((item) => {
-                  const itemId = I(item?.post_id || item?.id);
-                  const imgSrc = Ne(item);
-                  const priceVal = resolvePostPriceValue(item);
-                  const priceLabel = priceVal > 0 ? formatCurrency(priceVal) : null;
-                  return React.createElement(
-                    "div",
-                    { key: itemId, className: "rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 overflow-hidden" },
-                    React.createElement(
-                      "div",
-                      { className: "relative" },
-                      React.createElement("img", {
-                        src: imgSrc,
-                        alt: item?.title || "",
-                        loading: "lazy",
-                        className: "w-full h-44 object-cover",
-                        onError: (ev) => { ev.target.style.display = "none"; },
-                      }),
-                      React.createElement(
-                        "button",
-                        {
-                          type: "button",
-                          onClick: () => toggleCompare(item),
-                          className: "absolute top-2 right-2 p-1.5 rounded-full bg-red-500/90 text-white hover:bg-red-600 transition text-xs",
-                          title: s("remove", { defaultValue: "Remove" }),
-                        },
-                        React.createElement(Jo, { className: "w-3.5 h-3.5" }),
-                      ),
-                    ),
-                    React.createElement(
-                      "div",
-                      { className: "p-4 space-y-3" },
-                      React.createElement("h3", { className: "font-bold text-base text-gray-900 dark:text-white line-clamp-2" }, item?.title || "—"),
-                      priceLabel && React.createElement("p", { className: "text-lg font-bold text-emerald-600 dark:text-emerald-400" }, priceLabel),
-                      React.createElement(
-                        "div",
-                        { className: "space-y-2 text-sm" },
-                        [
-                          { label: s("condition", { defaultValue: "Condition" }), value: item?.condition || item?.item_condition },
-                          { label: s("brand", { defaultValue: "Brand" }), value: item?.brand || item?.brand_name },
-                          { label: s("model", { defaultValue: "Model" }), value: item?.model || item?.model_name },
-                          { label: s("location", { defaultValue: "Location" }), value: item?.location || item?.city || item?.area },
-                          { label: s("category", { defaultValue: "Category" }), value: item?.category_name || item?.category },
-                          { label: s("seller", { defaultValue: "Seller" }), value: item?.user?.name || item?.user_name || item?.username },
-                          { label: s("subcategory", { defaultValue: "Subcategory" }), value: item?.subcategory_name || item?.subcategory },
-                          { label: s("posted", { defaultValue: "Posted" }), value: item?.created_at ? new Date(item.created_at).toLocaleDateString() : null },
-                        ].filter((spec) => spec.value).map((spec) =>
-                          React.createElement(
-                            "div",
-                            { key: spec.label, className: "flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700/50" },
-                            React.createElement("span", { className: "text-gray-500 dark:text-gray-400 text-xs font-medium" }, spec.label),
-                            React.createElement("span", { className: "text-gray-900 dark:text-gray-100 font-medium text-right max-w-[60%] truncate" }, spec.value),
-                          ),
-                        ),
-                      ),
-                      React.createElement(
-                        W,
-                        {
-                          onClick: () => { setShowComparePanel(!1); y(`/post/${itemId}`); },
-                          className: "w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold dark:bg-indigo-700 dark:hover:bg-indigo-800",
-                        },
-                        s("view_details", { defaultValue: "View Details" }),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-      ),
+        return (
+      <div
+        className={`mhub-page-allposts ${isForYouMode ? "mhub-page-foryou" : ""} mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 ${density === "compact" ? "mhub-compact" : ""}`}
+        data-feed-mode={isForYouMode ? "for-you" : "all-posts"}
+      >
+        {/* Mode banner */}
+        {showModeBanner && (
+          <div className="w-full flex justify-center px-3 sm:px-4 pt-3" style={{ paddingTop: `${secondaryStickyTop}px` }}>
+            <div className={`w-full ${pageMaxWidthClass} mhub-premium-surface rounded-2xl p-3 sm:p-3.5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {hasCategoryMode
+                    ? `${tr("category_mode", "Category mode")}: ${categoryModeLabel}`
+                    : `${tr("app_world", "App world")}: ${activeAppLabel}`}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => y(hasCategoryMode ? "/category-mode" : "/category-hub")}
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]"
+                >
+                  {hasCategoryMode ? tr("switch_category", "Switch category") : tr("switch_app", "Switch app")}
+                </button>
+              </div>
+              {categoryModeLoading ? (
+                <div className="mt-1.5 text-xs text-slate-500 dark:text-slate-300">{tr("loading", "Loading")}</div>
+              ) : hasCategoryMode && allPostsSubcategoryBarList.length > 0 ? (
+                <div className="mt-1.5 text-xs text-slate-500 dark:text-slate-300">
+                  {allPostsSubcategoryBarList.length} {tr("subcategories", "subcategories")}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* For You mode */}
+        {isForYouMode ? (
+          <ForYouPosts
+            forYouHeroExpanded={forYouHeroExpanded}
+            onToggleHeroExpanded={() => setForYouHeroExpanded((e) => !e)}
+            resultsCount={(f || []).length}
+            subcategoryCount={allPostsCategoryFallback.length || 0}
+            activeFiltersCount={activeFiltersCount}
+            onBrowseFeed={() => { const el = document.getElementById("all-posts-feed"); el?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+            onShuffle={() => setShuffleSeed(Date.now())}
+            canShuffle={canShuffle}
+            isAuthenticated={C}
+            onClearFilters={Y}
+            hasActiveFilters={ue}
+            autoRefreshEnabled={autoRefreshEnabled}
+            onToggleAutoRefresh={() => setAutoRefreshEnabled((e) => !e)}
+            onSwitchToAllPosts={() => y("/all-posts")}
+            setLoginPromptOpen={setLoginPromptOpen}
+            pageMaxWidthClass={pageMaxWidthClass}
+            secondaryStickyTop={secondaryStickyTop}
+            dealsBannerNode={dealsBannerNode}
+          />
+        ) : null}
+
+        {/* Regular mode hero */}
+        {!showModeBanner && !isForYouMode ? (
+          <section className="w-full mhub-allposts-hero" data-density="extra">
+            <div className="w-full flex justify-center px-3 sm:px-4 pt-3" style={{ paddingTop: `${secondaryStickyTop}px` }}>
+              <div className={`w-full ${pageMaxWidthClass}`}>
+                <div className="mhub-allposts-hero-card">
+                  <div className="mhub-allposts-hero-grid">
+                    <div className="mhub-allposts-hero-main">
+                      <div className="mhub-allposts-hero-kicker">{heroContextLabel}</div>
+                      <h1 className="mhub-allposts-hero-title">{heroTitle}</h1>
+                      <p className="mhub-allposts-hero-subtitle">{heroSubtitle}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-600 px-3 py-2 dark:bg-blue-500/10 dark:text-blue-300">
+                          {tr("marketplace_listings", "Marketplace listings")}
+                        </span>
+                        <button type="button" onClick={() => y("/feed")} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-2 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10">
+                          {tr("community_feed", "Community Feed")}
+                          <Bo className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {tr("feed_updates_hint", "news & updates")}
+                        </span>
+                      </div>
+                      {resultsCount > 0 && (
+                        <div className="allposts-hero-stats mt-2 flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap">
+                            📦 {resultsCount} {tr("items_available", "items")}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap">
+                            ⚡ {tr("live_marketplace", "Live marketplace")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* Filter bar — sticky toolbar */}
+        <FilterBar
+          searchValue={t.search || ""}
+          onSearchChange={(value) => b({ search: value })}
+          onClearSearch={() => b({ search: "" })}
+          searchPlaceholder={s("search_products", { defaultValue: "Search by title, description or subcategory..." })}
+          quickFiltersChips={quickFiltersChips}
+          isForYouMode={isForYouMode}
+          categoryBarCategories={categoryBarCategories}
+          activeCategoryBarLabel={activeCategoryBarLabel}
+          onCategorySelectAll={handleCategoryBarSelectAll}
+          onCategorySelect={handleCategoryBarSelect}
+          subcategoryList={showSubcategoryRail ? allPostsSubcategoryBarList : []}
+          activeSubcategoryLabel={activeSubcategoryLabel}
+          onSubcategorySelectAll={Ee}
+          onSubcategorySelect={handleSubcategoryBarSelect}
+          maxWidthClass={pageMaxWidthClass}
+          secondaryStickyTop={secondaryStickyTop}
+          secondaryStickyRef={secondaryStickyRef}
+          compact={density === "compact"}
+        />
+
+        {/* Deals banner */}
+        {dealsBannerNode}
+
+        {/* Feed section */}
+        <div
+          id="all-posts-feed"
+          className={`mhub-allposts-feed w-full flex flex-col items-center mb-4 transition-opacity duration-200 ${filterPulse ? "opacity-90" : "opacity-100"}`}
+        >
+          <div className={`w-full ${feedMaxWidthClass} mx-auto px-3 ${feedHeaderCompact ? "pb-2 pt-2" : "pb-3 pt-4"} md:px-0`}>
+            <FeedHeader title={feedTitle} compact={density === "compact"} />
+          </div>
+          {K.length > 0 ? K : (!E && !V ? (
+            <div className="w-full text-center py-12 text-slate-500 dark:text-slate-400">
+              {tr("no_posts_found", "No posts found")}
+            </div>
+          ) : null)}
+        </div>
+
+        {/* Filter panel overlay */}
+        <AllPostsFilterPanel
+          open={filterPanelOpen}
+          onClose={() => setFilterPanelOpen(false)}
+          filters={t}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={Y}
+          activeFilterCount={activeFiltersCount}
+        />
+
+        {/* Modals */}
+        {shareDialogOpen && <pt open={shareDialogOpen} onClose={() => setShareDialogOpen(false)} url={shareDialogUrl} />}
+        {promotePostId && <PromoteDialog postId={promotePostId} postTitle={promotePostTitle} onClose={closePromote} />}
+        {G && <BuyerInterestModal open={!!G} onClose={() => ie(null)} postDetails={G} />}
+        {loginPromptOpen && <LoginPromptModal open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} returnTo={returnTo} />}
+
+        {/* Page density toggle */}
+        <div className="fixed bottom-20 right-4 z-40">
+          <PageDensityToggle density={density} onDensityChange={setDensity} storageKey="mhub_allposts_density" />
+        </div>
+
+        {/* Nav sticky spacer */}
+        <div className="w-full h-0 pointer-events-none" style={{ marginTop: `${navStickyTop}px` }} />
+      </div>
     );
   };
 var Nt = AllPosts;

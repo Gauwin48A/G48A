@@ -174,6 +174,9 @@ async function getTransactionSchema(queryable) {
     cancelledBy: columns.has("cancelled_by"),
     cancelReason: columns.has("cancel_reason"),
     createdAt: columns.has("created_at"),
+    platformFee: columns.has("platform_fee"),
+    gstOnFee: columns.has("gst_on_fee"),
+    sellerPayout: columns.has("seller_payout"),
   };
 
   schema.priceColumn = schema.agreedPrice ? "agreed_price" : schema.amount ? "amount" : null;
@@ -689,6 +692,67 @@ const confirmSale = async (req, res) => {
 
     const appliedPostStatus = await updatePostStatus(client, transaction.post_id, "sold", "active");
 
+    // Award coins and milestones for the transaction completion
+    try {
+      const { addCoins, checkAndAwardSalesMilestones, EARN_AMOUNTS } = require("./coinController");
+      
+      // Award coins to seller
+      await addCoins(
+        transaction.seller_id,
+        EARN_AMOUNTS?.sale || 10,
+        "sale",
+        `sale_payout:seller:${transaction.post_id}:${transaction.seller_id}`,
+        `Earned ${EARN_AMOUNTS?.sale || 10} coins for completing a sale`
+      );
+      
+      // Award coins to buyer
+      await addCoins(
+        transaction.buyer_id,
+        EARN_AMOUNTS?.purchase || 10,
+        "purchase",
+        `sale_payout:buyer:${transaction.post_id}:${transaction.buyer_id}`,
+        `Earned ${EARN_AMOUNTS?.purchase || 10} coins for completing a purchase`
+      );
+      
+      // Check sales milestones for the seller
+      await checkAndAwardSalesMilestones(transaction.seller_id);
+    } catch (coinErr) {
+      logger.warn("[Sale] Milestone check or coin payout failed:", coinErr.message);
+    }
+
+    // ── Calculate and store platform commission fees ─────────────────
+    let v0PlatformFee = 0;
+    let v0GstOnFee = 0;
+    let v0SellerPayout = 0;
+
+    if (schema.platformFee && schema.gstOnFee && schema.sellerPayout) {
+      const agreedPrice = parseFloat(transaction.agreed_price || 0);
+      if (agreedPrice > 0) {
+        const PLATFORM_FEE_RATE = 0.025; // 2.5% platform fee
+        const GST_RATE = 0.18; // 18% GST on platform fee
+        v0PlatformFee = Math.round(agreedPrice * PLATFORM_FEE_RATE * 100) / 100;
+        v0GstOnFee = Math.round(v0PlatformFee * GST_RATE * 100) / 100;
+        v0SellerPayout = Math.round((agreedPrice - v0PlatformFee - v0GstOnFee) * 100) / 100;
+
+        if (v0SellerPayout > 0) {
+          const actualTxId = transaction.transaction_id || transactionId;
+          if (actualTxId) {
+            await client.query(
+              `UPDATE transactions SET
+                 platform_fee = $1,
+                 gst_on_fee = $2,
+                 seller_payout = $3
+               WHERE transaction_id = $4`,
+              [v0PlatformFee, v0GstOnFee, v0SellerPayout, actualTxId]
+            );
+            logger.info(
+              `[SALE_FEES] Transaction #${actualTxId} fees: agreed=₹${agreedPrice}, fee=₹${v0PlatformFee}, GST=₹${v0GstOnFee}, payout=₹${v0SellerPayout}`
+            );
+          }
+        }
+      }
+    }
+
     const rewardReferenceId = String(transaction.transaction_id || transactionId);
     const rewardPoints = calculateSaleRewardPoints(transaction.agreed_price);
     let sellerRewardChange = null;
@@ -863,6 +927,76 @@ const confirmSale = async (req, res) => {
       } catch (err) {
         logger.warn("[Sale] Deferred referral join rewards failed", { message: err.message });
       }
+
+      // ── V0 Payout Trigger: financial_ledger + payout_records + gateway call ──
+      if (v0SellerPayout > 0) {
+        const actualTxId = String(transaction.transaction_id || transactionId);
+        const saleRef = `transaction_${actualTxId}`;
+
+        try {
+          // 1. Log PLATFORM_FEE into financial_ledger (idempotent via UNIQUE constraint)
+          if (v0PlatformFee > 0) {
+            await runQuery(
+              `INSERT INTO financial_ledger (reference_id, order_id, user_id, event_type, direction, amount, status, provider_reference)
+               VALUES ($1, $2, $3, 'PLATFORM_FEE', 'CREDIT', $4, 'COMPLETED', 'V0_SALE')`,
+              [saleRef, actualTxId, 'PLATFORM', v0PlatformFee]
+            ).catch((e) => logger.warn("[Sale] PLATFORM_FEE ledger insert:", e.message));
+          }
+
+          // 2. Log SELLER_TRANSFER into financial_ledger
+          await runQuery(
+            `INSERT INTO financial_ledger (reference_id, order_id, user_id, event_type, direction, amount, status, provider_reference)
+             VALUES ($1, $2, $3, 'SELLER_TRANSFER', 'DEBIT', $4, 'COMPLETED', 'V0_SALE')`,
+            [saleRef, actualTxId, String(transaction.seller_id), v0SellerPayout]
+          ).catch((e) => logger.warn("[Sale] SELLER_TRANSFER ledger insert:", e.message));
+
+          // 3. Create payout_records entry for payout state machine
+          await runQuery(
+            `INSERT INTO payout_records (reference_id, seller_id, amount, currency, status, gateway_reference)
+             VALUES ($1, $2, $3, 'INR', 'PAYOUT_PENDING', $4)
+             ON CONFLICT (reference_id) DO NOTHING`,
+            [saleRef, String(transaction.seller_id), v0SellerPayout, saleRef]
+          ).catch((e) => logger.warn("[Sale] Payout record insert:", e.message));
+
+          // 4. Trigger gateway payout
+          const { executeSellerPayout } = require("../services/paymentGatewayService");
+          const payoutResult = await executeSellerPayout({
+            sellerId: transaction.seller_id,
+            amount: v0SellerPayout,
+            currency: "INR",
+            referenceId: saleRef,
+          });
+
+          // 5. Update payout record with gateway result
+          if (payoutResult && payoutResult.success) {
+            await runQuery(
+              `UPDATE payout_records SET
+                 status = $1,
+                 gateway_payout_id = $2,
+                 attempts = attempts + 1,
+                 updated_at = NOW()
+               WHERE reference_id = $3`,
+              [payoutResult.mode === 'RAZORPAY_LIVE' ? 'PAYOUT_SUCCESS' : 'PAYOUT_PENDING',
+               payoutResult.transferId || null,
+               saleRef]
+            ).catch((e) => logger.warn("[Sale] Payout record update:", e.message));
+          } else {
+            await runQuery(
+              `UPDATE payout_records SET
+                 status = 'PAYOUT_FAILED_RETRYABLE',
+                 last_error = $1,
+                 attempts = attempts + 1,
+                 updated_at = NOW()
+               WHERE reference_id = $2`,
+              [payoutResult?.error || 'Unknown gateway error', saleRef]
+            ).catch((e) => logger.warn("[Sale] Payout record failure:", e.message));
+          }
+
+          logger.info(`[V0_PAYOUT] Transaction #${actualTxId}: fee=₹${v0PlatformFee}, GST=₹${v0GstOnFee}, payout=₹${v0SellerPayout}`);
+        } catch (payoutErr) {
+          logger.warn("[Sale] V0 payout trigger error (non-blocking):", payoutErr.message);
+        }
+      }
     });
 
     try {
@@ -932,8 +1066,8 @@ const confirmSale = async (req, res) => {
             buyer_profile.avatar_url AS buyer_avatar
           FROM transactions t
           JOIN posts p ON p.post_id::text = t.post_id::text
-          LEFT JOIN categories c ON p.category_id = c.category_id
-          LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+          LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+          LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
           LEFT JOIN users seller ON p.user_id::text = seller.user_id::text
           LEFT JOIN profiles seller_profile ON p.user_id::text = seller_profile.user_id::text
           LEFT JOIN users buyer ON t.buyer_id::text = buyer.user_id::text

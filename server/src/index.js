@@ -119,6 +119,18 @@ const dailyCodeRoutes = require("./routes/dailycode.js");
 const loginAuditRoutes = require("./routes/loginAudit.js");
 const saleUndoneRoutes = require("./routes/saleundone.js");
 const ratingsRoutes = require("./routes/ratings.js");
+
+// ── Level 3 Foundation Routes ────────────────────────────
+const ordersRoutes = require("./routes/orders.js");
+const disputesRoutes = require("./routes/disputes.js");
+const shipmentsRoutes = require("./routes/shipments.js");
+const pagesRoutes = require("./routes/pages.js");
+const mediaRoutes = require("./routes/media.js");
+const searchRoutes = require("./routes/search.js");
+const refundsRoutes = require("./routes/refunds.js");
+const settlementsRoutes = require("./routes/settlements.js");
+const webhooksRoutes = require("./routes/webhooks.js");
+
 const { setNotificationSocket } = require("./services/notificationEmitter");
 
 /* ─────────────────────────────────────────────────────────
@@ -314,6 +326,11 @@ const resolveCorsOrigin = (origin, callback) => {
 const commonAllowedHeaders = [
   "Content-Type",
   "Authorization",
+  // Demo / local sessions authenticate via these headers (auth.js + dbHelpers.js).
+  // They must be CORS-allowlisted or browsers reject the preflight for any
+  // request carrying X-User-Id / X-Demo-Id (e.g. demo-mode sold-posts page).
+  "X-User-Id",
+  "X-Demo-Id",
   "X-Device-Id",
   "X-Device-Fingerprint",
   "X-Timezone",
@@ -519,13 +536,14 @@ app.use((req, res, next) => {
 
 // ── CSRF Protection (Double Submit Cookie) ────────────────
 const { csrfProtection } = require("./middleware/csrf");
+const { WEBHOOK_SKIP_PATHS } = require("./middleware/skipPathConfig");
 app.use(
   csrfProtection({
     skipPaths: [
-      "/api/webhooks",
+      // Webhook routes share the same skip list as the anti-replay middleware
+      // (single source of truth — see ./middleware/skipPathConfig).
+      ...WEBHOOK_SKIP_PATHS,
       "/api/auth/refresh",
-      "/api/payments/webhook",
-      "/api/push-notifications/webhook",
       "/api/analytics/client-event",
       "/api/analytics/client-error",
       "/api/analytics/device",
@@ -754,6 +772,18 @@ const apiRouteMounts = [
   ["/api/saleundone", saleUndoneRoutes],
   ["/api/ratings", ratingsRoutes],
   ["/api/trust", require("./routes/trust.js")],
+
+  // ── Level 3 Foundation Routes ────────────────────────
+  ["/api/orders", ordersRoutes],
+  ["/api/disputes", disputesRoutes],
+  ["/api/shipments", shipmentsRoutes],
+  ["/api/pages", pagesRoutes],
+  ["/api/media", mediaRoutes],
+  ["/api/search", searchRoutes],
+  ["/api/refunds", refundsRoutes],
+  ["/api/settlements", settlementsRoutes],
+  ["/api/webhooks", webhooksRoutes],
+  // Note: /api/v1/* versions are auto-created by mountRoute below
 ];
 
 for (const [routePath, routeHandler] of apiRouteMounts) {
@@ -783,6 +813,12 @@ try {
   require("./workers/notificationWorker.js");
 } catch (err) {
   logger.warn("[Workers] Could not start notificationWorker:", err.message);
+}
+
+try {
+  require("./workers/payoutWorker.js");
+} catch (err) {
+  logger.warn("[Workers] Could not start payoutWorker:", err.message);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -824,25 +860,72 @@ if (!isProduction) console.log("📁 Static file caching configured");
    API Health & Readiness Probes
    ───────────────────────────────────────────────────────── */
 
-/** Deep health check — verifies DB connectivity */
+/** Deep health check — verifies DB, Redis, and BullMQ queue connectivity */
 app.get("/api/health", async (req, res) => {
+  const checks = {
+    service: "zaruda-backend",
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    db: "unknown",
+    redis_session: "unknown",
+    redis_cache: "unknown",
+    queues: {},
+  };
+  let overallStatus = "ok";
+
+  // ── DB check ──
   try {
     const time = await pool.query("SELECT NOW()");
-    res.json({
-      service: "mhub-backend",
-      status: "ok",
-      db: "connected",
-      time: time.rows[0].now,
-    });
-  } catch (err) {
-    res.status(503).json({
-      service: "mhub-backend",
-      status: "degraded",
-      db: "disconnected",
-      time: null,
-      error: "Database connection failed",
-    });
+    checks.db = "connected";
+    checks.time = time.rows[0].now;
+  } catch {
+    checks.db = "disconnected";
+    overallStatus = "degraded";
   }
+
+  // ── Redis session store check ──
+  try {
+    checks.redis_session = sessionStore.isRedisAvailable()
+      ? "connected"
+      : "fallback_memory";
+    if (!sessionStore.isRedisAvailable()) overallStatus = "degraded";
+  } catch {
+    checks.redis_session = "error";
+    overallStatus = "degraded";
+  }
+
+  // ── Redis cache check ──
+  try {
+    const cacheHealth = await cacheLayer.healthCheck();
+    checks.redis_cache = cacheHealth.status || "unknown";
+    if (cacheHealth.backend === "memory") {
+      checks.redis_cache = "fallback_memory";
+      if (overallStatus === "ok") overallStatus = "degraded";
+    }
+  } catch {
+    checks.redis_cache = "error";
+    overallStatus = "degraded";
+  }
+
+  // ── BullMQ notification queue check ──
+  try {
+    const { notificationQueue } = require("./services/notificationQueue");
+    checks.queues.notifications = notificationQueue ? "initialized" : "not_initialized";
+  } catch {
+    checks.queues.notifications = "error";
+  }
+
+  // ── BullMQ payout queue check ──
+  try {
+    const { payoutQueue } = require("./services/payoutQueue");
+    checks.queues.payouts = payoutQueue ? "initialized" : "not_initialized";
+  } catch {
+    checks.queues.payouts = "error";
+  }
+
+  checks.status = overallStatus;
+  res.status(overallStatus === "ok" ? 200 : 503).json(checks);
 });
 
 /** Readiness probe — checks DB + cache + session store */

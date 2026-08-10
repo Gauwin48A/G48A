@@ -1,10 +1,14 @@
-const admin = require("firebase-admin");
+// firebase-admin v14+ exposes only the modular API via subpath imports
+// (the legacy compat namespace `admin.messaging()` / `admin.apps` is gone),
+// so this service imports getApps/getMessaging exactly like config/firebase.js.
+const { initializeApp, cert, getApps } = require("firebase-admin/app");
+const { getMessaging } = require("firebase-admin/messaging");
 const logger = require("../utils/logger");
 
 let fcmInitialized = false;
 
 function initFcmAdmin() {
-  if (fcmInitialized || admin.apps.length > 0) {
+  if (fcmInitialized || getApps().length > 0) {
     fcmInitialized = true;
     return true;
   }
@@ -12,15 +16,15 @@ function initFcmAdmin() {
   try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
       const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+      initializeApp({
+        credential: cert(serviceAccount)
       });
       fcmInitialized = true;
       logger.info("[FCM] Admin SDK initialized from service account file");
       return true;
     } else if (process.env.FCM_PROJECT_ID && process.env.FCM_CLIENT_EMAIL && process.env.FCM_PRIVATE_KEY) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+      initializeApp({
+        credential: cert({
           projectId: process.env.FCM_PROJECT_ID,
           clientEmail: process.env.FCM_CLIENT_EMAIL,
           privateKey: process.env.FCM_PRIVATE_KEY.replace(/\\n/g, "\n")
@@ -100,7 +104,7 @@ async function sendFcmMessage(token, payload) {
   };
 
   try {
-    const response = await admin.messaging().send(message);
+    const response = await getMessaging().send(message);
     logger.info(`[FCM] Successfully sent push notification (MessageId: ${response})`);
     return { success: true, messageId: response };
   } catch (err) {
@@ -121,9 +125,10 @@ async function sendFcmMulticast(tokens, payload) {
   );
 
   const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
-  const invalidTokens = results
-    .filter(r => r.status === 'fulfilled' && r.value?.isUnregistered)
-    .map((r, i) => tokens[i]);
+  const invalidTokens = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value?.isUnregistered) invalidTokens.push(tokens[i]);
+  });
 
   return {
     success: true,

@@ -78,8 +78,8 @@ router.get("/undone", async (req, res) => {
           buyer.user_id AS buyer_id,
           COALESCE(bp.full_name, buyer.username) AS buyer_name
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+        LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
         LEFT JOIN LATERAL (
           SELECT transaction_id, buyer_id, status, created_at, completed_at
           FROM transactions
@@ -100,7 +100,8 @@ router.get("/undone", async (req, res) => {
     return res.json(result.rows);
   } catch (err) {
     logger.error("[Transactions] Error fetching undone sales:", err);
-    return res.status(500).json({ error: "Failed to fetch undone sales" });
+    const detail = err?.message?.includes("does not exist") ? "A required database column is missing. Please contact support." : "An unexpected error occurred while loading undone sales.";
+    return res.status(500).json({ error: "Unable to load undone sales records", detail });
   }
 });
 

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.remote.dto.KycStatusResponse
 import com.zaruda.app.data.remote.dto.KycSubmitRequest
+import com.zaruda.app.data.repository.AuthRepository
 import com.zaruda.app.data.repository.KycRepository
 import com.zaruda.app.data.repository.UploadRepository
 import com.zaruda.app.ui.common.InputValidators
@@ -36,6 +37,7 @@ data class KycState(
 class KycViewModel @Inject constructor(
     private val kycRepo: KycRepository,
     private val uploadRepo: UploadRepository,
+    private val authRepo: AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(KycState())
     val state: StateFlow<KycState> = _state.asStateFlow()
@@ -46,6 +48,15 @@ class KycViewModel @Inject constructor(
     fun refresh() {
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
+            // Demo sessions always 401 — they have KYC verified by design
+            if (authRepo.isDemoSession) {
+                _state.value = _state.value.copy(
+                    loading = false,
+                    status = KycStatusResponse(kycStatus = "verified", role = "seller"),
+                )
+                stopStatusPolling()
+                return@launch
+            }
             when (val r = kycRepo.status()) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(loading = false, status = r.data)

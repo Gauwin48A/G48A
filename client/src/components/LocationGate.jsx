@@ -77,6 +77,10 @@ function LocationGate({ children }) {
 
   // Routes where the floating accuracy badge should be hidden because it
   // overlaps the primary CTA (auth/onboarding flows have no bottom-nav).
+  // /post/{id} is included because the badge sits at the top-right and covers
+  // the post-detail Share / Save action buttons (release-gate caught this at
+  // both 360x800 and 412x915 — taps on those buttons were being intercepted
+  // by the badge pill).
   const routerLoc = useRouterLocation();
   const HIDE_BADGE_ROUTES = [
     "/login",
@@ -85,6 +89,7 @@ function LocationGate({ children }) {
     "/reset-password",
     "/aadhaar-verify",
     "/tier-selection",
+    "/post",
   ];
   const shouldHideBadge =
     badgeDismissed ||
@@ -484,13 +489,29 @@ const badgeStyles = `
     align-items: center;
     gap: 4px;
     z-index: 40;
-    pointer-events: auto;
+    /* The wrap is a click-through container: only the pill and the close
+       button below should capture pointer events. Without this, the empty
+       (transparent) area of the fixed wrap blocks taps on page content that
+       happens to sit underneath it — e.g. the Share / Save buttons on the
+       post-detail page (release-gate 360x800 & 412x915 caught this). */
+    pointer-events: none;
     max-width: calc(100vw - 16px);
     transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .location-accuracy-badge,
+  .location-accuracy-badge-close {
+    pointer-events: auto;
   }
   html.nav-scrolled-down .location-accuracy-badge-wrap {
     opacity: 0;
     transform: translateY(-8px);
+    pointer-events: none;
+  }
+  /* Children re-enable pointer events via explicit auto (above), so when the
+     badge is hidden on scroll-down we must disable them too — otherwise the
+     invisible pill/close would still intercept taps in the top-right corner. */
+  html.nav-scrolled-down .location-accuracy-badge,
+  html.nav-scrolled-down .location-accuracy-badge-close {
     pointer-events: none;
   }
   .location-accuracy-badge {

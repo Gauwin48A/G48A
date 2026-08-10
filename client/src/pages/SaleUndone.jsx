@@ -94,7 +94,7 @@ const SaleUndonePage = () => {
     })();
     return () => { active = false; };
   }, []);
-    submitAbortRef = useRef(null),
+  const submitAbortRef = useRef(null),
     historyAbortRef = useRef(null),
     reactivationEndpointRef = useRef(null),
     reactivationEndpointBlacklistRef = useRef(new Set()),

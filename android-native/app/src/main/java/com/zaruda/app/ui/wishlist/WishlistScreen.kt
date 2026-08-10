@@ -107,6 +107,7 @@ data class WishlistState(
 class WishlistViewModel @Inject constructor(
     private val repo: WishlistRepository,
     private val cartRepo: CartRepository,
+    private val wishlistItemDao: com.zaruda.app.data.local.db.WishlistItemDao,
     private val priceAlertsRepo: com.zaruda.app.data.repository.PriceAlertsRepository,
     private val authRepo: com.zaruda.app.data.repository.AuthRepository,
     private val localeManager: com.zaruda.app.core.LocaleManager,
@@ -119,6 +120,7 @@ class WishlistViewModel @Inject constructor(
     val state: StateFlow<WishlistState> = _state.asStateFlow()
     private var lastLocaleVersion = 0L
     private var remoteWishlistItems: List<Post> = emptyList()
+    private var roomWishlistItems: List<Post> = emptyList()
 
     private val _categoryFilter = MutableStateFlow<String?>(null)
     fun setCategoryFilter(cat: String?) {
@@ -127,6 +129,7 @@ class WishlistViewModel @Inject constructor(
     }
 
     init {
+        loadLocalRoomItems()
         load()
         viewModelScope.launch {
             SharedExploreStore.wishlistFlow.collect {
@@ -141,13 +144,21 @@ class WishlistViewModel @Inject constructor(
         }
     }
 
+    /** Load Room-persisted wishlist items so saved posts survive restart and appear immediately. */
+    private fun loadLocalRoomItems() {
+        viewModelScope.launch {
+            roomWishlistItems = wishlistItemDao.getAll().map { it.toPost() }
+            syncWishlist(loading = false)
+        }
+    }
+
     private fun syncWishlist(
         loading: Boolean = _state.value.loading,
         refreshing: Boolean = false,
         error: String? = null,
     ) {
         val catFilter = _categoryFilter.value
-        val allItems = (remoteWishlistItems + SharedExploreStore.wishlistPosts)
+        val allItems = (remoteWishlistItems + roomWishlistItems + SharedExploreStore.wishlistPosts)
             .distinctBy { it.stableId }
         val mergedItems = if (catFilter != null) {
             allItems.filter { it.category == catFilter }
@@ -213,9 +224,11 @@ class WishlistViewModel @Inject constructor(
 
     fun remove(postId: String) {
         remoteWishlistItems = remoteWishlistItems.filterNot { it.stableId == postId }
+        roomWishlistItems = roomWishlistItems.filterNot { it.stableId == postId }
         SharedExploreStore.removeWishlist(postId)
         syncWishlist(loading = false)
         viewModelScope.launch {
+            runCatching { wishlistItemDao.deleteByPostId(postId) }
             repo.remove(postId)
         }
     }
@@ -264,6 +277,19 @@ class WishlistViewModel @Inject constructor(
         }
     }
 }
+
+/** Convert a Room wishlist entity into the UI Post model. */
+private fun com.zaruda.app.data.local.db.WishlistItemEntity.toPost(): Post = Post(
+    id = postId.ifBlank { id },
+    postId = postId.ifBlank { id },
+    title = title,
+    price = price,
+    originalPrice = originalPrice,
+    imageUrl = imageUrl,
+    category = category,
+    brand = brand,
+    status = "active",
+)
 
 private enum class WishlistSort(val label: String) {
     SAVED("Saved"),

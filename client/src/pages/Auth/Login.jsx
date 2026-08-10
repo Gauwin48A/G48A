@@ -60,6 +60,7 @@ export default function Login() {
         tier: "gold",
         current_plan: "gold",
         kyc_verified: true,
+        is_demo: true,
       };
       setUser(demoUser);
       localStorage.setItem("authSession", "true");

@@ -19,7 +19,7 @@ const DEFAULT_INDIRECT_COINS = parsePositiveNumber(
 );
 const DEFAULT_MAX_CHAIN_DEPTH = parsePositiveInt(
   process.env.REFERRAL_CHAIN_MAX_DEPTH,
-  5,
+  4,
 );
 const REQUIRE_ACTIVITY_DEFAULT = parseBoolean(
   process.env.REFERRAL_REQUIRE_ACTIVITY,
@@ -41,9 +41,9 @@ function parseChainCoinsFromEnv() {
   return parsed.length ? parsed : null;
 }
 
-// Reward ladder: L1=100, L2=40, L3=20, L4=10, L5=5
+// Reward ladder: L1=100, L2=10, L3=10, L4=10 (L1 direct + 3 indirect levels)
 const CHAIN_COINS =
-  parseChainCoinsFromEnv() || [100, 40, 20, 10, 5];
+  parseChainCoinsFromEnv() || [100, 10, 10, 10];
 
 const REFERRAL_CHAIN_MAX_DEPTH = parsePositiveInt(
   process.env.REFERRAL_CHAIN_MAX_DEPTH,
@@ -157,49 +157,25 @@ function isUndefinedTableError(error) {
 async function hasUserActivity(client, userId) {
   if (!userId) return false;
 
-  // Tier 1 (strongest signal): Completed a real transaction as buyer or seller
-  let hasTransaction = false;
   try {
-    const txResult = await client.query(
+    const result = await client.query(
       `SELECT 1
-       FROM transactions
-       WHERE (buyer_id::text = $1 OR seller_id::text = $1)
-         AND status IN ('completed', 'success')
+       FROM user_subscriptions
+       WHERE user_id::text = $1
+         AND status = 'ACTIVE'
+         AND end_date > NOW()
        LIMIT 1`,
       [userId],
     );
-    hasTransaction = txResult.rows.length > 0;
+    return result.rows.length > 0;
   } catch (err) {
     if (!isUndefinedTableError(err)) {
-      logger.warn("[ReferralJoinRewards] Transaction activity check failed", {
+      logger.warn("[ReferralJoinRewards] Subscription activity check failed", {
         message: err.message,
       });
     }
+    return false;
   }
-
-  if (hasTransaction) return true;
-
-  // Tier 2 (moderate signal): Created 2+ listings AND is verified
-  // A single post is too easy to game — require multiple to show intent
-  let hasMultiplePosts = false;
-  try {
-    const postResult = await client.query(
-      "SELECT COUNT(*)::int AS cnt FROM posts WHERE user_id::text = $1",
-      [userId],
-    );
-    hasMultiplePosts = (postResult.rows[0]?.cnt || 0) >= 2;
-  } catch (err) {
-    if (!isUndefinedTableError(err)) {
-      logger.warn("[ReferralJoinRewards] Post activity check failed", { message: err.message });
-    }
-  }
-
-  if (hasMultiplePosts) {
-    const verified = await isUserVerified(client, userId);
-    return verified;
-  }
-
-  return false;
 }
 
 async function recordReferralReward(client, { referrerId, referredUserId, depth, reward }) {
@@ -245,6 +221,35 @@ async function applyReferralJoinCoinRewards({
       }
     }
 
+    // Award 100 Welcome Coins to the referred user (subjectUserId) if they signed up via referral
+    try {
+      const userRes = await client.query(
+        `SELECT referred_by FROM users WHERE user_id::text = $1 LIMIT 1`,
+        [normalizedUserId]
+      );
+      const referrerId = userRes.rows[0]?.referred_by;
+      
+      if (referrerId) {
+        const rewardCheck = await client.query(
+          `SELECT 1 FROM coin_transactions WHERE user_id::text = $1 AND type = 'referral_join_bonus' LIMIT 1`,
+          [normalizedUserId]
+        );
+        
+        if (rewardCheck.rows.length === 0) {
+          await addCoins(
+            normalizedUserId,
+            100,
+            "referral_join_bonus",
+            `referral_join_bonus:${normalizedUserId}`,
+            "Welcome bonus for signing up via referral link"
+          );
+          logger.info(`[ReferralJoinRewards] Awarded 100 welcome coins to referred user ${normalizedUserId}`);
+        }
+      }
+    } catch (welcomeErr) {
+      logger.warn("[ReferralJoinRewards] Failed to award welcome coins to referred user:", welcomeErr.message);
+    }
+
     const chain = await getReferralChain(client, normalizedUserId, maxDepth);
     if (!chain.length) {
       return { applied: false, reason: "no_chain" };
@@ -255,6 +260,76 @@ async function applyReferralJoinCoinRewards({
       const ancestorId = parseOptionalString(node.ancestor_user_id);
       if (!ancestorId || ancestorId === normalizedUserId) continue;
       const depth = Number.parseInt(node.depth, 10);
+
+      // Handle L1 Direct Referral Batching (10 referrals = 1000 coins)
+      if (depth === 1) {
+        try {
+          const checkResult = await client.query(
+            `SELECT 1 FROM referral_rewards WHERE referrer_id::text = $1 AND referred_user_id::text = $2 AND level = 1`,
+            [ancestorId, normalizedUserId]
+          );
+          
+          if (checkResult.rows.length === 0) {
+            await client.query(
+              `INSERT INTO referral_rewards (referrer_id, referred_user_id, level, reward_coins)
+               VALUES ($1, $2, 1, 0.00)
+               ON CONFLICT (referrer_id, referred_user_id, level) DO NOTHING`,
+              [ancestorId, normalizedUserId]
+            );
+            
+            const countResult = await client.query(
+              `SELECT COUNT(*) AS total FROM referral_rewards WHERE referrer_id::text = $1 AND level = 1`,
+              [ancestorId]
+            );
+            const totalReferrals = parseInt(countResult.rows[0]?.total || 0, 10);
+            
+            if (totalReferrals > 0 && totalReferrals % 10 === 0) {
+              const batchReferenceId = `referral_batch_10:${ancestorId}:${totalReferrals}`;
+              const batchDescription = `Completed a batch of 10 direct referrals (Total: ${totalReferrals} referrals)`;
+              
+              const metadata = {
+                trigger: context.trigger || "signup",
+                referralCode: context.referralCode || null,
+                ipAddress: context.ipAddress || null,
+                deviceId: context.deviceId || null,
+                batch_count: totalReferrals
+              };
+              
+              const result = await addCoins(
+                ancestorId,
+                1000,
+                "referral_l1_batch",
+                batchReferenceId,
+                batchDescription,
+                {
+                  sourceUserId: normalizedUserId,
+                  level: 1,
+                  metadata
+                }
+              );
+              
+              if (result?.applied) {
+                await client.query(
+                  `UPDATE referral_rewards SET reward_coins = 1000.00
+                   WHERE referrer_id::text = $1 AND referred_user_id::text = $2 AND level = 1`,
+                  [ancestorId, normalizedUserId]
+                );
+                applied.push({ ancestorId, depth: 1, reward: 1000 });
+              }
+            } else {
+              logger.info(`[ReferralJoinRewards] Registered L1 referral for ${ancestorId}. Batch progress: ${totalReferrals}/10 completed.`);
+              applied.push({ ancestorId, depth: 1, reward: 0 });
+            }
+          }
+        } catch (err) {
+          logger.warn("[ReferralJoinRewards] Failed to process L1 batch referral", {
+            ancestorId,
+            message: err.message
+          });
+        }
+        continue;
+      }
+
       let reward = getCoinsForDepth(depth);
       if (!reward) continue;
 

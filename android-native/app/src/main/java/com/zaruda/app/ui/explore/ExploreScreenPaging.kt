@@ -204,6 +204,7 @@ fun ExploreScreenWithPaging(
     onOpenCart: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onAddPost: () -> Unit = {},
+    onOpenUser: (String) -> Unit = {},
     viewModel: ExplorePagingViewModel = hiltViewModel(),
 ) {
     val lazyPosts = viewModel.pagingPosts.collectAsLazyPagingItems()
@@ -397,6 +398,7 @@ fun ExploreScreenWithPaging(
                                 PostCard(
                                     post = item,
                                     onClick = { onOpenPost(item.stableId) },
+                                    onUserClick = { item.userId?.let(onOpenUser) },
                                     isWishlisted = false,
                                     onToggleWishlist = {},
                                     isCompared = comparePosts.containsKey(item.stableId),

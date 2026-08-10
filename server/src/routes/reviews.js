@@ -17,6 +17,9 @@ router.get("/stats/:userId", publicReadSlowDown, reviewsController.getUserRating
 /** @route POST / - Create a new review */
 router.post("/", protect, reviewsController.createReview);
 
+/** @route POST /purchase - Rate a completed purchase (buyer only) */
+router.post("/purchase", protect, reviewsController.ratePurchase);
+
 /** @route PATCH /:reviewId/helpful - Mark a review as helpful */
 router.patch("/:reviewId/helpful", protect, reviewsController.markReviewHelpful);
 

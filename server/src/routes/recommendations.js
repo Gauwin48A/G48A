@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { runQuery, getAuthUserId, parseOptionalString, parsePositiveInt } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
+const { TEST_USER_CONDITION } = require("../queries/testDataExclusion");
 const { optionalAuth } = require("../middleware/auth");
 const { attachTrustToPosts } = require("../services/trustBadgeService");
 const {
@@ -202,6 +203,9 @@ router.get("/", async (req, res) => {
 
     const whereClauses = [`p.status = 'active'`];
 
+    // Exclude posts from known test / e2e accounts (identity-based).
+    whereClauses.push(TEST_USER_CONDITION);
+
     if (effectiveUserId) {
       whereClauses.push(`p.user_id != ${addParam(effectiveUserId)}::uuid`);
     }
@@ -272,8 +276,8 @@ router.get("/", async (req, res) => {
              u.username as seller_name,
              COALESCE(pr.full_name, u.username, 'Seller') as author_name
       FROM posts p
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+      LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       LEFT JOIN users u ON p.user_id = u.user_id
       LEFT JOIN LATERAL (
         SELECT full_name

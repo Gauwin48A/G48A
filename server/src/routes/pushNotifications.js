@@ -122,13 +122,39 @@ router.post("/broadcast", protect, async (req, res) => {
       return res.status(400).json({ error: "title and body are required" });
     }
 
-    const result = await runQuery("SELECT token FROM device_tokens WHERE is_active = true");
+    const result = await runQuery(
+      "SELECT fcm_token AS token, COALESCE(platform, 'android') AS platform FROM device_tokens WHERE is_active = true"
+    );
     if (result.rows.length === 0) {
       return res.json({ success: false, reason: "No registered devices" });
     }
 
-    const tokens = result.rows.map(row => row.token);
-    const sendResult = await fcm.sendToMultiple(tokens, title, body, data || {});
+    // Android FCM tokens via Firebase Admin SDK, web subscriptions via VAPID web-push.
+    const androidTokens = result.rows.filter(r => r.platform !== "web").map(r => r.token);
+    const webTokens = result.rows.filter(r => r.platform === "web").map(r => r.token);
+
+    let androidResult = { successCount: 0 };
+    if (androidTokens.length) {
+      const { sendFcmMulticast } = require("../services/fcmAdminService");
+      androidResult = await sendFcmMulticast(androidTokens, {
+        notification_id: data?.notification_id || "",
+        type: data?.type || "system",
+        title,
+        message: body,
+        image_url: data?.image_url || "",
+        deep_link: data?.deep_link || "",
+        data: data || {}
+      });
+    }
+    const webResult = webTokens.length
+      ? await fcm.sendToMultiple(webTokens, title, body, data || {})
+      : { successCount: 0 };
+
+    const sendResult = {
+      success: true,
+      totalCount: result.rows.length,
+      successCount: (androidResult.successCount || 0) + (webResult.successCount || 0)
+    };
     res.json(sendResult);
   } catch (error) {
     logger.error("Error broadcasting notification:", error);

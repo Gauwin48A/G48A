@@ -87,7 +87,7 @@ async function sendNotification(subscriptionJSON, title, body, data = {}) {
       // Subscription expired — deactivate
       try {
         await pool.query(
-          "UPDATE device_tokens SET is_active = false WHERE token = $1",
+          "UPDATE device_tokens SET is_active = false WHERE fcm_token = $1",
           [typeof subscriptionJSON === "string" ? subscriptionJSON : JSON.stringify(subscriptionJSON)]
         );
       } catch {}
@@ -110,14 +110,38 @@ async function sendToMultiple(tokens, title, body, data = {}) {
 async function sendToUser(userId, title, body, data = {}) {
   try {
     const result = await pool.query(
-      "SELECT token FROM device_tokens WHERE user_id = $1 AND is_active = true",
+      "SELECT fcm_token AS token, COALESCE(platform, 'android') AS platform FROM device_tokens WHERE user_id = $1 AND is_active = true",
       [userId]
     );
     if (result.rows.length === 0) {
       return { success: false, reason: "No active devices" };
     }
-    const tokens = result.rows.map((row) => row.token);
-    return await sendToMultiple(tokens, title, body, data);
+
+    // Android FCM tokens go through the Firebase Admin SDK, web subscriptions
+    // through VAPID web-push — mirroring the queue/worker split.
+    const androidTokens = result.rows.filter((row) => row.platform !== "web").map((row) => row.token);
+    const webTokens = result.rows.filter((row) => row.platform === "web").map((row) => row.token);
+
+    let androidResult = { successCount: 0 };
+    if (androidTokens.length) {
+      const { sendFcmMulticast } = require("./fcmAdminService");
+      androidResult = await sendFcmMulticast(androidTokens, {
+        notification_id: data.notification_id || "",
+        type: data.type || "system",
+        title,
+        message: body,
+        image_url: data.image_url || "",
+        deep_link: data.deep_link || "",
+        data
+      });
+    }
+    let webResult = { successCount: 0 };
+    if (webTokens.length) {
+      webResult = await sendToMultiple(webTokens, title, body, data);
+    }
+
+    const successCount = (androidResult.successCount || 0) + (webResult.successCount || 0);
+    return { success: true, successCount, totalCount: result.rows.length };
   } catch (error) {
     logger.error("[Push] Error sending to user:", error);
     throw error;
@@ -127,11 +151,11 @@ async function sendToUser(userId, title, body, data = {}) {
 async function registerToken(userId, token, deviceType = "web", deviceName = null) {
   try {
     await pool.query(
-      `INSERT INTO device_tokens (user_id, token, device_type, device_name)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (token)
-       DO UPDATE SET user_id = $1, device_type = $3, device_name = $4, is_active = true, updated_at = NOW()`,
-      [userId, token, deviceType, deviceName]
+      `INSERT INTO device_tokens (user_id, fcm_token, platform)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (fcm_token)
+       DO UPDATE SET user_id = $1, platform = $3, is_active = true, updated_at = NOW()`,
+      [userId, token, deviceType]
     );
     return { success: true };
   } catch (error) {
@@ -145,12 +169,12 @@ async function unregisterToken(token, userId = null) {
     let result;
     if (userId === null || userId === undefined || String(userId).trim() === "") {
       result = await pool.query(
-        "UPDATE device_tokens SET is_active = false WHERE token = $1",
+        "UPDATE device_tokens SET is_active = false WHERE fcm_token = $1",
         [token]
       );
     } else {
       result = await pool.query(
-        "UPDATE device_tokens SET is_active = false WHERE token = $1 AND user_id::text = $2",
+        "UPDATE device_tokens SET is_active = false WHERE fcm_token = $1 AND user_id::text = $2",
         [token, String(userId)]
       );
     }

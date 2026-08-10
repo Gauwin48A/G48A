@@ -9,6 +9,7 @@
 
 const crypto = require("crypto");
 const logger = require("../utils/logger");
+const { isWebhookPath } = require("./skipPathConfig");
 
 const API_INTEGRITY_ENABLED = String(process.env.API_INTEGRITY_ENABLED || "true").toLowerCase() === "true";
 const isProduction = process.env.NODE_ENV === "production";
@@ -186,6 +187,8 @@ const antiReplayProtection = (req, res, next) => {
 
   const path = req.path || "";
   const fullPath = req.originalUrl || path;
+  // Strip any query string so boundary-aware prefix matching sees a clean path
+  const fullPathNoQuery = String(fullPath).split("?")[0];
   if (!isProduction && path.includes("/telemetry/vitals")) {
     return next();
   }
@@ -197,6 +200,16 @@ const antiReplayProtection = (req, res, next) => {
     return next();
   }
   if (path === "/health" || path.endsWith("/health")) return next();
+
+  // Server-to-server webhook endpoints (Razorpay, Surepass) can never carry
+  // client integrity headers (timestamp/nonce) — skip them exactly like the
+  // CSRF middleware does (shared WEBHOOK_SKIP_PATHS constant), otherwise every
+  // real webhook would be rejected.
+  // Both req.path (query-less) and req.originalUrl (query-stripped above) are
+  // checked against the shared webhook prefixes.
+  if (isWebhookPath(path) || isWebhookPath(fullPathNoQuery)) {
+    return next();
+  }
 
   // Timestamp is MANDATORY on all write operations
   const timestamp = req.headers["x-mhub-timestamp"] || req.body?._timestamp;

@@ -36,7 +36,7 @@ const Chat = () => {
 
   // Current user info from localStorage session
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const currentUserId = currentUser.user_id || currentUser.id || "demo-user-001";
+  const currentUserId = currentUser.user_id || currentUser.id || null;
 
   // Connect active room to Pusher / real-time hook
   const activeRoomId = activeConv ? activeConv.id || activeConv.conversationId : null;
@@ -80,20 +80,7 @@ const Chat = () => {
 
       setConversations(convList);
     } catch (err) {
-      // Fallback mock conversations if server is offline or empty
-      const mockConvs = [
-        {
-          id: urlSellerId ? `conv_${urlSellerId}` : "conv_demo_1",
-          sellerId: urlSellerId || "seller_101",
-          recipientName: searchParams.get("sellerName") || "Verified Seller",
-          postTitle: urlTitle || "Premium Electronics Item",
-          lastMessage: "Is this item still available?",
-          updatedAt: new Date().toISOString(),
-          unreadCount: 0
-        }
-      ];
-      setConversations(mockConvs);
-      if (!activeConv) setActiveConv(mockConvs[0]);
+      setConversations([]);
     } finally {
       setLoadingConvs(false);
     }
@@ -122,8 +109,9 @@ const Chat = () => {
       );
     } catch (err) {
       toast({
-        title: "Message Sent",
-        description: "Your message has been dispatched to the seller.",
+        title: "Message Failed",
+        description: "Could not send your message. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -249,7 +237,7 @@ const Chat = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/posts/${urlPostId || ''}`)}
+                  onClick={() => navigate(`/post/${urlPostId || ''}`)}
                 >
                   View Listing
                 </Button>

@@ -238,10 +238,10 @@ async function getChainEarnedPoints(userId) {
   try {
     const result = await runQuery(
       `
-        SELECT COALESCE(SUM(points), 0)::int AS total
-        FROM reward_log
+        SELECT COALESCE(SUM(amount), 0)::int AS total
+        FROM coin_transactions
         WHERE user_id::text = $1
-          AND action LIKE 'referral_chain_%'
+          AND type LIKE 'referral_l%'
       `,
       [userId],
     );
@@ -257,12 +257,12 @@ async function getReferralLedgerSnapshot(userId) {
     const result = await runQuery(
       `
         SELECT
-          COUNT(*) FILTER (WHERE action = 'qualified_referral_bonus')::int AS qualified_bonus_entries,
-          COUNT(*) FILTER (WHERE action LIKE 'referral_chain_%')::int AS chain_reward_entries,
+          COUNT(*) FILTER (WHERE type = 'referral_l1')::int AS qualified_bonus_entries,
+          COUNT(*) FILTER (WHERE type LIKE 'referral_l%' AND type != 'referral_l1')::int AS chain_reward_entries,
           MAX(created_at) FILTER (
-            WHERE action = 'qualified_referral_bonus' OR action LIKE 'referral_chain_%'
+            WHERE type LIKE 'referral_l%'
           ) AS last_referral_reward_at
-        FROM reward_log
+        FROM coin_transactions
         WHERE user_id::text = $1
       `,
       [userId],
@@ -290,10 +290,10 @@ async function getLeaderboardHistory(userId, limit = 5) {
   try {
     const result = await runQuery(
       `
-        SELECT action, points, description, created_at
-        FROM reward_log
+        SELECT type AS action, amount AS points, description, created_at
+        FROM coin_transactions
         WHERE user_id::text = $1
-          AND action IN ('leaderboard_top_seller', 'leaderboard_top_buyer')
+          AND type IN ('leaderboard_top_seller', 'leaderboard_top_buyer')
         ORDER BY created_at DESC
         LIMIT $2
       `,
@@ -479,7 +479,7 @@ exports.getRewardsByUser = async (req, res) => {
   if (!userIdFromSession) return;
 
   try {
-    await ensureRewardLogTable();
+    // ensureRewardLogTable omitted as points system is decommissioned
     const userId = await resolveCanonicalUserId(userIdFromSession);
     const cacheKey = `rewards:${userId}:profile`;
 
@@ -497,6 +497,7 @@ exports.getRewardsByUser = async (req, res) => {
                 u.current_plan,
                 u.tier,
                 u.subscription_expiry,
+                u.coins,
                 p.full_name
               FROM users u
               LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
@@ -507,45 +508,41 @@ exports.getRewardsByUser = async (req, res) => {
           ),
           runQuery(
             `
-              SELECT points, tier FROM rewards
-              WHERE user_id::text = $1
-              LIMIT 1
-            `,
-            [userId],
+              SELECT 1 AS dummy
+            `
           ),
           calculateChainPoints(userId),
           runQuery(
             `
               SELECT
-                COUNT(*) FILTER (WHERE action = 'sale_completed')::int AS sales_count,
-                COUNT(*) FILTER (WHERE action = 'purchase_completed')::int AS purchases_count,
+                COUNT(*) FILTER (WHERE type IN ('sale', 'first_sale'))::int AS sales_count,
+                COUNT(*) FILTER (WHERE type = 'purchase')::int AS purchases_count,
                 COUNT(*) FILTER (
-                  WHERE action IN ('referral_bonus', 'qualified_referral_bonus')
+                  WHERE type LIKE 'referral_l%'
                 )::int AS referrals_count,
-                COUNT(*) FILTER (WHERE action = 'post_daily')::int AS posts_count,
-                COUNT(*) FILTER (WHERE action = 'visit_daily')::int AS visits_count,
+                COUNT(*) FILTER (WHERE type IN ('post', 'first_listing'))::int AS posts_count,
+                COUNT(*) FILTER (WHERE type = 'daily_checkin')::int AS visits_count,
                 COUNT(*) FILTER (
-                  WHERE action = 'sale_completed'
+                  WHERE type IN ('sale', 'first_sale')
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS sales_today,
                 COUNT(*) FILTER (
-                  WHERE action = 'purchase_completed'
+                  WHERE type = 'purchase'
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS purchases_today,
                 COUNT(*) FILTER (
-                  WHERE action IN ('referral_bonus', 'qualified_referral_bonus')
+                  WHERE type LIKE 'referral_l%'
                     AND created_at >= NOW() - INTERVAL '1 day'
-                )::int AS referrals_today
-                ,
+                )::int AS referrals_today,
                 COUNT(*) FILTER (
-                  WHERE action = 'post_daily'
+                  WHERE type IN ('post', 'first_listing')
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS posts_today,
                 COUNT(*) FILTER (
-                  WHERE action = 'visit_daily'
+                  WHERE type = 'daily_checkin'
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS visits_today
-              FROM reward_log
+              FROM coin_transactions
               WHERE user_id::text = $1
             `,
             [userId],
@@ -590,7 +587,7 @@ exports.getRewardsByUser = async (req, res) => {
           parseOptionalString(userRow.current_plan) ||
           parseOptionalString(userRow.tier) ||
           "basic";
-        const totalPoints = Number(rewardsRow.points || 0);
+        const totalPoints = Number(userRow.coins || 0);
         const activityRow = activityResult.rows[0] || {};
         const activityStats = {
           salesCount: toInt(activityRow.sales_count, 0),
@@ -748,7 +745,6 @@ exports.getRewardLog = async (req, res) => {
   const limit = parsePositiveInt(req.query?.limit, DEFAULT_LOG_LIMIT, MAX_LOG_LIMIT);
 
   try {
-    await ensureRewardLogTable();
     const userId = await resolveCanonicalUserId(userIdFromSession);
     const cacheKey = `rewards:${userId}:log:${limit}`;
 
@@ -759,11 +755,11 @@ exports.getRewardLog = async (req, res) => {
           `
             SELECT
               user_id,
-              action,
-              points,
+              type AS action,
+              amount AS points,
               description,
               created_at
-            FROM reward_log
+            FROM coin_transactions
             WHERE user_id::text = $1
             ORDER BY created_at DESC
             LIMIT $2

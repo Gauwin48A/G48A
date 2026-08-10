@@ -131,7 +131,16 @@ const CompactProductCard = memo(function CompactProductCard({
           >
             {sellerInitial}
           </span>
-          <span className="font-medium truncate">{sellerName}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (sellerId) navigate(`/user/${sellerId}/sold-posts`);
+            }}
+            className="font-medium truncate text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline text-left"
+            title={t("view_seller_items", { defaultValue: "View seller's sold items" })}
+          >
+            {sellerName}
+          </button>
           {trustLabel && (
             <span
               className={`rounded-full px-2 py-1 text-xs font-semibold ${trustBadgeClass}`}

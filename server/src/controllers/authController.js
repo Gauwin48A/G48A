@@ -438,10 +438,14 @@ exports.signup = async (req, res) => {
     }
     const sessionData = await createSession(newUser, req, res);
     // Auto-create notification preferences for new users
+    // (columns match the notification_preferences schema used by the web/app)
     try {
       await runQuery(
-        `INSERT INTO notification_preferences (user_id, email_notifications, push_notifications, sms_notifications, sound_enabled)
-         VALUES ($1, true, true, false, true)
+        `INSERT INTO notification_preferences (user_id, push_enabled, email_enabled, sms_enabled,
+           likes_enabled, comments_enabled, follows_enabled, mentions_enabled,
+           order_updates_enabled, marketing_enabled, security_enabled, system_enabled,
+           price_drop_enabled, message_enabled)
+         VALUES ($1, true, true, false, true, true, true, true, true, true, true, true, true, true)
          ON CONFLICT (user_id) DO NOTHING`,
         [newUser.user_id]
       );
@@ -1644,12 +1648,12 @@ exports.completeAadhaarSignup = async (req, res) => {
     await client.query('COMMIT');
     await redisSession.del(buildAadhaarSignupTokenKey(signupToken));
 
-    // Award 90-coin welcome bonus
+    // Award welcome bonus
     try {
-      const { addCoins } = require('./coinController');
+      const { addCoins, EARN_AMOUNTS } = require('./coinController');
       await addCoins(
         newUser.user_id,
-        90,
+        EARN_AMOUNTS.welcome_bonus,
         'welcome_bonus',
         `welcome:${newUser.user_id}`,
         'Welcome bonus for new signup',

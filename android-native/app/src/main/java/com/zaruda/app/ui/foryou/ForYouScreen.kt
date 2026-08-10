@@ -19,6 +19,7 @@ fun ForYouScreen(
     onOpenNotifications: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
+    onOpenUser: (String) -> Unit = {},
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
 ) {
@@ -34,6 +35,7 @@ fun ForYouScreen(
         onOpenNotifications = onOpenNotifications,
         onOpenRecentlyViewed = onOpenRecentlyViewed,
         onOpenWishlist = onOpenWishlist,
+        onOpenUser = onOpenUser,
         currentThemeMode = currentThemeMode,
         onToggleTheme = onToggleTheme,
         forYouMode = true,

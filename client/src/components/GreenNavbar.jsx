@@ -473,12 +473,31 @@ const GreenNavbar = () => {
             savedSubcategories.length === 1 ? savedSubcategories[0] : 'All';
           // Pre-populate filters with user preferences
           if (data) {
+            // Resolve the correct category for the saved subcategory
+            // instead of always defaulting to 'All'
+            let resolvedCategory = 'All';
+            if (singleSavedSubcategory && singleSavedSubcategory !== 'All') {
+              const rawName = normalizeCategoryText(singleSavedSubcategory);
+              // Search through category mode categories to find which category this subcategory belongs to
+              const cats = Array.isArray(categoryModeCategories) ? categoryModeCategories : [];
+              for (const cat of cats) {
+                const subs = Array.isArray(cat?.subcategories) ? cat.subcategories : [];
+                const match = subs.find(sub => {
+                  const subName = normalizeCategoryText(sub?.name || sub?.subcategory_name || '');
+                  return subName === rawName;
+                });
+                if (match) {
+                  resolvedCategory = cat?.name || cat?.title || cat?.category_name || '';
+                  if (resolvedCategory) break;
+                }
+              }
+            }
             setFilters(f => ({
               ...f,
               location: data.location || '',
               minPrice: data.minPrice !== undefined && data.minPrice !== null ? String(data.minPrice) : '',
               maxPrice: data.maxPrice !== undefined && data.maxPrice !== null ? String(data.maxPrice) : '',
-              category: 'All',
+              category: resolvedCategory,
               subcategory: singleSavedSubcategory || 'All',
             }));
           }
@@ -490,7 +509,7 @@ const GreenNavbar = () => {
       };
       fetchPreferences();
     }
-  }, [isForYouPage, setFilters, user]);
+  }, [isForYouPage, setFilters, user, categoryModeCategories]);
 
   // Show full navbar for home (all-posts), my-posts, and For You
   const showFullNavbar =

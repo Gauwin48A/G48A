@@ -6,6 +6,7 @@ const userController = require("../controllers/userController");
 const { protect, requireActivePlan } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/rbac");
 const upload = require("../middleware/upload");
+const { postUploadSecurity } = require("../middleware/upload");
 const optimizeLocalImages = require("../middleware/imageOptimizer");
 
 /**
@@ -46,6 +47,19 @@ router.post("/kyc/aadhaar/generate", protect, requireActivePlan, userController.
 
 /** @route POST /kyc/aadhaar/verify - Verify Aadhaar OTP */
 router.post("/kyc/aadhaar/verify", protect, requireActivePlan, userController.verifyAadhaarOtp);
+
+/** @route POST /kyc/submit - Submit KYC documents */
+router.post("/kyc/submit", protect, requireActivePlan, userController.submitKyc);
+
+/** @route POST /kyc/upload - Upload a KYC document image (front/back/selfie) */
+router.post(
+  "/kyc/upload",
+  protect,
+  requireActivePlan,
+  upload.single("file"),
+  postUploadSecurity,
+  userController.uploadKycDoc
+);
 
 /** @route GET /kyc/status - Check KYC verification status */
 router.get("/kyc/status", protect, userController.getKYCStatus);

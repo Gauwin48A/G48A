@@ -95,7 +95,7 @@ exports.getAllCategories = async (req, res) => {
             FROM posts
             WHERE status = 'active'
             GROUP BY subcategory_id
-          ) spc ON spc.subcategory_id = s.subcategory_id
+          ) spc ON spc.subcategory_id::text = s.subcategory_id::text
           ORDER BY c.name ASC, s.display_order ASC, s.name ASC
         `);
 
@@ -213,7 +213,7 @@ exports.getHubStats = async (req, res) => {
             COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '24 hours' THEN p.post_id END)::int AS new_today,
             COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '7 days'  THEN p.post_id END)::int AS new_week
           FROM posts p
-          JOIN categories c ON p.category_id = c.category_id
+          JOIN categories c ON p.category_id::text = c.category_id::text
           WHERE p.status = 'active'
             AND (p.expires_at IS NULL OR p.expires_at > NOW())
           GROUP BY grp
@@ -270,7 +270,7 @@ exports.getStats = async (req, res) => {
         COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '24 hours' THEN p.post_id END)::int AS new_today,
         COUNT(DISTINCT CASE WHEN p.created_at > NOW() - INTERVAL '7 days'  THEN p.post_id END)::int AS new_week
       FROM posts p
-      JOIN categories c ON p.category_id = c.category_id
+      JOIN categories c ON p.category_id::text = c.category_id::text
       WHERE p.status = 'active'
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
       GROUP BY grp
@@ -375,7 +375,7 @@ exports.resolveCategory = async (req, res) => {
         ${CATEGORY_GROUP_SQL} AS category_group,
         NULLIF(to_jsonb(s)->>'seo_slug', '') AS seo_slug
       FROM subcategories s
-      JOIN categories c ON s.category_id = c.category_id
+      JOIN categories c ON s.category_id::text = c.category_id::text
       WHERE ${isNumeric ? "s.subcategory_id::text = $1" : "LOWER(s.name) = LOWER($1)"}
         AND s.is_active = TRUE
       LIMIT 1

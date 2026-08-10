@@ -1,3 +1,5 @@
+const { TEST_USER_EXCLUSION } = require("./testDataExclusion");
+
 /**
  * Stratified feed query.
  *
@@ -76,6 +78,7 @@ all_active_posts AS (
       AND p.post_type = 'text'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
+      ${TEST_USER_EXCLUSION}
 ),
 -- Apply diversity constraints
 ranked_posts AS (
@@ -110,8 +113,8 @@ SELECT
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM ranked_posts r
 LEFT JOIN profiles pr ON r.author_id::text = pr.user_id::text
-LEFT JOIN categories c ON r.category_id = c.category_id
-LEFT JOIN subcategories sc ON r.subcategory_id = sc.subcategory_id
+LEFT JOIN categories c ON r.category_id::text = c.category_id::text
+LEFT JOIN subcategories sc ON r.subcategory_id::text = sc.subcategory_id::text
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 4     -- Max 4 posts per category
 ORDER BY
@@ -208,6 +211,7 @@ all_active_posts AS (
       AND (p.expires_at IS NULL OR p.expires_at > NOW())
       AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))
       ${groupFilter}
+      ${TEST_USER_EXCLUSION}
 ),
 ranked_posts AS (
     SELECT
@@ -238,8 +242,8 @@ SELECT
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM ranked_posts r
 LEFT JOIN profiles pr ON r.author_id::text = pr.user_id::text
-LEFT JOIN categories c ON r.category_id = c.category_id
-LEFT JOIN subcategories sc ON r.subcategory_id = sc.subcategory_id
+LEFT JOIN categories c ON r.category_id::text = c.category_id::text
+LEFT JOIN subcategories sc ON r.subcategory_id::text = sc.subcategory_id::text
 WHERE r.author_rank = 1
   AND r.category_rank <= 4
 ORDER BY
@@ -283,12 +287,13 @@ SELECT
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM posts p
 LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-LEFT JOIN categories c ON p.category_id = c.category_id
-LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
 WHERE p.status = 'active'
   AND p.post_type = 'text'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
   AND ($1::text = '' OR p.user_id::text != $1::text)
+  ${TEST_USER_EXCLUSION}
 ORDER BY
     COALESCE(p.boost_level, 0) DESC,
     COALESCE(p.tier_priority, 1) DESC,
@@ -316,11 +321,12 @@ SELECT
     sc.name AS subcategory_name
 FROM posts p
 LEFT JOIN categories c ON p.category_id::text = c.category_id::text
-LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
 WHERE p.status = 'active'
   AND p.post_type = 'text'
   AND p.created_at > NOW() - INTERVAL '7 days'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
+  ${TEST_USER_EXCLUSION}
 ORDER BY engagement_score DESC
 LIMIT 5;
 `;

@@ -693,7 +693,7 @@ const PaymentPage = () => {
 
       const options = {
         key: order.key_id || paymentConfig.razorpay_key_id,
-        amount: order.amount,
+        amount: order.amount_paise ?? order.amount,
         currency: order.currency || "INR",
         name: paymentConfig.merchant_name,
         description: isBoostFlow

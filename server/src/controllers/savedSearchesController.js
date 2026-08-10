@@ -342,8 +342,8 @@ const getMatchingPosts = async (req, res) => {
         sc.name as subcategory_name,
         u.username as seller_name
       FROM posts p
-      LEFT JOIN categories c ON c.category_id = p.category_id
-      LEFT JOIN subcategories sc ON sc.subcategory_id = p.subcategory_id
+      LEFT JOIN categories c ON c.category_id::text = p.category_id::text
+      LEFT JOIN subcategories sc ON sc.subcategory_id::text = p.subcategory_id::text
       LEFT JOIN users u ON u.user_id = p.user_id
       WHERE p.status = 'active'
     `;

@@ -196,6 +196,8 @@ const NotificationsPage = () => {
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [preferences, setPreferences] = useState(null);
   const [prefsLoading, setPrefsLoading] = useState(false);
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsSaveError, setPrefsSaveError] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const fetchCounterRef = useRef(0);
   const cursorRef = useRef(null);
@@ -704,7 +706,24 @@ const NotificationsPage = () => {
     try {
       const response = await api.get("/notifications/preferences");
       const payload = response?.data ?? response;
-      setPreferences(payload || null);
+      // The API wraps prefs as { success, preferences: {...} } — extract the nested object.
+      const prefs = payload?.preferences ?? payload;
+      setPreferences({
+        push_enabled: true,
+        email_enabled: true,
+        sms_enabled: false,
+        marketing_enabled: true,
+        order_updates_enabled: true,
+        price_drop_enabled: true,
+        message_enabled: true,
+        likes_enabled: true,
+        comments_enabled: true,
+        follows_enabled: true,
+        mentions_enabled: true,
+        security_enabled: true,
+        system_enabled: true,
+        ...(prefs && typeof prefs === "object" ? prefs : {}),
+      });
     } catch (err) {
       console.error("[Notifications] Failed to load preferences:", err);
     } finally {
@@ -715,16 +734,32 @@ const NotificationsPage = () => {
   const updatePreferences = useCallback(
     async (next) => {
       if (!isAuth || !userId) return;
-      setPreferences(next);
+      const previous = preferences;
+      const optimistic = { ...previous, ...next };
+      setPreferences(optimistic);
+      setPrefsSaveError(false);
+      setPrefsSaving(true);
       try {
-        const response = await api.put("/notifications/preferences", next);
+        const response = await api.put("/notifications/preferences", optimistic);
         const payload = response?.data ?? response;
-        setPreferences(payload || next);
+        const saved = payload?.preferences ?? payload ?? optimistic;
+        setPreferences({ ...optimistic, ...saved });
       } catch (err) {
         console.error("[Notifications] Failed to update preferences:", err);
+        setPreferences(previous || optimistic);
+        setPrefsSaveError(true);
+        toast({
+          variant: "destructive",
+          title: t("prefs_save_failed") || "Couldn't save preferences",
+          description:
+            t("prefs_save_failed_desc") ||
+            "Your notification settings couldn't be saved. Please try again.",
+        });
+      } finally {
+        setPrefsSaving(false);
       }
     },
-    [isAuth, userId],
+    [isAuth, userId, preferences, t, toast],
   );
 
   const categoryFilteredNotifications = useMemo(() => {
@@ -1184,32 +1219,58 @@ const NotificationsPage = () => {
                   {t("loading") || "Loading..."}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { key: "email_enabled", label: t("email_alerts") || "Email alerts" },
-                    { key: "push_enabled", label: t("push_alerts") || "Push alerts" },
-                    { key: "sms_enabled", label: t("sms_alerts") || "SMS alerts" },
-                    { key: "marketing_enabled", label: t("marketing_alerts") || "Marketing" },
-                    { key: "order_updates_enabled", label: t("order_updates") || "Order updates" },
-                    { key: "price_drop_enabled", label: t("price_drops") || "Price drops" },
-                    { key: "message_enabled", label: t("message_alerts") || "Messages" },
-                  ].map((pref) => (
-                    <label
-                      key={pref.key}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-700/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
-                    >
-                      <span>{pref.label}</span>
-                      <Switch
-                        checked={Boolean(preferences?.[pref.key])}
-                        onCheckedChange={(checked) =>
-                          updatePreferences({
-                            ...preferences,
-                            [pref.key]: checked,
-                          })
-                        }
-                      />
-                    </label>
-                  ))}
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { key: "email_enabled", label: t("email_alerts") || "Email alerts" },
+                      { key: "push_enabled", label: t("push_alerts") || "Push alerts" },
+                      { key: "sms_enabled", label: t("sms_alerts") || "SMS alerts" },
+                      { key: "marketing_enabled", label: t("marketing_alerts") || "Marketing" },
+                      { key: "order_updates_enabled", label: t("order_updates") || "Order updates" },
+                      { key: "price_drop_enabled", label: t("price_drops") || "Price drops" },
+                      { key: "message_enabled", label: t("message_alerts") || "Messages" },
+                      { key: "likes_enabled", label: t("likes_alerts") || "Likes" },
+                      { key: "comments_enabled", label: t("comment_alerts") || "Comments" },
+                      { key: "follows_enabled", label: t("follow_alerts") || "Follows" },
+                      { key: "mentions_enabled", label: t("mention_alerts") || "Mentions" },
+                      { key: "security_enabled", label: t("security_alerts") || "Security" },
+                      { key: "system_enabled", label: t("system_alerts") || "System" },
+                    ].map((pref) => (
+                      <label
+                        key={pref.key}
+                        className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-700/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
+                      >
+                        <span>{pref.label}</span>
+                        <Switch
+                          checked={Boolean(preferences?.[pref.key])}
+                          onCheckedChange={(checked) =>
+                            updatePreferences({
+                              ...preferences,
+                              [pref.key]: checked,
+                            })
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    {prefsSaving ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <Check className="w-3.5 h-3.5" />
+                        {t("saving") || "Saving…"}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {t("prefs_auto_save") || "Changes save automatically."}
+                      </span>
+                    )}
+                    {prefsSaveError && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {t("prefs_save_error") || "Not saved — try again"}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

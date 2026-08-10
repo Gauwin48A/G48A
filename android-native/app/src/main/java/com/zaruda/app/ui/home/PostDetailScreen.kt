@@ -23,19 +23,26 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
@@ -53,6 +60,8 @@ import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -104,6 +113,7 @@ import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.remote.dto.TrustScoreResponse
 import com.zaruda.app.data.repository.CartRepository
 import com.zaruda.app.data.repository.OffersRepository
+import com.zaruda.app.data.repository.SalesRepository
 import com.zaruda.app.data.repository.PostsRepository
 import com.zaruda.app.data.repository.SocialRepository
 import com.zaruda.app.data.repository.TrustRepository
@@ -117,6 +127,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -158,6 +169,15 @@ data class PostDetailState(
     val ownerInsights: OwnerInsights? = null,
     // Current plan (for premium/boost badge logic)
     val currentPlan: String? = null,   // "basic" | "bronze" | "silver" | "premium"
+
+    // Buyer review eligibility for THIS post (only the verified buyer of a completed sale)
+    val reviewStatus: com.zaruda.app.data.remote.dto.MyReviewStatusResponse? = null,
+    val reviewLoading: Boolean = false,
+    val showRateDialog: Boolean = false,
+    val selectedRating: Int = 5,
+    val rateComment: String = "",
+    val ratingSubmitting: Boolean = false,
+    val reviewError: String? = null,
 )
 
 data class OwnerInsights(
@@ -173,11 +193,14 @@ class PostDetailViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val wishlistRepo: WishlistRepository,
     private val cartRepo: CartRepository,
+    private val wishlistItemDao: com.zaruda.app.data.local.db.WishlistItemDao,
+    private val cartItemDao: com.zaruda.app.data.local.db.CartItemDao,
     private val trustRepo: TrustRepository,
     private val offersRepo: OffersRepository,
     private val socialRepo: SocialRepository,
     private val analyticsRepo: com.zaruda.app.data.repository.AnalyticsRepository,
     private val authRepo: com.zaruda.app.data.repository.AuthRepository,
+    private val salesRepo: SalesRepository,
     private val localeManager: com.zaruda.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
@@ -205,6 +228,8 @@ class PostDetailViewModel @Inject constructor(
                     // Track view + recently viewed
                     launch { runCatching { socialRepo.viewPost(postId) } }
                     launch { runCatching { socialRepo.trackViewed(postId) } }
+                    // Check whether the current user is the buyer of a completed, unrated sale for this post
+                    launch { loadReviewStatus() }
                     // Load current plan
                     launch {
                         when (val me = authRepo.me()) {
@@ -313,6 +338,53 @@ class PostDetailViewModel @Inject constructor(
         }
     }
 
+    // ── Buyer review eligibility for this post (verified buyer of a completed sale only) ──
+
+    fun loadReviewStatus() {
+        _state.update { it.copy(reviewLoading = true) }
+        viewModelScope.launch {
+            when (val r = salesRepo.myReviewStatus(postId)) {
+                is ApiResult.Success -> _state.update { it.copy(reviewLoading = false, reviewStatus = r.data) }
+                is ApiResult.Failure -> _state.update { it.copy(reviewLoading = false) } // anonymous/not a buyer — fine
+            }
+        }
+    }
+
+    fun setRateDialog(show: Boolean) {
+        _state.update { it.copy(showRateDialog = show, selectedRating = 5, rateComment = "", reviewError = null) }
+    }
+    fun setSelectedRating(rating: Int) { _state.update { it.copy(selectedRating = rating.coerceIn(1, 5)) } }
+    fun setRateComment(comment: String) { _state.update { it.copy(rateComment = comment) } }
+
+    fun submitReview() {
+        val saleId = _state.value.reviewStatus?.saleId ?: return
+        val rating = _state.value.selectedRating
+        val comment = _state.value.rateComment
+        if (_state.value.ratingSubmitting) return
+        _state.update { it.copy(ratingSubmitting = true) }
+        viewModelScope.launch {
+            when (val r = salesRepo.rateCompletedSale(saleId, rating, comment)) {
+                is ApiResult.Success -> {
+                    _state.update {
+                        it.copy(
+                            ratingSubmitting = false,
+                            showRateDialog = false,
+                            reviewStatus = it.reviewStatus?.copy(
+                                eligible = false,
+                                rated = true,
+                                buyerRating = rating,
+                                buyerComment = comment,
+                            ),
+                        )
+                    }
+                }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(ratingSubmitting = false, reviewError = r.error.message ?: "Failed to submit rating")
+                }
+            }
+        }
+    }
+
     fun toggleWishlist() {
         val current = _state.value
         if (current.wishlistLoading) return
@@ -322,11 +394,31 @@ class PostDetailViewModel @Inject constructor(
             if (current.wishlisted) {
                 wishlistRepo.remove(postId)
                 SharedExploreStore.removeWishlist(postId)
+                runCatching { wishlistItemDao.deleteByPostId(postId) }
                 _state.value = _state.value.copy(wishlisted = false, wishlistLoading = false)
             } else {
                 wishlistRepo.add(postId)
                 // Save full Post to shared store so WishlistScreen works without backend
-                _state.value.post?.let { SharedExploreStore.addWishlist(it) }
+                val post = _state.value.post
+                post?.let {
+                    SharedExploreStore.addWishlist(it)
+                    runCatching {
+                        wishlistItemDao.insert(
+                            com.zaruda.app.data.local.db.WishlistItemEntity(
+                                id = it.stableId,
+                                postId = it.stableId,
+                                title = it.displayTitle,
+                                price = it.price ?: 0.0,
+                                originalPrice = it.originalPrice ?: 0.0,
+                                imageUrl = it.primaryImage.orEmpty(),
+                                category = it.category.orEmpty(),
+                                brand = it.brand.orEmpty(),
+                                rating = 0f,
+                                reviewCount = 0,
+                            )
+                        )
+                    }
+                }
                 _state.value = _state.value.copy(wishlisted = true, wishlistLoading = false)
             }
         }
@@ -352,8 +444,32 @@ class PostDetailViewModel @Inject constructor(
         if (_state.value.inCart) return
         _state.value = _state.value.copy(inCart = true)
         // Save to shared store so CartScreen works without backend
-        _state.value.post?.let { SharedExploreStore.addCart(it) }
-        viewModelScope.launch { cartRepo.add(postId) }
+        val post = _state.value.post
+        post?.let { SharedExploreStore.addCart(it) }
+        viewModelScope.launch {
+            val item = _state.value.post
+            if (item != null) {
+                runCatching {
+                    cartItemDao.insert(
+                        com.zaruda.app.data.local.db.CartItemEntity(
+                            id = item.stableId,
+                            postId = item.stableId,
+                            title = item.displayTitle,
+                            price = item.price ?: 0.0,
+                            originalPrice = item.originalPrice ?: 0.0,
+                            imageUrl = item.primaryImage.orEmpty(),
+                            category = item.category.orEmpty(),
+                            brand = item.brand.orEmpty(),
+                            selectedColor = "",
+                            selectedSize = "",
+                            quantity = 1,
+                            inStock = true,
+                        )
+                    )
+                }
+            }
+            cartRepo.add(postId)
+        }
     }
 }
 
@@ -365,6 +481,7 @@ fun PostDetailScreen(
     onOpenCategory: (String) -> Unit = {},
     onOpenCentre: (String) -> Unit = {},
     onOpenSale: (postId: String, sellerId: String) -> Unit = { _, _ -> },
+    onOpenUser: (String) -> Unit = {},
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -374,6 +491,10 @@ fun PostDetailScreen(
     var showInterestModal by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImageIndex by remember { mutableStateOf(0) }
+    var showBuyFlowHowItWorks by remember { mutableStateOf(false) }
+    val salePrefs = remember {
+        context.getSharedPreferences("mhub_sale_prefs", android.content.Context.MODE_PRIVATE)
+    }
 
     if (showShareSheet && state.post != null) {
         com.zaruda.app.ui.components.ShareLinkBottomSheet(
@@ -388,6 +509,29 @@ fun PostDetailScreen(
             postTitle = state.post!!.displayTitle,
             onDismiss = { showInterestModal = false },
             onSubmit = { _, _, _ -> showInterestModal = false },
+        )
+    }
+    if (showBuyFlowHowItWorks && state.post != null) {
+        val buyPost = state.post!!
+        BuyFlowHowItWorksDialog(
+            onContinue = {
+                showBuyFlowHowItWorks = false
+                salePrefs.edit().putBoolean("buy_flow_seen_${buyPost.stableId}", true).apply()
+                buyPost.userId?.let { sellerId -> onOpenSale(buyPost.stableId, sellerId) }
+            },
+            onDismiss = { showBuyFlowHowItWorks = false },
+        )
+    }
+    if (state.showRateDialog) {
+        PostRatingDialog(
+            selectedRating = state.selectedRating,
+            comment = state.rateComment,
+            submitting = state.ratingSubmitting,
+            error = state.reviewError,
+            onRatingChange = viewModel::setSelectedRating,
+            onCommentChange = viewModel::setRateComment,
+            onSubmit = viewModel::submitReview,
+            onDismiss = { viewModel.setRateDialog(false) },
         )
     }
 
@@ -616,6 +760,35 @@ fun PostDetailScreen(
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
+                                // Seller row — tap to open the seller's sold-posts trust page
+                                val sellerNameForRow = post.sellerName ?: post.userName
+                                if (sellerNameForRow != null) {
+                                    val userClickable = post.userId != null
+                                    Row(
+                                        modifier = if (userClickable) Modifier.clip(RoundedCornerShape(12.dp)).clickable { post.userId?.let(onOpenUser) } else Modifier,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(sellerNameForRow.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        Column {
+                                            Text(sellerNameForRow, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = if (userClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                            if (userClickable) {
+                                                Text(stringResource(R.string.explore_view_seller_sales), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                                            } else {
+                                                Text(stringResource(R.string.commerce_verified_seller), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        if (userClickable) {
+                                            Spacer(Modifier.weight(1f))
+                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
                                 // Status badge: Active / Sold / Inactive / Expired
                                 post.status?.takeIf { it.isNotBlank() }?.let { status ->
                                     val (statusColor, statusBg, statusLabel) = when (status.lowercase()) {
@@ -720,6 +893,58 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                            }
+                        }
+                        // ── Buyer review card — only the verified buyer of a completed sale sees this ──
+                        item(key = "sec_review") {
+                            val review = state.reviewStatus
+                            when {
+                                review?.eligible == true -> {
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF059669).copy(alpha = if (isDark) 0.18f else 0.12f)),
+                                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.4f)),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                    ) {
+                                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text("✅", fontSize = 20.sp)
+                                                Column {
+                                                    Text("You bought this item", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                    Text("Your verified review builds trust for the seller.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            }
+                                            Button(
+                                                onClick = { viewModel.setRateDialog(true) },
+                                                enabled = !state.reviewLoading,
+                                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                                            ) {
+                                                Icon(Icons.Filled.Star, null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Rate & Review", fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
+                                }
+                                review?.rated == true -> {
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF59E0B).copy(alpha = if (isDark) 0.15f else 0.1f)),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                    ) {
+                                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Text("⭐", fontSize = 18.sp)
+                                            Column(Modifier.weight(1f)) {
+                                                Text("You rated this purchase ${review.buyerRating ?: 0}/5", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                review.buyerComment?.takeIf { it.isNotBlank() }?.let {
+                                                    Text("\"$it\"", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         item(key = "sec_specs") {
@@ -1099,24 +1324,67 @@ fun PostDetailScreen(
                                     Text(if (state.inCart) "In Cart" else "Add")
                                 }
                             }
-                            // Initiate Sale button — full-width, prominent
+                            // ── Buy via App (escrow-protected purchase) ──
                             Spacer(Modifier.height(6.dp))
                             Button(
                                 onClick = {
                                     post.userId?.let { sellerId ->
-                                        onOpenSale(post.stableId, sellerId)
+                                        if (isOwner) {
+                                            // Seller managing their own listing — straight to sale hub
+                                            onOpenSale(post.stableId, sellerId)
+                                        } else if (salePrefs.getBoolean("buy_flow_seen_${post.stableId}", false)) {
+                                            onOpenSale(post.stableId, sellerId)
+                                        } else {
+                                            showBuyFlowHowItWorks = true
+                                        }
                                     }
                                 },
                                 enabled = post.userId != null,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF7C3AED)
+                                    containerColor = Color(0xFF059669)
                                 )
                             ) {
                                 Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Initiate Sale — Buy with Sale Done", fontWeight = FontWeight.Bold)
+                                Column(horizontalAlignment = Alignment.Start) {
+                                    Text(
+                                        if (isOwner) stringResource(R.string.commerce_sell_via_app)
+                                        else stringResource(R.string.commerce_buy_via_app),
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    Text(
+                                        if (isOwner) stringResource(R.string.commerce_sell_manage)
+                                        else stringResource(R.string.commerce_escrow_badge),
+                                        fontSize = 10.sp,
+                                        color = Color.White.copy(alpha = 0.85f),
+                                    )
+                                }
+                            }
+
+                            // ── How it works — always available so the flow is never a mystery ──
+                            if (!isOwner) {
+                                TextButton(
+                                    onClick = { showBuyFlowHowItWorks = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(Icons.Default.Info, null, tint = Color(0xFF059669), modifier = Modifier.size(15.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(stringResource(R.string.commerce_buy_flow_how), color = Color(0xFF059669), fontSize = 12.sp)
+                                }
+                            }
+
+                            // ── Contact Seller — direct deal, number revealed on tap ──
+                            if (!isOwner) {
+                                Spacer(Modifier.height(6.dp))
+                                ContactSellerRevealPanel(
+                                    post = post,
+                                    context = context,
+                                    onBuyViaApp = {
+                                        post.userId?.let { sellerId -> onOpenSale(post.stableId, sellerId) }
+                                    },
+                                )
                             }
                         }
                     }
@@ -1133,6 +1401,316 @@ private fun EngagementChip(emoji: String, count: String, label: String) {
             Text(emoji, fontSize = 14.sp)
             Text(count, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Buy via App — How it works dialog (escrow + fraud freeze explanation)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Star-rating + review dialog for the verified buyer of a completed sale. */
+@Composable
+private fun PostRatingDialog(
+    selectedRating: Int,
+    comment: String,
+    submitting: Boolean,
+    error: String?,
+    onRatingChange: (Int) -> Unit,
+    onCommentChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rate Your Purchase", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text("How was your experience with this purchase?", fontSize = 13.sp, color = Color.Gray)
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    (1..5).forEach { star ->
+                        IconButton(onClick = { onRatingChange(star) }) {
+                            Icon(
+                                imageVector = if (star <= selectedRating) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                contentDescription = "Star $star",
+                                tint = if (star <= selectedRating) Color(0xFFFFB800) else Color.Gray,
+                                modifier = Modifier.size(34.dp),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = onCommentChange,
+                    label = { Text("Review / Feedback (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                )
+                error?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = Color(0xFFDC2626), fontSize = 12.sp)
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onSubmit, enabled = !submitting) {
+                Text(if (submitting) "Submitting..." else "Submit Rating")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun BuyFlowHowItWorksDialog(
+    onContinue: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val steps = listOf(
+        Triple(
+            stringResource(R.string.commerce_buy_flow_step1_title),
+            stringResource(R.string.commerce_buy_flow_step1_desc),
+            "📝",
+        ),
+        Triple(
+            stringResource(R.string.commerce_buy_flow_step2_title),
+            stringResource(R.string.commerce_buy_flow_step2_desc),
+            "✅",
+        ),
+        Triple(
+            stringResource(R.string.commerce_buy_flow_step3_title),
+            stringResource(R.string.commerce_buy_flow_step3_desc),
+            "💳",
+        ),
+        Triple(
+            stringResource(R.string.commerce_buy_flow_step4_title),
+            stringResource(R.string.commerce_buy_flow_step4_desc),
+            "📦",
+        ),
+        Triple(
+            stringResource(R.string.commerce_buy_flow_step5_title),
+            stringResource(R.string.commerce_buy_flow_step5_desc),
+            "💰",
+        ),
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(stringResource(R.string.commerce_buy_flow_title), fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    stringResource(R.string.commerce_buy_flow_subtitle),
+                    fontSize = 12.sp,
+                    color = if (isDark) Color.Gray else Color(0xFF64748B),
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                steps.forEach { (title, desc, emoji) ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF059669).copy(alpha = 0.12f),
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(emoji, fontSize = 16.sp)
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(desc, fontSize = 12.sp, color = if (isDark) Color.Gray else Color(0xFF64748B))
+                        }
+                    }
+                }
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        "⚠️ " + stringResource(R.string.commerce_buy_flow_fraud_note),
+                        fontSize = 11.sp,
+                        color = if (isDark) Color(0xFFFDE68A) else Color(0xFF78350F),
+                        modifier = Modifier.padding(10.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onContinue) {
+                Text(stringResource(R.string.commerce_got_it))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.commerce_not_now))
+            }
+        },
+    )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Contact Seller — reveal-on-tap number with Call / WhatsApp + outside-app notice
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ContactSellerRevealPanel(
+    post: Post,
+    context: android.content.Context,
+    onBuyViaApp: () -> Unit = {},
+) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    var revealed by remember { mutableStateOf(false) }
+    var numberVisible by remember { mutableStateOf(false) }
+    val rawNumber = post.contactNumber?.trim().orEmpty()
+    val digits = rawNumber.filter { it.isDigit() }
+    val displayNumber = when {
+        digits.length == 12 && digits.startsWith("91") -> "+91 ${digits.substring(2, 5)} ${digits.substring(5, 8)} ${digits.substring(8)}"
+        digits.length == 10 -> "+91 ${digits.substring(0, 5)} ${digits.substring(5)}"
+        else -> rawNumber
+    }
+    val masked = when {
+        digits.length >= 6 -> "+91 ******${digits.takeLast(4)}"
+        digits.isNotEmpty() -> "+91 ****${digits.takeLast(2)}"
+        else -> ""
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // KYC + active-plan trust line (all users are verified)
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.6f) else Color(0xFFF0FDF4),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Default.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                Text(
+                    stringResource(R.string.commerce_contact_kyc_note),
+                    fontSize = 10.5.sp,
+                    color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF065F46),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        OutlinedButton(
+            onClick = { revealed = !revealed; numberVisible = false },
+            modifier = Modifier.fillMaxWidth().height(46.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF3B82F6)),
+            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f)),
+        ) {
+            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.commerce_contact_seller), fontWeight = FontWeight.SemiBold)
+        }
+
+        if (revealed) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (rawNumber.isBlank()) {
+                        // No number shared — give an actionable fallback instead of a dead end
+                        Text(
+                            stringResource(R.string.commerce_contact_not_shared),
+                            fontSize = 12.sp,
+                            color = if (isDark) Color.Gray else Color(0xFF64748B),
+                        )
+                        OutlinedButton(
+                            onClick = onBuyViaApp,
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF059669)),
+                            border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.5f)),
+                        ) {
+                            Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.commerce_contact_use_buy), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    } else if (!numberVisible) {
+                        // Step 1 — show masked number, tap to reveal
+                        Text(
+                            stringResource(R.string.commerce_contact_masked),
+                            fontSize = 11.sp,
+                            color = if (isDark) Color.Gray else Color(0xFF64748B),
+                        )
+                        Text(masked, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Button(
+                            onClick = { numberVisible = true },
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                        ) {
+                            Icon(Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.commerce_contact_show), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    } else {
+                        // Step 2 — full number + Call / WhatsApp
+                        Text(
+                            stringResource(R.string.commerce_contact_seller),
+                            fontSize = 11.sp,
+                            color = if (isDark) Color.Gray else Color(0xFF64748B),
+                        )
+                        Text(displayNumber, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    runCatching {
+                                        val intent = android.content.Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits"))
+                                        context.startActivity(intent)
+                                    }
+                                },
+                                enabled = digits.isNotEmpty(),
+                                modifier = Modifier.weight(1f).height(42.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                            ) {
+                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.commerce_contact_call), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                            Button(
+                                onClick = {
+                                    runCatching {
+                                        val waNumber = if (digits.length == 10) "91$digits" else digits
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$waNumber"))
+                                        context.startActivity(intent)
+                                    }
+                                },
+                                enabled = digits.isNotEmpty(),
+                                modifier = Modifier.weight(1f).height(42.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                            ) {
+                                Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.commerce_contact_whatsapp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.commerce_outside_app_note),
+                        fontSize = 10.sp,
+                        color = if (isDark) Color.Gray else Color(0xFF6B7280),
+                    )
+                }
+            }
         }
     }
 }

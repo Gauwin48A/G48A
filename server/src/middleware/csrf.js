@@ -6,6 +6,7 @@
  */
 
 const crypto = require('crypto');
+const { WEBHOOK_SKIP_PATHS } = require('./skipPathConfig');
 
 // CSRF Token Configuration
 const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
@@ -29,7 +30,10 @@ function generateToken() {
  */
 const csrfProtection = (options = {}) => {
     const {
-        skipPaths = ['/api/webhooks', '/api/auth/refresh'],
+        // Webhook routes share the same skip list as the anti-replay middleware
+        // (single source of truth — see ./skipPathConfig). `/api/auth/refresh`
+        // is intentionally exempt from CSRF but still requires integrity headers.
+        skipPaths = [...WEBHOOK_SKIP_PATHS, '/api/auth/refresh'],
         cookieOptions = {
             httpOnly: false, // Frontend needs to read this
             secure: process.env.NODE_ENV === 'production',

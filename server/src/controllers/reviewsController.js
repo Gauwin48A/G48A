@@ -5,6 +5,7 @@
  * flagging/moderation, and seller responses.
  */
 
+const pool = require("../config/db");
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const {
   parseOptionalString,
@@ -60,6 +61,8 @@ function ensureReviewsModerationSchema() {
       await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS quality_rating SMALLINT`);
       await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS value_rating SMALLINT`);
       await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS shipping_rating SMALLINT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS sale_id TEXT`);
+      await runQuery(`CREATE INDEX IF NOT EXISTS idx_reviews_sale_id ON reviews(sale_id)`);
       await runQuery(`CREATE INDEX IF NOT EXISTS idx_reviews_review_type ON reviews(review_type)`);
 
       await runQuery(`
@@ -1024,6 +1027,160 @@ const getUserRatingStats = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
+// Purchase-specific: POST /api/reviews/purchase
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /api/reviews/purchase
+ * Rate a completed purchase — only the buyer can rate, and only once per sale.
+ * Request: { sale_id, rating, comment }
+ */
+const ratePurchase = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await ensureReviewsModerationSchema();
+    const buyerId = getAuthUserId(req);
+
+    const saleId = parseOptionalString(req.body.sale_id);
+    const rating = parseRating(req.body.rating);
+    const comment = parseOptionalString(req.body.comment);
+    const clientPostId = parseOptionalString(req.body.post_id || req.body.postId);
+
+    if (!buyerId) {
+      client.release();
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    if (!saleId || rating === null) {
+      client.release();
+      return res.status(400).json({ error: "Sale ID and rating are required" });
+    }
+    if (rating < 1 || rating > 5) {
+      client.release();
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
+
+    await client.query("BEGIN");
+
+    // Fetch the sale with row lock to prevent concurrent rating races
+    const saleResult = await client.query(
+      `
+      SELECT sale_id, buyer_id::text AS buyer_id, seller_id::text AS seller_id, post_id::text AS post_id, status
+      FROM sales
+      WHERE sale_id::text = $1
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [saleId]
+    );
+
+    if (!saleResult.rows.length) {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(404).json({ error: "Sale not found" });
+    }
+
+    const sale = saleResult.rows[0];
+
+    // Validate the client-supplied post_id matches the sale's actual post
+    if (clientPostId && String(clientPostId) !== String(sale.post_id)) {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(400).json({ error: "Post ID does not match the sale record" });
+    }
+
+    if (sale.buyer_id !== buyerId) {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(403).json({ error: "Only the buyer can rate this purchase" });
+    }
+
+    if (sale.status !== "completed" && sale.status !== "amount_received" && sale.status !== "confirmed") {
+      await client.query("ROLLBACK");
+      client.release();
+      return res.status(400).json({ error: "Sale must be completed before rating" });
+    }
+
+    // Check for existing review tied to this specific sale_id.
+    // This allows the same buyer to rate the same seller+post again
+    // if they bought it in a separate sale.
+    // Also catches legacy reviews (pre-migration) where sale_id is NULL
+    // by falling back to reviewer_id + post_id + reviewee_id match.
+    const existingReview = await client.query(
+      `
+      SELECT review_id
+      FROM reviews
+      WHERE reviewer_id::text = $1
+        AND (
+          sale_id::text = $2
+          OR (sale_id IS NULL AND post_id::text = $3 AND reviewee_id::text = $4)
+        )
+      LIMIT 1
+      `,
+      [buyerId, saleId, sale.post_id, sale.seller_id]
+    );
+
+    if (existingReview.rows.length > 0) {
+      // Update existing review within the transaction
+      const result = await client.query(
+        `
+        UPDATE reviews
+        SET rating = $1,
+            comment = $2,
+            verified_purchase = true,
+            updated_at = NOW()
+        WHERE review_id::text = $3
+        RETURNING review_id, rating, comment, verified_purchase, created_at, updated_at
+        `,
+        [rating, comment, existingReview.rows[0].review_id]
+      );
+
+      await client.query("COMMIT");
+      client.release();
+
+      // Post-commit side effects (cache + rating recalculation)
+      invalidateReviewsCache(sale.seller_id);
+      triggerRatingRecalculation(sale.seller_id);
+
+      return res.json({
+        message: "Rating updated",
+        review: result.rows[0],
+      });
+    }
+
+    // Create new review within the transaction, storing sale_id for dedup
+    const result = await client.query(
+      `
+      INSERT INTO reviews (reviewer_id, reviewee_id, post_id, rating, comment, verified_purchase, review_type, sale_id)
+      VALUES ($1, $2, $3, $4, $5, true, 'seller', $6)
+      RETURNING review_id, rating, comment, verified_purchase, created_at
+      `,
+      [buyerId, sale.seller_id, sale.post_id, rating, comment, saleId]
+    );
+
+    await client.query("COMMIT");
+    client.release();
+
+    // Post-commit side effects
+    invalidateReviewsCache(sale.seller_id);
+    triggerRatingRecalculation(sale.seller_id);
+
+    return res.status(201).json({
+      message: "Purchase rated successfully",
+      review: result.rows[0],
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_rollbackErr) {
+      // Rollback failed — connection may be in a bad state
+    }
+    client.release();
+    logger.error("Error rating purchase:", error);
+    return res.status(500).json({ error: "Failed to rate purchase" });
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
@@ -1037,4 +1194,5 @@ module.exports = {
   moderateReviewVisibility,
   getBuyerReviews,
   getUserRatingStats,
+  ratePurchase,
 };

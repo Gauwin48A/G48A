@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,21 +46,28 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
 import com.zaruda.app.R
 import com.zaruda.app.ui.common.InputValidators
@@ -71,11 +79,22 @@ import com.zaruda.app.ui.components.PrimaryButton
 @Composable
 fun KycScreen(
     onBack: () -> Unit,
+    onNavigateToAadhaarVerify: () -> Unit,
     viewModel: KycViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val requiresBackImage = InputValidators.requiresKycBackImage(state.docType)
+
+    // Refresh status when returning from the Aadhaar OTP flow (or any resume).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val docNumberError = if (
         state.docNumber.isNotBlank() &&
         !InputValidators.isValidKycDocumentNumber(state.docType, state.docNumber)
@@ -212,59 +231,96 @@ fun KycScreen(
                     DocTypeChip("driving_license", stringResource(R.string.kyc_doc_dl), state.docType, viewModel::setDocType)
                 }
 
-                AppTextField(
-                    value = state.docNumber,
-                    onValueChange = {
-                        viewModel.setDocNumber(it)
-                        viewModel.clearError()
-                    },
-                    label = stringResource(R.string.kyc_doc_number),
-                    keyboardType = if (state.docType == "aadhaar") KeyboardType.Number else KeyboardType.Text,
-                    error = docNumberError,
-                )
-
-                UploadSlot(
-                    label = stringResource(R.string.kyc_upload_front),
-                    uri = state.frontUri,
-                    onPick = {
-                        pickFront.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                )
-                UploadSlot(
-                    label = if (requiresBackImage) {
-                        "Upload back image (required)"
-                    } else {
-                        stringResource(R.string.kyc_upload_back)
-                    },
-                    uri = state.backUri,
-                    onPick = {
-                        pickBack.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                )
-                UploadSlot(
-                    label = stringResource(R.string.kyc_upload_selfie),
-                    uri = state.selfieUri,
-                    onPick = {
-                        pickSelfie.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                )
-
-                PrimaryButton(
-                    text = stringResource(R.string.kyc_submit),
-                    loading = state.submitting,
-                    enabled = canSubmit,
-                    onClick = {
-                        viewModel.submit { uri ->
-                            runCatching {
-                                val resolver = context.contentResolver
-                                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
-                                    ?: return@runCatching null
-                                val mime = resolver.getType(uri) ?: "image/jpeg"
-                                bytes to mime
-                            }.getOrNull()
+                if (state.docType == "aadhaar") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Box(
+                                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFFE0F2FE)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Shield, null, tint = Color(0xFF0284C7), modifier = Modifier.size(20.dp))
+                                }
+                                Text("⚡ Paperless Aadhaar Verification", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+                            Text(
+                                "Verify your identity instantly via safe, government-approved OTP verification. No physical Aadhaar photo uploads required.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Button(
+                                onClick = onNavigateToAadhaarVerify,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8))
+                            ) {
+                                Text("Start Aadhaar OTP Verification ⚡", fontWeight = FontWeight.Bold)
+                            }
                         }
-                    },
-                )
+                    }
+                } else {
+                    AppTextField(
+                        value = state.docNumber,
+                        onValueChange = {
+                            viewModel.setDocNumber(it)
+                            viewModel.clearError()
+                        },
+                        label = stringResource(R.string.kyc_doc_number),
+                        keyboardType = KeyboardType.Text,
+                        error = docNumberError,
+                    )
+
+                    UploadSlot(
+                        label = stringResource(R.string.kyc_upload_front),
+                        uri = state.frontUri,
+                        onPick = {
+                            pickFront.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                    )
+                    UploadSlot(
+                        label = if (requiresBackImage) {
+                            "Upload back image (required)"
+                        } else {
+                            stringResource(R.string.kyc_upload_back)
+                        },
+                        uri = state.backUri,
+                        onPick = {
+                            pickBack.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                    )
+                    UploadSlot(
+                        label = stringResource(R.string.kyc_upload_selfie),
+                        uri = state.selfieUri,
+                        onPick = {
+                            pickSelfie.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                    )
+
+                    PrimaryButton(
+                        text = stringResource(R.string.kyc_submit),
+                        loading = state.submitting,
+                        enabled = canSubmit,
+                        onClick = {
+                            viewModel.submit { uri ->
+                                runCatching {
+                                    val resolver = context.contentResolver
+                                    val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                                        ?: return@runCatching null
+                                    val mime = resolver.getType(uri) ?: "image/jpeg"
+                                    bytes to mime
+                                }.getOrNull()
+                            }
+                        },
+                    )
+                }
             }
         }
     }
@@ -272,10 +328,11 @@ fun KycScreen(
 
 @Composable
 private fun StatusCard(status: String) {
-    val (label, tint, icon) = when (status) {
-        "verified" -> Triple(stringResource(R.string.kyc_status_verified), Color(0xFF067647), Icons.Default.CheckCircle)
-        "pending" -> Triple(stringResource(R.string.kyc_status_pending), Color(0xFFB54708), Icons.Default.HourglassBottom)
-        "rejected" -> Triple(stringResource(R.string.kyc_status_rejected), MaterialTheme.colorScheme.error, Icons.Default.CheckCircle)
+    val statusLower = status.lowercase()
+    val (label, tint, icon) = when {
+        statusLower.contains("verified") -> Triple(stringResource(R.string.kyc_status_verified), Color(0xFF067647), Icons.Default.CheckCircle)
+        statusLower.contains("pending") || statusLower.contains("review") -> Triple(stringResource(R.string.kyc_status_pending), Color(0xFFB54708), Icons.Default.HourglassBottom)
+        statusLower.contains("rejected") || statusLower.contains("fail") -> Triple(stringResource(R.string.kyc_status_rejected), MaterialTheme.colorScheme.error, Icons.Default.CheckCircle)
         else -> Triple(stringResource(R.string.kyc_status_none), MaterialTheme.colorScheme.onSurfaceVariant, Icons.Default.HourglassBottom)
     }
 

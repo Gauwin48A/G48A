@@ -28,47 +28,37 @@ const REFERRAL_INDIRECT_COINS = parsePositiveNumber(
 // Coin earn amounts
 const EARN_AMOUNTS = {
   welcome_bonus: 100,
-  post: 5,
-  sale: 25,
+  post: 10,
+  sale: 10,
   purchase: 10,
-  first_listing: 25,
-  first_sale: 50,
-  five_star_review: 15,
+  first_listing: 0,
+  first_sale: 0,
+  five_star_review: 0,
   referral_l1: REFERRAL_DIRECT_COINS,
-  referral_l2: 40,
-  referral_l3: 20,
+  referral_l2: 10,
+  referral_l3: 10,
   referral_l4: 10,
-  referral_l5: 5,
+  referral_l5: 0,
 };
 
 // Daily earning caps per action type (anti-abuse)
 const DAILY_EARN_CAPS = {
-  post: 50,       // max 50 coins from listings per day (10 listings × 5)
-  sale: 250,      // max 250 coins from sales per day
+  post: 10,       // max 10 coins from listings per day (1 listing × 10)
+  sale: 100,      // max 100 coins from sales per day
   purchase: 100,  // max 100 coins from purchases per day
 };
 
-const DAILY_CHECKIN_REWARDS = [5, 10, 15, 20, 30, 50, 100];
+const DAILY_CHECKIN_REWARDS = [10, 10, 10, 10, 10, 10, 10];
 const SPIN_REWARD_POOL = [
   { amount: 25, weight: 15 },
   { amount: 15, weight: 20 },
   { amount: 10, weight: 25 },
   { amount: 5, weight: 25 },
   { amount: 0, weight: 10 },
-  { amount: -5, weight: 3 },
-  { amount: -10, weight: 2 },
+  { amount: -50, weight: 3 },
+  { amount: -25, weight: 2 },
 ];
-const SCRATCH_REWARD_POOL = [
-  { amount: 10, weight: 30 },
-  { amount: 20, weight: 25 },
-  { amount: 40, weight: 20 },
-  { amount: 60, weight: 15 },
-  { amount: 80, weight: 7 },
-  { amount: 100, weight: 3 },
-];
-const REFERRAL_MILESTONES = [
-  { count: 3, reward: 50, type: "referral_milestone_3" },
-];
+const REFERRAL_MILESTONES = [];
 const STORE_REDEEM_COSTS = {
   boost: 100,
   badge: 1000,
@@ -557,8 +547,36 @@ async function applyPostBoost({ userId, postId, boostType, durationDays, source 
   });
 
   const BOOST_LEVELS = { boost: 1, featured: 2, spotlight: 3, top_search: 3 };
-  const expiresAt = new Date();
+  const now = new Date();
+  const expiresAt = new Date(now);
   expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+  // Idempotent activation: if an active boost of the same type already exists for
+  // this post, extend it instead of inserting a duplicate. This makes the webhook
+  // + client-verify race harmless (boost can never be applied twice).
+  const existing = await runQuery(
+    `SELECT boost_id, expires_at FROM post_boosts
+     WHERE post_id::text = $1 AND boost_type = $2 AND status = 'active'
+     ORDER BY expires_at DESC LIMIT 1`,
+    [String(postId), boostType]
+  ).catch(() => ({ rows: [] }));
+
+  if (existing.rows.length > 0) {
+    const base = new Date(existing.rows[0].expires_at);
+    const merged = base > now ? base : now;
+    merged.setDate(merged.getDate() + durationDays);
+    await runQuery(
+      `UPDATE post_boosts SET expires_at = $1, source = $2 WHERE boost_id = $3`,
+      [merged, source || "coins", existing.rows[0].boost_id]
+    );
+    await runQuery(
+      `UPDATE posts SET boost_level = GREATEST(COALESCE(boost_level, 0), $1) WHERE post_id::text = $2`,
+      [BOOST_LEVELS[boostType] || 1, postId]
+    ).catch((err) => {
+      logger.warn("[Coins] ApplyPostBoost level update (posts.boost_level) skipped:", { message: err?.message });
+    });
+    return { expiresAt: merged, extended: true };
+  }
 
   await runQuery(
     `INSERT INTO post_boosts (post_id, user_id, boost_type, source, expires_at)
@@ -815,7 +833,7 @@ exports.getEngagementStatus = async (req, res) => {
     const todayKey = getIstDateKey();
     const yesterdayKey = getIstDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
-    const [checkinRes, spinRes, scratchRes] = await Promise.all([
+    const [checkinRes, spinRes] = await Promise.all([
       runQuery(
         "SELECT last_checkin_date, streak, best_streak FROM reward_daily_checkins WHERE user_id = $1 LIMIT 1",
         [userId],
@@ -823,10 +841,6 @@ exports.getEngagementStatus = async (req, res) => {
       runQuery(
         "SELECT reward_amount, spin_date, created_at FROM reward_spin_history WHERE user_id = $1 AND spin_date = $2 LIMIT 1",
         [userId, todayKey],
-      ),
-      runQuery(
-        "SELECT referral_user_id FROM reward_scratch_claims WHERE user_id = $1",
-        [userId],
       ),
     ]);
 
@@ -851,10 +865,6 @@ exports.getEngagementStatus = async (req, res) => {
     const spinReward = spinRow ? Number(spinRow.reward_amount || 0) : 0;
 
     const directIds = await getDirectReferralIds(userId);
-    const claimedScratch = new Set(
-      (scratchRes.rows || []).map((row) => String(row.referral_user_id)),
-    );
-    const availableScratch = Math.max(0, directIds.length - claimedScratch.size);
 
     const milestone = REFERRAL_MILESTONES[0];
     const milestoneClaimed = milestone
@@ -890,16 +900,12 @@ exports.getEngagementStatus = async (req, res) => {
         nextReward,
         nextCheckInAt: getNextIstMidnightIso(),
       },
+      dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
       spin: {
         hasSpunToday,
         reward: spinReward,
         spinDate: spinRow?.spin_date ? String(spinRow.spin_date).slice(0, 10) : null,
         nextSpinAt: getNextIstMidnightIso(),
-      },
-      scratch: {
-        available: availableScratch,
-        totalReferrals: directIds.length,
-        claimed: claimedScratch.size,
       },
       referralMilestone,
     });
@@ -1084,61 +1090,7 @@ exports.spinWheel = async (req, res) => {
 
 // POST /api/coins/scratch
 exports.claimScratchCard = async (req, res) => {
-  const userId = getAuthUserId(req);
-  if (!userId) return res.status(401).json({ error: "Authentication required" });
-
-  try {
-    await lazyEnsureSchema();
-    await lazyEnsureEngagementSchema();
-
-    const directIds = await getDirectReferralIds(userId);
-    if (!directIds.length) {
-      return res.status(404).json({ error: "No referrals found for scratch rewards" });
-    }
-
-    const claimedRes = await runQuery(
-      "SELECT referral_user_id FROM reward_scratch_claims WHERE user_id = $1",
-      [userId],
-    );
-    const claimedSet = new Set(
-      (claimedRes.rows || []).map((row) => String(row.referral_user_id)),
-    );
-
-    const pending = directIds.filter((id) => !claimedSet.has(String(id)));
-    if (!pending.length) {
-      return res.status(409).json({ error: "No scratch cards available" });
-    }
-
-    const referralUserId = pending[0];
-    const reward = pickWeightedReward(SCRATCH_REWARD_POOL);
-    const referenceId = `scratch:${userId}:${referralUserId}`;
-    const result = await addCoins(
-      userId,
-      reward,
-      "scratch_card",
-      referenceId,
-      "Scratch card reward",
-    );
-
-    if (!result.applied) {
-      return res.status(409).json({ error: "Duplicate scratch claim" });
-    }
-
-    await runQuery(
-      "INSERT INTO reward_scratch_claims (user_id, referral_user_id, reward_amount) VALUES ($1, $2, $3)",
-      [userId, referralUserId, reward],
-    );
-
-    res.json({
-      success: true,
-      reward,
-      newBalance: result.newBalance,
-      remaining: Math.max(0, pending.length - 1),
-    });
-  } catch (err) {
-    logger.error("[Coins] scratch card error:", err);
-    res.status(500).json({ error: "Failed to claim scratch reward" });
-  }
+  res.status(404).json({ error: "Scratch card rewards have been removed." });
 };
 
 // POST /api/coins/store-redeem
@@ -1292,6 +1244,7 @@ exports.claimReferralMilestones = async (req, res) => {
 // Export internal functions for use by other services
 exports.addCoins = addCoins;
 exports.spendCoins = spendCoins;
+exports.applyPostBoost = applyPostBoost;
 exports.applyReferralMilestoneRewards = applyReferralMilestoneRewards;
 exports.EARN_AMOUNTS = EARN_AMOUNTS;
 exports.REDEEM_COSTS = REDEEM_COSTS;
@@ -1358,7 +1311,6 @@ exports.getRewardsConfig = async (req, res) => {
     },
     dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
     spinRewardPool: SPIN_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight })),
-    scratchRewardPool: SCRATCH_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight })),
     tiers: [
       { name: "Bronze", min: 0, max: 499, perks: ["Basic marketplace access"] },
       { name: "Silver", min: 500, max: 1999, perks: ["Bronze perks", "Priority support", "5% boost discount"] },
@@ -1380,3 +1332,79 @@ exports.getRewardsConfig = async (req, res) => {
     milestones: REFERRAL_MILESTONES,
   });
 };
+
+/**
+ * Check if the seller has reached milestones:
+ * - 5 sales: 'trusted' badge + 100 coins
+ * - 10 sales: 'gold' badge + 200 coins
+ * Automatically awards coins and updates profile badges.
+ */
+async function checkAndAwardSalesMilestones(sellerId) {
+  if (!sellerId) return;
+  try {
+    // Count successful/completed/settled sales from both sales and legacy transactions tables
+    const salesCountRes = await runQuery(
+      `SELECT COUNT(*)::int AS total FROM sales WHERE seller_id::text = $1 AND status = 'settled'`,
+      [String(sellerId)]
+    );
+    const completedSales = salesCountRes.rows[0]?.total || 0;
+
+    const txsCountRes = await runQuery(
+      `SELECT COUNT(*)::int AS total FROM transactions WHERE seller_id::text = $1 AND status IN ('completed', 'success')`,
+      [String(sellerId)]
+    );
+    const completedTransactions = txsCountRes.rows[0]?.total || 0;
+
+    const totalCompleted = completedSales + completedTransactions;
+
+    // Check if 5 sales reward already given
+    const check5 = await runQuery(
+      `SELECT 1 FROM coin_transactions WHERE user_id::text = $1 AND type = 'milestone_5_sales' LIMIT 1`,
+      [String(sellerId)]
+    );
+    if (totalCompleted >= 5 && check5.rows.length === 0) {
+      const refId = `milestone_5_sales:${sellerId}`;
+      const rewardResult = await addCoins(
+        sellerId,
+        100,
+        "milestone_5_sales",
+        refId,
+        "Completed 5 verified sales milestone - Trusted Trader"
+      );
+      if (rewardResult.applied) {
+        await runQuery(
+          `INSERT INTO profiles (user_id, reward_badge) VALUES ($1, 'trusted') ON CONFLICT (user_id) DO UPDATE SET reward_badge = 'trusted'`,
+          [String(sellerId)]
+        );
+        logger.info(`[Milestones] Seller ${sellerId} reached 5 sales milestone. Awarded Trusted Trader badge and 100 coins.`);
+      }
+    }
+
+    // Check if 10 sales reward already given
+    const check10 = await runQuery(
+      `SELECT 1 FROM coin_transactions WHERE user_id::text = $1 AND type = 'milestone_10_sales' LIMIT 1`,
+      [String(sellerId)]
+    );
+    if (totalCompleted >= 10 && check10.rows.length === 0) {
+      const refId = `milestone_10_sales:${sellerId}`;
+      const rewardResult = await addCoins(
+        sellerId,
+        200,
+        "milestone_10_sales",
+        refId,
+        "Completed 10 verified sales milestone - Gold Trader"
+      );
+      if (rewardResult.applied) {
+        await runQuery(
+          `INSERT INTO profiles (user_id, reward_badge) VALUES ($1, 'gold') ON CONFLICT (user_id) DO UPDATE SET reward_badge = 'gold'`,
+          [String(sellerId)]
+        );
+        logger.info(`[Milestones] Seller ${sellerId} reached 10 sales milestone. Awarded Gold Trader badge and 200 coins.`);
+      }
+    }
+  } catch (err) {
+    logger.error("[Milestones] Error checkAndAwardSalesMilestones:", err);
+  }
+}
+
+exports.checkAndAwardSalesMilestones = checkAndAwardSalesMilestones;

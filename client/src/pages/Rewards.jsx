@@ -1514,15 +1514,23 @@ const RewardsPage = () => {
     dailyCheckInStatus = engagement?.dailyCheckIn || null,
     spinStatus = engagement?.spin || null,
     scratchStatus = engagement?.scratch || null,
-    dailyCheckInRewards = [
-      { day: 1, coins: 5 },
-      { day: 2, coins: 10 },
-      { day: 3, coins: 15 },
-      { day: 4, coins: 20 },
-      { day: 5, coins: 30 },
-      { day: 6, coins: 50 },
-      { day: 7, coins: 100 },
-    ],
+    dailyCheckInRewards = (() => {
+      // Read from backend API response first, fall back to backend's default [10,10,10,10,10,10,10]
+      const backendRewards = engagement?.dailyCheckinRewards;
+      if (Array.isArray(backendRewards) && backendRewards.length === 7) {
+        return backendRewards.map((coins, i) => ({ day: i + 1, coins: Number(coins) || 10 }));
+      }
+      // Fallback matching backend DAILY_CHECKIN_REWARDS = [10, 10, 10, 10, 10, 10, 10]
+      return [
+        { day: 1, coins: 10 },
+        { day: 2, coins: 10 },
+        { day: 3, coins: 10 },
+        { day: 4, coins: 10 },
+        { day: 5, coins: 10 },
+        { day: 6, coins: 10 },
+        { day: 7, coins: 10 },
+      ];
+    })(),
     currentCheckInDay = (() => {
       const reportedDay = Number(dailyCheckInStatus?.currentDay || 0);
       if (Number.isFinite(reportedDay) && reportedDay > 0) {

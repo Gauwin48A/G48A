@@ -319,6 +319,8 @@ const ProfilePage = () => {
             address: s.address || "",
             avatar_url: s.avatar_url || "",
             bio: s.bio || "",
+            payout_upi_id: s.payout_upi_id || "",
+            payout_bank_details: s.payout_bank_details || {},
           });
       }
     } catch (s) {
@@ -333,6 +335,8 @@ const ProfilePage = () => {
           address: g.address || "",
           avatar_url: g.avatar_url || "",
           bio: g.bio || "",
+          payout_upi_id: g.payout_upi_id || "",
+          payout_bank_details: g.payout_bank_details || {},
         };
         N(g);
         me(profileForm);

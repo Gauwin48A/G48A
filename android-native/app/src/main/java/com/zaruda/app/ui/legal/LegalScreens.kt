@@ -95,14 +95,15 @@ class SupportPolicyViewModel @Inject constructor(private val repo: CmsRepository
 }
 
 @Composable
-private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBack: () -> Unit) {
+private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBack: () -> Unit, fallbackContent: String? = null) {
     val isDark = ColorTokens.isDark
+    val bodyText = state.content?.takeIf { it.isNotBlank() } ?: fallbackContent
     Box(Modifier.fillMaxSize().background(bgGradient(isDark))) {
         Column(Modifier.fillMaxSize()) {
             LegalTopBar(title, onBack)
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
-                state.content != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                bodyText != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (isDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -113,7 +114,7 @@ private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBac
                                 Text(title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
                             }
                             Spacer(Modifier.height(16.dp))
-                            Text(state.content, fontSize = 14.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151), lineHeight = 22.sp)
+                            Text(bodyText, fontSize = 14.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151), lineHeight = 22.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)
                         }
                     }
                 }
@@ -130,25 +131,126 @@ private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBac
 @Composable
 fun TermsScreen(onBack: () -> Unit, viewModel: TermsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    CmsScreen("Terms & Conditions", Icons.Filled.Gavel, state, onBack)
+    CmsScreen("Terms & Conditions", Icons.Filled.Gavel, state, onBack,
+        fallbackContent = """
+MHub Terms & Conditions
+
+1. Acceptance of Terms
+By accessing or using MHub ("the Platform"), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the Platform.
+
+2. Description of Service
+MHub is a marketplace platform that connects buyers and sellers for local commerce. We facilitate listings, messaging, and transaction coordination.
+
+3. User Accounts
+You must provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your login credentials.
+
+4. Listings & Sales
+Sellers are responsible for the accuracy of their listings. MHub is not a party to any sale transaction and acts solely as a facilitator.
+
+5. Prohibited Activities
+Users may not list prohibited items, engage in fraud, or misuse the platform in any way as determined by MHub's discretion.
+
+6. Limitation of Liability
+MHub is not liable for any damages arising from the use of the Platform, including but not limited to failed transactions, misrepresented items, or disputes between users.
+
+7. Modifications
+MHub reserves the right to modify these terms at any time. Users will be notified of material changes.
+
+For complete terms, please visit our website or contact support through the app.
+        """.trimIndent()
+    )
 }
 
 @Composable
 fun PrivacyScreen(onBack: () -> Unit, viewModel: PrivacyViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    CmsScreen("Privacy Policy", Icons.Filled.PrivacyTip, state, onBack)
+    CmsScreen("Privacy Policy", Icons.Filled.PrivacyTip, state, onBack,
+        fallbackContent = """
+MHub Privacy Policy
+
+1. Information We Collect
+We collect information you provide during registration (name, email, phone number, location) and usage data (listings, messages, transactions).
+
+2. How We Use Your Information
+Your information is used to operate and improve the Platform, process transactions, send notifications, and personalize your experience.
+
+3. Data Sharing
+We do not sell your personal information. We may share data with service providers who help operate the Platform (e.g., cloud hosting, analytics), subject to strict confidentiality agreements.
+
+4. Data Security
+We implement reasonable security measures to protect your data. However, no method of transmission over the Internet is 100% secure.
+
+5. Your Rights
+You can access, update, or delete your account data at any time through your profile settings.
+
+6. Contact
+For privacy-related inquiries, please contact us through the Feedback section in the app.
+
+This policy was last updated on August 1, 2026.
+        """.trimIndent()
+    )
 }
 
 @Composable
 fun RefundScreen(onBack: () -> Unit, viewModel: RefundViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    CmsScreen("Refund Policy", Icons.Filled.CurrencyRupee, state, onBack)
+    CmsScreen("Refund Policy", Icons.Filled.CurrencyRupee, state, onBack,
+        fallbackContent = """
+MHub Refund Policy
+
+1. Marketplace Facilitator
+MHub is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
+
+2. Dispute Resolution
+If an item is not as described or a transaction fails, buyers should first contact the seller directly via the in-app chat.
+
+3. Mediation
+If the buyer and seller cannot resolve the dispute, MHub offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
+
+4. Escrow Protection
+For transactions processed through MHub's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
+
+5. Chargebacks
+Buyers who initiate chargebacks without first attempting to resolve the dispute through MHub may have their account restricted.
+
+For assistance, please file a complaint through the app's Complaints section.
+        """.trimIndent()
+    )
 }
 
 @Composable
 fun SupportPolicyScreen(onBack: () -> Unit, viewModel: SupportPolicyViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    CmsScreen("Support Policy", Icons.Filled.SupportAgent, state, onBack)
+    CmsScreen("Support Policy", Icons.Filled.SupportAgent, state, onBack,
+        fallbackContent = """
+MHub Support Policy
+
+1. How to Get Help
+If you need assistance, you can reach our support team through the following channels:
+- In-app Feedback (Settings > Feedback)
+- Complaint Form (More > Complaints)
+- Email: support@mhub.app
+
+2. Response Times
+Our support team aims to respond to all inquiries within 24-48 hours during business days.
+
+3. Categories of Support
+We provide assistance for:
+- Account issues (login, password reset, account recovery)
+- Listing problems (posting, editing, removing listings)
+- Transaction disputes (buyer-seller mediation)
+- Technical issues (app crashes, feature not working)
+- General inquiries (how-to, best practices)
+
+4. Escalation
+If your issue is not resolved by front-line support, it will be escalated to a senior team member. Critical issues (safety, fraud) are prioritized.
+
+5. Community Guidelines
+Users are expected to communicate respectfully. Abusive language or harassment of support staff will not be tolerated.
+
+We're here to help! Please reach out through the app.
+        """.trimIndent()
+    )
 }
 
 @Composable

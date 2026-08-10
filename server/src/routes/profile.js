@@ -57,4 +57,10 @@ router.get("/preferences", protect, profileController.getPreferences);
 /** @route POST /preferences/update - Update user preferences */
 router.post("/preferences/update", protect, profileController.updatePreferences);
 
+/** @route POST /payout-link - Link a Razorpay payout account (bank/UPI) */
+router.post("/payout-link", protect, profileController.linkPayoutAccount);
+
+/** @route GET /payout-status - Get the user's payout account status */
+router.get("/payout-status", protect, profileController.getPayoutStatus);
+
 module.exports = router;

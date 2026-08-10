@@ -1,4 +1,5 @@
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const pool = require("../config/db");
 const { parseOptionalString } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 const {
@@ -479,11 +480,41 @@ exports.getTierStatus = async (req, res) => {
 exports.verifyPan = async (req, res) => {
   try {
     const userId = getAuthUserId(req);
-    const panNumber = parseOptionalString(req.body.pan_number);
+    const panNumber = parseOptionalString(req.body.pan_number || req.body.panNumber);
 
     if (!userId) return res.status(401).json({ error: "Authentication required" });
     if (!panNumber) return res.status(400).json({ error: "PAN number is required" });
 
+    // 1. One-way hash PAN locally to verify if it has already been registered to another account
+    const crypto = require("crypto");
+    const normalizedPan = String(panNumber).trim().toUpperCase();
+    if (normalizedPan.length !== 10) {
+      return res.status(400).json({ error: "PAN number must be exactly 10 characters" });
+    }
+
+    const panHash = crypto.createHash("sha256").update(normalizedPan).digest("hex");
+
+    // Check blacklist first
+    const blacklistCheck = await runQuery(
+      "SELECT reason FROM kyc_blacklist WHERE pan_hash = $1 LIMIT 1",
+      [panHash]
+    );
+    if (blacklistCheck.rows.length > 0) {
+      return res.status(403).json({
+        error: "This document is blacklisted due to verification violations: " + blacklistCheck.rows[0].reason
+      });
+    }
+
+    const duplicateCheck = await runQuery(
+      "SELECT user_id FROM kyc_verifications WHERE pan_hash = $1 AND status IN ('PAN_VERIFIED', 'VERIFIED') AND user_id::text != $2",
+      [panHash, userId]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ error: "This PAN card is already verified with another account" });
+    }
+
+    // 2. Call Surepass to verify PAN
     const result = await kycService.verifyPan(userId, panNumber);
 
     if (result.verified) {
@@ -511,12 +542,47 @@ exports.verifyPan = async (req, res) => {
 exports.generateAadhaarOtp = async (req, res) => {
   try {
     const userId = getAuthUserId(req);
-    const aadhaarNumber = parseOptionalString(req.body.aadhaar_number);
+    const aadhaarNumber = parseOptionalString(req.body.aadhaar_number || req.body.aadhaarNumber);
 
     if (!userId) return res.status(401).json({ error: "Authentication required" });
     if (!aadhaarNumber) return res.status(400).json({ error: "Aadhaar number is required" });
 
+    // 1. One-way hash Aadhaar locally to verify if it has already been registered to another account
+    const crypto = require("crypto");
+    const parsedAadhaar = String(aadhaarNumber).replace(/\D/g, "");
+    if (parsedAadhaar.length !== 12) {
+      return res.status(400).json({ error: "Aadhaar number must be exactly 12 digits" });
+    }
+
+    const aadhaarHash = crypto.createHash("sha256").update(parsedAadhaar).digest("hex");
+
+    // Check blacklist first
+    const blacklistCheck = await runQuery(
+      "SELECT reason FROM kyc_blacklist WHERE aadhaar_hash = $1 LIMIT 1",
+      [aadhaarHash]
+    );
+    if (blacklistCheck.rows.length > 0) {
+      return res.status(403).json({
+        error: "This document is blacklisted due to verification violations: " + blacklistCheck.rows[0].reason
+      });
+    }
+
+    const duplicateCheck = await runQuery(
+      "SELECT user_id FROM kyc_verifications WHERE aadhaar_hash = $1 AND status = 'VERIFIED' AND user_id::text != $2",
+      [aadhaarHash, userId]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ error: "This Aadhaar card is already verified with another account" });
+    }
+
+    // 2. Call Surepass to generate OTP
     const result = await kycService.sendAadhaarOtp(userId, aadhaarNumber);
+
+    // 3. Cache the Aadhaar Hash and last 4 digits temporarily keyed by txnId (Valid for 15 minutes)
+    const cacheService = require("../services/cacheService");
+    const lastFour = parsedAadhaar.slice(-4);
+    cacheService.set(`kyc:aadhaar:${result.txnId}`, { aadhaarHash, lastFour }, 900);
 
     return res.json({ success: true, txnId: result.txnId, masked: result.masked });
   } catch (err) {
@@ -532,19 +598,42 @@ exports.generateAadhaarOtp = async (req, res) => {
 exports.verifyAadhaarOtp = async (req, res) => {
   try {
     const userId = getAuthUserId(req);
-    const { otp, txnId } = req.body;
+    const { otp, txnId, txn_id } = req.body;
+    const resolvedTxnId = txnId || txn_id;
 
     if (!userId) return res.status(401).json({ error: "Authentication required" });
-    if (!otp || !txnId) return res.status(400).json({ error: "OTP and txnId are required" });
+    if (!otp || !resolvedTxnId) return res.status(400).json({ error: "OTP and txnId are required" });
 
-    const result = await kycService.verifyAadhaarOtp(userId, otp, txnId);
+    // 1. Retrieve the cached Aadhaar hash & last 4 digits
+    const cacheService = require("../services/cacheService");
+    const cachedData = cacheService.get(`kyc:aadhaar:${resolvedTxnId}`);
+
+    // 2. Verify OTP with Surepass
+    const result = await kycService.verifyAadhaarOtp(userId, otp, resolvedTxnId);
 
     if (result.verified) {
+      const aadhaarHash = cachedData?.aadhaarHash || null;
+      const lastFour = cachedData?.lastFour || null;
+
+      // 3. Persist the record in kyc_verifications including hash and audit details
       await runQuery(
-        `UPDATE kyc_verifications SET status = 'VERIFIED', verified_at = NOW() WHERE user_id::text = $1`,
-        [userId]
+        `INSERT INTO kyc_verifications (user_id, status, aadhaar_hash, aadhaar_last_four, surepass_aadhaar_client_id, verified_at, updated_at)
+         VALUES ($1, 'VERIFIED', $2, $3, $4, NOW(), NOW())
+         ON CONFLICT (user_id)
+         DO UPDATE SET status = 'VERIFIED',
+                       aadhaar_hash = COALESCE(EXCLUDED.aadhaar_hash, kyc_verifications.aadhaar_hash),
+                       aadhaar_last_four = COALESCE(EXCLUDED.aadhaar_last_four, kyc_verifications.aadhaar_last_four),
+                       surepass_aadhaar_client_id = EXCLUDED.surepass_aadhaar_client_id,
+                       verified_at = NOW(),
+                       updated_at = NOW()`,
+        [userId, aadhaarHash, lastFour, resolvedTxnId]
       );
+
       await runQuery(`UPDATE users SET kyc_status = 'VERIFIED', kyc_verified = true WHERE user_id::text = $1`, [userId]);
+      
+      // Clean cache
+      cacheService.del(`kyc:aadhaar:${resolvedTxnId}`);
+
       return res.json({
         success: true,
         message: "Aadhaar verified successfully",
@@ -595,6 +684,9 @@ async function getKycStatusRow(userId) {
 /**
  * GET /api/users/kyc/status – Return the current KYC verification
  * status for the authenticated user. Sensitive ID numbers are masked.
+ *
+ * Returns both `status` (web convention) and `kyc_status` (native app
+ * convention) so both clients parse the same payload.
  * @param {import("express").Request} req
  * @param {import("express").Response} res
  */
@@ -611,19 +703,102 @@ exports.getKYCStatus = async (req, res) => {
     if (result.rows.length === 0) {
       return res.json({
         status: "NOT_SUBMITTED",
+        kyc_status: "NOT_SUBMITTED",
         rejection_reason: null,
       });
     }
 
     const data = result.rows[0];
+    const status = data.status || "PENDING";
     return res.json({
-      status: data.status || "PENDING",
+      status,
+      kyc_status: status,
       verified_at: data.verified_at,
       pan_status: data.pan_status,
     });
   } catch (err) {
     logger.error("[KYC] Status fetch failed:", err);
     return res.status(500).json({ error: "Failed to fetch KYC status" });
+  }
+};
+
+/**
+ * POST /api/users/kyc/submit – Submit KYC documents for automated processing.
+ *
+ * Accepts BOTH payload shapes so the native app and web stay in sync:
+ *   - App (JSON):  { docType, docNumber, docFrontKey, docBackKey, selfieKey }
+ *   - Web (JSON):  { aadhaarNumber|aadhaar_number, panNumber|pan_number, documents:{front,back} }
+ */
+exports.submitKyc = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    const body = req.body || {};
+    const docType = parseOptionalString(body.docType)?.toLowerCase();
+    const docNumber = parseOptionalString(body.docNumber) || "";
+
+    let aadhaarNumber = parseOptionalString(body.aadhaarNumber || body.aadhaar_number);
+    let panNumber = parseOptionalString(body.panNumber || body.pan_number);
+
+    // App payload: docType routes the single doc number to the right slot.
+    if (docType === "aadhaar") aadhaarNumber = docNumber;
+    else if (docType === "pan") panNumber = docNumber;
+
+    const documents = {
+      front:
+        parseOptionalString(body.docFrontKey) ||
+        parseOptionalString(body.documents?.front),
+      back:
+        parseOptionalString(body.docBackKey) ||
+        parseOptionalString(body.documents?.back),
+      selfie: parseOptionalString(body.selfieKey),
+    };
+
+    const result = await processKycSubmission({
+      userId,
+      docType,
+      aadhaarNumber,
+      panNumber,
+      documents,
+    });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error("[KYC] Submit KYC error:", err);
+    return res.status(500).json({ error: err.message || "Failed to submit KYC" });
+  }
+};
+
+/**
+ * POST /api/users/kyc/upload – Upload a KYC document image.
+ * Returns the public URL + key so the app can pass it into /kyc/submit.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.uploadKycDoc = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const url = getImageUrl(file);
+    if (!url) {
+      return res.status(400).json({ error: "Upload failed: could not resolve file URL" });
+    }
+
+    return res.json({
+      success: true,
+      url,
+      key: url,
+      size: file.size || null,
+    });
+  } catch (err) {
+    logger.error("[KYC] Upload error:", err);
+    return res.status(500).json({ error: "Failed to upload document" });
   }
 };
 
@@ -667,7 +842,26 @@ exports.deleteAccount = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Check for active transactions
+    // ── Financial-activity guard (Phase 7, item 50): refuse permanent
+    //    deletion while escrow / payouts / disputes / balances are open ──
+    try {
+      const { checkAccountFinancialExposure } = require("../services/accountFinancialGuardService");
+      const exposure = await checkAccountFinancialExposure(userId);
+      if (exposure.blocked) {
+        await client.query("ROLLBACK");
+        client.release();
+        return res.status(409).json({
+          error: "Cannot delete your account while financial activity is pending.",
+          reasons: exposure.reasons,
+          suggestion: "You can DEACTIVATE your account instead (keeps your financial history intact).",
+        });
+      }
+    } catch (guardErr) {
+      // Fail-open: if the guard service itself errors, fall through to legacy check
+      logger.warn("[Account] Financial guard error (fail-open):", guardErr.message);
+    }
+
+    // Check for active transactions (legacy check — kept for backward compat)
     try {
       const activeTx = await client.query(
         `SELECT transaction_id FROM transactions
@@ -705,18 +899,36 @@ exports.deleteAccount = async (req, res) => {
     );
 
     // Deactivate user + anonymize PII
+    // Schema-safe: the live users table may lack is_active/name/phone_number
+    // columns (they are added lazily by schemaGuard/admin bootstrap). Try the
+    // full anonymization first, then fall back to the guaranteed-safe subset.
     const anonEmail = `deleted_${userId}_${Date.now()}@deleted.mhub.local`;
-    await client.query(
-      `UPDATE users SET
-         is_active = false,
-         email = $2,
-         phone_number = NULL,
-         name = 'Deleted User',
-         username = $3,
-         updated_at = NOW()
-       WHERE user_id::text = $1`,
-      [String(userId), anonEmail, `deleted_${userId}`]
-    );
+    try {
+      await client.query(
+        `UPDATE users SET
+           is_active = false,
+           email = $2,
+           phone_number = NULL,
+           name = 'Deleted User',
+           username = $3,
+           updated_at = NOW()
+         WHERE user_id::text = $1`,
+        [String(userId), anonEmail, `deleted_${userId}`]
+      );
+    } catch (deleteColErr) {
+      if (!isUndefinedColumnError(deleteColErr)) {
+        throw deleteColErr;
+      }
+      // Fallback: only update columns known to exist in the live schema
+      await client.query(
+        `UPDATE users SET
+           email = $2,
+           username = $3,
+           updated_at = NOW()
+         WHERE user_id::text = $1`,
+        [String(userId), anonEmail, `deleted_${userId}`]
+      );
+    }
 
     // Revoke all sessions
     try {

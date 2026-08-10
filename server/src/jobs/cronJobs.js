@@ -20,6 +20,9 @@ const {
   expireBoosts,
   setTierBasedExpiry,
 } = require("../cron/subscriptionExpiry");
+const {
+  reconcileStuckTransactions,
+} = require("../services/reconciliationService");
 
 let transactionExpirySupportPromise = null;
 let transactionExpirySupport = null;
@@ -533,10 +536,51 @@ const runPaymentReconciliation = async () => {
       return;
     }
 
+    // 1. Run manual payment reconciliation report
     const result = await executePaymentReconciliation({ actor: "cron" });
     console.log(
       `[CRON] Payment reconciliation complete: expired=${result.actions.auto_expired_count}, amount_flags=${result.actions.amount_mismatch_flagged_count}, duplicate_flags=${result.actions.duplicate_flagged_count}`
     );
+
+    // 2. Clean up stale automated payment transactions (status = 'CREATED' older than 1 hour) and refund their coins
+    const staleTxns = await runQuery(
+      `SELECT transaction_id, user_id, coins_deducted, razorpay_order_id 
+       FROM payment_transactions 
+       WHERE status = 'CREATED' 
+         AND created_at < NOW() - INTERVAL '1 hour'`
+    );
+
+    let refundedCount = 0;
+    for (const tx of staleTxns.rows) {
+      const coinsUsed = Number(tx.coins_deducted || 0);
+      
+      // Update transaction status to FAILED
+      await runQuery(
+        `UPDATE payment_transactions 
+         SET status = 'FAILED', updated_at = NOW() 
+         WHERE transaction_id = $1`,
+        [tx.transaction_id]
+      );
+
+      // Refund coins if any were deducted
+      if (coinsUsed > 0) {
+        await runQuery(
+          `UPDATE users 
+           SET post_credits = COALESCE(post_credits, 0) + $1 
+           WHERE user_id::text = $2`,
+          [coinsUsed, tx.user_id]
+        );
+        await runQuery(
+          `INSERT INTO coin_transactions (user_id, amount, action, description)
+           VALUES ($1, $2, 'refund', $3)`,
+          [tx.user_id, coinsUsed, `Refunded ${coinsUsed} coins — stale order ${tx.razorpay_order_id} expired`]
+        );
+        refundedCount++;
+      }
+    }
+    if (staleTxns.rows.length > 0) {
+      console.log(`[CRON] Cleared ${staleTxns.rows.length} stale payment transactions. Refunded coins to ${refundedCount} transactions.`);
+    }
   } catch (error) {
     console.error("[CRON] Payment reconciliation error:", error);
   }
@@ -568,6 +612,97 @@ const runLocationRetention = async () => {
     );
   } catch (error) {
     console.error("[CRON] Location retention error:", error);
+  }
+};
+
+/**
+ * Automatically completes shipped/delivered orders after the dispute window (e.g. 10 days) has passed,
+ * releasing payouts and logging financial ledger entries.
+ */
+const autoSettleShippedOrders = async () => {
+  console.log("[CRON] Running auto-settle shipped orders check...");
+  try {
+    // 1. Get dispute deadline settings
+    const settingsResult = await pool.query(
+      `SELECT value FROM platform_settings WHERE key = 'DISPUTE_DEADLINE_DAYS'`
+    );
+    const deadlineDays = parseInt(settingsResult.rows[0]?.value || "10", 10) || 10;
+
+    // 2. Select eligible orders
+    const eligibleResult = await pool.query(
+      `SELECT * FROM orders
+       WHERE status IN ('SHIPPED', 'DELIVERED')
+         AND updated_at < NOW() - INTERVAL '1 day' * $1`,
+      [deadlineDays]
+    );
+
+    const ordersToSettle = eligibleResult.rows;
+    if (ordersToSettle.length === 0) {
+      console.log("[CRON] No shipped orders require auto-settling.");
+      return;
+    }
+
+    console.log(`[CRON] Auto-settling ${ordersToSettle.length} orders...`);
+    const { checkAndAwardSalesMilestones } = require("../controllers/coinController");
+
+    for (const order of ordersToSettle) {
+      // Begin transaction settlement
+      await pool.query(
+        `UPDATE orders SET status = 'COMPLETED', updated_at = NOW() WHERE order_id = $1`,
+        [order.order_id]
+      );
+
+      // Verify and log ledger transfers if not already done
+      const ledgerCheck = await pool.query(
+        `SELECT id FROM financial_ledger WHERE order_id = $1 AND event_type = 'SELLER_TRANSFER'`,
+        [String(order.order_id)]
+      );
+
+      if (ledgerCheck.rows.length === 0) {
+        // Log PLATFORM_FEE
+        if (order.platform_fee && parseFloat(order.platform_fee) > 0) {
+          await pool.query(
+            `INSERT INTO financial_ledger (reference_id, order_id, user_id, event_type, direction, amount, status, provider_reference)
+             VALUES ($1, $2, $3, 'PLATFORM_FEE', 'CREDIT', $4, 'COMPLETED', $5)`,
+            [order.order_number, String(order.order_id), order.seller_id, order.platform_fee, order.razorpay_payment_id || "AUTO_SETTLE"]
+          );
+        }
+        // Log SELLER_TRANSFER
+        if (order.seller_payout && parseFloat(order.seller_payout) > 0) {
+          await pool.query(
+            `INSERT INTO financial_ledger (reference_id, order_id, user_id, event_type, direction, amount, status, provider_reference)
+             VALUES ($1, $2, $3, 'SELLER_TRANSFER', 'DEBIT', $4, 'COMPLETED', $5)`,
+            [order.order_number, String(order.order_id), order.seller_id, order.seller_payout, order.razorpay_payment_id || "AUTO_SETTLE"]
+          );
+        }
+      }
+
+      // Trigger Gateway Payout to seller bank account
+      if (order.seller_payout && parseFloat(order.seller_payout) > 0) {
+        try {
+          const { executeSellerPayout } = require("../services/paymentGatewayService");
+          await executeSellerPayout({
+            sellerId: order.seller_id,
+            amount: parseFloat(order.seller_payout),
+            currency: "INR",
+            referenceId: `order_${order.order_id}`,
+          });
+        } catch (payoutErr) {
+          console.error(`[CRON] Error executing gateway payout for order ${order.order_id}:`, payoutErr.message);
+        }
+      }
+
+      // Check sales milestones for seller
+      try {
+        await checkAndAwardSalesMilestones(order.seller_id);
+      } catch (milestoneErr) {
+        console.error(`[CRON] Error awarding milestones for auto-settled order ${order.order_id}:`, milestoneErr);
+      }
+    }
+
+    console.log(`[CRON] Auto-settle complete. Settled ${ordersToSettle.length} orders.`);
+  } catch (error) {
+    console.error("[CRON] Auto-settle shipped orders error:", error);
   }
 };
 
@@ -711,6 +846,23 @@ const initCronJobs = () => {
   );
   console.log("  - Tier-based listing expiry: Daily at 01:15 IST");
 
+  // Payout stuck-transaction watchdog – Every 15 minutes
+  cron.schedule("*/15 * * * *", async () => {
+    try {
+      const result = await reconcileStuckTransactions();
+      console.log(
+        `[CRON] Payout watchdog complete: reconciled=${result.reconciledCount || 0}, reenqueued=${result.reenqueuedCount || 0}, mismatches=${result.mismatchCount || 0}`
+      );
+    } catch (error) {
+      console.error("[CRON] Payout watchdog error:", error);
+    }
+  }, { timezone: "Asia/Kolkata" });
+  console.log("  - Payout stuck-transaction watchdog: Every 15 minutes");
+
+  // Auto-settle shipped/delivered orders – Daily at 03:00 IST
+  cron.schedule("0 3 * * *", autoSettleShippedOrders, { timezone: "Asia/Kolkata" });
+  console.log("  - Auto-settle shipped orders: Daily at 03:00 IST");
+
   console.log("[CRON] CRON jobs initialized");
 };
 
@@ -728,4 +880,5 @@ module.exports = {
   sendDailyDigest,
   runFraudBatchReview,
   autoResolveStaleComplaints,
+  autoSettleShippedOrders,
 };

@@ -22,7 +22,11 @@ const protect = async (req, res, next) => {
   }
 
   const verifiedAuth = resolveVerifiedAuth(req, { preferCookie: true });
-  if (!verifiedAuth && customUserId) {
+  // Only honor the guest/demo identity when the request carried NO token at all.
+  // If a token WAS presented but failed verification, return 401 so the client's
+  // token-refresh flow runs — instead of silently downgrading a real (expired)
+  // session to demo and breaking authenticated features like KYC.
+  if (!verifiedAuth && customUserId && !hasCookieToken && !hasHeaderToken) {
     req.user = { id: customUserId, userId: customUserId, user_id: customUserId, role: "user", is_demo: true };
     req.authToken = `mock-${customUserId}`;
     return next();
@@ -89,10 +93,45 @@ const requireAadhaarVerified = (req, res, next) => {
   return next();
 };
 
-const requireActivePlan = (req, res, next) => {
+/**
+ * Enrich req.user with plan/KYC claims from the DB when the JWT didn't carry them.
+ * Access tokens only sign { id, userId, role, name }; plan gates read tier / KYC
+ * flags from req.user, so real (non-demo) sessions need a fallback lookup.
+ */
+const enrichPlanClaims = async (req) => {
+  const userId = req.user?.user_id || req.user?.userId || req.user?.id;
+  if (!userId || req.user?.is_demo) return;
+  if (req.user?.subscription_tier || req.user?.tier) return; // already present
+  try {
+    const pool = require("../config/db");
+    const { rows } = await pool.query(
+      `SELECT tier, current_plan, current_tier, kyc_status, kyc_verified, isaadhaarverified
+       FROM users WHERE user_id::text = $1 LIMIT 1`,
+      [String(userId)],
+    );
+    if (rows[0]) {
+      const tierValue = rows[0].tier || rows[0].current_plan || null;
+      req.user.subscription_tier = tierValue;
+      req.user.tier = tierValue;
+      req.user.current_tier = rows[0].current_tier || null;
+      req.user.kyc_status = rows[0].kyc_status || null;
+      req.user.kyc_verified =
+        rows[0].kyc_verified === true ||
+        String(rows[0].kyc_verified).toLowerCase() === "true";
+      req.user.aadhaar_verified =
+        rows[0].isaadhaarverified === true ||
+        String(rows[0].isaadhaarverified).toLowerCase() === "true";
+    }
+  } catch (err) {
+    // Non-blocking: let the gate evaluate with whatever claims exist.
+  }
+};
+
+const requireActivePlan = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required." });
   }
+  await enrichPlanClaims(req);
   const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
   const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
   if (!hasPlan && !req.user.is_demo) {
@@ -105,10 +144,11 @@ const requireActivePlan = (req, res, next) => {
   return next();
 };
 
-const requirePlanAndKyc = (req, res, next) => {
+const requirePlanAndKyc = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required." });
   }
+  await enrichPlanClaims(req);
   const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
   const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
   const isKycVerified = Boolean(req.user.aadhaar_verified || req.user.kyc_verified);
@@ -124,10 +164,39 @@ const requirePlanAndKyc = (req, res, next) => {
   return next();
 };
 
+const checkFrozenAccountDisputeRestriction = async (req, res, next) => {
+  if (!req.user || req.user.is_demo) return next();
+
+  const userId = req.user.user_id || req.user.id;
+  if (!userId) return next();
+
+  // Allow dispute responses, support messaging, profile view, and auth endpoints
+  const allowedPaths = ["/dispute", "/disputes", "/logout", "/me", "/profile", "/notifications"];
+  const isAllowedPath = allowedPaths.some((p) => req.path.toLowerCase().includes(p));
+  if (isAllowedPath) return next();
+
+  try {
+    const { getAccountState } = require("../services/accountStateService");
+    const accountInfo = await getAccountState(userId);
+    if (accountInfo && accountInfo.state === "FROZEN_DISPUTE") {
+      return res.status(403).json({
+        error: "Your account is temporarily frozen due to an active transaction dispute. You only have access to view and respond to your active dispute.",
+        code: "ACCOUNT_FROZEN_DISPUTE",
+        state: "FROZEN_DISPUTE",
+      });
+    }
+  } catch (err) {
+    // Non-blocking on error
+  }
+
+  return next();
+};
+
 module.exports = {
   protect,
   optionalAuth,
   requireAadhaarVerified,
   requireActivePlan,
   requirePlanAndKyc,
+  checkFrozenAccountDisputeRestriction,
 };

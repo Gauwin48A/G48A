@@ -6,6 +6,10 @@ const {
   TRENDING_POSTS_QUERY,
 } = require("../queries/feedQuery");
 const {
+  TEST_USER_EXCLUSION,
+  TEST_USER_ID_SELECT,
+} = require("../queries/testDataExclusion");
+const {
   CATEGORY_GROUP_SQL,
   CATEGORY_GROUP_VALUES,
 } = require("../utils/categoryGroupSql");
@@ -68,6 +72,40 @@ function parseFeedSortBy(value) {
  */
 function parseFeedSortOrder(value) {
   return parseOptionalString(value)?.toLowerCase() === "asc" ? "ASC" : "DESC";
+}
+
+// ---------------------------------------------------------------------------
+// Test-user post exclusion (JS-side, for endpoints whose SQL cannot express
+// the filter — e.g. the get_posts_near_me() function path).
+// ---------------------------------------------------------------------------
+let testUserIdCache = new Set();
+let testUserIdsLoaded = false;
+let testUserIdCacheAt = 0;
+
+/** Load (and briefly cache) the user ids of known test / e2e accounts. */
+async function getTestUserIds() {
+  const now = Date.now();
+  if (!testUserIdsLoaded || now - testUserIdCacheAt > 5 * 60 * 1000) {
+    try {
+      const r = await queryWithTimeout(TEST_USER_ID_SELECT, []);
+      testUserIdCache = new Set(r.rows.map((row) => row.id));
+      testUserIdsLoaded = true;
+      testUserIdCacheAt = now;
+    } catch (_) {
+      /* keep the last known cache on failure */
+    }
+  }
+  return testUserIdCache;
+}
+
+/** Drop posts whose author is a known test / e2e account. */
+async function filterOutTestUserPosts(posts) {
+  if (!Array.isArray(posts) || posts.length === 0) return posts;
+  const testIds = await getTestUserIds();
+  if (testIds.size === 0) return posts;
+  return posts.filter(
+    (p) => !testIds.has(String(p.user_id ?? p.author_id ?? ""))
+  );
 }
 
 /**
@@ -241,10 +279,11 @@ function buildTextFeedQuery({
            COALESCE(pr.full_name, 'Seller') as author_name,
            pr.full_name as user_name
     FROM posts p
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+    LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+    LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
     LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
     WHERE ${conditions.join(" AND ")}
+    ${TEST_USER_EXCLUSION}
     ${orderClause}
     OFFSET ${addParam(offset)} LIMIT ${addParam(limit)}
   `;
@@ -311,10 +350,11 @@ function buildTextFeedCountQuery({
       COALESCE(SUM(p.views_count), 0)::int AS total_views,
       COALESCE(SUM(p.likes), 0)::int AS total_likes
     FROM posts p
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+    LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+    LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
     LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
     WHERE ${conditions.join(" AND ")}
+    ${TEST_USER_EXCLUSION}
   `;
 
   return { query, params };
@@ -655,10 +695,11 @@ exports.getRandomFeed = async (req, res) => {
       FROM posts p TABLESAMPLE BERNOULLI(5)
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN categories c ON p.category_id::text = c.category_id::text
       WHERE p.status = 'active'
         AND p.post_type = 'text'
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
+      ${TEST_USER_EXCLUSION}
       ${orderClause}
       LIMIT $1;
     `;
@@ -700,10 +741,11 @@ exports.getRandomFeed = async (req, res) => {
         FROM posts p
         LEFT JOIN users u ON p.user_id::text = u.user_id::text
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
         WHERE p.status = 'active'
           AND p.post_type = 'text'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
+        ${TEST_USER_EXCLUSION}
         ${orderClause}
         LIMIT $1;
       `;
@@ -777,12 +819,13 @@ exports.getNearbyFeed = async (req, res) => {
         SELECT p.*, c.name as category_name,
                COALESCE(pr.full_name, 'Seller') as seller_name
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         WHERE p.status = 'active'
           AND p.post_type = 'text'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND p.sold_at IS NULL
+        ${TEST_USER_EXCLUSION}
         ORDER BY p.tier_priority DESC, p.created_at DESC
         LIMIT $1
         `,
@@ -804,7 +847,8 @@ exports.getNearbyFeed = async (req, res) => {
       );
     }
 
-    const enrichedPosts = await attachTrustToPosts(result.rows || []);
+    const cleanedRows = await filterOutTestUserPosts(result.rows || []);
+    const enrichedPosts = await attachTrustToPosts(cleanedRows);
     res.json({
       posts: enrichedPosts,
       nearby: true,
@@ -825,7 +869,7 @@ exports.getNearbyFeed = async (req, res) => {
           SELECT p.*, c.name as category_name,
                  COALESCE(pr.full_name, 'Seller') as seller_name
           FROM posts p
-          LEFT JOIN categories c ON p.category_id = c.category_id
+          LEFT JOIN categories c ON p.category_id::text = c.category_id::text
           LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
           WHERE p.status = 'active'
             AND (p.expires_at IS NULL OR p.expires_at > NOW())
@@ -893,14 +937,15 @@ exports.searchPosts = async (req, res) => {
           u.current_plan,
           ts_rank(p.search_vector, plainto_tsquery('english', $1)) as rank
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+        LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         LEFT JOIN users u ON p.user_id::text = u.user_id::text
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND p.sold_at IS NULL
           AND p.search_vector @@ plainto_tsquery('english', $1)
+        ${TEST_USER_EXCLUSION}
           AND ($3::text IS NULL OR p.category_id::text = $3::text)
           AND ($4::text IS NULL OR p.subcategory_id::text = $4::text)
         ORDER BY
@@ -932,13 +977,14 @@ exports.searchPosts = async (req, res) => {
           COALESCE(pr.full_name, 'Seller') as seller_name,
           u.current_plan
         FROM posts p
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+        LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+        LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
         LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         LEFT JOIN users u ON p.user_id::text = u.user_id::text
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND (p.title ILIKE $1 OR p.description ILIKE $1 OR p.location ILIKE $1)
+        ${TEST_USER_EXCLUSION}
           AND ($3::text IS NULL OR p.category_id::text = $3::text)
           AND ($4::text IS NULL OR p.subcategory_id::text = $4::text)
         ORDER BY
