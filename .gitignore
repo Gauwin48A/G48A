@@ -126,3 +126,8 @@ _codex_backups/
 
 # Kotlin build sessions/caches
 android-native/.kotlin/
+
+# Secrets & signing keys — never commit
+/server/firebase/firebase-admin.json
+/android-native/zaruda-release-key.jks
+/android-native/keystore.properties
