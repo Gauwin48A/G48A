@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { isDevServerResource } from '../comprehensive/e2e-helpers';
 
 test.describe('Notifications / Recently Viewed / My Home smoke', () => {
   test.beforeEach(async ({ page }) => {
@@ -34,6 +35,11 @@ test.describe('Notifications / Recently Viewed / My Home smoke', () => {
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       const method = route.request().method();
+
+      if (isDevServerResource(url)) {
+        await route.fallback();
+        return;
+      }
 
       if (url.includes('/api/health')) {
         await route.fulfill({
@@ -224,6 +230,10 @@ test.describe('Notifications / Recently Viewed / My Home smoke', () => {
 
     await page.route('**/auth/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        await route.fallback();
+        return;
+      }
       if (url.includes('/auth/session')) {
         await route.fulfill({
           status: 200,

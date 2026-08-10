@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'reports', 'overlap-audit');
 
@@ -198,6 +199,9 @@ test.describe('Overlap & Clumsy UI Audit', () => {
     // Mock API calls
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       if (url.includes('/api/auth/') || url.includes('/api/health') ||
           url.includes('/api/analytics/') || url.includes('/api/location')) {
         return route.fallback();
@@ -281,7 +285,7 @@ test.describe('Overlap & Clumsy UI Audit', () => {
         await page.waitForTimeout(1500);
 
         // Take viewport-only shot first (shows fixed/sticky overlap as user sees it)
-        await page.screenshot({ path: screenshotPath, fullPage: false });
+        await safeScreenshot(page, { path: screenshotPath, fullPage: false });
         console.log(`[overlap-audit] ✓ ${screenshotName}  |  ${entry.issue}`);
 
         // If page has bottom overlap issues, scroll to bottom and capture again
@@ -289,13 +293,13 @@ test.describe('Overlap & Clumsy UI Audit', () => {
           await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
           await page.waitForTimeout(800);
           const bottomName = `mobile__${entry.label}__bottom.png`;
-          await page.screenshot({ path: path.join(OUTPUT_DIR, bottomName), fullPage: false });
+          await safeScreenshot(page, { path: path.join(OUTPUT_DIR, bottomName), fullPage: false });
           console.log(`[overlap-audit] ✓ ${bottomName}  (scrolled to bottom)`);
         }
 
         // Full-page shot for complete layout picture
         const fullName = `mobile__${entry.label}__full.png`;
-        await page.screenshot({ path: path.join(OUTPUT_DIR, fullName), fullPage: true });
+        await safeScreenshot(page, { path: path.join(OUTPUT_DIR, fullName), fullPage: true });
         console.log(`[overlap-audit] ✓ ${fullName}  (full page)`);
 
       } catch (error) {
@@ -319,14 +323,14 @@ test.describe('Overlap & Clumsy UI Audit', () => {
         await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS });
         await page.waitForTimeout(1500);
 
-        await page.screenshot({ path: screenshotPath, fullPage: false });
+        await safeScreenshot(page, { path: screenshotPath, fullPage: false });
         console.log(`[overlap-audit] ✓ ${screenshotName}  |  ${entry.issue}`);
 
         if (entry.scrollToBottom) {
           await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
           await page.waitForTimeout(800);
           const bottomName = `desktop__${entry.label}__bottom.png`;
-          await page.screenshot({ path: path.join(OUTPUT_DIR, bottomName), fullPage: false });
+          await safeScreenshot(page, { path: path.join(OUTPUT_DIR, bottomName), fullPage: false });
           console.log(`[overlap-audit] ✓ ${bottomName}  (scrolled to bottom)`);
         }
 

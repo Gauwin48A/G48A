@@ -3,2663 +3,48 @@
     "page": "all-posts",
     "url": "/all-posts",
     "loggedIn": false,
-    "scrollH": 2120,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 3,
+    "steps": 2,
     "shots": [
       "all-posts-scroll00",
-      "all-posts-scroll01",
-      "all-posts-scroll02"
+      "all-posts-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 2120,
-      "screens": 3,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 527,
-        "interactive": 51,
-        "text": 147,
-        "images": 5
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
+        "images": 0
       },
-      "fontDistribution": {
-        "14px": 16,
-        "12px": 87,
-        "13px": 25,
-        "11px": 15,
-        "16.8px": 1,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "+1 more",
-          "w": 60,
-          "h": 36,
-          "top": 706,
-          "left": 31,
-          "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "+1 more",
-          "w": 60,
-          "h": 36,
-          "top": 722,
-          "left": 229,
-          "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "+1 more",
-          "w": 60,
-          "h": 36,
-          "top": 1186,
-          "left": 31,
-          "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "+1 more",
-          "w": 60,
-          "h": 36,
-          "top": 1140,
-          "left": 229,
-          "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "+1 more",
-          "w": 60,
-          "h": 36,
-          "top": 1651,
-          "left": 31,
-          "classes": "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gra"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
-      "cards": [
-        {
-          "index": 0,
-          "width": 190,
-          "height": 457,
-          "top": 394,
-          "left": 12,
-          "children": [
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 200,
-              "top": 150,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px 2px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 194,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px 48px 0px 0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 46,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 54,
-              "h": 14,
-              "top": 154,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "text",
-              "text": "Arjun Rao"
-            },
-            {
-              "tag": "span",
-              "w": 58,
-              "h": 28,
-              "top": 172,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "3px 6px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹2,500"
-            },
-            {
-              "tag": "span",
-              "w": 44,
-              "h": 20,
-              "top": 176,
-              "left": 26,
-              "fontSize": "13px",
-              "lineHeight": "20px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹2,500"
-            },
-            {
-              "tag": "h3",
-              "w": 104,
-              "h": 16,
-              "top": 202,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "15.6px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "title",
-              "text": "Vintage Camera",
-              "clamp": "2",
-              "isTruncated": false
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 128,
-              "top": 220,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 99,
-              "h": 44,
-              "top": 220,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Android Phones"
-            },
-            {
-              "tag": "span",
-              "w": 71,
-              "h": 44,
-              "top": 266,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Hyderabad"
-            },
-            {
-              "tag": "button",
-              "w": 60,
-              "h": 36,
-              "top": 312,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "6px 8px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "+1 more",
-              "issues": [
-                "SMALL_TOUCH_TARGET"
-              ]
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 154,
-              "left": 129,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px",
-              "margin": "0px",
-              "position": "absolute",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 14,
-              "h": 14,
-              "top": 169,
-              "left": 137,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 4,
-              "h": 14,
-              "top": 169,
-              "left": 142,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 137,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible",
-              "role": "media"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 128,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 0px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "auto"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "img",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "clip",
-              "role": "image",
-              "src": "http://127.0.0.1:4173/placeholder.svg",
-              "naturalW": 400,
-              "naturalH": 300
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 78,
-              "top": 350,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 61,
-              "top": 355,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px 10px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "button",
-              "w": 65,
-              "h": 44,
-              "top": 364,
-              "left": 29,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "4"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 379,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 11,
-              "top": 380,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 36,
-              "h": 36,
-              "top": 368,
-              "left": 53,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "text",
-              "text": "4"
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 364,
-              "left": 98,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 379,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 12,
-              "top": 380,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 50,
-              "h": 36,
-              "top": 368,
-              "left": 146,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "120"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 379,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 9,
-              "top": 382,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            }
-          ]
-        },
-        {
-          "index": 1,
-          "width": 190,
-          "height": 457,
-          "top": 394,
-          "left": 210,
-          "children": [
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 216,
-              "top": 150,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px 2px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 210,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px 48px 0px 0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 46,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 70,
-              "h": 14,
-              "top": 154,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "text",
-              "text": "Meera Singh"
-            },
-            {
-              "tag": "span",
-              "w": 67,
-              "h": 28,
-              "top": 172,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "3px 6px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹68,000"
-            },
-            {
-              "tag": "span",
-              "w": 53,
-              "h": 20,
-              "top": 176,
-              "left": 26,
-              "fontSize": "13px",
-              "lineHeight": "20px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹68,000"
-            },
-            {
-              "tag": "h3",
-              "w": 104,
-              "h": 31,
-              "top": 202,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "15.6px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "title",
-              "text": "Gaming Laptop Pro",
-              "clamp": "2",
-              "isTruncated": false
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 128,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 101,
-              "h": 44,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Gaming Laptops"
-            },
-            {
-              "tag": "span",
-              "w": 67,
-              "h": 44,
-              "top": 282,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Bengaluru"
-            },
-            {
-              "tag": "button",
-              "w": 60,
-              "h": 36,
-              "top": 328,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "6px 8px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "+1 more",
-              "issues": [
-                "SMALL_TOUCH_TARGET"
-              ]
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 154,
-              "left": 129,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px",
-              "margin": "0px",
-              "position": "absolute",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 14,
-              "h": 14,
-              "top": 169,
-              "left": 137,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 4,
-              "h": 14,
-              "top": 169,
-              "left": 142,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 137,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible",
-              "role": "media"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 128,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 0px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "auto"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "img",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "clip",
-              "role": "image",
-              "src": "http://127.0.0.1:4173/placeholder.svg",
-              "naturalW": 400,
-              "naturalH": 300
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 78,
-              "top": 366,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 61,
-              "top": 371,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px 10px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "button",
-              "w": 65,
-              "h": 44,
-              "top": 380,
-              "left": 29,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "8"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 11,
-              "top": 396,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 36,
-              "h": 36,
-              "top": 384,
-              "left": 53,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "text",
-              "text": "8"
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 380,
-              "left": 98,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 12,
-              "top": 396,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 45,
-              "h": 36,
-              "top": 384,
-              "left": 146,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "88"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 9,
-              "top": 397,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            }
-          ]
-        },
-        {
-          "index": 2,
-          "width": 190,
-          "height": 457,
-          "top": 859,
-          "left": 12,
-          "children": [
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 216,
-              "top": 150,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px 2px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 210,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px 48px 0px 0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 46,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 74,
-              "h": 14,
-              "top": 154,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "text",
-              "text": "Nisha Kapoor"
-            },
-            {
-              "tag": "span",
-              "w": 58,
-              "h": 28,
-              "top": 172,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "3px 6px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹4,200"
-            },
-            {
-              "tag": "span",
-              "w": 44,
-              "h": 20,
-              "top": 176,
-              "left": 26,
-              "fontSize": "13px",
-              "lineHeight": "20px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹4,200"
-            },
-            {
-              "tag": "h3",
-              "w": 104,
-              "h": 31,
-              "top": 202,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "15.6px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "title",
-              "text": "Leather Sneakers",
-              "clamp": "2",
-              "isTruncated": false
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 128,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 63,
-              "h": 44,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Sneakers"
-            },
-            {
-              "tag": "span",
-              "w": 55,
-              "h": 44,
-              "top": 282,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Mumbai"
-            },
-            {
-              "tag": "button",
-              "w": 60,
-              "h": 36,
-              "top": 328,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "6px 8px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "+1 more",
-              "issues": [
-                "SMALL_TOUCH_TARGET"
-              ]
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 154,
-              "left": 129,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px",
-              "margin": "0px",
-              "position": "absolute",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 14,
-              "h": 14,
-              "top": 169,
-              "left": 137,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 4,
-              "h": 14,
-              "top": 169,
-              "left": 142,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 137,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible",
-              "role": "media"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 128,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 0px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "auto"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "img",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "clip",
-              "role": "image",
-              "src": "http://127.0.0.1:4173/placeholder.svg",
-              "naturalW": 400,
-              "naturalH": 300
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 78,
-              "top": 366,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 61,
-              "top": 371,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px 10px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "button",
-              "w": 65,
-              "h": 44,
-              "top": 380,
-              "left": 29,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "2"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 11,
-              "top": 396,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 36,
-              "h": 36,
-              "top": 384,
-              "left": 53,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "text",
-              "text": "2"
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 380,
-              "left": 98,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 12,
-              "top": 396,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 45,
-              "h": 36,
-              "top": 384,
-              "left": 146,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "63"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 9,
-              "top": 397,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            }
-          ]
-        },
-        {
-          "index": 3,
-          "width": 190,
-          "height": 457,
-          "top": 859,
-          "left": 210,
-          "children": [
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 170,
-              "top": 150,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px 2px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 164,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px 48px 0px 0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 46,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 69,
-              "h": 14,
-              "top": 154,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "text",
-              "text": "Rahul Verma"
-            },
-            {
-              "tag": "span",
-              "w": 79,
-              "h": 28,
-              "top": 172,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "3px 6px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹6,50,000"
-            },
-            {
-              "tag": "span",
-              "w": 65,
-              "h": 20,
-              "top": 176,
-              "left": 26,
-              "fontSize": "13px",
-              "lineHeight": "20px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹6,50,000"
-            },
-            {
-              "tag": "h3",
-              "w": 104,
-              "h": 31,
-              "top": 202,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "15.6px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "title",
-              "text": "Compact SUV 2018",
-              "clamp": "2",
-              "isTruncated": false
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 82,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 41,
-              "h": 44,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "SUVs"
-            },
-            {
-              "tag": "span",
-              "w": 39,
-              "h": 44,
-              "top": 236,
-              "left": 62,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Delhi"
-            },
-            {
-              "tag": "button",
-              "w": 60,
-              "h": 36,
-              "top": 282,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "6px 8px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "+1 more",
-              "issues": [
-                "SMALL_TOUCH_TARGET"
-              ]
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 154,
-              "left": 129,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px",
-              "margin": "0px",
-              "position": "absolute",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 14,
-              "h": 14,
-              "top": 169,
-              "left": 137,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 4,
-              "h": 14,
-              "top": 169,
-              "left": 142,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 137,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible",
-              "role": "media"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 128,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 0px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "auto"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "img",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "clip",
-              "role": "image",
-              "src": "http://127.0.0.1:4173/placeholder.svg",
-              "naturalW": 400,
-              "naturalH": 300
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 78,
-              "top": 320,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 61,
-              "top": 325,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px 10px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "button",
-              "w": 65,
-              "h": 44,
-              "top": 334,
-              "left": 29,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "11"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 349,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 11,
-              "top": 350,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 36,
-              "h": 36,
-              "top": 338,
-              "left": 53,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "text",
-              "text": "11"
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 334,
-              "left": 98,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 349,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 12,
-              "top": 350,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 50,
-              "h": 36,
-              "top": 338,
-              "left": 146,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "155"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 349,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 9,
-              "top": 351,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            }
-          ]
-        },
-        {
-          "index": 4,
-          "width": 190,
-          "height": 457,
-          "top": 1323,
-          "left": 12,
-          "children": [
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 216,
-              "top": 150,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px 2px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 210,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px 48px 0px 0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 46,
-              "top": 154,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 41,
-              "h": 14,
-              "top": 154,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "text",
-              "text": "Sara Ali"
-            },
-            {
-              "tag": "span",
-              "w": 66,
-              "h": 28,
-              "top": 172,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "3px 6px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹32,000"
-            },
-            {
-              "tag": "span",
-              "w": 52,
-              "h": 20,
-              "top": 176,
-              "left": 26,
-              "fontSize": "13px",
-              "lineHeight": "20px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "price",
-              "text": "₹32,000"
-            },
-            {
-              "tag": "h3",
-              "w": 104,
-              "h": 31,
-              "top": 202,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "15.6px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "hidden",
-              "role": "title",
-              "text": "Designer Sofa Set",
-              "clamp": "2",
-              "isTruncated": false
-            },
-            {
-              "tag": "div",
-              "w": 104,
-              "h": 128,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "2px 0px 0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 62,
-              "h": 44,
-              "top": 236,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Furniture"
-            },
-            {
-              "tag": "span",
-              "w": 57,
-              "h": 44,
-              "top": 282,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "2px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "Chennai"
-            },
-            {
-              "tag": "button",
-              "w": 60,
-              "h": 36,
-              "top": 328,
-              "left": 19,
-              "fontSize": "12px",
-              "lineHeight": "14.4px",
-              "padding": "6px 8px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "+1 more",
-              "issues": [
-                "SMALL_TOUCH_TARGET"
-              ]
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 154,
-              "left": 129,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px",
-              "margin": "0px",
-              "position": "absolute",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 14,
-              "h": 14,
-              "top": 169,
-              "left": 137,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 4,
-              "h": 14,
-              "top": 169,
-              "left": 142,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 137,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible",
-              "role": "media"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 128,
-              "top": 13,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 0px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "auto"
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "img",
-              "w": 164,
-              "h": 120,
-              "top": 17,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "clip",
-              "role": "image",
-              "src": "http://127.0.0.1:4173/placeholder.svg",
-              "naturalW": 400,
-              "naturalH": 300
-            },
-            {
-              "tag": "div",
-              "w": 164,
-              "h": 78,
-              "top": 366,
-              "left": 13,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "4px 6px",
-              "margin": "0px",
-              "position": "relative",
-              "overflow": "visible"
-            },
-            {
-              "tag": "div",
-              "w": 152,
-              "h": 61,
-              "top": 371,
-              "left": 19,
-              "fontSize": "14px",
-              "lineHeight": "21.7px",
-              "padding": "8px 10px",
-              "margin": "0px 0px 8px",
-              "position": "sticky",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "button",
-              "w": 65,
-              "h": 44,
-              "top": 380,
-              "left": 29,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": "1"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 11,
-              "top": 396,
-              "left": 34,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 36,
-              "h": 36,
-              "top": 384,
-              "left": 53,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "text",
-              "text": "1"
-            },
-            {
-              "tag": "button",
-              "w": 44,
-              "h": 44,
-              "top": 380,
-              "left": 98,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "button",
-              "text": ""
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 12,
-              "top": 396,
-              "left": 103,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            },
-            {
-              "tag": "span",
-              "w": 45,
-              "h": 36,
-              "top": 384,
-              "left": 146,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px 5px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible",
-              "role": "chip",
-              "text": "44"
-            },
-            {
-              "tag": "svg",
-              "w": 13,
-              "h": 13,
-              "top": 395,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "hidden"
-            },
-            {
-              "tag": "path",
-              "w": 13,
-              "h": 9,
-              "top": 397,
-              "left": 152,
-              "fontSize": "12px",
-              "lineHeight": "16px",
-              "padding": "0px",
-              "margin": "0px",
-              "position": "static",
-              "overflow": "visible"
-            }
-          ]
-        }
-      ],
-      "grid": {
-        "columns": "190px 190px",
-        "rows": "456.578px 456.578px 456.578px",
-        "gap": "8px",
-        "width": 388,
-        "padding": "0px",
-        "childCount": 5
-      },
-      "stickyBars": [
-        {
-          "h": 61,
-          "w": 412,
-          "top": "0px",
-          "zIndex": "200",
-          "position": "sticky",
-          "classes": "mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300"
-        },
-        {
-          "h": 147,
-          "w": 412,
-          "top": "40px",
-          "zIndex": "95",
-          "position": "sticky",
-          "classes": "w-full sticky z-30 mhub-premium-bar mhub-allposts-toolbar"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 55
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 286,
-        "h": 44,
-        "top": 8,
-        "fontSize": "14px",
-        "padding": "10px 8px",
-        "placeholder": ""
-      },
-      "categoryTrack": {
-        "trackW": 596,
-        "viewportW": 412,
-        "overflowPx": 203,
-        "scrollable": true,
-        "chipCount": 6,
-        "chips": [
-          {
-            "text": "All",
-            "w": 65,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": true
-          },
-          {
-            "text": "📱Mobiles",
-            "w": 99,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": true
-          },
-          {
-            "text": "📦Laptops",
-            "w": 101,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": true
-          },
-          {
-            "text": "📦Men's Fashion",
-            "w": 135,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": false
-          },
-          {
-            "text": "📦Cars",
-            "w": 81,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": false
-          },
-          {
-            "text": "📦Home",
-            "w": 88,
-            "h": 44,
-            "fontSize": "12px",
-            "visible": false
-          }
-        ]
-      },
+      "fontDistribution": {},
+      "touchTargetIssues": [],
+      "cards": [],
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
+      "searchBar": null,
+      "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "div",
-          "classes": "mhub-category-track flex items-center gap-1.5 md:gap-2 w-max min-w-full justify-",
-          "w": 596,
-          "right": 615,
-          "overflowBy": 203
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-category-item mhub-chip flex items-center mhub-chip-compact flex-row gap-1.",
-          "w": 135,
-          "right": 434,
-          "overflowBy": 22
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-category-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 81,
-          "right": 419,
-          "overflowBy": 7
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-category-item mhub-chip flex items-center mhub-chip-compact flex-row gap-1.",
-          "w": 81,
-          "right": 519,
-          "overflowBy": 107
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-category-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 471,
-          "overflowBy": 59
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-category-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 27,
-          "right": 504,
-          "overflowBy": 92
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-category-item mhub-chip flex items-center mhub-chip-compact flex-row gap-1.",
-          "w": 88,
-          "right": 611,
-          "overflowBy": 199
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-category-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 556,
-          "overflowBy": 144
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-category-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 34,
-          "right": 596,
-          "overflowBy": 184
-        },
-        {
-          "tag": "div",
-          "classes": "mhub-subcategory-track flex items-center gap-1.5 md:gap-2 w-max min-w-full justi",
-          "w": 1215,
-          "right": 1234,
-          "overflowBy": 822
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 108,
-          "right": 454,
-          "overflowBy": 42
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 54,
-          "right": 439,
-          "overflowBy": 27
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 108,
-          "right": 566,
-          "overflowBy": 154
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 491,
-          "overflowBy": 79
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 54,
-          "right": 551,
-          "overflowBy": 139
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 118,
-          "right": 687,
-          "overflowBy": 275
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 602,
-          "overflowBy": 190
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 64,
-          "right": 672,
-          "overflowBy": 260
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 105,
-          "right": 796,
-          "overflowBy": 384
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 724,
-          "overflowBy": 312
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 51,
-          "right": 781,
-          "overflowBy": 369
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 88,
-          "right": 889,
-          "overflowBy": 477
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 833,
-          "overflowBy": 421
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 35,
-          "right": 874,
-          "overflowBy": 462
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 148,
-          "right": 1040,
-          "overflowBy": 628
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 925,
-          "overflowBy": 513
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 94,
-          "right": 1025,
-          "overflowBy": 613
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 84,
-          "right": 1128,
-          "overflowBy": 716
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 1077,
-          "overflowBy": 665
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 30,
-          "right": 1113,
-          "overflowBy": 701
-        },
-        {
-          "tag": "button",
-          "classes": "mhub-subcategory-item mhub-chip flex items-center mhub-chip-compact flex-row gap",
-          "w": 97,
-          "right": 1230,
-          "overflowBy": 818
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-icon text-sm sm:text-sm ",
-          "w": 18,
-          "right": 1165,
-          "overflowBy": 753
-        },
-        {
-          "tag": "span",
-          "classes": "mhub-subcategory-label font-semibold text-xs text-slate-700 dark:text-slate-300",
-          "w": 44,
-          "right": 1215,
-          "overflowBy": 803
-        }
-      ],
-      "cardSizeStats": {
-        "widthRange": [
-          190,
-          190
-        ],
-        "heightRange": [
-          457,
-          457
-        ],
-        "uniqueWidths": 1,
-        "uniqueHeights": 1
-      }
+      "overflowElements": []
     }
   },
   "category-hub": {
     "page": "category-hub",
     "url": "/",
     "loggedIn": false,
-    "scrollH": 1003,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -2671,415 +56,66 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1003,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 182,
-        "interactive": 7,
-        "text": 34,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "20.6px": 2,
-        "13px": 1,
-        "14px": 12,
-        "15px": 4,
-        "18.54px": 4,
-        "12px": 8,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "372px",
-        "rows": "114.109px 114.109px 114.109px 114.109px",
-        "gap": "12px",
-        "width": 388,
-        "padding": "8px",
-        "childCount": 4
-      },
+      "grid": null,
       "stickyBars": [],
       "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "div",
-          "classes": "absolute top-0 left-1/2 -translate-x-1/2 w-[140vw] h-[60vh] rounded-b-full opaci",
-          "w": 577,
-          "right": 494,
-          "overflowBy": 82
-        },
-        {
-          "tag": "span",
-          "classes": "pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/1",
-          "w": 192,
-          "right": 432,
-          "overflowBy": 20
-        },
-        {
-          "tag": "span",
-          "classes": "pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/1",
-          "w": 192,
-          "right": 432,
-          "overflowBy": 20
-        },
-        {
-          "tag": "span",
-          "classes": "pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/1",
-          "w": 192,
-          "right": 432,
-          "overflowBy": 20
-        },
-        {
-          "tag": "span",
-          "classes": "pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/1",
-          "w": 192,
-          "right": 432,
-          "overflowBy": 20
-        }
-      ]
+      "overflowElements": []
     }
   },
   "post-detail": {
     "page": "post-detail",
     "url": "/post/post-1",
     "loggedIn": false,
-    "scrollH": 4566,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 6,
+    "steps": 2,
     "shots": [
       "post-detail-scroll00",
-      "post-detail-scroll01",
-      "post-detail-scroll02",
-      "post-detail-scroll03",
-      "post-detail-scroll04",
-      "post-detail-scroll05"
+      "post-detail-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 4548,
-      "screens": 5,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 674,
-        "interactive": 50,
-        "text": 177,
-        "images": 4
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
+        "images": 0
       },
-      "fontDistribution": {
-        "14px": 30,
-        "11px": 14,
-        "13px": 51,
-        "12px": 69,
-        "15px": 10,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Overview",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 68,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Listing details",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 96,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Key details",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 124,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Location & meetup",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 152,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Trust & Safety",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 180,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Description",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 208,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Negotiate",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 236,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Seller",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 264,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Sponsored",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 292,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Premium",
-          "w": 24,
-          "h": 36,
-          "top": 4,
-          "left": 320,
-          "classes": "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-gra"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 24,
-          "h": 36,
-          "top": 304,
-          "left": 180,
-          "classes": "w-2 h-2 rounded-full transition-all bg-blue-500 w-6"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 8,
-          "h": 36,
-          "top": 304,
-          "left": 210,
-          "classes": "w-2 h-2 rounded-full transition-all bg-white/70"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 8,
-          "h": 36,
-          "top": 304,
-          "left": 224,
-          "classes": "w-2 h-2 rounded-full transition-all bg-white/70"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Listing details",
-          "w": 358,
-          "h": 36,
-          "top": 1960,
-          "left": 27,
-          "classes": "flex items-center justify-between w-full gap-2 group cursor-pointer mb-3"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Key details",
-          "w": 358,
-          "h": 36,
-          "top": 2202,
-          "left": 27,
-          "classes": "flex items-center justify-between w-full gap-2 group cursor-pointer mb-3"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 358,
-          "h": 36,
-          "top": 2499,
-          "left": 27,
-          "classes": "flex items-center justify-between w-full gap-2 group cursor-pointer "
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 358,
-          "h": 36,
-          "top": 2721,
-          "left": 27,
-          "classes": "flex items-center justify-between w-full gap-2 group cursor-pointer mb-4"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 358,
-          "h": 36,
-          "top": 3729,
-          "left": 27,
-          "classes": "flex items-center justify-between w-full gap-2 group cursor-pointer mb-3"
-        },
-        {
-          "tag": "A",
-          "text": "Back to top",
-          "w": 62,
-          "h": 16,
-          "top": 4106,
-          "left": 175,
-          "classes": "text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "72.0781px 72.0781px",
-        "rows": "44px",
-        "gap": "8px",
-        "width": 152,
-        "padding": "0px",
-        "childCount": 2
-      },
-      "stickyBars": [
-        {
-          "h": 61,
-          "w": 412,
-          "top": "0px",
-          "zIndex": "40",
-          "position": "sticky",
-          "classes": "sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.0"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
@@ -3090,241 +126,38 @@
     "page": "search",
     "url": "/search?q=camera",
     "loggedIn": false,
-    "scrollH": 1574,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 3,
+    "steps": 2,
     "shots": [
       "search-scroll00",
-      "search-scroll01",
-      "search-scroll02"
+      "search-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1574,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 279,
-        "interactive": 29,
-        "text": 68,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 20,
-        "11px": 14,
-        "16px": 1,
-        "18.54px": 4,
-        "12px": 8,
-        "13px": 17,
-        "15px": 1,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 40,
-          "top": 82,
-          "left": 12,
-          "classes": "p-2 rounded-full hover:bg-[var(--surface-2)] transition dark:hover:bg-[var(--sur"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 32,
-          "h": 36,
-          "top": 84,
-          "left": 320,
-          "classes": "absolute right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-[var(--surf"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 40,
-          "top": 82,
-          "left": 352,
-          "classes": "absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-gradient-to-r from"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Mobiles",
-          "w": 120,
-          "h": 40,
-          "top": 916,
-          "left": 27,
-          "classes": "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 da"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Laptops",
-          "w": 120,
-          "h": 40,
-          "top": 916,
-          "left": 159,
-          "classes": "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 da"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Men's Fashion",
-          "w": 133,
-          "h": 40,
-          "top": 968,
-          "left": 27,
-          "classes": "px-4 py-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 da"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Mobiles",
-          "w": 175,
-          "h": 38,
-          "top": 1087,
-          "left": 27,
-          "classes": "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-g"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Laptops",
-          "w": 175,
-          "h": 38,
-          "top": 1087,
-          "left": 210,
-          "classes": "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-g"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Men's Fashion",
-          "w": 175,
-          "h": 38,
-          "top": 1133,
-          "left": 27,
-          "classes": "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-g"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Cars",
-          "w": 175,
-          "h": 38,
-          "top": 1133,
-          "left": 210,
-          "classes": "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-g"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Home",
-          "w": 175,
-          "h": 38,
-          "top": 1179,
-          "left": 27,
-          "classes": "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-g"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "358px",
-        "rows": "68px 68px 68px",
-        "gap": "12px",
-        "width": 358,
-        "padding": "0px",
-        "childCount": 3
-      },
-      "stickyBars": [
-        {
-          "h": 61,
-          "w": 412,
-          "top": "40px",
-          "zIndex": "50",
-          "position": "sticky",
-          "classes": "sticky z-50 mhub-premium-bar shadow-lg"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 336,
-        "h": 44,
-        "top": 80,
-        "fontSize": "16px",
-        "padding": "0px 96px 0px 16px",
-        "placeholder": "Search for products, brands and more"
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
       "overflowElements": []
@@ -3334,7 +167,7 @@
     "page": "feed",
     "url": "/feed",
     "loggedIn": true,
-    "scrollH": 1111,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -3346,126 +179,26 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1111,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 295,
-        "interactive": 26,
-        "text": 69,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 13,
-        "11px": 28,
-        "18px": 3,
-        "12px": 14,
-        "13px": 6,
-        "11.2px": 2,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
-      "stickyBars": [
-        {
-          "h": 129,
-          "w": 412,
-          "top": "40px",
-          "zIndex": "40",
-          "position": "sticky",
-          "classes": "sticky z-40 mhub-premium-bar feed-sticky-toolbar transition-all"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 55
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 55
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 226,
-        "h": 44,
-        "top": 119,
-        "fontSize": "12px",
-        "padding": "0px 10px",
-        "placeholder": "Search feed"
-      },
+      "stickyBars": [],
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
       "overflowElements": []
@@ -3475,209 +208,48 @@
     "page": "for-you",
     "url": "/for-you",
     "loggedIn": true,
-    "scrollH": 3549,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 5,
+    "steps": 2,
     "shots": [
       "for-you-scroll00",
-      "for-you-scroll01",
-      "for-you-scroll02",
-      "for-you-scroll03",
-      "for-you-scroll04"
+      "for-you-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 3549,
-      "screens": 4,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 665,
-        "interactive": 50,
-        "text": 173,
-        "images": 6
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
+        "images": 0
       },
-      "fontDistribution": {
-        "14px": 15,
-        "12px": 65,
-        "13px": 40,
-        "11px": 28,
-        "18px": 3,
-        "13.6px": 2,
-        "9px": 18,
-        "9.28px": 2
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "repeat(2, minmax(0px, 1fr))",
-        "rows": "none",
-        "gap": "8px",
-        "width": 0,
-        "padding": "0px",
-        "childCount": 2
-      },
-      "stickyBars": [
-        {
-          "h": 61,
-          "w": 412,
-          "top": "0px",
-          "zIndex": "200",
-          "position": "sticky",
-          "classes": "mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300"
-        },
-        {
-          "h": 236,
-          "w": 412,
-          "top": "40px",
-          "zIndex": "40",
-          "position": "sticky",
-          "classes": "w-full sticky z-40 mhub-premium-bar"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 55
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 266,
-        "h": 44,
-        "top": 8,
-        "fontSize": "14px",
-        "padding": "10px 8px",
-        "placeholder": ""
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 100,
-          "right": 422,
-          "overflowBy": 10
-        },
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 111,
-          "right": 542,
-          "overflowBy": 130
-        },
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 85,
-          "right": 634,
-          "overflowBy": 222
-        },
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 87,
-          "right": 729,
-          "overflowBy": 317
-        },
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 80,
-          "right": 817,
-          "overflowBy": 405
-        },
-        {
-          "tag": "button",
-          "classes": "inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 t",
-          "w": 102,
-          "right": 927,
-          "overflowBy": 515
-        }
-      ]
+      "overflowElements": []
     }
   },
   "cart": {
     "page": "cart",
     "url": "/cart",
     "loggedIn": true,
-    "scrollH": 1461,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -3689,411 +261,67 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1461,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 340,
-        "interactive": 31,
-        "text": 79,
-        "images": 2
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
+        "images": 0
       },
-      "fontDistribution": {
-        "14px": 7,
-        "11px": 19,
-        "18px": 1,
-        "12px": 25,
-        "20.6px": 1,
-        "13px": 15,
-        "16px": 6,
-        "18.54px": 1,
-        "15px": 1,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Back",
-          "w": 72,
-          "h": 36,
-          "top": 23,
-          "left": 35,
-          "classes": "inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 p"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Select All",
-          "w": 77,
-          "h": 36,
-          "top": 346,
-          "left": 29,
-          "classes": "text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200"
-        },
-        {
-          "tag": "INPUT",
-          "text": "",
-          "w": 16,
-          "h": 48,
-          "top": 428,
-          "left": 38,
-          "classes": "h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 436,
-          "left": 162,
-          "classes": "h-10 w-10 rounded-full flex items-center justify-center hover:bg-white dark:hove"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 436,
-          "left": 246,
-          "classes": "h-10 w-10 rounded-full flex items-center justify-center hover:bg-white dark:hove"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Remove",
-          "w": 86,
-          "h": 36,
-          "top": 436,
-          "left": 286,
-          "classes": "text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 ho"
-        },
-        {
-          "tag": "INPUT",
-          "text": "",
-          "w": 16,
-          "h": 48,
-          "top": 570,
-          "left": 38,
-          "classes": "h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 578,
-          "left": 162,
-          "classes": "h-10 w-10 rounded-full flex items-center justify-center hover:bg-white dark:hove"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 578,
-          "left": 246,
-          "classes": "h-10 w-10 rounded-full flex items-center justify-center hover:bg-white dark:hove"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Remove",
-          "w": 86,
-          "h": 36,
-          "top": 578,
-          "left": 286,
-          "classes": "text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 ho"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "372px",
-        "rows": "395px 530px",
-        "gap": "12px",
-        "width": 388,
-        "padding": "8px",
-        "childCount": 2
-      },
-      "stickyBars": [
-        {
-          "h": 530,
-          "w": 372,
-          "top": "16px",
-          "zIndex": "auto",
-          "position": "static",
-          "classes": "rounded-2xl p-5 md:p-6 h-fit md:sticky bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-wh"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "button",
-          "classes": "text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-",
-          "w": 47,
-          "right": 427,
-          "overflowBy": 15
-        },
-        {
-          "tag": "button",
-          "classes": "text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-",
-          "w": 47,
-          "right": 427,
-          "overflowBy": 15
-        }
-      ]
+      "overflowElements": []
     }
   },
   "wishlist": {
     "page": "wishlist",
     "url": "/wishlist",
     "loggedIn": true,
-    "scrollH": 1617,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 3,
+    "steps": 2,
     "shots": [
       "wishlist-scroll00",
-      "wishlist-scroll01",
-      "wishlist-scroll02"
+      "wishlist-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1617,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 343,
-        "interactive": 31,
-        "text": 67,
-        "images": 2
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
+        "images": 0
       },
-      "fontDistribution": {
-        "14px": 9,
-        "11px": 20,
-        "18px": 1,
-        "12px": 21,
-        "20.6px": 1,
-        "13px": 10,
-        "15px": 2,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Back",
-          "w": 72,
-          "h": 36,
-          "top": 23,
-          "left": 35,
-          "classes": "inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 p"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 36,
-          "top": 23,
-          "left": 217,
-          "classes": "inline-flex items-center justify-center rounded-full border border-white/25 bg-w"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 396,
-          "left": 108,
-          "classes": "h-8 w-8 rounded-lg flex items-center justify-center transition bg-pink-500 text-"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 28,
-          "h": 36,
-          "top": 396,
-          "left": 140,
-          "classes": "h-8 w-8 rounded-lg flex items-center justify-center transition text-gray-500 dar"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "372px",
-        "rows": "472.875px 472.875px",
-        "gap": "12px",
-        "width": 388,
-        "padding": "8px",
-        "childCount": 2
-      },
+      "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 388,
-        "h": 48,
-        "top": 227,
-        "fontSize": "13px",
-        "padding": "8px 14px",
-        "placeholder": "Search wishlist"
-      },
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
       "overflowElements": []
@@ -4103,168 +331,37 @@
     "page": "profile",
     "url": "/profile",
     "loggedIn": true,
-    "scrollH": 2623,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 4,
+    "steps": 2,
     "shots": [
       "profile-scroll00",
-      "profile-scroll01",
-      "profile-scroll02",
-      "profile-scroll03"
+      "profile-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 2623,
-      "screens": 3,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 475,
-        "interactive": 28,
-        "text": 118,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 13,
-        "11px": 27,
-        "18px": 1,
-        "12px": 24,
-        "20.6px": 1,
-        "13px": 38,
-        "15px": 6,
-        "16px": 5,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Overview",
-          "w": 90,
-          "h": 34,
-          "top": 438,
-          "left": 26,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Personal",
-          "w": 88,
-          "h": 34,
-          "top": 438,
-          "left": 120,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Preferences",
-          "w": 105,
-          "h": 34,
-          "top": 438,
-          "left": 212,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "366px",
-        "rows": "205.188px 60px",
-        "gap": "12px",
-        "width": 366,
-        "padding": "0px",
-        "childCount": 2
-      },
-      "stickyBars": [
-        {
-          "h": 88,
-          "w": 388,
-          "top": "12px",
-          "zIndex": "40",
-          "position": "sticky",
-          "classes": "profile-tabs-sticky rewards-tabs-sticky sticky z-40 mb-4"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 55
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 55
-          }
-        ]
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
@@ -4275,7 +372,7 @@
     "page": "dashboard",
     "url": "/dashboard",
     "loggedIn": true,
-    "scrollH": 1003,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -4287,108 +384,25 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1003,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 169,
-        "interactive": 14,
-        "text": 30,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 8,
-        "11px": 14,
-        "18px": 1,
-        "12px": 1,
-        "13px": 3,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
@@ -4399,7 +413,7 @@
     "page": "notifications",
     "url": "/notifications",
     "loggedIn": true,
-    "scrollH": 1497,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -4411,402 +425,77 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1497,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 338,
-        "interactive": 29,
-        "text": 69,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 10,
-        "11px": 19,
-        "18px": 1,
-        "12px": 21,
-        "20.6px": 1,
-        "13px": 12,
-        "16px": 2,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Back",
-          "w": 72,
-          "h": 36,
-          "top": 23,
-          "left": 35,
-          "classes": "inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 p"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 36,
-          "top": 23,
-          "left": 337,
-          "classes": "inline-flex items-center justify-center rounded-full border border-white/25 bg-w"
-        },
-        {
-          "tag": "INPUT",
-          "text": "",
-          "w": 16,
-          "h": 48,
-          "top": 596,
-          "left": 21,
-          "classes": "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:bor"
-        },
-        {
-          "tag": "INPUT",
-          "text": "",
-          "w": 16,
-          "h": 48,
-          "top": 744,
-          "left": 21,
-          "classes": "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:bor"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "repeat(1, minmax(0px, 1fr))",
-        "rows": "none",
-        "gap": "12px",
-        "width": 388,
-        "padding": "8px 12px",
-        "childCount": 3
-      },
+      "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 388,
-        "h": 48,
-        "top": 219,
-        "fontSize": "13px",
-        "padding": "8px 14px",
-        "placeholder": "Search notifications"
-      },
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "div",
-          "classes": "absolute -top-20 -left-20 w-[500px] h-[500px] bg-blue-500/[0.04] dark:bg-blue-50",
-          "w": 500,
-          "right": 420,
-          "overflowBy": 8
-        },
-        {
-          "tag": "div",
-          "classes": "absolute top-1/2 -right-32 w-[600px] h-[600px] bg-indigo-500/[0.04] dark:bg-indi",
-          "w": 600,
-          "right": 540,
-          "overflowBy": 128
-        },
-        {
-          "tag": "div",
-          "classes": "absolute -bottom-20 left-1/3 w-[400px] h-[400px] bg-purple-500/[0.03] dark:bg-pu",
-          "w": 400,
-          "right": 537,
-          "overflowBy": 125
-        }
-      ]
+      "overflowElements": []
     }
   },
   "rewards": {
     "page": "rewards",
     "url": "/rewards",
     "loggedIn": true,
-    "scrollH": 5067,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 7,
+    "steps": 2,
     "shots": [
       "rewards-scroll00",
-      "rewards-scroll01",
-      "rewards-scroll02",
-      "rewards-scroll03",
-      "rewards-scroll04",
-      "rewards-scroll05",
-      "rewards-scroll06"
+      "rewards-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 6325,
-      "screens": 7,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 781,
-        "interactive": 35,
-        "text": 192,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 7,
-        "11px": 25,
-        "18px": 4,
-        "12px": 102,
-        "18.54px": 1,
-        "13px": 33,
-        "15px": 10,
-        "17px": 5,
-        "16px": 2,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 44,
-          "top": 1120,
-          "left": 332,
-          "classes": "mhub-btn inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Progress",
-          "w": 89,
-          "h": 34,
-          "top": 1332,
-          "left": 26,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Earn & Challenges",
-          "w": 135,
-          "h": 34,
-          "top": 1332,
-          "left": 119,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Referrals",
-          "w": 89,
-          "h": 34,
-          "top": 1332,
-          "left": 258,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Activity & Rewards",
-          "w": 137,
-          "h": 34,
-          "top": 1332,
-          "left": 351,
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
-      "grid": {
-        "columns": "388px",
-        "rows": "214.891px 229px",
-        "gap": "12px",
-        "width": 388,
-        "padding": "0px",
-        "childCount": 2
-      },
-      "stickyBars": [
-        {
-          "h": 90,
-          "w": 388,
-          "top": "12px",
-          "zIndex": "30",
-          "position": "sticky",
-          "classes": "rewards-tabs-sticky sticky z-30 mb-4"
-        }
-      ],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 55
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 55
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 55
-          }
-        ]
-      },
+      "grid": null,
+      "stickyBars": [],
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
-      "overflowElements": [
-        {
-          "tag": "button",
-          "classes": "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full bo",
-          "w": 137,
-          "right": 488,
-          "overflowBy": 76
-        },
-        {
-          "tag": "span",
-          "classes": "inline-flex items-center gap-1.5",
-          "w": 115,
-          "right": 477,
-          "overflowBy": 65
-        }
-      ]
+      "overflowElements": []
     }
   },
   "channels": {
     "page": "channels",
     "url": "/channels",
     "loggedIn": true,
-    "scrollH": 1003,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -4818,118 +507,26 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1003,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 181,
-        "interactive": 15,
-        "text": 34,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 8,
-        "11px": 14,
-        "18px": 1,
-        "12px": 1,
-        "20.6px": 1,
-        "13px": 5,
-        "15px": 1,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "GPS",
-          "w": 51,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 63,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "+\nSell",
-            "w": 44,
-            "h": 44
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
-      "searchBar": {
-        "w": 362,
-        "h": 48,
-        "top": 159,
-        "fontSize": "13px",
-        "padding": "8px 14px 8px 36px",
-        "placeholder": "Search Channels"
-      },
+      "bottomNav": null,
+      "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
       "overflowElements": []
@@ -4939,7 +536,7 @@
     "page": "login",
     "url": "/login",
     "loggedIn": false,
-    "scrollH": 1003,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -4951,72 +548,21 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1003,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 130,
-        "interactive": 8,
-        "text": 16,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "13px": 12,
-        "18px": 1,
-        "15px": 1,
-        "12px": 2
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Back",
-          "w": 48,
-          "h": 36,
-          "top": 40,
-          "left": 12,
-          "classes": "flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "",
-          "w": 40,
-          "h": 44,
-          "top": 434,
-          "left": 337,
-          "classes": "mhub-btn inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Sign up here",
-          "w": 74,
-          "h": 36,
-          "top": 490,
-          "left": 166,
-          "classes": "text-blue-600 dark:text-blue-400 cursor-pointer hover:underline font-medium"
-        },
-        {
-          "tag": "A",
-          "text": "Forgot Password?",
-          "w": 106,
-          "h": 40,
-          "top": 488,
-          "left": 279,
-          "classes": "text-blue-600 dark:text-blue-400 hover:underline font-medium whitespace-nowrap m"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
@@ -5031,7 +577,7 @@
     "page": "signup",
     "url": "/signup",
     "loggedIn": false,
-    "scrollH": 1003,
+    "scrollH": 915,
     "viewH": 915,
     "steps": 2,
     "shots": [
@@ -5043,63 +589,21 @@
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1003,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 151,
-        "interactive": 7,
-        "text": 19,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "13px": 11,
-        "18px": 1,
-        "12px": 6,
-        "15px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "BUTTON",
-          "text": "Back",
-          "w": 48,
-          "h": 36,
-          "top": 99,
-          "left": 12,
-          "classes": "flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray"
-        },
-        {
-          "tag": "A",
-          "text": "Privacy Policy",
-          "w": 73,
-          "h": 28,
-          "top": 581,
-          "left": 199,
-          "classes": "underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:"
-        },
-        {
-          "tag": "A",
-          "text": "Sign In",
-          "w": 40,
-          "h": 40,
-          "top": 761,
-          "left": 262,
-          "classes": "text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purpl"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
@@ -5114,153 +618,37 @@
     "page": "terms",
     "url": "/terms",
     "loggedIn": false,
-    "scrollH": 1635,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 3,
+    "steps": 2,
     "shots": [
       "terms-scroll00",
-      "terms-scroll01",
-      "terms-scroll02"
+      "terms-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1635,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 211,
-        "interactive": 14,
-        "text": 53,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 7,
-        "11px": 14,
-        "12px": 2,
-        "18px": 1,
-        "13px": 21,
-        "17px": 5,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "A",
-          "text": "Terms",
-          "w": 62,
-          "h": 34,
-          "top": 1424,
-          "left": 21,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Privacy",
-          "w": 68,
-          "h": 34,
-          "top": 1424,
-          "left": 91,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Refund",
-          "w": 69,
-          "h": 34,
-          "top": 1424,
-          "left": 167,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Support Tickets",
-          "w": 119,
-          "h": 34,
-          "top": 1424,
-          "left": 244,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],
@@ -5271,153 +659,37 @@
     "page": "privacy",
     "url": "/privacy-policy",
     "loggedIn": false,
-    "scrollH": 1639,
+    "scrollH": 915,
     "viewH": 915,
-    "steps": 3,
+    "steps": 2,
     "shots": [
       "privacy-scroll00",
-      "privacy-scroll01",
-      "privacy-scroll02"
+      "privacy-scroll01"
     ],
     "scan": {
       "viewport": {
         "width": 412,
         "height": 915
       },
-      "scrollHeight": 1639,
-      "screens": 2,
+      "scrollHeight": 915,
+      "screens": 1,
       "overflow": {
         "bodyX": false,
         "htmlX": false,
-        "bodyScrollW": 412
+        "bodyScrollW": 396
       },
       "stats": {
-        "total": 211,
-        "interactive": 14,
-        "text": 53,
+        "total": 42,
+        "interactive": 0,
+        "text": 0,
         "images": 0
       },
-      "fontDistribution": {
-        "14px": 7,
-        "11px": 14,
-        "12px": 2,
-        "18px": 1,
-        "13px": 21,
-        "17px": 5,
-        "9.28px": 2,
-        "13.6px": 1
-      },
-      "touchTargetIssues": [
-        {
-          "tag": "A",
-          "text": "Terms",
-          "w": 62,
-          "h": 34,
-          "top": 1428,
-          "left": 21,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Privacy",
-          "w": 68,
-          "h": 34,
-          "top": 1428,
-          "left": 91,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Refund",
-          "w": 69,
-          "h": 34,
-          "top": 1428,
-          "left": 167,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "A",
-          "text": "Support Tickets",
-          "w": 119,
-          "h": 34,
-          "top": 1428,
-          "left": 244,
-          "classes": "rounded-md border border-blue-200/70 bg-white/80 px-3 py-1.5 text-blue-700 hover"
-        },
-        {
-          "tag": "OL",
-          "text": "",
-          "w": 412,
-          "h": 16,
-          "top": 0,
-          "left": 0,
-          "classes": "fixed top-0 z-[300] flex max-h-screen w-full flex-col-reverse p-4 sm:right-0 sm:"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "Bachupally · Good (GPS) ±50m",
-          "w": 162,
-          "h": 36,
-          "top": 803,
-          "left": 8,
-          "classes": "location-accuracy-badge"
-        },
-        {
-          "tag": "BUTTON",
-          "text": "×",
-          "w": 20,
-          "h": 36,
-          "top": 803,
-          "left": 174,
-          "classes": "location-accuracy-badge-close"
-        }
-      ],
+      "fontDistribution": {},
+      "touchTargetIssues": [],
       "cards": [],
       "grid": null,
       "stickyBars": [],
-      "bottomNav": {
-        "h": 64,
-        "w": 412,
-        "top": 851,
-        "zIndex": "120",
-        "items": [
-          {
-            "text": "Home",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "All Posts",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "For You",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Feed",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "Rewards",
-            "w": 52,
-            "h": 45
-          },
-          {
-            "text": "Profile",
-            "w": 48,
-            "h": 45
-          },
-          {
-            "text": "More",
-            "w": 48,
-            "h": 45
-          }
-        ]
-      },
+      "bottomNav": null,
       "searchBar": null,
       "categoryTrack": null,
       "spacingIssues": [],

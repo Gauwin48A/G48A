@@ -132,3 +132,19 @@ Last updated: 2026-02-27
 - `docs/waf-rules.md`
 - `docs/security-policy.md`
 - `docs/edge-caching-setup.md`
+- `requirements.md` (Master Requirements & Audit Specification)
+
+## Architectural & System Audit Fixes
+- **Tier-Aware Platform Commission**:
+  - Gold Subscription Tier: 0.0% Platform Fee
+  - Silver Subscription Tier: 1.5% Platform Fee
+  - Free / Default Tier: 2.5% Platform Fee (plus 18% GST calculation).
+- **Escrow & Auto-Settling Worker**:
+  - `autoSettleShippedOrders` background cron sweeps orders in `SHIPPED`/`DELIVERED` status after 10 days into `COMPLETED` and logs financial ledger payout records.
+- **Admin Subscription Override**:
+  - Endpoints `POST /api/subscriptions/admin/user/:userId/activate` and `deactivate` allow admins to manually update subscription plans and synchronize tier entitlements.
+- **Seller Bank Details & Payout Onboarding**:
+  - `payout_upi_id` & `payout_bank_details` columns added to `profiles` table to enable seller payout accounts.
+- **Trust Score Caching**:
+  - Stampede-protected 60s cache added to `trustBadgeService.js` (`getTrustSnapshot`).
+

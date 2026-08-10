@@ -53,8 +53,47 @@ const jsonResponse = (route, body, status = 200) =>
     body: JSON.stringify(body)
   });
 
+/**
+ * True when the request is a Vite dev-server resource (module script, asset,
+ * HMR client) rather than a backend API call. Broad catch-all routes (e.g.
+ * the api-path glob) must pass these through via route.fallback() — otherwise
+ * source files like `/src/services/api/csrf.js` get fulfilled as JSON and the
+ * React bundle fails to mount with "MIME type application/json" module errors.
+ */
+export const isDevServerResource = (url: string) =>
+  url.includes("/src/") ||
+  url.includes("/@vite/") ||
+  url.includes("/@react-refresh") ||
+  url.includes("/node_modules/") ||
+  /\.(?:js|mjs|cjs|jsx|ts|tsx|css|svg|png|jpe?g|gif|webp|avif|woff2?)(?:\?|$)/i.test(url);
+
 export async function disableAnimations(page: Page) {
   await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS });
+}
+
+// Windows workers can race on the same screenshot output file
+// ("UNKNOWN: unknown error, open ..."). Only swallow file-open errors so a
+// capture failure can't fail the test — rethrow anything else (e.g. a crashed
+// page) so real failures stay visible.
+const isScreenshotFileRace = (e: unknown) =>
+  // Node reports the Windows file-open race as "UNKNOWN: unknown error, open '<path>'".
+  // Match the full phrase (plus the standard fs codes) so a genuine crash whose
+  // message merely contains the word "unknown" is NOT swallowed.
+  /unknown error, open|ENOENT|EACCES|EPERM|EBUSY/i.test(String((e as Error)?.message ?? e));
+
+export async function safeScreenshot(
+  page: Page,
+  options: Parameters<Page["screenshot"]>[0]
+) {
+  try {
+    await page.screenshot(options);
+  } catch (e) {
+    if (isScreenshotFileRace(e)) {
+      console.warn(`screenshot skipped (${options.path}):`, String(e).slice(0, 120));
+      return;
+    }
+    throw e;
+  }
 }
 
 export async function waitForPageReady(page: Page) {
@@ -199,16 +238,11 @@ export async function mockSinglePostApi(
 }
 
 export async function mockCommonApiRoutes(page: Page) {
-  // ── Catch-all registered FIRST → lowest priority in Playwright LIFO ──
-  await page.route("**/api/**", async (route) =>
-    jsonResponse(route, {})
-  );
-
+  // ── Known API paths that should be mocked with default responses ──
   await page.route("**/socket.io/**", async (route) =>
     route.abort("failed")
   );
 
-  // ── Specific routes registered AFTER → higher priority ──
   await page.route("**/api/health**", async (route) =>
     jsonResponse(route, {
       status: "ok",
@@ -236,6 +270,14 @@ export async function mockCommonApiRoutes(page: Page) {
 
   await page.route("**/api/cms/pages/**", async (route) =>
     jsonResponse(route, { content: null })
+  );
+
+  // ── Catch-all: fallback to next matching route or real network ──
+  // IMPORTANT: This must be registered AFTER all other common routes so
+  // specific mocks (registered even later by individual tests) are checked FIRST.
+  // Using route.fallback() allows more specific mocks to intercept before this.
+  await page.route("**/api/**", async (route) =>
+    route.fallback()
   );
 }
 

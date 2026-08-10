@@ -24,7 +24,34 @@ app.use('*', async (c, next) => {
       : (origin) => (origins.includes(origin) ? origin : null);
   return cors({
     origin: allow as any,
-    allowHeaders: ['Authorization', 'Content-Type', 'X-Admin-Key'],
+    allowHeaders: [
+      'Authorization',
+      'Content-Type',
+      'X-Admin-Key',
+      // Demo/local sessions authenticate via these headers. Keep this aligned
+      // with the main server's commonAllowedHeaders so browsers don't reject
+      // the preflight for demo-mode requests (X-User-Id / X-Demo-Id) or the
+      // interceptor's standard integrity headers (X-Device-Id, X-Timezone,
+      // X-MHub-Timestamp, X-MHub-Nonce, etc.).
+      'X-User-Id',
+      'X-Demo-Id',
+      'X-Device-Id',
+      'X-Device-Fingerprint',
+      'X-Timezone',
+      'X-Correlation-Id',
+      'X-Request-Id',
+      'X-Location-Signature',
+      'X-Simulated-User',
+      'X-XSRF-TOKEN',
+      'X-CSRF-Token',
+      'X-Platform',
+      'X-MHub-VPN-Detected',
+      'X-MHub-Timestamp',
+      'X-MHub-Nonce',
+      'X-MHub-Signature',
+      'X-MHub-DevTools',
+      'Accept-Language',
+    ],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     maxAge: 600,
   })(c, next);

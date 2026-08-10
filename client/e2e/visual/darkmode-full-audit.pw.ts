@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'darkmode-full-audit');
 const RATINGS_PATH = path.join(OUTPUT_DIR, 'ratings.json');
@@ -87,6 +88,9 @@ test.describe('Dark Mode Full Audit', () => {
 
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       const isAuth = url.includes('/api/auth/');
       const isHealth = url.includes('/api/health');
       const isAnalytics = url.includes('/api/analytics/');
@@ -405,7 +409,7 @@ test.describe('Dark Mode Full Audit', () => {
         );
 
       const screenshotPath = path.join(OUTPUT_DIR, `${name}.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await safeScreenshot(page, { path: screenshotPath, fullPage: true });
       console.log(`[darkmode-full-audit] Saved ${name}.png`);
 
       results.push({

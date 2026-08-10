@@ -387,8 +387,13 @@ export async function mockSellerAndKyc(page: Page) {
     const m = r.request().method();
     if (m === "POST" || m === "PUT" || m === "PATCH" || m === "DELETE")
       return json(r, { success: true, post: MOCK_POST_DETAIL });
-    // GET handled by mockPostsAndDetail (registered later).
-    return json(r, { posts: MOCK_POSTS, hasMore: false });
+    // GET must fall through to the earlier-registered, more-specific routes in
+    // mockPostsAndDetail (single-post regex /api/posts/{id}$ returns { post },
+    // list + for-you routes return { posts }). This handler is registered LAST,
+    // so Playwright's LIFO matching would otherwise swallow every /api/posts
+    // GET (including /api/posts/post-1) and return the list shape, which makes
+    // the post-detail image gallery render zero <img> elements.
+    return r.fallback();
   });
 }
 

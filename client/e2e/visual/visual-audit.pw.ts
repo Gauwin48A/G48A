@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const APP_FILE = path.resolve(process.cwd(), 'src/App.jsx');
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'visual-audit');
@@ -176,6 +177,9 @@ test.describe('Visual Audit Capture', () => {
 
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       const isAuth = url.includes('/api/auth/');
       const isHealth = url.includes('/api/health');
       const isAnalytics = url.includes('/api/analytics/');
@@ -294,7 +298,7 @@ test.describe('Visual Audit Capture', () => {
         console.warn(`[visual-audit] Navigation failed for ${targetUrl}:`, error);
       }
 
-      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await safeScreenshot(page, { path: screenshotPath, fullPage: true });
       console.log(`[visual-audit] Saved ${screenshotName}`);
     }
   });

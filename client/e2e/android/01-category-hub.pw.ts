@@ -5,7 +5,7 @@
 import { test, expect } from "@playwright/test";
 import {
   disableAnimations, waitForPageReady, screenshotPage, screenshotViewport,
-  setupLoggedOutState, enableDarkMode, enableLightMode,
+  setupLoggedInState, enableDarkMode, enableLightMode,
   mockAllApis, assertNoOverflow, ANDROID_VIEWPORT
 } from "./android-helpers";
 
@@ -16,8 +16,11 @@ const MODES = ["light", "dark"] as const;
 for (const mode of MODES) {
   test.describe(`Category Hub [${mode}]`, () => {
     test.beforeEach(async ({ page }) => {
-      await mockAllApis(page);
-      await setupLoggedOutState(page);
+      // /category-hub is wrapped in <RequireAuth> in the real app, so the
+      // tile UI only renders for authenticated sessions. Mock a logged-in
+      // session (matching the app's actual auth requirement).
+      await mockAllApis(page, true);
+      await setupLoggedInState(page);
       if (mode === "dark") await enableDarkMode(page);
       else await enableLightMode(page);
       await page.goto("/category-hub", { waitUntil: "domcontentloaded" });

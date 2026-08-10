@@ -16,6 +16,7 @@ import {
   MOCK_RECENTLY_VIEWED,
   MOCK_COMPARE_ITEMS
 } from "../comprehensive/fixtures";
+import { isDevServerResource, safeScreenshot } from "../comprehensive/e2e-helpers";
 
 /* ─── Constants ─── */
 export const ANDROID_VIEWPORT = { width: 412, height: 915 };
@@ -63,15 +64,19 @@ export async function waitForPageReady(page: Page) {
   await page.waitForTimeout(300);
 }
 
+// Windows workers can race on the same screenshot output file
+// ("UNKNOWN: unknown error, open ..."). safeScreenshot (in
+// ../comprehensive/e2e-helpers) swallows only file-open errors so a capture
+// failure can't fail the functional test — anything else is rethrown.
 export async function screenshotPage(page: Page, name: string) {
-  await page.screenshot({
+  await safeScreenshot(page, {
     path: `e2e/android/screenshots/${name}.png`,
     fullPage: true
   });
 }
 
 export async function screenshotViewport(page: Page, name: string) {
-  await page.screenshot({
+  await safeScreenshot(page, {
     path: `e2e/android/screenshots/${name}.png`,
     fullPage: false
   });
@@ -143,7 +148,11 @@ export async function toggleDarkMode(page: Page) {
 
 export async function mockCommonApiRoutes(page: Page) {
   // Catch-all (lowest priority — registered FIRST in Playwright LIFO)
-  await page.route("**/api/**", async (route) => jsonResponse(route, {}));
+  await page.route("**/api/**", async (route) => {
+    const url = route.request().url();
+    if (isDevServerResource(url)) return route.fallback();
+    return jsonResponse(route, {});
+  });
   await page.route("**/socket.io/**", async (route) => route.abort("failed"));
 
   await page.route("**/api/health**", async (route) =>

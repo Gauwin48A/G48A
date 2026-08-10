@@ -24,16 +24,18 @@ test.describe("User Journey — Guest Browse & Explore", () => {
   });
 
   test("guest can browse categories → all-posts → post detail → back", async ({ page }) => {
-    // Step 1: Land on category hub
-    await expect(page.getByText(/electronics/i).first()).toBeVisible();
-    await screenshotViewport(page, "16-journey-guest-01-category-hub");
+    // /category-hub is wrapped in <RequireAuth> in the real app, so a guest
+    // lands on the auth gate (not the tiles). The real guest flow is:
+    // gate → "Browse Marketplace" → public /all-posts → post detail → back.
+    // Step 1: Land on category hub → auth gate for guests
+    await expect(page.getByText(/sign in to continue/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /browse marketplace/i })).toBeVisible();
+    await screenshotViewport(page, "16-journey-guest-01-category-hub-gate");
 
-    // Step 2: Tap Electronics → navigates to all-posts
-    const elecBtn = page.locator("button").filter({ hasText: "Electronics" }).first();
-    if (await elecBtn.isVisible()) {
-      await elecBtn.click({ force: true });
-      await page.waitForTimeout(1000);
-    }
+    // Step 2: Browse Marketplace → navigates to public /all-posts
+    await page.getByRole("button", { name: /browse marketplace/i }).click({ force: true });
+    await expect(page).toHaveURL(/\/all-posts/);
+    await page.waitForTimeout(1000);
     await screenshotViewport(page, "16-journey-guest-02-all-posts");
 
     // Step 3: Verify page loaded
@@ -45,15 +47,16 @@ test.describe("User Journey — Guest Browse & Explore", () => {
       await screenshotViewport(page, "16-journey-guest-03-search-bar-visible");
     }
 
-    // Step 5: Navigate to feed directly (bottom nav may not be visible after category-hub)
-    await page.goto("/feed", { waitUntil: "domcontentloaded" });
+    // Step 5: Open a public post detail
+    await page.goto("/post/post-1", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
-    await screenshotViewport(page, "16-journey-guest-04-feed");
+    await screenshotViewport(page, "16-journey-guest-04-post-detail");
 
-    // Step 6: Go back to home
+    // Step 6: Go back to home → gate again for guests
     await page.goto("/category-hub", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
-    await screenshotViewport(page, "16-journey-guest-05-home");
+    await expect(page.getByText(/sign in to continue/i)).toBeVisible();
+    await screenshotViewport(page, "16-journey-guest-05-home-gate");
   });
 
   test("guest encounters login prompt properly", async ({ page }) => {
@@ -145,42 +148,56 @@ test.describe("User Journey — Dark Mode Full Flow", () => {
   });
 
   test("dark mode full navigation flow", async ({ page }) => {
+    // Every stop asserts the body rendered so the flow keeps detection value
+    // (it is primarily a screenshot dump, but must not silently pass a crash).
+    const assertRendered = async () => {
+      await expect(page.locator("body")).toBeVisible();
+    };
+
     // Category Hub
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-01-category-hub");
 
     // All Posts
     await page.goto("/all-posts", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-02-all-posts");
 
     // Post Detail
     await page.goto("/post/post-1", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-03-post-detail");
 
     // Feed
     await page.goto("/feed", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-04-feed");
 
     // Profile
     await page.goto("/profile", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-05-profile");
 
     // Rewards
     await page.goto("/rewards", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-06-rewards");
 
     // Dashboard
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-07-dashboard");
 
     // Search
     await page.goto("/search", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);
+    await assertRendered();
     await screenshotViewport(page, "16-journey-dark-08-search");
   });
 });

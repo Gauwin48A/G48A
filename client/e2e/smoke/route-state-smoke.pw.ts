@@ -1,4 +1,16 @@
 import { expect, test } from '@playwright/test';
+import { mockAuthenticatedApiRoutes, setupLoggedInState } from '../comprehensive/e2e-helpers';
+
+/**
+ * /search and /feed/:id are wrapped in <RequireAuth> in the real app, so their
+ * content only renders for authenticated sessions. Seed a local auth session
+ * (localStorage authSession + user fast-path in AuthContext + mocked session
+ * endpoint) so the error-state UI under test renders instead of the auth gate.
+ */
+const seedLoggedInSession = async (page: Parameters<typeof setupLoggedInState>[0]) => {
+  await setupLoggedInState(page);
+  await mockAuthenticatedApiRoutes(page);
+};
 
 test.describe('Route State Smoke', () => {
   test.beforeEach(async ({ page }) => {
@@ -72,6 +84,7 @@ test.describe('Route State Smoke', () => {
   });
 
   test('shows recoverable search category error state', async ({ page }) => {
+    await seedLoggedInSession(page);
     await page.route('**/api/categories**', async (route) => {
       await route.fulfill({
         status: 500,
@@ -99,6 +112,7 @@ test.describe('Route State Smoke', () => {
   });
 
   test('shows feed-detail error state with retry and back actions', async ({ page }) => {
+    await seedLoggedInSession(page);
     await page.route('**/api/posts/123', async (route) => {
       await route.fulfill({
         status: 500,

@@ -1,0 +1,3 @@
+=== VISIBLE TEXTS ===
+Support Policy | Internal Server Error
+=== CLICKABLE (label @ x,y [class]) ===

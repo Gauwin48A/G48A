@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 import {
   disableAnimations,
+  mockAuthenticatedApiRoutes,
   mockCategoriesApi,
   mockCommonApiRoutes,
-  setupLoggedOutState,
+  setupLoggedInState,
   waitForPageReady
 } from "./e2e-helpers";
 
@@ -16,8 +17,12 @@ const CATEGORY_GROUPS = [
 
 test.describe("Category Hub", () => {
   test.beforeEach(async ({ page }) => {
+    // /category-hub is wrapped in <RequireAuth> in the real app, so the tile
+    // UI only renders for authenticated sessions. Mock a logged-in session
+    // (matching the app's actual auth requirement).
     await mockCommonApiRoutes(page);
-    await setupLoggedOutState(page);
+    await setupLoggedInState(page);
+    await mockAuthenticatedApiRoutes(page);
     await mockCategoriesApi(page);
     await page.goto("/category-hub", { waitUntil: "domcontentloaded" });
     await waitForPageReady(page);

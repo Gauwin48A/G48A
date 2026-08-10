@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'allposts-audit');
 
@@ -55,6 +56,9 @@ test.describe('AllPosts Spotcheck', () => {
 
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       const isAuth = url.includes('/api/auth/');
       const isHealth = url.includes('/api/health');
       const isAnalytics = url.includes('/api/analytics/');
@@ -144,17 +148,17 @@ test.describe('AllPosts Spotcheck', () => {
     await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS });
     await page.waitForTimeout(1000);
 
-    await page.screenshot({ path: path.join(OUTPUT_DIR, 'allposts-default.png'), fullPage: true });
+    await safeScreenshot(page, { path: path.join(OUTPUT_DIR, 'allposts-default.png'), fullPage: true });
 
     await page.evaluate(() => window.scrollTo(0, 900));
     await page.waitForTimeout(600);
-    await page.screenshot({ path: path.join(OUTPUT_DIR, 'allposts-sticky.png'), fullPage: true });
+    await safeScreenshot(page, { path: path.join(OUTPUT_DIR, 'allposts-sticky.png'), fullPage: true });
 
     const filterButton = page.getByRole('button', { name: /filter/i }).first();
     if (await filterButton.isVisible()) {
       await filterButton.click();
       await page.waitForTimeout(400);
-      await page.screenshot({ path: path.join(OUTPUT_DIR, 'allposts-filter.png'), fullPage: true });
+      await safeScreenshot(page, { path: path.join(OUTPUT_DIR, 'allposts-filter.png'), fullPage: true });
       await page.keyboard.press('Escape');
       await page.waitForTimeout(300);
     }
@@ -167,14 +171,14 @@ test.describe('AllPosts Spotcheck', () => {
     if (await languageTrigger.isVisible()) {
       await languageTrigger.click();
       await page.waitForTimeout(400);
-      await page.screenshot({ path: path.join(OUTPUT_DIR, 'allposts-language.png'), fullPage: true });
+      await safeScreenshot(page, { path: path.join(OUTPUT_DIR, 'allposts-language.png'), fullPage: true });
     }
 
     const layoutTrigger = page.getByRole('button', { name: /layout/i }).first();
     if (await layoutTrigger.isVisible()) {
       await layoutTrigger.click();
       await page.waitForTimeout(400);
-      await page.screenshot({ path: path.join(OUTPUT_DIR, 'allposts-layout.png'), fullPage: true });
+      await safeScreenshot(page, { path: path.join(OUTPUT_DIR, 'allposts-layout.png'), fullPage: true });
       await page.keyboard.press('Escape');
     }
   });

@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'header-nav-audit');
 
@@ -55,6 +56,9 @@ test.describe('Header/Nav Spotcheck', () => {
 
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       const isAuth = url.includes('/api/auth/');
       const isHealth = url.includes('/api/health');
       const isAnalytics = url.includes('/api/analytics/');
@@ -138,7 +142,7 @@ test.describe('Header/Nav Spotcheck', () => {
       await page.waitForTimeout(1000);
       const name = route.replace(/^\//, '').replace(/\W+/g, '_') || 'root';
       const screenshotPath = path.join(OUTPUT_DIR, `${name}.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await safeScreenshot(page, { path: screenshotPath, fullPage: true });
       console.log(`[header-nav-audit] Saved ${name}.png`);
     }
   });

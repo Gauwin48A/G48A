@@ -108,3 +108,15 @@ SCRIPT_MIGRATION_REPORT.md
 _codex_backups/
 .dev-logs/
 .claude/
+
+# Live runtime files (kept on disk, not tracked)
+/server_out.txt
+/server_err.txt
+/server.pid
+
+# Regenerated audit/screenshot output
+/client/_audit_screenshots/
+/client/android-screenshots/
+/client/audit-screenshots/
+/client/test-results/
+/client/dev/

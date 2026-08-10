@@ -15,6 +15,9 @@ jest.mock('../src/controllers/userController', () => ({
   upgradeTier: jest.fn((req, res) => res.json({})),
   getTierStatus: jest.fn((req, res) => res.json({})),
   submitKYC: jest.fn((req, res) => res.json({})),
+  submitKyc: jest.fn((req, res) => res.json({})),
+  uploadKycDocument: jest.fn((req, res) => res.json({})),
+  uploadKycDoc: jest.fn((req, res) => res.json({})),
   getKYCStatus: jest.fn((req, res) => res.json({})),
   verifyPan: jest.fn((req, res) => res.json({})),
   generateAadhaarOtp: jest.fn((req, res) => res.json({})),
@@ -39,6 +42,7 @@ jest.mock('../src/middleware/auth', () => ({
 
 jest.mock('../src/middleware/upload', () => ({
   fields: () => (req, res, next) => next(),
+  single: () => (req, res, next) => next(),
   postUploadSecurity: (req, res, next) => next()
 }));
 

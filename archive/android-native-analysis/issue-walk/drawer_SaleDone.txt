@@ -1,0 +1,3 @@
+=== VISIBLE TEXTS ===
+Mark as Sold | Request | Pending | Active | History | Request a Sale | Enter the Seller's ID and the Post ID to initiate a sale request. | Seller ID | Post ID | Send Sale Request | Zaruda | Home | All Posts | Feed | Rewards | More
+=== CLICKABLE (label @ x,y [class]) ===

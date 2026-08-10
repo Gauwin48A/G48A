@@ -1,0 +1,3 @@
+=== VISIBLE TEXTS ===
+Search listings... | &#127968; My Home | ✨ For You | ✨ | NEW ARRIVALS | Fresh Listings Daily | Be the first to grab new items near you | Explore | JUST LISTED | E | E2E Seller | MHub network | · | 2026-08-04 | Test Product 2 | General | Newest | Oldest | Most popular | Most viewed | Price low-high | Zaruda | Home | All Posts | Feed | Rewards | More
+=== CLICKABLE (label @ x,y [class]) ===

@@ -1,0 +1,4 @@
+=== VISIBLE TEXTS ===
+Search listings... | &#127968; My Home | ✨ For You | ✨ | NEW ARRIVALS | Fresh Listings Daily | Be the first to grab new items near you | Explore | JUST LISTED | R | Rohit K. | Mumbai, MH | · | 2024-01-20 | ★ | ☆ | 3.7 | iPhone 14 Pro Max 256GB – Deep Purple | electronics | Phones | 1 year old, excellent condition. Original box, charger and earphones included. No scratches. Battery health 94%. Face ID working perfectly. | Read more | &#128293; | HOT | &#128081; | PREMIUM | ⭐ SPOTLIGHT | USED | Newest | Oldest | Most popular | Most viewed | Price low-high | Zaruda | Home | All Posts | Feed | Rewards | More
+=== CLICKABLE (label @ x,y [class]) ===
+Read more @ 141,1996 [TextView]

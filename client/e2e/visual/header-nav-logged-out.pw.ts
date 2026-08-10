@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isDevServerResource, safeScreenshot } from '../comprehensive/e2e-helpers';
 
 const OUTPUT_DIR = path.resolve(process.cwd(), '..', 'analysis', 'header-nav-audit');
 
@@ -49,6 +50,9 @@ test.describe('Header/Nav Logged-Out', () => {
 
     await page.route('**/api/**', async (route) => {
       const url = route.request().url();
+      if (isDevServerResource(url)) {
+        return route.fallback();
+      }
       if (url.includes('/api/health')) return route.fallback();
       if (url.includes('/api/auth/session')) return route.fallback();
       if (url.includes('/api/auth/me')) {
@@ -106,7 +110,7 @@ test.describe('Header/Nav Logged-Out', () => {
       await page.waitForTimeout(1000);
 
       const screenshotPath = path.join(OUTPUT_DIR, `${route.name}.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await safeScreenshot(page, { path: screenshotPath, fullPage: true });
       console.log(`[header-nav-audit] Saved ${route.name}.png`);
     }
   });

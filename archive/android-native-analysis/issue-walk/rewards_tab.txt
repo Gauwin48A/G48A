@@ -1,0 +1,3 @@
+=== VISIBLE TEXTS ===
+Title | 0/120 | Description | 0/1000 | Pricing &amp; Location | Price | ₹ | Price (₹) | 0 | Location | Category | Publish Listing | Create Listing | Fill in the details below
+=== CLICKABLE (label @ x,y [class]) ===

@@ -1,0 +1,8 @@
+Process: com.zaruda.app, PID: 5966
+java.lang.IllegalArgumentException: Multiple entries with same key: K6.I=true and K6.I=true
+	at com.google.common.collect.ImmutableMap$Builder$DuplicateKey.exception(SourceFile:75)
+	at com.google.common.collect.ImmutableMap$Builder.build(SourceFile:16)
+	at com.google.common.collect.ImmutableMap$Builder.buildOrThrow(SourceFile:2)
+	at com.google.common.collect.ImmutableMap$Builder.build(SourceFile:17)
+	at d6.a.a(SourceFile:453)
+	at com.zaruda.app.MainActivity.d(SourceFile:15)

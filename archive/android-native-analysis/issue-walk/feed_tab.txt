@@ -1,0 +1,3 @@
+=== VISIBLE TEXTS ===
+Welcome to MHub &#127775; | Select the app you want to open. Your choice becomes the active experience. | &#127978; | Electronics | Phones, laptops &amp; gadgets | — | Fashion | Clothing, shoes &amp; accessories | Vehicles | Cars, bikes &amp; spare parts | ✨ | Others | Home, services, jobs &amp; more
+=== CLICKABLE (label @ x,y [class]) ===
