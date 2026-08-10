@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# ============================================================================
+# pre-commit secret scanner
+# Blocks commits that stage credential/secret files or secret-like content.
+# Works in Git for Windows (Git Bash) and any POSIX git.
+#
+# Install (one-time):  git config core.hooksPath .githooks
+# Test:                .githooks/pre-commit
+# ============================================================================
+set -u
+
+# ANSI colors (safe on Windows too)
+RED=$'\033[31m'; YELLOW=$'\033[33m'; NC=$'\033[0m'
+
+# ---------------------------------------------------------------------------
+# 1. BLOCKED FILE NAMES (staged, whole-path match) — the actual files that
+#    leaked in this repo plus every common secret filename.
+# ---------------------------------------------------------------------------
+BLOCKED_FILE_RE='(^|/)(\.env|\.env\.[a-zA-Z0-9._-]+)$|(^|/)(serviceAccountKey\.json|firebase-admin\.json|firebaseServiceAccount\.json)$|\.jks$|\.p12$|\.pfx$|\.pem$|\.key$|\.p8$|\.pkcs8$|keystore\.properties$|\.npmrc$|\.netrc$|id_rsa$|id_dsa$|id_ed25519$|credentials\.json$|client_secret\.json$|secret[^/]*\.(json|yaml|yml|env|txt)$'
+
+# ---------------------------------------------------------------------------
+# 2. SECRET CONTENT PATTERNS (scanned across all staged text files)
+# ---------------------------------------------------------------------------
+# Private key blocks
+PRIVATE_KEY_RE='BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY'
+# Google/Firebase/AWS/Stripe/Razorpay API keys
+API_KEY_RE='AIza[0-9A-Za-z_\-]{35}|AKIA[0-9A-Z]{16}|sk_live_[0-9a-zA-Z]{20,}|rzp_(live|test)_[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{36}|xox[baprs]-[0-9A-Za-z-]{10,}|ya29\.[0-9A-Za-z_\-]+'
+# DB / connection strings carrying credentials
+DB_URL_RE='(postgres|postgresql|mysql|mongodb(\+srv)?|redis|rediss)://[^/]+:[^/]+@'
+# Generic high-signal assignments
+GENERIC_SECRET_RE='(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|token)[[:space:]]*[:=][[:space:]]*["'\''`]?[A-Za-z0-9_\-\.]{16,}'
+
+# Files never scanned (binary, lockfiles, vendor, tests/fixtures that
+# legitimately contain fake keys, and this hook itself).
+SKIP_RE='(^|/)(node_modules|vendor|dist|build|\.gradle|target|archive)/|package-lock\.json$|yarn\.lock$|\.min\.(js|css)$|\.map$|(test|spec|fixture)[^/]*\.(js|jsx|ts|tsx|json)$|\.githooks/'
+
+violations=0
+
+# ---- helper: print violation ----------------------------------------------
+warn() {
+  violations=$((violations + 1))
+  printf '%s[SECRET]%s %s: %s\n' "$RED" "$NC" "$2" "$1"
+}
+
+# ---- scan staged file names ------------------------------------------------
+while IFS= read -r fname; do
+  [ -z "$fname" ] && continue
+  if printf '%s' "$fname" | grep -qE "$BLOCKED_FILE_RE"; then
+    warn "$fname" "blocked file"
+  fi
+done < <(git diff --cached --name-only -z | tr '\0' '\n')
+
+# ---- scan staged file contents ---------------------------------------------
+while IFS= read -r fname; do
+  [ -z "$fname" ] && continue
+  # skip binary / vendor / test files
+  printf '%s' "$fname" | grep -qE "$SKIP_RE" && continue
+  # only scan files that look textual
+  file "$fname" 2>/dev/null | grep -qiE 'text|json|script|source|empty' || continue
+
+  blob=$(git show ":$fname" 2>/dev/null) || continue
+
+  if printf '%s' "$blob" | grep -qE "$PRIVATE_KEY_RE"; then
+    warn "$fname" "private key material"
+  fi
+  if printf '%s' "$blob" | grep -qE "$API_KEY_RE"; then
+    warn "$fname" "API key"
+  fi
+  if printf '%s' "$blob" | grep -qE "$DB_URL_RE"; then
+    warn "$fname" "connection string with credentials"
+  fi
+  if printf '%s' "$blob" | grep -qE "$GENERIC_SECRET_RE"; then
+    warn "$fname" "possible secret assignment"
+  fi
+done < <(git diff --cached --name-only -z | tr '\0' '\n')
+
+# ---- result ----------------------------------------------------------------
+if [ "$violations" -gt 0 ]; then
+  printf '\n%sCommit blocked: %d secret(s) found in staged changes.%s\n' "$RED" "$violations" "$NC"
+  printf '%sFix: remove the files/values above, or if they are test fixtures add them to the SKIP_RE / allowed list in .githooks/pre-commit.%s\n' "$YELLOW" "$NC"
+  exit 1
+fi
+
+exit 0

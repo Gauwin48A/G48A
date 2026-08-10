@@ -1782,7 +1782,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 
   /* --- Mobile: Rewards impact dashboard Ã¢â‚¬â€ make cards more compact --- */
-  .rewards-surface .grid.grid-cols-1.md\\:grid-cols-3 {
+  .rewards-surface .grid.grid-cols-1.md\:grid-cols-3 {
     gap: 8px !important;
   }
 
@@ -1818,7 +1818,7 @@ html[data-native-platform] .location-accuracy-badge-close {
   }
 
   /* --- Mobile-compact: CategoryHub tiles --- */
-  .min-h-\\[100dvh\\] .grid.grid-cols-2 {
+  .min-h-\[100dvh\] .grid.grid-cols-2 {
     gap: 8px !important;
   }
 

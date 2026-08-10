@@ -847,7 +847,7 @@ button[type="submit"]:active {
   }
   
   /* Catch any remaining tiny text in cards / nav / badges */
-  .text-\\[10px\\], .text-\\[11px\\],
+  .text-\[10px\], .text-\[11px\],
   .text-xs {
     font-size: 12px !important;
   }
