@@ -240,12 +240,64 @@ const storeRefreshSession = async (userId, refreshToken, req) => {
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
   const userAgent = req.headers['user-agent'] || 'Unknown Device';
   const deviceFingerprint = req.body?.deviceSpecs || userAgent;
+
+  // ── Multi-Device / Concurrent Location Anti-Spam & Fraud Guard ──────
+  try {
+    const recentSessions = await runQuery(
+      `SELECT COUNT(DISTINCT device_fingerprint) AS distinct_devices,
+              COUNT(DISTINCT ip_address) AS distinct_ips
+       FROM user_sessions
+       WHERE user_id = $1
+         AND created_at > NOW() - INTERVAL '1 hour'`,
+      [userId]
+    );
+    const distinctDevices = parseInt(recentSessions.rows[0]?.distinct_devices || '0', 10);
+    const distinctIps = parseInt(recentSessions.rows[0]?.distinct_ips || '0', 10);
+
+    // If logged in from 3+ distinct devices or IPs within 1 hour -> Block & Suspend Account
+    if (distinctDevices >= 3 || distinctIps >= 3) {
+      logger.warn(`[SECURITY] Account ${userId} locked due to rapid multi-device/location login spam: ${distinctDevices} devices, ${distinctIps} IPs.`);
+      await runQuery(
+        `UPDATE users
+         SET lock_until = NOW() + INTERVAL '24 hours',
+             login_attempts = 5
+         WHERE user_id = $1`,
+        [userId]
+      );
+      await revokeAllRefreshSessions(userId);
+      await runQuery(
+        `INSERT INTO audit_logs (user_id, action, ip_address, user_agent)
+         VALUES ($1, 'ACCOUNT_BLOCKED_SUSPICIOUS_MULTI_DEVICE', $2, $3)`,
+        [userId, clientIp, userAgent]
+      );
+      const err = new Error('Account suspended due to suspicious multi-device login activity across multiple locations. Contact support.');
+      err.code = 'MULTI_DEVICE_SPAM_BLOCKED';
+      err.status = 403;
+      throw err;
+    }
+
+    // Revoke previous sessions on other devices to enforce single active device security
+    await runQuery(
+      `UPDATE user_sessions
+       SET is_active = false
+       WHERE user_id = $1
+         AND device_fingerprint != $2`,
+      [userId, deviceFingerprint]
+    );
+  } catch (secErr) {
+    if (secErr.code === 'MULTI_DEVICE_SPAM_BLOCKED') throw secErr;
+    logger.warn('[SECURITY] Non-fatal multi-device check notice:', secErr.message);
+  }
+
   const insertResult = await runQuery(
-    `INSERT INTO user_sessions (user_id, token_hash, device_fingerprint, ip_address, user_agent, expires_at)\n     VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')\n     RETURNING session_id`,
+    `INSERT INTO user_sessions (user_id, token_hash, device_fingerprint, ip_address, user_agent, expires_at)
+     VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')
+     RETURNING session_id`,
     [userId, tokenHash, deviceFingerprint, clientIp, userAgent],
   );
   return { sessionId: insertResult.rows[0]?.session_id || null };
 };
+
 const findMatchingRefreshSession = async (userId, incomingToken) => {
   await ensureUserSessionsSchema();
   const sessions = await runQuery(
@@ -895,11 +947,21 @@ exports.logout = async (req, res) => {
   }
   res.json({ message: 'Logged out successfully' });
 };
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 exports.getMe = async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+    // Legacy/invalid tokens may carry an integer or malformed subject id that
+    // cannot be compared against users.user_id (UUID). Treat those as stale
+    // sessions (401) so the app clears the token and re-prompts login, instead
+    // of surfacing a confusing 500 "Server error" on the profile screen.
+    if (!UUID_REGEX.test(String(userId))) {
+      logger.warn(`[GET ME] Rejecting non-UUID subject id: ${String(userId).slice(0, 12)}`);
+      return res.status(401).json({ error: 'Session is stale. Please login again.' });
     }
     const rewardsAvailable = await resolveRewardsTableAvailability();
     let user;

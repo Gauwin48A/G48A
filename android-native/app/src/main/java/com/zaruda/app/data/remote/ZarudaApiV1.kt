@@ -211,4 +211,14 @@ interface ZarudaApiV1 {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20,
     ): UserSoldPostsResponseV1
+
+    // ---- User Bought Posts (public trust signal) ----
+
+    @GET("api/v1/posts/user/{userId}/bought")
+    suspend fun getUserBoughtPosts(
+        @Path("userId") userId: String,
+        @Query("category") category: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20,
+    ): UserBoughtPostsResponseV1
 }

@@ -213,7 +213,7 @@ class CategoriesRepository @Inject constructor(
     }
     suspend fun stats(): ApiResult<List<CategoryStat>> = safeApiCall { api.categoryStats().stats }
     suspend fun subcategories(categoryId: String): ApiResult<List<Category>> =
-        safeApiCall { api.subcategories(categoryId).items }
+        safeApiCall { api.subcategories(categoryId) }
 }
 
 @Singleton
@@ -239,7 +239,10 @@ class WishlistRepository @Inject constructor(private val api: ZarudaApi) {
         cachedItems = cachedItems?.filterNot { it.stableId == postId }
         return safeApiCall { api.removeWishlist(postId); Unit }
     }
-
+    suspend fun toggle(postId: String): ApiResult<Boolean> = safeApiCall {
+        val resp = api.toggleWishlist(postId)
+        resp.inWishlist ?: true
+    }
 }
 
 @Singleton
@@ -313,38 +316,6 @@ class NotificationsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteNotification(id); Unit }
     suspend fun snooze(id: String, duration: Int = 60): ApiResult<Unit> = safeApiCall {
         api.snoozeNotification(id, SnoozeRequest(duration)); Unit
-    }
-}
-
-@Singleton
-class ChatRepository @Inject constructor(private val api: ZarudaApi) {
-    suspend fun conversations(): ApiResult<List<com.zaruda.app.domain.model.ChatConversation>> = safeApiCall {
-        api.conversations().conversations
-    }
-    suspend fun messages(conversationId: String): ApiResult<List<com.zaruda.app.domain.model.ChatMessage>> = safeApiCall {
-        api.messages(conversationId).items
-    }
-    suspend fun send(conversationId: String, content: String): ApiResult<Unit> = safeApiCall {
-        api.sendMessage(conversationId, SendMessageRequest(content = content)); Unit
-    }
-    suspend fun deleteMessage(conversationId: String, messageId: String): ApiResult<Unit> = safeApiCall {
-        api.deleteChatMessage(conversationId, messageId); Unit
-    }
-    suspend fun blockUser(userId: String): ApiResult<Unit> = safeApiCall {
-        api.blockUser(userId); Unit
-    }
-    suspend fun reportConversation(conversationId: String): ApiResult<Unit> = safeApiCall {
-        api.reportConversation(conversationId, ChatReportRequest("spam")); Unit
-    }
-    suspend fun addReaction(messageId: String, emoji: String): ApiResult<Unit> = safeApiCall {
-        api.addMessageReaction(messageId, ChatReactionRequest(emoji)); Unit
-    }
-    suspend fun markConversationRead(conversationId: String): ApiResult<Unit> = safeApiCall {
-        api.markConversationRead(conversationId); Unit
-    }
-    suspend fun uploadChatFile(bytes: ByteArray, mimeType: String): ApiResult<String> = safeApiCall {
-        val body = bytes.toRequestBody(mimeType.toMediaType())
-        api.uploadChatFile(body).url ?: error("No URL returned from upload")
     }
 }
 
@@ -549,10 +520,6 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
         api.createRazorpayOrder(RazorpayOrderRequest(amount = 0.0, tierId = req.tierId)); Unit
     }
 
-    /** Activate the 7-day Premium free trial via /api/subscriptions/claim-trial. */
-    suspend fun activateTrial(): ApiResult<Unit> = safeApiCall {
-        api.claimTrial(); Unit
-    }
     suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall {
         // Cancel not available in new API; return success
         Unit
@@ -726,10 +693,62 @@ class ProfileRepository @Inject constructor(private val api: ZarudaApi) {
 }
 
 @Singleton
-class DraftRepository @Inject constructor(private val api: ZarudaApi) {
-    suspend fun get(): ApiResult<DraftResponse> = safeApiCall { api.getDraft() }
-    suspend fun save(req: DraftRequest): ApiResult<Unit> = safeApiCall { api.saveDraft(req); Unit }
-    suspend fun clear(): ApiResult<Unit> = safeApiCall { api.clearDraft(); Unit }
+class DraftRepository @Inject constructor(
+    private val api: ZarudaApi,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+) {
+    private val prefs by lazy { context.getSharedPreferences("post_draft_cache", android.content.Context.MODE_PRIVATE) }
+
+    suspend fun get(): ApiResult<DraftResponse> {
+        val remote = safeApiCall { api.getDraft() }
+        if (remote is ApiResult.Success && (remote.data.title != null || remote.data.description != null || remote.data.price != null)) {
+            return remote
+        }
+        val cachedTitle = prefs.getString("draft_title", null)
+        val cachedDesc = prefs.getString("draft_desc", null)
+        val cachedPrice = prefs.getString("draft_price", null)?.toDoubleOrNull()
+        val cachedCategory = prefs.getString("draft_category", null)
+        val cachedBrand = prefs.getString("draft_brand", null)
+        val cachedModel = prefs.getString("draft_model", null)
+        val cachedLocation = prefs.getString("draft_location", null)
+        val cachedContact = prefs.getString("draft_contact", null)
+
+        if (cachedTitle != null || cachedDesc != null || cachedPrice != null) {
+            return ApiResult.Success(
+                DraftResponse(
+                    title = cachedTitle,
+                    description = cachedDesc,
+                    price = cachedPrice,
+                    categoryId = cachedCategory,
+                    brand = cachedBrand,
+                    model = cachedModel,
+                    location = cachedLocation,
+                    contactNumber = cachedContact
+                )
+            )
+        }
+        return remote
+    }
+
+    suspend fun save(req: DraftRequest): ApiResult<Unit> {
+        prefs.edit().apply {
+            putString("draft_title", req.title)
+            putString("draft_desc", req.description)
+            putString("draft_price", req.price?.toString())
+            putString("draft_category", req.categoryId)
+            putString("draft_brand", req.brand)
+            putString("draft_model", req.model)
+            putString("draft_location", req.location)
+            putString("draft_contact", req.contactNumber)
+            apply()
+        }
+        return safeApiCall { api.saveDraft(req); Unit }
+    }
+
+    suspend fun clear(): ApiResult<Unit> {
+        prefs.edit().clear().apply()
+        return safeApiCall { api.clearDraft(); Unit }
+    }
 }
 
 @Singleton

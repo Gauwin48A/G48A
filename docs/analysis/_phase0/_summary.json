@@ -1,0 +1,18 @@
+{
+  "phase": "0",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "generatedAt": "2026-08-03T16:32:21.623Z",
+  "pages": [
+    {
+      "name": "category-hub",
+      "path": "/category-hub",
+      "score": 9.9,
+      "blockers": 0,
+      "warnings": 1,
+      "navError": null
+    }
+  ]
+}

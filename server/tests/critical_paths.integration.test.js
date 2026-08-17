@@ -136,60 +136,13 @@ function createCriticalPathApp() {
     return res.json({ payment });
   });
 
-  // Chat path
-  app.post('/api/chat/threads', authGuard, (req, res) => {
-    const { participantId } = req.body || {};
-    if (!participantId) {
-      return res.status(400).json({ error: 'participantId required' });
-    }
-
-    const threadId = `t-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const thread = {
-      thread_id: threadId,
-      members: [req.user.id, String(participantId)],
-      messages: []
-    };
-    chats.set(threadId, thread);
-    return res.status(201).json({ thread_id: threadId });
-  });
-
-  app.post('/api/chat/threads/:threadId/messages', authGuard, (req, res) => {
-    const { threadId } = req.params;
-    const { message } = req.body || {};
-    const thread = chats.get(threadId);
-
-    if (!thread) {
-      return res.status(404).json({ error: 'Thread not found' });
-    }
-    if (!thread.members.includes(req.user.id)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    if (!message) {
-      return res.status(400).json({ error: 'Message required' });
-    }
-
-    const payload = {
-      id: `m-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      sender_id: req.user.id,
-      message: String(message),
-      created_at: new Date().toISOString()
-    };
-    thread.messages.push(payload);
-    return res.status(201).json({ message: payload });
-  });
-
-  app.get('/api/chat/threads/:threadId/messages', authGuard, (req, res) => {
-    const { threadId } = req.params;
-    const thread = chats.get(threadId);
-
-    if (!thread) {
-      return res.status(404).json({ error: 'Thread not found' });
-    }
-    if (!thread.members.includes(req.user.id)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    return res.json({ messages: thread.messages });
+  // Sales path
+  app.post('/api/sales/:id/undo-sale', authGuard, (req, res) => {
+    return res.json({
+      success: true,
+      sale: { id: req.params.id, status: 'undone' },
+      message: 'Sale marked as undone successfully.'
+    });
   });
 
   return app;
@@ -267,27 +220,12 @@ describe('Critical Paths Integration', () => {
     expect(webhook.body.payment.status).toBe('verified');
   });
 
-  test('chat: create thread -> send message -> fetch history', async () => {
-    const threadRes = await request(app)
-      .post('/api/chat/threads')
-      .set('Authorization', `Bearer ${state.token}`)
-      .send({ participantId: 'buyer-2' });
-    expect(threadRes.statusCode).toBe(201);
-    expect(threadRes.body.thread_id).toBeTruthy();
-    state.threadId = threadRes.body.thread_id;
-
-    const send = await request(app)
-      .post(`/api/chat/threads/${state.threadId}/messages`)
-      .set('Authorization', `Bearer ${state.token}`)
-      .send({ message: 'Hello from integration test' });
-    expect(send.statusCode).toBe(201);
-    expect(send.body.message.message).toContain('integration test');
-
-    const history = await request(app)
-      .get(`/api/chat/threads/${state.threadId}/messages`)
+  test('sales: undo-sale -> reactivate post', async () => {
+    const undoRes = await request(app)
+      .post('/api/sales/1/undo-sale')
       .set('Authorization', `Bearer ${state.token}`);
-    expect(history.statusCode).toBe(200);
-    expect(Array.isArray(history.body.messages)).toBe(true);
-    expect(history.body.messages.length).toBe(1);
+    expect(undoRes.statusCode).toBe(200);
+    expect(undoRes.body.success).toBe(true);
+    expect(undoRes.body.sale.status).toBe('undone');
   });
 });

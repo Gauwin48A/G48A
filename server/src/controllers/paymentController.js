@@ -78,6 +78,39 @@ async function ensureSalePaymentColumns() {
 }
 module.exports.ensureSalePaymentColumns = ensureSalePaymentColumns;
 
+/** Normalise a plan display name ("Starter Plan"/"Premium") into a tier slug. */
+function tierSlug(planName) {
+  const raw = String(planName || "basic").trim().toLowerCase();
+  if (raw.includes("starter")) return "starter";
+  if (raw.includes("premium")) return "premium";
+  if (raw.includes("gold")) return "gold";
+  if (raw.includes("silver")) return "silver";
+  if (raw.includes("bronze")) return "bronze";
+  if (raw.includes("basic")) return "basic";
+  return raw || "basic";
+}
+
+/**
+ * Write every plan-gating column on users (tier, current_plan, current_tier,
+ * subscription_expiry) after a plan purchase/activation. Keeps the payment flow
+ * and the post-creation/image-limit gating (which read current_plan/tier) in sync.
+ */
+async function syncUserPlanColumns(userId, planName, durationDays) {
+  const slug = tierSlug(planName);
+  let expiry = null;
+  if (slug !== "basic" && Number(durationDays) > 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + Number(durationDays));
+    expiry = d;
+  }
+  await runQuery(
+    `UPDATE users
+     SET current_tier = $1, current_plan = $1, tier = $1, subscription_expiry = $2, updated_at = NOW()
+     WHERE user_id::text = $3`,
+    [slug, expiry, userId]
+  );
+}
+
 /**
  * POST /api/payments/razorpay/order
  * Create a Razorpay Order.
@@ -519,7 +552,7 @@ exports.handleWebhook = async (req, res) => {
           [paymentId, sp.sale_id]
         );
         await runQuery(
-          `UPDATE sales SET razorpay_payment_id=$1, payment_status='PAID', paid_at=NOW(), razorpay_hold=true, updated_at=NOW() WHERE id=$2`,
+          `UPDATE sales SET razorpay_payment_id=$1, payment_status='PAID', paid_at=NOW(), updated_at=NOW() WHERE id=$2`,
           [paymentId, sp.sale_id]
         );
         logger.info(`[WEBHOOK] Sale #${sp.sale_id} payment captured (${paymentId}) — funds held in escrow`);
@@ -635,13 +668,10 @@ exports.handleWebhook = async (req, res) => {
         [tx.user_id, tx.plan_id, endDate]
       );
 
-      // Update user tier
-      await runQuery(
-        `UPDATE users SET current_tier = $1 WHERE user_id::text = $2`,
-        [planName, tx.user_id]
-      );
+    // Update user tier — write every gating column (tier/current_plan/current_tier/subscription_expiry)
+    await syncUserPlanColumns(tx.user_id, planName, durationDays);
 
-      logger.info(`[WEBHOOK] Successfully activated subscription for user ${tx.user_id}`);
+    logger.info(`[WEBHOOK] Successfully activated subscription for user ${tx.user_id}`);
     } else if (event === "payment.failed") {
       await runQuery(
         `UPDATE payment_transactions 
@@ -819,9 +849,12 @@ exports.verifyRazorpayPayment = async (req, res) => {
         [paymentId, signature, sp.sale_id]
       );
       // Mark the sale paid; funds are HELD (escrow) until buyer confirms receipt.
+      // NOTE: razorpay_hold is deliberately NOT set here — it flags a DISPUTE hold
+      // only (set by disputes/chargebacks/fraud). The normal escrow hold is implicit
+      // and must not block settlement in salesController.amountReceived.
       await runQuery(
         `UPDATE sales
-         SET razorpay_payment_id = $1, payment_status = 'PAID', paid_at = NOW(), razorpay_hold = true, updated_at = NOW()
+         SET razorpay_payment_id = $1, payment_status = 'PAID', paid_at = NOW(), updated_at = NOW()
          WHERE id = $2`,
         [paymentId, sp.sale_id]
       );
@@ -918,11 +951,8 @@ exports.verifyRazorpayPayment = async (req, res) => {
       [tx.user_id, tx.plan_id, endDate]
     );
 
-    // Update user tier
-    await runQuery(
-      `UPDATE users SET current_tier = $1 WHERE user_id::text = $2`,
-      [planName, tx.user_id]
-    );
+    // Update user tier — write every gating column (tier/current_plan/current_tier/subscription_expiry)
+    await syncUserPlanColumns(tx.user_id, planName, durationDays);
 
     logger.info(`[PAYMENT] Successfully activated subscription for user ${tx.user_id} via instant verification`);
 

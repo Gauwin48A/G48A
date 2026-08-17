@@ -2,11 +2,12 @@
  * financialEngine.js - Authoritative Financial Engine & Snapshot Manager
  *
  * Implements:
- * 1. Single Rounding Rule:
- *    - platform_fee = round(agreed_price * commission_rate, 2)
- *    - gst_on_fee = round(platform_fee * 0.18, 2)
- *    - seller_payout = agreed_price - platform_fee - gst_on_fee
- *    - Guaranteed invariant: platform_fee + gst_on_fee + seller_payout == agreed_price
+ * 1. Single Rounding Rule (all-inclusive):
+ *    - platform_fee = round(agreed_price * commission_rate, 2)  // TOTAL the platform keeps (GST-inclusive)
+ *    - net_fee      = round(platform_fee / (1 + gst_rate), 2)   // platform's net revenue
+ *    - gst_on_fee   = platform_fee - net_fee                    // GST portion booked out of the fee
+ *    - seller_payout = agreed_price - platform_fee              // seller receives the full remaining balance
+ *    - Guaranteed invariant: net_fee + gst_on_fee + seller_payout == agreed_price
  * 2. Immutable Calculation Snapshots:
  *    - Freezes calculation rules (commission_rate, gst_rate, plan) at order/sale creation
  *    - Historical transactions never recalculate if subscription expires or rates change.
@@ -15,8 +16,8 @@
 const { runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 
-const CALCULATION_VERSION = "2026.1_AUTHORITATIVE";
-const DEFAULT_GST_RATE = 0.18; // 18% GST on platform fee
+const CALCULATION_VERSION = "2026.2_ALL_INCLUSIVE";
+const DEFAULT_GST_RATE = 0.18; // 18% GST, absorbed inside the all-inclusive platform fee
 
 /**
  * Calculate settlement amounts using the single rounding rule.
@@ -30,17 +31,18 @@ const calculateSettlement = (agreedPrice, commissionRate = 0.025, gstRate = DEFA
   const commRate = Math.max(0, parseFloat(commissionRate) || 0);
   const taxRate = Math.max(0, parseFloat(gstRate) || 0);
 
-  // 1. Calculate platform fee & round to 2 decimals
+  // 1. Platform keeps commissionRate of the price — ALL-INCLUSIVE (GST absorbed inside it)
   const platformFee = Math.round(price * commRate * 100) / 100;
 
-  // 2. Calculate GST on platform fee & round to 2 decimals
-  const gstOnFee = Math.round(platformFee * taxRate * 100) / 100;
+  // 2. Book the GST portion out of the fee (fee is GST-inclusive)
+  const netFee = Math.round((platformFee / (1 + taxRate)) * 100) / 100;
+  const gstOnFee = Math.round((platformFee - netFee) * 100) / 100;
 
-  // 3. Derive seller payout directly from remaining balance (prevents independent rounding drift)
-  const sellerPayout = Math.round((price - platformFee - gstOnFee) * 100) / 100;
+  // 3. Seller receives the full remaining balance
+  const sellerPayout = Math.round((price - platformFee) * 100) / 100;
 
-  // 4. Verify invariant
-  const checksum = Math.round((platformFee + gstOnFee + sellerPayout) * 100) / 100;
+  // 4. Verify invariant: netFee + gstOnFee + sellerPayout == price
+  const checksum = Math.round((netFee + gstOnFee + sellerPayout) * 100) / 100;
   if (Math.abs(checksum - price) > 0.001) {
     logger.warn(`[FinancialEngine] Discrepancy detected: checksum ${checksum} vs price ${price}`);
   }
@@ -49,6 +51,7 @@ const calculateSettlement = (agreedPrice, commissionRate = 0.025, gstRate = DEFA
     agreedPrice: price,
     commissionRate: commRate,
     platformFee,
+    netFee,
     gstRate: taxRate,
     gstOnFee,
     sellerPayout,

@@ -156,12 +156,31 @@ fun OrderHistoryScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // Tab row
+            // Disclaimer Banner
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "🛡️ Platform facilitates verified discovery & escrow protection for electronics. Buyers must verify items upon physical exchange.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+
+            // Tab row: Bought Posts vs Sold Posts
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                listOf("Purchases" to 0, "Sales" to 1).forEach { (label, idx) ->
+                listOf("🛍️ Bought Posts" to 0, "🏷️ Sold Posts" to 1).forEach { (label, idx) ->
                     Surface(
                         onClick = { viewModel.selectTab(idx) },
                         shape = RoundedCornerShape(20.dp),

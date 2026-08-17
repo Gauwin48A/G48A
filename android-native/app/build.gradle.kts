@@ -42,8 +42,9 @@ android {
         applicationId = "com.zaruda.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
+
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -53,12 +54,6 @@ android {
             "String",
             "DEFAULT_API_BASE_URL",
             "\"$stagingApiBaseUrl\""
-        )
-        // Google OAuth 2.0 Web Client ID — set GOOGLE_WEB_CLIENT_ID in local.properties
-        buildConfigField(
-            "String",
-            "GOOGLE_WEB_CLIENT_ID",
-            "\"${localProp("GOOGLE_WEB_CLIENT_ID")}\""
         )
         buildConfigField(
             "String",
@@ -211,11 +206,6 @@ dependencies {
 
     // Accompanist system UI / permissions
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
-
-    // Google Sign-In via Credential Manager
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // Firebase BOM — manages all Firebase library versions
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))

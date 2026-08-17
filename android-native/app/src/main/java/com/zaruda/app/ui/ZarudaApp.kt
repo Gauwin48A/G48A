@@ -20,10 +20,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Explore
@@ -31,9 +32,7 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Explore
@@ -119,7 +118,8 @@ import com.zaruda.app.ui.commerce.PaymentScreen
 import com.zaruda.app.ui.commerce.PostWelcomeScreen
 import com.zaruda.app.ui.commerce.RecentlyViewedScreen
 import com.zaruda.app.ui.commerce.SaleDoneScreen
-import com.zaruda.app.ui.commerce.SaleUndoneScreen
+import com.zaruda.app.ui.commerce.ExpiryActionScreen
+import com.zaruda.app.ui.commerce.RepostScreen
 import com.zaruda.app.ui.commerce.SavedSearchesScreen
 import com.zaruda.app.ui.commerce.SoldPostsScreen
 import com.zaruda.app.ui.commerce.TierSelectionScreen
@@ -134,7 +134,7 @@ import com.zaruda.app.ui.legal.InviteScreen
 import com.zaruda.app.ui.legal.NotFoundScreen
 import com.zaruda.app.ui.legal.PrivacyScreen
 import com.zaruda.app.ui.legal.RefundScreen
-import com.zaruda.app.ui.legal.SupportPolicyScreen
+import com.zaruda.app.ui.legal.HelpSupportScreen
 import com.zaruda.app.ui.legal.TermsScreen
 import com.zaruda.app.ui.more.MoreScreen
 import com.zaruda.app.ui.navigation.Routes
@@ -160,6 +160,7 @@ import com.zaruda.app.ui.social.PublicWallScreen
 import com.zaruda.app.ui.social.RatingsScreen
 import com.zaruda.app.ui.theme.ZarudaTheme
 import com.zaruda.app.ui.wishlist.WishlistScreen
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import com.zaruda.app.core.ConnectivityObserver
 import com.zaruda.app.ui.components.OfflineBanner
 import com.zaruda.app.ui.components.ZarudaTopBar
@@ -204,33 +205,31 @@ class SellFlowViewModel @Inject constructor(
     private val tiersRepo: TiersRepository,
     private val authRepo: com.zaruda.app.data.repository.AuthRepository,
 ) : ViewModel() {
+    /** True when the KYC status string means the user is verified. */
+    private fun isKycVerified(status: String?): Boolean {
+        val s = status?.lowercase()?.trim()
+        return s == "verified" || s == "approved" || s == "pan_verified"
+    }
+
     /** Returns the route to navigate to when the sell button is tapped. */
     suspend fun resolveDestination(): String {
         // Demo sessions have premium + KYC enabled by design — go straight to post welcome
         if (authRepo.isDemoSession) return com.zaruda.app.ui.navigation.Routes.POST_WELCOME
-        // Free 3-month launch promo: skip subscription check
-        if (com.zaruda.app.core.FreeLaunchPlan.isActive()) {
-            // Still require KYC
-            when (val kycResult = kycRepo.status()) {
-                is ApiResult.Success -> {
-                    if (kycResult.data.kycStatus != "approved") return com.zaruda.app.ui.navigation.Routes.KYC
-                }
-                is ApiResult.Failure -> return com.zaruda.app.ui.navigation.Routes.KYC
-            }
-            return com.zaruda.app.ui.navigation.Routes.POST_WELCOME
-        }
-        when (val kycResult = kycRepo.status()) {
-            is ApiResult.Success -> {
-                val status = kycResult.data.kycStatus
-                if (status != "approved") return com.zaruda.app.ui.navigation.Routes.KYC
-            }
-            is ApiResult.Failure -> return com.zaruda.app.ui.navigation.Routes.KYC
-        }
+        // Full access requires BOTH verified KYC AND an active subscription (any plan).
+        // Plan is checked first: the server gates every /kyc/* endpoint behind an
+        // active subscription (requireActivePlan), so KYC without a plan would hit a
+        // 403 dead-end on submit. This matches the web flow (plan, then KYC).
         when (val subResult = tiersRepo.mySubscription()) {
             is ApiResult.Success -> {
                 if (!subResult.data.active) return com.zaruda.app.ui.navigation.Routes.TIER_SELECTION
             }
             is ApiResult.Failure -> return com.zaruda.app.ui.navigation.Routes.TIER_SELECTION
+        }
+        when (val kycResult = kycRepo.status()) {
+            is ApiResult.Success -> {
+                if (!isKycVerified(kycResult.data.kycStatus)) return com.zaruda.app.ui.navigation.Routes.KYC
+            }
+            is ApiResult.Failure -> return com.zaruda.app.ui.navigation.Routes.KYC
         }
         return com.zaruda.app.ui.navigation.Routes.POST_WELCOME
     }
@@ -239,8 +238,6 @@ class SellFlowViewModel @Inject constructor(
     suspend fun checkSubscriptionOnly(): Boolean {
         // Demo sessions have premium enabled by design
         if (authRepo.isDemoSession) return true
-        // Free 3-month launch promo: everyone can post
-        if (com.zaruda.app.core.FreeLaunchPlan.isActive()) return true
         return when (val subResult = tiersRepo.mySubscription()) {
             is ApiResult.Success -> subResult.data.active
             is ApiResult.Failure -> false
@@ -281,21 +278,6 @@ fun ZarudaApp(
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
         val exitScope = rememberCoroutineScope()
 
-        fun normalizeMarketplaceCategoryKey(raw: String?): String {
-            val value = raw?.lowercase()?.trim().orEmpty()
-            return when {
-                value in setOf("electronics", "fashion", "vehicles", "others") -> value
-                value.contains("electron") || value.contains("phone") || value.contains("laptop") ||
-                    value.contains("camera") || value.contains("audio") || value.contains("gadget") -> "electronics"
-                value.contains("fashion") || value.contains("cloth") || value.contains("apparel") ||
-                    value.contains("shoe") || value.contains("bag") || value.contains("watch") -> "fashion"
-                value.contains("vehicle") || value.contains("car") || value.contains("bike") ||
-                    value.contains("motor") || value.contains("cycle") || value.contains("truck") ||
-                    value.contains("scooter") || value.contains("spare") -> "vehicles"
-                else -> "others"
-            }
-        }
-
         fun openAllPosts(categoryKey: String? = null) {
             activeCategoryKey = categoryKey
             navController.navigate(Routes.ALL_POSTS) {
@@ -304,8 +286,11 @@ fun ZarudaApp(
             }
         }
 
-        fun openCategoryInAllPosts(rawCategoryKey: String?) {
-            openAllPosts(normalizeMarketplaceCategoryKey(rawCategoryKey))
+        /** Open the dedicated category mini-app (CategoryAppShell with its own 5-tab
+         *  Home/Categories/Cart/Wishlist/Profile nav) for the given raw category key. */
+        fun openCategoryApp(rawCategoryKey: String?) {
+            val safeKey = normalizeMarketplaceCategoryKey(rawCategoryKey)
+            navController.navigate(Routes.categoryDetail(safeKey)) { launchSingleTop = true }
         }
 
         /** Pop back stack; navigate to [fallback] if there's no back stack entry. */
@@ -518,7 +503,7 @@ fun ZarudaApp(
                                     putString("entry_type", "mapped_category")
                                 },
                             )
-                            openAllPosts(mapped)
+                            openCategoryApp(mapped)
                         },
                         onOpenAllPosts = {
                             openAllPosts(null)
@@ -533,7 +518,7 @@ fun ZarudaApp(
                                     putString("entry_type", "direct_card")
                                 },
                             )
-                            openAllPosts(safeKey)
+                            openCategoryApp(safeKey)
                         },
                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
@@ -570,6 +555,8 @@ fun ZarudaApp(
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
+                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
                         )
@@ -594,6 +581,8 @@ fun ZarudaApp(
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
+                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
                         )
@@ -651,7 +640,7 @@ fun ZarudaApp(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
                             onOpenSaleDone = { navController.navigate(Routes.saleDoneTab()) { launchSingleTop = true } },
-                            onOpenSaleUndone = { navController.navigate(Routes.SALE_UNDONE) { launchSingleTop = true } },
+                            onOpenSaleUndone = { navController.navigate(Routes.REPOST) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
                         )
@@ -698,6 +687,8 @@ fun ZarudaApp(
                 composable(Routes.WISHLIST) {
                     MainShell(navController = navController, selected = BottomTab.PROFILE) {
                         val catKey = LocalActiveCategoryKey.current
+                        // Wishlist is category-scoped: when opened from a category app it
+                        // only shows that category's saved items.
                         WishlistScreen(onBack = { navController.popBackStack() }, onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } }, categoryKey = catKey)
                     }
                 }
@@ -711,7 +702,7 @@ fun ZarudaApp(
                     PostDetailScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                    onOpenCategory = { key -> openCategoryInAllPosts(key) },
+                    onOpenCategory = { key -> openCategoryApp(key) },
                     onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
                     onOpenSale = { postId, sellerId ->
                         navController.navigate(Routes.saleDone(postId, sellerId)) { launchSingleTop = true }
@@ -739,7 +730,7 @@ fun ZarudaApp(
                     CategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onCategoryClick = { _, name ->
-                            openCategoryInAllPosts(name)
+                            openCategoryApp(name)
                         },
                     )
                 }
@@ -749,7 +740,7 @@ fun ZarudaApp(
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
                     com.zaruda.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenCategory = { catKey -> openCategoryInAllPosts(catKey) },
+                        onOpenCategory = { catKey -> openCategoryApp(catKey) },
                     )
                 }
             }
@@ -803,7 +794,7 @@ fun ZarudaApp(
                     onBack = { navController.popBackStack() },
                     onSelectApp = { appKey ->
                         if (appKey.isNotBlank()) {
-                            openCategoryInAllPosts(appKey)
+                            openCategoryApp(appKey)
                         } else {
                             navController.popBackStack()
                         }
@@ -867,17 +858,17 @@ fun ZarudaApp(
                     }
                 }
                 CompositionLocalProvider(LocalActiveCategoryKey provides key) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, showBottomBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, showBottomBar = false) {
                         val catKey = key ?: "others"
                         com.zaruda.app.ui.categoryapp.CategoryAppShell(
                             categoryKey = catKey,
-                            useExternalBottomNav = true,
+                            useExternalBottomNav = false,
                             onBackToLauncher = { navController.popBackStack() },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
                             onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                            onOpenHelp = { navController.navigate(Routes.SUPPORT_POLICY) { launchSingleTop = true } },
+                            onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
                             onSwitchCategory = { cat -> navController.navigate(Routes.categoryDetail(cat)) { launchSingleTop = true } },
                             onOpenPostDetail = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenFeed = { navController.navigate(Routes.FEED) { launchSingleTop = true } },
@@ -951,15 +942,25 @@ fun ZarudaApp(
                 }
             }
 
-            composable(Routes.SALE_UNDONE) {
+            composable(Routes.REPOST) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    SaleUndoneScreen(onBack = {
+                    RepostScreen(onBack = {
                         navController.navigate(Routes.ALL_POSTS) {
                             popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                             launchSingleTop = true
                         }
                     })
                 }
+            }
+
+            composable(
+                route = Routes.EXPIRY_ACTION,
+                arguments = listOf(androidx.navigation.navArgument("postId") { type = androidx.navigation.NavType.StringType }),
+            ) {
+                ExpiryActionScreen(
+                    postId = it.arguments?.getString("postId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                )
             }
 
             composable(Routes.PAYMENT) {
@@ -974,7 +975,9 @@ fun ZarudaApp(
             }
 
             composable(Routes.RECENTLY_VIEWED) {
-                val catKey = LocalActiveCategoryKey.current
+                // Main app (outside the 4 category apps) shows ALL categories' recently viewed
+                // items. Pass null explicitly so a stale category key from a previous category
+                // app visit can't scope it by accident.
                 RecentlyViewedScreen(
                     onBack = { navController.popBackStack() },
                     onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -986,7 +989,7 @@ fun ZarudaApp(
                     currentThemeMode = themeMode,
                     onToggleTheme = toggleTheme,
                     onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                    categoryKey = catKey,
+                    categoryKey = null,
                 )
             }
 
@@ -1041,11 +1044,7 @@ fun ZarudaApp(
                 }
             }
 
-            composable(Routes.CHAT) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    com.zaruda.app.ui.chat.ChatScreen(onBack = { navController.popBackStack() })
-                }
-            }
+            // Chat route removed in favor of direct buyer-seller notification alerts
 
             composable(Routes.COMPLAINTS) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
@@ -1173,8 +1172,8 @@ fun ZarudaApp(
                 RefundScreen(onBack = { navController.popBackStack() })
             }
 
-            composable(Routes.SUPPORT_POLICY) {
-                SupportPolicyScreen(onBack = { navController.popBackStack() })
+            composable(Routes.HELP_SUPPORT) {
+                HelpSupportScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Routes.ADMIN_PANEL) {
@@ -1268,17 +1267,16 @@ fun ZarudaApp(
                         onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
                         onOpenMyHome = { drawerNav(Routes.MY_HOME) },
                         onOpenSaleDone = { drawerNav(Routes.saleDoneTab()) },
-                        onOpenSaleUndone = { drawerNav(Routes.SALE_UNDONE) },
+                        onOpenSaleUndone = { drawerNav(Routes.REPOST) },
                         onOpenPublicWall = { drawerNav(Routes.PUBLIC_WALL) },
                         onOpenFeedback = { drawerNav(Routes.FEEDBACK) },
                         onOpenComplaints = { drawerNav(Routes.COMPLAINTS) },
                         onOpenProfile = { drawerNav(Routes.PROFILE) },
                         onOpenAdminPanel = { drawerNav(Routes.ADMIN_PANEL) },
-                        onOpenHelp = { drawerNav(Routes.SUPPORT_POLICY) },
+                        onOpenHelp = { drawerNav(Routes.HELP_SUPPORT) },
                         onOpenRewards = { drawerNav(Routes.REWARDS) },
                         onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
-                        onOpenChat = { drawerNav(Routes.CHAT) },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
                             showMoreDrawer = false
@@ -1377,97 +1375,121 @@ fun MainShell(
                     modifier = Modifier
                         .fillMaxWidth()
                         .shadow(elevation = ZarudaElevation.bottomBar, shape = ZarudaShapes.bottomBar),
+                    shape = ZarudaShapes.bottomBar,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                 ) {
-                    Row(
+                    // Full-bleed bottom bar: the navigation-bar inset lives INSIDE the surface
+                    // so the surface color extends to the very bottom of the screen (no dark
+                    // gap under the bar), while the item row keeps its full un-squished 64dp.
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp)
                             .navigationBarsPadding(),
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Left cluster: Home, Browse
-                        listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
-                            BottomNavTabItem(
-                                tab = tab,
-                                isSelected = tab == selected,
-                                modifier = Modifier.weight(1f),
-                                onClick = { navigateToTab(tab) },
-                            )
-                        }
-                        // + Sell button — prominent center action with flow resolution
-                        val sellFlowVm: SellFlowViewModel = hiltViewModel()
-                        val authGate = LocalAuthGate.current
-                        val authVm: AuthViewModel = hiltViewModel()
-                        val isAuthed by authVm.isAuthenticated.collectAsState()
-                        val sellScope = rememberCoroutineScope()
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            contentAlignment = Alignment.Center,
+                                .fillMaxWidth()
+                                .height(64.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            FloatingActionButton(
-                                onClick = {
-                                    if (!isAuthed) {
-                                        authGate()
-                                    } else {
-                                        sellScope.launch {
-                                            val destination = sellFlowVm.resolveDestination()
-                                            navController.navigate(destination) { launchSingleTop = true }
-                                        }
-                                    }
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(44.dp),
-                                elevation = FloatingActionButtonDefaults.elevation(
-                                    defaultElevation = 4.dp,
-                                    pressedElevation = 8.dp,
-                                ),
+                            // Left cluster: Home, All Posts — shares the left half of the bar
+                            // with the right cluster so the + button sits at the true center.
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
                             ) {
-                                Icon(
-                                    Icons.Filled.AddCircle,
-                                    contentDescription = stringResource(R.string.nav_sell),
-                                    modifier = Modifier.size(26.dp),
-                                )
+                                listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
+                                    BottomNavTabItem(
+                                        tab = tab,
+                                        isSelected = tab == selected,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { navigateToTab(tab) },
+                                    )
+                                }
                             }
-                        }
-                        // Right cluster: Feed, Rewards, More
-                        listOf(BottomTab.FEED, BottomTab.REWARDS).forEach { tab ->
-                            BottomNavTabItem(
-                                tab = tab,
-                                isSelected = tab == selected,
-                                modifier = Modifier.weight(1f),
-                                onClick = { navigateToTab(tab) },
-                            )
-                        }
-                        // More menu button
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    onClick = openMore,
-                                ),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.Menu,
-                                contentDescription = stringResource(R.string.nav_more),
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            // + Sell button — native 56dp FAB, dead-center of the screen
+                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
+                            val authGate = LocalAuthGate.current
+                            val authVm: AuthViewModel = hiltViewModel()
+                            val isAuthed by authVm.isAuthenticated.collectAsState()
+                            val sellScope = rememberCoroutineScope()
+                            Box(
+                                modifier = Modifier
+                                    .width(76.dp)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                FloatingActionButton(
+                                    onClick = {
+                                        if (!isAuthed) {
+                                            authGate()
+                                        } else {
+                                            sellScope.launch {
+                                                val destination = sellFlowVm.resolveDestination()
+                                                navController.navigate(destination) { launchSingleTop = true }
+                                            }
+                                        }
+                                    },
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(56.dp),
+                                    elevation = FloatingActionButtonDefaults.elevation(
+                                        defaultElevation = 4.dp,
+                                        pressedElevation = 8.dp,
+                                    ),
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Add,
+                                        contentDescription = stringResource(R.string.nav_sell),
+                                        modifier = Modifier.size(28.dp),
+                                    )
+                                }
+                            }
+                            // Right cluster: Feed, Rewards, More — mirrors the left half
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                            ) {
+                                listOf(BottomTab.FEED, BottomTab.REWARDS).forEach { tab ->
+                                    BottomNavTabItem(
+                                        tab = tab,
+                                        isSelected = tab == selected,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { navigateToTab(tab) },
+                                    )
+                                }
+                                // More menu button
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            onClick = openMore,
+                                        ),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Menu,
+                                        contentDescription = stringResource(R.string.nav_more),
+                                        modifier = Modifier.size(24.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                             Text(
                                 text = stringResource(R.string.nav_more),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Normal,
                             )
+                                }
+                            }
                         }
                     }
                 }
@@ -1523,7 +1545,9 @@ private fun BottomNavTabItem(
         }
         Text(
             text = stringResource(tab.labelRes),
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             color = contentColor,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
         )
@@ -1532,8 +1556,8 @@ private fun BottomNavTabItem(
 
 /**
  * Route deep link URIs to the appropriate composable routes.
- * Supports: mhub://post/{id}, mhub://chat/{id}, mhub://search, mhub://create-post,
- * mhub://saledone[/{tab}], https://mhub.app/post/{id}, https://mhub.app/chat/{id}
+ * Supports: mhub://post/{id}, mhub://search, mhub://create-post,
+ * mhub://saledone[/{tab}], https://mhub.app/post/{id}
  */
 private fun handleDeepLink(uri: String, navController: NavHostController) {
     val path = uri
@@ -1546,7 +1570,17 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
     when (segments.firstOrNull()) {
         "post", "posts", "listing" -> {
             val id = segments.getOrNull(1) ?: return
-            navController.navigate("${Routes.POST_DETAIL}/$id")
+            // Expiry reminders deep-link here with an action hint
+            val action = segments.getOrNull(2)
+            when (action) {
+                "sold" -> navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }
+                "repost" -> navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }
+                else -> navController.navigate("${Routes.POST_DETAIL}/$id")
+            }
+        }
+        "expiry-action" -> {
+            val id = segments.getOrNull(1) ?: return
+            navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }
         }
 
         "user" -> {

@@ -179,6 +179,7 @@ exports.getWishlist = async (req, res) => {
             WHEN LOWER(
               COALESCE(
                 NULLIF(to_jsonb(u)->>'isAadhaarVerified', ''),
+                NULLIF(to_jsonb(u)->>'isaadhaarverified', ''),
                 NULLIF(to_jsonb(u)->>'aadhaar_verified', ''),
                 NULLIF(to_jsonb(u)->>'kyc_verified', '')
               )
@@ -186,6 +187,7 @@ exports.getWishlist = async (req, res) => {
             WHEN LOWER(
               COALESCE(
                 NULLIF(to_jsonb(u)->>'isAadhaarVerified', ''),
+                NULLIF(to_jsonb(u)->>'isaadhaarverified', ''),
                 NULLIF(to_jsonb(u)->>'aadhaar_verified', ''),
                 NULLIF(to_jsonb(u)->>'kyc_verified', '')
               )
@@ -239,39 +241,80 @@ exports.getWishlist = async (req, res) => {
 
 /**
  * POST /api/wishlist
- * Add a post to the user's wishlist. Body: { postId, notes? }
+ * Add a post to the user's wishlist. Body: { postId, notes? } or URL param :id
  */
 exports.addToWishlist = async (req, res) => {
   try {
     const userId = enforceUserAccess(req, res, { allowBodyOverride: true });
     if (!userId) return;
 
-    const { postId, notes } = req.body;
+    const targetPostId = req.body?.postId || req.params?.postId || req.params?.id;
+    const { notes } = req.body || {};
     const normalizedNotes = parseOptionalString(notes);
 
-    if (!postId) {
+    if (!targetPostId) {
       return res.status(400).json({ error: "postId required" });
     }
 
     const existing = await runQuery(
       "SELECT wishlist_id FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
-      [String(userId), String(postId)],
+      [String(userId), String(targetPostId)],
     );
 
     if (existing.rows.length > 0) {
-      return res.json({ message: "Already in wishlist", wishlist_id: existing.rows[0].wishlist_id });
+      return res.json({ message: "Already in wishlist", wishlist_id: existing.rows[0].wishlist_id, inWishlist: true });
     }
 
     const result = await runQuery(
       `INSERT INTO wishlists (user_id, post_id, notes)
        VALUES ($1, $2, $3)
        RETURNING wishlist_id, user_id, post_id, notes, created_at`,
-      [String(userId), String(postId), normalizedNotes],
+      [String(userId), String(targetPostId), normalizedNotes],
     );
 
-    res.status(201).json({ message: "Added to wishlist", item: result.rows[0] });
+    res.status(201).json({ message: "Added to wishlist", inWishlist: true, item: result.rows[0] });
   } catch (err) {
     logger.error("[Wishlist] Add error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * POST /api/wishlist/:id/toggle
+ * Toggle a post in/out of the user's wishlist.
+ */
+exports.toggleWishlist = async (req, res) => {
+  try {
+    const userId = enforceUserAccess(req, res, { allowBodyOverride: true, allowQueryOverride: true });
+    if (!userId) return;
+
+    const targetPostId = req.body?.postId || req.params?.postId || req.params?.id;
+    if (!targetPostId) {
+      return res.status(400).json({ error: "postId required" });
+    }
+
+    const existing = await runQuery(
+      "SELECT wishlist_id FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
+      [String(userId), String(targetPostId)],
+    );
+
+    if (existing.rows.length > 0) {
+      await runQuery(
+        "DELETE FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
+        [String(userId), String(targetPostId)],
+      );
+      return res.json({ message: "Removed from wishlist", inWishlist: false, wishlist: false });
+    } else {
+      const result = await runQuery(
+        `INSERT INTO wishlists (user_id, post_id)
+         VALUES ($1, $2)
+         RETURNING wishlist_id, user_id, post_id, created_at`,
+        [String(userId), String(targetPostId)],
+      );
+      return res.status(201).json({ message: "Added to wishlist", inWishlist: true, wishlist: true, item: result.rows[0] });
+    }
+  } catch (err) {
+    logger.error("[Wishlist] Toggle error:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -285,17 +328,17 @@ exports.removeFromWishlist = async (req, res) => {
     const userId = enforceUserAccess(req, res, { allowQueryOverride: true, allowBodyOverride: true });
     if (!userId) return;
 
-    const { postId } = req.params;
-    if (!postId) {
+    const targetPostId = req.params?.postId || req.params?.id || req.body?.postId;
+    if (!targetPostId) {
       return res.status(400).json({ error: "postId required" });
     }
 
     await runQuery(
       "DELETE FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
-      [String(userId), String(postId)],
+      [String(userId), String(targetPostId)],
     );
 
-    res.json({ message: "Removed from wishlist" });
+    res.json({ message: "Removed from wishlist", inWishlist: false });
   } catch (err) {
     logger.error("[Wishlist] Remove error:", err.message);
     res.status(500).json({ error: "Internal server error" });
@@ -311,17 +354,17 @@ exports.checkWishlist = async (req, res) => {
     const userId = enforceUserAccess(req, res, { allowQueryOverride: true, allowBodyOverride: true });
     if (!userId) return;
 
-    const { postId } = req.params;
-    if (!postId) {
+    const targetPostId = req.params?.postId || req.params?.id;
+    if (!targetPostId) {
       return res.status(400).json({ error: "postId required" });
     }
 
     const result = await runQuery(
       "SELECT wishlist_id FROM wishlists WHERE user_id::text = $1 AND post_id::text = $2",
-      [String(userId), String(postId)],
+      [String(userId), String(targetPostId)],
     );
 
-    res.json({ inWishlist: result.rows.length > 0 });
+    res.json({ inWishlist: result.rows.length > 0, wishlist: result.rows.length > 0 });
   } catch (err) {
     logger.error("[Wishlist] Check error:", err.message);
     res.status(500).json({ error: "Internal server error" });

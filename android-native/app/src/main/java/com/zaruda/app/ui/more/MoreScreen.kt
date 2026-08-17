@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.AccountTree
@@ -132,7 +131,6 @@ fun MoreScreen(
     onOpenHelp: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenRewards: () -> Unit = {},
-    onOpenChat: () -> Unit = {},
     onOpenMyFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
@@ -152,12 +150,11 @@ fun MoreScreen(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", plansSubtitle, Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
         MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
-        MenuRow("Sale Undone", "Undo or revert a completed sale", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
+        MenuRow("Repost", "Renew or reactivate your listings", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
     )
 
-    // ── SOCIAL section: Chat, Feedback, Complaints
+    // ── SOCIAL section: Feedback, Complaints
     val socialRows = listOf(
-        MenuRow("Messages", "Chat with buyers and sellers", Icons.AutoMirrored.Outlined.Chat, Color(0xFFE0F2FE), Color(0xFF2563EB), onClick = onOpenChat),
         MenuRow("Feedback", "Share your app experience", Icons.Outlined.VolunteerActivism, Color(0xFFE0F2FE), Color(0xFF0284C7), onClick = onOpenFeedback),
         MenuRow("Complaints", "Report an issue or dispute", Icons.Outlined.Report, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onOpenComplaints),
     )
@@ -273,7 +270,7 @@ fun MoreScreen(
                     ) {
                         Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Log In to MHub", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Log In to Zaruda", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }

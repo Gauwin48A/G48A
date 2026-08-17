@@ -1,6 +1,7 @@
 package com.zaruda.app.data.remote
 
 import com.zaruda.app.data.remote.dto.*
+import com.zaruda.app.domain.model.Category
 import com.zaruda.app.domain.model.Post
 import com.zaruda.app.domain.model.User
 import okhttp3.RequestBody
@@ -20,9 +21,6 @@ interface ZarudaApi {
     suspend fun unregisterPushToken(@Body body: PushTokenRequest): MessageResponse
 
     // ---- Auth ----
-    @POST("api/auth/google")
-    suspend fun googleSignIn(@Body body: GoogleAuthRequest): AuthResponse
-
     @POST("api/auth/login")
     suspend fun emailLogin(@Body body: EmailLoginRequest): AuthResponse
 
@@ -165,7 +163,7 @@ interface ZarudaApi {
     suspend fun categoryStats(): CategoryStatsResponse
 
     @GET("api/categories/{id}/subcategories")
-    suspend fun subcategories(@Path("id") id: String): CategoriesResponse
+    suspend fun subcategories(@Path("id") id: String): List<Category>
 
     // ---- Categories ----
     @GET("api/categories")
@@ -229,51 +227,6 @@ interface ZarudaApi {
     suspend fun snoozeNotification(
         @Path("id") id: String,
         @Body body: SnoozeRequest,
-    ): MessageResponse
-
-    // ---- Chat ----
-    @GET("api/chat/conversations")
-    suspend fun conversations(): ConversationsResponse
-
-    @GET("api/chat/conversations/{id}")
-    suspend fun messages(@Path("id") conversationId: String): MessagesResponse
-
-    @POST("api/chat/conversations/{id}/messages")
-    suspend fun sendMessage(
-        @Path("id") conversationId: String,
-        @Body body: SendMessageRequest,
-    ): MessageResponse
-
-    @DELETE("api/chat/conversations/{convId}/messages/{msgId}")
-    suspend fun deleteChatMessage(
-        @Path("convId") conversationId: String,
-        @Path("msgId") messageId: String,
-    ): MessageResponse
-
-    @POST("api/chat/conversations/{id}/report")
-    suspend fun reportConversation(
-        @Path("id") conversationId: String,
-        @Body body: ChatReportRequest,
-    ): MessageResponse
-
-    @POST("api/chat/conversations/{id}/read")
-    suspend fun markConversationRead(
-        @Path("id") conversationId: String,
-    ): MessageResponse
-
-    @POST("api/chat/messages/{id}/reactions")
-    suspend fun addMessageReaction(
-        @Path("id") messageId: String,
-        @Body body: ChatReactionRequest,
-    ): MessageResponse
-
-    @POST("api/chat/upload")
-    suspend fun uploadChatFile(@Body body: RequestBody): ChatUploadResponse
-
-    @POST("api/chat/conversations/{recipientId}/start")
-    suspend fun startConversation(
-        @Path("recipientId") recipientId: String,
-        @Body body: SendMessageRequest,
     ): MessageResponse
 
     // ---- User social ----
@@ -698,9 +651,6 @@ interface ZarudaApi {
     @GET("api/subscriptions/my")
     suspend fun mySubscription(): MySubscriptionResponse
 
-    // Activate the 7-day Premium free trial (server enforces one-per-user).
-    @POST("api/subscriptions/claim-trial")
-    suspend fun claimTrial(): MessageResponse
 
     // ---- Legal / CMS ----
     // NOTE: Server routes these under /api/cms/pages/:slug (web parity)

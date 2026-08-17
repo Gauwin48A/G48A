@@ -37,6 +37,12 @@
     "migrate:profiles-backfill": "node scripts/ops/run_migration.js database/migrations/backfill_missing_profiles.sql",
     "migrate:posts-expiry-backfill": "node scripts/ops/run_migration.js database/migrations/backfill_active_post_expiry.sql",
     "migrate:security": "node scripts/ops/run_sec_migration.js",
+    "migrate:051-feature-tables": "node scripts/ops/run_migration.js database/migrations/051_feature_tables.sql",
+    "migrate:052-schema-reconciliation": "node scripts/ops/run_migration.js database/migrations/052_schema_reconciliation.sql",
+    "migrate:053-reviews-users": "node scripts/ops/run_migration.js database/migrations/053_reviews_users_columns.sql",
+    "migrate:054-marketplace-indexes": "node scripts/ops/run_migration.js database/migrations/054_marketplace_indexes.sql",
+    "migrate:055-login-flow": "node scripts/ops/run_migration.js database/migrations/055_login_flow_columns.sql",
+    "auth:e2e:login-flow": "bash scripts/auth-flow-e2e.sh",
     "seed:profiles": "node scripts/ops/seed-profiles.js",
     "build:client": "cd ../client && npm install && npm run build"
   },

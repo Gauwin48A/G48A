@@ -659,7 +659,8 @@ const replyToInquiry = async (req, res) => {
 
     const buyerId = ownedInquiry.inquiry.buyer_id;
     if (buyerId) {
-      const actionPath = `/chat`;
+      const postId = ownedInquiry.inquiry.post_id;
+      const actionPath = `/post/${postId}`;
       const replyText = finalText.substring(0, 80);
       const notificationResult = await runQuery(
         `INSERT INTO notifications (user_id, title, message, type, sender_id, post_id, action_path, metadata)
@@ -669,9 +670,9 @@ const replyToInquiry = async (req, res) => {
           buyerId,
           `The seller replied to your inquiry: "${replyText}..."`,
           userId,
-          ownedInquiry.inquiry.post_id,
+          postId,
           actionPath,
-          JSON.stringify({ action_label: "Open Chat" }),
+          JSON.stringify({ action_label: "View Post" }),
         ]
       );
 
@@ -681,8 +682,8 @@ const replyToInquiry = async (req, res) => {
         message: `The seller replied to your inquiry: "${replyText}..."`,
         type: "inquiry_reply",
         sender_id: userId,
-        post_id: ownedInquiry.inquiry.post_id,
-        action: { path: actionPath, label: "Open Chat" },
+        post_id: postId,
+        action: { path: actionPath, label: "View Post" },
         created_at: notificationResult.rows[0]?.created_at || new Date().toISOString(),
       });
     }

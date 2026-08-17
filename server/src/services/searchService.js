@@ -168,29 +168,6 @@ const calculateDistance = async (lat1, lng1, lat2, lng2) => {
 };
 
 /**
- * Get or create a chat session between a buyer and seller for a specific post.
- * @param {string} buyerId
- * @param {string} sellerId
- * @param {string} postId
- * @returns {Promise<string|null>} Chat ID
- */
-const getOrCreateChat = async (buyerId, sellerId, postId) => {
-  try {
-    const result = await runQuery(
-      `SELECT get_or_create_chat_v2($1, $2, $3) as chat_id`,
-      [buyerId, sellerId, postId]
-    );
-    return result.rows[0]?.chat_id || null;
-  } catch (error) {
-    logger.error(
-      "[SearchService] get_or_create_chat_v2 error:",
-      error.message
-    );
-    throw error;
-  }
-};
-
-/**
  * Run the database cleanup routine for expired data.
  * @returns {Promise<boolean>} true on success, false on failure
  */
@@ -213,6 +190,5 @@ module.exports = {
   fuzzySearchPosts,
   getNearbyPosts,
   calculateDistance,
-  getOrCreateChat,
   cleanupExpiredData,
 };

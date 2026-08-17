@@ -19,7 +19,10 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON notifications
 -- Wishlist, cart, and views
 CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlists_post_id ON wishlists(post_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_user_cat ON wishlists(user_id, category);
 CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_user_cat ON cart_items(user_id, category);
+CREATE INDEX IF NOT EXISTS idx_posts_category_status_created ON posts(category, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_recently_viewed_user_id ON recently_viewed(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id);
 

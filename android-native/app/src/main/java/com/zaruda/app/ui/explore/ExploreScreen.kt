@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.explore
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -574,8 +575,13 @@ class ExploreViewModel @Inject constructor(
 
     private fun findActionPost(postId: String): Post? {
         val current = _state.value
+        // Search the loaded list first, then fall back to the shared store so a toggle
+        // never silently fails to persist just because the post isn't in the current list.
         return (current.posts + current.searchResults)
             .firstOrNull { it.stableId == postId }
+            ?: SharedExploreStore.wishlistPosts.firstOrNull { it.stableId == postId }
+            ?: SharedExploreStore.cartPosts.firstOrNull { it.stableId == postId }
+            ?: SharedExploreStore.recentlyViewedPosts.firstOrNull { it.stableId == postId }
     }
 
     fun toggleCompare(postId: String) {
@@ -955,6 +961,8 @@ fun ExploreScreen(
     onAddPost: () -> Unit = {},
     onLanguage: () -> Unit = {},
     onOpenUser: (String) -> Unit = {},
+    onOpenTierSelection: () -> Unit = {},
+    onOpenKyc: () -> Unit = {},
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     forYouMode: Boolean = false,
@@ -1237,7 +1245,7 @@ fun ExploreScreen(
 
             // Plan expiry / expired banner
             if (state.showPlanExpiryBanner) {
-                val bannerIsDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val bannerIsDark = ColorTokens.isDarkTheme()
                 val bannerColor = if (state.planExpired) {
                     if (bannerIsDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
                 } else {
@@ -1821,17 +1829,41 @@ fun ExploreScreen(
                 )
             },
             text = {
-                Text(
-                    text = "App access is currently limited. To view details, go to the 'More' tab (or bottom navigation), choose 'Plans & Subscriptions' to buy a plan, and then verify your Aadhaar/PAN KYC. Click OK to dismiss.",
-                    fontSize = 14.sp
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "App access is currently limited — you can browse previews only. Unlock the full app by completing BOTH:",
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "\u2022  An active subscription plan (any tier)\n\u2022  Aadhaar/PAN KYC verification",
+                        fontSize = 14.sp
+                    )
+                }
             },
             confirmButton = {
                 Button(
-                    onClick = { showRestrictionDialog = false },
+                    onClick = {
+                        showRestrictionDialog = false
+                        onOpenTierSelection()
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("OK", color = Color.White)
+                    Text("Choose a Plan", color = Color.White)
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            showRestrictionDialog = false
+                            onOpenKyc()
+                        }
+                    ) {
+                        Text("Complete KYC")
+                    }
+                    TextButton(onClick = { showRestrictionDialog = false }) {
+                        Text("Not now")
+                    }
                 }
             }
         )
@@ -2586,15 +2618,15 @@ private fun ForYouMetricTile(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.78f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.38f)),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-            Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -2608,7 +2640,7 @@ private fun ForYouHeroAction(
 ) {
     Surface(
         shape = RoundedCornerShape(22.dp),
-        color = if (selected) Color(0xFF1D4ED8) else Color.White.copy(alpha = 0.92f),
+        color = if (selected) Color(0xFF1D4ED8) else MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
         onClick = onClick,
     ) {
         Row(
@@ -2616,8 +2648,8 @@ private fun ForYouHeroAction(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(icon, null, modifier = Modifier.size(15.dp), tint = if (selected) Color.White else Color(0xFF4F46E5))
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else Color(0xFF334155))
+            Icon(icon, null, modifier = Modifier.size(15.dp), tint = if (selected) Color.White else MaterialTheme.colorScheme.primary)
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface)
         }
     }
 }

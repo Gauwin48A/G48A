@@ -72,7 +72,6 @@ const rewardsRoutes = require("./routes/rewards.js");
 const locationRoutes = require("./routes/locationRoutes.js");
 const locationVerificationRoutes = require("./routes/locationVerificationRoutes.js");
 const inquiriesRoutes = require("./routes/inquiries.js");
-const chatRoutes = require("./routes/chat.js");
 const offersRoutes = require("./routes/offers.js");
 const savedSearchesRoutes = require("./routes/savedSearches.js");
 const analyticsRoutes = require("./routes/analytics.js");
@@ -115,9 +114,7 @@ const coinRoutes = require("./routes/coins.js");
 const walletRoutes = require("./routes/wallet.js");
 const sellerAnalyticsRoutes = require("./routes/sellerAnalytics.js");
 const auditRoutes = require("./routes/audit.js");
-const dailyCodeRoutes = require("./routes/dailycode.js");
 const loginAuditRoutes = require("./routes/loginAudit.js");
-const saleUndoneRoutes = require("./routes/saleundone.js");
 const ratingsRoutes = require("./routes/ratings.js");
 
 // ── Level 3 Foundation Routes ────────────────────────────
@@ -126,6 +123,7 @@ const disputesRoutes = require("./routes/disputes.js");
 const shipmentsRoutes = require("./routes/shipments.js");
 const pagesRoutes = require("./routes/pages.js");
 const mediaRoutes = require("./routes/media.js");
+const uploadsRoutes = require("./routes/uploads.js");
 const searchRoutes = require("./routes/search.js");
 const refundsRoutes = require("./routes/refunds.js");
 const settlementsRoutes = require("./routes/settlements.js");
@@ -424,52 +422,6 @@ io.on("connection", (socket) => {
     console.log(`User Connected: ${socket.id} (uid: ${socket.user?.userId || socket.user?.id})`);
   }
 
-  socket.on("join_room", (data) => {
-    const roomId = String(data || "");
-    const userId = String(socket.user?.userId || socket.user?.id || "");
-
-    // Validate room membership: user must be one of the exact participant IDs
-    // Room format: "{userId1}_{userId2}" for DM, or "{userId}" for personal
-    if (roomId && userId) {
-      const roomParts = roomId.split("_");
-      // Exact match: the userId must exactly equal one of the room segments
-      const isMember = roomParts.some((part) => part === userId);
-      if (!isMember) {
-        if (socketDebugEnabled) {
-          console.warn(`[Socket] User ${userId} denied access to room: ${roomId}`);
-        }
-        socket.emit("error", { message: "Access denied to this room" });
-        return;
-      }
-    }
-
-    socket.join(roomId);
-    if (socketDebugEnabled) {
-      console.log(`User with ID: ${socket.id} joined room: ${roomId}`);
-    }
-  });
-
-  // Per-socket rate limiting for messages
-  const messageTimestamps = [];
-  const MSG_RATE_LIMIT = 30; // max messages
-  const MSG_RATE_WINDOW = 60000; // per 60 seconds
-
-  socket.on("send_message", (data) => {
-    // Validate required fields
-    if (!data || typeof data !== "object" || !data.room || typeof data.room !== "string") return;
-    if (data.message && typeof data.message === "string" && data.message.length > 5000) return;
-
-    // Rate limit
-    const now = Date.now();
-    while (messageTimestamps.length && messageTimestamps[0] < now - MSG_RATE_WINDOW) {
-      messageTimestamps.shift();
-    }
-    if (messageTimestamps.length >= MSG_RATE_LIMIT) return;
-    messageTimestamps.push(now);
-
-    socket.to(data.room).emit("receive_message", data);
-  });
-
   socket.on("disconnect", () => {
     if (socketDebugEnabled) {
       console.log("User Disconnected", socket.id);
@@ -694,7 +646,6 @@ const apiRouteMounts = [
     ],
   ],
   ["/api/inquiries", inquiriesRoutes],
-  ["/api/chat", chatRoutes],
   [
     "/api/offers",
     [
@@ -767,9 +718,7 @@ const apiRouteMounts = [
   ["/api/wallet", walletRoutes],
   ["/api/seller-analytics", sellerAnalyticsRoutes],
   ["/api/audit", auditRoutes],
-  ["/api/dailycode", dailyCodeRoutes],
   ["/api/login-audit", loginAuditRoutes],
-  ["/api/saleundone", saleUndoneRoutes],
   ["/api/ratings", ratingsRoutes],
   ["/api/trust", require("./routes/trust.js")],
 
@@ -779,6 +728,7 @@ const apiRouteMounts = [
   ["/api/shipments", shipmentsRoutes],
   ["/api/pages", pagesRoutes],
   ["/api/media", mediaRoutes],
+  ["/api/uploads", uploadsRoutes],
   ["/api/search", searchRoutes],
   ["/api/refunds", refundsRoutes],
   ["/api/settlements", settlementsRoutes],

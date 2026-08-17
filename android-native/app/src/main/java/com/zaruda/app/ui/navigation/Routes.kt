@@ -54,7 +54,10 @@ object Routes {
     fun saleDoneTab(tab: Int = 0): String = "saledone?tab=$tab"
     const val SALE_DONE_WITH = "saledone/{postId}/{sellerId}"
     fun saleDone(postId: String, sellerId: String): String = "saledone/$postId/$sellerId"
-    const val SALE_UNDONE = "saleundone"
+    const val REPOST = "repost"
+    /** Notification-driven expiry action: {postId} → Sold/Not-sold/Repost chooser. */
+    const val EXPIRY_ACTION = "expiry-action/{postId}"
+    fun expiryAction(postId: String) = "expiry-action/$postId"
     const val PAYMENT = "payment"
     const val CART = "cart"
     const val RECENTLY_VIEWED = "recently-viewed"
@@ -100,13 +103,10 @@ object Routes {
     const val TERMS = "terms"
     const val PRIVACY = "privacy"
     const val REFUND = "refund"
-    const val SUPPORT_POLICY = "support-policy"
+    const val HELP_SUPPORT = "help-support"
     const val ADMIN_PANEL = "admin-panel"
     const val INVITE = "invite/{code}"
     fun invite(code: String): String = "invite/$code"
-
-    // Chat
-    const val CHAT = "chat"
 
     // New screens
     const val CATEGORY_MODE = "category-mode"

@@ -1,4 +1,5 @@
-﻿package com.zaruda.app.ui.home
+package com.zaruda.app.ui.home
+import com.zaruda.app.ui.theme.ColorTokens
 
 import com.zaruda.app.R
 import androidx.compose.animation.AnimatedVisibility
@@ -1145,7 +1146,7 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         // Premium gradient page-shell (web-parity: AllPosts.jsx page gradient wrapper)
-        val darkTheme = isSystemInDarkTheme()
+        val darkTheme = ColorTokens.isDarkTheme()
         val pageShellGradient = if (darkTheme) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
             else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
         Box(modifier = Modifier.fillMaxSize().background(pageShellGradient)) {
@@ -1454,8 +1455,8 @@ fun HomeScreen(
                                                         }
                                                     }
                                                     Column(Modifier.padding(8.dp)) {
-                                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = Color(0xFF1E293B))
-                                                        if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF2563EB))
+                                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
+                                                        if (post.price != null) Text("â‚¹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                                                     }
                                                 }
                                             }
@@ -2062,8 +2063,19 @@ fun ListPostCard(
                 post.price?.let { price ->
                     Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
                 }
+                val wishlistPosts by com.zaruda.app.ui.explore.SharedExploreStore.wishlistFlow.collectAsState()
+                val wishlisted = wishlistPosts.any { it.stableId == post.stableId }
                 val saveColor by animateColorAsState(if (wishlisted) Color(0xFF6366F1) else Color.White, label = "save")
-                IconButton(onClick = { wishlisted = !wishlisted }, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape)) {
+                IconButton(
+                    onClick = {
+                        if (wishlisted) {
+                            com.zaruda.app.ui.explore.SharedExploreStore.removeWishlist(post.stableId)
+                        } else {
+                            com.zaruda.app.ui.explore.SharedExploreStore.addWishlist(post)
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape)
+                ) {
                     Icon(imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Wishlist", tint = saveColor, modifier = Modifier.size(18.dp))
                 }
                 // Promo badges overlay
@@ -2152,8 +2164,19 @@ fun GridPostCard(
                 post.price?.let { price ->
                     Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
+                val wishlistPosts by com.zaruda.app.ui.explore.SharedExploreStore.wishlistFlow.collectAsState()
+                val wishlisted = wishlistPosts.any { it.stableId == post.stableId }
                 val saveColor by animateColorAsState(if (wishlisted) Color(0xFF6366F1) else Color.White, label = "save")
-                Box(modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable { wishlisted = !wishlisted }, contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable {
+                        if (wishlisted) {
+                            com.zaruda.app.ui.explore.SharedExploreStore.removeWishlist(post.stableId)
+                        } else {
+                            com.zaruda.app.ui.explore.SharedExploreStore.addWishlist(post)
+                        }
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Wishlist", tint = saveColor, modifier = Modifier.size(14.dp))
                 }
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(6.dp))

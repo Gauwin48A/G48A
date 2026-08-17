@@ -65,7 +65,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDeepLink(intent: Intent?) {
-        val uri = intent?.data?.toString()
+        // Prefer an explicit deep-link URI; fall back to the DEEP_LINK extra the
+        // notification service attaches (tap on an FCM notification navigates).
+        val uri = intent?.data?.toString() ?: intent?.getStringExtra("DEEP_LINK")
         if (uri != null) deepLinkUri.value = uri
     }
 

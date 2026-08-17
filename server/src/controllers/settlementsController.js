@@ -26,7 +26,8 @@ exports.current = async (req, res) => {
     const result = await runQuery(
       `SELECT COUNT(*) as total_orders, COALESCE(SUM(total_amount), 0) as gross_amount,
               COALESCE(SUM(platform_fee), 0) as total_fees,
-              COALESCE(SUM(total_amount - platform_fee - gst_on_fee), 0) as estimated_payout
+              -- platform_fee is all-inclusive (GST absorbed), so payout = total - fee
+              COALESCE(SUM(total_amount - platform_fee), 0) as estimated_payout
        FROM orders
        WHERE seller_id::text = $1 AND status IN ('DELIVERED', 'COMPLETED')
          AND created_at >= DATE_TRUNC('month', NOW())`,

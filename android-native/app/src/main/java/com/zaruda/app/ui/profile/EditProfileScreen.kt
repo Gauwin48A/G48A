@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.profile
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.ui.draw.alpha
 import android.net.Uri
@@ -69,7 +70,7 @@ fun EditProfileScreen(
     onUploadCover: (Uri) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDarkTheme()
     val scrollState = rememberScrollState()
 
     // ── Form State ──

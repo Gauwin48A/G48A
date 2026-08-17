@@ -65,6 +65,20 @@ import javax.inject.Inject
 
 // ──────────────────────────────────────────────────────────────────────────────
 
+data class PaymentUiState(
+    val step: Int = 0,
+    val loading: Boolean = true,
+    val upiId: String? = null,
+    val merchantName: String? = null,
+    val instructions: List<String> = emptyList(),
+    val history: List<PaymentHistoryItem> = emptyList(),
+    val selectedPlan: String? = null,
+    val transactionId: String = "",
+    val submitting: Boolean = false,
+    val success: Boolean = false,
+    val error: String? = null,
+)
+
 @HiltViewModel
 class PaymentViewModel @Inject constructor(private val repo: PaymentsRepository) : ViewModel() {
     private val _state = MutableStateFlow(PaymentUiState())
@@ -134,13 +148,13 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(56.dp))
                                 Spacer(Modifier.height(12.dp))
-                                Text("Payment Submitted!", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF14532D))
-                                Text("Your payment is being verified. This usually takes 2-24 hours.", fontSize = 13.sp, color = Color(0xFF166534))
+                                Text("Payment Submitted!", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                Text("Your payment is being verified. This usually takes 2-24 hours.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
                             }
                         }
                     } else when (state.step) {
                         0 -> {
-                            Text("Choose Your Plan", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                            Text("Choose Your Plan", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                             
                             // Plan comparison
                             val planFeatures = mapOf(
@@ -153,7 +167,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             plans.forEach { (key, label) ->
                                 Surface(
                                     shape = RoundedCornerShape(14.dp),
-                                    color = if (state.selectedPlan == key) Color(0xFFEFF6FF) else Color.White,
+                                    color = if (state.selectedPlan == key) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
                                     shadowElevation = if (state.selectedPlan == key) 4.dp else 2.dp,
                                     border = if (state.selectedPlan == key) BorderStroke(2.dp, Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF2563EB)))) else ButtonDefaults.outlinedButtonBorder(enabled = true),
                                     modifier = Modifier.fillMaxWidth().clickable { viewModel.selectPlan(key) }
@@ -165,7 +179,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                                                 onClick = { viewModel.selectPlan(key) },
                                                 colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF2563EB))
                                             )
-                                            Text(label, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
+                                            Text(label, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                                             if (key == "gold") {
                                                 Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF2563EB)) {
                                                     Text("POPULAR", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold,
@@ -173,12 +187,12 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                                                 }
                                             }
                                         }
-                                        HorizontalDivider(color = Color(0xFFE2E8F0), modifier = Modifier.padding(vertical = 8.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
                                         planFeatures[key]?.forEach { feature ->
                                             Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(14.dp))
                                                 Spacer(Modifier.width(6.dp))
-                                                Text(feature, fontSize = 12.sp, color = Color(0xFF64748B))
+                                                Text(feature, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                     }
@@ -187,21 +201,21 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             }
                         }
                         1 -> {
-                            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(20.dp)) {
-                                    Text("Pay via UPI", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                                    Text("Pay via UPI", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                                     Spacer(Modifier.height(12.dp))
                                     if (state.upiId != null) {
-                                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth()) {
+                                        Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), modifier = Modifier.fillMaxWidth()) {
                                             Column(Modifier.padding(14.dp)) {
-                                                Text("UPI ID", fontSize = 12.sp, color = Color(0xFF64748B))
+                                                Text("UPI ID", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Text(state.upiId ?: "", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
-                                                if (state.merchantName != null) Text("Merchant: ${state.merchantName}", fontSize = 12.sp, color = Color(0xFF64748B))
+                                                if (state.merchantName != null) Text("Merchant: ${state.merchantName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                     }
                                     Spacer(Modifier.height(12.dp))
-                                    state.instructions.forEach { Text("• $it", fontSize = 13.sp, color = Color(0xFF64748B)) }
+                                    state.instructions.forEach { Text("• $it", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     Spacer(Modifier.height(16.dp))
                                     Button(onClick = { viewModel.advanceStep() }, shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
@@ -212,7 +226,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                             }
                         }
                         else -> {
-                            Text("Enter Transaction ID (UTR)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                            Text("Enter Transaction ID (UTR)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                             MhubTextField("Transaction ID / UTR", state.transactionId, viewModel::setTransactionId)
                             Button(onClick = { viewModel.submitPayment() }, enabled = !state.submitting,
                                 shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
@@ -224,18 +238,18 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                     // Payment history
                     if (state.history.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Payment History", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                        Text("Payment History", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                         state.history.forEach { pay ->
                             val statusColor = when (pay.status?.lowercase()) {
                                 "verified" -> Color(0xFF22C55E)
                                 "rejected" -> Color(0xFFEF4444)
                                 else -> Color(0xFFF59E0B)
                             }
-                            Surface(shape = RoundedCornerShape(10.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
-                                        Text(pay.plan ?: pay.purpose ?: "Payment", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
-                                        Text(pay.transactionId ?: "", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text(pay.plan ?: pay.purpose ?: "Payment", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                        Text(pay.transactionId ?: "", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Surface(shape = RoundedCornerShape(12.dp), color = statusColor.copy(alpha = 0.15f)) {
                                         Text(pay.status?.replaceFirstChar { it.uppercase() } ?: "Pending", fontSize = 11.sp,

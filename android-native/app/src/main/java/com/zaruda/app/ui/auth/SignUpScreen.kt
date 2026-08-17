@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.auth
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,7 +47,7 @@ fun SignUpScreen(
 
     LaunchedEffect(state.success) { if (state.success) onSignedUp() }
 
-    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDarkTheme()
     val pageGradient = Brush.verticalGradient(
         if (darkTheme) listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2540))
         else listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF))

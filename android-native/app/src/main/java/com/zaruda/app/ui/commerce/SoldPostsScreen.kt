@@ -1,5 +1,6 @@
 package com.zaruda.app.ui.commerce
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -23,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,6 +95,7 @@ data class SellerSummary(
     val starString: String? = null,
     val trustScore: Int = 0,
     val trustBadge: String? = null,
+    val totalBought: Int = 0,
 ) {
     val initials: String get() = (sellerName ?: "S").take(2).uppercase()
 }
@@ -106,6 +109,11 @@ data class SoldPostsUiState(
     // Currently-active listings of the seller (trust page second tab)
     val activeListings: List<Post> = emptyList(),
     val activeLoading: Boolean = false,
+    // Posts this user purchased (public trust signal)
+    val boughtItems: List<SoldPostItem> = emptyList(),
+    val boughtLoading: Boolean = false,
+    val boughtError: String? = null,
+    val totalBought: Int = 0,
 )
 
 private fun UserSoldPostV1.toSoldPostItem(): SoldPostItem = SoldPostItem(
@@ -180,6 +188,36 @@ class SoldPostsViewModel @Inject constructor(
         }
     }
 
+    /** Load the posts this user purchased (public trust signal for the Bought tab). */
+    fun loadBought() {
+        val uid = targetUserId ?: currentUserId ?: return
+        _state.update { it.copy(boughtLoading = true) }
+        viewModelScope.launch {
+            when (val r = purchaseReviewRepo.getUserBoughtPosts(uid, category = targetCategory)) {
+                is ApiResult.Success -> _state.update {
+                    it.copy(
+                        boughtLoading = false,
+                        boughtError = null,
+                        totalBought = r.data.totalBought,
+                        boughtItems = r.data.boughtPosts.map { bp ->
+                            SoldPostItem(
+                                post = bp.toDomainPost(),
+                                saleId = bp.saleId,
+                                buyerRating = bp.buyerRating,
+                                buyerComment = bp.buyerComment,
+                                buyerName = bp.sellerName ?: bp.userName, // seller of the bought post
+                                ratedAt = bp.ratedAt,
+                                ratingStars = bp.ratingStars,
+                                saleDate = bp.saleDate,
+                            )
+                        },
+                    )
+                }
+                is ApiResult.Failure -> _state.update { it.copy(boughtLoading = false, boughtError = r.error.message) }
+            }
+        }
+    }
+
     fun load() {
         viewModelScope.launch {
             _state.value = SoldPostsUiState(loading = true)
@@ -200,6 +238,7 @@ class SoldPostsViewModel @Inject constructor(
                             starString = data.starString,
                             trustScore = data.trustScore,
                             trustBadge = data.trustBadge,
+                            totalBought = data.totalBought,
                         )
                         _state.value = SoldPostsUiState(
                             loading = false,
@@ -207,6 +246,7 @@ class SoldPostsViewModel @Inject constructor(
                             seller = seller,
                             isUserSpecific = targetUserId != null,
                             error = null,
+                            totalBought = data.totalBought,
                         )
                     }
                     is ApiResult.Failure -> {
@@ -220,6 +260,7 @@ class SoldPostsViewModel @Inject constructor(
                     }
                 }
                 loadActiveListings()
+                loadBought()
             } else {
                 // No session — legacy current-user sold posts (title-only fallback).
                 when (val r = repo.sold()) {
@@ -288,6 +329,25 @@ private fun SoldPostsListScreen(
     }
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
+            val seller = state.seller
+            if (state.isUserSpecific && seller != null) {
+                SellerPassportHeader(seller = seller, onBack = onBack)
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text(
+                        stringResource(R.string.sold_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
             when {
                 state.loading && state.items.isEmpty() -> com.zaruda.app.ui.components.ListShimmer(count = 5, modifier = Modifier.padding(16.dp))
                 state.error != null && state.items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -298,29 +358,60 @@ private fun SoldPostsListScreen(
                     )
                 }
                 else -> {
-                    val seller = state.seller
-                    if (state.isUserSpecific && seller != null) {
-                        SellerPassportHeader(seller = seller, onBack = onBack)
-                    }
-                    // ── Trust page tabs: Sold & Reviewed / Active Listings ──
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // ── Purchase awareness banner: platform isn't a party to user deals ──
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFF7ED),
+                        border = BorderStroke(1.dp, Color(0xFFFCD34D).copy(alpha = 0.6f)),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
                     ) {
-                        FilterChip(
-                            selected = activeTab == 0,
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("⚠️", fontSize = 15.sp)
+                            Text(
+                                "Zaruda verifies every user with KYC (one Aadhaar = one account). But the platform is not a party to user-to-user deals — check the history & trust score above before you pay. For Electronics, always use in-app escrow.",
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                color = Color(0xFF92400E),
+                            )
+                        }
+                    }
+
+                    // ── Trust page: two big buttons — Sold / Bought ──
+                    Text(
+                        if (activeTab == 0) "🛍️ Sold Posts — items ${state.seller?.sellerName ?: "this user"} has sold" else "🛒 Posts ${state.seller?.sellerName ?: "this user"} has bought",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        OutlinedButton(
                             onClick = { activeTab = 0 },
-                            label = { Text("Sold & Reviewed (${state.items.size})", fontSize = 11.sp) },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF059669), selectedLabelColor = Color.White),
-                        )
-                        FilterChip(
-                            selected = activeTab == 1,
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(if (activeTab == 0) 2.dp else 1.dp, if (activeTab == 0) Color(0xFF059669) else Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (activeTab == 0) Color(0xFFECFDF5) else Color.White),
+                            modifier = Modifier.weight(1f).height(58.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🛍️ Sold", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF475569))
+                                Text("${state.items.size} sales", fontSize = 10.sp, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF94A3B8))
+                            }
+                        }
+                        OutlinedButton(
                             onClick = { activeTab = 1 },
-                            label = { Text("Active Listings (${state.activeListings.size})", fontSize = 11.sp) },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                        )
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(if (activeTab == 1) 2.dp else 1.dp, if (activeTab == 1) Color(0xFF2563EB) else Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (activeTab == 1) Color(0xFFEFF6FF) else Color.White),
+                            modifier = Modifier.weight(1f).height(58.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🛒 Bought", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF475569))
+                                Text("${state.totalBought} purchases", fontSize = 10.sp, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF94A3B8))
+                            }
+                        }
                     }
                     if (activeTab == 0) {
                     OutlinedTextField(
@@ -368,7 +459,7 @@ private fun SoldPostsListScreen(
                         }
                     }
                     } else {
-                        ActiveListingsTab(state = state, onOpenPost = onOpenPost)
+                        BoughtTab(state = state, onOpenPost = onOpenPost)
                     }
                 }
             }
@@ -451,6 +542,22 @@ private fun SellerPassportHeader(seller: SellerSummary, onBack: () -> Unit) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${seller.totalSold}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                         Text(stringResource(R.string.commerce_seller_total_sold), fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("${seller.totalBought}", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text(stringResource(R.string.commerce_seller_total_bought), fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            if (seller.isKycVerified) stringResource(R.string.commerce_seller_kyc_verified)
+                            else stringResource(R.string.commerce_seller_kyc_pending),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFBBF7D0),
+                        )
+                        Text(stringResource(R.string.commerce_seller_kyc_label), fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
                     }
                 }
             }
@@ -561,23 +668,69 @@ private fun BuyerReviewBlock(item: SoldPostItem) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Active Listings tab — everything the seller is currently selling
+// Bought tab — posts this user purchased (public trust signal)
 // ──────────────────────────────────────────────────────────────────────────────
 
+/** Bought card: what the user purchased, from whom, and when. */
 @Composable
-private fun ActiveListingsTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
+private fun PostListItemBought(item: SoldPostItem, onClick: () -> Unit) {
+    val post = item.post
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = post.primaryImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("₹${post.price?.toLong() ?: 0}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                item.buyerName?.let { seller ->
+                    Text(
+                        stringResource(R.string.commerce_purchased_from, seller),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+                item.saleDate?.take(10)?.let { date ->
+                    Text(stringResource(R.string.commerce_purchased_on, date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDBEAFE)) {
+                Text("BOUGHT", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF1D4ED8), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoughtTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
     when {
-        state.activeLoading && state.activeListings.isEmpty() -> {
+        state.boughtLoading && state.boughtItems.isEmpty() -> {
             Box(Modifier.fillMaxSize().padding(top = 24.dp), contentAlignment = Alignment.TopCenter) {
                 CircularProgressIndicator(modifier = Modifier.size(28.dp))
             }
         }
-        state.activeListings.isEmpty() -> {
-            Box(Modifier.fillMaxSize().padding(top = 24.dp), contentAlignment = Alignment.TopCenter) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.Storefront, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
-                    Spacer(Modifier.height(8.dp))
-                    Text("No active listings right now", color = Color.Gray, fontSize = 13.sp)
+        state.boughtItems.isEmpty() -> {
+            // New-user empty state — no purchase history yet, deal carefully.
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.ShoppingBag, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
+                    Text("No purchases yet", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "This user hasn't bought anything on Zaruda yet. New accounts have no history to judge by — verify the listing, check KYC, and prefer in-app escrow for Electronics.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
@@ -587,13 +740,13 @@ private fun ActiveListingsTab(state: SoldPostsUiState, onOpenPost: (String) -> U
         ) {
             item {
                 Text(
-                    stringResource(R.string.commerce_sales_count, state.activeListings.size),
+                    stringResource(R.string.commerce_sales_count, state.boughtItems.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            items(state.activeListings, key = { it.stableId }) { post ->
-                ActiveListingCard(post) { (post.id ?: post.postId)?.let(onOpenPost) }
+            items(state.boughtItems, key = { it.saleId ?: it.post.stableId }) { item ->
+                PostListItemBought(item) { (item.post.id ?: item.post.postId)?.let(onOpenPost) }
             }
         }
     }

@@ -21,6 +21,9 @@ const {
   setTierBasedExpiry,
 } = require("../cron/subscriptionExpiry");
 const {
+  sendExpiryReminders,
+} = require("../cron/postExpiryReminders");
+const {
   reconcileStuckTransactions,
 } = require("../services/reconciliationService");
 
@@ -724,6 +727,12 @@ const initCronJobs = () => {
   // Expiry warnings – Daily at 09:00 IST
   cron.schedule("0 9 * * *", sendExpiryWarnings, { timezone: "Asia/Kolkata" });
   console.log("  - Expiry warnings: Daily at 09:00 IST");
+
+  // Interactive expiry reminders – Daily at 09:30 IST
+  // ≤7 days → "Is your post sold?" (Sold / Not sold actions)
+  // ≤2 days → "Repost now?" (Repost action)
+  cron.schedule("30 9 * * *", sendExpiryReminders, { timezone: "Asia/Kolkata" });
+  console.log("  - Expiry reminders (sold prompt / repost prompt): Daily at 09:30 IST");
 
   // Subscription expiry check – Daily at 10:00 IST
   cron.schedule("0 10 * * *", checkSubscriptionExpiry, {

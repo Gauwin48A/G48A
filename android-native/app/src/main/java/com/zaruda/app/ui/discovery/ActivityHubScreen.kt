@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -34,14 +33,6 @@ private data class ActivityItem(
 )
 
 private val ACTIVITY_ITEMS = listOf(
-    ActivityItem(
-        key = "chat",
-        label = "Messages",
-        description = "View your conversations and messages",
-        icon = Icons.AutoMirrored.Filled.Chat,
-        tint = Color(0xFF2563EB),
-        bgColor = Color(0xFFEFF6FF),
-    ),
     ActivityItem(
         key = "offers",
         label = "Offers & Negotiations",
@@ -130,7 +121,7 @@ fun ActivityHubScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Activity Hub", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                     Text(
-                        "Quick access to your conversations, offers, reviews, and activity.",
+                        "Quick access to your offers, reviews, and activity.",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 13.sp,
                     )

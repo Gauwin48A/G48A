@@ -20,6 +20,7 @@ const PROFILE_COMPLETION_BONUS_POINTS =
 
 let preferencesDateColumnAvailablePromise = null;
 let profilesUpdatedAtColumnAvailablePromise = null;
+let preferencesNotificationColumnAvailablePromise = null;
 
 /**
  * Check (once) whether the `preferences` table has a `date` column.
@@ -47,6 +48,34 @@ async function hasPreferencesDateColumn() {
       });
   }
   return preferencesDateColumnAvailablePromise;
+}
+
+/**
+ * Check (once) whether the `preferences` table has a `notification_enabled`
+ * column. Falls back to `TRUE` when the column is missing.
+ * @returns {Promise<boolean>}
+ */
+async function hasPreferencesNotificationColumn() {
+  if (!preferencesNotificationColumnAvailablePromise) {
+    preferencesNotificationColumnAvailablePromise = runQuery(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'preferences'
+           AND column_name = 'notification_enabled'
+       ) AS available`
+    )
+      .then((result) => Boolean(result?.rows?.[0]?.available))
+      .catch((err) => {
+        logger.warn(
+          "[Profile] Failed to inspect preferences.notification_enabled column, assuming missing",
+          { message: err.message }
+        );
+        return false;
+      });
+  }
+  return preferencesNotificationColumnAvailablePromise;
 }
 
 /**
@@ -651,6 +680,7 @@ exports.getPreferences = async (req, res) => {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.query.userId ?? authenticatedUserId);
     const hasDateColumn = await hasPreferencesDateColumn();
+    const hasNotificationColumn = await hasPreferencesNotificationColumn();
 
     if (!requestedUserId) {
       logger.warn("Preferences request missing userId");
@@ -677,7 +707,7 @@ exports.getPreferences = async (req, res) => {
              max_price,
              categories,
              ${getPreferencesDateSelectExpression(hasDateColumn)},
-             notification_enabled
+             ${hasNotificationColumn ? "notification_enabled" : "TRUE AS notification_enabled"}
            FROM preferences
            WHERE user_id::text = $1
            LIMIT 1`,
@@ -698,15 +728,20 @@ exports.getPreferences = async (req, res) => {
         }
 
         const pref = result.rows[0];
+        const categories = Array.isArray(pref.categories) ? pref.categories : [];
         return {
           userId: pref.user_id,
           location: pref.location || "",
           minPrice: parseOptionalNumber(pref.min_price) || 0,
           maxPrice: parseOptionalNumber(pref.max_price) || 1e5,
-          categories: pref.categories || [],
-          subcategories: pref.categories || [],
+          categories: categories,
+          // `subcategories` may not exist in older schemas — fall back to `categories`
+          subcategories: Array.isArray(pref.subcategories) ? pref.subcategories : categories,
           date: pref.date || null,
-          notificationEnabled: pref.notification_enabled,
+          notificationEnabled:
+            typeof pref.notification_enabled === "boolean"
+              ? pref.notification_enabled
+              : true,
         };
       },
       PREFERENCES_CACHE_TTL_SECONDS
@@ -740,6 +775,7 @@ exports.updatePreferences = async (req, res) => {
     const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
     const { location, categories, subcategories } = req.body;
     const hasDateColumn = await hasPreferencesDateColumn();
+    const hasNotificationColumn = await hasPreferencesNotificationColumn();
 
     if (!requestedUserId) {
       return res.status(400).json({ error: "userId is required" });
@@ -783,7 +819,7 @@ exports.updatePreferences = async (req, res) => {
          max_price,
          categories,
          ${getPreferencesDateSelectExpression(hasDateColumn)},
-         notification_enabled`,
+         ${hasNotificationColumn ? "notification_enabled" : "TRUE AS notification_enabled"}`,
       [requestedUserId, parseOptionalString(location) || "", minPrice, maxPrice, categoriesJson]
     );
 

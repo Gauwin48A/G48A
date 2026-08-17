@@ -59,6 +59,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -76,14 +77,17 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 import com.zaruda.app.ui.navigation.Routes
 import com.zaruda.app.ui.wishlist.WishlistScreen
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import com.zaruda.app.ui.commerce.CompareScreen
 import com.zaruda.app.ui.commerce.RecentlyViewedScreen
+import com.zaruda.app.ui.components.TopBarViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -120,14 +124,28 @@ class CategoryShellViewModel @Inject constructor(
         _currentCategory.value = cat
     }
 
+    // Cart badge counts ONLY the active category's items — using the same normalized
+    // category matching as the Cart screen, so the badge always matches what's shown
+    // and no other category's items leak into this app's count.
     val cartCount: StateFlow<Int> = _currentCategory.flatMapLatest { cat ->
-        if (cat != null) cartItemDao.observeCategoryCount(cat)
-        else cartItemDao.observeCount()
+        if (cat != null) {
+            cartItemDao.observeAll().map { items ->
+                items.count { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(cat) }
+            }
+        } else {
+            cartItemDao.observeCount()
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    // Wishlist is category-scoped — the badge counts only the active category's saved items.
     val wishlistCount: StateFlow<Int> = _currentCategory.flatMapLatest { cat ->
-        if (cat != null) wishlistItemDao.observeCategoryCount(cat)
-        else wishlistItemDao.observeCount()
+        if (cat != null) {
+            wishlistItemDao.observeAll().map { items ->
+                items.count { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(cat) }
+            }
+        } else {
+            wishlistItemDao.observeCount()
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     internal suspend fun loadLastTab(categoryKey: String): CategoryTab {
@@ -179,6 +197,11 @@ fun CategoryAppShell(
     val appDef = CATEGORY_APPS.find { it.key == categoryKey }
         ?: CATEGORY_APPS.first()
 
+    // Notifications are COMMON across all 4 category apps — the same global unread
+    // badge is shown here so no app hides it or shows a per-category variant.
+    val topBarVm: TopBarViewModel = hiltViewModel()
+    val unreadNotifCount by topBarVm.unreadCount.collectAsState()
+
     val innerNav = rememberNavController()
     var selectedTab by rememberSaveable { mutableStateOf(CategoryTab.HOME) }
     val roomCartCount by viewModel.cartCount.collectAsState()
@@ -205,6 +228,7 @@ fun CategoryAppShell(
                 CategoryTopBar(
                     appDef = appDef,
                     cartBadgeCount = effectiveCartBadgeCount,
+                    unreadNotifCount = unreadNotifCount,
                     onBackToLauncher = onBackToLauncher,
                     onSearch = onOpenSearch,
                     onNotifications = onOpenNotifications,
@@ -329,6 +353,7 @@ fun CategoryAppShell(
             }
 
             composable(Routes.categoryWishlist(categoryKey)) {
+                // Wishlist is category-scoped — only this category's saved items show.
                 WishlistScreen(
                     onBack = { innerNav.popBackStack() },
                     onOpenPost = onOpenPostDetail,
@@ -370,6 +395,7 @@ fun CategoryAppShell(
 private fun CategoryTopBar(
     appDef: CategoryAppDef,
     cartBadgeCount: Int,
+    unreadNotifCount: Int = 0,
     onBackToLauncher: () -> Unit,
     onSearch: () -> Unit,
     onNotifications: () -> Unit,
@@ -401,11 +427,27 @@ private fun CategoryTopBar(
         actions = {
             // Search moved out of the top bar — AllPosts/listing screens expose an
             // inline search + filter row below the navbar (web parity).
-            IconButton(
-                onClick = onNotifications,
-                modifier = Modifier.semantics { contentDescription = "View notifications" },
+            // Notifications are common to the whole app — same global unread badge
+            // in every category app.
+            BadgedBox(
+                badge = {
+                    if (unreadNotifCount > 0) {
+                        Badge(containerColor = MaterialTheme.colorScheme.error) {
+                            Text(
+                                if (unreadNotifCount > 99) "99+" else "$unreadNotifCount",
+                                color = MaterialTheme.colorScheme.onError,
+                                fontSize = 9.sp,
+                            )
+                        }
+                    }
+                },
             ) {
-                Icon(Icons.Filled.Notifications, contentDescription = null)
+                IconButton(
+                    onClick = onNotifications,
+                    modifier = Modifier.semantics { contentDescription = "View notifications" },
+                ) {
+                    Icon(Icons.Filled.Notifications, contentDescription = null)
+                }
             }
             BadgedBox(
                 badge = {
@@ -493,7 +535,7 @@ private fun CategoryBottomNavBar(
                         )
                     }
                 },
-                label = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
+                label = { Text(item.label, style = MaterialTheme.typography.labelMedium) },
                 modifier = Modifier.semantics {
                     contentDescription = "${item.label}${if (isSelected) ", selected" else ""}"
                 },

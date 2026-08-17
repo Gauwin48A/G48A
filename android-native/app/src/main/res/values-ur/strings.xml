@@ -1329,7 +1329,7 @@
     <string name="settings_intl_languages">International Languages</string>
     <string name="settings_local">Local emulator</string>
     <string name="settings_logout_all">Logout from all devices</string>
-    <string name="settings_logout_all_desc">This will revoke all active sessions except this one.</string>
+    <string name="settings_logout_all_desc">Sign out of Zaruda on every device, including this one. You will need to sign in again.</string>
     <string name="settings_network">Network</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_offer_updates">Offer updates</string>

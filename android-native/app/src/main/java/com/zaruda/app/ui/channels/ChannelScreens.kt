@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.channels
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,30 +45,30 @@ import javax.inject.Inject
 private val bgGradientLight get() = Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
 private val bgGradientDark get() = Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
 @Composable
-private fun pageGradient() = if (isSystemInDarkTheme()) bgGradientDark else bgGradientLight
+private fun pageGradient() = if (ColorTokens.isDarkTheme()) bgGradientDark else bgGradientLight
 
 @Composable
-private fun amberCard() = if (isSystemInDarkTheme()) Color(0xFF451A03) else Color(0xFFFEF3C7)
+private fun amberCard() = if (ColorTokens.isDarkTheme()) Color(0xFF451A03) else Color(0xFFFEF3C7)
 @Composable
-private fun amberText() = if (isSystemInDarkTheme()) Color(0xFFFDE68A) else Color(0xFFB45309)
+private fun amberText() = if (ColorTokens.isDarkTheme()) Color(0xFFFDE68A) else Color(0xFFB45309)
 @Composable
-private fun redCard() = if (isSystemInDarkTheme()) Color(0xFF450A0A) else Color(0xFFFEE2E2)
+private fun redCard() = if (ColorTokens.isDarkTheme()) Color(0xFF450A0A) else Color(0xFFFEE2E2)
 @Composable
-private fun redText() = if (isSystemInDarkTheme()) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+private fun redText() = if (ColorTokens.isDarkTheme()) Color(0xFFFCA5A5) else Color(0xFFDC2626)
 @Composable
-private fun greenText() = if (isSystemInDarkTheme()) Color(0xFF86EFAC) else Color(0xFF047857)
+private fun greenText() = if (ColorTokens.isDarkTheme()) Color(0xFF86EFAC) else Color(0xFF047857)
 @Composable
-private fun greenCard() = if (isSystemInDarkTheme()) Color(0xFF064E3B) else Color(0xFFECFDF5)
+private fun greenCard() = if (ColorTokens.isDarkTheme()) Color(0xFF064E3B) else Color(0xFFECFDF5)
 @Composable
-private fun indigoCard() = if (isSystemInDarkTheme()) Color(0xFF1E1B4B) else Color(0xFFEEF2FF)
+private fun indigoCard() = if (ColorTokens.isDarkTheme()) Color(0xFF1E1B4B) else Color(0xFFEEF2FF)
 @Composable
-private fun chartBarBg() = if (isSystemInDarkTheme()) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+private fun chartBarBg() = if (ColorTokens.isDarkTheme()) Color(0xFF1E293B) else Color(0xFFF1F5F9)
 @Composable
-private fun heroGradient() = if (isSystemInDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF1A1B4B), Color(0xFF3B1F6E))) else Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))
+private fun heroGradient() = if (ColorTokens.isDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF1A1B4B), Color(0xFF3B1F6E))) else Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))
 @Composable
-private fun heroGradient2() = if (isSystemInDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF2D1B69), Color(0xFF4B1F7A))) else Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))
+private fun heroGradient2() = if (ColorTokens.isDarkTheme()) Brush.horizontalGradient(listOf(Color(0xFF2D1B69), Color(0xFF4B1F7A))) else Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))
 @Composable
-private fun greenContainer() = if (isSystemInDarkTheme()) Color(0xFF064E3B) else Color(0xFF10B981)
+private fun greenContainer() = if (ColorTokens.isDarkTheme()) Color(0xFF064E3B) else Color(0xFF10B981)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -586,7 +587,6 @@ data class CreateCentreUiState(
     val loading: Boolean = false,
     val checkingAccess: Boolean = true,
     val canCreateCentre: Boolean = false,
-    val trialAvailable: Boolean = false,
     val accessLabel: String = "",
     val error: String? = null,
     val success: Boolean = false,
@@ -620,29 +620,16 @@ class CreateCentreViewModel @Inject constructor(
                     val status = subscription?.status.orEmpty()
                     val active = result.data.active && !status.equals("expired", ignoreCase = true)
                     val premium = active && tier.contains("premium", ignoreCase = true)
-                    val trial = active && (tier.contains("trial", ignoreCase = true) || tier.equals("trial_week", ignoreCase = true))
                     _state.value = _state.value.copy(
                         checkingAccess = false,
-                        canCreateCentre = premium || trial,
-                        trialAvailable = !premium && !trial,
-                        accessLabel = if (trial) "1-week trial active" else if (premium) "Premium active" else "",
+                        canCreateCentre = premium,
+                        accessLabel = if (premium) "Premium active" else "",
                     )
                 }
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     checkingAccess = false,
                     canCreateCentre = false,
-                    trialAvailable = true,
                 )
-            }
-        }
-    }
-
-    fun activateTrial() {
-        _state.value = _state.value.copy(loading = true, error = null)
-        viewModelScope.launch {
-            when (tiersRepo.activateTrial()) {
-                is ApiResult.Success -> checkAccess()
-                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "Unable to activate the trial right now")
             }
         }
     }
@@ -650,7 +637,7 @@ class CreateCentreViewModel @Inject constructor(
     fun submit() {
         val s = _state.value
         if (!s.canCreateCentre) {
-            _state.value = s.copy(error = "Premium or an active 1-week trial is required to create a centre")
+            _state.value = s.copy(error = "A Premium subscription is required to create a centre")
             return
         }
         if (s.name.isBlank()) { _state.value = s.copy(error = "Centre name is required"); return }
@@ -698,16 +685,9 @@ fun CreateCentreScreen(
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(42.dp))
                             Text("Premium Feature", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                            Text("Centre creation is available for Premium users or during the 1-week trial.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                            if (state.trialAvailable) {
-                                Button(onClick = { viewModel.activateTrial() }, enabled = !state.loading, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                                    Text(if (state.loading) "Starting trial…" else "Start 1-Week Free Trial", fontWeight = FontWeight.Bold)
-                                }
-                                TextButton(onClick = onNavigateToPremium) { Text("View Plans") }
-                            } else {
-                                Button(onClick = onNavigateToPremium, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                                    Text("Upgrade to Premium", fontWeight = FontWeight.Bold)
-                                }
+                            Text("Centre creation is available for Premium subscribers.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            Button(onClick = onNavigateToPremium, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                                Text("Upgrade to Premium", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

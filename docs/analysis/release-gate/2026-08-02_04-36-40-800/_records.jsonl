@@ -1,0 +1,1 @@
+{"runId":"2026-08-02_04-36-40-800","phase":"unspecified","test":"DEBUG post detail request flow","file":"G48A/client/e2e/release-gate/_debug.pw.ts","status":"passed","durationMs":4265,"startedAt":"2026-08-02T04:36:41.124Z","routesVisited":[],"selectorsClicked":[],"assertions":[],"consoleErrors":[],"networkFailures":[],"screenshots":[],"notes":["mode=logged-in"]}

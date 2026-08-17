@@ -728,11 +728,12 @@ const confirmSale = async (req, res) => {
     if (schema.platformFee && schema.gstOnFee && schema.sellerPayout) {
       const agreedPrice = parseFloat(transaction.agreed_price || 0);
       if (agreedPrice > 0) {
-        const PLATFORM_FEE_RATE = 0.025; // 2.5% platform fee
-        const GST_RATE = 0.18; // 18% GST on platform fee
+        const PLATFORM_FEE_RATE = 0.025; // 2.5% all-inclusive platform fee (GST absorbed inside)
+        const GST_RATE = 0.18; // 18% GST booked out of the fee
         v0PlatformFee = Math.round(agreedPrice * PLATFORM_FEE_RATE * 100) / 100;
-        v0GstOnFee = Math.round(v0PlatformFee * GST_RATE * 100) / 100;
-        v0SellerPayout = Math.round((agreedPrice - v0PlatformFee - v0GstOnFee) * 100) / 100;
+        const v0NetFee = Math.round((v0PlatformFee / (1 + GST_RATE)) * 100) / 100;
+        v0GstOnFee = Math.round(v0PlatformFee - v0NetFee);
+        v0SellerPayout = Math.round((agreedPrice - v0PlatformFee) * 100) / 100;
 
         if (v0SellerPayout > 0) {
           const actualTxId = transaction.transaction_id || transactionId;

@@ -1,16 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/auth");
+const { protect, requirePlanAndKyc } = require("../middleware/auth");
 const salesController = require("../controllers/salesController");
 
 /** @route GET /api/sales/user/:sellerId/sold-posts - PUBLIC: seller's sold posts with ratings/reviews (category-filtered) */
 router.get("/user/:sellerId/sold-posts", salesController.getSellerSoldPosts);
 
+/** @route GET /api/sales/user/:userId/bought-posts - PUBLIC: posts the user purchased (trust signal) */
+router.get("/user/:userId/bought-posts", salesController.getUserBoughtPosts);
+
 /** All sale routes below require authentication */
 router.use(protect);
 
 /** @route POST /api/sales/request - Buyer sends sale request */
-router.post("/request", salesController.requestSale);
+router.post("/request", requirePlanAndKyc, salesController.requestSale);
 
 /** @route GET /api/sales/pending - Seller sees pending requests */
 router.get("/pending", salesController.getPendingSales);
@@ -32,6 +35,9 @@ router.post("/:id/reject", salesController.rejectSale);
 
 /** @route POST /api/sales/:id/cancel - Buyer withdraws their own pending request */
 router.post("/:id/cancel", salesController.cancelSale);
+
+/** @route POST /api/sales/:id/undo-sale - Seller marks sale undone and reactivates post on marketplace */
+router.post("/:id/undo-sale", salesController.undoSale);
 
 /** @route POST /api/sales/:id/order-received - Buyer marks received */
 router.post("/:id/order-received", salesController.orderReceived);

@@ -12,4 +12,6 @@ local.properties
 keystore/*.keystore
 keystore/*.jks
 keystore.properties
+*.jks
 app/google-services.json
+.kotlin/

@@ -12,7 +12,6 @@ import androidx.work.WorkerParameters
 import com.zaruda.app.data.local.OfflineQueueDao
 import com.zaruda.app.data.local.QueuedAction
 import com.zaruda.app.data.remote.ZarudaApi
-import com.zaruda.app.data.remote.dto.SendMessageRequest
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -91,11 +90,6 @@ class OfflineSyncWorker(
                         val postId = payload?.get("postId")?.jsonPrimitive?.content ?: continue
                         val add = payload["add"]?.jsonPrimitive?.content?.toBoolean() ?: true
                         if (add) api.addWishlist(postId) else api.removeWishlist(postId)
-                    }
-                    "send_message" -> {
-                        val conversationId = payload?.get("conversationId")?.jsonPrimitive?.content ?: continue
-                        val text = payload["text"]?.jsonPrimitive?.content ?: continue
-                        api.sendMessage(conversationId, SendMessageRequest(content = text))
                     }
                     else -> {
                         Log.w(TAG, "Unknown queued action: ${item.action} — dropping")

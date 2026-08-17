@@ -2,6 +2,18 @@ const { runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 const crypto = require("crypto");
 
+/** Normalise a plan display name ("Starter Plan"/"Premium") into a tier slug. */
+function tierSlug(planName) {
+  const raw = String(planName || "basic").trim().toLowerCase();
+  if (raw.includes("starter")) return "starter";
+  if (raw.includes("premium")) return "premium";
+  if (raw.includes("gold")) return "gold";
+  if (raw.includes("silver")) return "silver";
+  if (raw.includes("bronze")) return "bronze";
+  if (raw.includes("basic")) return "basic";
+  return raw || "basic";
+}
+
 /**
  * POST /api/v1/webhooks/razorpay
  * Handle Razorpay webhook events (payment captured, subscription activated, refund processed)
@@ -494,8 +506,9 @@ async function handleSubscriptionActivated(payload) {
     );
     const planName = planResult.rows[0]?.plan_name || "ACTIVE";
     await runQuery(
-      `UPDATE users SET current_tier = $1 WHERE user_id::text = $2`,
-      [planName, sub.user_id]
+      `UPDATE users SET current_tier = $1, current_plan = $1, tier = $1, subscription_expiry = $2, updated_at = NOW()
+       WHERE user_id::text = $3`,
+      [tierSlug(planName), new Date(subscription.end_at * 1000), sub.user_id]
     );
 
     await runQuery(
@@ -525,8 +538,9 @@ async function handleSubscriptionActivated(payload) {
         );
 
         await runQuery(
-          `UPDATE users SET current_tier = $1 WHERE user_id::text = $2`,
-          [plan.plan_name, userId]
+          `UPDATE users SET current_tier = $1, current_plan = $1, tier = $1, subscription_expiry = $2, updated_at = NOW()
+           WHERE user_id::text = $3`,
+          [tierSlug(plan.plan_name), endDate, userId]
         );
 
         await runQuery(
@@ -552,7 +566,8 @@ async function handleSubscriptionCompleted(payload) {
   if (result.rows.length > 0) {
     const sub = result.rows[0];
     await runQuery(
-      `UPDATE users SET current_tier = 'BASIC' WHERE user_id::text = $1`,
+      `UPDATE users SET current_tier = 'basic', current_plan = 'basic', tier = 'basic', subscription_expiry = NULL, updated_at = NOW()
+       WHERE user_id::text = $1`,
       [sub.user_id]
     );
 

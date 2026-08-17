@@ -45,6 +45,7 @@ import com.zaruda.app.ui.components.HeroBannerCarousel
 import com.zaruda.app.ui.components.SectionHeader
 import com.zaruda.app.ui.components.SubcategoryChipRow
 import com.zaruda.app.ui.components.SubcategoryChipShimmer
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
@@ -169,6 +170,7 @@ fun CategoryHomeScreen(
                             EnhancedProductCard(
                                 product = product,
                                 isWishlisted = wishlistedIds.contains(product.id),
+                                showWishlist = normalizeMarketplaceCategoryKey(product.category) == categoryKey,
                                 onTap = { onOpenProduct(product.id) },
                                 onAddToCart = { viewModel.addToCart(product) },
                                 onToggleWishlist = { viewModel.toggleWishlist(product) },
@@ -189,6 +191,7 @@ fun CategoryHomeScreen(
                 ProductGrid2Col(
                     products = featured,
                     wishlistedIds = wishlistedIds,
+                    categoryKey = categoryKey,
                     onOpenProduct = onOpenProduct,
                     onToggleWishlist = { id ->
                         featured.firstOrNull { it.id == id }?.let { viewModel.toggleWishlist(it) }
@@ -215,6 +218,7 @@ fun CategoryHomeScreen(
                             EnhancedProductCard(
                                 product = product,
                                 isWishlisted = wishlistedIds.contains(product.id),
+                                showWishlist = normalizeMarketplaceCategoryKey(product.category) == categoryKey,
                                 onTap = { onOpenProduct(product.id) },
                                 onAddToCart = { viewModel.addToCart(product) },
                                 onToggleWishlist = { viewModel.toggleWishlist(product) },
@@ -241,6 +245,7 @@ fun CategoryHomeScreen(
                             EnhancedProductCard(
                                 product = product,
                                 isWishlisted = wishlistedIds.contains(product.id),
+                                showWishlist = normalizeMarketplaceCategoryKey(product.category) == categoryKey,
                                 onTap = { onOpenProduct(product.id) },
                                 onAddToCart = { viewModel.addToCart(product) },
                                 onToggleWishlist = { viewModel.toggleWishlist(product) },
@@ -361,6 +366,7 @@ fun CategoryHomeScreen(
 private fun ProductGrid2Col(
     products: List<MockDataProvider.MockProduct>,
     wishlistedIds: Set<String>,
+    categoryKey: String,
     onOpenProduct: (String) -> Unit,
     onToggleWishlist: (String) -> Unit,
     onAddToCart: (String) -> Unit = {},
@@ -377,6 +383,7 @@ private fun ProductGrid2Col(
                     EnhancedProductCard(
                         product = product,
                         isWishlisted = wishlistedIds.contains(product.id),
+                        showWishlist = normalizeMarketplaceCategoryKey(product.category) == categoryKey,
                         onTap = { onOpenProduct(product.id) },
                         onAddToCart = { onAddToCart(product.id) },
                         onToggleWishlist = { onToggleWishlist(product.id) },

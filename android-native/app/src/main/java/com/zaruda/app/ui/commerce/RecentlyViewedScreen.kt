@@ -97,6 +97,7 @@ import com.zaruda.app.data.local.ThemeMode
 import com.zaruda.app.ui.components.AppErrorState
 import com.zaruda.app.ui.components.ListShimmer
 import com.zaruda.app.ui.explore.SharedExploreStore
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -163,7 +164,7 @@ class RecentlyViewedViewModel @Inject constructor(
             .distinctBy { it.stableId }
             .take(50)
         val mergedPosts = if (catFilter != null) {
-            allPosts.filter { it.category == catFilter }
+            allPosts.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
         } else {
             allPosts
         }
@@ -365,7 +366,9 @@ fun RecentlyViewedScreen(
     val filteredItems = remember(state.posts, searchQuery, sortBy, statusFilter, categoryKey) {
         state.posts
             .filter { post ->
-                (categoryKey == null || post.category == categoryKey) &&
+                // Same normalized comparison as the ViewModel — never exact-match, or legit
+                // items (e.g. category "Cars & Bikes" vs key "vehicles") would be dropped.
+                (categoryKey == null || normalizeMarketplaceCategoryKey(post.category) == normalizeMarketplaceCategoryKey(categoryKey)) &&
                 (searchQuery.isBlank() ||
                     post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                     post.location?.contains(searchQuery, ignoreCase = true) == true ||
@@ -407,7 +410,9 @@ fun RecentlyViewedScreen(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         } else if (state.posts.isNotEmpty()) {
-                            val displayCount = if (categoryKey != null) filteredItems.size else state.posts.size
+                            // state.posts is already scoped by the ViewModel; filteredItems adds
+                            // search/sort — use it so the count always matches what is shown.
+                            val displayCount = filteredItems.size
                             Text(
                                 text = "$displayCount item${if (displayCount != 1) "s" else ""}",
                                 style = MaterialTheme.typography.bodySmall,
@@ -623,8 +628,8 @@ fun RecentlyViewedScreen(
                             ) {
                                 AppEmptyState(
                                     icon = Icons.Default.History,
-                                    title = "No recently viewed items",
-                                    subtitle = "Items you browse will appear here.",
+                                    title = if (categoryKey != null) "No items viewed in this category" else "No recently viewed items",
+                                    subtitle = if (categoryKey != null) "Items you browse in this app will appear here." else "Items you browse will appear here.",
                                 )
                             }
                             filteredItems.isEmpty() -> Box(

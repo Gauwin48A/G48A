@@ -748,7 +748,6 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val prefs by viewModel.prefsLoaded.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val darkTheme = ColorTokens.isDark
     val heroGradient = Brush.horizontalGradient(
@@ -1256,7 +1255,6 @@ fun ProfileScreen(
                         if (selectedTab == 0) {
                         ProfileOverviewSections(
                             user = user,
-                            preferences = prefs,
                             referralCode = profileReferralCode(state.referralCode, user),
                             onEditPersonal = { showEditDialog = true },
                         )
@@ -1398,83 +1396,6 @@ fun ProfileScreen(
                             }
                         }
 
-                        // ─── Profile Essentials (compact) ─────────────────────────
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                // Compact checklist + User ID in one row
-                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    // Compact checklist summary
-                                    val steps = listOf(
-                                        Triple("Name", !user?.displayName.isNullOrBlank() && user?.displayName != "User", "Add your name"),
-                                        Triple("Phone", !user?.phone.isNullOrBlank(), "Add phone number"),
-                                        Triple("Email", !user?.email.isNullOrBlank(), "Add email"),
-                                        Triple("Verified", user?.isKycVerified == true, "Get verified"),
-                                    )
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Profile Completion", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            steps.forEachIndexed { index, (label, done, _) ->
-                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                    Box(
-                                                        modifier = Modifier.size(14.dp).clip(CircleShape).background(
-                                                            if (done) Color(0xFF22C55E) else MaterialTheme.colorScheme.surfaceVariant
-                                                        ),
-                                                        contentAlignment = Alignment.Center,
-                                                    ) {
-                                                        if (done) Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(10.dp))
-                                                    }
-                                                    Text(label.take(1), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Spacer(Modifier.weight(1f))
-                                    // User ID pill
-                                    val uid = user?.stableId ?: user?.userId ?: ""
-                                    if (uid.isNotBlank()) {
-                                        val clipboardManager = LocalClipboardManager.current
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(uid)) },
-                                        ) {
-                                            Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Icon(Icons.Default.ContentCopy, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
-                                                Text("ID: " + uid.take(8) + "...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Referral code row
-                                val refCode = state.referralCode ?: user?.rewardsRank ?: "REF" + (user?.stableId?.take(4)?.uppercase() ?: "CODE")
-                                if (refCode.isNotBlank()) {
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                                    val clipboardManager = LocalClipboardManager.current
-                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Referral Code", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(refCode, style = MaterialTheme.typography.titleSmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                                        Spacer(Modifier.weight(1f))
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                            modifier = Modifier.clickable { clipboardManager.setText(AnnotatedString(refCode)) },
-                                        ) {
-                                            Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Icon(Icons.Default.ContentCopy, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
-                                                Text("Copy", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         }
 
                         // ─── All Settings (unified collapsible menu) ────────────────
@@ -1530,9 +1451,10 @@ fun ProfileScreen(
                             }
                         }
 
-                        // ─── Sign Out ─────────────────────────────────────────────────
+                        // ─── Sign Out (with confirmation) ──────────────────────
+                        var showSignOutConfirm by remember { mutableStateOf(false) }
                         OutlinedButton(
-                            onClick = { viewModel.logout(onSignedOut) },
+                            onClick = { showSignOutConfirm = true },
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1542,6 +1464,28 @@ fun ProfileScreen(
                             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.SemiBold)
+                        }
+                        if (showSignOutConfirm) {
+                            AlertDialog(
+                                onDismissRequest = { showSignOutConfirm = false },
+                                title = { Text(stringResource(R.string.profile_sign_out), fontWeight = FontWeight.Bold) },
+                                text = { Text(stringResource(R.string.profile_sign_out_confirm_message)) },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            showSignOutConfirm = false
+                                            viewModel.logout(onSignedOut)
+                                        },
+                                    ) {
+                                        Text(stringResource(R.string.profile_sign_out_yes), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showSignOutConfirm = false }) {
+                                        Text(stringResource(R.string.profile_sign_out_no))
+                                    }
+                                },
+                            )
                         }
                         Spacer(Modifier.height(24.dp))
 
@@ -1585,11 +1529,9 @@ fun ProfileScreen(
 @Composable
 private fun ProfileOverviewSections(
     user: User?,
-    preferences: com.zaruda.app.data.remote.dto.PreferencesResponse?,
     referralCode: String,
     onEditPersonal: () -> Unit,
 ) {
-    val locationParts = remember(preferences?.location) { parseProfileLocation(preferences?.location) }
     val clipboardManager = LocalClipboardManager.current
 
     Column(
@@ -1612,16 +1554,6 @@ private fun ProfileOverviewSections(
             ProfileInfoRow(stringResource(R.string.profile_bio_optional), user?.bio)
             ProfileInfoRow(stringResource(R.string.profile_current_plan), tierLabel(user?.currentPlan))
             ProfileInfoRow(stringResource(R.string.profile_verification_status), user?.kycStatus?.replaceFirstChar { it.uppercase() })
-        }
-
-        ProfileExpandableSection(
-            title = stringResource(R.string.profile_location_selection),
-            subtitle = stringResource(R.string.profile_overview_location_subtitle),
-        ) {
-            ProfileInfoRow(stringResource(R.string.profile_country), locationParts.country)
-            ProfileInfoRow(stringResource(R.string.profile_state), locationParts.state)
-            ProfileInfoRow(stringResource(R.string.profile_district), locationParts.district)
-            ProfileInfoRow(stringResource(R.string.profile_city), locationParts.city)
         }
 
         ProfileExpandableSection(
@@ -1767,109 +1699,6 @@ private fun PersonalInfoTab(
 }
 
 @Composable
-@OptIn(ExperimentalLayoutApi::class)
-private fun SearchableChoiceField(
-    label: String,
-    value: String,
-    placeholder: String,
-    options: List<String>,
-    enabled: Boolean = true,
-    onSelected: (String) -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    var query by remember(showDialog) { mutableStateOf("") }
-    val filteredOptions = remember(query, options) {
-        val normalizedQuery = query.trim()
-        if (normalizedQuery.isBlank()) options else options.filter { it.contains(normalizedQuery, ignoreCase = true) }
-    }
-
-    OutlinedTextField(
-        value = profileDisplayValue(value),
-        onValueChange = {},
-        readOnly = true,
-        enabled = enabled,
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
-        trailingIcon = {
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.graphicsLayer { rotationZ = 90f },
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { showDialog = true },
-        shape = RoundedCornerShape(12.dp),
-    )
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text(label, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        singleLine = true,
-                        label = { Text(stringResource(R.string.profile_search_dropdown)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                    )
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(220.dp)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        if (filteredOptions.isEmpty()) {
-                            Text(
-                                stringResource(R.string.profile_no_matches),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 12.dp),
-                            )
-                        } else {
-                            filteredOptions.forEach { option ->
-                                TextButton(
-                                    onClick = {
-                                        onSelected(option)
-                                        showDialog = false
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text(
-                                        option,
-                                        textAlign = TextAlign.Start,
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onSelected("")
-                        showDialog = false
-                    },
-                ) {
-                    Text(stringResource(R.string.profile_clear_selection))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text(stringResource(R.string.profile_cancel))
-                }
-            },
-        )
-    }
-}
-@Composable
 private fun AvatarWithRing(initial: Char, completionPercent: Int, size: Dp) {
     val ringColor = Color(0xFF34D399)
     val ringTrack = Color.White.copy(alpha = 0.25f)
@@ -1938,97 +1767,7 @@ private fun AvatarWithRing(initial: Char, completionPercent: Int, size: Dp) {
     }
 }
 
-private data class ProfileLocationParts(
-    val country: String = "",
-    val state: String = "",
-    val district: String = "",
-    val city: String = "",
-)
-
-private val profileCountryOptions = listOf(
-    "India",
-    "United States",
-    "United Kingdom",
-    "Canada",
-    "Australia",
-    "United Arab Emirates",
-    "Singapore",
-)
-
-private val profileStateOptions = mapOf(
-    "India" to listOf("Andhra Pradesh", "Delhi", "Gujarat", "Karnataka", "Kerala", "Maharashtra", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal"),
-    "United States" to listOf("California", "Florida", "New York", "Texas", "Washington"),
-    "United Kingdom" to listOf("England", "Scotland", "Wales", "Northern Ireland"),
-    "Canada" to listOf("Alberta", "British Columbia", "Ontario", "Quebec"),
-    "Australia" to listOf("New South Wales", "Queensland", "Victoria", "Western Australia"),
-    "United Arab Emirates" to listOf("Abu Dhabi", "Dubai", "Sharjah"),
-    "Singapore" to listOf("Central", "East", "North", "North-East", "West"),
-)
-
-private val profileDistrictOptions = mapOf(
-    "Karnataka" to listOf("Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Mangaluru"),
-    "Maharashtra" to listOf("Mumbai", "Pune", "Nagpur", "Nashik"),
-    "Telangana" to listOf("Hyderabad", "Rangareddy", "Medchal", "Warangal"),
-    "Tamil Nadu" to listOf("Chennai", "Coimbatore", "Madurai", "Salem"),
-    "Delhi" to listOf("Central Delhi", "East Delhi", "New Delhi", "South Delhi", "West Delhi"),
-    "California" to listOf("Los Angeles", "San Diego", "San Francisco", "Santa Clara"),
-    "Texas" to listOf("Austin", "Dallas", "Houston", "Travis"),
-    "England" to listOf("Greater London", "Greater Manchester", "West Midlands"),
-    "Ontario" to listOf("Toronto", "Ottawa", "Peel", "York"),
-    "Dubai" to listOf("Dubai"),
-    "Central" to listOf("Central Area"),
-)
-
-private val profileCityOptions = mapOf(
-    "Bengaluru Urban" to listOf("Bengaluru", "Yelahanka", "Whitefield", "Electronic City"),
-    "Mumbai" to listOf("Mumbai", "Andheri", "Bandra", "Dadar"),
-    "Pune" to listOf("Pune", "Hinjewadi", "Kharadi", "Wakad"),
-    "Hyderabad" to listOf("Hyderabad", "Gachibowli", "Secunderabad", "Madhapur"),
-    "Chennai" to listOf("Chennai", "Tambaram", "T Nagar", "Velachery"),
-    "Central Delhi" to listOf("Connaught Place", "Karol Bagh", "Paharganj"),
-    "Los Angeles" to listOf("Los Angeles", "Santa Monica", "Pasadena"),
-    "San Francisco" to listOf("San Francisco", "Daly City", "Oakland"),
-    "Austin" to listOf("Austin", "Round Rock", "Cedar Park"),
-    "Greater London" to listOf("London", "Croydon", "Wembley"),
-    "Toronto" to listOf("Toronto", "North York", "Scarborough"),
-    "Dubai" to listOf("Dubai", "Deira", "Jumeirah"),
-    "Central Area" to listOf("Downtown Core", "Orchard", "Rochor"),
-)
-
-private fun profileStatesFor(country: String): List<String> = profileStateOptions[country].orEmpty()
-
-private fun profileDistrictsFor(state: String): List<String> = profileDistrictOptions[state].orEmpty()
-
-private fun profileCitiesFor(district: String): List<String> = profileCityOptions[district].orEmpty()
-
-private fun parseProfileLocation(raw: String?): ProfileLocationParts {
-    val parts = raw.orEmpty().split(",").map { it.trim() }.filter { it.isNotBlank() }
-    return when {
-        parts.size >= 4 -> ProfileLocationParts(country = parts[3], state = parts[2], district = parts[1], city = parts[0])
-        parts.size == 3 -> ProfileLocationParts(country = parts[2], state = parts[1], city = parts[0])
-        parts.size == 2 -> ProfileLocationParts(state = parts[1], city = parts[0])
-        parts.size == 1 -> ProfileLocationParts(city = parts[0])
-        else -> ProfileLocationParts()
-    }
-}
-
-private fun composeProfileLocation(country: String, state: String, district: String, city: String): String {
-    return listOf(city, district, state, country)
-        .map { it.trim() }
-        .filter { it.isNotBlank() }
-        .joinToString(", ")
-}
-
 private fun profileDisplayValue(value: String?): String = value?.trim()?.takeIf { it.isNotBlank() } ?: "N/A"
-
-private fun profilePriceRange(minPrice: Int?, maxPrice: Int?): String {
-    return when {
-        minPrice != null && maxPrice != null -> "Rs.$minPrice - Rs.$maxPrice"
-        minPrice != null -> "From Rs.$minPrice"
-        maxPrice != null -> "Up to Rs.$maxPrice"
-        else -> ""
-    }
-}
 
 private fun profileReferralCode(explicitCode: String?, user: User?): String {
     explicitCode?.trim()?.takeIf { it.isNotBlank() }?.let { return it }

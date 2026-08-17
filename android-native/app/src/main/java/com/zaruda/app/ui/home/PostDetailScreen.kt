@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.home
+import com.zaruda.app.ui.theme.ColorTokens
 
 import android.content.Intent
 import android.net.Uri
@@ -486,7 +487,7 @@ fun PostDetailScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     var showShareSheet by remember { mutableStateOf(false) }
     var showInterestModal by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
@@ -1347,15 +1348,18 @@ fun PostDetailScreen(
                                 )
                             ) {
                                 Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
+                                val catLower = (post.category ?: post.categoryName ?: "").lowercase()
+                                val isElectronicsCategory = catLower.contains("electron") || catLower.contains("mobile") || catLower.contains("phone") || catLower.contains("gadget")
                                 Column(horizontalAlignment = Alignment.Start) {
                                     Text(
                                         if (isOwner) stringResource(R.string.commerce_sell_via_app)
+                                        else if (isElectronicsCategory) "Buy via App (Escrow Protected · 2.5% Fee)"
                                         else stringResource(R.string.commerce_buy_via_app),
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         if (isOwner) stringResource(R.string.commerce_sell_manage)
+                                        else if (isElectronicsCategory) "100% Escrow Fraud Shield · 2.5% Commission"
                                         else stringResource(R.string.commerce_escrow_badge),
                                         fontSize = 10.sp,
                                         color = Color.White.copy(alpha = 0.85f),
@@ -1470,7 +1474,7 @@ private fun BuyFlowHowItWorksDialog(
     onContinue: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val steps = listOf(
         Triple(
             stringResource(R.string.commerce_buy_flow_step1_title),
@@ -1570,7 +1574,7 @@ private fun ContactSellerRevealPanel(
     context: android.content.Context,
     onBuyViaApp: () -> Unit = {},
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     var revealed by remember { mutableStateOf(false) }
     var numberVisible by remember { mutableStateOf(false) }
     val rawNumber = post.contactNumber?.trim().orEmpty()

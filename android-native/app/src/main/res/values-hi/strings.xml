@@ -684,7 +684,7 @@
   <string name="settings_clear_cache">स्थान खाली करने के लिए छवि कैश साफ़ करें।</string>
   <string name="settings_danger_zone">खतरे का क्षेत्र</string>
   <string name="settings_logout_all">सभी डिवाइस से लॉगआउट</string>
-  <string name="settings_logout_all_desc">यह इस डिवाइस को छोड़कर सभी सक्रिय सत्र रद्द कर देगा।</string>
+  <string name="settings_logout_all_desc">हर डिवाइस पर ज़रूदा से साइन आउट करें, जिसमें यह डिवाइस भी शामिल है। आपको फिर से साइन इन करना होगा।</string>
   <string name="settings_account_data">खाता डेटा</string>
   <string name="settings_export_data">मेरा डेटा निर्यात करें</string>
   <string name="settings_export_desc">अपने सभी खाता डेटा की कॉपी डाउनलोड करें (GDPR अनुपालित)।</string>

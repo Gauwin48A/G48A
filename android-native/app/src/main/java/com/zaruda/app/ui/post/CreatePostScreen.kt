@@ -5,9 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.LocationManager
-import android.media.MediaRecorder
 import android.net.Uri
-import android.os.Build
 import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -15,10 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,8 +37,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -58,19 +56,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -106,7 +100,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.coroutines.resume
@@ -136,85 +129,16 @@ fun CreatePostScreen(
     var stepError by remember { mutableStateOf<String?>(null) }
     var detectingLocation by remember { mutableStateOf(false) }
 
+    // Scroll state — reset to top whenever the step changes so users always
+    // land on the step's first section instead of a stale scroll offset.
+    val scrollState = rememberScrollState()
+    LaunchedEffect(currentStep) { scrollState.animateScrollTo(0) }
+
     // Focus / touched tracking for validation-on-blur
     var titleTouched by rememberSaveable { mutableStateOf(false) }
     var descTouched by rememberSaveable { mutableStateOf(false) }
     var priceTouched by rememberSaveable { mutableStateOf(false) }
 
-    // ── Voice note recorder state ───────────────────────────────────────
-    var elapsedSeconds by rememberSaveable { mutableStateOf(0) }
-    var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
-    var lastAudioFile by remember { mutableStateOf<File?>(null) }
-
-    fun doStartRecording() {
-        if (state.recording) return
-        val file = File(context.cacheDir, "voice_${System.currentTimeMillis()}.m4a")
-        val r: MediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(context).apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setOutputFile(file)
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setOutputFile(file.path)
-            }
-        }
-        runCatching { r.prepare() }.onFailure { runCatching { r.release() }; return }
-        runCatching { r.start() }.onFailure { runCatching { r.release() }; return }
-        lastAudioFile = file
-        recorder = r
-        viewModel.setRecording(true)
-        stepError = null
-    }
-
-    fun stopRecording() {
-        val r = recorder ?: return
-        recorder = null
-        viewModel.setRecording(false)
-        runCatching { r.stop() }
-        runCatching { r.release() }
-        lastAudioFile?.let { viewModel.setAudioUri(Uri.fromFile(it), elapsedSeconds) }
-    }
-
-    val recordPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) doStartRecording() }
-
-    fun startRecording() {
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        } else {
-            doStartRecording()
-        }
-    }
-
-    // 60s max recording timer
-    LaunchedEffect(state.recording) {
-        if (state.recording) {
-            elapsedSeconds = 0
-            while (state.recording && elapsedSeconds < 60) {
-                delay(1000)
-                elapsedSeconds++
-            }
-            if (elapsedSeconds >= 60 && state.recording) stopRecording()
-        }
-    }
-
-    // Always release the recorder when leaving the screen
-    DisposableEffect(Unit) {
-        onDispose {
-            runCatching { recorder?.stop() }
-            runCatching { recorder?.release() }
-            recorder = null
-        }
-    }
 
     // ── GPS location detection ──────────────────────────────────────────
     fun detectLocation() {
@@ -329,8 +253,6 @@ fun CreatePostScreen(
 
     fun goNext() {
         if (currentStep >= 5) return
-        // Never carry a live recording into the next step
-        if (state.recording) stopRecording()
         when (currentStep) {
             1 -> titleTouched = true
             2 -> titleTouched = true
@@ -349,6 +271,14 @@ fun CreatePostScreen(
     fun goBack() {
         if (currentStep > 1) {
             currentStep--
+            stepError = null
+        }
+    }
+
+    /** Jump back to an already-completed step (tappable step indicator). */
+    fun goToStep(target: Int) {
+        if (target in 1..currentStep) {
+            currentStep = target
             stepError = null
         }
     }
@@ -390,7 +320,7 @@ fun CreatePostScreen(
                         Text("Create Listing", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Text(
                             when (currentStep) {
-                                1 -> "Photos & voice note"
+                                1 -> "Photos"
                                 2 -> "Choose your category"
                                 3 -> "Describe your item"
                                 4 -> "Price, location & contact"
@@ -424,6 +354,39 @@ fun CreatePostScreen(
         ) {
 
             // ═════════════════════════════════════════════════════════════
+            // Daily / listing limit dialog — shown when the server rejects a
+            // publish because the user hit their plan's per-day or active-
+            // listing cap. Explains the cap instead of a terse inline banner.
+            // ═════════════════════════════════════════════════════════════
+            val limitError = state.error?.takeIf {
+                it.contains("Daily limit", ignoreCase = true) || it.contains("Listing limit", ignoreCase = true)
+            }
+            if (limitError != null) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.clearError() },
+                    icon = { Text("⏱️", fontSize = 28.sp) },
+                    title = { Text("Posting limit reached", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                    text = {
+                        Text(
+                            "${limitError}\n\nYour plan caps how many listings you can publish per day. The limit resets at midnight — or upgrade your plan to post more.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.clearError() },
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        ) { Text("Got it") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.clearError() }) { Text("Upgrade Plan") }
+                    },
+                )
+            }
+
+            // ═════════════════════════════════════════════════════════════
             // Wizard content
             // ═════════════════════════════════════════════════════════════
             AnimatedContent(
@@ -434,14 +397,19 @@ fun CreatePostScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 104.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Spacer(Modifier.height(0.dp))
 
-                    ErrorBanner(message = state.error)
+                    // Suppress the inline banner for limit errors — those surface as a dialog above.
+                    if (state.error?.contains("Daily limit", ignoreCase = true) != true &&
+                        state.error?.contains("Listing limit", ignoreCase = true) != true
+                    ) {
+                        ErrorBanner(message = state.error)
+                    }
 
                     // Draft indicator
                     AnimatedVisibility(visible = draftMessage != null, enter = fadeIn(), exit = fadeOut()) {
@@ -465,11 +433,12 @@ fun CreatePostScreen(
                         }
                     }
 
-                    // Step indicator
+                    // Step indicator (tap a completed step to jump back)
                     StepIndicator(
                         currentStep = step,
                         totalSteps = 5,
                         labels = listOf("Photos", "Category", "Details", "Price", "Publish"),
+                        onStepClick = { target -> goToStep(target) },
                     )
 
                     // Per-step error
@@ -548,22 +517,6 @@ fun CreatePostScreen(
                                 }
                             }
 
-                            FormSectionCard {
-                                SectionHeader(
-                                    icon = Icons.Default.GraphicEq,
-                                    title = "Voice Note",
-                                    subtitle = "Optional — helps buyers trust your listing",
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                VoiceNoteRecorder(
-                                    hasAudio = state.audioUri != null,
-                                    isRecording = state.recording,
-                                    elapsedSeconds = elapsedSeconds,
-                                    onRecord = { startRecording() },
-                                    onStop = { stopRecording() },
-                                    onRemove = { viewModel.clearAudio() },
-                                )
-                            }
                         }
 
                         // ── STEP 2: Category & Subcategory ───────────────
@@ -571,8 +524,8 @@ fun CreatePostScreen(
                             FormSectionCard {
                                 SectionHeader(
                                     icon = Icons.Default.Category,
-                                    title = "Category",
-                                    subtitle = "Helps buyers find your listing",
+                                    title = "Category & Subcategory",
+                                    subtitle = "Select main category and specific subcategory for your item",
                                 )
                                 Spacer(Modifier.height(12.dp))
 
@@ -585,7 +538,7 @@ fun CreatePostScreen(
                                 OutlinedTextField(
                                     value = categorySearch,
                                     onValueChange = { categorySearch = it },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().then(rememberBringIntoViewOnFocusModifier()),
                                     label = { Text("Search category") },
                                     placeholder = { Text("e.g., Mobiles, Vehicles, Fashion…") },
                                     leadingIcon = { Icon(Icons.Default.Category, null, modifier = Modifier.size(18.dp)) },
@@ -717,7 +670,7 @@ fun CreatePostScreen(
                                         OutlinedTextField(
                                             value = state.brand,
                                             onValueChange = { viewModel.setBrand(it); brandExpanded = true },
-                                            modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable),
+                                            modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryEditable).then(rememberBringIntoViewOnFocusModifier()),
                                             label = { Text("Brand") },
                                             placeholder = { Text("Apple") },
                                             leadingIcon = { Icon(Icons.Default.Sell, null, modifier = Modifier.size(18.dp)) },
@@ -738,7 +691,7 @@ fun CreatePostScreen(
                                     OutlinedTextField(
                                         value = state.model,
                                         onValueChange = { viewModel.setModel(it) },
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f).then(rememberBringIntoViewOnFocusModifier()),
                                         label = { Text("Model") },
                                         placeholder = { Text("iPhone 14") },
                                         singleLine = true,
@@ -869,6 +822,14 @@ fun CreatePostScreen(
                                     error = priceError,
                                 )
 
+                                // Quick price suggestions — one tap to set a common price.
+                                // Strip commas so parsePositiveAmount (toDoubleOrNull) accepts them.
+                                Spacer(Modifier.height(10.dp))
+                                QuickPriceChips(
+                                    current = priceText,
+                                    onPick = { priceText = it.replace(",", ""); priceTouched = true; viewModel.clearError() },
+                                )
+
                                 if (state.isNegotiable && priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) != null) {
                                     Spacer(Modifier.height(6.dp))
                                     Surface(
@@ -953,6 +914,12 @@ fun CreatePostScreen(
                                     leadingIcon = Icons.Default.LocationOn,
                                     imeAction = ImeAction.Done,
                                 )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "We'll show your city on the listing — never your exact address.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
 
                             FormSectionCard {
@@ -964,7 +931,7 @@ fun CreatePostScreen(
                                 OutlinedTextField(
                                     value = state.contactNumber,
                                     onValueChange = { viewModel.setContactNumber(it) },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().then(rememberBringIntoViewOnFocusModifier()),
                                     label = { Text("Phone (required)") },
                                     placeholder = { Text("98765 43210") },
                                     leadingIcon = { Text("+91", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
@@ -1016,6 +983,24 @@ fun CreatePostScreen(
 
                         // ── STEP 5: Preview & Publish ────────────────────
                         else -> {
+                            // Readiness checklist — what's missing before publishing
+                            val hasPhoto = state.imageUris.isNotEmpty()
+                            val hasCategory = state.selectedCategory != null && state.selectedSubcategory != null
+                            val hasTitle = title.isNotBlank() && InputValidators.isValidTitle(title)
+                            val hasCondition = state.condition != null
+                            val hasPrice = priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) != null || state.isNegotiable
+                            val hasContact = state.contactNumber.isNotBlank() && InputValidators.isValidIndianMobile(state.contactNumber)
+                            ListingReadinessCard(
+                                checks = listOf(
+                                    "Add at least one photo" to hasPhoto,
+                                    "Choose a category & subcategory" to hasCategory,
+                                    "Write a clear title" to hasTitle,
+                                    "Select item condition" to hasCondition,
+                                    "Set a price (or mark negotiable)" to hasPrice,
+                                    "Add your 10-digit contact number" to hasContact,
+                                ),
+                            )
+
                             LiveListingPreview(
                                 title = title,
                                 description = description,
@@ -1024,7 +1009,6 @@ fun CreatePostScreen(
                                 condition = state.condition,
                                 negotiable = state.isNegotiable,
                                 flashSale = state.flashSale,
-                                hasAudio = state.audioUri != null,
                                 imageUri = state.imageUris.firstOrNull(),
                                 category = state.selectedCategory?.displayName,
                                 brand = state.brand,
@@ -1047,7 +1031,6 @@ fun CreatePostScreen(
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                         Text(
                                             when {
-                                                state.audioUploading -> "Uploading voice note…"
                                                 state.uploading -> "Uploading images…"
                                                 else -> "Publishing listing…"
                                             },
@@ -1077,70 +1060,85 @@ fun CreatePostScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp,
+                tonalElevation = 2.dp,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedButton(
-                        onClick = { goBack() },
-                        enabled = currentStep > 1 && !state.uploading && !state.submitting,
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                    ) {
-                        Text("← Back", fontWeight = FontWeight.Bold)
-                    }
-
-                    Text(
-                        "Step $currentStep of 5",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Column(Modifier.fillMaxWidth()) {
+                    // Thin progress accent above the action row
+                    LinearProgressIndicator(
+                        progress = { (currentStep - 1) / 4f },
+                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
-
-                    if (currentStep < 5) {
-                        Button(
-                            onClick = { goNext() },
-                            enabled = !state.uploading && !state.submitting,
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedButton(
+                            onClick = { goBack() },
+                            enabled = currentStep > 1 && !state.uploading && !state.submitting,
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         ) {
-                            Text("Next →", fontWeight = FontWeight.Bold)
+                            Text("← Back", fontWeight = FontWeight.Bold)
                         }
-                    } else {
-                        Button(
-                            onClick = {
-                                titleTouched = true; descTouched = true; priceTouched = true
-                                focusManager.clearFocus()
-                                viewModel.uploadImagesAndSubmit(
-                                    title = title,
-                                    description = description,
-                                    priceText = priceText,
-                                    location = location,
-                                    bytesProvider = { uri ->
-                                        runCatching {
-                                            val resolver = context.contentResolver
-                                            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
-                                            val mime = resolver.getType(uri) ?: "image/jpeg"
-                                            bytes to mime
-                                        }.getOrNull()
-                                    },
-                                    audioBytesProvider = { uri ->
-                                        runCatching {
-                                            val resolver = context.contentResolver
-                                            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
-                                            val mime = resolver.getType(uri)?.takeIf { it.startsWith("audio/") } ?: "audio/mp4"
-                                            bytes to mime
-                                        }.getOrNull()
-                                    },
-                                )
-                            },
-                            enabled = !state.uploading && !state.submitting,
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
-                        ) {
-                            Text("🚀 Publish", fontWeight = FontWeight.Bold)
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "Step $currentStep of 5",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                listOf("Photos", "Category", "Details", "Price", "Publish")[currentStep - 1],
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+
+                        if (currentStep < 5) {
+                            Button(
+                                onClick = { goNext() },
+                                enabled = !state.uploading && !state.submitting,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                            ) {
+                                Text("Next →", fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    titleTouched = true; descTouched = true; priceTouched = true
+                                    focusManager.clearFocus()
+                                    viewModel.uploadImagesAndSubmit(
+                                        title = title,
+                                        description = description,
+                                        priceText = priceText,
+                                        location = location,
+                                        bytesProvider = { uri ->
+                                            runCatching {
+                                                val resolver = context.contentResolver
+                                                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
+                                                val mime = resolver.getType(uri) ?: "image/jpeg"
+                                                bytes to mime
+                                            }.getOrNull()
+                                        },
+                                    )
+                                },
+                                enabled = !state.uploading && !state.submitting,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            ) {
+                                Text("🚀 Publish", fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -1181,10 +1179,27 @@ fun CreatePostScreen(
 // Sub-components
 // ═════════════════════════════════════════════════════════════════════════════
 
+// ── Auto-scroll focused fields above the keyboard ───────────────────────────
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun rememberBringIntoViewOnFocusModifier(): Modifier {
+    val requester = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
+    return Modifier
+        .bringIntoViewRequester(requester)
+        .onFocusChanged { focused -> if (focused.isFocused) scope.launch { requester.bringIntoView() } }
+}
+
 // ── Step indicator ──────────────────────────────────────────────────────────
 
 @Composable
-private fun StepIndicator(currentStep: Int, totalSteps: Int, labels: List<String>) {
+private fun StepIndicator(
+    currentStep: Int,
+    totalSteps: Int,
+    labels: List<String>,
+    onStepClick: (Int) -> Unit = {},
+) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -1201,8 +1216,13 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int, labels: List<String
                     val stepNum = idx + 1
                     val isActive = currentStep == stepNum
                     val isDone = currentStep > stepNum
+                    val canJump = isDone
                     Column(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (canJump) Modifier.clickable { onStepClick(stepNum) } else Modifier)
+                            .clip(RoundedCornerShape(10.dp))
+                            .padding(vertical = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Box(
@@ -1343,116 +1363,109 @@ private fun SubcategoryChips(
     }
 }
 
-// ── Voice note recorder ─────────────────────────────────────────────────────
+
+// ── Quick price chips ───────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QuickPriceChips(current: String, onPick: (String) -> Unit) {
+    val suggestions = listOf("499", "999", "1,499", "2,999", "4,999", "9,999", "14,999", "29,999")
+    Column {
+        Text(
+            "Quick prices",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(6.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            suggestions.forEach { s ->
+                val selected = current.replace(",", "") == s.replace(",", "")
+                AssistChip(
+                    onClick = { onPick(s) },
+                    label = { Text("₹$s", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+                    leadingIcon = if (selected) {{ Icon(Icons.Default.Check, null, Modifier.size(14.dp)) }} else null,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        labelColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    ),
+                    border = AssistChipDefaults.assistChipBorder(
+                        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        enabled = true,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+// ── Listing readiness checklist ─────────────────────────────────────────────
 
 @Composable
-private fun VoiceNoteRecorder(
-    hasAudio: Boolean,
-    isRecording: Boolean,
-    elapsedSeconds: Int,
-    onRecord: () -> Unit,
-    onStop: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-        label = "pulseAlpha",
-    )
-
+private fun ListingReadinessCard(checks: List<Pair<String, Boolean>>) {
+    val doneCount = checks.count { it.second }
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = if (isRecording) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.5.dp,
+        shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            when {
-                isRecording -> {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .scale(1f + 0.18f * pulse)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEF4444).copy(alpha = 0.15f + 0.35f * pulse)),
-                        contentAlignment = Alignment.Center,
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text("Listing readiness", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "$doneCount of ${checks.size} complete",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (doneCount == checks.size) Color(0xFF16A34A) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (doneCount == checks.size) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFDCFCE7),
                     ) {
-                        Icon(Icons.Default.Stop, null, Modifier.size(20.dp), tint = Color(0xFFDC2626))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text("Recording…", fontWeight = FontWeight.Bold, color = Color(0xFFB91C1C))
                         Text(
-                            "0:%02d".format(elapsedSeconds) + " / 0:60 · tap stop when done",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFB91C1C),
+                            "Ready to publish",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF16A34A),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         )
-                    }
-                    Button(
-                        onClick = onStop,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                    ) {
-                        Text("Stop", fontWeight = FontWeight.Bold)
                     }
                 }
-
-                hasAudio -> {
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            checks.forEach { (label, ok) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFDCFCE7)),
+                            .background(if (ok) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Default.CheckCircle, null, Modifier.size(22.dp), tint = Color(0xFF16A34A))
+                        if (ok) {
+                            Icon(Icons.Default.Check, null, Modifier.size(13.dp), tint = Color(0xFF16A34A))
+                        } else {
+                            Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text("Voice note recorded", fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "0:%02d".format(elapsedSeconds) + " · added to your listing",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    TextButton(onClick = onRecord) { Text("Re-record", fontWeight = FontWeight.Bold) }
-                    IconButton(onClick = onRemove) {
-                        Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                    }
-                }
-
-                else -> {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Default.Mic, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text("Record a voice note", fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "Optional — up to 60s describing your item",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Button(
-                        onClick = onRecord,
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                    ) {
-                        Icon(Icons.Default.Mic, null, Modifier.size(14.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Record", fontWeight = FontWeight.Bold)
-                    }
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (ok) FontWeight.Medium else FontWeight.Normal,
+                        color = if (ok) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -1471,7 +1484,6 @@ private fun LiveListingPreview(
     condition: String?,
     negotiable: Boolean,
     flashSale: Boolean,
-    hasAudio: Boolean,
     imageUri: Uri?,
     category: String?,
     brand: String,
@@ -1556,7 +1568,6 @@ private fun LiveListingPreview(
                             location.ifBlank { null }?.let { "📍 $it" },
                             negotiable.takeIf { it }?.let { "₹ Negotiable" },
                             flashSale.takeIf { it }?.let { "⚡ Flash Sale" },
-                            hasAudio.takeIf { it }?.let { "🎙️ Voice note" },
                         ).forEach { chip ->
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
@@ -1726,7 +1737,10 @@ private fun PriceField(
                     onValueChange(newVal)
                 }
             },
-            modifier = Modifier.fillMaxWidth().onFocusChanged { onFocusChanged(it.isFocused) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { onFocusChanged(it.isFocused) }
+                .then(rememberBringIntoViewOnFocusModifier()),
             label = { Text("Price (₹)") },
             placeholder = { Text("0") },
             leadingIcon = { Text("₹", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface) },
@@ -1775,7 +1789,10 @@ private fun CharCountField(
         OutlinedTextField(
             value = value,
             onValueChange = { if (it.length <= maxLength) onValueChange(it) },
-            modifier = Modifier.fillMaxWidth().onFocusChanged { onFocusChanged(it.isFocused) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { onFocusChanged(it.isFocused) }
+                .then(rememberBringIntoViewOnFocusModifier()),
             label = { Text(label) },
             placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             leadingIcon = { Icon(leadingIcon, null, modifier = Modifier.size(18.dp)) },
@@ -1811,10 +1828,13 @@ private fun FormTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().then(
-                if (onFocusChanged != null) Modifier.onFocusChanged { onFocusChanged(it.isFocused) }
-                else Modifier
-            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (onFocusChanged != null) Modifier.onFocusChanged { onFocusChanged(it.isFocused) }
+                    else Modifier
+                )
+                .then(rememberBringIntoViewOnFocusModifier()),
             label = { Text(label) },
             placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             leadingIcon = { Icon(leadingIcon, null, modifier = Modifier.size(18.dp)) },

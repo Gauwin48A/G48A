@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,19 +14,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +52,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.zaruda.app.R
 
@@ -77,39 +82,39 @@ fun AboutUsScreen(onBack: () -> Unit) {
             item {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "MHub — Your Local Marketplace",
+                    stringResource(R.string.about_headline),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.semantics { heading() },
                 )
             }
             item {
                 Text(
-                    "MHub is India's fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.",
+                    stringResource(R.string.about_description),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             item {
                 AboutSection(
-                    title = "Our Mission",
-                    body = "To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.",
+                    title = stringResource(R.string.about_mission_title),
+                    body = stringResource(R.string.about_mission),
                 )
             }
             item {
                 AboutSection(
-                    title = "Our Vision",
-                    body = "A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.",
+                    title = stringResource(R.string.about_vision_title),
+                    body = stringResource(R.string.about_vision),
                 )
             }
             item {
                 AboutSection(
-                    title = "Why Choose MHub?",
-                    body = "✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns & refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards & loyalty programme",
+                    title = stringResource(R.string.about_why_title),
+                    body = stringResource(R.string.about_why),
                 )
             }
             item {
                 AboutSection(
-                    title = "Version",
-                    body = "MHub App v1.1.0 · Made with ❤️ in India",
+                    title = stringResource(R.string.about_version_title),
+                    body = stringResource(R.string.about_version),
                 )
                 Spacer(Modifier.height(24.dp))
             }
@@ -162,8 +167,8 @@ fun ContactUsScreen(onBack: () -> Unit) {
             }
             // Direct contact info
             item {
-                ContactRow(icon = Icons.Filled.Email, label = "support@mhub.in")
-                ContactRow(icon = Icons.Filled.Phone, label = "+91 1800-XXX-XXXX (Toll Free)")
+                ContactRow(icon = Icons.Filled.Email, label = "support@zaruda.app")
+                ContactRow(icon = Icons.Filled.Comment, label = "In-app: More → Feedback / Complaints")
             }
             if (!submitted) {
                 item {
@@ -241,25 +246,36 @@ private fun ContactRow(icon: androidx.compose.ui.graphics.vector.ImageVector, la
 private data class FaqItem(val question: String, val answer: String, val category: String)
 
 private val faqs = listOf(
-    FaqItem("How do I place an order?", "Browse products, add to cart, and proceed to checkout. Fill in your address and payment details, then tap 'Place Order'.", "Orders"),
-    FaqItem("What payment methods are accepted?", "We accept UPI, Credit/Debit Cards, Net Banking, and Cash on Delivery.", "Payments"),
-    FaqItem("How do I track my order?", "Go to Profile → Order History and tap on any order to see its tracking timeline.", "Orders"),
-    FaqItem("What is the return policy?", "Most products can be returned within 7 days of delivery. Go to Order History and tap 'Return' on the relevant order.", "Returns"),
-    FaqItem("How do I cancel an order?", "Go to Profile → Order History, tap on the order, and select 'Cancel Order' (available within 1 hour of placing).", "Orders"),
-    FaqItem("Is my data secure?", "Yes. We use end-to-end encryption, secure token storage, and CSRF protection. We never store raw card details.", "Security"),
-    FaqItem("How does the Rewards programme work?", "Earn coins by shopping, referring friends, daily check-ins, and completing challenges. Redeem coins for discounts.", "Rewards"),
-    FaqItem("How do I become a seller?", "Tap 'Sell' on the home screen, complete KYC, and start listing products. No subscription needed for the first 10 listings.", "Selling"),
-    FaqItem("How do I verify my account (KYC)?", "Go to Profile → KYC Verification and upload your Aadhaar and PAN documents. Verification takes 24–48 hours.", "Account"),
-    FaqItem("Can I use MHub in my language?", "Yes! MHub supports English, Hindi, Bengali, Kannada, Marathi, Tamil and Telugu. Change in Settings → Language.", "App"),
+    FaqItem("How do I create an account?", "Tap Sign Up on the login screen and register with your email or mobile number, then verify the one-time password (OTP) sent to you. You can browse and buy right away.", "Account"),
+    FaqItem("I forgot my password. How do I reset it?", "On the login screen tap Forgot Password, enter your registered email or phone number, and follow the instructions sent to you to set a new password.", "Account"),
+    FaqItem("How do I secure my account?", "Open Profile → Security to set a strong password and enable two-factor authentication (2FA). With 2FA on, you'll need a one-time code when logging in from a new device.", "Account"),
+    FaqItem("Can I use Zaruda in my language?", "Yes. Zaruda supports English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali and Gujarati. Switch anytime from More → Appearance & Language.", "App"),
+    FaqItem("How do I buy an item?", "Browse or search listings in Electronics, Fashion, Vehicles and Others. Open an item to view details, then contact the seller, express interest or send an offer, or buy safely in-app when the listing carries the escrow lock badge.", "Buying"),
+    FaqItem("What is Escrow Protection?", "On escrow-eligible listings your payment is held securely and released to the seller only after you confirm you've received the item — protecting both sides. A 2.5% platform fee applies to escrow-protected purchases and is shown before you pay.", "Buying"),
+    FaqItem("Where do I find my purchases?", "Open Profile → Orders → Order History, or the Bought Posts section, to see everything you've bought, track its status and raise any issues.", "Buying"),
+    FaqItem("How do I start selling?", "Tap Sell from the home screen. You need an active plan (free or paid) and completed KYC (Aadhaar + PAN). Then add photos, a title and description, price and category, and publish your listing.", "Selling"),
+    FaqItem("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Sale Undone to bring the listing back.", "Selling"),
+    FaqItem("Why do I need KYC?", "KYC (Aadhaar + PAN) confirms that sellers are real people, which builds trust and keeps the marketplace safe. KYC verification is required to publish listings.", "Account"),
+    FaqItem("How do I complete KYC?", "Go to More → Verification, verify your Aadhaar with an OTP, verify your PAN, and submit. An active plan is required to complete KYC. Most verifications are approved within 24–48 hours.", "Account"),
+    FaqItem("What do the plans include?", "The Free plan includes 1 photo per post. Paid plans add more photos, better visibility, promoted listings, analytics, a profile badge and priority support.", "Plans"),
+    FaqItem("How do refunds work?", "Refunds are handled through the order flow or via a complaint. Escrow funds are returned to you if the item is never delivered or isn't as described. See the Refund Policy for details.", "Plans"),
+    FaqItem("How do Rewards and Coins work?", "Earn coins through daily check-ins, spins, engagement and referral milestones. Redeem them in the Rewards store for discounts and perks.", "Rewards"),
+    FaqItem("How do I report a post or user?", "Open the post and tap Report, or block a user from their profile. Our safety team reviews every report.", "Safety"),
+    FaqItem("What should I do if a deal goes wrong?", "File a complaint from More → Complaints with the order or listing details. Our team mediates between buyer and seller. In fraud cases, payments are held and accounts may be frozen until the case is reviewed.", "Safety"),
+    FaqItem("How do I contact support?", "Email support@zaruda.app, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "Support"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FAQScreen(onBack: () -> Unit) {
     var query by remember { mutableStateOf("") }
-    val filtered = remember(query) {
-        if (query.isBlank()) faqs
-        else faqs.filter { it.question.contains(query, ignoreCase = true) || it.answer.contains(query, ignoreCase = true) }
+    var category by remember { mutableStateOf("All") }
+    val categories = remember { listOf("All") + faqs.map { it.category }.distinct() }
+    val filtered = remember(query, category) {
+        faqs.filter { faq ->
+            (category == "All" || faq.category == category) &&
+                (query.isBlank() || faq.question.contains(query, ignoreCase = true) || faq.answer.contains(query, ignoreCase = true))
+        }
     }
 
     Scaffold(
@@ -292,6 +308,23 @@ fun FAQScreen(onBack: () -> Unit) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             )
+
+            // Category filter chips
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
+            ) {
+                items(categories, key = { it }) { cat ->
+                    FilterChip(
+                        selected = category == cat,
+                        onClick = { category = cat },
+                        label = { Text(cat, fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary),
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                }
+            }
 
             if (filtered.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -7,6 +7,7 @@
  */
 
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parseOptionalString, parsePositiveInt } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 const cacheService = require("../services/cacheService");
 const financialEngine = require("../services/financialEngine");
@@ -76,6 +77,16 @@ async function permanentlyLockAccount(userId) {
 // ── Helper: normalize sale payment mode ─────────────────────────────────────
 function normalizePaymentMode(value) {
   return String(value || "IN_APP").toUpperCase() === "OUTSIDE" ? "OUTSIDE" : "IN_APP";
+}
+
+/**
+ * Electronics category check — these listings are escrow-eligible and get the
+ * 2.5% platform commission. Everything else is direct/outside payment only.
+ * Matches the enrichment in postController.getPostById (is_escrow_eligible).
+ */
+function isElectronicsCategory(category) {
+  const c = String(category || "").toLowerCase();
+  return c.includes("electron") || c.includes("mobile") || c.includes("phone") || c.includes("gadget");
 }
 
 /** Best-effort lifecycle notification for the other party of a sale. */
@@ -190,9 +201,10 @@ async function freezePostForHold(postId) {
 }
 
 // ── 1. POST /request ────────────────────────────────────────────────────────
-// Buyer sends a sale request to seller. paymentMode selects IN_APP (escrow,
-// money via platform) vs OUTSIDE (parties transfer money directly, platform
-// only tracks the mutual agreement).
+// Buyer sends a sale request to seller. The payment mode is NOT client-driven:
+// it is enforced server-side by the listing's category — Electronics listings
+// are escrow-eligible (IN_APP, money via platform), everything else is forced
+// to direct/outside payment (OUTSIDE, platform only tracks the agreement).
 exports.requestSale = async (req, res) => {
   try {
     const buyerId = getAuthUserId(req);
@@ -203,11 +215,14 @@ exports.requestSale = async (req, res) => {
       return res.status(400).json({ error: "Both postId and sellerId are required" });
     }
 
-    const paymentMode = normalizePaymentMode(req.body.paymentMode || req.body.payment_mode);
-
-    // Verify post exists and belongs to the seller
+    // Verify post exists and belongs to the seller. The category name is resolved
+    // via the categories table — posts only store category_id (no 'category' column).
     const postResult = await runQuery(
-      "SELECT post_id, user_id, price FROM posts WHERE post_id::text = $1",
+      `SELECT p.post_id, p.user_id, p.price,
+              COALESCE(c.name, p.category_id::text) AS category
+       FROM posts p
+       LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+       WHERE p.post_id::text = $1`,
       [postId]
     );
     if (postResult.rows.length === 0) {
@@ -216,6 +231,11 @@ exports.requestSale = async (req, res) => {
     if (String(postResult.rows[0].user_id) !== String(sellerId)) {
       return res.status(400).json({ error: "Post does not belong to the specified seller" });
     }
+
+    // ── Category-driven payment mode (server-enforced, never client-trusted) ──
+    // Electronics → in-app escrow (IN_APP). All other categories → direct/outside.
+    const isElectronics = isElectronicsCategory(postResult.rows[0].category);
+    const paymentMode = isElectronics ? "IN_APP" : "OUTSIDE";
 
     // Check no duplicate active request
     const existingResult = await runQuery(
@@ -458,6 +478,53 @@ exports.cancelSale = async (req, res) => {
   } catch (err) {
     logger.error("[Sales] Error cancelling sale:", err);
     return res.status(500).json({ error: "Unable to cancel request", detail: "An unexpected error occurred while cancelling this request. Please try again." });
+  }
+};
+
+// ── 5c. POST /:id/undo-sale — Seller marks sale undone & reactivates post ───────
+exports.undoSale = async (req, res) => {
+  try {
+    const userId = getAuthUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const sale = await getSaleOrFail(req.params.id);
+    if (!sale) return res.status(404).json({ error: "Sale not found" });
+
+    if (String(sale.seller_id) !== String(userId)) {
+      return res.status(403).json({ error: "Only the seller can mark a sale as undone and repost the item" });
+    }
+
+    const result = await runQuery(
+      `UPDATE sales SET status = 'undone', updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [req.params.id]
+    );
+
+    if (sale.post_id) {
+      await runQuery(
+        `UPDATE posts SET status = 'active', updated_at = NOW() WHERE id = $1`,
+        [sale.post_id]
+      );
+    }
+
+    notifySaleParty(
+      sale.buyer_id,
+      "sale_undone",
+      "Sale Marked Undone",
+      "The seller marked this sale as undone and reactivated the listing on the marketplace.",
+      sale.id,
+      sale.post_id
+    );
+
+    return res.json({
+      success: true,
+      sale: result.rows[0],
+      message: "Sale marked as undone successfully. Post has been reactivated on the marketplace.",
+      post_id: sale.post_id,
+    });
+  } catch (err) {
+    logger.error("[Sales] Error undoing sale:", err);
+    return res.status(500).json({ error: "Unable to undo sale", detail: err.message });
   }
 };
 
@@ -815,7 +882,8 @@ exports.getMyReviewStatus = async (req, res) => {
 // ── 6f. GET /user/:sellerId/sold-posts — Public category-filtered sold posts for a user ────────
 exports.getSellerSoldPosts = async (req, res) => {
   try {
-    const { sellerId } = req.params;
+    // Both aliases exist: /user/:sellerId/sold-posts and /user/:userId/sold
+    const sellerId = req.params.sellerId || req.params.userId;
     const { category } = req.query;
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(SOLD_POSTS_MAX_LIMIT, Math.max(1, parseInt(req.query.limit, 10) || SOLD_POSTS_DEFAULT_LIMIT));
@@ -875,24 +943,36 @@ exports.getSellerSoldPosts = async (req, res) => {
       async () => {
         const statsResult = await runQuery(
           `SELECT COUNT(*)::int AS total_sold,
+                  COUNT(*) FILTER (WHERE s.status IN ('received','settled'))::int AS completed_sold,
                   COALESCE(AVG(buyer_rating), 0)::numeric(3,2) AS avg_rating,
                   COUNT(CASE WHEN status = 'fraud' THEN 1 END)::int AS dispute_count
-           FROM sales WHERE seller_id::text = $1`,
+           FROM sales s WHERE s.seller_id::text = $1`,
           [String(sellerId)]
         );
-        return statsResult.rows[0] || { total_sold: 0, avg_rating: "0.00", dispute_count: 0 };
+        const boughtResult = await runQuery(
+          `SELECT COUNT(*)::int AS total_bought
+           FROM sales WHERE buyer_id::text = $1 AND status IN ('received','settled')`,
+          [String(sellerId)]
+        );
+        const stats = statsResult.rows[0] || { total_sold: 0, completed_sold: 0, avg_rating: "0.00", dispute_count: 0 };
+        stats.total_bought = Number(boughtResult.rows[0]?.total_bought || 0);
+        return stats;
       },
       TRUST_SCORE_CACHE_TTL_SECONDS
     );
 
     const totalSold = Number(stats.total_sold || totalItems);
+    const totalBought = Number(stats.total_bought || 0);
     const avgRating = Number(stats.avg_rating || 0);
 
-    // Compute Trust Score (0-100) — same formula, just cached
+    // Compute Trust Score (0-100) — rewards real marketplace activity: sales
+    // completed AND purchases made (a genuine buyer is a genuine member).
     let trustScore = 40;
     if (seller.kyc_status === "VERIFIED" || seller.is_verified) trustScore += 25;
-    if (totalSold >= 5) trustScore += 15;
-    else if (totalSold >= 1) trustScore += 10;
+    const completedActivity = Number(stats.completed_sold || 0) + totalBought;
+    if (completedActivity >= 10) trustScore += 15;
+    else if (completedActivity >= 3) trustScore += 10;
+    else if (completedActivity >= 1) trustScore += 5;
     if (avgRating >= 4.5) trustScore += 20;
     else if (avgRating >= 3.5) trustScore += 10;
     if (Number(stats.dispute_count || 0) === 0) trustScore += 10;
@@ -923,6 +1003,7 @@ exports.getSellerSoldPosts = async (req, res) => {
       avatar_url: seller.avatar_url || null,
       is_kyc_verified: seller.kyc_status === "VERIFIED" || Boolean(seller.is_verified),
       total_sold: totalSold,
+      total_bought: totalBought,
       average_rating: avgRating,
       star_string: getStarString(avgRating),
       trust_score: trustScore,
@@ -947,6 +1028,95 @@ exports.getSellerSoldPosts = async (req, res) => {
     logger.error("[Sales] Error fetching seller sold posts:", err);
     const detail = err?.message?.includes("does not exist") ? "A required database column is missing. Please contact support." : "An unexpected error occurred while loading sold posts. Please try again later.";
     return res.status(500).json({ error: "Unable to load seller's sold posts", detail });
+  }
+};
+
+/**
+ * GET /api/sales/user/:userId/bought-posts — PUBLIC
+ * Posts a user has actually purchased (completed sales where they were the buyer).
+ * Like sold-posts, this is a public trust signal: genuine buyers prove themselves
+ * through real purchases. New users with no history get an empty list.
+ */
+exports.getUserBoughtPosts = async (req, res) => {
+  try {
+    const userId = parseOptionalString(req.params.userId);
+    const category = parseOptionalString(req.query.category);
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, 20);
+    const offset = (page - 1) * limit;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    // Buyer summary (same trust-passport shape as the seller endpoint)
+    const userResult = await runQuery(
+      `SELECT COALESCE(pr.full_name, u.username) AS seller_name,
+              pr.avatar_url, u.kyc_status, u.is_verified
+       FROM users u
+       LEFT JOIN profiles pr ON u.user_id::text = pr.user_id::text
+       WHERE u.user_id::text = $1`,
+      [String(userId)]
+    );
+    const user = userResult.rows.length > 0 ? userResult.rows[0] : { seller_name: "User", kyc_status: "PENDING" };
+
+    let sql = `
+      SELECT s.id AS sale_id, s.post_id, s.seller_id, s.buyer_rating, s.buyer_comment,
+             s.rated_at, s.created_at AS sale_date,
+             p.title AS post_title, p.price AS post_price,
+             COALESCE(p.category_id::text, '') AS category,
+             COALESCE(sp.full_name, su.username) AS seller_name
+      FROM sales s
+      JOIN posts p ON s.post_id::text = p.post_id::text
+      LEFT JOIN users su ON s.seller_id::text = su.user_id::text
+      LEFT JOIN profiles sp ON s.seller_id::text = sp.user_id::text
+      WHERE s.buyer_id::text = $1 AND s.status IN ('received','settled')
+    `;
+    const queryParams = [String(userId)];
+
+    if (category && String(category).trim() !== "" && String(category).toLowerCase() !== "all") {
+      sql += ` AND LOWER(COALESCE(p.category_id::text, '')) = LOWER($2)`;
+      queryParams.push(String(category).trim());
+    }
+
+    const countSql = sql.replace(
+      /SELECT s\.id AS sale_id, s\.post_id, s\.seller_id, s\.buyer_rating, s\.buyer_comment,\n\s+s\.rated_at, s\.created_at AS sale_date,\n\s+p\.title AS post_title, p\.price AS post_price,\n\s+COALESCE\(p\.category_id::text, ''\) AS category,\n\s+COALESCE\(sp\.full_name, su\.username\) AS seller_name/g,
+      "SELECT COUNT(*)::int AS total"
+    );
+    const countResult = await runQuery(countSql, queryParams);
+    const totalItems = countResult.rows[0]?.total || 0;
+
+    sql += ` ORDER BY s.created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
+
+    const result = await runQuery(sql, queryParams);
+
+    const formattedPosts = result.rows.map((item) => ({
+      ...item,
+      rating_stars: item.buyer_rating ? "★".repeat(Math.round(Number(item.buyer_rating))) : "Not Rated",
+    }));
+
+    const totalPages = Math.ceil(totalItems / limit) || 1;
+
+    const response = {
+      success: true,
+      user_id: userId,
+      seller_name: user.seller_name,
+      avatar_url: user.avatar_url || null,
+      is_kyc_verified: user.kyc_status === "VERIFIED" || Boolean(user.is_verified),
+      total_bought: totalItems,
+      bought_posts: formattedPosts,
+      pagination: { page, limit, total: totalItems, totalPages, hasNext: page < totalPages, hasPrevious: page > 1 },
+    };
+
+    if (formattedPosts.length === 0) {
+      response.message = "No purchases yet for this user.";
+    }
+
+    return res.json(response);
+  } catch (err) {
+    logger.error("[Sales] Error fetching user bought posts:", err);
+    return res.status(500).json({ error: "Unable to load user's purchased posts" });
   }
 };
 
@@ -1031,7 +1201,19 @@ exports.amountReceived = async (req, res) => {
       });
     }
 
-    // Fetch seller's active subscription plan to apply commission discount
+    // Fetch post category to apply category-specific escrow fee. The category
+    // name is resolved via the categories table (posts store only category_id).
+    const postCatRes = await runQuery(
+      `SELECT p.category_id, COALESCE(c.name, p.category_id::text, '') AS category
+       FROM posts p
+       LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+       WHERE p.post_id::text = $1`,
+      [sale.post_id]
+    );
+    const postCategory = String(postCatRes.rows[0]?.category || postCatRes.rows[0]?.category_id || "");
+    const isElectronics = isElectronicsCategory(postCategory);
+
+    // Fetch seller's active subscription plan (kept for the financial snapshot audit trail)
     const subResult = await runQuery(
       `SELECT sp.slug
        FROM user_subscriptions us
@@ -1042,12 +1224,9 @@ exports.amountReceived = async (req, res) => {
     );
     const activePlan = subResult.rows[0]?.slug || "free";
 
-    let PLATFORM_FEE_RATE = 0.025; // 2.5% default
-    if (activePlan.toLowerCase().includes("gold")) {
-      PLATFORM_FEE_RATE = 0.0;
-    } else if (activePlan.toLowerCase().includes("silver")) {
-      PLATFORM_FEE_RATE = 0.015;
-    }
+    // Flat 2.5% platform commission for Electronics Escrow Protection (no tier
+    // discounts); 0% for General Categories (Subscription model covers them).
+    const PLATFORM_FEE_RATE = isElectronics ? 0.025 : 0.0;
 
     const calc = financialEngine.calculateSettlement(agreedPrice, PLATFORM_FEE_RATE);
     const platformFee = calc.platformFee;

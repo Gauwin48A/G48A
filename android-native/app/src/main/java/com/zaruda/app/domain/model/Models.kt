@@ -108,6 +108,10 @@ data class Post(
     @SerialName("updated_at") val updatedAt: String? = null,
     // Contact number shared by the seller (shown when viewer has KYC + active plan)
     @SerialName("contact_number") val contactNumber: String? = null,
+    // Electronics escrow protection: true = this listing is escrow-eligible
+    // (in-app payment, 2.5% platform fee); false/null = direct/outside payment.
+    @SerialName("is_escrow_eligible") val isEscrowEligible: Boolean? = null,
+    @SerialName("escrow_fee_pct") val escrowFeePct: Double? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()
@@ -122,49 +126,15 @@ data class Post(
 data class Category(
     val id: String? = null,
     @SerialName("category_id") val categoryId: String? = null,
+    @SerialName("subcategory_id") val subcategoryId: String? = null,
     val name: String? = null,
     @SerialName("icon_url") val iconUrl: String? = null,
     val slug: String? = null,
     @SerialName("category_group") val categoryGroup: String? = null,
     @SerialName("product_count") val productCount: Int = 0,
 ) {
-    val stableId: String get() = id ?: categoryId ?: slug ?: name.orEmpty()
+    val stableId: String get() = id ?: subcategoryId ?: categoryId ?: slug ?: name.orEmpty()
     val displayName: String get() = name ?: slug ?: "Unnamed"
-}
-
-@Immutable
-@Serializable
-data class ChatConversation(
-    @SerialName("conversation_id") val conversationId: String? = null,
-    val id: String? = null,
-    @SerialName("other_user_id") val otherUserId: String? = null,
-    @SerialName("other_user_name") val otherUserName: String? = null,
-    @SerialName("other_user_avatar") val otherUserAvatar: String? = null,
-    @SerialName("last_message") val lastMessage: String? = null,
-    @SerialName("last_message_time") val lastMessageTime: String? = null,
-    @SerialName("unread_count") val unreadCount: Int = 0,
-    @SerialName("post_id") val postId: String? = null,
-    @SerialName("post_title") val postTitle: String? = null,
-) {
-    val stableId: String get() = conversationId ?: id ?: otherUserId ?: "unknown"
-    val displayName: String get() = otherUserName ?: "Unknown"
-    val initials: String get() = displayName.take(1).uppercase()
-}
-
-@Immutable
-@Serializable
-data class ChatMessage(
-    val id: String? = null,
-    @SerialName("message_id") val messageId: String? = null,
-    val content: String? = null,
-    @SerialName("sender_id") val senderId: String? = null,
-    @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("is_read") val isRead: Boolean = false,
-    @SerialName("attachment_url") val attachmentUrl: String? = null,
-    @SerialName("attachment_type") val attachmentType: String? = null,
-) {
-    val stableId: String get() = id ?: messageId ?: "${senderId}-${createdAt}"
-    val displayContent: String get() = content ?: ""
 }
 
 @Immutable

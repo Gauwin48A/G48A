@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.account
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +67,7 @@ import javax.inject.Inject
 
 private val payoutBgGradient: Brush
     @Composable get() {
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val isDark = ColorTokens.isDarkTheme()
         return if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
         else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
     }

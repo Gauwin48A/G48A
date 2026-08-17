@@ -80,14 +80,14 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Sell, null, tint = Color.White, modifier = Modifier.size(48.dp)) }
                 Spacer(Modifier.height(24.dp))
-                Text(stringResource(R.string.sell_ready), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF1E293B))
+                Text(stringResource(R.string.sell_ready), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.sell_subtitle), fontSize = 15.sp, color = Color(0xFF64748B))
+                Text(stringResource(R.string.sell_subtitle), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(28.dp))
                 // FlowStep visual progress
-                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.sell_how_it_works), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(R.string.sell_how_it_works), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(12.dp))
                         val steps = listOf(
                             Triple(Icons.Filled.PhotoCamera, stringResource(R.string.sell_step_photos), stringResource(R.string.sell_step_photos_desc)),
@@ -100,12 +100,12 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                                     Box(Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF2563EB)), contentAlignment = Alignment.Center) {
                                         Text("${idx + 1}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     }
-                                    if (idx < 2) Box(Modifier.width(2.dp).height(24.dp).background(Color(0xFFDBEAFE)))
+                                    if (idx < 2) Box(Modifier.width(2.dp).height(24.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)))
                                 }
                                 Spacer(Modifier.width(14.dp))
                                 Column(Modifier.padding(bottom = if (idx < 2) 24.dp else 0.dp)) {
-                                    Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-                                    Text(desc, fontSize = 12.sp, color = Color(0xFF64748B))
+                                    Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -113,7 +113,7 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                 }
             }
             // ── Sticky bottom CTA ──
-            Surface(shadowElevation = 8.dp, color = Color.White) {
+            Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
                 Button(
                     onClick = onStartPost,
                     shape = RoundedCornerShape(14.dp),

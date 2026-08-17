@@ -204,7 +204,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     }
 
                     // Photos section with X remove + Add button
-                    Text("Photos (${state.existingImages.size}/10)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF374151))
+                    Text("Photos (${state.existingImages.size}/10)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.existingImages.forEachIndexed { idx, url ->
                             Box(Modifier.size(76.dp)) {

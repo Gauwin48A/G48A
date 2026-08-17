@@ -244,4 +244,13 @@ class PurchaseReviewRepositoryV1 @Inject constructor(
     ): ApiResult<UserSoldPostsResponseV1> = safeApiCall {
         api.getUserSoldPosts(userId = userId, category = category, page = page, limit = limit)
     }
+
+    suspend fun getUserBoughtPosts(
+        userId: String,
+        category: String? = null,
+        page: Int = 1,
+        limit: Int = 20,
+    ): ApiResult<UserBoughtPostsResponseV1> = safeApiCall {
+        api.getUserBoughtPosts(userId = userId, category = category, page = page, limit = limit)
+    }
 }

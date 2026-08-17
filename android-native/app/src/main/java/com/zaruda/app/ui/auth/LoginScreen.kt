@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.auth
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +27,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Visibility
@@ -59,7 +58,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -112,7 +110,7 @@ fun LoginScreen(
     }
 
     // ── Theme-aware palette ───────────────────────────────────
-    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDarkTheme()
     val pageGradient = Brush.verticalGradient(
         if (darkTheme) listOf(
             Color(0xFF0F1422),
@@ -502,69 +500,29 @@ fun LoginScreen(
                 }
             }
 
-            // ── Demo Login Button (temporary convenience) ────────────
-            Spacer(Modifier.height(12.dp))
-            androidx.compose.material3.OutlinedButton(
-                onClick = { viewModel.demoLogin() },
-                enabled = !state.loading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .height(44.dp),
-            ) {
-                if (state.loading) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(18.dp),
-                    )
-                } else {
-                    Text(
-                        text = "\uD83D\uDD11 Demo Login",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-
-            // ── Google Sign-In ────────────────────────────────────────
-            Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
-                Text("OR", color = mutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            val googleContext = LocalContext.current
-            val googleScope = rememberCoroutineScope()
-            var googleLoading by remember { mutableStateOf(false) }
-            androidx.compose.material3.OutlinedButton(
-                onClick = {
-                    googleScope.launch {
-                        googleLoading = true
-                        val result = GoogleSignInHelper.signIn(googleContext, com.zaruda.app.BuildConfig.GOOGLE_WEB_CLIENT_ID)
-                        when (result) {
-                            is GoogleSignInHelper.Result.Success -> viewModel.signInWithGoogle(result.idToken)
-                            is GoogleSignInHelper.Result.Error -> viewModel.setError(result.message)
-                            is GoogleSignInHelper.Result.Cancelled -> { /* no-op */ }
-                        }
-                        googleLoading = false
-                    }
-                },
-                enabled = !state.loading && !googleLoading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).height(48.dp),
-            ) {
-                if (googleLoading) {
-                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("G", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF4285F4))
-                        Text("Continue with Google", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            // ── Demo Login (debug builds only — removed from release) ─────────
+            if (com.zaruda.app.BuildConfig.DEBUG) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.demoLogin() },
+                    enabled = !state.loading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 460.dp)
+                        .height(44.dp),
+                ) {
+                    if (state.loading) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    } else {
+                        Text(
+                            text = "\uD83D\uDD11 Demo Login",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
                     }
                 }
             }

@@ -222,8 +222,10 @@ const reviewVerification = async (req, res) => {
     const doc = result.rows[0];
 
     if (status === "approved") {
+      // The app-facing gating reads kyc_verified; is_verified is the legacy
+      // alias some middleware checks. Set both so the two stay in sync.
       await runQuery(
-        `UPDATE users SET is_verified = true, verified_at = NOW() WHERE user_id = $1`,
+        `UPDATE users SET is_verified = true, kyc_verified = true, verified_at = NOW() WHERE user_id = $1`,
         [doc.user_id]
       );
     }

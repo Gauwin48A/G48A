@@ -9,6 +9,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -87,13 +95,6 @@ class RefundViewModel @Inject constructor(private val repo: CmsRepository) : Vie
     init { viewModelScope.launch { loadCms(repo::refund) { _state.value = it } } }
 }
 
-@HiltViewModel
-class SupportPolicyViewModel @Inject constructor(private val repo: CmsRepository) : ViewModel() {
-    private val _state = MutableStateFlow(CmsUiState())
-    val state: StateFlow<CmsUiState> = _state.asStateFlow()
-    init { viewModelScope.launch { loadCms(repo::supportPolicy) { _state.value = it } } }
-}
-
 @Composable
 private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBack: () -> Unit, fallbackContent: String? = null) {
     val isDark = ColorTokens.isDark
@@ -133,28 +134,28 @@ fun TermsScreen(onBack: () -> Unit, viewModel: TermsViewModel = hiltViewModel())
     val state by viewModel.state.collectAsState()
     CmsScreen("Terms & Conditions", Icons.Filled.Gavel, state, onBack,
         fallbackContent = """
-MHub Terms & Conditions
+Zaruda Terms & Conditions
 
 1. Acceptance of Terms
-By accessing or using MHub ("the Platform"), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the Platform.
+By accessing or using Zaruda ("the Platform"), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the Platform.
 
 2. Description of Service
-MHub is a marketplace platform that connects buyers and sellers for local commerce. We facilitate listings, messaging, and transaction coordination.
+Zaruda is a marketplace platform that connects buyers and sellers for local commerce. We facilitate listings, messaging, and transaction coordination.
 
 3. User Accounts
 You must provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your login credentials.
 
 4. Listings & Sales
-Sellers are responsible for the accuracy of their listings. MHub is not a party to any sale transaction and acts solely as a facilitator.
+Sellers are responsible for the accuracy of their listings. Zaruda is not a party to any sale transaction and acts solely as a facilitator.
 
 5. Prohibited Activities
-Users may not list prohibited items, engage in fraud, or misuse the platform in any way as determined by MHub's discretion.
+Users may not list prohibited items, engage in fraud, or misuse the platform in any way as determined by Zaruda's discretion.
 
 6. Limitation of Liability
-MHub is not liable for any damages arising from the use of the Platform, including but not limited to failed transactions, misrepresented items, or disputes between users.
+Zaruda is not liable for any damages arising from the use of the Platform, including but not limited to failed transactions, misrepresented items, or disputes between users.
 
 7. Modifications
-MHub reserves the right to modify these terms at any time. Users will be notified of material changes.
+Zaruda reserves the right to modify these terms at any time. Users will be notified of material changes.
 
 For complete terms, please visit our website or contact support through the app.
         """.trimIndent()
@@ -166,7 +167,7 @@ fun PrivacyScreen(onBack: () -> Unit, viewModel: PrivacyViewModel = hiltViewMode
     val state by viewModel.state.collectAsState()
     CmsScreen("Privacy Policy", Icons.Filled.PrivacyTip, state, onBack,
         fallbackContent = """
-MHub Privacy Policy
+Zaruda Privacy Policy
 
 1. Information We Collect
 We collect information you provide during registration (name, email, phone number, location) and usage data (listings, messages, transactions).
@@ -196,61 +197,241 @@ fun RefundScreen(onBack: () -> Unit, viewModel: RefundViewModel = hiltViewModel(
     val state by viewModel.state.collectAsState()
     CmsScreen("Refund Policy", Icons.Filled.CurrencyRupee, state, onBack,
         fallbackContent = """
-MHub Refund Policy
+Zaruda Refund Policy
 
 1. Marketplace Facilitator
-MHub is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
+Zaruda is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
 
 2. Dispute Resolution
 If an item is not as described or a transaction fails, buyers should first contact the seller directly via the in-app chat.
 
 3. Mediation
-If the buyer and seller cannot resolve the dispute, MHub offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
+If the buyer and seller cannot resolve the dispute, Zaruda offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
 
 4. Escrow Protection
-For transactions processed through MHub's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
+For transactions processed through Zaruda's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
 
 5. Chargebacks
-Buyers who initiate chargebacks without first attempting to resolve the dispute through MHub may have their account restricted.
+Buyers who initiate chargebacks without first attempting to resolve the dispute through Zaruda may have their account restricted.
 
 For assistance, please file a complaint through the app's Complaints section.
         """.trimIndent()
     )
 }
 
+// ─── Help & Support ──────────────────────────────────────────────────────────
+private data class HelpFaq(val question: String, val answer: String, val category: String)
+
+private val helpFaqs: List<HelpFaq> = listOf(
+    HelpFaq("How do I create an account?", "Tap Sign Up on the login screen and register with your email or mobile number, then verify the one-time password (OTP) sent to you. You can browse and buy right away; to sell you'll also need an active plan and KYC verification.", "Account"),
+    HelpFaq("I forgot my password. How do I reset it?", "On the login screen tap Forgot Password, enter your registered email or phone number, and follow the instructions sent to you to set a new password.", "Account"),
+    HelpFaq("How do I secure my account?", "Open Profile → Security to set a strong password and enable two-factor authentication (2FA). With 2FA on, you'll need a one-time code when logging in from a new device.", "Account"),
+    HelpFaq("Can I use Zaruda in my language?", "Yes. Zaruda supports English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali and Gujarati. Switch anytime from More → Appearance & Language.", "Account"),
+
+    HelpFaq("How do I buy an item?", "Browse or search listings in Electronics, Fashion, Vehicles and Others. Open an item to view details, then contact the seller, express interest or send an offer, or buy safely in-app when the listing carries the escrow lock badge.", "Buying"),
+    HelpFaq("What is the Interest / Offer option?", "It tells the seller that you want to buy. You can send an offer amount with a short message; the seller can accept or decline it. Once accepted, you'll be guided to complete the purchase.", "Buying"),
+    HelpFaq("What is Escrow Protection?", "On escrow-eligible listings your payment is held securely and released to the seller only after you confirm you've received the item — protecting both sides. A 2.5% platform fee applies to escrow-protected purchases and is always shown before you pay.", "Buying"),
+    HelpFaq("When can I see a seller's contact number?", "A seller's number is revealed when the seller is KYC-verified with an active plan and you are verified too. Otherwise, connect with the seller through the app.", "Buying"),
+    HelpFaq("Where do I find my purchases?", "Open Profile → Orders → Order History, or the Bought Posts section, to see everything you've bought, track its status and raise any issues.", "Buying"),
+    HelpFaq("What are Wishlist, Compare and Saved Searches?", "Tap the heart on a listing to save it to Wishlist. Compare lets you view similar listings side by side, and Saved Searches notifies you when new listings match your filters.", "Buying"),
+
+    HelpFaq("How do I start selling?", "Tap Sell from the home screen. You need an active plan (free or paid) and completed KYC (Aadhaar + PAN). Then add photos, a title and description, price and category, and publish your listing.", "Selling"),
+    HelpFaq("What do the plans include?", "The Free plan includes 1 photo per post. Paid plans add more photos, better visibility, promoted listings, analytics, a profile badge and priority support.", "Selling"),
+    HelpFaq("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Sale Undone to bring the listing back.", "Selling"),
+    HelpFaq("How do I get paid for an escrow sale?", "Once the buyer confirms receipt, escrow payments are released to your payout account. Add your UPI or bank details under Profile → Payout Account.", "Selling"),
+    HelpFaq("How do I track how my listings are doing?", "Open Profile → Seller Analytics to see views, likes and engagement for your posts. Analytics access is included with paid plans.", "Selling"),
+
+    HelpFaq("Why do I need KYC?", "KYC (Aadhaar + PAN) confirms that sellers are real people, which builds trust and keeps the marketplace safe. KYC verification is required to publish listings.", "KYC & Verification"),
+    HelpFaq("How do I complete KYC?", "Go to More → Verification, verify your Aadhaar with an OTP, verify your PAN, and submit. An active plan is required to complete KYC.", "KYC & Verification"),
+    HelpFaq("How long does KYC take?", "Most verifications are approved within 24–48 hours. You'll get a notification when your status changes to verified.", "KYC & Verification"),
+
+    HelpFaq("What payment methods are accepted?", "In-app escrow purchases are processed through a secure gateway using UPI, cards and net banking. Direct deals outside escrow are arranged between the buyer and seller.", "Plans & Payments"),
+    HelpFaq("What is the 2.5% platform fee?", "A 2.5% platform fee applies to escrow-protected (in-app) purchases. It covers secure payment handling, fraud protection and dispute support, and is shown on the order summary before you pay.", "Plans & Payments"),
+    HelpFaq("Can I cancel a paid plan?", "Yes. Open the Plans page and cancel anytime; you keep your benefits until the end of the current billing period.", "Plans & Payments"),
+    HelpFaq("How do refunds work?", "Refunds are handled through the order flow or via a complaint. Escrow funds are returned to you if the item is never delivered or isn't as described. See the Refund Policy for details.", "Plans & Payments"),
+
+    HelpFaq("What are the Public Wall and Feed?", "They are community spaces for discussions, local updates and posts. You can follow channels, write reviews and interact with other members.", "Community & Rewards"),
+    HelpFaq("How do Rewards and Coins work?", "Earn coins through daily check-ins, spins, engagement and referral milestones. Redeem them in the Rewards store for discounts and perks.", "Community & Rewards"),
+    HelpFaq("How do referrals work?", "Share your invite link from the Rewards page. When friends join, you earn bonus coins through referral milestones and can climb the referral leaderboard.", "Community & Rewards"),
+
+    HelpFaq("How do I report a post or user?", "Open the post and tap Report, or block a user from their profile. Our safety team reviews every report.", "Safety & Disputes"),
+    HelpFaq("What should I do if a deal goes wrong?", "File a complaint from More → Complaints with the order or listing details. Our team mediates between buyer and seller. In fraud cases, payments are held and accounts may be frozen until the case is reviewed.", "Safety & Disputes"),
+    HelpFaq("How is my data protected?", "Your data is encrypted in transit and at rest, tokens are stored securely, and we never sell your personal information. See the Privacy Policy for details.", "Safety & Disputes"),
+
+    HelpFaq("I'm not receiving notifications. What should I do?", "Check that notifications are enabled for Zaruda in your phone's Settings and that in-app notification preferences are on, then restart the app.", "App & Technical"),
+    HelpFaq("Can I use Zaruda offline?", "Yes — core browsing works with cached content, and actions such as saving to your wishlist are queued and synced automatically when you're back online.", "App & Technical"),
+    HelpFaq("How do I contact support?", "Email support@zaruda.app, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "App & Technical"),
+)
+
+private val helpCategories = listOf(
+    "All", "Account", "Buying", "Selling", "KYC & Verification", "Plans & Payments",
+    "Community & Rewards", "Safety & Disputes", "App & Technical",
+)
+
 @Composable
-fun SupportPolicyScreen(onBack: () -> Unit, viewModel: SupportPolicyViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsState()
-    CmsScreen("Support Policy", Icons.Filled.SupportAgent, state, onBack,
-        fallbackContent = """
-MHub Support Policy
+fun HelpSupportScreen(onBack: () -> Unit) {
+    val isDark = ColorTokens.isDark
+    val context = LocalContext.current
+    var query by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf("All") }
 
-1. How to Get Help
-If you need assistance, you can reach our support team through the following channels:
-- In-app Feedback (Settings > Feedback)
-- Complaint Form (More > Complaints)
-- Email: support@mhub.app
+    val filtered = remember(query, category) {
+        helpFaqs.filter { faq ->
+            (category == "All" || faq.category == category) &&
+                (query.isBlank() || faq.question.contains(query, ignoreCase = true) || faq.answer.contains(query, ignoreCase = true))
+        }
+    }
 
-2. Response Times
-Our support team aims to respond to all inquiries within 24-48 hours during business days.
+    Box(Modifier.fillMaxSize().background(bgGradient(isDark))) {
+        Column(Modifier.fillMaxSize()) {
+            LegalTopBar("Help & Support", onBack)
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Header card with contact channels
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isDark) Color(0xFF1E293B) else Color.White,
+                    shadowElevation = if (isDark) 0.dp else 2.dp,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(18.dp)) {
+                        Text("How can we help you?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                        Spacer(Modifier.height(4.dp))
+                        Text("Guides, answers and direct support for everything in Zaruda.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                        Spacer(Modifier.height(12.dp))
+                        HelpContactRow(Icons.Filled.Email, "Email — support@zaruda.app") {
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@zaruda.app")))
+                            }
+                        }
+                        HelpContactRow(Icons.Filled.Comment, "In-app Feedback — More → Feedback", onClick = null)
+                        HelpContactRow(Icons.Filled.Report, "Complaints & disputes — More → Complaints", onClick = null)
+                    }
+                }
 
-3. Categories of Support
-We provide assistance for:
-- Account issues (login, password reset, account recovery)
-- Listing problems (posting, editing, removing listings)
-- Transaction disputes (buyer-seller mediation)
-- Technical issues (app crashes, feature not working)
-- General inquiries (how-to, best practices)
+                // Search
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search help articles…", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)) },
+                    leadingIcon = { Icon(Icons.Filled.Search, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) },
+                    trailingIcon = if (query.isNotBlank()) {
+                        {
+                            IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = "Clear search") }
+                        }
+                    } else null,
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = if (isDark) Color(0xFF3B82F6) else Color(0xFF2563EB),
+                        unfocusedBorderColor = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0),
+                        focusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White,
+                        unfocusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-4. Escalation
-If your issue is not resolved by front-line support, it will be escalated to a senior team member. Critical issues (safety, fraud) are prioritized.
+                // Category chips
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(helpCategories) { cat ->
+                        FilterChip(
+                            selected = category == cat,
+                            onClick = { category = cat },
+                            label = { Text(cat, fontSize = 12.sp) },
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                    }
+                }
 
-5. Community Guidelines
-Users are expected to communicate respectfully. Abusive language or harassment of support staff will not be tolerated.
+                if (filtered.isEmpty()) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🔍", fontSize = 28.sp)
+                            Spacer(Modifier.height(8.dp))
+                            Text("No articles match your search.", fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Try a different keyword, or email support@zaruda.app.", fontSize = 12.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
+                        }
+                    }
+                } else {
+                    filtered.forEach { faq -> HelpFaqRow(faq, isDark) }
+                }
 
-We're here to help! Please reach out through the app.
-        """.trimIndent()
-    )
+                // Support promise
+                Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (isDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Our support promise", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                        HelpBullet("We respond to every inquiry within 24–48 hours on business days.", isDark)
+                        HelpBullet("We help with accounts, listings, orders, payments, KYC and disputes.", isDark)
+                        HelpBullet("Safety and fraud issues are prioritised and handled by a senior team member.", isDark)
+                        HelpBullet("We treat every user with respect — abusive behaviour isn't tolerated.", isDark)
+                    }
+                }
+
+                // Still need help
+                Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E3A5F) else Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Still need help?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                        Text("Reach us any time at support@zaruda.app, or use the Feedback and Complaints forms inside the app. For urgent safety concerns, mention “Urgent” in your message so we can prioritise it.", fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151))
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HelpContactRow(icon: ImageVector, label: String, onClick: (() -> Unit)? = null) {
+    val isDark = ColorTokens.isDark
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(if (isDark) Color(0xFF2563EB).copy(alpha = 0.25f) else Color(0xFF2563EB).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(label, fontSize = 13.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569))
+    }
+}
+
+@Composable
+private fun HelpFaqRow(faq: HelpFaq, isDark: Boolean) {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (isDark) Color(0xFF1E293B) else Color.White,
+        shadowElevation = if (isDark) 0.dp else 1.dp,
+        modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp).animateContentSize()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(faq.question, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B), modifier = Modifier.weight(1f).padding(end = 8.dp))
+                Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+            }
+            if (expanded) {
+                Spacer(Modifier.height(8.dp))
+                Text(faq.answer, fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HelpBullet(text: String, isDark: Boolean) {
+    Row(verticalAlignment = Alignment.Top) {
+        Text("•  ", fontSize = 13.sp, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB))
+        Text(text, fontSize = 13.sp, lineHeight = 19.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569), modifier = Modifier.weight(1f))
+    }
 }
 
 @Composable
@@ -261,13 +442,13 @@ fun ShippingPolicyScreen(onBack: () -> Unit) {
         state = CmsUiState(
             loading = false,
             content = """
-MHub Shipping Policy
+Zaruda Shipping Policy
 
 1. Shipping Responsibility
-Shipping is the responsibility of the seller. MHub acts as a marketplace facilitator and does not directly handle shipping or logistics.
+Shipping is the responsibility of the seller. Zaruda acts as a marketplace facilitator and does not directly handle shipping or logistics.
 
 2. Delivery Timelines
-Estimated delivery timelines are provided by sellers. MHub is not responsible for delays caused by sellers or logistics partners.
+Estimated delivery timelines are provided by sellers. Zaruda is not responsible for delays caused by sellers or logistics partners.
 
 3. Shipping Costs
 Shipping costs, if any, are set by the seller and displayed on the listing page before purchase.
@@ -276,10 +457,10 @@ Shipping costs, if any, are set by the seller and displayed on the listing page 
 Where available, sellers will provide tracking information after dispatch. Buyers can track their orders from the "Bought Posts" section.
 
 5. Damaged / Lost Shipments
-If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. MHub will mediate between buyer and seller.
+If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. Zaruda will mediate between buyer and seller.
 
 6. Local Pickup
-Many transactions on MHub support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
+Many transactions on Zaruda support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
 
 7. Return Shipping
 Return shipping costs are borne by the buyer unless the item was misrepresented or defective. See our Refund Policy for details.
@@ -612,14 +793,14 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                             item {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Checkbox(checked = state.flaggedUsers.isNotEmpty() && state.selectedUsers.size == state.flaggedUsers.size, onCheckedChange = { if (it) viewModel.selectAllUsers() else viewModel.clearUserSelection() })
-                                    Text("Select All", fontSize = 13.sp, color = Color(0xFF374151))
+                                    Text("Select All", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }
                         val filtered = state.flaggedUsers.filter { u -> state.search.isBlank() || (u.name ?: "").contains(state.search, true) || (u.email ?: "").contains(state.search, true) }
                         if (filtered.isEmpty()) item { Text("No flagged users", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.name ?: "" }) { user ->
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
                                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Checkbox(
@@ -631,7 +812,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                                         }
                                         Spacer(Modifier.width(10.dp))
                                         Column(Modifier.weight(1f)) {
-                                            Text(user.name ?: "Unknown", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Text(user.name ?: "Unknown", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                             Text(user.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFEF4444))
                                         }
                                         val statusColor = when (user.status) {
@@ -681,14 +862,14 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                             item {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Checkbox(checked = state.flaggedPosts.isNotEmpty() && state.selectedPosts.size == state.flaggedPosts.size, onCheckedChange = { if (it) viewModel.selectAllPosts() else viewModel.clearPostSelection() })
-                                    Text("Select All", fontSize = 13.sp, color = Color(0xFF374151))
+                                    Text("Select All", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }
                         val filtered = state.flaggedPosts.filter { p -> state.search.isBlank() || (p.title ?: "").contains(state.search, true) }
                         if (filtered.isEmpty()) item { Text("No flagged posts", color = Color(0xFF64748B)) }
                         items(filtered, key = { it.id ?: it.title ?: "" }) { post ->
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
                                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Checkbox(
@@ -698,7 +879,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                                         Icon(Icons.Filled.Flag, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(10.dp))
                                         Column(Modifier.weight(1f)) {
-                                            Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B))
+                                            Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                             Text(post.reason ?: "Flagged", fontSize = 11.sp, color = Color(0xFFF59E0B))
                                         }
                                         val statusColor = if (post.status == "approved") Color(0xFF22C55E) else Color(0xFFF59E0B)
@@ -718,7 +899,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         }
                     }
                     "flags" -> {
-                        item { Text("Auto-Detection Rules", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B)) }
+                        item { Text("Auto-Detection Rules", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface) }
                         item {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 listOf("all" to "All", "spam" to "Spam", "scam" to "Scam", "fake" to "Fake", "duplicate" to "Duplicate", "inappropriate" to "Inappropriate").forEach { (key, label) ->

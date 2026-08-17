@@ -582,12 +582,12 @@ fun MyPostsScreen(
                                         Triple("$soldCount", "Sold", listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))),
                                         Triple("${state.boughtItems.size}", "Bought", listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
                                     ).forEach { (value, label, accent) ->
-                                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f)) {
+                                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 4.dp, modifier = Modifier.weight(1f)) {
                                             Column {
                                                 Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(accent)))
                                                 Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                    Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = Color(0xFF0F172A))
-                                                    Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B), letterSpacing = 0.5.sp)
+                                                    Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+                                                    Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.5.sp)
                                                 }
                                             }
                                         }
@@ -707,7 +707,7 @@ fun MyPostsScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     Text("🚀", fontSize = 20.sp)
-                                                    Text("Welcome to MHub!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
+                                                    Text("Welcome to Zaruda!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
                                                 }
                                                 IconButton(onClick = { showOnboarding = false }, modifier = Modifier.size(24.dp)) {
                                                     Icon(Icons.Default.Close, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
@@ -718,7 +718,7 @@ fun MyPostsScreen(
                                                 "📸 Tap + to create your first listing",
                                                 "🪙 Earn coins daily \u2192 check-in & spin",
                                                 "⚡ Boost listings with coins for more buyers",
-                                                "💬 Chat with buyers & close deals fast",
+                                                "🔒 In-app escrow protects Electronics deals",
                                             ).forEach { tip ->
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     Text("\u2022", fontSize = 14.sp, color = Color(0xFF0284C7))

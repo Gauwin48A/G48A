@@ -28,7 +28,7 @@ API_KEY_RE='AIza[0-9A-Za-z_\-]{35}|AKIA[0-9A-Z]{16}|sk_live_[0-9a-zA-Z]{20,}|rzp
 # DB / connection strings carrying credentials
 DB_URL_RE='(postgres|postgresql|mysql|mongodb(\+srv)?|redis|rediss)://[^/]+:[^/]+@'
 # Generic high-signal assignments
-GENERIC_SECRET_RE='(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|token)[[:space:]]*[:=][[:space:]]*["'\''`]?[A-Za-z0-9_\-\.]{16,}'
+GENERIC_SECRET_RE='(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|token)[[:space:]]*[:=][[:space:]]*["'\''`][^"'\''`\r\n]{8,}["'\''`]'
 
 # Files never scanned (binary, lockfiles, vendor, tests/fixtures that
 # legitimately contain fake keys, and this hook itself).
@@ -48,7 +48,7 @@ while IFS= read -r fname; do
   if printf '%s' "$fname" | grep -qE "$BLOCKED_FILE_RE"; then
     warn "$fname" "blocked file"
   fi
-done < <(git diff --cached --name-only -z | tr '\0' '\n')
+done < <(git diff --cached --name-only -z --diff-filter=ACMR | tr '\0' '\n')
 
 # ---- scan staged file contents ---------------------------------------------
 while IFS= read -r fname; do
@@ -72,7 +72,7 @@ while IFS= read -r fname; do
   if printf '%s' "$blob" | grep -qE "$GENERIC_SECRET_RE"; then
     warn "$fname" "possible secret assignment"
   fi
-done < <(git diff --cached --name-only -z | tr '\0' '\n')
+done < <(git diff --cached --name-only -z --diff-filter=ACMR | tr '\0' '\n')
 
 # ---- result ----------------------------------------------------------------
 if [ "$violations" -gt 0 ]; then

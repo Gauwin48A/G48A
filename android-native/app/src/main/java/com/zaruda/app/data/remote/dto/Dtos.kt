@@ -34,9 +34,6 @@ data class PreferredLanguageRequest(
 
 // -------- Auth --------
 @Serializable
-data class GoogleAuthRequest(val idToken: String)
-
-@Serializable
 data class EmailLoginRequest(val identifier: String, val password: String)
 
 @Serializable
@@ -518,7 +515,7 @@ data class ReviewRespondRequest(val response: String)
 
 // -------- Generic --------
 @Serializable
-data class MessageResponse(val success: Boolean = true, val message: String? = null)
+data class MessageResponse(val success: Boolean = true, val message: String? = null, val inWishlist: Boolean? = null)
 
 @Serializable
 data class IdResponse(val success: Boolean = true, val id: String? = null)
@@ -635,26 +632,6 @@ data class NotificationsResponse(
 }
 
 // -------- Chat --------
-@Serializable
-data class ConversationsResponse(
-    val conversations: List<com.zaruda.app.domain.model.ChatConversation> = emptyList(),
-)
-
-@Serializable
-data class MessagesResponse(
-    val messages: List<com.zaruda.app.domain.model.ChatMessage> = emptyList(),
-    val data: List<com.zaruda.app.domain.model.ChatMessage> = emptyList(),
-) {
-    val items: List<com.zaruda.app.domain.model.ChatMessage> get() = if (messages.isNotEmpty()) messages else data
-}
-
-@Serializable
-data class SendMessageRequest(
-    val content: String,
-    @SerialName("post_id") val postId: String? = null,
-    @SerialName("recipient_id") val recipientId: String? = null,
-)
-
 // -------- Rewards --------
 @Serializable
 data class RewardsOverviewResponse(
@@ -961,22 +938,6 @@ data class PreferencesResponse(
 )
 
 // -------- Chat extras --------
-@Serializable
-data class ChatReactionRequest(
-    val emoji: String,
-)
-
-@Serializable
-data class ChatUploadResponse(
-    val url: String? = null,
-    val key: String? = null,
-)
-
-@Serializable
-data class ChatReportRequest(
-    val reason: String = "spam",
-)
-
 // -------- Dashboard --------
 @Serializable
 data class DashboardResponse(
@@ -1157,10 +1118,17 @@ data class CartItem(
     val currency: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("seller_name") val sellerName: String? = null,
+    /** Seller (post owner) — required to initiate an in-app escrow sale. */
+    @SerialName("seller_id") val sellerId: String? = null,
+    /** Category name from the server (e.g. "Electronics") — drives the escrow badge. */
+    @SerialName("category_name") val categoryName: String? = null,
     val quantity: Int = 1,
     val category: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: title.orEmpty()
+    /** True for Electronics — the only category with in-app escrow purchase. */
+    val isElectronics: Boolean get() = (categoryName ?: category)
+        ?.lowercase()?.contains("electron") == true
 }
 
 @Serializable
@@ -2495,6 +2463,7 @@ data class UserSoldPostsResponseV1(
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("is_kyc_verified") val isKycVerified: Boolean = false,
     @SerialName("total_sold") val totalSold: Int = 0,
+    @SerialName("total_bought") val totalBought: Int = 0,
     @SerialName("average_rating") val averageRating: Double = 0.0,
     @SerialName("star_string") val starString: String? = null,
     @SerialName("trust_score") val trustScore: Int = 0,
@@ -2505,6 +2474,20 @@ data class UserSoldPostsResponseV1(
 ) {
     val items: List<UserSoldPostV1> get() = if (soldPosts.isNotEmpty()) soldPosts else posts
 }
+
+@Serializable
+data class UserBoughtPostsResponseV1(
+    val success: Boolean = false,
+    @SerialName("bought_posts") val boughtPosts: List<UserSoldPostV1> = emptyList(),
+    @SerialName("user_id") val userId: String? = null,
+    @SerialName("seller_name") val userName: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("is_kyc_verified") val isKycVerified: Boolean = false,
+    @SerialName("total_bought") val totalBought: Int = 0,
+    val total: Int = 0,
+    val page: Int = 1,
+    val limit: Int = 20,
+)
 
 @Serializable
 data class UserSoldPostV1(

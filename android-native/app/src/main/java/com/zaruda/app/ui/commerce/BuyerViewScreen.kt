@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.commerce
+import com.zaruda.app.ui.theme.ColorTokens
 
 import android.content.Intent
 import androidx.compose.animation.animateColorAsState
@@ -171,7 +172,7 @@ fun BuyerViewScreen(onBack: () -> Unit, viewModel: BuyerViewViewModel = hiltView
 
 @Composable
 private fun BuyerPostCard(post: Post) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column {
             Box(Modifier.fillMaxWidth().height(160.dp)) {

@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.commerce
+import com.zaruda.app.ui.theme.ColorTokens
 
 import android.content.Intent
 import androidx.compose.animation.animateColorAsState
@@ -69,7 +70,7 @@ import javax.inject.Inject
 
 internal val bgGradient: Brush
     @Composable get() {
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val isDark = ColorTokens.isDarkTheme()
         return if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
         else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
     }
@@ -140,7 +141,7 @@ internal fun PostListItem(post: Post, onClick: () -> Unit) {
 
 @Composable
 internal fun StatusChip(status: String) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val (bg, fg) = when (status.lowercase()) {
         "active" -> if (isDark) Color(0xFF064E3B) to Color(0xFF6EE7B7) else Color(0xFFDCFCE7) to Color(0xFF166534)
         "sold" -> if (isDark) Color(0xFF1E3A5F) to Color(0xFF93C5FD) else Color(0xFFDBEAFE) to Color(0xFF1D4ED8)

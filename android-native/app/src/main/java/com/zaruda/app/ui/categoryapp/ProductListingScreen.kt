@@ -89,6 +89,7 @@ import com.zaruda.app.data.mock.MockDataProvider
 import com.zaruda.app.ui.common.PageEmptyState
 import com.zaruda.app.ui.components.EnhancedProductCard
 import com.zaruda.app.ui.components.PostGridShimmer
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import com.zaruda.app.ui.components.RatingStars
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -530,6 +531,7 @@ fun ProductListingScreen(
                                 EnhancedProductCard(
                                     product = product,
                                     isWishlisted = wishlistedIds.contains(product.id),
+                                    showWishlist = normalizeMarketplaceCategoryKey(product.category) == categoryKey,
                                     onTap = { onOpenProduct(product.id) },
                                     onAddToCart = { viewModel.addToCart(product) },
                                     onToggleWishlist = { viewModel.toggleWishlist(product) },

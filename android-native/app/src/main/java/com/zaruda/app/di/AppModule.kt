@@ -40,6 +40,7 @@ object AppModule {
     @Singleton
     fun provideZarudaDatabase(@ApplicationContext context: Context): ZarudaDatabase =
         Room.databaseBuilder(context, ZarudaDatabase::class.java, "zaruda.db")
+            .addMigrations(ZarudaDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
 

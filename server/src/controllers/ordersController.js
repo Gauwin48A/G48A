@@ -68,21 +68,13 @@ exports.create = async (req, res) => {
     );
     const activePlan = subResult.rows[0]?.slug || "free";
 
-    // Set commission rate based on plan:
-    // Free / Default = 2.5% (0.025)
-    // Silver = 1.5% (0.015)
-    // Gold = 0% (0.0)
-    let commissionRate = 0.025;
-    if (activePlan.toLowerCase().includes("gold")) {
-      commissionRate = 0.0;
-    } else if (activePlan.toLowerCase().includes("silver")) {
-      commissionRate = 0.015;
-    }
-
-    // Calculate platform fee, GST on fee (18%), and seller payout
-    const platformFee = parseFloat((totalAmount * commissionRate).toFixed(2));
-    const gstOnFee = parseFloat((platformFee * 0.18).toFixed(2));
-    const sellerPayout = parseFloat((totalAmount - platformFee - gstOnFee).toFixed(2));
+    // Flat 2.5% all-inclusive platform fee for escrow-protected (in-app) purchases.
+    // No plan discounts — GST is absorbed inside the 2.5% (see financialEngine).
+    const commissionRate = 0.025;
+    const settlement = financialEngine.calculateSettlement(totalAmount, commissionRate);
+    const platformFee = settlement.platformFee;
+    const gstOnFee = settlement.gstOnFee;
+    const sellerPayout = settlement.sellerPayout;
 
     // Generate order number using PostgreSQL sequence for uniqueness
     const seqResult = await runQuery("SELECT nextval('order_number_seq') as seq");

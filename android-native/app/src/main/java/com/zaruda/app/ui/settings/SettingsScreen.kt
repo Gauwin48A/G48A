@@ -20,11 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -35,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -60,22 +55,14 @@ import com.zaruda.app.BuildConfig
 import com.zaruda.app.R
 import com.zaruda.app.data.local.AppPreferences
 import com.zaruda.app.data.local.ThemeMode
-import com.zaruda.app.ui.common.InputValidators
-import com.zaruda.app.ui.components.AppTextField
-import com.zaruda.app.ui.components.ErrorBanner
 import com.zaruda.app.ui.components.PrimaryButton
-import com.zaruda.app.ui.components.SuccessBanner
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
 import javax.inject.Inject
 
 import com.zaruda.app.data.repository.AuthRepository
@@ -95,17 +82,6 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    private val _baseUrl = MutableStateFlow("")
-    val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
-
-    private val _saved = MutableStateFlow(false)
-    val saved: StateFlow<Boolean> = _saved.asStateFlow()
-
-    private val _saving = MutableStateFlow(false)
-    val saving: StateFlow<Boolean> = _saving.asStateFlow()
-
-    private val _validating = MutableStateFlow(false)
-    val validating: StateFlow<Boolean> = _validating.asStateFlow()
 
     private val _validationMessage = MutableStateFlow<String?>(null)
     val validationMessage: StateFlow<String?> = _validationMessage.asStateFlow()
@@ -123,10 +99,7 @@ class SettingsViewModel @Inject constructor(
     fun clearCache() {
         viewModelScope.launch {
             try {
-                // Clear Coil image cache
-                val imageLoader = coil.ImageLoader.Builder(appContext).build()
                 appContext.cacheDir.resolve("image_cache").deleteRecursively()
-                // Clear app cache directory
                 appContext.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
                 _validationMessage.value = "Cache cleared successfully — images & data purged."
             } catch (e: Exception) {
@@ -137,95 +110,16 @@ class SettingsViewModel @Inject constructor(
 
     fun logoutAllDevices() {
         viewModelScope.launch {
-            try {
-                tokenStore.clear()
-                _loggedOut.value = true
-            } catch (e: Exception) {
-                _validationMessage.value = "Failed to logout: ${e.message}"
-            }
-        }
-    }
-
-    init {
-        viewModelScope.launch {
-            _baseUrl.value = prefs.baseUrl.first()
-        }
-    }
-
-    fun applyPreset(value: String) {
-        _baseUrl.value = InputValidators.toDisplayBaseUrl(value, BuildConfig.DEFAULT_API_BASE_URL)
-        _saved.value = false
-        _validationMessage.value = null
-    }
-
-    fun update(value: String) {
-        _baseUrl.value = value
-        _saved.value = false
-        _validationMessage.value = null
-    }
-
-    fun save() {
-        val normalized = normalize(_baseUrl.value)
-        if (!InputValidators.isSecureOrLocalDevUrl(normalized)) {
-            _saved.value = false
-            _validationMessage.value = "Invalid URL: use HTTPS or emulator local URL"
-            return
-        }
-
-        viewModelScope.launch {
-            _saving.value = true
-            try {
-                prefs.setBaseUrl(normalized)
-                _saved.value = true
-                _validationMessage.value = null
-            } finally {
-                _saving.value = false
-            }
-        }
-    }
-
-    fun validateNow() {
-        val normalized = normalize(_baseUrl.value)
-        if (!InputValidators.isSecureOrLocalDevUrl(normalized)) {
-            _validationMessage.value = "Invalid URL: use HTTPS or emulator local URL"
-            return
-        }
-
-        viewModelScope.launch {
-            _validating.value = true
-            _validationMessage.value = "Checking $normalized ..."
-            try {
-                _validationMessage.value = withContext(Dispatchers.IO) {
-                    val healthUrl = "${normalized}api/health"
-                    runCatching {
-                        val conn = URL(healthUrl).openConnection() as HttpURLConnection
-                        conn.connectTimeout = 3500
-                        conn.readTimeout = 3500
-                        conn.requestMethod = "GET"
-                        conn.instanceFollowRedirects = true
-                        conn.inputStream.bufferedReader().use { it.readText() }
-                        conn.responseCode
-                    }.fold(
-                        onSuccess = { code ->
-                            if (code in 200..299) {
-                                "Connection verified. API responded with HTTP $code."
-                            } else {
-                                "API reachable but returned HTTP $code. Check backend health."
-                            }
-                        },
-                        onFailure = { err ->
-                            "Connection failed: ${err.message ?: "unknown error"}"
-                        },
-                    )
+            _validationMessage.value = null
+            when (val r = authRepository.logoutAllDevices()) {
+                is com.zaruda.app.core.ApiResult.Success -> _loggedOut.value = true
+                is com.zaruda.app.core.ApiResult.Failure -> {
+                    // Still sign out locally if the server call fails — never trap the user.
+                    tokenStore.clear()
+                    _loggedOut.value = true
                 }
-            } finally {
-                _validating.value = false
             }
         }
-    }
-
-    private fun normalize(value: String): String {
-        return InputValidators.toDisplayBaseUrl(value, BuildConfig.DEFAULT_API_BASE_URL)
     }
 }
 
@@ -238,25 +132,10 @@ fun SettingsScreen(
 ) {
     val localeManager = LocalLocaleManager.current
     val context = LocalContext.current
-    val baseUrl by viewModel.baseUrl.collectAsState()
-    val saved by viewModel.saved.collectAsState()
-    val saving by viewModel.saving.collectAsState()
-    val validating by viewModel.validating.collectAsState()
     val validationMessage by viewModel.validationMessage.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val loggedOut by viewModel.loggedOut.collectAsState()
     LaunchedEffect(loggedOut) { if (loggedOut) onLogout() }
-    val localPreset = BuildConfig.DEFAULT_API_BASE_URL
-    val stagingPreset = BuildConfig.STAGING_API_BASE_URL.takeIf { it.isNotBlank() }
-    val normalizedBaseUrl = InputValidators.toDisplayBaseUrl(baseUrl, localPreset)
-    val baseUrlError = if (
-        baseUrl.isNotBlank() &&
-        !InputValidators.isSecureOrLocalDevUrl(normalizedBaseUrl)
-    ) {
-        "Use HTTPS URL or local emulator URL"
-    } else {
-        null
-    }
 
     Scaffold(
         topBar = {
@@ -395,138 +274,6 @@ fun SettingsScreen(
                 }
             }
 
-            // ── Notifications section ──────────────────────────────────────
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Notifications, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
-                }
-                Text(stringResource(R.string.settings_notifications), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    var pushEnabled by remember { mutableStateOf(true) }
-                    var emailEnabled by remember { mutableStateOf(true) }
-                    var chatAlerts by remember { mutableStateOf(true) }
-                    var offerAlerts by remember { mutableStateOf(true) }
-
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_push), style = MaterialTheme.typography.bodyMedium)
-                        Switch(checked = pushEnabled, onCheckedChange = { pushEnabled = it })
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_email), style = MaterialTheme.typography.bodyMedium)
-                        Switch(checked = emailEnabled, onCheckedChange = { emailEnabled = it })
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_chat_alerts), style = MaterialTheme.typography.bodyMedium)
-                        Switch(checked = chatAlerts, onCheckedChange = { chatAlerts = it })
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_offer_updates), style = MaterialTheme.typography.bodyMedium)
-                        Switch(checked = offerAlerts, onCheckedChange = { offerAlerts = it })
-                    }
-                }
-            }
-
-            // ── Network section ──────────────────────────────────────────
-            // Network section header
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Cloud, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                }
-                Text(stringResource(R.string.settings_network), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.Cloud, contentDescription = null)
-                        Text(
-                            text = stringResource(R.string.settings_api_base_url),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.settings_api_base_url_helper),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    AppTextField(
-                        value = baseUrl,
-                        onValueChange = viewModel::update,
-                        label = "URL",
-                        error = baseUrlError,
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        FilterChip(
-                            selected = baseUrl == localPreset,
-                            onClick = { viewModel.applyPreset(localPreset) },
-                            label = { Text(stringResource(R.string.settings_local)) },
-                        )
-                        if (stagingPreset != null) {
-                            FilterChip(
-                                selected = baseUrl == stagingPreset,
-                                onClick = { viewModel.applyPreset(stagingPreset) },
-                                label = { Text(stringResource(R.string.settings_staging)) },
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = "Default: ${BuildConfig.DEFAULT_API_BASE_URL}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    PrimaryButton(
-                        text = stringResource(R.string.action_save),
-                        loading = saving,
-                        enabled = baseUrlError == null && !validating,
-                        onClick = viewModel::save,
-                    )
-                    PrimaryButton(
-                        text = "Validate connection",
-                        loading = validating,
-                        enabled = baseUrlError == null && !saving,
-                        onClick = viewModel::validateNow,
-                    )
-
-                    if (saved) {
-                        SuccessBanner(message = "Saved. Restart app to apply new API URL.")
-                    }
-                    validationMessage?.let { msg ->
-                        if (msg.startsWith("Connection failed") || msg.startsWith("Invalid URL")) {
-                            ErrorBanner(message = msg)
-                        } else {
-                            SuccessBanner(message = msg)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
             // ── Storage & Cache section ──────────────────────────────────
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                 Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
@@ -543,6 +290,9 @@ fun SettingsScreen(
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(R.string.settings_clear_cache), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PrimaryButton(text = "Clear Cache", onClick = { viewModel.clearCache() })
+                    validationMessage?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
 
@@ -563,38 +313,6 @@ fun SettingsScreen(
                     Text(stringResource(R.string.settings_logout_all), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.settings_logout_all_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PrimaryButton(text = "Logout All Devices", onClick = { viewModel.logoutAllDevices() })
-                }
-            }
-
-            // ── Account Data section ────────────────────────────────────
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Download, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                }
-                Text(stringResource(R.string.settings_account_data), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.settings_export_data), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.settings_export_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    var exporting by remember { mutableStateOf(false) }
-                    var exportMsg by remember { mutableStateOf<String?>(null) }
-                    PrimaryButton(
-                        text = if (exporting) "Preparing…" else "Request Data Export",
-                        onClick = {
-                            exporting = true
-                            exportMsg = "Your data export has been requested. You will receive an email with the download link."
-                            exporting = false
-                        },
-                    )
-                    exportMsg?.let {
-                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                    }
                 }
             }
 
@@ -622,16 +340,16 @@ fun SettingsScreen(
                         Icon(Icons.Default.Settings, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
                     }
                     Column {
-                        Text(
-                            text = "MHub v${BuildConfig.VERSION_NAME}",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            text = "Build ${BuildConfig.VERSION_CODE} • Android",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Text(
+                        text = stringResource(R.string.app_name) + " v" + BuildConfig.VERSION_NAME,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Version ${BuildConfig.VERSION_CODE} • Android",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     }
                 }
             }

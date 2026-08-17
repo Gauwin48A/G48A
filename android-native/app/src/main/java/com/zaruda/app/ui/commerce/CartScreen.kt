@@ -55,6 +55,7 @@ import com.zaruda.app.data.repository.*
 import com.zaruda.app.domain.model.Post
 import com.zaruda.app.ui.common.LinkColor
 import com.zaruda.app.ui.explore.SharedExploreStore
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -75,6 +76,10 @@ data class CartUiState(
     val pendingUndoItem: CartItem? = null,
     val total: Double = 0.0,
     val error: String? = null,
+    /** Electronics item the buyer is initiating a platform-purchase for. */
+    val buyingItem: CartItem? = null,
+    val buying: Boolean = false,
+    val buyMessage: String? = null,
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -82,6 +87,7 @@ data class CartUiState(
 @HiltViewModel
 class CartViewModel @Inject constructor(
     private val repo: CartRepository,
+    private val salesRepo: SalesRepository,
     private val cartItemDao: com.zaruda.app.data.local.db.CartItemDao,
     private val localeManager: com.zaruda.app.core.LocaleManager,
 ) : ViewModel() {
@@ -124,18 +130,23 @@ class CartViewModel @Inject constructor(
 
     private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
         val catFilter = _categoryFilter.value
-        // Filter remote cart items by category too (CartItem now has category field)
+        // Filter all cart items strictly by category when inside a category app / category-scoped context
         val filteredRemote = if (catFilter != null) {
-            remoteCartItems.filter { it.category == catFilter }
+            remoteCartItems.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
         } else {
             remoteCartItems
         }
         val localPosts = if (catFilter != null) {
-            SharedExploreStore.cartPosts.filter { it.category == catFilter }
+            SharedExploreStore.cartPosts.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
         } else {
             SharedExploreStore.cartPosts
         }
-        val mergedItems = mergeCartItems(filteredRemote, localPosts, roomCartItems)
+        val filteredRoom = if (catFilter != null) {
+            roomCartItems.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
+        } else {
+            roomCartItems
+        }
+        val mergedItems = mergeCartItems(filteredRemote, localPosts, filteredRoom)
         _state.value = _state.value.copy(
             loading = loading,
             items = mergedItems,
@@ -242,6 +253,52 @@ class CartViewModel @Inject constructor(
             repo.updateQty(postId, qty)
         }
     }
+
+    // ── Electronics in-app purchase (escrow) ──────────────────────────────
+
+    /** Confirm dialog for a specific electronics item. */
+    fun confirmBuy(item: CartItem) {
+        _state.value = _state.value.copy(buyingItem = item, buyMessage = null, error = null)
+    }
+
+    fun dismissBuy() {
+        _state.value = _state.value.copy(buyingItem = null, buying = false)
+    }
+
+    /**
+     * Initiate the escrow sale for an Electronics cart item.
+     * Server forces payment_mode = IN_APP for Electronics (never client-trusted);
+     * seller then approves, buyer pays in-app, funds held in escrow.
+     */
+    fun requestPlatformBuy() {
+        val item = _state.value.buyingItem ?: return
+        val postId = item.postId ?: item.id ?: return
+        val sellerId = item.sellerId ?: return
+        _state.value = _state.value.copy(buying = true, buyMessage = null, error = null)
+        viewModelScope.launch {
+            when (val r = salesRepo.requestSale(
+                SaleRequest(postId = postId, sellerId = sellerId, paymentMode = "IN_APP")
+            )) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    buying = false,
+                    buyingItem = null,
+                    buyMessage = r.data.message ?: "Purchase request sent! The seller will confirm shortly.",
+                )
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    buying = false,
+                    buyingItem = null,
+                    error = r.error.message ?: "Could not send the purchase request.",
+                )
+            }
+        }
+    }
+
+    fun dismissBuyMessage() { _state.value = _state.value.copy(buyMessage = null) }
+
+    /** Surface a transient UI error (e.g. a listing missing seller info). */
+    fun setError(msg: String) { _state.value = _state.value.copy(error = msg) }
+
+    fun clearError() { _state.value = _state.value.copy(error = null) }
 }
 
 private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
@@ -251,8 +308,10 @@ private fun Post.toCartItem(quantity: Int = 1): CartItem = CartItem(
     currency = currency,
     imageUrl = primaryImage,
     sellerName = sellerName ?: userName ?: location,
+    sellerId = userId,
     quantity = quantity,
     category = category,
+    categoryName = category,
 )
 
 private fun CartItem.toPost(): Post = Post(
@@ -262,7 +321,7 @@ private fun CartItem.toPost(): Post = Post(
     currency = currency,
     imageUrl = imageUrl,
     sellerName = sellerName,
-    category = category,
+    category = categoryName ?: category,
 )
 
 private fun CartItem.matchesPostId(postId: String): Boolean =
@@ -271,8 +330,20 @@ private fun CartItem.matchesPostId(postId: String): Boolean =
 private fun mergeCartItems(remoteItems: List<CartItem>, localPosts: List<Post>, roomItems: List<CartItem> = emptyList()): List<CartItem> {
     // Dedupe across ALL sources by stableId — the same item may exist in Room,
     // SharedExploreStore, and the remote API (category screens write to both).
-    return (remoteItems + roomItems + localPosts.map { it.toCartItem() })
+    // Prefer LOCAL copies (Room + SharedExploreStore) over the remote copy so an item
+    // added in a category app keeps its local category even when the server's copy
+    // lacks or mislabels it (mirrors the wishlist merge).
+    val remoteById = remoteItems.associateBy { it.stableId }
+    return (roomItems + localPosts.map { it.toCartItem() } + remoteItems)
         .distinctBy { it.stableId }
+        // Enrich local-first copies with the server's seller_id / category_name so the
+        // Electronics "Buy with Platform" button works even when the item was added
+        // offline or from a category app (the server knows the real seller + category).
+        .map { item ->
+            val remote = remoteById[item.stableId] ?: return@map item
+            if (item.sellerId != null && item.categoryName != null) item
+            else item.copy(sellerId = item.sellerId ?: remote.sellerId, categoryName = item.categoryName ?: remote.categoryName)
+        }
 }
 
 /** Convert a Room cart entity into the UI CartItem model. */
@@ -284,8 +355,10 @@ private fun com.zaruda.app.data.local.db.CartItemEntity.toCartItem(): CartItem =
     currency = null,
     imageUrl = imageUrl,
     sellerName = brand,
+    sellerId = sellerId,
     quantity = quantity,
     category = category,
+    categoryName = category,
 )
 
 /** Convert a UI CartItem back into a Room cart entity (for undo / move-to-cart persistence). */
@@ -298,6 +371,7 @@ private fun CartItem.toCartEntity(): com.zaruda.app.data.local.db.CartItemEntity
     imageUrl = imageUrl.orEmpty(),
     category = category.orEmpty(),
     brand = sellerName.orEmpty(),
+    sellerId = sellerId,
     selectedColor = "",
     selectedSize = "",
     quantity = quantity,
@@ -402,6 +476,9 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                                         item = item,
                                         onRemove = { viewModel.removeWithUndo(item.postId ?: "") },
                                         onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
+                                        onBuyWithPlatform = if (item.isElectronics) {
+                                            { viewModel.confirmBuy(item) }
+                                        } else null,
                                     )
                                 }
                             }
@@ -422,30 +499,61 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                             }
                         }
 
-                        // Contact seller prompt at bottom
+                        // Contact seller prompt or Electronics Escrow Purchase at bottom
                         if (state.items.isNotEmpty()) {
+                            val hasElectronics = state.items.any {
+                                it.category?.lowercase()?.contains("electronic") == true || categoryKey?.lowercase()?.contains("electronic") == true
+                            }
                             Surface(
                                 color = MaterialTheme.colorScheme.surface,
                                 tonalElevation = 3.dp,
                                 shadowElevation = 8.dp,
                             ) {
-                                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.CompareArrows, null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp),
-                                        )
+                                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    if (hasElectronics) {
+                                        // Electronics Category: In-App Escrow Fraud Protection
+                                        Button(
+                                            onClick = {
+                                                // Pick the first electronics item that has a seller to request a platform purchase.
+                                                val target = state.items.firstOrNull { it.isElectronics && (it.sellerId != null) }
+                                                if (target != null) viewModel.confirmBuy(target)
+                                                else viewModel.setError("This listing can't start a platform purchase right now.")
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Icon(Icons.Filled.VerifiedUser, null, tint = Color.White)
+                                                Text("Buy with Platform Escrow Protection (2.5% Fee)", fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        }
                                         Text(
-                                            "Interested in an item? Contact the seller directly to ask questions or arrange a meetup.",
-                                            fontSize = 13.sp,
+                                            "🛡️ Funds held securely in Escrow until you inspect & confirm device delivery.",
+                                            fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            lineHeight = 18.sp,
-                                            modifier = Modifier.weight(1f),
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
+                                    } else {
+                                        // General Categories: Direct Contact
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.CompareArrows, null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                            Text(
+                                                "Interested in an item? Contact the seller directly via Call or WhatsApp to arrange meetup.",
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                lineHeight = 18.sp,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -458,6 +566,82 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
+    }
+
+    // ── Electronics purchase confirm dialog ────────────────────────────────
+    val buyingItem = state.buyingItem
+    if (buyingItem != null) {
+        AlertDialog(
+            onDismissRequest = { if (!state.buying) viewModel.dismissBuy() },
+            icon = { Text("🛡️", fontSize = 30.sp) },
+            title = { Text("Buy with Platform Protection", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "\"${buyingItem.title ?: "This item"}\"\n₹%,.0f".format(buyingItem.price ?: 0.0),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                    Text(
+                        "• You pay securely inside the app — funds are held in escrow.\n" +
+                        "• The seller ships, you confirm receipt, then the money is released.\n" +
+                        "• Platform fee: 2.5% (inclusive of GST), deducted at settlement.\n" +
+                        "• If the item never arrives or is wrong, raise a dispute and get your money back.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 19.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.requestPlatformBuy() },
+                    enabled = !state.buying,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    if (state.buying) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(if (state.buying) "Sending…" else "Request Purchase", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissBuy() }, enabled = !state.buying) { Text("Cancel") }
+            },
+        )
+    }
+
+    // ── Error feedback (e.g. purchase request failed) ───────────────────────
+    state.error?.let { err ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Couldn't start purchase", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            text = { Text(err, fontSize = 13.sp, color = MaterialTheme.colorScheme.error) },
+            confirmButton = {
+                Button(onClick = { viewModel.clearError() }, shape = RoundedCornerShape(10.dp)) { Text("OK") }
+            },
+        )
+    }
+
+    // ── Success feedback ────────────────────────────────────────────────────
+    state.buyMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissBuyMessage() },
+            icon = { Text("✅", fontSize = 28.sp) },
+            title = { Text("Purchase request sent!", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            text = {
+                Text(
+                    "$message\n\nOnce the seller approves, you'll pay securely inside the app and the funds stay in escrow until you confirm delivery.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.dismissBuyMessage() }, shape = RoundedCornerShape(10.dp)) { Text("OK") }
+            },
+        )
     }
 }
 
@@ -501,6 +685,7 @@ private fun ShortlistItemCard(
     item: CartItem,
     onRemove: () -> Unit,
     onSaveForLater: () -> Unit = {},
+    onBuyWithPlatform: (() -> Unit)? = null,
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -585,6 +770,21 @@ private fun ShortlistItemCard(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
+                // Electronics only → in-app escrow purchase button (per post)
+                if (item.isElectronics && onBuyWithPlatform != null) {
+                    Button(
+                        onClick = onBuyWithPlatform,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxWidth().height(36.dp),
+                    ) {
+                        Icon(Icons.Filled.VerifiedUser, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Buy with Platform (2.5% fee)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,

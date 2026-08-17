@@ -302,7 +302,7 @@ fun NotificationsScreen(
     var selectedFilter by rememberSaveable { mutableStateOf("All") }
     val focusManager = LocalFocusManager.current
 
-    val filterOptions = listOf("All", "Offers", "Chat", "System")
+    val filterOptions = listOf("All", "Offers", "Inquiries", "System")
 
     val displayItems = remember(state.items, searchQuery, showUnreadOnly, selectedFilter, state.snoozedItems) {
         state.items.filter { n ->
@@ -315,7 +315,7 @@ fun NotificationsScreen(
                     val t = n.type?.lowercase() ?: ""
                     when (selectedFilter) {
                         "Offers" -> t.contains("offer") || t.contains("price") || t.contains("deal")
-                        "Chat" -> t.contains("message") || t.contains("chat") || t.contains("inquiry")
+                        "Inquiries" -> t.contains("message") || t.contains("chat") || t.contains("inquiry")
                         "System" -> t.contains("security") || t.contains("auth") || t.contains("alert") || t.contains("system")
                         else -> true
                     }
@@ -648,7 +648,7 @@ fun NotificationsScreen(
 
                 listOf(
                     Triple("Offers & Deals", "Get notified about price drops and offers", true),
-                    Triple("Messages & Chat", "New messages from buyers and sellers", true),
+                    Triple("Inquiries & Offers", "Buyer interest alerts and offer notifications", true),
                     Triple("System Updates", "Account security and app updates", true),
                     Triple("Marketing", "Promotional offers and campaigns", false),
                     Triple("Order Updates", "Shipping and delivery notifications", true),

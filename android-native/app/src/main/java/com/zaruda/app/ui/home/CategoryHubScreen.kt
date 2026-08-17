@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.home
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -193,11 +194,8 @@ fun CategoryHubScreen(
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val roomCartCount by viewModel.cartCount.collectAsState()
-    val roomWishlistCount by viewModel.wishlistCount.collectAsState()
-    val effectiveCartCount = cartItemCount.coerceAtLeast(roomCartCount)
 
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val pageGradient = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
         else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
     PullToRefreshBox(
@@ -262,20 +260,62 @@ fun CategoryHubScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // ── Quick access: For You / Cart / Wishlist / Recently Viewed ─
-                item(key = "quick_access") {
-                    HubQuickAccessRow(
-                        cartCount = effectiveCartCount,
-                        wishlistCount = roomWishlistCount,
-                        onOpenForYou = onOpenForYou,
-                        onOpenCart = onOpenCart,
-                        onOpenWishlist = onOpenWishlist,
-                        onOpenRecentlyViewed = onOpenRecentlyViewed,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-                    )
-                }
-                item(key = "quick_access_gap") {
-                    Spacer(Modifier.height(12.dp))
+                // ── All Posts — unified marketplace across every category ──
+                item(key = "all_posts") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Brush.linearGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED))))
+                                .clickable { onOpenAllPosts() }
+                                .semantics {
+                                    role = Role.Button
+                                    contentDescription = "Open All Posts"
+                                }
+                                .padding(horizontal = 18.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(Icons.Filled.Search, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                    }
+                                    Column {
+                                        Text(
+                                            "All Posts",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 17.sp,
+                                        )
+                                        Text(
+                                            "Browse every listing across all categories",
+                                            color = Color.White.copy(alpha = 0.75f),
+                                            fontSize = 11.sp,
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // ── Row 1: Electronics + Fashion ───────────────────────
@@ -339,106 +379,6 @@ fun CategoryHubScreen(
                 }
             }
         }
-    }
-}
-
-/* ── Quick access row (For You / Cart / Wishlist / Recently Viewed) ──────── */
-
-@Composable
-private fun HubQuickAccessRow(
-    cartCount: Int,
-    wishlistCount: Int,
-    onOpenForYou: () -> Unit,
-    onOpenCart: () -> Unit,
-    onOpenWishlist: () -> Unit,
-    onOpenRecentlyViewed: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        HubQuickTile(
-            emoji = "⭐",
-            label = "For You",
-            sub = "Personalized",
-            gradient = listOf(Color(0xFFFF6B6B), Color(0xFFF97316)),
-            onClick = onOpenForYou,
-            modifier = Modifier.weight(1f),
-            isDark = isDark,
-        )
-        HubQuickTile(
-            emoji = "🛒",
-            label = "Cart",
-            sub = if (cartCount > 0) "$cartCount item${if (cartCount > 1) "s" else ""}" else "Your items",
-            gradient = listOf(Color(0xFF3B82F6), Color(0xFF4F46E5)),
-            badge = cartCount,
-            onClick = onOpenCart,
-            modifier = Modifier.weight(1f),
-            isDark = isDark,
-        )
-        HubQuickTile(
-            emoji = "🔖",
-            label = "Wishlist",
-            sub = if (wishlistCount > 0) "$wishlistCount saved" else "Saved items",
-            gradient = listOf(Color(0xFF8B5CF6), Color(0xFFA855F7)),
-            badge = wishlistCount,
-            onClick = onOpenWishlist,
-            modifier = Modifier.weight(1f),
-            isDark = isDark,
-        )
-        HubQuickTile(
-            emoji = "🕐",
-            label = "Recent",
-            sub = "Viewed",
-            gradient = listOf(Color(0xFF10B981), Color(0xFF14B8A6)),
-            onClick = onOpenRecentlyViewed,
-            modifier = Modifier.weight(1f),
-            isDark = isDark,
-        )
-    }
-}
-
-@Composable
-private fun HubQuickTile(
-    emoji: String,
-    label: String,
-    sub: String,
-    gradient: List<Color>,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isDark: Boolean = false,
-    badge: Int = 0,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isDark) Color(0xFF1E293B).copy(alpha = 0.9f) else Color.White)
-            .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = if (isDark) Color.Transparent else Color(0xFF0F172A).copy(alpha = 0.12f))
-            .clickable { onClick() }
-            .padding(vertical = 14.dp, horizontal = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Box(
-                Modifier.size(34.dp).clip(CircleShape).background(Brush.linearGradient(gradient)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(emoji, fontSize = 16.sp)
-            }
-            if (badge > 0) {
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFFEF4444),
-                    modifier = Modifier.align(Alignment.TopEnd).size(18.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(if (badge > 99) "99+" else "$badge", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B), maxLines = 1)
-        Text(sub, fontSize = 8.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), maxLines = 1)
     }
 }
 

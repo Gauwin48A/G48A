@@ -7,7 +7,7 @@ const {
   awardCoinOnSale,
 } = require("../services/coinHooks");
 const { validate, postValidation } = require("../middleware/validators");
-const { protect, optionalAuth } = require("../middleware/auth");
+const { protect, optionalAuth, requirePlanAndKyc } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const { postUploadSecurity } = require("../middleware/upload");
 const { publicReadSlowDown, searchSlowDown } = require("../middleware/rateLimiter");
@@ -48,6 +48,13 @@ router.get("/all", publicReadSlowDown, postController.getAllPosts);
  */
 router.get("/user/:userId/sold", publicReadSlowDown, salesController.getSellerSoldPosts);
 router.get("/user/:sellerId/sold-posts", publicReadSlowDown, salesController.getSellerSoldPosts);
+
+/**
+ * GET /user/:userId/bought — Public: posts the user purchased (trust signal).
+ * Alias of /api/sales/user/:userId/bought-posts for Android/Web clients.
+ */
+router.get("/user/:userId/bought", publicReadSlowDown, salesController.getUserBoughtPosts);
+router.get("/user/:userId/bought-posts", publicReadSlowDown, salesController.getUserBoughtPosts);
 
 /**
  * GET /mine
@@ -392,6 +399,7 @@ const optimizeLocalImages = require("../middleware/imageOptimizer");
 router.post(
   "/",
   protect,
+  requirePlanAndKyc,
   upload.fields([{ name: "images", maxCount: 10 }]),
   postUploadSecurity,
   optimizeLocalImages,
@@ -408,6 +416,7 @@ router.post(
 router.post(
   "/create",
   protect,
+  requirePlanAndKyc,
   upload.fields([{ name: "images", maxCount: 10 }]),
   postUploadSecurity,
   optimizeLocalImages,

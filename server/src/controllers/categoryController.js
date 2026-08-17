@@ -145,7 +145,8 @@ exports.getAllCategories = async (req, res) => {
       logger.error("No categories found in DB");
     }
 
-    res.json(
+    res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+    return res.status(200).json(
       buildCategoryResponse(safeRows, {
         includeSubcategories,
       })

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/auth");
+const { protect, requirePlanAndKyc } = require("../middleware/auth");
 const offersController = require("../controllers/offersController");
 const { offerLimiter } = require("../middleware/rateLimiter");
 
@@ -13,7 +13,7 @@ const { offerLimiter } = require("../middleware/rateLimiter");
 router.use(protect);
 
 /** @route POST / - Create a new offer on a post */
-router.post("/", offerLimiter, offersController.createOffer);
+router.post("/", requirePlanAndKyc, offerLimiter, offersController.createOffer);
 
 /** @route GET / - Get all offers for the authenticated user */
 router.get("/", offersController.getOffers);

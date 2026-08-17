@@ -90,11 +90,21 @@ const postValidation = {
       .withMessage("Price must be a positive number"),
     body("category_id")
       .optional()
-      .isInt({ min: 1 })
+      .custom((value) => {
+        const v = String(value).trim();
+        if (/^\d+$/.test(v)) return true;
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) return true;
+        return false;
+      })
       .withMessage("Invalid category"),
     body("subcategory_id")
       .optional({ checkFalsy: true })
-      .isInt({ min: 1 })
+      .custom((value) => {
+        const v = String(value).trim();
+        if (/^\d+$/.test(v)) return true;
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) return true;
+        return false;
+      })
       .withMessage("Invalid subcategory"),
     body("latitude")
       .optional()

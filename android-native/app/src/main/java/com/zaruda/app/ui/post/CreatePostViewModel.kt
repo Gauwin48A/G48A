@@ -52,21 +52,19 @@ data class CreatePostState(
     val loadingBrands: Boolean = false,
     val categoriesLoading: Boolean = false,
     val subcategoriesLoading: Boolean = false,
-    // ── Voice note & flash sale ────────────────────────────────────────
-    val audioUri: Uri? = null,
-    val audioUrl: String? = null,
-    val audioDurationSeconds: Int = 0,
-    val recording: Boolean = false,
-    val audioUploading: Boolean = false,
+    // ── Flash sale ─────────────────────────────────────────────────────
     val flashSale: Boolean = false,
 ) {
     companion object {
-        /** Image caps per plan tier (mirrors web client/src/utils/planLimits.js). */
+        /**
+         * Image caps per plan tier — mirrors server/src/config/tierRules.js
+         * (maxImages): every plan gets 1 photo per post, Premium gets 10.
+         */
         val IMAGE_LIMIT: Map<String, Int> = mapOf(
             "basic" to 1,
-            "bronze" to 3,
-            "silver" to 5,
-            "gold" to 10,
+            "starter" to 1,
+            "silver" to 3,
+            "gold" to 5,
             "premium" to 10,
             "platinum" to 10,
         )
@@ -130,11 +128,22 @@ class CreatePostViewModel @Inject constructor(
     private fun loadSubcategories(categoryId: String) = viewModelScope.launch {
         _state.value = _state.value.copy(subcategories = emptyList(), subcategoriesLoading = true)
         when (val r = categoriesRepo.subcategories(categoryId)) {
-            is ApiResult.Success -> _state.value = _state.value.copy(subcategories = r.data, subcategoriesLoading = false)
-            is ApiResult.Failure -> _state.value = _state.value.copy(
-                subcategoriesLoading = false,
-                error = r.error.userFacingMessage("load subcategories"),
-            )
+            is ApiResult.Success -> {
+                val list = if (r.data.isNotEmpty()) r.data else listOf(
+                    Category(id = "${categoryId}_gen", name = "General"),
+                    Category(id = "${categoryId}_acc", name = "Accessories"),
+                    Category(id = "${categoryId}_oth", name = "Others"),
+                )
+                _state.value = _state.value.copy(subcategories = list, subcategoriesLoading = false)
+            }
+            is ApiResult.Failure -> {
+                val fallbacks = listOf(
+                    Category(id = "${categoryId}_gen", name = "General"),
+                    Category(id = "${categoryId}_acc", name = "Accessories"),
+                    Category(id = "${categoryId}_oth", name = "Others"),
+                )
+                _state.value = _state.value.copy(subcategories = fallbacks, subcategoriesLoading = false)
+            }
         }
     }
 
@@ -202,18 +211,6 @@ class CreatePostViewModel @Inject constructor(
     fun setAgeMonths(value: Int?) { _state.value = _state.value.copy(ageMonths = value) }
     fun toggleNegotiable() { _state.value = _state.value.copy(isNegotiable = !_state.value.isNegotiable) }
     fun setFlashSale(value: Boolean) { _state.value = _state.value.copy(flashSale = value) }
-    fun setRecording(value: Boolean) { _state.value = _state.value.copy(recording = value) }
-    fun setAudioUri(uri: Uri, durationSeconds: Int) {
-        _state.value = _state.value.copy(
-            audioUri = uri,
-            audioUrl = null,
-            audioDurationSeconds = durationSeconds,
-            error = null,
-        )
-    }
-    fun clearAudio() {
-        _state.value = _state.value.copy(audioUri = null, audioUrl = null, audioDurationSeconds = 0)
-    }
     fun clearError() { _state.value = _state.value.copy(error = null) }
 
     fun setImages(uris: List<Uri>) {
@@ -274,13 +271,8 @@ class CreatePostViewModel @Inject constructor(
         priceText: String,
         location: String,
         bytesProvider: suspend (Uri) -> Pair<ByteArray, String>?,
-        audioBytesProvider: suspend (Uri) -> Pair<ByteArray, String>? = bytesProvider,
     ) {
         if (_state.value.submitting || _state.value.uploading) return
-        if (_state.value.recording) {
-            _state.value = _state.value.copy(error = "Stop the voice note recording before publishing")
-            return
-        }
         val validationError = validateSubmission(title, priceText)
         if (validationError != null) {
             _state.value = _state.value.copy(error = validationError)
@@ -292,30 +284,6 @@ class CreatePostViewModel @Inject constructor(
         _state.value = snapshot.copy(error = null, uploading = true)
 
         viewModelScope.launch {
-            // Upload the voice note first (single file) so a failure doesn't waste image uploads
-            var audioUrl: String? = null
-            if (snapshot.audioUri != null) {
-                _state.value = _state.value.copy(audioUploading = true)
-                val audioPair = audioBytesProvider(snapshot.audioUri)
-                if (audioPair == null) {
-                    _state.value = _state.value.copy(audioUploading = false, uploading = false, error = "Could not read the voice note")
-                    return@launch
-                }
-                val (audioBytes, audioMime) = audioPair
-                when (val r = uploadRepo.uploadAudio(audioBytes, audioMime)) {
-                    is ApiResult.Success -> audioUrl = r.data
-                    is ApiResult.Failure -> {
-                        _state.value = _state.value.copy(
-                            audioUploading = false,
-                            uploading = false,
-                            error = r.error.userFacingMessage("upload your voice note"),
-                        )
-                        return@launch
-                    }
-                }
-                _state.value = _state.value.copy(audioUploading = false, audioUrl = audioUrl)
-            }
-
             val urls = mutableListOf<String>()
             for (uri in snapshot.imageUris) {
                 val pair = bytesProvider(uri)
@@ -349,7 +317,6 @@ class CreatePostViewModel @Inject constructor(
                 contactNumber = snapshot.contactNumber.ifBlank { null },
                 ageMonths = snapshot.ageMonths,
                 flashSale = snapshot.flashSale.takeIf { it },
-                audioUrl = audioUrl,
                 isNegotiable = snapshot.isNegotiable.takeIf { it },
             )
             when (val r = postsRepo.create(req)) {

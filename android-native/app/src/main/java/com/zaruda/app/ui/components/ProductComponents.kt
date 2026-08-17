@@ -125,6 +125,7 @@ fun SubcategoryChipRow(
 fun EnhancedProductCard(
     product: MockDataProvider.MockProduct,
     isWishlisted: Boolean = false,
+    showWishlist: Boolean = true,
     onTap: () -> Unit,
     onAddToCart: () -> Unit,
     onToggleWishlist: () -> Unit,
@@ -173,25 +174,28 @@ fun EnhancedProductCard(
                         )
                     }
                 }
-                // Wishlist button
-                IconButton(
-                    onClick = onToggleWishlist,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .size(40.dp)
-                        .semantics {
-                            contentDescription = if (isWishlisted)
-                                "Remove ${product.title} from wishlist"
-                            else
-                                "Add ${product.title} to wishlist"
-                        },
-                ) {
-                    Icon(
-                        imageVector = if (isWishlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                        contentDescription = null,
-                        tint = if (isWishlisted) Color(0xFF6366F1) else Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
+                // Wishlist button — hidden for products that don't belong to this
+                // category app (the wishlist is strictly category-scoped).
+                if (showWishlist) {
+                    IconButton(
+                        onClick = onToggleWishlist,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .size(40.dp)
+                            .semantics {
+                                contentDescription = if (isWishlisted)
+                                    "Remove ${product.title} from wishlist"
+                                else
+                                    "Add ${product.title} to wishlist"
+                            },
+                    ) {
+                        Icon(
+                            imageVector = if (isWishlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = null,
+                            tint = if (isWishlisted) Color(0xFF6366F1) else Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
                 // Out of stock overlay
                 if (!product.inStock) {

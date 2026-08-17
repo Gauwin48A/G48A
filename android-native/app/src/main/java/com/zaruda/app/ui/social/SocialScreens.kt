@@ -2,6 +2,7 @@
 
 package com.zaruda.app.ui.social
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -183,7 +184,7 @@ private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null, onPromote: (
                     modifier = Modifier.clickable {
                         val si = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "Check out this post on MHub: " + (item.title ?: item.displayContent.take(80)))
+                            putExtra(Intent.EXTRA_TEXT, "Check out this post on Zaruda: " + (item.title ?: item.displayContent.take(80)))
                         }
                         context.startActivity(Intent.createChooser(si, "Share via"))
                     },
@@ -209,16 +210,16 @@ private fun FeedCard(item: FeedItem, onClick: (() -> Unit)? = null, onPromote: (
 // FeedDetailScreen
 // ──────────────────────────────────────────────────────────────────────────────
 private val MOCK_FEED_MAP = mapOf(
-    "mock_1" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_1", title = "How to negotiate the best price when buying a used car", content = "Buying a used car can be tricky. Here are 7 proven tips to get the best deal:\n\n1) Research market prices on MHub before visiting. Always know the average price range for the model you're looking at.\n\n2) Always inspect the vehicle in daylight — scratches and dents are much harder to see at night.\n\n3) Get a mechanic inspection before paying. A ₹500 inspection fee can save you ₹50,000 in repairs.\n\n4) Check the RC certificate, insurance, and service history documents carefully.\n\n5) Never pay in advance without meeting the seller in person.\n\n6) Negotiate confidently — most sellers expect a counter-offer.\n\n7) Use MHub's compare feature to check similar listings before finalizing.", userName = "AutoExpert_Ravi", createdAt = "2024-01-15T10:30:00Z", likeCount = 234, commentCount = 18, viewCount = 1850, categoryName = "Vehicles"),
-    "mock_2" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_2", title = "Top 5 budget smartphones under ₹15,000 in 2024", content = "The budget smartphone market has exploded this year. Redmi, Realme and Poco are fighting hard for your money.\n\nHere's our analysis of the best bang-for-buck options available on MHub right now:\n\n• Redmi 13C – Best camera in segment\n• Realme C65 – Best battery life\n• POCO M6 Pro – Best performance\n• Samsung Galaxy M14 – Best display\n• Motorola G34 – Best after-sales support\n\nAll of these have pre-owned listings available on MHub at 30-40% below retail price. Check the 'Electronics → Phones' category to find great deals near you.", userName = "TechReview_Ananya", createdAt = "2024-01-14T14:22:00Z", likeCount = 567, commentCount = 45, viewCount = 4200, categoryName = "Electronics"),
-    "mock_3" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_3", title = "Is it worth buying pre-owned electronics on MHub?", content = "I've bought 3 refurbished items on MHub in the last year. My experience has been mostly positive but there are things to watch out for. Always check the seller rating, demand original receipts, and test everything on the spot before paying. Sellers appreciate serious buyers and are often willing to negotiate if you're prepared. The key is to be patient and not rush into a purchase.", userName = "SmartBuyer_Priya", createdAt = "2024-01-13T08:45:00Z", likeCount = 189, commentCount = 32, viewCount = 2100, categoryName = "Electronics"),
-    "mock_4" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_4", title = "Summer fashion trends 2024 — what's hot in India", content = "Cotton kurtis, palazzo sets, and breathable fabrics are dominating this summer. I found amazing deals on MHub from local designers who are selling premium quality at half the retail price. Here's what I picked up and why I think pre-owned fashion is the smart way to shop this season.", userName = "FashionFirst_Meera", createdAt = "2024-01-12T16:00:00Z", likeCount = 412, commentCount = 28, viewCount = 3300, categoryName = "Fashion"),
-    "mock_5" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_5", title = "Starting a small business? Here's what I learned selling on MHub", content = "I started selling handmade jewellery on MHub 6 months ago. First month was slow, but by month 3 I was getting 10+ inquiries daily. Key learnings: great photos matter most, respond within 1 hour, and price competitively. MHub's community is supportive and the platform makes it easy to connect with buyers.", userName = "Entrepreneur_Sunita", createdAt = "2024-01-11T11:15:00Z", likeCount = 892, commentCount = 76, viewCount = 6800, categoryName = "Fashion"),
-    "mock_6" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_6", title = "Guide to buying second-hand furniture in Bangalore", content = "Moving to Bangalore? Don't buy new furniture at inflated prices. MHub has hundreds of quality listings from people relocating. I furnished my entire 2BHK for under ₹40,000 by being patient and negotiating well. Here's exactly what I bought and how I approached each deal.", userName = "HomeDecor_Kiran", createdAt = "2024-01-10T09:30:00Z", likeCount = 654, commentCount = 89, viewCount = 5400, categoryName = "Home & Living"),
+    "mock_1" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_1", title = "How to negotiate the best price when buying a used car", content = "Buying a used car can be tricky. Here are 7 proven tips to get the best deal:\n\n1) Research market prices on Zaruda before visiting. Always know the average price range for the model you're looking at.\n\n2) Always inspect the vehicle in daylight — scratches and dents are much harder to see at night.\n\n3) Get a mechanic inspection before paying. A ₹500 inspection fee can save you ₹50,000 in repairs.\n\n4) Check the RC certificate, insurance, and service history documents carefully.\n\n5) Never pay in advance without meeting the seller in person.\n\n6) Negotiate confidently — most sellers expect a counter-offer.\n\n7) Use Zaruda's compare feature to check similar listings before finalizing.", userName = "AutoExpert_Ravi", createdAt = "2024-01-15T10:30:00Z", likeCount = 234, commentCount = 18, viewCount = 1850, categoryName = "Vehicles"),
+    "mock_2" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_2", title = "Top 5 budget smartphones under ₹15,000 in 2024", content = "The budget smartphone market has exploded this year. Redmi, Realme and Poco are fighting hard for your money.\n\nHere's our analysis of the best bang-for-buck options available on Zaruda right now:\n\n• Redmi 13C – Best camera in segment\n• Realme C65 – Best battery life\n• POCO M6 Pro – Best performance\n• Samsung Galaxy M14 – Best display\n• Motorola G34 – Best after-sales support\n\nAll of these have pre-owned listings available on Zaruda at 30-40% below retail price. Check the 'Electronics → Phones' category to find great deals near you.", userName = "TechReview_Ananya", createdAt = "2024-01-14T14:22:00Z", likeCount = 567, commentCount = 45, viewCount = 4200, categoryName = "Electronics"),
+    "mock_3" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_3", title = "Is it worth buying pre-owned electronics on Zaruda?", content = "I've bought 3 refurbished items on Zaruda in the last year. My experience has been mostly positive but there are things to watch out for. Always check the seller rating, demand original receipts, and test everything on the spot before paying. Sellers appreciate serious buyers and are often willing to negotiate if you're prepared. The key is to be patient and not rush into a purchase.", userName = "SmartBuyer_Priya", createdAt = "2024-01-13T08:45:00Z", likeCount = 189, commentCount = 32, viewCount = 2100, categoryName = "Electronics"),
+    "mock_4" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_4", title = "Summer fashion trends 2024 — what's hot in India", content = "Cotton kurtis, palazzo sets, and breathable fabrics are dominating this summer. I found amazing deals on Zaruda from local designers who are selling premium quality at half the retail price. Here's what I picked up and why I think pre-owned fashion is the smart way to shop this season.", userName = "FashionFirst_Meera", createdAt = "2024-01-12T16:00:00Z", likeCount = 412, commentCount = 28, viewCount = 3300, categoryName = "Fashion"),
+    "mock_5" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_5", title = "Starting a small business? Here's what I learned selling on Zaruda", content = "I started selling handmade jewellery on Zaruda 6 months ago. First month was slow, but by month 3 I was getting 10+ inquiries daily. Key learnings: great photos matter most, respond within 1 hour, and price competitively. Zaruda's community is supportive and the platform makes it easy to connect with buyers.", userName = "Entrepreneur_Sunita", createdAt = "2024-01-11T11:15:00Z", likeCount = 892, commentCount = 76, viewCount = 6800, categoryName = "Fashion"),
+    "mock_6" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_6", title = "Guide to buying second-hand furniture in Bangalore", content = "Moving to Bangalore? Don't buy new furniture at inflated prices. Zaruda has hundreds of quality listings from people relocating. I furnished my entire 2BHK for under ₹40,000 by being patient and negotiating well. Here's exactly what I bought and how I approached each deal.", userName = "HomeDecor_Kiran", createdAt = "2024-01-10T09:30:00Z", likeCount = 654, commentCount = 89, viewCount = 5400, categoryName = "Home & Living"),
     "mock_7" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_7", title = "EV revolution in India: Should you buy an electric vehicle now?", content = "With petrol prices rising and EV subsidies available, more Indians are considering electric vehicles. I test drove 4 electric scooters last month.\n\nHere's my honest take:\n\nThe Good:\n• Daily commute costs drop by 80%\n• Government FAME II subsidy saves ₹15,000-25,000\n• Very low maintenance (no engine oil, fewer moving parts)\n\nThe Challenges:\n• Charging infrastructure still patchy in tier-2/3 cities\n• Range anxiety for trips beyond 80km\n• Resale value still uncertain\n\nVerdict: If your daily commute is under 50km and you have home charging, EVs make excellent financial sense in 2024.", userName = "GreenMobility_Arjun", createdAt = "2024-01-09T13:00:00Z", likeCount = 1203, commentCount = 145, viewCount = 9800, categoryName = "Vehicles"),
     "mock_8" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_8", title = "How I sold my old MacBook for ₹5,000 more than expected", content = "Small tricks that helped me get top price: cleaned it thoroughly, took photos in good lighting, was honest about every scratch, and priced it ₹500 below similar listings to get quick inquiries. Sold in 2 days! The key is presentation and pricing strategy.", userName = "SellerTips_Vikram", createdAt = "2024-01-08T07:00:00Z", likeCount = 445, commentCount = 56, viewCount = 3900, categoryName = "Electronics"),
-    "mock_9" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_9", title = "Monthly market report: Used electronics prices in India (Jan 2024)", content = "iPhone 13 prices have stabilised at ₹42,000–₹48,000. Samsung S23 is available at ₹35,000. Laptops over 2 years old are seeing 20% price drops. Best time to buy gaming gear — stock is high and prices are soft. Here's the complete breakdown.", userName = "MarketWatch_MHub", createdAt = "2024-01-07T12:00:00Z", likeCount = 788, commentCount = 34, viewCount = 7200, categoryName = "Electronics"),
-    "mock_10" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_10", title = "Safety tips when buying or selling on MHub", content = "Your safety matters. Here are essential tips for safe transactions:\n\n🔒 BUYING SAFETY\n• Meet in public places like malls, police stations, or busy coffee shops\n• Never share OTP or UPI PIN with anyone\n• Test electronics before paying — insist on a demo\n• For vehicles, verify RC in the Parivahan app before paying\n• Avoid advance payments to unverified sellers\n\n📦 SELLING SAFETY\n• Don't share your home address publicly in listings\n• Meet buyers in neutral locations for high-value items\n• Accept only bank transfers or UPI — no wallet-to-wallet for large amounts\n• Verify buyer identity before delivering\n• Screenshot all conversations for dispute resolution\n\n⚠️ RED FLAGS\n• Offers too good to be true\n• Pressure to transact quickly\n• Requests to pay outside MHub\n• Anyone asking for remote access to your device", userName = "SafetyFirst_MHub", createdAt = "2024-01-06T10:00:00Z", likeCount = 2100, commentCount = 234, viewCount = 18500),
+    "mock_9" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_9", title = "Monthly market report: Used electronics prices in India (Jan 2024)", content = "iPhone 13 prices have stabilised at ₹42,000–₹48,000. Samsung S23 is available at ₹35,000. Laptops over 2 years old are seeing 20% price drops. Best time to buy gaming gear — stock is high and prices are soft. Here's the complete breakdown.", userName = "MarketWatch_Zaruda", createdAt = "2024-01-07T12:00:00Z", likeCount = 788, commentCount = 34, viewCount = 7200, categoryName = "Electronics"),
+    "mock_10" to com.zaruda.app.data.remote.dto.FeedItem(id = "mock_10", title = "Safety tips when buying or selling on Zaruda", content = "Your safety matters. Here are essential tips for safe transactions:\n\n🔒 BUYING SAFETY\n• Meet in public places like malls, police stations, or busy coffee shops\n• Never share OTP or UPI PIN with anyone\n• Test electronics before paying — insist on a demo\n• For vehicles, verify RC in the Parivahan app before paying\n• Avoid advance payments to unverified sellers\n\n📦 SELLING SAFETY\n• Don't share your home address publicly in listings\n• Meet buyers in neutral locations for high-value items\n• Accept only bank transfers or UPI — no wallet-to-wallet for large amounts\n• Verify buyer identity before delivering\n• Screenshot all conversations for dispute resolution\n\n⚠️ RED FLAGS\n• Offers too good to be true\n• Pressure to transact quickly\n• Requests to pay outside Zaruda\n• Anyone asking for remote access to your device", userName = "SafetyFirst_Zaruda", createdAt = "2024-01-06T10:00:00Z", likeCount = 2100, commentCount = 234, viewCount = 18500),
 )
 
 data class FeedDetailUiState(val loading: Boolean = true, val item: com.zaruda.app.data.remote.dto.FeedItem? = null, val error: String? = null, val liked: Boolean = false, val likeCount: Int = 0)
@@ -339,7 +340,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
                             // Share icon
                             IconButton(onClick = {                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}\n\n${item.displayContent.take(120)}")
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on Zaruda:\n${item.title ?: ""}\n\n${item.displayContent.take(120)}")
                                     }
                                 context.startActivity(android.content.Intent.createChooser(intent, "Share"))
                             }) {
@@ -439,7 +440,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
                                     onClick = {
                                         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                             type = "text/plain"
-                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on MHub:\n${item.title ?: ""}")
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out this post on Zaruda:\n${item.title ?: ""}")
                                         }
                                         context.startActivity(android.content.Intent.createChooser(intent, "Share"))
                                     },
@@ -549,7 +550,7 @@ fun MyFeedScreen(onBack: () -> Unit, onCreatePost: () -> Unit = {}, viewModel: M
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Boost visibility for \"${post.title ?: post.displayContent.take(40)}...\"", fontSize = 14.sp)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        val promoteIsDark = isSystemInDarkTheme()
+                        val promoteIsDark = ColorTokens.isDarkTheme()
                         Surface(shape = RoundedCornerShape(8.dp), color = if (promoteIsDark) Color(0xFF064E3B) else Color(0xFFDCFCE7), modifier = Modifier.weight(1f)) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("🪙 50", fontWeight = FontWeight.Bold, color = if (promoteIsDark) Color(0xFF6EE7B7) else Color(0xFF059669))
@@ -600,7 +601,7 @@ fun MyFeedScreen(onBack: () -> Unit, onCreatePost: () -> Unit = {}, viewModel: M
     val totalViews = state.items.sumOf { it.viewCount ?: 0 }
     Scaffold(
         topBar = {
-            val myFeedDark = isSystemInDarkTheme()
+            val myFeedDark = ColorTokens.isDarkTheme()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -881,7 +882,7 @@ fun FeedPostAddScreen(
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.social_new_post), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Text("Share a text update with the MHub community", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Share a text update with the Zaruda community", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Button(
                     onClick = submitPost,
@@ -981,7 +982,7 @@ fun FeedPostAddScreen(
 // ──────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun ComposerNotice(message: String, isError: Boolean = false) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDarkTheme()
     val bg = if (isError) {
         if (darkTheme) Color(0xFF450A0A) else Color(0xFFFFF1F2)
     } else {
@@ -1125,7 +1126,7 @@ fun PublicWallScreen(onBack: () -> Unit, viewModel: PublicWallViewModel = hiltVi
                         // Error banner when data is stale
                         if (state.error != null && state.hasData) {
                             item(key = "stale_error") {
-                                Surface(color = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
+                                Surface(color = if (ColorTokens.isDarkTheme()) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else Color(0xFFFEF2F2), modifier = Modifier.fillMaxWidth()) {
                                     Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Filled.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(8.dp))
@@ -1649,7 +1650,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
     data class FeedbackType(val key: String, val emoji: String, val name: String, val description: String, val bgColor: Color, val tintColor: Color)
     val feedbackTypes = listOf(
         FeedbackType("bug", "🐛", "Bug Report", "Found something broken? Let us know", if (darkTheme) Color(0xFF450A0A) else Color(0xFFFEF2F2), if (darkTheme) Color(0xFFF87171) else Color(0xFFDC2626)),
-        FeedbackType("feature", "💡", "Feature Request", "Have an idea to make MHub better?", if (darkTheme) Color(0xFF422006) else Color(0xFFFEFCE8), if (darkTheme) Color(0xFFFBBF24) else Color(0xFFCA8A04)),
+        FeedbackType("feature", "💡", "Feature Request", "Have an idea to make Zaruda better?", if (darkTheme) Color(0xFF422006) else Color(0xFFFEFCE8), if (darkTheme) Color(0xFFFBBF24) else Color(0xFFCA8A04)),
         FeedbackType("ui", "🎨", "UI Improvement", "Suggestions for design and layout", if (darkTheme) Color(0xFF1E1B4B) else Color(0xFFF5F3FF), if (darkTheme) Color(0xFFA78BFA) else Color(0xFF7C3AED)),
         FeedbackType("performance", "⚡", "Performance", "Slow loading or lagging? Tell us", if (darkTheme) Color(0xFF431407) else Color(0xFFFFF7ED), if (darkTheme) Color(0xFFFB923C) else Color(0xFFEA580C)),
         FeedbackType("general", "💬", "General", "Any other feedback or thoughts", if (darkTheme) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFEFF6FF), MaterialTheme.colorScheme.primary),
@@ -1678,12 +1679,22 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                             Spacer(Modifier.height(10.dp))
                             Text("Share Your Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (darkTheme) MaterialTheme.colorScheme.onSurface else Color(0xFF1E293B))
                             Spacer(Modifier.height(4.dp))
-                            Text("Help us improve MHub for everyone", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Help us improve Zaruda for everyone", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("📢 Your Voice Matters" to Color(0xFFF0F9FF), "👂 We Listen" to Color(0xFFDCFCE7), "🔄 Continuous Improvement" to Color(0xFFFEF3C7)).forEach { (badge, bgColor) ->
+                                val badges = if (darkTheme) listOf(
+                                    "📢 Your Voice Matters" to Color(0xFF0284C7) to Color(0xFFE0F2FE),
+                                    "👂 We Listen" to Color(0xFF059669) to Color(0xFFD1FAE5),
+                                    "🔄 Continuous Improvement" to Color(0xFFD97706) to Color(0xFFFEF3C7)
+                                ) else listOf(
+                                    "📢 Your Voice Matters" to Color(0xFF0369A1) to Color(0xFFF0F9FF),
+                                    "👂 We Listen" to Color(0xFF15803D) to Color(0xFFDCFCE7),
+                                    "🔄 Continuous Improvement" to Color(0xFFB45309) to Color(0xFFFEF3C7)
+                                )
+                                badges.forEach { (pair, textColor) ->
+                                    val (badge, bgColor) = pair
                                     Surface(shape = RoundedCornerShape(8.dp), color = bgColor) {
-                                        Text(badge, fontSize = 9.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                                        Text(badge, fontSize = 9.sp, fontWeight = FontWeight.Medium, color = textColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
                                     }
                                 }
                             }
@@ -1691,7 +1702,8 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                     }
                 }
                 // Hero toggle button (web parity)
-                TextButton(onClick = { showHero = !showHero }, modifier = Modifier.fillMaxWidth()) {                        Text(if (showHero) "Hide Highlights" else "Show Highlights", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                TextButton(onClick = { showHero = !showHero }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (showHero) "Hide Highlights" else "Show Highlights", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                 }
 
                 if (state.success) {
@@ -1789,9 +1801,9 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                                 row.forEach { ft ->
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = if (state.type == ft.key) ft.bgColor else Color.White,
+                                        color = if (state.type == ft.key) ft.bgColor else MaterialTheme.colorScheme.surface,
                                         shadowElevation = if (state.type == ft.key) 3.dp else 1.dp,
-                                        border = if (state.type == ft.key) androidx.compose.foundation.BorderStroke(1.5.dp, ft.tintColor) else null,
+                                        border = if (state.type == ft.key) androidx.compose.foundation.BorderStroke(1.5.dp, ft.tintColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                                         modifier = Modifier.weight(1f).clickable { viewModel.setType(ft.key) },
                                     ) {
                                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1842,11 +1854,11 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                             Triple("💡", "Shapes Features", "Your ideas guide what we build next"),
                             Triple("🛡", "Improves Safety", "Bug reports keep the platform secure"),
                             Triple("✨", "Better UX", "Your UI feedback drives design decisions"),
-                            Triple("🌱", "Grows Community", "Your input makes MHub better for everyone"),
+                            Triple("🌱", "Grows Community", "Your input makes Zaruda better for everyone"),
                         ).chunked(2).forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { (emoji, title, desc) ->
-                                    Surface(shape = RoundedCornerShape(10.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
+                                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
                                         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                             Text(emoji, fontSize = 18.sp)
                                             Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
@@ -1863,7 +1875,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 Surface(shape = RoundedCornerShape(12.dp), color = if (darkTheme) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("📞 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text("For urgent issues, reach us at support@mhub.app", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("For urgent issues, reach us at support@zaruda.app", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("We respond within 24 hours on business days.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

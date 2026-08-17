@@ -15,7 +15,7 @@ import com.zaruda.app.data.local.QueuedAction
         RecentlyViewedEntity::class,
         AddressEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class ZarudaDatabase : RoomDatabase() {
@@ -26,4 +26,13 @@ abstract class ZarudaDatabase : RoomDatabase() {
     abstract fun wishlistItemDao(): WishlistItemDao
     abstract fun recentlyViewedDao(): RecentlyViewedDao
     abstract fun addressDao(): AddressDao
+
+    companion object {
+        /** v3 → v4: cart items gain seller_id (for Electronics in-app escrow purchases). */
+        val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE cart_items ADD COLUMN sellerId TEXT DEFAULT NULL")
+            }
+        }
+    }
 }

@@ -203,7 +203,7 @@ fun KycScreen(
                                 if (isComplete) Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(16.dp))
                                 else Text("$stepNum", color = if (isCurrent) Color.White else Color(0xFF94A3B8), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                             }
-                            Text(label, style = MaterialTheme.typography.labelSmall, color = if (isCurrent || isComplete) Color(0xFF1E293B) else Color(0xFF94A3B8))
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = if (isCurrent || isComplete) MaterialTheme.colorScheme.onSurface else Color(0xFF94A3B8))
                         }
                     }
                 }

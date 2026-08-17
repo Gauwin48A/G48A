@@ -29,8 +29,14 @@ const checkUserAccessFull = async (userId) => {
   if (!userId) return false;
   try {
     const res = await runQuery(
-      `SELECT (COALESCE(kyc_verified, false) OR COALESCE(aadhaar_verified, false)) as kyc_active, 
-              (COALESCE(subscription_expiry > NOW(), false) OR (subscription_tier IS NOT NULL AND LOWER(subscription_tier) NOT IN ('none', '', 'free_trial_expired'))) as plan_active 
+      `SELECT
+         (COALESCE(kyc_verified, false) OR COALESCE(isaadhaarverified, false)
+          OR UPPER(COALESCE(kyc_status, '')) IN ('VERIFIED', 'APPROVED', 'PAN_VERIFIED')) AS kyc_active,
+         EXISTS (
+           SELECT 1 FROM user_subscriptions us
+           WHERE us.user_id::text = users.user_id::text
+             AND us.status = 'ACTIVE' AND us.end_date > NOW()
+         ) AS plan_active
        FROM users WHERE user_id::text = $1`,
       [String(userId)]
     );
@@ -1556,7 +1562,12 @@ exports.createPost = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     logError("Error creating post (Transaction Rolled Back):", err);
-    res.status(400).json({ error: "Internal server error" });
+    // Surface actionable limit/validation messages (daily limit, listing limit,
+    // expired subscription, KYC/plan) instead of a generic 500-style blob.
+    const msg = (err && (err.message || err.error)) || "Internal server error";
+    const isClientError =
+      /daily limit|listing limit|subscription expired|no post credits|kyc|plan required|required|invalid|must|cannot|already/i.test(msg);
+    res.status(isClientError ? 400 : 500).json({ error: msg });
   } finally {
     client.release();
   }
@@ -1665,6 +1676,11 @@ exports.getPostById = async (req, res) => {
     if (post.discount_percentage !== undefined && post.discount_percentage !== null) {
       post.discount_percentage = Number(post.discount_percentage);
     }
+
+    const catName = String(post.category_name || post.category || "").toLowerCase();
+    const isElectronics = catName.includes("electron") || catName.includes("mobile") || catName.includes("phone") || catName.includes("gadget");
+    post.is_escrow_eligible = isElectronics;
+    post.escrow_fee_pct = isElectronics ? 2.5 : 0.0;
 
     const [enrichedPost] = await attachTrustToPosts([post]);
     res.json({ post: enrichedPost || post });
@@ -2043,7 +2059,7 @@ exports.reactivatePost = async (req, res) => {
     }
 
     const postCheck = await runQuery(
-      "SELECT post_id, user_id, status, COALESCE(to_jsonb(posts)->>'repost_count', '0')::int AS repost_count FROM posts WHERE post_id = $1",
+      "SELECT post_id, user_id, status, created_at, expires_at, COALESCE(to_jsonb(posts)->>'repost_count', '0')::int AS repost_count FROM posts WHERE post_id = $1",
       [id]
     );
 
@@ -2059,16 +2075,6 @@ exports.reactivatePost = async (req, res) => {
         .json({ error: "You can only reactivate your own posts" });
     }
 
-    if (post.status === "active") {
-      return res.status(400).json({ error: "Post is already active" });
-    }
-
-    if (Number(post.repost_count || 0) >= 1) {
-      return res.status(400).json({
-        error: "This post has already been reactivated once. Re-posting is allowed only 1 time per listing when expired."
-      });
-    }
-
     const { getTierRules } = require("../config/tierRules");
     const userResult = await runQuery(
       "SELECT COALESCE(NULLIF(current_plan, ''), NULLIF(tier, ''), 'basic') AS plan, subscription_expiry FROM users WHERE user_id = $1",
@@ -2076,6 +2082,23 @@ exports.reactivatePost = async (req, res) => {
     );
     const plan = userResult.rows[0]?.plan || "basic";
     const rules = getTierRules(plan);
+    const minAgeDays = plan === "premium" ? 45 : plan === "standard" ? 30 : 15;
+
+    // Check anti-abuse condition: Only allow repost if sold, expired, or older than plan threshold (15/30/45 days)
+    const isExpired = post.expires_at ? new Date(post.expires_at) <= new Date() : false;
+    const postAgeDays = Math.floor((Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (post.status === "active" && !isExpired && postAgeDays < minAgeDays) {
+      return res.status(400).json({
+        error: `Recently active posts cannot be redundantly reposted. Reposting is permitted for sold or expired listings after ${minAgeDays} days (based on your ${plan} plan).`
+      });
+    }
+
+    if (Number(post.repost_count || 0) >= 1 && post.status === "active") {
+      return res.status(400).json({
+        error: "This post has already been reactivated once. Re-posting is allowed only 1 time per active listing."
+      });
+    }
     if (plan !== "basic") {
       const expiry = userResult.rows[0]?.subscription_expiry
         ? new Date(userResult.rows[0].subscription_expiry)

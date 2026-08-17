@@ -239,27 +239,6 @@ class TiersViewModel @Inject constructor(
         }
     }
 
-    fun claimTrial() {
-        _state.value = _state.value.copy(subscribeLoading = "trial_claim", error = null)
-        viewModelScope.launch {
-            // Server-side 7-day Premium free trial (one per user, enforced by /api/subscriptions/claim-trial)
-            when (val r = repo.activateTrial()) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(subscribeLoading = null, coinsApplied = 0)
-                    _verifyResult.value = RazorpayVerifyState.Success(
-                        message = "🎉 7-Day Premium trial activated! Enjoy free access.",
-                        title = "🎁 Trial Activated!",
-                    )
-                    loadSubscriptionData()
-                    loadCoinBalance()
-                }
-                is ApiResult.Failure -> {
-                    _state.value = _state.value.copy(subscribeLoading = null, error = r.error.message)
-                }
-            }
-        }
-    }
-
     /** The restored comprehensive list of plans + new gateway */
     private val gatewayTiers = listOf(
         Tier(
@@ -267,11 +246,11 @@ class TiersViewModel @Inject constructor(
             name = "Starter Plan",
             price = 111.0,
             currency = "INR",
-            duration = 30, // 30 days (1 month)
+            duration = 30,
             features = listOf(
                 "✨ 1 Month Access (30 Days)",
                 "📸 1 Photo per Post",
-                "✍️ 1 Post Per Day Limit",
+                "✍️ 1 Post Per Day",
                 "💰 100 Coins Bonus on Activation",
                 "🆔 KYC Verification Included",
                 "🛡️ Inclusive of GST & all fees"
@@ -284,7 +263,12 @@ class TiersViewModel @Inject constructor(
             price = 500.0,
             currency = "INR",
             duration = 30,
-            features = listOf("📄 1 Post Credit", "⏱️ 30 Days Visibility", "📸 1 Photo per Post", "✍️ 1 Post Per Day"),
+            features = listOf(
+                "📄 1 Post Credit",
+                "⏱️ 30 Days Visibility",
+                "📸 1 Photo per Post",
+                "✍️ 1 Post Per Day"
+            ),
             popular = false
         ),
         Tier(
@@ -293,7 +277,14 @@ class TiersViewModel @Inject constructor(
             price = 850.0,
             currency = "INR",
             duration = 90,
-            features = listOf("📦 Up to 100 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🏅 Seller Badge", "📊 Basic Analytics"),
+            features = listOf(
+                "📦 Up to 100 Posts",
+                "⏱️ 30 Days Visibility/Post",
+                "📸 1 Photo per Post",
+                "✍️ 1 Post Per Day",
+                "🏅 Seller Badge",
+                "📊 Basic Analytics"
+            ),
             popular = false
         ),
         Tier(
@@ -302,7 +293,16 @@ class TiersViewModel @Inject constructor(
             price = 1200.0,
             currency = "INR",
             duration = 180,
-            features = listOf("📦 Up to 200 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🚀 Boosts & Featured", "✅ Verified Badge", "🔝 Priority Search", "📊 Full Analytics", "🎁 7-Day Free Trial"),
+            features = listOf(
+                "📦 Up to 200 Posts",
+                "⏱️ 30 Days Visibility/Post",
+                "📸 3 Photos per Post",
+                "✍️ 1 Post Per Day",
+                "🚀 5 Boosts + 5 Featured + 5 Spotlights / 6 Months",
+                "✅ Verified Badge",
+                "🔝 Priority Search Ranking",
+                "📊 Full Analytics Dashboard"
+            ),
             popular = false
         ),
         Tier(
@@ -310,9 +310,18 @@ class TiersViewModel @Inject constructor(
             name = "Gold",
             price = 1500.0,
             currency = "INR",
-            duration = 270, // 9 months
-            features = listOf("📦 Up to 500 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🥇 Gold Badge", "🔝 Top Search Priority", "📊 Full Analytics", "🎁 7-Day Free Trial"),
-            popular = false
+            duration = 270,
+            features = listOf(
+                "📦 Up to 500 Posts",
+                "⏱️ 30 Days Visibility/Post",
+                "📸 5 Photos per Post",
+                "✍️ 2 Posts Per Day",
+                "🚀 5 Boosts + 5 Featured + 5 Spotlights / 9 Months",
+                "🥇 Gold Badge",
+                "🔝 Top Search Priority",
+                "📊 Full Analytics Dashboard"
+            ),
+            popular = true
         ),
         Tier(
             id = "premium",
@@ -323,14 +332,12 @@ class TiersViewModel @Inject constructor(
             features = listOf(
                 "📦 Unlimited Posts",
                 "⏱️ 45 Days Visibility",
-                "🔥 2 Posts Per Day",
                 "🔥 10 Photos per Post",
                 "🔥 5x Coin Valuation (100c = ₹5.00)",
-                "👑 Crown Badge & Priority Support",
                 "🚀 10 Boosts + 10 Featured + 10 Spotlights/Month",
+                "👑 Crown Badge & Priority Support",
                 "🔝 Top of Feed Priority",
-                "📊 Full Analytics Dashboard",
-                "🎁 14-Day Free Trial"
+                "📊 Full Analytics Dashboard"
             ),
             popular = false
         )
@@ -357,7 +364,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         put("amount", (event.amount * 100).toLong())
                         put("currency", event.currency)
                         put("order_id", event.orderId)
-                        put("name", "MHub Marketplace")
+                        put("name", "Zaruda Marketplace")
                         put("description", "Plan: ${event.tierId}")
                         put("theme", JSONObject().apply {
                             put("color", "#3B82F6")
@@ -443,43 +450,6 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         }
                     }
 
-                    // Trial period offer for new users
-                    item {
-                        val isPromoActive = com.zaruda.app.core.FreeLaunchPlan.isActive()
-                        if (isPromoActive) {
-                            Surface(shape = RoundedCornerShape(16.dp), color = ColorTokens.GreenContainer, border = BorderStroke(1.dp, ColorTokens.VerifiedGreen.copy(alpha = 0.3f))) {
-                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text("🎉", fontSize = 24.sp)
-                                    Column(Modifier.weight(1f)) {
-                                        Text("Free Launch Offer!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText)
-                                        Text("Post & sell FREE until ${com.zaruda.app.core.FreeLaunchPlan.endDateLabel()}!", fontSize = 12.sp, color = ColorTokens.GreenText)
-                                    }
-                                }
-                            }
-                        } else if (state.currentSubscription == null) {
-                            Surface(shape = RoundedCornerShape(16.dp), color = ColorTokens.BlueContainer, border = BorderStroke(1.dp, ColorTokens.BlueText.copy(alpha = 0.3f))) {
-                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Box(Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
-                                        Text("🎁", fontSize = 20.sp)
-                                    }
-                                    Column(Modifier.weight(1f)) {
-                                        Text("New User Special", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.BlueText)
-                                        Text("Get 1 Week Premium Access for FREE!", fontSize = 12.sp, color = ColorTokens.BlueText)
-                                    }
-                                    Button(
-                                        onClick = { viewModel.claimTrial() },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.height(36.dp),
-                                        contentPadding = PaddingValues(horizontal = 12.dp)
-                                    ) {
-                                        if (state.subscribeLoading == "trial_claim") CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
-                                        else Text("Claim", fontSize = 12.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                     // List all plans from state
                     items(state.tiers, key = { it.id ?: it.name ?: "" }) { tier ->
                         TierCard(
@@ -489,8 +459,8 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                                 "bronze" -> "₹8.50/post"
                                 "silver" -> "₹6/post"
                                 "gold" -> "₹3/post"
-                                "premium" -> "Unlimited"
-                                "starter" -> "Taste Premium (1 post/day)"
+                                "premium" -> "No per-post cost"
+                                "starter" -> "Taste Premium"
                                 else -> ""
                             },
                             coinBalance = state.coinBalance,

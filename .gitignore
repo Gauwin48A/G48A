@@ -3,11 +3,15 @@
 /client/node_modules
 /server/node_modules
 
-# Logs
+# Logs & Temporary Local Dumps
 *.log
+*.pid
+server_out.txt
+server_err.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+emu-screenshots/
 
 # Windows reserved names
 NUL
@@ -15,6 +19,10 @@ NUL
 # Environment variables
 .env
 .env.local
+
+# Secrets (never commit)
+/server/src/config/serviceAccountKey.json
+/server/firebase/*.json
 .env.development.local
 .env.test.local
 .env.production.local
@@ -98,36 +106,4 @@ SCRIPT_MIGRATION_REPORT.md
 /client/_ux_screens/
 /client/test-results/
 /client/playwright-report/
-/client/test-output*.txt
-/client/test-run*.txt
-/client/final-report.txt
-/client/audit-screenshots/
-
-# Dev tool caches
-.codex-snapshots/
-_codex_backups/
-.dev-logs/
-.claude/
-
-# Live runtime files (kept on disk, not tracked)
-/server_out.txt
-/server_err.txt
-/server.pid
-
-# Regenerated audit/screenshot output
-/client/_audit_screenshots/
-/client/android-screenshots/
-/client/audit-screenshots/
-/client/test-results/
-/client/dev/
-
-# Secrets — never commit
-/server/src/config/serviceAccountKey.json
-
-# Kotlin build sessions/caches
-android-native/.kotlin/
-
-# Secrets & signing keys — never commit
-/server/firebase/firebase-admin.json
-/android-native/zaruda-release-key.jks
-/android-native/keystore.properties
+/_ui/

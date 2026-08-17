@@ -448,11 +448,13 @@ async function ensureSalesTables() {
     await runQuery("ALTER TABLE sales ADD COLUMN IF NOT EXISTS shipping_courier TEXT");
     await runQuery("ALTER TABLE sales ADD COLUMN IF NOT EXISTS shipping_evidence JSONB DEFAULT '[]'::jsonb");
 
-    // Extend status CHECK to allow 'shipped' (live tables carry the older CHECK)
+    // Extend status CHECK to allow 'shipped', 'cancelled' and 'undone' — the
+    // live tables carry the older CHECK which silently breaks cancelSale,
+    // undoSale and adminResolveSale(BUYER_FAVOR → 'cancelled').
     await runQuery(`
       ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_status_check;
       ALTER TABLE sales ADD CONSTRAINT sales_status_check
-        CHECK (status IN ('requested','approved','shipped','received','settled','fraud','rejected'))
+        CHECK (status IN ('requested','approved','shipped','received','settled','fraud','rejected','cancelled','undone'))
     `).catch((e) => logger.warn("[SchemaGuard] sales status CHECK rebuild skipped:", e.message));
 
     await runQuery(`
@@ -809,6 +811,149 @@ async function ensureFinancialOpsTables() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Rewards ledger (points, log, idempotency, streaks)                */
+/* ------------------------------------------------------------------ */
+
+async function ensureRewardsTables() {
+  try {
+    // rewards — rewardsLedgerService.ensureRewardsRow() INSERTs into this
+    // table INSIDE the createPost/sale transactions. It was never provisioned
+    // anywhere (not init.sql, not schemaGuard), so the INSERT threw, the
+    // transaction aborted, and the final COMMIT silently rolled back — every
+    // post creation reported success but saved nothing.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS rewards (
+        user_id TEXT PRIMARY KEY,
+        points INTEGER NOT NULL DEFAULT 0,
+        tier VARCHAR(20) NOT NULL DEFAULT 'Bronze',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // reward_log — auto-created by rewardsLedgerService.ensureRewardLogTable()
+    // but provision here too so first-time writes never race it.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS reward_log (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        action VARCHAR(80) NOT NULL,
+        points INTEGER NOT NULL,
+        description TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(
+      "CREATE INDEX IF NOT EXISTS idx_reward_log_user_created ON reward_log(user_id, created_at DESC)"
+    );
+
+    // reward_idempotency — ledger idempotency table (guarded, but provision).
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS reward_idempotency (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        idempotency_key VARCHAR(255) NOT NULL,
+        action VARCHAR(80),
+        points_delta INTEGER,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(user_id, idempotency_key)
+      )
+    `);
+
+    // user_streaks — streakRewardsService.createTableIfNeeded() runs this
+    // CREATE on the shared client inside the createPost transaction; a missing
+    // table on first post also aborts the transaction. Provision up-front.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS user_streaks (
+        user_id TEXT PRIMARY KEY,
+        visit_streak INTEGER NOT NULL DEFAULT 0,
+        post_streak INTEGER NOT NULL DEFAULT 0,
+        last_visit_date DATE,
+        last_post_date DATE,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision rewards tables", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Translation queue (auto-translate on post create)                */
+/* ------------------------------------------------------------------ */
+
+async function ensureTranslationTables() {
+  try {
+    // translation_queue — postController.createPost inserts a 'pending' row
+    // inside the create transaction; translationController reads/updates it.
+    // It was never in init.sql or provisioned, so every post creation rolled
+    // back with `relation "translation_queue" does not exist`.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS translation_queue (
+        queue_id BIGSERIAL PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        source_text TEXT,
+        source_lang VARCHAR(10) DEFAULT 'en',
+        target_lang VARCHAR(10) DEFAULT 'hi',
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        retry_count INT NOT NULL DEFAULT 0,
+        translated_text TEXT,
+        processed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(
+      "CREATE INDEX IF NOT EXISTS idx_translation_queue_status ON translation_queue(status, created_at)"
+    );
+    await runQuery(
+      "CREATE INDEX IF NOT EXISTS idx_translation_queue_post ON translation_queue(post_id)"
+    );
+
+    // translations — the translation worker upserts results here.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS translations (
+        id BIGSERIAL PRIMARY KEY,
+        entity_type VARCHAR(32) NOT NULL,
+        entity_id TEXT NOT NULL,
+        language VARCHAR(10) NOT NULL,
+        field VARCHAR(50) NOT NULL,
+        value TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    // PostgreSQL has no ADD CONSTRAINT IF NOT EXISTS — guard via pg_constraint.
+    await runQuery(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'unique_translation') THEN
+          ALTER TABLE translations
+            ADD CONSTRAINT unique_translation UNIQUE (entity_type, entity_id, language, field);
+        END IF;
+      END $$;
+    `);
+
+    // posts translated-title/description columns written by the worker
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS translated_title TEXT"
+    );
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS translated_description TEXT"
+    );
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to auto-provision translation tables", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Tier columns                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -817,6 +962,12 @@ async function ensureUserTierColumns() {
   if (tierColumnsPromise) return tierColumnsPromise;
 
   tierColumnsPromise = (async () => {
+    // users.status — account lifecycle state used by accountStateService and the
+    // sale/dispute freeze flows (FROZEN / LOCKED / permanently_locked / ACTIVE).
+    // Older schemas lack this column; backfill it idempotently.
+    await runQuery(
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'"
+    );
     await runQuery(
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'basic'"
     );
@@ -1155,7 +1306,7 @@ async function ensureCouponTables() {
       CREATE TABLE IF NOT EXISTS coupon_redemptions (
         redemption_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         coupon_id UUID REFERENCES influencer_coupons(coupon_id) ON DELETE CASCADE,
-        user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
         razorpay_order_id VARCHAR(100),
         discount_amount DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
@@ -1484,6 +1635,8 @@ async function ensureSchemaPreflight({
   await ensureSubscriptionTables();
   await ensurePaymentTables();
   await ensureCouponTables();
+  await ensureTranslationTables();
+  await ensureRewardsTables();
 
   const report = await evaluateSchemaContract({
     autoCreateTwoFactorFallback,
@@ -1529,5 +1682,7 @@ module.exports = {
   ensureSubscriptionTables,
   ensurePaymentTables,
   ensureCouponTables,
+  ensureTranslationTables,
+  ensureRewardsTables,
   runInitSql,
 };

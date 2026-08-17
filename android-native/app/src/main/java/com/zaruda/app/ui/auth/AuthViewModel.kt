@@ -79,17 +79,6 @@ class AuthViewModel @Inject constructor(
     fun clearError() { _state.value = _state.value.copy(error = null) }
     fun setError(msg: String) { _state.value = _state.value.copy(error = msg, loading = false) }
 
-    fun signInWithGoogle(idToken: String) {
-        if (_state.value.loading) return
-        _state.value = AuthUiState(loading = true)
-        viewModelScope.launch {
-            when (val res = repo.signInWithGoogle(idToken)) {
-                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
-                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
-            }
-        }
-    }
-
     fun signInWithEmail(identifier: String, password: String) {
         if (_state.value.loading) return
         if (identifier.isBlank() || password.isBlank()) {
@@ -244,10 +233,6 @@ class AuthViewModel @Inject constructor(
     }
 
     // signUp removed — SignUpScreen uses the Aadhaar 4-step flow instead
-
-
-    // onGoogleError removed — Google sign-in errors are handled via setError()
-
 
     fun logout() {
         viewModelScope.launch { repo.logout() }

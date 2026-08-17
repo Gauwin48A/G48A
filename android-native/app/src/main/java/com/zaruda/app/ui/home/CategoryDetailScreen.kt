@@ -423,19 +423,19 @@ fun CategoryDetailScreen(
                         items(filteredPosts, key = { it.stableId }) { post ->
                             Surface(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable { onOpenPost(post.stableId) },
-                                shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp,
+                                shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp,
                             ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     if (post.primaryImage != null) {
                                         AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)))
                                     } else {
-                                        Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = Color(0xFFCBD5E1)) }
+                                        Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)) }
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2, color = Color(0xFF1E293B))
+                                        Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2, color = MaterialTheme.colorScheme.onSurface)
                                         if (post.price != null) { Spacer(Modifier.height(4.dp)); Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, color = gradients.first()) }
-                                        if (post.location != null) { Spacer(Modifier.height(2.dp)); Text(post.location, fontSize = 12.sp, color = Color(0xFF64748B)) }
+                                        if (post.location != null) { Spacer(Modifier.height(2.dp)); Text(post.location, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     }
                                 }
                             }

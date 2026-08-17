@@ -16,9 +16,9 @@ object NotificationChannelHelper {
         val channels = listOf(
             NotificationChannel(
                 ZarudaFirebaseMessagingService.CHANNEL_CHAT,
-                "Chat & Messages",
+                "Inquiries & Offers",
                 NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "Notifications for private messages and direct chats" },
+            ).apply { description = "Buyer interest alerts, seller replies and offer notifications" },
 
             NotificationChannel(
                 ZarudaFirebaseMessagingService.CHANNEL_TRANSACTION,

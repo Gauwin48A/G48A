@@ -19,7 +19,7 @@ async function getActiveSubscription(userId) {
             sp.features as plan_features
      FROM user_subscriptions us
      LEFT JOIN subscription_plans sp ON sp.plan_id = us.plan_id
-     WHERE us.user_id::text = $1 AND us.status = 'ACTIVE'
+     WHERE us.user_id::text = $1 AND us.status = 'ACTIVE' AND us.end_date > NOW()
      ORDER BY us.end_date DESC LIMIT 1`,
     [userId]
   );
@@ -44,12 +44,60 @@ async function getPlanFeatures(planId) {
 }
 
 /**
- * Update the user's current_tier on the users table.
+ * Normalise a plan display name ("Starter Plan", "Premium") or slug into the
+ * lowercase slug used by getTierRules() and the app's plan detection.
  */
-async function syncUserTier(userId, planName) {
+function tierSlug(planName) {
+  const raw = String(planName || "basic").trim().toLowerCase();
+  if (raw.includes("starter")) return "starter";
+  if (raw.includes("premium")) return "premium";
+  if (raw.includes("gold")) return "gold";
+  if (raw.includes("silver")) return "silver";
+  if (raw.includes("bronze")) return "bronze";
+  if (raw.includes("basic")) return "basic";
+  return raw || "basic";
+}
+
+/**
+ * Update the user's plan fields on the users table.
+ *
+ * Writes ALL the columns the rest of the platform gates on — post creation,
+ * image limits, daily limits, the /me endpoint — not just current_tier:
+ *   users.tier / users.current_plan        → slug (e.g. 'premium')
+ *   users.current_tier                     → same slug (legacy consumers)
+ *   users.subscription_expiry              → end of the active subscription
+ *
+ * Called after subscription activation / cancellation / expiry.
+ */
+async function syncUserTier(userId, planName, options = {}) {
+  const slug = tierSlug(planName || "basic");
+  const isBasic = slug === "basic";
+
+  let expiry = null;
+  if (!isBasic && !options.durationDays) {
+    // Derive expiry from the user's currently active subscription row, if any.
+    const active = await runQuery(
+      `SELECT end_date FROM user_subscriptions
+       WHERE user_id::text = $1 AND status = 'ACTIVE' AND end_date > NOW()
+       ORDER BY end_date DESC LIMIT 1`,
+      [userId]
+    ).catch(() => ({ rows: [] }));
+    if (active.rows.length > 0) expiry = active.rows[0].end_date;
+  } else if (!isBasic && options.durationDays) {
+    const d = new Date();
+    d.setDate(d.getDate() + Number(options.durationDays));
+    expiry = d;
+  }
+
   await runQuery(
-    `UPDATE users SET current_tier = $1, updated_at = NOW() WHERE user_id::text = $2`,
-    [planName || "BASIC", userId]
+    `UPDATE users
+     SET current_tier = $1,
+         current_plan = $1,
+         tier = $1,
+         subscription_expiry = $2,
+         updated_at = NOW()
+     WHERE user_id::text = $3`,
+    [slug, expiry, userId]
   );
 }
 
@@ -131,6 +179,7 @@ exports.getMySubscription = async (req, res) => {
         subscription: null,
         currentPlan: "BASIC",
         features: [],
+        active: false,
         isExpired: false,
         expiresInDays: 0,
       });
@@ -143,6 +192,22 @@ exports.getMySubscription = async (req, res) => {
     subscription.started_at = subscription.start_date;
     subscription.expires_at = subscription.end_date;
 
+    // Self-heal: keep users.tier/current_plan/subscription_expiry in sync with the
+    // active subscription row (in case a purchase was activated before the column
+    // sync existed, or an admin activated a subscription manually).
+    try {
+      const slug = tierSlug(subscription.plan_name);
+      await runQuery(
+        `UPDATE users
+         SET current_tier = $1, current_plan = $1, tier = $1, subscription_expiry = $2, updated_at = NOW()
+         WHERE user_id::text = $3
+           AND (COALESCE(tier, '') <> $1 OR COALESCE(current_plan, '') <> $1 OR COALESCE(subscription_expiry, NOW()) <> $2::timestamp)`,
+        [slug, subscription.end_date, userId]
+      );
+    } catch (syncErr) {
+      logger.warn("[SUBSCRIPTION] getMySubscription self-heal sync failed:", syncErr.message);
+    }
+
     const features = await getPlanFeatures(subscription.plan_id);
     const now = new Date();
     const expiry = new Date(subscription.end_date);
@@ -154,6 +219,7 @@ exports.getMySubscription = async (req, res) => {
       subscription,
       currentPlan: subscription.plan_name,
       features,
+      active: !isExpired,
       isExpired,
       expiresInDays,
     });
@@ -492,86 +558,11 @@ exports.verifyPayment = async (req, res) => {
 
 /**
  * POST /api/subscriptions/claim-trial  (alias: POST /api/subscriptions/trial)
- * Activate a 7-day Premium free trial for a new user.
- * Rules: one trial per user (ever), and no active subscription allowed.
+ * DISABLED: free trials were removed from the product. This endpoint now
+ * refuses all claims so any stale client can never activate a trial.
  */
 exports.claimTrial = async (req, res) => {
-  const userId = getAuthUserId(req);
-  if (!userId) return res.status(401).json({ error: "Authentication required" });
-
-  try {
-    // A user with an active plan cannot claim a trial.
-    const activeSub = await getActiveSubscription(userId);
-    if (activeSub) {
-      return res.status(400).json({ error: "You already have an active plan. The free trial is for new users only." });
-    }
-
-    // One trial per user, ever.
-    const usedTrial = await runQuery(
-      `SELECT 1 FROM user_subscriptions WHERE user_id::text = $1 AND is_trial = true LIMIT 1`,
-      [userId]
-    );
-    if (usedTrial.rows.length > 0) {
-      return res.status(400).json({ error: "You have already claimed your free trial" });
-    }
-
-    // Resolve the Premium plan (fallback: any active plan, else null plan_id).
-    const planResult = await runQuery(
-      `SELECT * FROM subscription_plans
-       WHERE LOWER(COALESCE(slug, '')) = 'premium' OR LOWER(plan_name) LIKE '%premium%'
-       ORDER BY is_active DESC NULLS LAST
-       LIMIT 1`
-    );
-    const plan = planResult.rows[0] || null;
-    if (!plan) {
-      return res.status(503).json({ error: "Plans not configured yet. Please try again later." });
-    }
-
-    const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 7); // 7-day trial
-
-    // Defensive: expire any lingering ACTIVE rows for this user first.
-    await runQuery(
-      `UPDATE user_subscriptions SET status = 'EXPIRED', updated_at = NOW()
-       WHERE user_id::text = $1 AND status = 'ACTIVE'`,
-      [userId]
-    );
-
-    const subResult = await runQuery(
-      `INSERT INTO user_subscriptions (user_id, plan_id, status, start_date, end_date, auto_renew, is_trial)
-       VALUES ($1, $2, 'ACTIVE', $3, $4, false, true)
-       RETURNING *`,
-      [userId, plan ? plan.plan_id : null, startDate, endDate]
-    );
-    const sub = subResult.rows[0];
-
-    await syncUserTier(userId, plan ? plan.plan_name : "PREMIUM");
-
-    await runQuery(
-      `INSERT INTO subscription_events (user_id, sub_id, event_type, metadata)
-       VALUES ($1, $2, 'TRIAL_ACTIVATED', $3)`,
-      [userId, sub.sub_id, JSON.stringify({ plan_name: plan ? plan.plan_name : "premium", trial_days: 7 })]
-    );
-
-    logger.info(`[SUBSCRIPTION] Free trial activated for user ${userId}`);
-
-    res.json({
-      success: true,
-      message: "🎉 7-day Premium trial activated! Enjoy free access.",
-      subscription: {
-        id: String(sub.sub_id),
-        tier: plan ? plan.plan_name : "Premium",
-        status: sub.status,
-        started_at: sub.start_date,
-        expires_at: sub.end_date,
-        is_trial: true,
-      },
-    });
-  } catch (err) {
-    logger.error("[SUBSCRIPTION] claimTrial error:", err);
-    res.status(500).json({ error: "Failed to activate free trial" });
-  }
+  return res.status(403).json({ error: "Free trials are no longer available. Please subscribe to a plan." });
 };
 
 // ────────────────────────────────────────────────────────────

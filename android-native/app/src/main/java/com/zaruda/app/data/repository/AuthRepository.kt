@@ -9,7 +9,6 @@ import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.EmailLoginRequest
 import com.zaruda.app.data.remote.dto.EmailSignupRequest
 import com.zaruda.app.data.remote.dto.ForgotPasswordRequest
-import com.zaruda.app.data.remote.dto.GoogleAuthRequest
 import com.zaruda.app.data.remote.dto.ResetPasswordRequest
 import com.zaruda.app.data.remote.dto.AadhaarSendOtpRequest
 import com.zaruda.app.data.remote.dto.AadhaarVerifyOtpRequest
@@ -78,15 +77,6 @@ class AuthRepository @Inject constructor(
         tokenStore.save(token, "local-demo-refresh-token")
     }
 
-    /** Exchanges a Google ID token for an app JWT. */
-    suspend fun signInWithGoogle(idToken: String): ApiResult<User?> = safeApiCall {
-        val res = api.googleSignIn(GoogleAuthRequest(idToken))
-        val token = res.token ?: error("Server did not return token")
-        tokenStore.save(token, res.refreshToken)
-        registerPushTokenIfCached()
-        res.user
-    }
-
     /** Email/password login. Prefetches CSRF token first. Returns AuthResponse to check requireOtp. */
     suspend fun signInWithEmail(identifier: String, password: String): ApiResult<AuthResponse> = safeApiCall {
         runCatching { api.csrfToken() } // Prefetch to set XSRF-TOKEN cookie
@@ -123,6 +113,12 @@ class AuthRepository @Inject constructor(
         tokenStore.save(token, res.refreshToken)
         registerPushTokenIfCached()
         res.user
+    }
+
+    /** Revoke every active session on the server, then sign out locally. */
+    suspend fun logoutAllDevices(): ApiResult<Unit> = safeApiCall {
+        runCatching { api.revokeAllSessions() }
+        logout()
     }
 
     suspend fun logout(): ApiResult<Unit> = safeApiCall {

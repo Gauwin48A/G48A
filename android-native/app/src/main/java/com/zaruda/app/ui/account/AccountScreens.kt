@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.account
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -12,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -43,7 +43,7 @@ import javax.inject.Inject
 
 private val bgGradient: Brush
     @Composable get() {
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val isDark = ColorTokens.isDarkTheme()
         return if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
         else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
     }
@@ -81,7 +81,7 @@ data class DashboardUiState(
 )
 
 data class TopSeller(val id: String, val name: String, val avatar: String?, val sales: Int, val rank: Int)
-data class BuyerStats(val itemsBought: Int = 0, val offersMade: Int = 0, val savedItems: Int = 0, val activeChats: Int = 0)
+data class BuyerStats(val itemsBought: Int = 0, val offersMade: Int = 0, val savedItems: Int = 0, val inquiries: Int = 0)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(private val repo: DashboardRepository) : ViewModel() {
@@ -113,7 +113,7 @@ class DashboardViewModel @Inject constructor(private val repo: DashboardReposito
                         itemsBought = r.data.quickStats.firstOrNull { it.labelKey == "items_bought" || it.label?.contains("bought", true) == true }?.value ?: 0,
                         offersMade = r.data.quickStats.firstOrNull { it.labelKey == "offers_made" || it.label?.contains("offer", true) == true }?.value ?: 0,
                         savedItems = r.data.quickStats.firstOrNull { it.labelKey == "saved_items" || it.label?.contains("saved", true) == true || it.label?.contains("wishlist", true) == true }?.value ?: 0,
-                        activeChats = r.data.quickStats.firstOrNull { it.labelKey == "active_chats" || it.label?.contains("chat", true) == true }?.value ?: 0,
+                        inquiries = r.data.quickStats.firstOrNull { it.labelKey == "inquiries" || it.label?.contains("inquir", true) == true }?.value ?: 0,
                     ),
                 )
             }
@@ -325,7 +325,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 BuyerStatCard(Modifier.weight(1f), "${bs.savedItems}", "Saved Items", Icons.Filled.Bookmark, Color(0xFF8B5CF6))
-                                BuyerStatCard(Modifier.weight(1f), "${bs.activeChats}", "Active Chats", Icons.AutoMirrored.Filled.Chat, Color(0xFF2563EB))
+                                BuyerStatCard(Modifier.weight(1f), "${bs.inquiries}", "Inquiries", Icons.Filled.NotificationsActive, Color(0xFF2563EB))
                             }
                         }
                     }

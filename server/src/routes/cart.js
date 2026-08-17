@@ -15,6 +15,23 @@ router.get("/", cartController.getCart);
 /** @route POST /items - Add item to cart */
 router.post("/items", cartController.addCartItem);
 
+/**
+ * Android compatibility: the app calls path-based ops (POST/DELETE/PATCH
+ * /api/cart/:postId) — mirror them onto the body-based handlers.
+ */
+router.post("/:postId", (req, res, next) => {
+  req.body = { ...req.body, postId: req.params.postId, quantity: req.body?.quantity || 1 };
+  cartController.addCartItem(req, res).catch(next);
+});
+router.delete("/:postId", (req, res, next) => {
+  req.body = { postId: req.params.postId };
+  cartController.removeCartItem(req, res).catch(next);
+});
+router.patch("/:postId", (req, res, next) => {
+  req.body = { ...req.body, postId: req.params.postId };
+  cartController.updateCartItem(req, res).catch(next);
+});
+
 /** @route PATCH /items/:cartItemId - Update quantity or status */
 router.patch("/items/:cartItemId", cartController.updateCartItem);
 

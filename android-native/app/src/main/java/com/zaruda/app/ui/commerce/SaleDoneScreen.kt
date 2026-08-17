@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.commerce
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
@@ -72,6 +73,13 @@ data class SaleDoneUiState(
     // instead of raw Seller ID / Post ID fields.
     val prefilledFromPost: Boolean = false,
 
+    // Escrow eligibility of the post being bought (fetched from the server).
+    // true  = Electronics → in-app escrow (IN_APP) is forced
+    // false = other categories → direct/outside (OUTSIDE) is forced
+    // null  = not yet known (manual form, no post fetched yet)
+    val escrowEligible: Boolean? = null,
+    val escrowFeePct: Double? = null,
+
     // Lists
     val pendingRequests: List<SaleInfo> = emptyList(),
     val activeSales: List<SaleInfo> = emptyList(),
@@ -136,12 +144,16 @@ data class RazorpaySaleCheckoutEvent(
 class SaleDoneViewModel @Inject constructor(
     private val salesRepo: SalesRepository,
     private val paymentsRepo: PaymentsRepository,
+    private val postsRepo: PostsRepository,
     private val tokenStore: TokenStore,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SaleDoneUiState())
     val state: StateFlow<SaleDoneUiState> = _state.asStateFlow()
+
+    /** Guards against stale escrow lookups when the user edits the post ID rapidly. */
+    private var escrowLoadJob: kotlinx.coroutines.Job? = null
 
     /** Current logged-in user id (from the JWT) — used to gate buyer actions. */
     val currentUserId: String? = run {
@@ -173,6 +185,7 @@ class SaleDoneViewModel @Inject constructor(
                     activeTab = if (isOwner) 1 else 0,
                 )
             }
+            loadEscrowInfo(prefillPostId)
         }
         loadAll()
     }
@@ -180,10 +193,57 @@ class SaleDoneViewModel @Inject constructor(
     // ── Setters ────────────────────────────────────────────────────────────────
 
     fun setSellerId(v: String) { _state.update { it.copy(sellerId = v, requestSuccess = false, error = null, prefilledFromPost = false) } }
-    fun setPostId(v: String) { _state.update { it.copy(postId = v, requestSuccess = false, error = null, prefilledFromPost = false) } }
+    fun setPostId(v: String) {
+        _state.update {
+            it.copy(
+                postId = v,
+                requestSuccess = false,
+                error = null,
+                prefilledFromPost = false,
+                escrowEligible = null,
+                escrowFeePct = null,
+            )
+        }
+        if (v.isNotBlank()) loadEscrowInfo(v)
+    }
     fun setPaymentMode(mode: String) { _state.update { it.copy(selectedPaymentMode = mode) } }
     fun clearPrefill() { _state.update { it.copy(prefilledFromPost = false, requestSuccess = false, error = null) } }
     fun setActiveTab(tab: Int) { _state.update { it.copy(activeTab = tab) } }
+
+    /**
+     * Fetch the post to determine its escrow eligibility, then force the payment
+     * mode to match the platform rule: Electronics → IN_APP (in-app escrow),
+     * every other category → OUTSIDE (direct/outside payment).
+     * The server enforces the identical rule independently — this keeps the UI
+     * honest so the user never sees an option that would be rejected.
+     */
+    fun loadEscrowInfo(postId: String) {
+        if (postId.isBlank()) return
+        escrowLoadJob?.cancel()
+        escrowLoadJob = viewModelScope.launch {
+            when (val r = postsRepo.detail(postId)) {
+                is ApiResult.Success -> {
+                    // Ignore a stale response if the user already moved to another post.
+                    if (postId != _state.value.postId) return@launch
+                    val post = r.data
+                    val cat = (post.category ?: post.categoryName ?: "").lowercase()
+                    val eligible = post.isEscrowEligible
+                        ?: (cat.contains("electron") || cat.contains("mobile") || cat.contains("phone") || cat.contains("gadget"))
+                    _state.update {
+                        it.copy(
+                            escrowEligible = eligible,
+                            escrowFeePct = post.escrowFeePct,
+                            selectedPaymentMode = if (eligible) "IN_APP" else "OUTSIDE",
+                        )
+                    }
+                }
+                is ApiResult.Failure -> {
+                    // Post couldn't be fetched — keep the current choice; the
+                    // server still enforces the correct mode on request.
+                }
+            }
+        }
+    }
 
     fun setFraudDialog(saleId: Int?, reportedParty: String) {
         _state.update { it.copy(showFraudDialog = saleId != null, fraudSaleId = saleId, fraudReportedParty = reportedParty, fraudReason = "") }
@@ -580,7 +640,7 @@ class SaleDoneViewModel @Inject constructor(
 @Composable
 fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val backgroundBrush = if (isDark) {
         Brush.verticalGradient(listOf(Color(0xFF0D1B1E), Color(0xFF0A1412), Color(0xFF0D1B1E)))
     } else {
@@ -877,7 +937,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
 @Composable
 private fun SuspensionBanner(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
     val suspension = state.suspensionStatus ?: return
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     Surface(
         shape = RoundedCornerShape(0.dp),
@@ -1012,7 +1072,108 @@ private fun SaleFlowStepper(isDark: Boolean) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Payment mode selector — in-app escrow vs outside-app direct
+// The mode is category-driven and server-enforced: Electronics → in-app escrow
+// only; every other category → direct/outside only. The full selector only
+// appears while the post's eligibility is still unknown (null).
 // ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
+    val isDark = ColorTokens.isDarkTheme()
+    when (state.escrowEligible) {
+        true -> {
+            // ── Electronics: in-app escrow is the only option ──────────────
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFF059669).copy(alpha = if (isDark) 0.18f else 0.08f),
+                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("🛡️", fontSize = 16.sp)
+                    Column {
+                        Text(
+                            "Escrow Protected — this Electronics listing is paid inside the app. Your money is held securely and released only after you confirm receipt.",
+                            fontSize = 11.5.sp,
+                            lineHeight = 15.sp,
+                            color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46),
+                        )
+                        if (state.escrowFeePct != null) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Platform fee ${state.escrowFeePct}% applies on sale completion (seller side).",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857),
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            PaymentModeOption(
+                selected = true,
+                title = "Pay inside the app (escrow)",
+                subtitle = "Required for Electronics listings — safest for both parties.",
+                emoji = "🛡️",
+                onClick = { viewModel.setPaymentMode("IN_APP") },
+            )
+        }
+        false -> {
+            // ── Other categories: direct/outside is the only option ─────────
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFFF59E0B).copy(alpha = if (isDark) 0.15f else 0.08f),
+                border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("🤝", fontSize = 16.sp)
+                    Text(
+                        "Direct payment — this category doesn't use in-app escrow. You and the seller arrange payment directly (cash / UPI); the sale is still tracked here.",
+                        fontSize = 11.5.sp,
+                        lineHeight = 15.sp,
+                        color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E),
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            PaymentModeOption(
+                selected = true,
+                title = "Pay outside the app",
+                subtitle = "Cash / direct UPI between you and the seller. Sale is still tracked here.",
+                emoji = "🤝",
+                onClick = { viewModel.setPaymentMode("OUTSIDE") },
+            )
+        }
+        null -> {
+            // ── Unknown yet: show both, the server enforces the final mode ──
+            Text("How do you want to pay?", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+            PaymentModeOption(
+                selected = state.selectedPaymentMode == "IN_APP",
+                title = "Pay inside the app (escrow)",
+                subtitle = "Money is held securely and released only after you confirm receipt. Safest.",
+                emoji = "🛡️",
+                onClick = { viewModel.setPaymentMode("IN_APP") },
+            )
+            PaymentModeOption(
+                selected = state.selectedPaymentMode == "OUTSIDE",
+                title = "Pay outside the app",
+                subtitle = "Cash / direct UPI between you and the seller. Sale is still tracked here.",
+                emoji = "🤝",
+                onClick = { viewModel.setPaymentMode("OUTSIDE") },
+            )
+        }
+    }
+}
 
 @Composable
 private fun PaymentModeOption(
@@ -1022,7 +1183,7 @@ private fun PaymentModeOption(
     emoji: String,
     onClick: () -> Unit,
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
@@ -1063,7 +1224,7 @@ private fun MarkShippedSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF0F172A) else Color.White,
+        containerColor = if (ColorTokens.isDarkTheme()) Color(0xFF0F172A) else Color.White,
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp),
@@ -1111,7 +1272,7 @@ private fun MarkShippedSheet(
 
 @Composable
 private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -1129,8 +1290,10 @@ private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
             color = if (isDark) Color.Gray else Color(0xFF64748B),
         )
 
-        // ── How Buy via App works — escrow stepper ──────────────────────────
-        SaleFlowStepper(isDark)
+        // ── How Buy via App works — escrow stepper (Electronics only) ───────
+        if (state.escrowEligible != false) {
+            SaleFlowStepper(isDark)
+        }
 
         if (state.requestSuccess) {
             Surface(
@@ -1214,22 +1377,8 @@ private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    // ── How do you want to pay? ──
-                    Text("How do you want to pay?", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                    PaymentModeOption(
-                        selected = state.selectedPaymentMode == "IN_APP",
-                        title = "Pay inside the app (escrow)",
-                        subtitle = "Money is held securely and released only after you confirm receipt. Safest.",
-                        emoji = "🛡️",
-                        onClick = { viewModel.setPaymentMode("IN_APP") },
-                    )
-                    PaymentModeOption(
-                        selected = state.selectedPaymentMode == "OUTSIDE",
-                        title = "Pay outside the app",
-                        subtitle = "Cash / direct UPI between you and the seller. Sale is still tracked here.",
-                        emoji = "🤝",
-                        onClick = { viewModel.setPaymentMode("OUTSIDE") },
-                    )
+                    // ── How do you want to pay? (category-driven) ──
+                    PaymentModeSection(state, viewModel)
                     state.error?.let { err ->
                         Text(err, color = Color(0xFFDC2626), fontSize = 12.sp)
                     }
@@ -1278,21 +1427,8 @@ private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
                         onValueChange = viewModel::setPostId,
                     )
                     Spacer(Modifier.height(2.dp))
-                    Text("How do you want to pay?", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                    PaymentModeOption(
-                        selected = state.selectedPaymentMode == "IN_APP",
-                        title = "Pay inside the app (escrow)",
-                        subtitle = "Money is held securely and released only after you confirm receipt. Safest.",
-                        emoji = "🛡️",
-                        onClick = { viewModel.setPaymentMode("IN_APP") },
-                    )
-                    PaymentModeOption(
-                        selected = state.selectedPaymentMode == "OUTSIDE",
-                        title = "Pay outside the app",
-                        subtitle = "Cash / direct UPI between you and the seller. Sale is still tracked here.",
-                        emoji = "🤝",
-                        onClick = { viewModel.setPaymentMode("OUTSIDE") },
-                    )
+                    // ── How do you want to pay? (category-driven) ──
+                    PaymentModeSection(state, viewModel)
 
                     state.error?.let { err ->
                         Text(err, color = Color(0xFFDC2626), fontSize = 12.sp)
@@ -1324,7 +1460,7 @@ private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
 
 @Composable
 private fun PendingTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     if (state.loading && state.pendingRequests.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1409,7 +1545,7 @@ private fun PendingRequestCard(sale: SaleInfo, state: SaleDoneUiState, viewModel
 
 @Composable
 private fun ActiveTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     if (state.loading && state.activeSales.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1873,7 +2009,7 @@ private fun SaleProgressTracker(sale: SaleInfo?, isDark: Boolean) {
 
 @Composable
 private fun HistoryTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     if (state.loading && state.historySales.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

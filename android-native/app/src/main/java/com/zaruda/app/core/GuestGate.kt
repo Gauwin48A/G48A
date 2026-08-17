@@ -63,10 +63,10 @@ object GuestGatePolicy {
     /** Whether a route requires auth for deeper interaction. */
     fun requiresAuth(route: String): Boolean = route !in openScreens
 
-    /** Whether an action requires auth (post detail, chat, create, etc). */
+    /** Whether an action requires auth (post detail, interest, create, etc). */
     fun actionRequiresAuth(action: String): Boolean = when (action) {
         "browse", "preview", "search" -> false
-        else -> true // chat, create, wishlist, cart, compare, follow, review
+        else -> true // interest, create, wishlist, cart, compare, follow, review
     }
 }
 

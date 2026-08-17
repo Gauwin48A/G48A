@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.automirrored.filled.ViewList
@@ -74,7 +73,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -93,6 +91,28 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/* ── Category-key normalization (single source of truth; imported by all category-scoped screens) ── */
+
+/**
+ * Normalizes a raw category string ("Electronics", "e-acc", "Cars") to a canonical
+ * marketplace key ("electronics", "fashion", "vehicles", "others").
+ * Used so the wishlist's category filter matches the same keys the rest of the app uses.
+ */
+internal fun normalizeMarketplaceCategoryKey(raw: String?): String {
+    val value = raw?.lowercase()?.trim().orEmpty()
+    return when {
+        value in setOf("electronics", "fashion", "vehicles", "others") -> value
+        value.contains("electron") || value.contains("phone") || value.contains("laptop") ||
+            value.contains("camera") || value.contains("audio") || value.contains("gadget") -> "electronics"
+        value.contains("fashion") || value.contains("cloth") || value.contains("apparel") ||
+            value.contains("shoe") || value.contains("bag") || value.contains("watch") -> "fashion"
+        value.contains("vehicle") || value.contains("car") || value.contains("bike") ||
+            value.contains("motor") || value.contains("cycle") || value.contains("truck") ||
+            value.contains("scooter") || value.contains("spare") -> "vehicles"
+        else -> "others"
+    }
+}
 
 data class WishlistState(
     val loading: Boolean = true,
@@ -123,6 +143,7 @@ class WishlistViewModel @Inject constructor(
     private var roomWishlistItems: List<Post> = emptyList()
 
     private val _categoryFilter = MutableStateFlow<String?>(null)
+    val categoryFilter: StateFlow<String?> = _categoryFilter.asStateFlow()
     fun setCategoryFilter(cat: String?) {
         _categoryFilter.value = cat
         syncWishlist(loading = false)
@@ -157,14 +178,23 @@ class WishlistViewModel @Inject constructor(
         refreshing: Boolean = false,
         error: String? = null,
     ) {
+        // Wishlist is category-scoped: when opened from a category app, only that
+        // category's saved items are shown — no cross-category items leak in.
         val catFilter = _categoryFilter.value
-        val allItems = (remoteWishlistItems + roomWishlistItems + SharedExploreStore.wishlistPosts)
-            .distinctBy { it.stableId }
-        val mergedItems = if (catFilter != null) {
-            allItems.filter { it.category == catFilter }
-        } else {
-            allItems
+        // Drop non-matching copies PER SOURCE before the dedupe. Local copies carry the
+        // category the user actually interacted with, so a category-scoped wishlist shows
+        // the item even when the server's copy lacks or mislabels it (otherwise the card
+        // shows a filled bookmark while the wishlist screen hides the item). Matching
+        // copies keep the original order so server-fresh status/price still win.
+        val matchesCategory: (Post) -> Boolean = { post ->
+            catFilter == null ||
+                normalizeMarketplaceCategoryKey(post.category) == normalizeMarketplaceCategoryKey(catFilter)
         }
+        val mergedItems = (
+            remoteWishlistItems.filter(matchesCategory) +
+                SharedExploreStore.wishlistPosts.filter(matchesCategory) +
+                roomWishlistItems.filter(matchesCategory)
+            ).distinctBy { it.stableId }
         _state.value = _state.value.copy(
             loading = loading,
             refreshing = refreshing,
@@ -306,6 +336,7 @@ fun WishlistScreen(
     viewModel: WishlistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val categoryFilter by viewModel.categoryFilter.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var gridMode by remember { mutableStateOf(false) }
     var sortBy by remember { mutableStateOf(WishlistSort.SAVED) }
@@ -313,7 +344,7 @@ fun WishlistScreen(
     var removeConfirmId by remember { mutableStateOf<String?>(null) }
     val focusManager = LocalFocusManager.current
 
-    // Apply category filter when categoryKey changes
+    // Apply category filter when categoryKey changes (e.g. inside a category app)
     LaunchedEffect(categoryKey) {
         viewModel.setCategoryFilter(categoryKey)
     }
@@ -336,10 +367,10 @@ fun WishlistScreen(
         )
     }
 
-    val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter, categoryKey) {
+    val filteredItems = remember(state.items, searchQuery, sortBy, statusFilter, categoryFilter) {
         state.items
             .filter { post ->
-                (categoryKey == null || post.category == categoryKey) &&
+                (categoryFilter == null || normalizeMarketplaceCategoryKey(post.category) == normalizeMarketplaceCategoryKey(categoryFilter)) &&
                 (searchQuery.isBlank() ||
                     post.displayTitle.contains(searchQuery, ignoreCase = true) ||
                     post.location?.contains(searchQuery, ignoreCase = true) == true ||
@@ -519,8 +550,11 @@ fun WishlistScreen(
                             ) {
                                 AppEmptyState(
                                     icon = Icons.Default.Bookmark,
-                                    title = "Nothing saved yet",
-                                    subtitle = "Tap the save icon on listings to add them here.",
+                                    title = if (categoryKey != null) "No items saved in this category" else "Nothing saved yet",
+                                    subtitle = if (categoryKey != null)
+                                        "Items you save in ${categoryKey.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }} will appear here."
+                                    else
+                                        "Tap the save icon on listings to add them here.",
                                 )
                             }
                             filteredItems.isEmpty() -> Box(
@@ -602,17 +636,7 @@ private fun WishlistListCard(
     isSelected: Boolean = false,
     onToggleSelect: () -> Unit = {},
 ) {
-    // Price drop not available without historical pricing data
-    val priceDrop: Int? = null
     var priceAlertEnabled by remember { mutableStateOf(false) }
-    
-    // Mock date added (in reality, would come from API)
-    val dateAdded = remember { 
-        val daysAgo = (post.stableId.hashCode().and(0xFF)) % 30
-        val cal = java.util.Calendar.getInstance()
-        cal.add(java.util.Calendar.DAY_OF_YEAR, -daysAgo)
-        java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault()).format(cal.time)
-    }
 
     Card(
         onClick = { if (isMultiSelectMode) onToggleSelect() else onOpen() },
@@ -658,22 +682,6 @@ private fun WishlistListCard(
                     Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
                 }
                 
-                // Price drop badge
-                if (priceDrop != null) {
-                    androidx.compose.material3.Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFEF4444),
-                        modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
-                    ) {
-                        Row(
-                            Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("↓", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("${priceDrop}%", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
             }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -721,22 +729,6 @@ private fun WishlistListCard(
                         )
                     }
                 }
-                
-                // Date added
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(11.dp),
-                    )
-                    Spacer(Modifier.width(3.dp))
-                    Text(
-                        text = "Added $dateAdded",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
 
             if (!isMultiSelectMode) {
@@ -778,9 +770,6 @@ private fun WishlistGridCard(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Price drop not available from API without price history endpoint
-    val priceDrop: Int? = null
-
     Card(
         onClick = onOpen,
         shape = RoundedCornerShape(14.dp),
@@ -812,23 +801,6 @@ private fun WishlistGridCard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
-                    }
-                }
-                
-                // Price drop badge
-                if (priceDrop != null) {
-                    androidx.compose.material3.Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFEF4444),
-                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
-                    ) {
-                        Row(
-                            Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("↓", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("${priceDrop}%", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                        }
                     }
                 }
                 post.price?.let {

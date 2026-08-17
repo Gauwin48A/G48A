@@ -101,7 +101,6 @@ const requireAadhaarVerified = (req, res, next) => {
 const enrichPlanClaims = async (req) => {
   const userId = req.user?.user_id || req.user?.userId || req.user?.id;
   if (!userId || req.user?.is_demo) return;
-  if (req.user?.subscription_tier || req.user?.tier) return; // already present
   try {
     const pool = require("../config/db");
     const { rows } = await pool.query(
@@ -110,10 +109,14 @@ const enrichPlanClaims = async (req) => {
       [String(userId)],
     );
     if (rows[0]) {
+      // ALWAYS refresh plan + KYC claims from the DB. JWTs freeze kyc_status /
+      // kyc_verified at login time (e.g. 'PENDING'/false), so a user who completes
+      // KYC later would be stuck with the stale claim and false 403s. Fresh DB
+      // state wins for every gate that calls this (requirePlanAndKyc etc).
       const tierValue = rows[0].tier || rows[0].current_plan || null;
       req.user.subscription_tier = tierValue;
       req.user.tier = tierValue;
-      req.user.current_tier = rows[0].current_tier || null;
+      req.user.current_tier = rows[0].current_tier || tierValue || null;
       req.user.kyc_status = rows[0].kyc_status || null;
       req.user.kyc_verified =
         rows[0].kyc_verified === true ||
@@ -127,14 +130,49 @@ const enrichPlanClaims = async (req) => {
   }
 };
 
+/**
+ * True when the user has a REAL active subscription: an ACTIVE row in
+ * user_subscriptions whose end_date is still in the future. The legacy
+ * tier/current_plan string on users is a display mirror and defaults to
+ * 'basic' for everyone, so it is never treated as proof of a plan.
+ */
+const hasActiveSubscription = async (userId) => {
+  if (!userId) return false;
+  try {
+    const pool = require("../config/db");
+    const { rows } = await pool.query(
+      `SELECT 1 FROM user_subscriptions
+       WHERE user_id::text = $1 AND status = 'ACTIVE' AND end_date > NOW()
+       LIMIT 1`,
+      [String(userId)]
+    );
+    return rows.length > 0;
+  } catch (err) {
+    return false;
+  }
+};
+
+/**
+ * True when the user's KYC is verified. Accepts every value the stack uses:
+ * boolean columns (kyc_verified, aadhaar_verified) and the status strings
+ * the providers write ('VERIFIED', 'APPROVED', 'PAN_VERIFIED').
+ */
+const isKycVerifiedUser = (user) => {
+  if (!user) return false;
+  if (user.is_demo) return true;
+  if (user.kyc_verified === true || user.aadhaar_verified === true) return true;
+  const status = String(user.kyc_status || "").toUpperCase();
+  return status === "VERIFIED" || status === "APPROVED" || status === "PAN_VERIFIED";
+};
+
 const requireActivePlan = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required." });
   }
-  await enrichPlanClaims(req);
-  const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
-  const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
-  if (!hasPlan && !req.user.is_demo) {
+  if (req.user.is_demo) return next();
+  const userId = req.user.user_id || req.user.userId || req.user.id;
+  const hasPlan = await hasActiveSubscription(userId);
+  if (!hasPlan) {
     return res.status(403).json({
       error: "Subscription plan required before proceeding.",
       code: "PLAN_REQUIRED",
@@ -148,12 +186,13 @@ const requirePlanAndKyc = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required." });
   }
+  if (req.user.is_demo) return next();
   await enrichPlanClaims(req);
-  const tier = (req.user.subscription_tier || req.user.tier || "").toLowerCase();
-  const hasPlan = tier && tier !== "none" && tier !== "free_trial_expired";
-  const isKycVerified = Boolean(req.user.aadhaar_verified || req.user.kyc_verified);
-  
-  if ((!hasPlan || !isKycVerified) && !req.user.is_demo) {
+  const userId = req.user.user_id || req.user.userId || req.user.id;
+  const hasPlan = await hasActiveSubscription(userId);
+  const isKycVerified = isKycVerifiedUser(req.user);
+
+  if (!hasPlan || !isKycVerified) {
     return res.status(403).json({
       error: "Active subscription plan and verified KYC are required to access this feature.",
       code: "PLAN_AND_KYC_REQUIRED",

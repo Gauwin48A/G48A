@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.social
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -68,7 +69,7 @@ fun RatingsScreen(
     viewModel: RatingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val isDark = isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
 
     LaunchedEffect(userId) { viewModel.load(userId) }
 

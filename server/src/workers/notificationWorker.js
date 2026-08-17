@@ -63,6 +63,22 @@ try {
 
       logger.info(`[NotificationWorker] Processing job ${job.id} for notification #${notification_id} to user #${receiver_id}`);
 
+      // Guard: users.user_id is UUID in this schema. Legacy/test receivers
+      // (e.g. "777777") would crash every downstream query with an invalid-uuid
+      // error and retry-storm the queue. Skip them gracefully instead.
+      if (!receiver_id || !isUuid(String(receiver_id))) {
+        logger.warn(`[NotificationWorker] Skipping job ${job.id}: receiver #${receiver_id} is not a valid UUID`);
+        if (isUuid(notification_id)) {
+          await pool
+            .query(
+              "UPDATE notifications SET status = 'failed', updated_at = NOW() WHERE notification_id = $1",
+              [notification_id]
+            )
+            .catch(() => {});
+        }
+        return { status: "invalid_receiver" };
+      }
+
       // 1. Update status to 'processing'
       if (isUuid(notification_id)) {
         await pool.query(
@@ -188,4 +204,55 @@ try {
   logger.error("[NotificationWorker] Failed to start notification worker:", err.message);
 }
 
-module.exports = { notificationWorker };
+/**
+ * Periodically checks for listings reaching 7-day and 2-day expiry windows.
+ */
+async function checkPostExpiryNotifications() {
+  try {
+    // 1. 7-day expiry notice (Day 23)
+    const res7 = await pool.query(
+      `SELECT post_id, title, user_id
+       FROM posts
+       WHERE status = 'active'
+         AND expires_at >= NOW() + INTERVAL '6 days'
+         AND expires_at <= NOW() + INTERVAL '7 days'`
+    );
+    for (const row of res7.rows) {
+      await pool.query(
+        `INSERT INTO notifications (receiver_id, type, title, message, deep_link, status)
+         VALUES ($1, 'expiry_warning_7d', $2, $3, $4, 'pending')`,
+        [
+          row.user_id,
+          'Is your listing sold yet?',
+          `Your post "${row.title}" has been active for 23 days. Mark it as sold or keep it active.`,
+          `zaruda://repost?post_id=${row.post_id}`
+        ]
+      ).catch(() => {});
+    }
+
+    // 2. 2-day expiry notice (Day 28)
+    const res2 = await pool.query(
+      `SELECT post_id, title, user_id
+       FROM posts
+       WHERE status = 'active'
+         AND expires_at >= NOW()
+         AND expires_at <= NOW() + INTERVAL '2 days'`
+    );
+    for (const row of res2.rows) {
+      await pool.query(
+        `INSERT INTO notifications (receiver_id, type, title, message, deep_link, status)
+         VALUES ($1, 'expiry_warning_2d', $2, $3, $4, 'pending')`,
+        [
+          row.user_id,
+          'Listing Expiring Soon!',
+          `Your post "${row.title}" will expire in 48 hours. Tap to repost and renew for 30 days.`,
+          `zaruda://repost?post_id=${row.post_id}`
+        ]
+      ).catch(() => {});
+    }
+  } catch (err) {
+    logger.warn("[NotificationWorker] Expiry notification check warning:", err.message);
+  }
+}
+
+module.exports = { notificationWorker, checkPostExpiryNotifications };

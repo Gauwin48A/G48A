@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.components
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -77,7 +78,7 @@ fun PostCard(
     elevation: androidx.compose.ui.unit.Dp = 2.dp,
     imageHeight: androidx.compose.ui.unit.Dp = 200.dp,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = ColorTokens.isDarkTheme()
     val pillBg = if (darkTheme) PillDefaultBgDark else PillDefaultBg
     val likeBg = if (darkTheme) PillLikeBgDark else PillLikeBg
     val priceStart = if (darkTheme) PriceGradientStartDark else PriceGradientStart

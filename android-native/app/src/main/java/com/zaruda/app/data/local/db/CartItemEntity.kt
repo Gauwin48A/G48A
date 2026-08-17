@@ -13,6 +13,8 @@ data class CartItemEntity(
     val imageUrl: String,
     val category: String,
     val brand: String,
+    /** Seller (post owner) id — lets local/offline cart items initiate escrow purchases. */
+    val sellerId: String? = null,
     val selectedColor: String,
     val selectedSize: String,
     val quantity: Int,

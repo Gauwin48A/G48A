@@ -20,6 +20,8 @@ fun ForYouScreen(
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
     onOpenUser: (String) -> Unit = {},
+    onOpenTierSelection: () -> Unit = {},
+    onOpenKyc: () -> Unit = {},
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
 ) {
@@ -36,6 +38,8 @@ fun ForYouScreen(
         onOpenRecentlyViewed = onOpenRecentlyViewed,
         onOpenWishlist = onOpenWishlist,
         onOpenUser = onOpenUser,
+        onOpenTierSelection = onOpenTierSelection,
+        onOpenKyc = onOpenKyc,
         currentThemeMode = currentThemeMode,
         onToggleTheme = onToggleTheme,
         forYouMode = true,

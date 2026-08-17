@@ -13,10 +13,16 @@ import com.zaruda.app.data.repository.PostsRepository
 import com.zaruda.app.data.repository.WishlistRepository
 import com.zaruda.app.domain.model.Post
 import com.zaruda.app.ui.explore.SharedExploreStore
+import com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,6 +33,7 @@ data class CategoryProductsState(
     val compareItems: List<MockDataProvider.MockProduct> = emptyList(),
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CategoryAppViewModel @Inject constructor(
     private val postsRepository: PostsRepository,
@@ -39,24 +46,31 @@ class CategoryAppViewModel @Inject constructor(
     private val _state = MutableStateFlow(CategoryProductsState())
     val state: StateFlow<CategoryProductsState> = _state.asStateFlow()
 
-    /** IDs currently in the local wishlist — powers the heart icon on product cards. */
-    private val _wishlistedIds = MutableStateFlow<Set<String>>(emptySet())
-    val wishlistedIds: StateFlow<Set<String>> = _wishlistedIds.asStateFlow()
+    private val _activeCategory = MutableStateFlow<String?>(null)
 
-    init {
-        viewModelScope.launch {
-            val local = wishlistItemDao.getAll()
-            _wishlistedIds.value = local.mapNotNull { it.postId.ifBlank { it.id } }.toSet()
+    /** IDs of wishlist items belonging to the ACTIVE category — powers the bookmark icon on
+     *  cards. An item saved from another category never shows as bookmarked in this app.
+     *  Reactive: removals from the Wishlist tab instantly clear the bookmark here too. */
+    val wishlistedIds: StateFlow<Set<String>> = _activeCategory.flatMapLatest { cat ->
+        wishlistItemDao.observeAll().map { local ->
+            if (cat == null) emptySet() else local
+                .filter { normalizeMarketplaceCategoryKey(it.category) == cat }
+                .mapNotNull { it.postId.ifBlank { it.id } }
+                .toSet()
         }
-    }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Load posts for the given category key, falling back to mock data on API failure. */
     fun load(categoryKey: String) {
+        _activeCategory.value = categoryKey
         viewModelScope.launch {
             _state.value = CategoryProductsState(isLoading = true)
+            val normKey = normalizeMarketplaceCategoryKey(categoryKey)
             when (val result = postsRepository.feed(page = 1, limit = 50, categoryId = categoryKey, sort = "newest")) {
                 is ApiResult.Success -> {
-                    val apiProducts = result.data.map { it.toMockProduct() }
+                    val apiProducts = result.data
+                        .map { it.toMockProduct() }
+                        .filter { normalizeMarketplaceCategoryKey(it.category) == normKey }
                     _state.value = CategoryProductsState(
                         isLoading = false,
                         products = apiProducts.ifEmpty { MockDataProvider.productsForCategory(categoryKey) },
@@ -115,19 +129,21 @@ class CategoryAppViewModel @Inject constructor(
 
     // ── Wishlist ───────────────────────────────────────────────────────────────
 
-    /** Toggle wishlist state for a product: Room (badge + offline), shared store (screen), server (best-effort). */
+    /** Toggle wishlist state for a product: Room (badge + offline), shared store (screen), server (best-effort).
+     *  Only items of the active category participate — cross-category items are ignored so the
+     *  wishlist stays strictly category-scoped. */
     fun toggleWishlist(product: MockDataProvider.MockProduct) {
+        val cat = _activeCategory.value
+        if (cat == null || normalizeMarketplaceCategoryKey(product.category) != cat) return
         val id = product.id
-        val isWished = _wishlistedIds.value.contains(id)
+        val isWished = wishlistedIds.value.contains(id)
         if (isWished) {
-            _wishlistedIds.value = _wishlistedIds.value - id
             SharedExploreStore.removeWishlist(id)
             viewModelScope.launch {
                 runCatching { wishlistItemDao.deleteByPostId(id) }
                 wishlistRepo.remove(id)
             }
         } else {
-            _wishlistedIds.value = _wishlistedIds.value + id
             val post = product.toPost()
             SharedExploreStore.addWishlist(post)
             viewModelScope.launch {

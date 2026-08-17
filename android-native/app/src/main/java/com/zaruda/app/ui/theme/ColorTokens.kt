@@ -237,4 +237,13 @@ object ColorTokens {
      */
     val isDark: Boolean
         @Composable get() = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    /**
+     * Theme-aware dark check that follows the app's applied MaterialTheme
+     * (including the in-app System/Light/Dark toggle), unlike
+     * isSystemInDarkTheme() which only reads the device setting. Use this
+     * everywhere a screen needs dark-mode colors.
+     */
+    @Composable
+    fun isDarkTheme(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
 }

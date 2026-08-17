@@ -1,4 +1,5 @@
 package com.zaruda.app.ui.common
+import com.zaruda.app.ui.theme.ColorTokens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,7 +55,7 @@ fun PageScaffold(
     onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val bg = if (isDark) PageGradientDark else PageGradient
     val link = if (isDark) LinkColorDark else LinkColor
     Box(modifier = Modifier.fillMaxSize().background(bg)) {
@@ -88,7 +89,7 @@ fun CardWithHeader(
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val brandGrad = if (isDark) BrandGradientDark else BrandGradient
     val cardColor = if (isDark) Color(0xFF1E293B) else Color.White
     Surface(
@@ -120,7 +121,7 @@ fun CardWithHeader(
 
 @Composable
 fun ErrorBanner(message: String) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = ColorTokens.isDarkTheme()
     val bg = if (isDark) ErrorBgDark else ErrorBg
     val icon = if (isDark) ErrorIconDark else ErrorIcon
     val text = if (isDark) ErrorTextDark else ErrorText
