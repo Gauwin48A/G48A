@@ -618,7 +618,7 @@ private fun PermissionDeniedScreen(
         Spacer(Modifier.height(12.dp))
         Text(
             if (showRationale)
-                "MHub needs camera access to scan QR codes and barcodes. Please grant the permission."
+                "Zaruda needs camera access to scan QR codes and barcodes. Please grant the permission."
             else
                 "Camera permission was denied. Please enable it in your device Settings to use the scanner.",
             color = Color.White.copy(alpha = 0.7f),

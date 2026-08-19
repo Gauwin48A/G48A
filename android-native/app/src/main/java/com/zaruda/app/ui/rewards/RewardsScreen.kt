@@ -161,7 +161,7 @@ data class RewardsUiState(
 private val fallbackRewardsOverview = RewardsOverviewResponse(
     user = RewardsUserDto(
         id = "demo_rewards_user",
-        name = "MHub Member",
+        name = "Zaruda Member",
         rank = "Bronze",
         tier = "Bronze",
         membershipPlan = "premium",
@@ -728,7 +728,7 @@ fun RewardsScreen(
                     val referralProgress = (directReferrals.toFloat() / referralTarget).coerceIn(0f, 1f)
                     val xpProgress = if (user.xpRequired <= 0) 0f else user.xpCurrent.toFloat() / user.xpRequired.toFloat()
                     val xpRemaining = max(0, user.xpRequired - user.xpCurrent)
-                    val inviteText = "Join MHub with my referral code ${user.referralCode ?: "MHUB"} and start earning rewards! https://mhub.app/invite/${user.referralCode ?: ""}"
+                    val inviteText = "Join Zaruda with my referral code ${user.referralCode ?: "ZARUDA"} and start earning rewards! https://zaruda.app/invite/${user.referralCode ?: ""}"
 
                     // Redeem confirmation dialog with optional post picker
                     var redeemDialogType by remember { mutableStateOf<String?>(null) }

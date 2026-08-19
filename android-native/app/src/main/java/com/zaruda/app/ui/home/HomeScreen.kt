@@ -1067,7 +1067,7 @@ fun HomeScreen(
                 title = {
                     Column {
                         Text(
-                            text = "MHub",
+                            text = "Zaruda",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary,

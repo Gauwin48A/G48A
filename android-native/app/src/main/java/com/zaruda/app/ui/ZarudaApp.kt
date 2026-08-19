@@ -1404,14 +1404,13 @@ fun MainShell(
                                 .height(64.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Left cluster: Home, All Posts — shares the left half of the bar
-                            // with the right cluster so the + button sits at the true center.
+                            // Left cluster: Home, Profile — platform-common tabs
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
                             ) {
-                                listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
+                                listOf(BottomTab.HOME, BottomTab.PROFILE).forEach { tab ->
                                     BottomNavTabItem(
                                         tab = tab,
                                         isSelected = tab == selected,
@@ -1458,13 +1457,13 @@ fun MainShell(
                                     )
                                 }
                             }
-                            // Right cluster: Feed, Rewards, More — mirrors the left half
+                            // Right cluster: Rewards, Plans, More — platform-common tabs
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
                             ) {
-                                listOf(BottomTab.FEED, BottomTab.REWARDS).forEach { tab ->
+                                listOf(BottomTab.REWARDS, BottomTab.PLANS).forEach { tab ->
                                     BottomNavTabItem(
                                         tab = tab,
                                         isSelected = tab == selected,

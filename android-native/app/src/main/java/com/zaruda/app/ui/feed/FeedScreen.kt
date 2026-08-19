@@ -743,7 +743,7 @@ private fun FeedCard(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "MHub network",
+                            text = "Zaruda network",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -847,7 +847,7 @@ private fun FeedCard(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable {
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on MHub!") }
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on Zaruda!") }
                         context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     },
                 ) {

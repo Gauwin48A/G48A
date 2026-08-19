@@ -1615,7 +1615,7 @@ Share Zaruda with your friends and earn rewards.
     <string name="commerce_buy_flow_subtitle">Your money stays protected until you confirm the deal.</string>
     <string name="commerce_buy_flow_how">How it works</string>
     <string name="commerce_request_confirm_title">Confirm your purchase</string>
-    <string name="commerce_request_confirm_desc">You\u2019re buying this item from the seller. Once they accept, you\u2019ll pay safely — your money is held by MHub until you confirm receipt.</string>
+    <string name="commerce_request_confirm_desc">You\u2019re buying this item from the seller. Once they accept, you\u2019ll pay safely — your money is held by Zaruda until you confirm receipt.</string>
     <string name="commerce_request_confirm_button">Send Request to Seller</string>
     <string name="commerce_request_edit">Change</string>
     <string name="commerce_field_seller">Seller</string>
@@ -1638,7 +1638,7 @@ Share Zaruda with your friends and earn rewards.
     <string name="commerce_contact_show">Show number</string>
     <string name="commerce_contact_call">Call</string>
     <string name="commerce_contact_whatsapp">WhatsApp</string>
-    <string name="commerce_outside_app_note">Deals made outside the app are between you and the seller. MHub is not responsible for off-app transactions.</string>
+    <string name="commerce_outside_app_note">Deals made outside the app are between you and the seller. Zaruda is not responsible for off-app transactions.</string>
     <string name="commerce_contact_not_shared">Seller has not shared a number.</string>
     <string name="commerce_contact_use_buy">Buy safely in-app instead</string>
     <string name="commerce_sale_hub_title">Buy &amp; Sell Securely</string>

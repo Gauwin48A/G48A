@@ -959,7 +959,7 @@ fun MyPostsScreen(
                 PostActionItem(icon = Icons.Default.Share, label = "Share Listing", subtitle = "Send to friends & social media") {
                     showPostActionsSheet = false; actionPost = null
                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${p.displayTitle} on MHub!")
+                        type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${p.displayTitle} on Zaruda!")
                     }
                     context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
                 }

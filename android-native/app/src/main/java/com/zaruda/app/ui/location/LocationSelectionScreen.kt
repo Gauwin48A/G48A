@@ -85,7 +85,7 @@ class LocationViewModel @Inject constructor(
             val url = "https://nominatim.openstreetmap.org/search?format=jsonv2&q=${java.net.URLEncoder.encode(query, "UTF-8")}&limit=10&addressdetails=1"
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "MHubApp/1.0 (marketplace)")
+                .header("User-Agent", "ZarudaApp/1.0 (marketplace)")
                 .build()
             val response = httpClient.newCall(request).execute()
             if (!response.isSuccessful) return@withContext emptyList()
@@ -262,7 +262,7 @@ fun LocationSelectionScreen(
             // Show rationale if permission was denied
             if (!locationPermissionState.status.isGranted && locationPermissionState.status.shouldShowRationale) {
                 Text(
-                    "MHub uses location to find listings near you. Please grant permission for a better experience.",
+                    "Zaruda uses location to find listings near you. Please grant permission for a better experience.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 24.dp)

@@ -2947,7 +2947,7 @@ fun AllPostCard(
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = post.location ?: "MHub network",
+                            text = post.location ?: "Zaruda network",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -2990,7 +2990,7 @@ fun AllPostCard(
                             leadingIcon = { Icon(Icons.Outlined.Share, null, modifier = Modifier.size(18.dp)) },
                             onClick = {
                                 showPostMenu = false
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on MHub!") }
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on Zaruda!") }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                             },
                         )
@@ -3187,7 +3187,7 @@ fun AllPostCard(
                 }
                 // Share pill
                 Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on MHub!") }
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on Zaruda!") }
                     context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                 }) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -3246,7 +3246,7 @@ AlertDialog(
                     }
                     Surface(onClick = {
                         showPostMenu = false
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out " + post.displayTitle + " on MHub!") }
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out " + post.displayTitle + " on Zaruda!") }
                         context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     }, shape = RoundedCornerShape(12.dp)) {
                         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
