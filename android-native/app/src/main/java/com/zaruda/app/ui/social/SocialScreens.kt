@@ -1823,7 +1823,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         (1..5).forEach { i ->
                             IconButton(onClick = { viewModel.setRating(i) }, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Star, null, tint = if (i <= state.rating) Color(0xFFF59E0B) else Color(0xFFE2E8F0), modifier = Modifier.size(28.dp))
+                                Icon(Icons.Filled.Star, null, tint = if (i <= state.rating) Color(0xFFF59E0B) else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(28.dp))
                             }
                         }
                         Spacer(Modifier.width(8.dp))

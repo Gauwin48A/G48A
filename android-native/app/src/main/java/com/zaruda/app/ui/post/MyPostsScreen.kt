@@ -367,7 +367,7 @@ fun MyPostsScreen(
             title = { Text("🚀 Promote Listing", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = Color(0xFF374151))
+                    Text("Boost visibility for \"${post.displayTitle}\"", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(2.dp))
 
                     // Boost education hint
@@ -624,7 +624,7 @@ fun MyPostsScreen(
                                             ).forEach { (title, cost, desc) ->
                                                 Surface(shape = RoundedCornerShape(10.dp), color = Color.White, modifier = Modifier.weight(1f)) {
                                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                        Text(title, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF1F2937))
+                                                        Text(title, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                                                         Text(cost, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, color = Color(0xFF059669))
                                                         Text(desc, fontSize = 9.sp, color = Color(0xFF6B7280), lineHeight = 12.sp)
                                                     }
@@ -710,7 +710,7 @@ fun MyPostsScreen(
                                                     Text("Welcome to Zaruda!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
                                                 }
                                                 IconButton(onClick = { showOnboarding = false }, modifier = Modifier.size(24.dp)) {
-                                                    Icon(Icons.Default.Close, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                                                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                                                 }
                                             }
                                             Text("Here's how to get started:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
@@ -731,7 +731,7 @@ fun MyPostsScreen(
                                                     onClick = { showOnboarding = false },
                                                     shape = RoundedCornerShape(10.dp),
                                                     modifier = Modifier.weight(1f),
-                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF64748B)),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                                                 ) { Text("Got it!", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                                             }
                                         }

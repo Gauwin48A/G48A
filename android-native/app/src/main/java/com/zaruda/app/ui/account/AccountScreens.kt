@@ -45,7 +45,7 @@ private val bgGradient: Brush
     @Composable get() {
         val isDark = ColorTokens.isDarkTheme()
         return if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF131B2E), Color(0xFF152035)))
-        else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
+        else Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
     }
 
 @Composable
@@ -495,7 +495,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                             Text(stringResource(R.string.account_change_password), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                             Spacer(Modifier.height(12.dp))
                             if (state.passwordChanged) {
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.account_password_changed), color = Color(0xFF22C55E), fontSize = 13.sp, modifier = Modifier.padding(12.dp))
                                 }
                             } else {
@@ -540,7 +540,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                                 Icon(Icons.Filled.Security, null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
                                 Spacer(Modifier.width(10.dp))
                                 Text(stringResource(R.string.account_2fa_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                                Surface(shape = RoundedCornerShape(12.dp), color = if (state.twoFaEnabled) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)) {
+                                Surface(shape = RoundedCornerShape(12.dp), color = if (state.twoFaEnabled) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.errorContainer) {
                                     Text(if (state.twoFaEnabled) "Enabled" else "Disabled", fontSize = 11.sp,
                                         color = if (state.twoFaEnabled) Color(0xFF22C55E) else Color(0xFFEF4444),
                                         fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
@@ -548,8 +548,8 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                             }
                             Spacer(Modifier.height(8.dp))
                             if (state.twoFaQr != null) {
-                                Text(stringResource(R.string.account_2fa_qr_hint), fontSize = 12.sp, color = Color(0xFF64748B))
-                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F9FF), modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                                Text(stringResource(R.string.account_2fa_qr_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                                     Text(state.twoFaQr ?: "", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
                                 }
                             }
@@ -597,7 +597,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                         if (state.sessions.size > 1) TextButton(onClick = { viewModel.revokeAll() }) { Text(stringResource(R.string.account_revoke_all), color = Color(0xFFDC2626), fontSize = 12.sp) }
                     }
                 }
-                if (state.sessions.isEmpty()) item { Text(stringResource(R.string.account_no_sessions), fontSize = 13.sp, color = Color(0xFF64748B)) }
+                if (state.sessions.isEmpty()) item { Text(stringResource(R.string.account_no_sessions), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 items(state.sessions, key = { it.stableId }) { session ->
                     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
@@ -606,12 +606,12 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(session.displayDevice, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                                    Text("IP: ${session.maskedIp}", fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text("IP: ${session.maskedIp}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     if (session.userAgent != null) Text(session.userAgent.take(50), fontSize = 10.sp, color = Color(0xFFBFDBFE), maxLines = 1)
                                 }
                                 OutlinedButton(onClick = { session.sessionId?.let { viewModel.revokeSession(it) } }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), modifier = Modifier.height(30.dp)) { Text(stringResource(R.string.account_revoke), fontSize = 11.sp) }
                             }
-                            if (session.lastActivity != null) { Spacer(Modifier.height(4.dp)); Text("Last active: ${session.lastActivity.take(16).replace("T", " ")}", fontSize = 11.sp, color = Color(0xFF64748B)) }
+                            if (session.lastActivity != null) { Spacer(Modifier.height(4.dp)); Text("Last active: ${session.lastActivity.take(16).replace("T", " ")}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             if (session.createdAt != null) Text("Created: ${session.createdAt.take(10)}", fontSize = 10.sp, color = Color(0xFFBFDBFE))
                         }
                     }
@@ -675,7 +675,7 @@ fun AccountDeleteScreen(onBack: () -> Unit, viewModel: DeleteAccountViewModel = 
                 Column {
                     Text(stringResource(R.string.account_delete_reason), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text(stringResource(R.string.account_delete_reason_hint), color = Color(0xFF64748B)) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = state.reason, onValueChange = viewModel::setReason, placeholder = { Text(stringResource(R.string.account_delete_reason_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) }, shape = RoundedCornerShape(12.dp), maxLines = 3, minLines = 2, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
                 }
                 state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                 if (!state.confirmed) {
@@ -740,7 +740,7 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
                         Spacer(Modifier.height(20.dp))
                         Text(stringResource(R.string.account_verified_title), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF166534))
                         Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.account_verified_msg), fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.account_verified_msg), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 "pending" -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -749,11 +749,11 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
                         Spacer(Modifier.height(16.dp))
                         Text(stringResource(R.string.account_pending_title), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.account_pending_msg), fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text(stringResource(R.string.account_pending_msg), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(stringResource(R.string.account_verify_submit_hint), fontSize = 14.sp, color = Color(0xFF64748B))
+                    Text(stringResource(R.string.account_verify_submit_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     state.error?.let { Text(it, color = Color(0xFFDC2626), fontSize = 13.sp) }
                     Text("Document Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -764,7 +764,7 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
                     Column {
                         Text("Document Number", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(value = state.docNumber, onValueChange = viewModel::setDocNumber, placeholder = { Text("Enter document number", color = Color(0xFF64748B)) }, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = state.docNumber, onValueChange = viewModel::setDocNumber, placeholder = { Text("Enter document number", color = MaterialTheme.colorScheme.onSurfaceVariant) }, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth())
                     }
                     Button(onClick = { viewModel.submit() }, enabled = !state.submitting, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)), modifier = Modifier.fillMaxWidth().height(50.dp)) { Text(if (state.submitting) "Submitting…" else "Submit for Verification", fontWeight = FontWeight.SemiBold) }
                 }
@@ -856,21 +856,21 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                 Spacer(Modifier.height(8.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Column {
-                                        Text("Conversion", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text("Conversion", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text("${String.format("%.1f", (ss?.conversionRate ?: d?.conversionRate ?: 0f) * 100)}%", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
                                     }
                                     Column {
-                                        Text("Avg Rating", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text("Avg Rating", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text("${String.format("%.1f", ss?.avgRating ?: 0f)} ★", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFF59E0B))
                                     }
                                     Column {
-                                        Text("Reviews", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text("Reviews", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text("${ss?.totalReviews ?: 0}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
                                 // Simple bar chart
                                 Spacer(Modifier.height(12.dp))
-                                Text(stringResource(R.string.account_performance), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF64748B))
+                                Text(stringResource(R.string.account_performance), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(8.dp))
                                 val maxVal = maxOf(ss?.totalViews ?: 1, ss?.totalInquiries ?: 1, ss?.soldPosts ?: 1, 1).toFloat()
                                 listOf("Views" to (ss?.totalViews ?: d?.postViews ?: 0) to Color(0xFF8B5CF6),
@@ -878,7 +878,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                     "Sales" to (ss?.soldPosts ?: d?.totalSales ?: 0) to Color(0xFF22C55E)).forEach { (pair, color) ->
                                     val (label, value) = pair
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
-                                        Text(label, fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.width(64.dp))
+                                        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(64.dp))
                                         Box(Modifier.weight(1f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFF1F5F9))) {
                                             Box(Modifier.fillMaxHeight().fillMaxWidth((value / maxVal).coerceIn(0f, 1f)).clip(RoundedCornerShape(4.dp)).background(color))
                                         }
@@ -898,7 +898,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(pa.title ?: "Post", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                                        Text("${pa.views} views · ${pa.inquiries} inquiries · ${pa.offers} offers", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text("${pa.views} views · ${pa.inquiries} inquiries · ${pa.offers} offers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
@@ -912,7 +912,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
                                         Text(ca.category ?: "Category", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                                        Text("${ca.listings} listings · ${ca.views} views · ${ca.sales} sales", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        Text("${ca.listings} listings · ${ca.views} views · ${ca.sales} sales", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
@@ -927,7 +927,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(post.displayTitle, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                                        if (post.viewCount != null) Text("${post.viewCount} views", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        if (post.viewCount != null) Text("${post.viewCount} views", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     if (post.price != null) Text("₹${post.price.toLong()}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2563EB))
                                 }

@@ -732,10 +732,10 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Users" to "${s.totalUsers}" to Color(0xFF2563EB), "Posts" to "${s.totalPosts}" to Color(0xFF22C55E), "Flagged" to "${s.flaggedPosts}" to Color(0xFFEF4444)).forEach { (pair, color) ->
                             val (label, value) = pair
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.weight(1f)) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = if (ColorTokens.isDarkTheme()) 0.dp else 2.dp, modifier = Modifier.weight(1f)) {
                                 Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(value, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = color)
-                                    Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -745,10 +745,10 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Restricted" to "${state.stats.restrictedUsers}" to Color(0xFFF59E0B), "Today Sign" to "${state.stats.todaySignups}" to Color(0xFF8B5CF6), "Today Post" to "${state.stats.todayPosts}" to Color(0xFF06B6D4)).forEach { (pair, color) ->
                             val (label, value) = pair
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.weight(1f)) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = if (ColorTokens.isDarkTheme()) 0.dp else 2.dp, modifier = Modifier.weight(1f)) {
                                 Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(value, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = color)
-                                    Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -798,7 +798,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                             }
                         }
                         val filtered = state.flaggedUsers.filter { u -> state.search.isBlank() || (u.name ?: "").contains(state.search, true) || (u.email ?: "").contains(state.search, true) }
-                        if (filtered.isEmpty()) item { Text("No flagged users", color = Color(0xFF64748B)) }
+                        if (filtered.isEmpty()) item { Text("No flagged users", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(filtered, key = { it.id ?: it.name ?: "" }) { user ->
                             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
@@ -867,7 +867,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                             }
                         }
                         val filtered = state.flaggedPosts.filter { p -> state.search.isBlank() || (p.title ?: "").contains(state.search, true) }
-                        if (filtered.isEmpty()) item { Text("No flagged posts", color = Color(0xFF64748B)) }
+                        if (filtered.isEmpty()) item { Text("No flagged posts", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(filtered, key = { it.id ?: it.title ?: "" }) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Column {
@@ -916,7 +916,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                             "all" -> state.flaggedPosts
                             else -> state.flaggedPosts.filter { (it.reason ?: "").contains(state.flagCategory, true) }
                         }
-                        if (flaggedByCategory.isEmpty()) item { Text("No flags in this category", color = Color(0xFF64748B)) }
+                        if (flaggedByCategory.isEmpty()) item { Text("No flags in this category", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(flaggedByCategory, key = { it.id ?: it.title ?: "" }) { post ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -930,7 +930,7 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                                     Box(Modifier.size(8.dp).clip(CircleShape).background(categoryColor))
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = Color(0xFF1E293B), maxLines = 1)
+                                        Text(post.title ?: "Post", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                                         Text(post.reason ?: "Flagged", fontSize = 11.sp, color = categoryColor)
                                     }
                                     IconButton(onClick = { post.id?.let { viewModel.approvePost(it) } }) {
@@ -944,15 +944,15 @@ fun AdminPanelScreen(onBack: () -> Unit, viewModel: AdminViewModel = hiltViewMod
                         }
                     }
                     "activity" -> {
-                        if (state.recentActivity.isEmpty()) item { Text("No recent activity", color = Color(0xFF64748B)) }
+                        if (state.recentActivity.isEmpty()) item { Text("No recent activity", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(state.recentActivity, key = { it.id ?: it.description ?: "" }) { act ->
                             Surface(shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.History, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Filled.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(act.description ?: act.type ?: "Action", fontSize = 13.sp, color = Color(0xFF374151))
-                                        if (act.createdAt != null) Text(act.createdAt.take(16).replace("T", " "), fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                        Text(act.description ?: act.type ?: "Action", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                        if (act.createdAt != null) Text(act.createdAt.take(16).replace("T", " "), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
