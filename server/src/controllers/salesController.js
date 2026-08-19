@@ -12,6 +12,7 @@ const logger = require("../utils/logger");
 const cacheService = require("../services/cacheService");
 const financialEngine = require("../services/financialEngine");
 const { emitNotification } = require("../services/notificationEmitter");
+const { notifyPostSaleDone, notifyPostReposted } = require("../services/postNotificationService");
 
 /** TTL for cached trust scores (5 minutes — short enough to stay fresh, long enough to reduce DB chatter). */
 const TRUST_SCORE_CACHE_TTL_SECONDS = 300;
@@ -210,7 +211,7 @@ exports.requestSale = async (req, res) => {
     const buyerId = getAuthUserId(req);
     if (!buyerId) return res.status(401).json({ error: "Authentication required" });
 
-    const { postId, sellerId } = req.body;
+    const { postId, sellerId, from_location, to_location } = req.body;
     if (!postId || !sellerId) {
       return res.status(400).json({ error: "Both postId and sellerId are required" });
     }
@@ -264,10 +265,10 @@ exports.requestSale = async (req, res) => {
     }
 
     const result = await runQuery(
-      `INSERT INTO sales (post_id, buyer_id, seller_id, status, payment_mode)
-       VALUES ($1, $2, $3, 'requested', $4)
-       RETURNING id, post_id, buyer_id, seller_id, status, payment_mode, created_at`,
-      [postId, buyerId, sellerId, paymentMode]
+      `INSERT INTO sales (post_id, buyer_id, seller_id, status, payment_mode, from_location, to_location)
+       VALUES ($1, $2, $3, 'requested', $4, $5, $6)
+       RETURNING id, post_id, buyer_id, seller_id, status, payment_mode, from_location, to_location, created_at`,
+      [postId, buyerId, sellerId, paymentMode, parseOptionalString(from_location), parseOptionalString(to_location)]
     );
 
     // Notify the seller of the new request (best-effort)
@@ -400,6 +401,14 @@ exports.approveSale = async (req, res) => {
       sale.post_id
     );
 
+    if (sale.post_id) {
+      notifyPostSaleDone({
+        postId: sale.post_id,
+        sellerId: sale.seller_id,
+        buyerId: sale.buyer_id,
+      }).catch((e) => logger.warn("[Sales] Sale approved notification error:", e.message));
+    }
+
     return res.json({ success: true, sale: result.rows[0] });
   } catch (err) {
     logger.error("[Sales] Error approving sale:", err);
@@ -515,6 +524,13 @@ exports.undoSale = async (req, res) => {
       sale.id,
       sale.post_id
     );
+
+    if (sale.post_id) {
+      notifyPostReposted({
+        postId: sale.post_id,
+        sellerId: userId,
+      }).catch((e) => logger.warn("[Sales] Undo sale notification error:", e.message));
+    }
 
     return res.json({
       success: true,

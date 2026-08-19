@@ -185,7 +185,7 @@ fun PostCard(
                 // Seller row — tap the name/avatar to open the seller's sold-posts trust page
                 val sellerClickable = onUserClick != null && !post.userId.isNullOrBlank()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val sellerName = post.sellerName ?: post.userName ?: "MHub"
+                    val sellerName = post.sellerName ?: post.userName ?: "Zaruda User"
                     val initial = sellerName.firstOrNull()?.uppercaseChar()?.toString() ?: "M"
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

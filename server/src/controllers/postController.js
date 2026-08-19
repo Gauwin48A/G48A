@@ -23,7 +23,8 @@ const logger = require("../utils/logger");
 const {
   TEST_USER_EXCLUSION,
   TEST_USER_CONDITION,
-} = require("../queries/testDataExclusion");
+} = require("../utils/testUserConstants");
+const { notifyPostSaleDone, notifyPostReposted } = require("../services/postNotificationService");
 
 const checkUserAccessFull = async (userId) => {
   if (!userId) return false;
@@ -1879,7 +1880,7 @@ exports.markAsSold = async (req, res) => {
   try {
     const id = req.params.postId || req.params.id;
     const userId = getAuthenticatedUserId(req);
-    const { buyer_id, sale_price } = req.body;
+    const { buyer_id, sale_price, from_location, to_location } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -1912,9 +1913,9 @@ exports.markAsSold = async (req, res) => {
     }
 
     await client.query(
-      `UPDATE posts SET status = 'sold', sold_at = NOW(), updated_at = NOW()
+      `UPDATE posts SET status = 'sold', sold_at = NOW(), sold_from_location = $2, sold_to_location = $3, updated_at = NOW()
        WHERE post_id = $1`,
-      [id]
+      [id, from_location || null, to_location || null]
     );
 
     let transactionId = null;
@@ -1924,10 +1925,10 @@ exports.markAsSold = async (req, res) => {
 
     if (txBuyerId) {
       const txResult = await client.query(
-        `INSERT INTO transactions (seller_id, buyer_id, post_id, amount, status, completed_at)
-         VALUES ($1, $2, $3, $4, 'completed', NOW())
+        `INSERT INTO transactions (seller_id, buyer_id, post_id, amount, status, completed_at, from_location, to_location)
+         VALUES ($1, $2, $3, $4, 'completed', NOW(), $5, $6)
          RETURNING transaction_id`,
-        [txSellerId, txBuyerId, id, txAmount]
+        [txSellerId, txBuyerId, id, txAmount, from_location || null, to_location || null]
       );
       transactionId = txResult.rows[0]?.transaction_id;
     }
@@ -2030,6 +2031,14 @@ exports.markAsSold = async (req, res) => {
 
     logInfo(`[MarkAsSold] Post ${id} marked as sold by user ${userId}`);
 
+    // Dispatch dynamic notification for sale done
+    notifyPostSaleDone({
+      postId: id,
+      sellerId: userId,
+      buyerId: txBuyerId,
+      salePrice: txAmount,
+    }).catch((e) => logError("[MarkAsSold] Notification error:", e.message));
+
     res.json({
       success: true,
       message: "Post marked as sold",
@@ -2126,6 +2135,13 @@ exports.reactivatePost = async (req, res) => {
     }
 
     logInfo(`[Reactivate] Post ${id} reactivated by user ${userId}`);
+
+    // Dispatch dynamic notification for post reposted
+    notifyPostReposted({
+      postId: id,
+      sellerId: userId,
+      expiresAt: newExpiresAt,
+    }).catch((e) => logError("[Reactivate] Notification error:", e.message));
 
     res.json({
       success: true,

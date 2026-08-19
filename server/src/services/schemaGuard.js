@@ -152,6 +152,15 @@ async function ensurePostsOptionalColumns() {
       "ALTER TABLE posts ADD COLUMN IF NOT EXISTS location TEXT"
     );
     await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS sold_from_location TEXT"
+    );
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS sold_to_location TEXT"
+    );
+    await runQuery(
+      "ALTER TABLE posts ADD COLUMN IF NOT EXISTS sold_at TIMESTAMPTZ"
+    );
+    await runQuery(
       "ALTER TABLE posts ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb"
     );
     await runQuery(
@@ -334,6 +343,8 @@ async function ensureTransactionsOffersTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await runQuery("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS from_location TEXT");
+    await runQuery("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS to_location TEXT");
     await runQuery(
       "CREATE INDEX IF NOT EXISTS idx_transactions_post ON transactions(post_id)"
     );
@@ -403,6 +414,8 @@ async function ensureSalesTables() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await runQuery("ALTER TABLE sales ADD COLUMN IF NOT EXISTS from_location TEXT");
+    await runQuery("ALTER TABLE sales ADD COLUMN IF NOT EXISTS to_location TEXT");
     await runQuery(`
       CREATE TABLE IF NOT EXISTS suspensions (
         id SERIAL PRIMARY KEY,

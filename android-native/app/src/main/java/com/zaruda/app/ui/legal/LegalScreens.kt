@@ -203,7 +203,7 @@ Zaruda Refund Policy
 Zaruda is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
 
 2. Dispute Resolution
-If an item is not as described or a transaction fails, buyers should first contact the seller directly via the in-app chat.
+If an item is not as described or a transaction fails, buyers should first contact the seller directly via phone, WhatsApp, or by raising a platform inquiry.
 
 3. Mediation
 If the buyer and seller cannot resolve the dispute, Zaruda offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
@@ -460,7 +460,7 @@ Where available, sellers will provide tracking information after dispatch. Buyer
 If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. Zaruda will mediate between buyer and seller.
 
 6. Local Pickup
-Many transactions on Zaruda support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
+Many transactions on Zaruda support local pickup. Buyers and sellers can coordinate pickup details directly via phone or WhatsApp.
 
 7. Return Shipping
 Return shipping costs are borne by the buyer unless the item was misrepresented or defective. See our Refund Policy for details.

@@ -386,7 +386,7 @@ private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartViewModel = hiltViewModel()) {
+fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, showTopBar: Boolean = true, viewModel: CartViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -413,6 +413,7 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
 
     Scaffold(
         topBar = {
+            if (showTopBar) {
             TopAppBar(
                 title = {
                     Column {
@@ -435,6 +436,7 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->

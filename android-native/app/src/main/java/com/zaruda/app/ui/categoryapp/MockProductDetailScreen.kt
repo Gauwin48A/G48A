@@ -193,7 +193,7 @@ fun MockProductDetailScreen(
                         onClick = {
                             val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${product.title} on MHub!")
+                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${product.title} on Zaruda!")
                             }
                             context.startActivity(android.content.Intent.createChooser(shareIntent, "Share"))
                         },

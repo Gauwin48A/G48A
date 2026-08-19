@@ -330,6 +330,7 @@ fun RecentlyViewedScreen(
     onToggleTheme: () -> Unit = {},
     onLanguage: () -> Unit = {},
     categoryKey: String? = null,
+    showTopBar: Boolean = true,
     viewModel: RecentlyViewedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -399,6 +400,7 @@ fun RecentlyViewedScreen(
 
     Scaffold(
         topBar = {
+            if (showTopBar) {
             TopAppBar(
                 title = {
                     Column {
@@ -523,6 +525,7 @@ fun RecentlyViewedScreen(
                     actionIconContentColor = Color.White,
                 ),
             )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {

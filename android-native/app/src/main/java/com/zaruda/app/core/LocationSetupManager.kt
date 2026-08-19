@@ -163,7 +163,7 @@ class LocationSetupManager @Inject constructor(
         try {
             val request = Request.Builder()
                 .url(IP_API_URL)
-                .header("User-Agent", "MHubApp/1.0")
+                .header("User-Agent", "ZarudaApp/1.0")
                 .build()
 
             val response = httpClient.newCall(request).execute()

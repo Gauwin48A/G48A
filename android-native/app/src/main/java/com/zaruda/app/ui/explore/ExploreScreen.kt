@@ -2223,6 +2223,64 @@ private fun AllPostsBrowse(
                             }
                         }
 
+                        // Row 2: Subcategory filter chips (scoped to active category)
+                        // Use ecosystemSubcategories (from LocalActiveCategoryKey) for accurate scoping
+                        val myHomeSubcategories = if (ecosystemSubcategories.isNotEmpty()) {
+                            allSubcategories.filter { (subName, _) ->
+                                ecosystemSubcategories.any { it.equals(subName, ignoreCase = true) }
+                            }
+                        } else {
+                            allSubcategories
+                        }
+                        if (myHomeSubcategories.isNotEmpty()) {
+                            val subScrollState = rememberScrollState()
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(subScrollState)
+                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                myHomeSubcategories.forEach { (subName, _) ->
+                                    val selected = state.filterSubcategory == subName
+                                    FilterChip(
+                                        selected = selected,
+                                        onClick = { onSelectSubcategory(subName) },
+                                        label = {
+                                            Text(
+                                                "${subcategoryEmoji(subName)} $subName",
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        },
+                                        leadingIcon = if (selected) {
+                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+                                        } else null,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                }
+                                // Clear filter chip
+                                if (state.filterSubcategory != null) {
+                                    FilterChip(
+                                        selected = false,
+                                        onClick = { onSelectSubcategory(state.filterSubcategory!!) },
+                                        label = { Text("✕ Clear", style = MaterialTheme.typography.labelSmall) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                        ),
+                                        shape = RoundedCornerShape(20.dp),
+                                    )
+                                }
+                            }
+                        }
+
                     }
                 }
             }

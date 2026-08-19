@@ -349,6 +349,7 @@ fun CategoryAppShell(
                 com.zaruda.app.ui.commerce.CartScreen(
                     onBack = { innerNav.popBackStack() },
                     categoryKey = categoryKey,
+                    showTopBar = false,
                 )
             }
 
@@ -358,6 +359,7 @@ fun CategoryAppShell(
                     onBack = { innerNav.popBackStack() },
                     onOpenPost = onOpenPostDetail,
                     categoryKey = categoryKey,
+                    showTopBar = false,
                 )
             }
 
@@ -366,6 +368,7 @@ fun CategoryAppShell(
                     onBack = { innerNav.popBackStack() },
                     onOpenPost = onOpenPostDetail,
                     categoryKey = categoryKey,
+                    showTopBar = false,
                 )
             }
 

@@ -71,7 +71,7 @@ Log.d("ZARUDA-FCM", "✅ Push notification received")
 Log.d("ZARUDA-FCM", "Title = ${message.notification?.title}")
 Log.d("ZARUDA-FCM", "Data = ${message.data}")
 
-        val title = message.notification?.title ?: message.data["title"] ?: "MHub Alert"
+        val title = message.notification?.title ?: message.data["title"] ?: "Zaruda Alert"
         val body  = message.notification?.body  ?: message.data["message"] ?: message.data["body"] ?: ""
         val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image_url"] ?: message.data["image"]
         val deepLink = message.data["deep_link"] ?: message.data["action"] ?: ""
@@ -80,7 +80,7 @@ Log.d("ZARUDA-FCM", "Data = ${message.data}")
         val serverChannelId = message.data["android_channel_id"] ?: message.data["channelId"]
         val channelId = serverChannelId ?: when {
             type.contains("chat", ignoreCase = true) || type.contains("message", ignoreCase = true) -> CHANNEL_CHAT
-            type.contains("transaction", ignoreCase = true) || type.contains("order", ignoreCase = true) || type.contains("pay", ignoreCase = true) -> CHANNEL_TRANSACTION
+            type.contains("transaction", ignoreCase = true) || type.contains("order", ignoreCase = true) || type.contains("pay", ignoreCase = true) || type.contains("sale", ignoreCase = true) || type.contains("repost", ignoreCase = true) || type.contains("sold", ignoreCase = true) || type.contains("purchase", ignoreCase = true) -> CHANNEL_TRANSACTION
             type.contains("promo", ignoreCase = true) || type.contains("offer", ignoreCase = true) || type.contains("marketing", ignoreCase = true) -> CHANNEL_PROMOTION
             type.contains("reward", ignoreCase = true) || type.contains("coin", ignoreCase = true) -> CHANNEL_REWARD
             type.contains("system", ignoreCase = true) || type.contains("security", ignoreCase = true) -> CHANNEL_SYSTEM

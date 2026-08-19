@@ -844,7 +844,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         put("amount", (event.amount * 100).toLong())
                         put("currency", event.currency)
                         put("order_id", event.orderId)
-                        put("name", "MHub Marketplace")
+                        put("name", "Zaruda Marketplace")
                         put("description", "Sale: ${event.saleTitle}")
                         put("theme", JSONObject().apply { put("color", "#16A34A") })
                     }

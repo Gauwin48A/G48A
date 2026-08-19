@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
 const saleController = require("../controllers/saleController");
+const salesController = require("../controllers/salesController");
+const postController = require("../controllers/postController");
 const { runQuery, getAuthUserId, isAdmin } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 
@@ -19,6 +21,28 @@ router.post("/cancel", saleController.cancelSale);
 
 /** @route GET /pending - Get all pending sales for the current user */
 router.get("/pending", saleController.getPendingSales);
+
+/**
+ * @route POST /undone
+ * @desc  Undo a sale and reactivate post on marketplace
+ */
+router.post("/undone", async (req, res) => {
+  try {
+    const { postId, saleId } = req.body || {};
+    if (saleId) {
+      req.params.id = saleId;
+      return salesController.undoSale(req, res);
+    }
+    if (postId) {
+      req.params.postId = postId;
+      return postController.reactivatePost(req, res);
+    }
+    return res.status(400).json({ error: "postId or saleId is required to undo a sale / reactivate post" });
+  } catch (err) {
+    logger.error("[Transactions] Error processing undo sale / reactivate:", err);
+    return res.status(500).json({ error: "Failed to process undo sale", detail: err.message });
+  }
+});
 
 /**
  * @route GET /undone
