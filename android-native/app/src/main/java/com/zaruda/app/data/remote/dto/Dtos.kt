@@ -1126,10 +1126,9 @@ data class CartItem(
     val category: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: title.orEmpty()
-    val isElectronics: Boolean get() {
-        val cat = (categoryName ?: category)?.lowercase() ?: return false
-        return cat == "1" || cat.contains("electron") || cat.contains("mobile") || cat.contains("phone") || cat.contains("gadget") || cat.contains("laptop") || cat.contains("tech")
-    }
+    /** True for Electronics — the only category with in-app escrow purchase. */
+    val isElectronics: Boolean get() = (categoryName ?: category)
+        ?.lowercase()?.contains("electron") == true
 }
 
 @Serializable

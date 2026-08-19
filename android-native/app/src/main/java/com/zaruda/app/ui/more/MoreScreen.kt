@@ -52,8 +52,6 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Report
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
@@ -134,9 +132,6 @@ fun MoreScreen(
     onOpenLogin: () -> Unit = {},
     onOpenRewards: () -> Unit = {},
     onOpenMyFeed: () -> Unit = {},
-    onOpenAllPosts: () -> Unit = {},
-    onOpenForYou: () -> Unit = {},
-    onOpenFeed: () -> Unit = {},
     onLogout: () -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
     isAdmin: Boolean = false,
@@ -148,20 +143,14 @@ fun MoreScreen(
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
     var accountExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 3 items — Sell, Plans, Repost
+    // ── TRADE section: 4 items — Sell, Plans, Sale Done, Sale Undone
     // Demo sessions have premium + KYC enabled — show that state instead of an upsell
     val plansSubtitle = if (isDemoSession) "Premium plan active • KYC verified" else "Buy Starter Plan (₹111) to unlock KYC"
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", plansSubtitle, Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
+        MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
         MenuRow("Repost", "Renew or reactivate your listings", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
-    )
-
-    // ── BROWSE section: cross-category pages (moved here from the bottom bar)
-    val browseRows = listOf(
-        MenuRow("All Posts", "Browse every listing across all categories", Icons.Outlined.Search, Color(0xFFEEF2FF), Color(0xFF4F46E5), onClick = onOpenAllPosts),
-        MenuRow("For You", "Personalized recommendations", Icons.Outlined.AutoAwesome, Color(0xFFF5F3FF), Color(0xFF7C3AED), onClick = onOpenForYou),
-        MenuRow("Feed", "Community posts and discussions", Icons.Outlined.Forum, Color(0xFFEFF6FF), Color(0xFF3B82F6), onClick = onOpenFeed),
     )
 
     // ── SOCIAL section: Feedback, Complaints
@@ -216,12 +205,6 @@ fun MoreScreen(
                 MoreSectionHeader("TRADE", Color(0xFF2563EB))
                 Spacer(Modifier.height(6.dp))
                 MoreRowList(tradeRows)
-            }
-
-            item(key = "browse") {
-                MoreSectionHeader("BROWSE", Color(0xFF7C3AED))
-                Spacer(Modifier.height(6.dp))
-                MoreRowList(browseRows)
             }
 
             item(key = "div1") {

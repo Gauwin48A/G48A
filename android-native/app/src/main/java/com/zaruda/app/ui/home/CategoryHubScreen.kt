@@ -179,6 +179,7 @@ class CategoryHubViewModel @Inject constructor(
 @Composable
 fun CategoryHubScreen(
     onOpenCategory: (Category) -> Unit = {},
+    onOpenAllPosts: () -> Unit = {},
     onOpenSearch: () -> Unit,
     onSelectApp: (String) -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -257,6 +258,64 @@ fun CategoryHubScreen(
             } else {
                 item(key = "section_spacer") {
                     Spacer(Modifier.height(16.dp))
+                }
+
+                // ── All Posts — unified marketplace across every category ──
+                item(key = "all_posts") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Brush.linearGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED))))
+                                .clickable { onOpenAllPosts() }
+                                .semantics {
+                                    role = Role.Button
+                                    contentDescription = "Open All Posts"
+                                }
+                                .padding(horizontal = 18.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(Icons.Filled.Search, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                    }
+                                    Column {
+                                        Text(
+                                            "All Posts",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 17.sp,
+                                        )
+                                        Text(
+                                            "Browse every listing across all categories",
+                                            color = Color.White.copy(alpha = 0.75f),
+                                            fontSize = 11.sp,
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // ── Row 1: Electronics + Fashion ───────────────────────

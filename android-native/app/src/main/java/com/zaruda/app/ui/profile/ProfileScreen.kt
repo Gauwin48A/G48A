@@ -745,7 +745,6 @@ fun ProfileScreen(
     onOpenSaleUndone: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
-    onOpenChannels: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -1377,10 +1376,7 @@ fun ProfileScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .clickable { onOpenChannels() },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         ) {
                             Row(
                                 Modifier.fillMaxWidth().padding(14.dp),

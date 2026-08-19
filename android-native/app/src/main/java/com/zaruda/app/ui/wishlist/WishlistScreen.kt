@@ -333,7 +333,6 @@ fun WishlistScreen(
     onBack: () -> Unit = {},
     onOpenPost: (String) -> Unit,
     categoryKey: String? = null,
-    showTopBar: Boolean = true,
     viewModel: WishlistViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -389,7 +388,6 @@ fun WishlistScreen(
 
     Scaffold(
         topBar = {
-            if (showTopBar) {
             TopAppBar(
                 title = {
                     Column {
@@ -445,7 +443,6 @@ fun WishlistScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
-            }
         },
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {

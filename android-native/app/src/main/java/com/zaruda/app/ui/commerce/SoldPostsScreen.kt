@@ -105,7 +105,6 @@ data class SoldPostsUiState(
     val items: List<SoldPostItem> = emptyList(),
     val seller: SellerSummary? = null,
     val isUserSpecific: Boolean = false,
-    val isOwnProfile: Boolean = true,
     val error: String? = null,
     // Currently-active listings of the seller (trust page second tab)
     val activeListings: List<Post> = emptyList(),
@@ -241,13 +240,11 @@ class SoldPostsViewModel @Inject constructor(
                             trustBadge = data.trustBadge,
                             totalBought = data.totalBought,
                         )
-                        val isOwn = targetUserId == null || targetUserId == currentUserId
                         _state.value = SoldPostsUiState(
                             loading = false,
                             items = items,
                             seller = seller,
                             isUserSpecific = targetUserId != null,
-                            isOwnProfile = isOwn,
                             error = null,
                             totalBought = data.totalBought,
                         )
@@ -303,8 +300,6 @@ fun SoldPostsScreen(
         onBack = onBack,
         onOpenPost = onOpenPost,
         onRetry = viewModel::load,
-        onLoadBought = viewModel::loadBought,
-        onLoadActive = viewModel::loadActiveListings,
     )
 }
 
@@ -314,8 +309,6 @@ private fun SoldPostsListScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     onRetry: () -> Unit,
-    onLoadBought: () -> Unit,
-    onLoadActive: () -> Unit,
 ) {
     var search by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("newest") }
@@ -383,16 +376,9 @@ private fun SoldPostsListScreen(
                         }
                     }
 
-                    // ── Trust page: two big buttons — Sold / (Bought or Active Listings) ──
-                    val sellerLabel = state.seller?.sellerName ?: "this user"
-                    val tab2Title = if (state.isOwnProfile) "🛒 Bought" else "📱 Active Items"
-                    val tab2Sub = if (state.isOwnProfile) "${state.totalBought} purchases" else "${state.activeListings.size} active"
-                    val tabHeader = if (activeTab == 0) "🛍️ Sold Posts — items $sellerLabel has sold"
-                        else if (state.isOwnProfile) "🛒 Posts $sellerLabel has bought"
-                        else "📱 Active listings by $sellerLabel"
-
+                    // ── Trust page: two big buttons — Sold / Bought ──
                     Text(
-                        tabHeader,
+                        if (activeTab == 0) "🛍️ Sold Posts — items ${state.seller?.sellerName ?: "this user"} has sold" else "🛒 Posts ${state.seller?.sellerName ?: "this user"} has bought",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -415,18 +401,15 @@ private fun SoldPostsListScreen(
                             }
                         }
                         OutlinedButton(
-                            onClick = {
-                                activeTab = 1
-                                if (state.isOwnProfile) onLoadBought() else onLoadActive()
-                            },
+                            onClick = { activeTab = 1 },
                             shape = RoundedCornerShape(14.dp),
                             border = BorderStroke(if (activeTab == 1) 2.dp else 1.dp, if (activeTab == 1) Color(0xFF2563EB) else Color(0xFFCBD5E1)),
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = if (activeTab == 1) Color(0xFFEFF6FF) else Color.White),
                             modifier = Modifier.weight(1f).height(58.dp),
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(tab2Title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF475569))
-                                Text(tab2Sub, fontSize = 10.sp, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF94A3B8))
+                                Text("🛒 Bought", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF475569))
+                                Text("${state.totalBought} purchases", fontSize = 10.sp, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF94A3B8))
                             }
                         }
                     }
@@ -476,11 +459,7 @@ private fun SoldPostsListScreen(
                         }
                     }
                     } else {
-                        if (state.isOwnProfile) {
-                            BoughtTab(state = state, onOpenPost = onOpenPost)
-                        } else {
-                            ActiveListingsTab(state = state, onOpenPost = onOpenPost)
-                        }
+                        BoughtTab(state = state, onOpenPost = onOpenPost)
                     }
                 }
             }
@@ -768,46 +747,6 @@ private fun BoughtTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
             }
             items(state.boughtItems, key = { it.saleId ?: it.post.stableId }) { item ->
                 PostListItemBought(item) { (item.post.id ?: item.post.postId)?.let(onOpenPost) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActiveListingsTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
-    when {
-        state.activeLoading && state.activeListings.isEmpty() -> {
-            Box(Modifier.fillMaxSize().padding(top = 24.dp), contentAlignment = Alignment.TopCenter) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp))
-            }
-        }
-        state.activeListings.isEmpty() -> {
-            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Filled.Inventory2, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
-                    Text("No active listings", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text(
-                        "This seller has no other active items for sale right now.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
-        else -> LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Text(
-                    "${state.activeListings.size} Active Listings",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            items(state.activeListings, key = { it.stableId }) { post ->
-                ActiveListingCard(post) { (post.id ?: post.postId)?.let(onOpenPost) }
             }
         }
     }

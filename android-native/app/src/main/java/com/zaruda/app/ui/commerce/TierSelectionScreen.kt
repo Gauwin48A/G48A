@@ -487,7 +487,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Default.Info, null, tint = ColorTokens.RedText, modifier = Modifier.size(20.dp))
                                 Text(
-                                    "Plan purchases are processed securely via Razorpay UPI & Cards. Plan activations are non-refundable.",
+                                    "Wallet balance added for plan activation is non-refundable and cannot be withdrawn.",
                                     style = MaterialTheme.typography.bodySmall, color = ColorTokens.RedText
                                 )
                             }
@@ -502,7 +502,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 ReasonRow("Trust", "KYC verified users get 5x more responses.", "🛡️")
                                 ReasonRow("Unlimited", "Post as many items as you want.", "📦")
-                                ReasonRow("Support", "Direct priority email & phone support.", "🎧")
+                                ReasonRow("Support", "Direct access to expert chat.", "🎧")
                             }
                         }
                     }

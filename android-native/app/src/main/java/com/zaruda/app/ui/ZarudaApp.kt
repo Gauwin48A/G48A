@@ -43,8 +43,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.filled.WorkspacePremium
-import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FloatingActionButton
@@ -280,6 +278,14 @@ fun ZarudaApp(
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
         val exitScope = rememberCoroutineScope()
 
+        fun openAllPosts(categoryKey: String? = null) {
+            activeCategoryKey = categoryKey
+            navController.navigate(Routes.ALL_POSTS) {
+                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                launchSingleTop = true
+            }
+        }
+
         /** Open the dedicated category mini-app (CategoryAppShell with its own 5-tab
          *  Home/Categories/Cart/Wishlist/Profile nav) for the given raw category key. */
         fun openCategoryApp(rawCategoryKey: String?) {
@@ -486,7 +492,7 @@ fun ZarudaApp(
             // â”€â”€ Main Graph (Bottom Nav) â”€â”€
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
-                    MainShell(navController = navController, selected = BottomTab.HOME, showTopBar = false, showBottomBar = true) {
+                    MainShell(navController = navController, selected = BottomTab.HOME, showTopBar = false, showBottomBar = false) {
                     CategoryHubScreen(
                         onOpenCategory = { category ->
                             val mapped = normalizeMarketplaceCategoryKey(category.categoryGroup ?: category.name)
@@ -498,6 +504,9 @@ fun ZarudaApp(
                                 },
                             )
                             openCategoryApp(mapped)
+                        },
+                        onOpenAllPosts = {
+                            openAllPosts(null)
                         },
                         onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                         onSelectApp = { key ->
@@ -634,7 +643,6 @@ fun ZarudaApp(
                             onOpenSaleUndone = { navController.navigate(Routes.REPOST) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
-                            onOpenChannels = { navController.navigate(Routes.CHANNELS) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -850,36 +858,21 @@ fun ZarudaApp(
                     }
                 }
                 CompositionLocalProvider(LocalActiveCategoryKey provides key) {
-                    // Each category opens the full platform feed (search, My Home/For You,
-                    // filters, banner, real listings) scoped to that category — the same rich
-                    // UI as All Posts, filtered by the active category key.
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, showBottomBar = true) {
-                        ExploreScreen(
-                            onOpenPost = { id ->
-                                navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
-                            },
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, showBottomBar = false) {
+                        val catKey = key ?: "others"
+                        com.zaruda.app.ui.categoryapp.CategoryAppShell(
+                            categoryKey = catKey,
+                            useExternalBottomNav = false,
+                            onBackToLauncher = { navController.popBackStack() },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
-                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                                launchSingleTop = true
-                            } },
-                            onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                            onOpenUser = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
-                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) {
-                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                                launchSingleTop = true
-                            } },
-                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
-                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
-                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
-                            onOpenRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
-                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
-                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
-                            currentThemeMode = themeMode,
-                            onToggleTheme = toggleTheme,
+                            onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
+                            onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                            onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
+                            onSwitchCategory = { cat -> navController.navigate(Routes.categoryDetail(cat)) { launchSingleTop = true } },
+                            onOpenPostDetail = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                            onOpenFeed = { navController.navigate(Routes.FEED) { launchSingleTop = true } },
+                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -1284,9 +1277,6 @@ fun ZarudaApp(
                         onOpenRewards = { drawerNav(Routes.REWARDS) },
                         onOpenKyc = { drawerNav(Routes.KYC) },
                         onOpenLogin = { showMoreDrawer = false; navController.navigate(Routes.LOGIN) { launchSingleTop = true } },
-                        onOpenAllPosts = { drawerNav(Routes.ALL_POSTS) },
-                        onOpenForYou = { drawerNav(Routes.FOR_YOU) },
-                        onOpenFeed = { drawerNav(Routes.FEED) },
                         onOpenMyFeed = { drawerNav(Routes.MY_FEED) },
                         onLogout = {
                             showMoreDrawer = false
@@ -1343,7 +1333,6 @@ enum class BottomTab(
     FEED(Routes.FEED, R.string.nav_feed, Icons.Outlined.Forum, Icons.Filled.Forum),
     REWARDS(Routes.REWARDS, R.string.nav_rewards, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
-    PLANS(Routes.TIER_SELECTION, R.string.nav_plans, Icons.Outlined.WorkspacePremium, Icons.Filled.WorkspacePremium),
 }
 
 @Composable
@@ -1404,13 +1393,14 @@ fun MainShell(
                                 .height(64.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Left cluster: Home, Profile — platform-common tabs
+                            // Left cluster: Home, All Posts — shares the left half of the bar
+                            // with the right cluster so the + button sits at the true center.
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
                             ) {
-                                listOf(BottomTab.HOME, BottomTab.PROFILE).forEach { tab ->
+                                listOf(BottomTab.HOME, BottomTab.ALL_POSTS).forEach { tab ->
                                     BottomNavTabItem(
                                         tab = tab,
                                         isSelected = tab == selected,
@@ -1457,13 +1447,13 @@ fun MainShell(
                                     )
                                 }
                             }
-                            // Right cluster: Rewards, Plans, More — platform-common tabs
+                            // Right cluster: Feed, Rewards, More — mirrors the left half
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
                             ) {
-                                listOf(BottomTab.REWARDS, BottomTab.PLANS).forEach { tab ->
+                                listOf(BottomTab.FEED, BottomTab.REWARDS).forEach { tab ->
                                     BottomNavTabItem(
                                         tab = tab,
                                         isSelected = tab == selected,

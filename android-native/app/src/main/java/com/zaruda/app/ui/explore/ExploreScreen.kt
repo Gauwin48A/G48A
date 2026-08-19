@@ -1231,6 +1231,7 @@ fun ExploreScreen(
     onSelectSubcategory = { sub ->
         viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
     },
+    onSetSubcategories = { subs -> SharedExploreStore.updateSelectedSubcategories(subs.toSet()) },
     onInterested = { postId, postTitle ->
         interestPostId = postId
         interestPostTitle = postTitle
@@ -2041,6 +2042,7 @@ private fun AllPostsBrowse(
     onOpenFilters: () -> Unit = {},
     onOpenPrefs: () -> Unit = {},
     onSelectSubcategory: (String) -> Unit = {},
+    onSetSubcategories: (List<String>) -> Unit = {},
     onInterested: (postId: String, postTitle: String) -> Unit = { _, _ -> },
     onOpenProfile: () -> Unit = {},
     onOpenUser: (String) -> Unit = {},
@@ -2165,7 +2167,9 @@ private fun AllPostsBrowse(
             ) {
                 Column {
                     if (state.forYouMode) {
-                        val filteredToolbarSubcategories = if (!state.ecosystemKey.isNullOrBlank()) {
+                        val filteredToolbarSubcategories = if (ecosystemSubcategories.isNotEmpty()) {
+                            allSubcategories.filter { ecosystemSubcategories.any { sub -> it.first.equals(sub, ignoreCase = true) } }
+                        } else if (!state.ecosystemKey.isNullOrBlank()) {
                             allSubcategories.filter { it.second.equals(state.ecosystemKey, ignoreCase = true) }
                         } else {
                             allSubcategories
@@ -2224,56 +2228,45 @@ private fun AllPostsBrowse(
                         }
 
                         // Row 2: Subcategory filter chips (scoped to active category)
-                        // Use ecosystemSubcategories (from LocalActiveCategoryKey) for accurate scoping
-                        val myHomeSubcategories = if (ecosystemSubcategories.isNotEmpty()) {
-                            allSubcategories.filter { (subName, _) ->
-                                ecosystemSubcategories.any { it.equals(subName, ignoreCase = true) }
-                            }
-                        } else {
-                            allSubcategories
-                        }
-                        if (myHomeSubcategories.isNotEmpty()) {
+                        if (ecosystemSubcategories.isNotEmpty()) {
                             val subScrollState = rememberScrollState()
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .horizontalScroll(subScrollState)
-                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                myHomeSubcategories.forEach { (subName, _) ->
-                                    val selected = state.filterSubcategory == subName
+                                if (selectedSubcategories.isNotEmpty()) {
                                     FilterChip(
-                                        selected = selected,
-                                        onClick = { onSelectSubcategory(subName) },
-                                        label = {
-                                            Text(
-                                                "${subcategoryEmoji(subName)} $subName",
-                                                style = MaterialTheme.typography.labelSmall,
-                                            )
-                                        },
-                                        leadingIcon = if (selected) {
-                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
-                                        } else null,
+                                        selected = false,
+                                        onClick = { onSetQuickFilter(null); onSetSubcategories(emptyList()) },
+                                        label = { Text("\u2715 Clear", style = MaterialTheme.typography.labelSmall) },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
                                         ),
                                         shape = RoundedCornerShape(20.dp),
                                     )
                                 }
-                                // Clear filter chip
-                                if (state.filterSubcategory != null) {
+                                ecosystemSubcategories.forEach { sub ->
+                                    val selected = selectedSubcategories.any { it.equals(sub, ignoreCase = true) }
                                     FilterChip(
-                                        selected = false,
-                                        onClick = { onSelectSubcategory(state.filterSubcategory!!) },
-                                        label = { Text("✕ Clear", style = MaterialTheme.typography.labelSmall) },
+                                        selected = selected,
+                                        onClick = {
+                                            val new = if (selected) selectedSubcategories.filterNot { it.equals(sub, ignoreCase = true) }.toList() else (selectedSubcategories + sub).toList()
+                                            onSetSubcategories(new)
+                                        },
+                                        label = { Text(sub, style = MaterialTheme.typography.labelSmall) },
+                                        leadingIcon = if (selected) {
+                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
+                                        } else null,
                                         colors = FilterChipDefaults.filterChipColors(
-                                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                         ),
                                         shape = RoundedCornerShape(20.dp),
                                     )
