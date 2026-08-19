@@ -858,21 +858,33 @@ fun ZarudaApp(
                     }
                 }
                 CompositionLocalProvider(LocalActiveCategoryKey provides key) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, showBottomBar = false) {
-                        val catKey = key ?: "others"
-                        com.zaruda.app.ui.categoryapp.CategoryAppShell(
-                            categoryKey = catKey,
-                            useExternalBottomNav = false,
-                            onBackToLauncher = { navController.popBackStack() },
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false) {
+                        ExploreScreen(
+                            onOpenPost = { id ->
+                                navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
+                            },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
+                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            } },
+                            onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                            onOpenUser = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
+                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            } },
+                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) { launchSingleTop = true } },
+                            onOpenCompare = { navController.navigate(Routes.COMPARE) { launchSingleTop = true } },
+                            onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
+                            onOpenRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                            onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
-                            onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                            onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
-                            onSwitchCategory = { cat -> navController.navigate(Routes.categoryDetail(cat)) { launchSingleTop = true } },
-                            onOpenPostDetail = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                            onOpenFeed = { navController.navigate(Routes.FEED) { launchSingleTop = true } },
-                            onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
+                            onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
+                            onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
+                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
+                            currentThemeMode = themeMode,
+                            onToggleTheme = toggleTheme,
                         )
                     }
                 }
