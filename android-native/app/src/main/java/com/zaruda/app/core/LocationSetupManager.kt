@@ -159,11 +159,10 @@ class LocationSetupManager @Inject constructor(
      * Mirrors the web app's IP-based location detection.
      */
     private suspend fun ipGeolocate(): IpLocationResult? = withContext(Dispatchers.IO) {
-        if (!com.zaruda.app.BuildConfig.DEBUG) return@withContext null
         try {
             val request = Request.Builder()
                 .url(IP_API_URL)
-                .header("User-Agent", "MHubApp/1.0")
+                .header("User-Agent", "ZarudaApp/1.0")
                 .build()
 
             val response = httpClient.newCall(request).execute()

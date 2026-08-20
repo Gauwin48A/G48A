@@ -500,30 +500,28 @@ fun LoginScreen(
                 }
             }
 
-            // ── Demo Login (debug builds only — removed from release) ─────────
-            if (com.zaruda.app.BuildConfig.DEBUG) {
-                Spacer(Modifier.height(12.dp))
-                androidx.compose.material3.OutlinedButton(
-                    onClick = { viewModel.demoLogin() },
-                    enabled = !state.loading,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 460.dp)
-                        .height(44.dp),
-                ) {
-                    if (state.loading) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    } else {
-                        Text(
-                            text = "\uD83D\uDD11 Demo Login",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
+            // ── Demo Login ─────────────────────────────────────────────────
+            Spacer(Modifier.height(12.dp))
+            androidx.compose.material3.OutlinedButton(
+                onClick = { viewModel.demoLogin() },
+                enabled = !state.loading,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 460.dp)
+                    .height(44.dp),
+            ) {
+                if (state.loading) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(18.dp),
+                    )
+                } else {
+                    Text(
+                        text = "\uD83D\uDD11 Demo Login",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
                 }
             }
 
