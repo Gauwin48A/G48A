@@ -54,7 +54,7 @@ fun ShareLinkBottomSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val postUrl = "https://mhub.app/post/$postId"
+    val postUrl = "https://zaruda.app/post/$postId"
     val shareText = "$title $postUrl"
 
     ModalBottomSheet(onDismissRequest = onDismiss) {

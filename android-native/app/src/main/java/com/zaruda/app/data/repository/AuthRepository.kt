@@ -67,7 +67,7 @@ class AuthRepository @Inject constructor(
             .put("userId", "demo_user")
             .put("role", "user")
             .put("name", "Demo User")
-            .put("email", "demo@mhub.local")
+            .put("email", "demo@zaruda.app")
             .put("kyc_verified", true)
             .put("current_plan", "premium")
             .put("tier", "premium")

@@ -468,7 +468,7 @@ class ProfileViewModel @Inject constructor(
             userId = "demo_user",
             fullName = "Demo User",
             phone = "+91-9876543210",
-            email = "demo@mhub.app",
+            email = "demo@zaruda.app",
             bio = "This is a demo account for preview purposes.",
             username = "demo_user",
             currentPlan = "premium",

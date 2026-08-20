@@ -586,7 +586,7 @@ fun MyFeedScreen(onBack: () -> Unit, onCreatePost: () -> Unit = {}, viewModel: M
                         shareTarget = null
                     }, modifier = Modifier.fillMaxWidth()) { Text("📤 Share anywhere") }
                     OutlinedButton(onClick = {
-                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://mhub.app/post/${post.stableId}"))
+                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("https://zaruda.app/post/${post.stableId}"))
                         shareTarget = null
                     }, modifier = Modifier.fillMaxWidth()) { Text("🔗 Copy link") }
                 }

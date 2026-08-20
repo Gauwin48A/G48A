@@ -1568,15 +1568,15 @@ private fun BottomNavTabItem(
 
 /**
  * Route deep link URIs to the appropriate composable routes.
- * Supports: mhub://post/{id}, mhub://search, mhub://create-post,
- * mhub://saledone[/{tab}], https://mhub.app/post/{id}
+ * Supports: zaruda://post/{id}, zaruda://search, zaruda://create-post,
+ * zaruda://saledone[/{tab}], https://zaruda.app/post/{id}
  */
 private fun handleDeepLink(uri: String, navController: NavHostController) {
     val path = uri
-        .removePrefix("mhub://")
-        .removePrefix("https://mhub.app/")
         .removePrefix("zaruda://")
         .removePrefix("https://zaruda.app/")
+        .removePrefix("mhub://")
+        .removePrefix("https://mhub.app/")
         .trimEnd('/')
     val segments = path.split("/")
     when (segments.firstOrNull()) {
