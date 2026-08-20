@@ -34,7 +34,7 @@ android {
     // An empty URL crashes the app at startup (OkHttp "no scheme found"), so never default to "".
     val stagingApiBaseUrl = System.getenv("ZARUDA_STAGING_API_BASE_URL")
         ?: System.getenv("MHUB_STAGING_API_BASE_URL")
-        ?: localProp("ZARUDA_API_BASE_URL", localProp("MHUB_API_BASE_URL", "http://10.0.2.2:5001/"))
+        ?: localProp("ZARUDA_API_BASE_URL", localProp("MHUB_API_BASE_URL", "https://api.wyntechlabs.com/"))
     namespace = "com.zaruda.app"
     compileSdk = 35
 
