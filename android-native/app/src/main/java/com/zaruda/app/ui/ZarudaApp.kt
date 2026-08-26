@@ -1278,7 +1278,6 @@ fun ZarudaApp(
                         onOpenSettings = { drawerNav(Routes.SETTINGS) },
                         onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
                         onOpenMyHome = { drawerNav(Routes.MY_HOME) },
-                        onOpenSaleDone = { drawerNav(Routes.saleDoneTab()) },
                         onOpenSaleUndone = { drawerNav(Routes.REPOST) },
                         onOpenPublicWall = { drawerNav(Routes.PUBLIC_WALL) },
                         onOpenFeedback = { drawerNav(Routes.FEEDBACK) },

@@ -35,7 +35,6 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dashboard
@@ -121,7 +120,6 @@ fun MoreScreen(
     onOpenSettings: () -> Unit,
     onOpenTierSelection: () -> Unit = {},
     onOpenMyHome: () -> Unit = {},
-    onOpenSaleDone: () -> Unit = {},
     onOpenSaleUndone: () -> Unit = {},
     onOpenPublicWall: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
@@ -143,13 +141,12 @@ fun MoreScreen(
     var prefsExpanded by rememberSaveable { mutableStateOf(false) }
     var accountExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // ── TRADE section: 4 items — Sell, Plans, Sale Done, Sale Undone
+    // ── TRADE section: Sell, Plans, Repost
     // Demo sessions have premium + KYC enabled — show that state instead of an upsell
     val plansSubtitle = if (isDemoSession) "Premium plan active • KYC verified" else "Buy Starter Plan (₹111) to unlock KYC"
     val tradeRows = listOf(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", plansSubtitle, Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
-        MenuRow("Sale Done", "Mark your listing as sold", Icons.Outlined.CheckCircle, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenSaleDone),
         MenuRow("Repost", "Renew or reactivate your listings", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
     )
 
