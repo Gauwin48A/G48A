@@ -219,14 +219,62 @@ class ExploreViewModel @Inject constructor(
     private var lastLocaleVersion = 0L
 
     init {
-        loadPosts(reset = true)
-        // Defer non-critical startup work so loadPosts() isn't competing for network bandwidth
+        // 1. Seed wishlist heart state + SharedExploreStore from Room so
+        //    persisted items survive process death and show across screens
         viewModelScope.launch {
-            delay(1500L)
+            val wishItems = wishlistItemDao.getAll()
+            _wishlisted.value = wishItems
+                .mapNotNull { it.postId.ifBlank { it.id } }
+                .toSet()
+            // Re-populate SharedExploreStore so WishlistScreen has data on cold start
+            wishItems.forEach { entity ->
+                SharedExploreStore.addWishlist(
+                    Post(
+                        id = entity.id,
+                        postId = entity.postId,
+                        title = entity.title,
+                        price = entity.price,
+                        originalPrice = entity.originalPrice,
+                        imageUrl = entity.imageUrl,
+                        category = entity.category,
+                        brand = entity.brand,
+                    )
+                )
+            }
+            // Re-populate SharedExploreStore cart from Room
+            val cartItems = cartItemDao.getAll()
+            cartItems.forEach { entity ->
+                SharedExploreStore.addCart(
+                    Post(
+                        id = entity.id,
+                        postId = entity.postId,
+                        title = entity.title,
+                        price = entity.price,
+                        originalPrice = entity.originalPrice,
+                        imageUrl = entity.imageUrl,
+                        category = entity.category,
+                        brand = entity.brand,
+                    )
+                )
+            }
+        }
+        // 2. Load saved preferences (may affect feed filtering)
+        viewModelScope.launch {
+            delay(500L)
+            loadPreferences()
+        }
+        // 3. Load posts (deferred slightly so preferences can land first)
+        viewModelScope.launch {
+            delay(600L)
+            loadPosts(reset = true)
+        }
+        // 4. Deferred non-critical startup work
+        viewModelScope.launch {
+            delay(2000L)
             checkPlanExpiry()
         }
         viewModelScope.launch {
-            delay(2000L)
+            delay(2500L)
             localeManager.localeVersion.collect { version ->
                 if (version > lastLocaleVersion && lastLocaleVersion > 0L) loadPosts(reset = true)
                 lastLocaleVersion = version
@@ -567,20 +615,10 @@ class ExploreViewModel @Inject constructor(
                     _state.value = _state.value.copy(subcategories = names)
                 }
                 is ApiResult.Failure -> {
-                    // Keep hardcoded fallback
-                    val fallback = when (key) {
-                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming")
-                        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches")
-                        "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts")
-                        "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education")
-                        else -> listOf(
-            "Phones", "Laptops", "Cameras", "Gaming",
-            "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
-            "Cars", "Motorcycles", "Scooters", "Bicycles",
-            "Home & Furniture", "Sports & Fitness", "Books & Education",
-        )
-                    }
-                    _state.value = _state.value.copy(subcategories = fallback)
+                    // Keep hardcoded fallback (single source of truth)
+                    _state.value = _state.value.copy(
+                        subcategories = ecosystemSubcategoryMap[key] ?: allEcosystemSubcategories
+                    )
                 }
             }
         }
@@ -842,19 +880,6 @@ class ExploreViewModel @Inject constructor(
             }
         }
     }
-
-    init {
-        viewModelScope.launch {
-            delay(500L)
-            loadPreferences()
-        }
-        // Seed the wishlist heart state from Room so persisted items show as saved
-        viewModelScope.launch {
-            _wishlisted.value = wishlistItemDao.getAll()
-                .mapNotNull { it.postId.ifBlank { it.id } }
-                .toSet()
-        }
-    }
 }
 
 /** Persist a feed [Post] as a Room cart entity (badge + offline list). */
@@ -899,6 +924,21 @@ private val allSubcategories: List<Pair<String, String>> = listOf(
     "Home & Furniture" to "Others", "Sports & Fitness" to "Others",
     "Books & Education" to "Others", "Health & Beauty" to "Others",
     "Agriculture" to "Others", "Real Estate" to "Others",
+)
+
+/** Canonical subcategory lists per ecosystem. Single source of truth — used by
+ *  both the ViewModel fallback and the ExploreScreen inline chips. */
+private val ecosystemSubcategoryMap = mapOf(
+    "electronics" to listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming"),
+    "fashion" to listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches"),
+    "vehicles" to listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts"),
+    "others" to listOf("Home & Furniture", "Sports & Fitness", "Books & Education"),
+)
+private val allEcosystemSubcategories = listOf(
+    "Phones", "Laptops", "Cameras", "Gaming",
+    "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
+    "Cars", "Motorcycles", "Scooters", "Bicycles",
+    "Home & Furniture", "Sports & Fitness", "Books & Education",
 )
 
 /**
@@ -972,7 +1012,7 @@ private fun categoryEmoji(name: String): String {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ExploreScreen(
     onOpenPost: (String) -> Unit,
@@ -1012,11 +1052,8 @@ fun ExploreScreen(
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
         state.subcategories.isNotEmpty() -> state.subcategories
-        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming")
-        ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches")
-        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts")
-        ecosystemKey == "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education")
-        else -> listOf("Phones", "Laptops", "Cameras", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Sports & Fitness", "Books & Education")
+        ecosystemKey != null -> ecosystemSubcategoryMap[ecosystemKey] ?: allEcosystemSubcategories
+        else -> allEcosystemSubcategories
     }
 
     // Draft filter state for the bottom sheet
@@ -1329,6 +1366,7 @@ fun ExploreScreen(
             }
             // Error banner
             state.errorMessage?.let { err ->
+                val isAuthError = err.contains("sign in", ignoreCase = true) || err.contains("authentication", ignoreCase = true)
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -1344,8 +1382,14 @@ fun ExploreScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { viewModel.retry() }) {
-                            Text("Retry", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        if (isAuthError) {
+                            TextButton(onClick = onOpenProfile) {
+                                Text("Sign In", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            TextButton(onClick = { viewModel.retry() }) {
+                                Text("Retry", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
