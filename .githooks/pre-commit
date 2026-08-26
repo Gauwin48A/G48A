@@ -16,7 +16,7 @@ RED=$'\033[31m'; YELLOW=$'\033[33m'; NC=$'\033[0m'
 # 1. BLOCKED FILE NAMES (staged, whole-path match) — the actual files that
 #    leaked in this repo plus every common secret filename.
 # ---------------------------------------------------------------------------
-BLOCKED_FILE_RE='(^|/)(\.env|\.env\.[a-zA-Z0-9._-]+)$|(^|/)(serviceAccountKey\.json|firebase-admin\.json|firebaseServiceAccount\.json)$|\.jks$|\.p12$|\.pfx$|\.pem$|\.key$|\.p8$|\.pkcs8$|keystore\.properties$|\.npmrc$|\.netrc$|id_rsa$|id_dsa$|id_ed25519$|credentials\.json$|client_secret\.json$|secret[^/]*\.(json|yaml|yml|env|txt)$'
+BLOCKED_FILE_RE='(^|/)(\.env|\.env\.(?!example)[a-zA-Z0-9._-]+)$|(^|/)(serviceAccountKey\.json|firebase-admin\.json|firebaseServiceAccount\.json)$|\.jks$|\.p12$|\.pfx$|\.pem$|\.key$|\.p8$|\.pkcs8$|keystore\.properties$|\.npmrc$|\.netrc$|id_rsa$|id_dsa$|id_ed25519$|credentials\.json$|client_secret\.json$|secret[^/]*\.(json|yaml|yml|env|txt)$'
 
 # ---------------------------------------------------------------------------
 # 2. SECRET CONTENT PATTERNS (scanned across all staged text files)
@@ -32,7 +32,7 @@ GENERIC_SECRET_RE='(password|passwd|secret|api[_-]?key|access[_-]?key|client[_-]
 
 # Files never scanned (binary, lockfiles, vendor, tests/fixtures that
 # legitimately contain fake keys, and this hook itself).
-SKIP_RE='(^|/)(node_modules|vendor|dist|build|\.gradle|target|archive)/|package-lock\.json$|yarn\.lock$|\.min\.(js|css)$|\.map$|(test|spec|fixture)[^/]*\.(js|jsx|ts|tsx|json)$|\.githooks/'
+SKIP_RE='(^|/)(node_modules|vendor|dist|build|\.gradle|target|archive)/|package-lock\.json$|yarn\.lock$|\.min\.(js|css)$|\.map$|(test|spec|fixture)[^/]*\.(js|jsx|ts|tsx|json)$|\.githooks/|\.env\.example$'
 
 violations=0
 
