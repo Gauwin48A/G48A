@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.os.Build
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -22,6 +24,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.*
 
 /**
  * Location service that provides GPS detection via FusedLocationProviderClient
@@ -37,13 +40,24 @@ class LocationSetupManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     companion object {
+        private const val TAG = "LocationSetupManager"
         private const val PREFS_NAME = "mhub_location"
         private const val KEY_CITY = "saved_city"
+        private const val KEY_AREA = "saved_area"
         private const val KEY_LAT = "saved_lat"
         private const val KEY_LNG = "saved_lng"
 
         // IP geolocation service — free tier, no API key required, ~1000 req/day
         private const val IP_API_URL = "http://ip-api.com/json/?fields=status,message,city,lat,lon"
+
+        /** Haversine formula — distance in km between two lat/lng points. */
+        fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+            val r = 6371.0 // Earth radius in km
+            val dLat = Math.toRadians(lat2 - lat1)
+            val dLon = Math.toRadians(lon2 - lon1)
+            val a = sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2)
+            return r * 2 * atan2(sqrt(a), sqrt(1 - a))
+        }
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -62,8 +76,15 @@ class LocationSetupManager @Inject constructor(
     private val _currentLocationName = MutableStateFlow("Detecting...")
     val currentLocationName: StateFlow<String> = _currentLocationName.asStateFlow()
 
+    private val _currentAreaName = MutableStateFlow("")
+    val currentAreaName: StateFlow<String> = _currentAreaName.asStateFlow()
+
     private val _isLocationSet = MutableStateFlow(false)
     val isLocationSet: StateFlow<Boolean> = _isLocationSet.asStateFlow()
+
+    /** True if the device location is suspected to be faked (mock provider). */
+    private val _isMockLocation = MutableStateFlow(false)
+    val isMockLocation: StateFlow<Boolean> = _isMockLocation.asStateFlow()
 
     private var lastLat: Double? = null
     private var lastLng: Double? = null
@@ -71,10 +92,12 @@ class LocationSetupManager @Inject constructor(
     init {
         // Restore persisted location on startup for instant availability
         val savedCity = prefs.getString(KEY_CITY, "") ?: ""
+        val savedArea = prefs.getString(KEY_AREA, "") ?: ""
         val savedLat = prefs.getString(KEY_LAT, "") ?: ""
         val savedLng = prefs.getString(KEY_LNG, "") ?: ""
         if (savedCity.isNotEmpty()) {
             _currentLocationName.value = savedCity
+            _currentAreaName.value = savedArea
             _isLocationSet.value = true
             lastLat = savedLat.toDoubleOrNull()
             lastLng = savedLng.toDoubleOrNull()
@@ -111,10 +134,28 @@ class LocationSetupManager @Inject constructor(
                 val location = Tasks.await(locationTask, 5, TimeUnit.SECONDS)
 
                 if (location != null) {
+                    // 🛡️ Fake GPS / Mock Location Protection
+                    if (location.isFromMockProvider) {
+                        _isMockLocation.value = true
+                        android.util.Log.w(TAG, "⚠️ Mock GPS location detected — flagging as spoofed")
+                    } else {
+                        _isMockLocation.value = false
+                    }
+
+                    // Hyper-Local geocoding: subLocality → locality → adminArea
                     val geocoder = Geocoder(context, Locale.getDefault())
                     val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    val cityName = addresses?.firstOrNull()?.locality ?: "Unknown City"
+                    val address = addresses?.firstOrNull()
 
+                    // Neighborhood / hub name (e.g. JNTU, Kukatpally, Gachibowli, Hitec City)
+                    val areaName = address?.subLocality
+                        ?: address?.subAdminArea
+                        ?: ""
+                    val cityName = address?.locality
+                        ?: address?.adminArea
+                        ?: "Unknown City"
+
+                    _currentAreaName.value = areaName
                     applyLocation(cityName, location.latitude, location.longitude)
                     return@withContext
                 }
@@ -195,6 +236,7 @@ class LocationSetupManager @Inject constructor(
         lastLng = lng
         prefs.edit()
             .putString(KEY_CITY, cityName)
+            .putString(KEY_AREA, _currentAreaName.value)
             .putString(KEY_LAT, lat.toString())
             .putString(KEY_LNG, lng.toString())
             .apply()
@@ -202,7 +244,45 @@ class LocationSetupManager @Inject constructor(
 
     /** Set location from user selection (city search) */
     fun setLocation(cityName: String, lat: Double, lng: Double) {
-        applyLocation(cityName, lat, lng)
+        _currentLocationName.value = cityName
+        _isLocationSet.value = true
+        lastLat = lat
+        lastLng = lng
+        prefs.edit()
+            .putString(KEY_CITY, cityName)
+            .putString(KEY_LAT, lat.toString())
+            .putString(KEY_LNG, lng.toString())
+            .apply()
+    }
+
+    /**
+     * Check if developer mock location settings are enabled system-wide.
+     * This catches GPS spoofing apps that don't use the mock location provider flag.
+     */
+    fun isDeveloperMockEnabled(): Boolean {
+        return try {
+            Settings.Secure.getInt(context.contentResolver, Settings.Secure.ALLOW_MOCK_LOCATION) == 1
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Distance-based sorting: filter a list of lat/lng items within [radiusKm] km.
+     * Returns items sorted by distance (nearest first).
+     */
+    fun <T> sortByDistance(
+        items: List<T>,
+        radiusKm: Double,
+        toLatLng: (T) -> Pair<Double, Double>,
+    ): List<T> {
+        val originLat = lastLat ?: return emptyList()
+        val originLng = lastLng ?: return emptyList()
+        return items
+            .map { it to distanceKm(originLat, originLng, toLatLng(it).first, toLatLng(it).second) }
+            .filter { it.second <= radiusKm }
+            .sortedBy { it.second }
+            .map { it.first }
     }
 
     /** Data class for IP geolocation results */

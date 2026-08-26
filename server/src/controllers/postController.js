@@ -23,7 +23,7 @@ const logger = require("../utils/logger");
 const {
   TEST_USER_EXCLUSION,
   TEST_USER_CONDITION,
-} = require("../utils/testUserConstants");
+} = require("../queries/testDataExclusion");
 const { notifyPostSaleDone, notifyPostReposted } = require("../services/postNotificationService");
 
 const checkUserAccessFull = async (userId) => {

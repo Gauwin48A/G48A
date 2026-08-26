@@ -66,6 +66,12 @@ android {
             "WEB_REPLICA_MODE",
             "false"
         )
+        // Google OAuth Web Client ID — leave empty/placeholder to disable Google Sign-In
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            "\"${localProp("GOOGLE_WEB_CLIENT_ID", "")}\""
+        )
     }
 
     signingConfigs {
@@ -195,6 +201,9 @@ dependencies {
 
     // Location (GPS / FusedLocationProvider) — web parity
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Google Sign-In (guarded by GoogleSignInHelper.isConfigured())
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Paging 3 — web parity pagination for post feed
     implementation("androidx.paging:paging-runtime-ktx:3.3.4")

@@ -380,6 +380,27 @@ class OffersRepository @Inject constructor(private val api: ZarudaApi) {
 }
 
 @Singleton
+class InquiriesRepository @Inject constructor(private val api: ZarudaApi) {
+    /** Express Interest — send buyer inquiry to seller (triggers FCM push notification). */
+    suspend fun createInquiry(
+        postId: String,
+        buyerName: String,
+        phone: String,
+        address: String? = null,
+        message: String? = null,
+    ): ApiResult<Unit> = safeApiCall {
+        api.createInquiry(CreateInquiryRequest(
+            postId = postId,
+            buyerName = buyerName,
+            phone = phone,
+            address = address,
+            message = message,
+        ));
+        Unit
+    }
+}
+
+@Singleton
 class CartRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun get(): ApiResult<CartResponse> = safeApiCall { api.cart() }
     suspend fun add(postId: String): ApiResult<Unit> = safeApiCall { api.addToCart(postId); Unit }
@@ -518,6 +539,11 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun subscribe(req: SubscribeRequest): ApiResult<Unit> = safeApiCall {
         // Subscribe endpoint replaced by payment order flow
         api.createRazorpayOrder(RazorpayOrderRequest(amount = 0.0, tierId = req.tierId)); Unit
+    }
+
+    /** Claim the free trial via POST /api/subscriptions/claim-trial */
+    suspend fun claimTrial(): ApiResult<ClaimTrialResponse> = safeApiCall {
+        api.claimTrial()
     }
 
     suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall {

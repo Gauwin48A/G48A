@@ -307,15 +307,39 @@ class ExploreViewModel @Inject constructor(
         loadPosts(reset = true)
     }
 
+    /**
+     * Apply all filter values at once from the filter sheet, triggering only ONE loadPosts call.
+     * This prevents the race condition where setFilterCondition / setFilterSubcategory /
+     * setFilterPrice each independently call loadPosts, cancelling each other's coroutines.
+     */
+    fun applyFilters(condition: String, subcategory: String?, minPrice: Float, maxPrice: Float) {
+        val hasActive = condition != "any" || subcategory != null || minPrice > 0f || maxPrice < 500000f
+        _state.value = _state.value.copy(
+            filterCondition = condition,
+            filterSubcategory = subcategory,
+            filterMinPrice = minPrice,
+            filterMaxPrice = maxPrice,
+            hasActiveFilters = hasActive,
+        )
+        // Sync inline chips so they reflect the filter sheet selection
+        if (subcategory != null) SharedExploreStore.updateSelectedSubcategories(setOf(subcategory))
+        else SharedExploreStore.updateSelectedSubcategories(emptySet())
+        loadPosts(reset = true)
+    }
+
     fun clearFilters() {
-        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, filterMinPrice = 0f, filterMaxPrice = 500000f, hasActiveFilters = false, quickFilter = null)
+        _state.value = _state.value.copy(filterCondition = "any", filterSubcategory = null, filterMinPrice = 0f, filterMaxPrice = 500000f, hasActiveFilters = false)
+        // Also clear the SharedExploreStore subcategories so inline chips reflect the cleared state
+        SharedExploreStore.updateSelectedSubcategories(emptySet())
         loadPosts(reset = true)
     }
 
     fun setQuickFilter(filter: String?) {
+        val effectiveFilter = filter?.ifBlank { null }
         val current = _state.value.quickFilter
-        val newFilter = if (current == filter) null else filter
-        _state.value = _state.value.copy(quickFilter = newFilter, sortBy = if (newFilter != null) "newest" else _state.value.sortBy)
+        val newFilter = if (current == effectiveFilter) null else effectiveFilter
+        // Do NOT override sortBy — keep the user's sort choice independent of quick filters
+        _state.value = _state.value.copy(quickFilter = newFilter)
         loadPosts(reset = true)
     }
 
@@ -333,6 +357,8 @@ class ExploreViewModel @Inject constructor(
         private const val MAX_CACHED_POSTS = 200
     }
 
+    private var loadJob: Job? = null
+    private var loadGeneration = 0L
     private var autoRefreshJob: Job? = null
     private fun startAutoRefresh() {
         autoRefreshJob?.cancel()
@@ -345,16 +371,16 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun loadPosts(reset: Boolean = false) {
+        // Cancel any in-flight load so a rapid filter/sort change doesn't race
+        loadJob?.cancel()
+        val generation = ++loadGeneration
         val currentPage = if (reset) 1 else _state.value.page
         val categoryKey = _state.value.ecosystemKey
-        val sort = _state.value.sortBy
         if (reset) {
-            // Keep existing posts visible while loading (optimistic UI) — no flash to empty state
-            // Only clear if this is a genuine first-load or filter change via setEcosystem()
-            val keepPosts = _state.value.posts.isNotEmpty() && _state.value.ecosystemKey == categoryKey
+            // Always show shimmer loading on filter/sort changes so the user sees feedback
             _state.value = _state.value.copy(
-                loadingPosts = !keepPosts,
-                posts = if (keepPosts) _state.value.posts else emptyList(),
+                loadingPosts = true,
+                posts = emptyList(),
                 page = 1, hasMore = true,
             )
         } else {
@@ -373,21 +399,27 @@ class ExploreViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
+        // Read ALL filter state inside the coroutine so it is always consistent
+        // and reflects the latest user action, not a stale snapshot.
+        loadJob = viewModelScope.launch {
+            val sort = _state.value.sortBy
             val condition = _state.value.filterCondition.takeIf { it != "any" }
             val subcategory = _state.value.filterSubcategory
+
+            /** Helper: skip stale coroutine results (cancelled by a newer loadPosts call) */
+            fun isStale() = generation != loadGeneration
+
             if (_state.value.forYouMode && reset) {
                 // For You: fetch the regular feed, then the UI filters by the user's
                 // saved preferences (subcategories, location, price). Never inject mock data.
                 when (val result = postsRepo.feedResponse(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                     is ApiResult.Success -> {
+                        if (isStale()) return@launch
                         val newPosts = filterForEcosystem(result.data.allItems, categoryKey)
+                        // Server already filters by subcategory via SQL (sc.name ILIKE);
+                        // only apply client-side condition filter as a safety net.
                         val filteredNewPosts = newPosts.let { p ->
                             var filtered = p
-                            if (!subcategory.isNullOrBlank()) filtered = filtered.filter {
-                                it.subcategory.equals(subcategory, ignoreCase = true) ||
-                                    it.subcategoryName.equals(subcategory, ignoreCase = true)
-                            }
                             if (condition != null) filtered = filtered.filter { it.condition?.lowercase() == condition }
                             filtered
                         }
@@ -397,18 +429,17 @@ class ExploreViewModel @Inject constructor(
                             page = 2,
                             hasMore = false,
                             errorMessage = null,
-                            // Demo sessions have premium + KYC enabled — never restrict them
                             restricted = result.data.isRestricted && !tokenStore.isDemoSession,
                         )
                     }
                     is ApiResult.Failure -> {
+                        if (isStale()) return@launch
                         _state.value = _state.value.copy(
                             loadingPosts = false, loadingMore = false,
                             posts = emptyList(),
                             page = 2,
                             hasMore = false,
                             errorMessage = result.error.message,
-                            // Demo sessions have premium + KYC enabled — never restrict them
                             restricted = !tokenStore.isDemoSession,
                         )
                     }
@@ -417,15 +448,15 @@ class ExploreViewModel @Inject constructor(
             }
             when (val result = postsRepo.feedResponse(page = currentPage, categoryId = categoryKey, sort = sort, condition = condition, subcategory = subcategory)) {
                 is ApiResult.Success -> {
+                    if (isStale()) return@launch
                     val postsResponse = result.data
                     val newPosts = filterForEcosystem(postsResponse.allItems, categoryKey)
-                    // Apply client-side subcategory & condition filtering so filters work
-                    // even if the server API ignores these parameters.
+                    // Server already filters by subcategory via SQL (sc.name ILIKE).
+                    // Only apply client-side condition filter as a safety net.
                     val filteredNewPosts = newPosts.let { p ->
-                        var result = p
-                        if (!subcategory.isNullOrBlank()) result = result.filter { it.subcategory.equals(subcategory, ignoreCase = true) }
-                        if (condition != null) result = result.filter { it.condition?.lowercase() == condition }
-                        result
+                        var filtered = p
+                        if (condition != null) filtered = filtered.filter { it.condition?.lowercase() == condition }
+                        filtered
                     }
                     val finalPosts = applyQuickFilter(applySort(when {
                         reset -> filteredNewPosts
@@ -437,17 +468,16 @@ class ExploreViewModel @Inject constructor(
                         page = currentPage + 1,
                         hasMore = newPosts.size >= 20,
                         errorMessage = null,
-                        // Demo sessions have premium + KYC enabled — never restrict them
                         restricted = postsResponse.isRestricted && !tokenStore.isDemoSession,
                     )
                 }
                 is ApiResult.Failure -> {
+                    if (isStale()) return@launch
                     // Honest failure state: keep already-loaded posts, surface the error banner.
                     _state.value = _state.value.copy(
                         loadingPosts = false, loadingMore = false,
                         errorMessage = result.error.message,
                         hasMore = false,
-                        // Demo sessions have premium + KYC enabled — never restrict them
                         restricted = !tokenStore.isDemoSession,
                     )
                 }
@@ -539,16 +569,15 @@ class ExploreViewModel @Inject constructor(
                 is ApiResult.Failure -> {
                     // Keep hardcoded fallback
                     val fallback = when (key) {
-                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming", "Accessories")
-                        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
-                        "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
-                        "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
+                        "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming")
+                        "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches")
+                        "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts")
+                        "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education")
                         else -> listOf(
             "Phones", "Laptops", "Cameras", "Gaming",
             "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches",
             "Cars", "Motorcycles", "Scooters", "Bicycles",
-            "Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate",
-            "Agriculture", "Real Estate", "Services",
+            "Home & Furniture", "Sports & Fitness", "Books & Education",
         )
                     }
                     _state.value = _state.value.copy(subcategories = fallback)
@@ -983,11 +1012,11 @@ fun ExploreScreen(
     val ecosystemKey = LocalActiveCategoryKey.current
     val ecosystemSubcategories: List<String> = when {
         state.subcategories.isNotEmpty() -> state.subcategories
-        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming", "Accessories")
-        ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Jewellery")
-        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts", "Accessories")
-        ecosystemKey == "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education", "Health & Beauty", "Agriculture", "Real Estate")
-        else -> listOf("Phones", "Laptops", "Cameras", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Books & Education", "Sports & Fitness", "Health & Beauty", "Agriculture", "Real Estate", "Services")
+        ecosystemKey == "electronics" -> listOf("Phones", "Laptops", "Tablets", "Cameras", "Gaming")
+        ecosystemKey == "fashion" -> listOf("Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches")
+        ecosystemKey == "vehicles" -> listOf("Cars", "Motorcycles", "Scooters", "Bicycles", "Spare Parts")
+        ecosystemKey == "others" -> listOf("Home & Furniture", "Sports & Fitness", "Books & Education")
+        else -> listOf("Phones", "Laptops", "Cameras", "Gaming", "Men's Clothing", "Women's Clothing", "Shoes", "Bags", "Watches", "Cars", "Motorcycles", "Scooters", "Bicycles", "Home & Furniture", "Sports & Fitness", "Books & Education")
     }
 
     // Draft filter state for the bottom sheet
@@ -1229,7 +1258,13 @@ fun ExploreScreen(
     },
     onOpenPrefs = { showForYouPrefsSheet = true },
     onSelectSubcategory = { sub ->
-        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+        if (sub.isBlank()) {
+            // Clear subcategory filter
+            viewModel.setFilterSubcategory(null)
+        } else {
+            // Toggle: deselect if same, select if different
+            viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+        }
     },
     onSetSubcategories = { subs -> SharedExploreStore.updateSelectedSubcategories(subs.toSet()) },
     onInterested = { postId, postTitle ->
@@ -1540,9 +1575,7 @@ fun ExploreScreen(
                     }
                     Button(
                         onClick = {
-                            viewModel.setFilterCondition(draftCondition)
-                            viewModel.setFilterSubcategory(draftSubcategory)
-                            viewModel.setFilterPrice(draftPriceRange.start, draftPriceRange.endInclusive)
+                            viewModel.applyFilters(draftCondition, draftSubcategory, draftPriceRange.start, draftPriceRange.endInclusive)
                             showFilterSheet = false
                         },
                         modifier = Modifier.weight(1.5f).height(48.dp),
@@ -2238,10 +2271,10 @@ private fun AllPostsBrowse(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                if (selectedSubcategories.isNotEmpty()) {
+                                if (state.filterSubcategory != null) {
                                     FilterChip(
                                         selected = false,
-                                        onClick = { onSetQuickFilter(null); onSetSubcategories(emptyList()) },
+                                        onClick = { onSelectSubcategory(state.filterSubcategory ?: "") },
                                         label = { Text("\u2715 Clear", style = MaterialTheme.typography.labelSmall) },
                                         colors = FilterChipDefaults.filterChipColors(
                                             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
@@ -2251,13 +2284,10 @@ private fun AllPostsBrowse(
                                     )
                                 }
                                 ecosystemSubcategories.forEach { sub ->
-                                    val selected = selectedSubcategories.any { it.equals(sub, ignoreCase = true) }
+                                    val selected = state.filterSubcategory?.equals(sub, ignoreCase = true) == true
                                     FilterChip(
                                         selected = selected,
-                                        onClick = {
-                                            val new = if (selected) selectedSubcategories.filterNot { it.equals(sub, ignoreCase = true) }.toList() else (selectedSubcategories + sub).toList()
-                                            onSetSubcategories(new)
-                                        },
+                                        onClick = { onSelectSubcategory(sub) },
                                         label = { Text(sub, style = MaterialTheme.typography.labelSmall) },
                                         leadingIcon = if (selected) {
                                             { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }

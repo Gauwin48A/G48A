@@ -383,6 +383,10 @@ interface ZarudaApi {
     @POST("api/offers")
     suspend fun makeOffer(@Body body: MakeOfferRequest): MessageResponse
 
+    // ---- Inquiries (Express Interest) ----
+    @POST("api/inquiries")
+    suspend fun createInquiry(@Body body: CreateInquiryRequest): MessageResponse
+
     // ---- Cart ----
     @GET("api/cart")
     suspend fun cart(): CartResponse
@@ -650,6 +654,9 @@ interface ZarudaApi {
 
     @GET("api/subscriptions/my")
     suspend fun mySubscription(): MySubscriptionResponse
+
+    @POST("api/subscriptions/claim-trial")
+    suspend fun claimTrial(): ClaimTrialResponse
 
 
     // ---- Legal / CMS ----

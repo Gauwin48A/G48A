@@ -218,6 +218,15 @@ data class MakeOfferRequest(
     val amount: Double,
 )
 
+@Serializable
+data class CreateInquiryRequest(
+    @SerialName("post_id") val postId: String,
+    @SerialName("buyer_name") val buyerName: String,
+    val phone: String,
+    val address: String? = null,
+    val message: String? = null,
+)
+
 // -------- Cart extended DTOs --------
 @Serializable
 data class CartQtyRequest(val quantity: Int)
@@ -1622,6 +1631,13 @@ data class MySubscriptionResponse(
     val active: Boolean = false,
 )
 
+@Serializable
+data class ClaimTrialResponse(
+    val success: Boolean = false,
+    val message: String? = null,
+    val subscription: SubscriptionRecord? = null,
+)
+
 // -------- Razorpay --------
 @Serializable
 data class RazorpayOrderRequest(
@@ -1718,10 +1734,19 @@ data class SaleInfo(
     @SerialName("rated_at") val ratedAt: String? = null,
     @SerialName("shipping_tracking") val shippingTracking: String? = null,
     @SerialName("shipping_courier") val shippingCourier: String? = null,
+    @SerialName("sold_from_location") val soldFromLocation: String? = null,
+    @SerialName("sold_to_location") val soldToLocation: String? = null,
 ) {
     val isInApp: Boolean get() = paymentMode.equals("IN_APP", ignoreCase = true)
     val isPaid: Boolean get() = paymentStatus.equals("PAID", ignoreCase = true)
     val payableAmount: Double get() = agreedPrice ?: postPrice ?: 0.0
+    /** Origin → Destination route badge (e.g. "Mumbai → Delhi") */
+    val routeTag: String?
+        get() {
+            val from = soldFromLocation?.takeIf { it.isNotBlank() } ?: return null
+            val to = soldToLocation?.takeIf { it.isNotBlank() } ?: return null
+            return "$from → $to"
+        }
 }
 
 @Serializable

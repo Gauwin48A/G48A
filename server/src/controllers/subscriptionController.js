@@ -562,7 +562,93 @@ exports.verifyPayment = async (req, res) => {
  * refuses all claims so any stale client can never activate a trial.
  */
 exports.claimTrial = async (req, res) => {
-  return res.status(403).json({ error: "Free trials are no longer available. Please subscribe to a plan." });
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    // 1. Check if user already has an active subscription
+    const activeSub = await getActiveSubscription(userId);
+    if (activeSub) {
+      return res.status(400).json({
+        error: "You already have an active subscription. Cancel it before claiming a trial.",
+      });
+    }
+
+    // 2. Check if user has EVER claimed a trial (one trial per user lifetime)
+    const existingTrial = await runQuery(
+      `SELECT sub_id FROM user_subscriptions
+       WHERE user_id::text = $1 AND is_trial = true LIMIT 1`,
+      [userId]
+    );
+    if (existingTrial.rows.length > 0) {
+      return res.status(400).json({
+        error: "You have already used your free trial. Please subscribe to a plan.",
+      });
+    }
+
+    // 3. Find the trial plan (slug-based lookup)
+    const planResult = await runQuery(
+      `SELECT * FROM subscription_plans
+       WHERE (slug ILIKE 'trial%' OR slug ILIKE 'free%' OR plan_name ILIKE 'trial%')
+         AND is_active = true
+       LIMIT 1`
+    );
+
+    // Fallback: use 'basic' plan as trial base if no dedicated trial plan exists
+    let planId;
+    let durationDays = 7;
+    if (planResult.rows.length > 0) {
+      const plan = planResult.rows[0];
+      planId = plan.plan_id;
+      durationDays = plan.duration_days || 7;
+    } else {
+      // Create a basic plan entry for the trial, or use the basic plan
+      const basicPlan = await runQuery(
+        `SELECT plan_id, duration_days FROM subscription_plans
+         WHERE (slug ILIKE 'basic%' OR plan_name ILIKE 'basic%')
+           AND is_active = true LIMIT 1`
+      );
+      if (basicPlan.rows.length > 0) {
+        planId = basicPlan.rows[0].plan_id;
+      } else {
+        return res.status(500).json({ error: "No trial plan available. Please contact support." });
+      }
+    }
+
+    // 4. Create the trial subscription (7 days, is_trial = true)
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durationDays);
+
+    const subResult = await runQuery(
+      `INSERT INTO user_subscriptions (user_id, plan_id, status, start_date, end_date, auto_renew, is_trial)
+       VALUES ($1, $2, 'ACTIVE', $3, $4, false, true)
+       RETURNING *`,
+      [userId, planId, startDate, endDate]
+    );
+
+    // 5. Sync user tier to match the plan
+    const planName = planResult.rows[0]?.plan_name || 'Basic';
+    await syncUserTier(userId, planName, { durationDays });
+
+    // 6. Log the event
+    await runQuery(
+      `INSERT INTO subscription_events (user_id, sub_id, event_type, metadata)
+       VALUES ($1, $2, 'TRIAL_ACTIVATED', $3)`,
+      [userId, subResult.rows[0].sub_id, JSON.stringify({ plan_name: planName, days: durationDays })]
+    );
+
+    logger.info(`[TRIAL] User ${userId} activated trial (${durationDays} days)`);
+
+    res.json({
+      success: true,
+      message: `Free trial activated! You have ${durationDays} days of premium access.`,
+      subscription: subResult.rows[0],
+    });
+  } catch (err) {
+    logger.error("[TRIAL] claimTrial error:", err);
+    res.status(500).json({ error: "Failed to activate trial" });
+  }
 };
 
 // ────────────────────────────────────────────────────────────

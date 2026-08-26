@@ -179,6 +179,9 @@ data class PostDetailState(
     val rateComment: String = "",
     val ratingSubmitting: Boolean = false,
     val reviewError: String? = null,
+    // Express Interest (buyer inquiry)
+    val inquirySent: Boolean = false,
+    val inquiryError: String? = null,
 )
 
 data class OwnerInsights(
@@ -202,6 +205,7 @@ class PostDetailViewModel @Inject constructor(
     private val analyticsRepo: com.zaruda.app.data.repository.AnalyticsRepository,
     private val authRepo: com.zaruda.app.data.repository.AuthRepository,
     private val salesRepo: SalesRepository,
+    private val inquiriesRepo: com.zaruda.app.data.repository.InquiriesRepository,
     private val localeManager: com.zaruda.app.core.LocaleManager,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
@@ -434,6 +438,16 @@ class PostDetailViewModel @Inject constructor(
         }
     }
 
+    /** Express Interest — notify seller via push notification (FCM). */
+    fun submitInquiry(buyerName: String, phone: String, message: String) {
+        viewModelScope.launch {
+            when (val r = inquiriesRepo.createInquiry(postId, buyerName, phone, message = message)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(inquirySent = true)
+                is ApiResult.Failure -> _state.value = _state.value.copy(inquiryError = r.error.message)
+            }
+        }
+    }
+
     fun reportPost() {
         viewModelScope.launch {
             runCatching { repo.report(postId) }
@@ -509,7 +523,10 @@ fun PostDetailScreen(
             postId = state.post!!.stableId,
             postTitle = state.post!!.displayTitle,
             onDismiss = { showInterestModal = false },
-            onSubmit = { _, _, _ -> showInterestModal = false },
+            onSubmit = { name, phone, msg ->
+                viewModel.submitInquiry(buyerName = name, phone = phone, message = msg)
+                showInterestModal = false
+            },
         )
     }
     if (showBuyFlowHowItWorks && state.post != null) {

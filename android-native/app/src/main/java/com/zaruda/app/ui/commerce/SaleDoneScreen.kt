@@ -1606,6 +1606,28 @@ private fun ActiveSaleCard(sale: SaleInfo, state: SaleDoneUiState, viewModel: Sa
                     Text("Sale #${sale.id} — ${sale.sellerName ?: "Seller"}", fontSize = 12.sp, color = Color.Gray)
                 }
             }
+            // ── Route tracking badge (Origin → Destination) ──
+            sale.routeTag?.let { route ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isDark) Color(0xFF1E3A5F).copy(alpha = 0.4f) else Color(0xFFDBEAFE),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("🚚", fontSize = 12.sp)
+                        Text(
+                            "Origin: $route",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8),
+                        )
+                    }
+                }
+            }
             if (sale.postPrice != null) {
                 Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
             }
