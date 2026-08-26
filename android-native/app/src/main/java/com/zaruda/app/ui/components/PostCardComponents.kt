@@ -119,7 +119,7 @@ fun PostCard(
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(formatPrice(price), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
                             post.originalPrice?.let { orig ->
-                                if (orig > price) {
+                                if (orig > price && orig > 0) {
                                     val pct = ((orig - price) / orig * 100).toInt()
                                     Text("" + pct + "% OFF", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF34D399))
                                 }
@@ -131,7 +131,7 @@ fun PostCard(
                 // Discount tag
                 post.originalPrice?.let { orig ->
                     post.price?.let { price ->
-                        if (orig > price) {
+                        if (orig > price && orig > 0) {
                             val pct = ((orig - price) / orig * 100).toInt()
                             Surface(Modifier.align(Alignment.TopStart).padding(8.dp), shape = RoundedCornerShape(8.dp), color = Color(0xFFEF4444)) {
                                 Text("-" + pct + "%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
@@ -149,7 +149,7 @@ fun PostCard(
                     isPromoted = post.isPromoted,
                     expiresAt = post.expiresAt,
                     modifier = Modifier.align(Alignment.TopStart).padding(
-                        top = if (topLeftBadge != null) 36.dp else if (post.originalPrice != null && post.price != null && post.originalPrice!! > post.price!!) 32.dp else 8.dp, start = 8.dp))
+                        top = if (topLeftBadge != null) 36.dp else if ((post.originalPrice ?: 0.0) > (post.price ?: 0.0)) 32.dp else 8.dp, start = 8.dp))
 
                 // Wishlist save
                 if (onToggleWishlist != null) {
@@ -314,8 +314,8 @@ fun PostCard(
                         post.brand?.let { brand ->
                             TagChip(brand, if (darkTheme) Color(0xFF1E3A5F) else Color(0xFFDBEAFE), Color(0xFF2563EB))
                         }
-                        if (post.categoryName != null && post.subcategoryName != null) {
-                            TagChip(post.subcategoryName!!, if (darkTheme) Color(0xFF1A1A2E) else Color(0xFFF3E8FF), Color(0xFF7C3AED))
+                        post.subcategoryName?.let { subName ->
+                            TagChip(subName, if (darkTheme) Color(0xFF1A1A2E) else Color(0xFFF3E8FF), Color(0xFF7C3AED))
                         }
                     }
                 }

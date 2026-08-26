@@ -761,7 +761,7 @@ exports.createComplaint = async (req, res) => {
               }),
               req.ip || null,
             ]
-          ).catch(() => {});
+          ).catch((e) => logger.warn('[Complaints] Failed to log activity', { message: e.message }));
         } catch (err) {
           logger.warn("[Complaints] Failed to set risk state for complaint", {
             message: err.message,

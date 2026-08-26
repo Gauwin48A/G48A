@@ -273,8 +273,8 @@ async function handleChargebackCreated(payload) {
 
   try {
     const { transitionAccountState } = require("../services/accountStateService");
-    await transitionAccountState(order.buyer_id, "FROZEN_DISPUTE", { reason: `Gateway chargeback on order ${order.order_id}` }).catch(() => {});
-    await transitionAccountState(order.seller_id, "FROZEN_DISPUTE", { reason: `Gateway chargeback on order ${order.order_id}` }).catch(() => {});
+    await transitionAccountState(order.buyer_id, "FROZEN_DISPUTE", { reason: `Gateway chargeback on order ${order.order_id}` }).catch((e) => logger.warn('[Webhooks] Failed to freeze buyer', { message: e.message }));
+    await transitionAccountState(order.seller_id, "FROZEN_DISPUTE", { reason: `Gateway chargeback on order ${order.order_id}` }).catch((e) => logger.warn('[Webhooks] Failed to freeze seller', { message: e.message }));
   } catch (freezeErr) {
     logger.warn("[Webhooks] Chargeback freeze error (non-blocking):", freezeErr.message);
   }
@@ -351,8 +351,8 @@ async function handleChargebackResolved(payload) {
     ).catch(() => {});
     try {
       const { transitionAccountState } = require("../services/accountStateService");
-      await transitionAccountState(order.buyer_id, "ACTIVE", { reason: `Chargeback resolved in merchant favour (order ${order.order_id})` }).catch(() => {});
-      await transitionAccountState(order.seller_id, "ACTIVE", { reason: `Chargeback resolved in merchant favour (order ${order.order_id})` }).catch(() => {});
+      await transitionAccountState(order.buyer_id, "ACTIVE", { reason: `Chargeback resolved in merchant favour (order ${order.order_id})` }).catch((e) => logger.warn('[Webhooks] Failed to unfreeze buyer', { message: e.message }));
+      await transitionAccountState(order.seller_id, "ACTIVE", { reason: `Chargeback resolved in merchant favour (order ${order.order_id})` }).catch((e) => logger.warn('[Webhooks] Failed to unfreeze seller', { message: e.message }));
     } catch (unfreezeErr) {
       logger.warn("[Webhooks] Chargeback unfreeze error (non-blocking):", unfreezeErr.message);
     }

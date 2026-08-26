@@ -1713,7 +1713,7 @@ private fun ActiveSaleCard(sale: SaleInfo, state: SaleDoneUiState, viewModel: Sa
                         if (state.actionLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
                         } else {
-                            Text("💳 Pay ₹${sale.payableAmount.toInt()} — money held until you confirm", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("💳 Pay ₹${(sale.payableAmount ?: 0.0).toInt()} — money held until you confirm", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(Modifier.height(6.dp))

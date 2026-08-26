@@ -455,10 +455,21 @@ exports.verifyPayment = async (req, res) => {
     }
     const paymentOrder = orderResult.rows[0];
 
-    // 3. Fetch the plan details
+    // 2.5. Use the plan_id from the order metadata (set during createOrder),
+    // NOT from the client request body. This prevents plan_id fraud where a
+    // client pays for a cheap plan but claims a premium one.
+    let orderPlanId = plan_id;
+    try {
+      const notes = JSON.parse(paymentOrder.notes || "{}");
+      if (notes.plan_id) {
+        orderPlanId = String(notes.plan_id);
+      }
+    } catch (_) { /* fall back to client-sent plan_id */ }
+
+    // 3. Fetch the plan details (always from the server-trusted plan_id)
     const planResult = await runQuery(
       `SELECT * FROM subscription_plans WHERE plan_id::text = $1`,
-      [plan_id]
+      [orderPlanId]
     );
     if (planResult.rows.length === 0) {
       return res.status(404).json({ error: "Plan not found" });
@@ -596,20 +607,24 @@ exports.claimTrial = async (req, res) => {
 
     // Fallback: use 'basic' plan as trial base if no dedicated trial plan exists
     let planId;
+    let planName = 'Basic';
     let durationDays = 7;
     if (planResult.rows.length > 0) {
       const plan = planResult.rows[0];
       planId = plan.plan_id;
+      planName = plan.plan_name || 'Basic';
       durationDays = plan.duration_days || 7;
     } else {
       // Create a basic plan entry for the trial, or use the basic plan
       const basicPlan = await runQuery(
-        `SELECT plan_id, duration_days FROM subscription_plans
+        `SELECT plan_id, plan_name, duration_days FROM subscription_plans
          WHERE (slug ILIKE 'basic%' OR plan_name ILIKE 'basic%')
            AND is_active = true LIMIT 1`
       );
       if (basicPlan.rows.length > 0) {
         planId = basicPlan.rows[0].plan_id;
+        planName = basicPlan.rows[0].plan_name || 'Basic';
+        durationDays = basicPlan.rows[0].duration_days || 7;
       } else {
         return res.status(500).json({ error: "No trial plan available. Please contact support." });
       }
@@ -628,7 +643,6 @@ exports.claimTrial = async (req, res) => {
     );
 
     // 5. Sync user tier to match the plan
-    const planName = planResult.rows[0]?.plan_name || 'Basic';
     await syncUserTier(userId, planName, { durationDays });
 
     // 6. Log the event

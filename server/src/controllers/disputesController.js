@@ -64,8 +64,8 @@ exports.create = async (req, res) => {
     // NOT by the sales 24h respond window — so the suspension cron must not
     // auto-permanently-lock either party while the dispute is under review.
     const { transitionAccountState } = require("../services/accountStateService");
-    await transitionAccountState(userId, "FROZEN_DISPUTE", { reason: `Dispute raised on order ${order_id}`, durationHours: 720 }).catch(() => {});
-    await transitionAccountState(raised_against, "FROZEN_DISPUTE", { reason: `Dispute raised against on order ${order_id}`, durationHours: 720 }).catch(() => {});
+    await transitionAccountState(userId, "FROZEN_DISPUTE", { reason: `Dispute raised on order ${order_id}`, durationHours: 720 }).catch((e) => logger.warn('[Disputes] Failed to freeze account', { message: e.message }));
+    await transitionAccountState(raised_against, "FROZEN_DISPUTE", { reason: `Dispute raised against on order ${order_id}`, durationHours: 720 }).catch((e) => logger.warn('[Disputes] Failed to freeze opposing account', { message: e.message }));
 
     await runQuery(
       `UPDATE sales SET razorpay_hold = true, updated_at = NOW() WHERE buyer_id::text IN ($1, $2) AND seller_id::text IN ($1, $2) AND status IN ('requested', 'approved', 'received')`,

@@ -829,7 +829,7 @@ fun PostDetailScreen(
                                             fontWeight = FontWeight.Bold,
                                         )
                                         val origPrice = post.originalPrice
-                                        if (origPrice != null && origPrice > price) {
+                                        if (origPrice != null && origPrice > price && origPrice > 0) {
                                             val savings = origPrice - price
                                             val pct = (savings / origPrice * 100).toInt()
                                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

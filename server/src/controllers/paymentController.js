@@ -790,7 +790,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
         `INSERT INTO notifications (user_id, type, title, message, created_at)
          VALUES ($1, 'boost_activated', 'Boost Activated', $2, NOW())`,
         [userId, `Your post has been boosted (${boostType}) for ${durationDays} days.`]
-      ).catch(() => {});
+      ).catch((e) => logger.warn('[PAYMENT] Failed to send boost notification', { message: e.message }));
 
       logger.info(`[PAYMENT] Boost ${boostType} activated for post ${boostPostId} (user ${userId})`);
       return res.json({

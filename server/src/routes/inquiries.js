@@ -14,11 +14,11 @@ router.post("/", protect, inquiryController.createInquiry);
 /** @route GET /seller - Get all inquiries received by the authenticated seller */
 router.get("/seller", protect, inquiryController.getInquiriesForSeller);
 
-/** @route GET /templates - Get quick-reply templates for the seller */
-router.get("/templates", protect, inquiryController.getQuickReplyTemplates);
-
 /** @route GET /analytics - Get inquiry analytics for the seller */
 router.get("/analytics", protect, inquiryController.getInquiryAnalytics);
+
+/** @route GET /templates - Get quick-reply templates for the seller */
+router.get("/templates", protect, inquiryController.getQuickReplyTemplates);
 
 /** @route GET /post/:postId - Get all inquiries for a specific post */
 router.get("/post/:postId", protect, inquiryController.getInquiriesForPost);

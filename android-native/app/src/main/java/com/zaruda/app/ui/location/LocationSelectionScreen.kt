@@ -63,6 +63,9 @@ class LocationViewModel @Inject constructor(
     private val _state = MutableStateFlow(LocationState(results = POPULAR_CITIES))
     val state: StateFlow<LocationState> = _state.asStateFlow()
 
+    val isMockLocation: StateFlow<Boolean> = locationManager.isMockLocation
+    fun isDeveloperMockEnabled(): Boolean = locationManager.isDeveloperMockEnabled()
+
     fun updateQuery(q: String) {
         _state.value = _state.value.copy(query = q)
         if (q.length < 3) {
@@ -177,6 +180,8 @@ fun LocationSelectionScreen(
     val locationPermissionState = com.google.accompanist.permissions.rememberPermissionState(
         android.Manifest.permission.ACCESS_COARSE_LOCATION
     )
+    val isMockLocation by viewModel.isMockLocation.collectAsState()
+    val isDeveloperMock by remember { mutableStateOf(viewModel.isDeveloperMockEnabled()) }
 
     Scaffold(
         topBar = {
@@ -256,6 +261,29 @@ fun LocationSelectionScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     if (state.detecting) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                }
+            }
+
+            // ⚠️ Mock GPS Warning
+            if (isMockLocation || isDeveloperMock) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Warning, null, tint = Color(0xFFDC2626))
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "Fake GPS detected. Location-based features may be restricted.",
+                            color = Color(0xFFDC2626),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
