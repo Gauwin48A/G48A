@@ -1261,7 +1261,7 @@ exports.retryPayment = async (req, res) => {
       retry_count: hasRetryCount ? 1 : null
     });
   } catch (err) {
-    console.log("RETRY_ERROR:", err.stack || err.message);
+    logger.info("RETRY_ERROR:", err.stack || err.message);
     logger.error("[PAYMENT LEGACY] retryPayment failed:", err);
     return res.status(500).json({ error: "Retry failed" });
   }
@@ -1346,7 +1346,7 @@ exports.rejectPayment = async (req, res) => {
       payment_id: paymentId
     });
   } catch (err) {
-    console.log("REJECT_ERROR:", err.stack || err.message);
+    logger.info("REJECT_ERROR:", err.stack || err.message);
     logger.error("[PAYMENT LEGACY] rejectPayment failed:", err);
     return res.status(500).json({ error: "Rejection failed" });
   }

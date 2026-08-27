@@ -213,13 +213,13 @@ const sendEmail = async ({ to, subject, text, html }) => {
     throw new Error("No email transport available for production delivery");
   }
 
-  console.log("\n[MOCK EMAIL] ========================================");
-  console.log(`[MOCK EMAIL] To: ${recipient}`);
-  console.log(`[MOCK EMAIL] Subject: ${finalSubject}`);
+  logger.info("\n[MOCK EMAIL] ========================================");
+  logger.info(`[MOCK EMAIL] To: ${recipient}`);
+  logger.info(`[MOCK EMAIL] Subject: ${finalSubject}`);
   if (finalText) {
-    console.log(`[MOCK EMAIL] Text: ${finalText.substring(0, 300)}`);
+    logger.info(`[MOCK EMAIL] Text: ${finalText.substring(0, 300)}`);
   }
-  console.log("[MOCK EMAIL] ========================================\n");
+  logger.info("[MOCK EMAIL] ========================================\n");
 
   return { success: true, provider: "mock", mock: true, providerMessageId: null };
 };

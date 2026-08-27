@@ -1,3 +1,4 @@
+const logger = require("../utils/logger");
 const sharp = require("sharp");
 const fs = require("fs");
 const fsp = fs.promises;
@@ -39,7 +40,7 @@ const optimizeLocalImages = async (req, res, next) => {
     return next();
   }
 
-  console.log(`🖼️ [ImageOptimizer] Processing ${files.length} local images...`);
+  logger.info(`🖼️ [ImageOptimizer] Processing ${files.length} local images...`);
 
   const processPromises = files.map(async (file) => {
     if (!file.mimetype.startsWith("image/")) return;
@@ -67,7 +68,7 @@ const optimizeLocalImages = async (req, res, next) => {
       const newStats = await fsp.stat(originalPath);
       file.size = newStats.size;
 
-      console.log(`   ✅ Optimized: ${file.originalname} (${Math.round(newStats.size / 1024)}KB)`);
+      logger.info(`   ✅ Optimized: ${file.originalname} (${Math.round(newStats.size / 1024)}KB)`);
     } catch (err) {
       console.error(`   ❌ Failed to optimize ${file.originalname}:`, err.message);
     }

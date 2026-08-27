@@ -70,7 +70,7 @@ const logSecurityEvent = async (event, details = {}) => {
 
   // --- Dev console log ---
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[AUDIT] ${event}:`, JSON.stringify(details));
+    logger.info(`[AUDIT] ${event}:`, JSON.stringify(details));
   }
 };
 

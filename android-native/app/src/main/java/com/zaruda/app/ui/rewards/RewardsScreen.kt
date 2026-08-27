@@ -717,7 +717,7 @@ fun RewardsScreen(
                     AppErrorState(title = "Rewards unavailable", message = state.error ?: "Failed to load", onRetry = { viewModel.load() }, retryLabel = "Retry")
                 }
                 state.rewards != null -> {
-                    val rewards = state.rewards!!
+                    val rewards = state.rewards!! // Safe: null check guaranteed by enclosing when branch
                     val user = rewards.user
                     val userCoins = user.coins ?: 0
                     val isPremium = user.isPremium

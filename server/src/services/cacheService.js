@@ -5,6 +5,7 @@
  * stampede protection (coalesced fetches), and hit-rate statistics.
  */
 
+const logger = require("../utils/logger");
 const NodeCache = require("node-cache");
 
 /* ------------------------------------------------------------------ */
@@ -107,7 +108,7 @@ class CacheService {
     this.patternMatchers = new Map();
     this.stats = { hits: 0, misses: 0, stampedePrevented: 0 };
 
-    console.log("[CacheService] In-memory cache initialized with stampede protection");
+    logger.info("[CacheService] In-memory cache initialized with stampede protection");
   }
 
   /**
@@ -187,7 +188,7 @@ class CacheService {
 
     if (!normalizedPattern.includes("*")) {
       const deletedCount = this.cache.del(normalizedPattern);
-      console.log(
+      logger.info(
         `[Cache] Invalidated ${deletedCount} keys matching pattern: ${normalizedPattern}`
       );
       return deletedCount;
@@ -206,7 +207,7 @@ class CacheService {
     }
 
     const deletedCount = this.deleteKeys(keysToDelete);
-    console.log(
+    logger.info(
       `[Cache] Invalidated ${deletedCount} keys matching pattern: ${normalizedPattern}`
     );
     return deletedCount;
@@ -217,7 +218,7 @@ class CacheService {
    */
   flush() {
     this.cache.flushAll();
-    console.log("[CacheService] Cache flushed");
+    logger.info("[CacheService] Cache flushed");
   }
 
   /**
@@ -314,7 +315,7 @@ class CacheService {
       }
     }
 
-    console.log(
+    logger.info(
       `[Cache Invalidation] Cleared ${totalInvalidated} keys across ${normalizedPatterns.length} patterns`
     );
     return totalInvalidated;

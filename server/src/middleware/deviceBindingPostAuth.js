@@ -254,7 +254,7 @@ const deviceBindingPostLogin = async (req, res, next) => {
   }
 
   // Log the activity
-  logAuthActivity(userId, "login", req).catch(() => {});
+  logAuthActivity(userId, "login", req).catch((e) => logger.warn('[DeviceBinding] Failed to log login activity', { userId, error: e.message }));
 
   // Send the successful auth response
   return res.status(authResult?._statusCode || 200).json(authResult);
@@ -316,7 +316,7 @@ const deviceBindingPostOtp = async (req, res, next) => {
     }
   }
 
-  logAuthActivity(userId, "login_otp", req).catch(() => {});
+  logAuthActivity(userId, "login_otp", req).catch((e) => logger.warn('[DeviceBinding] Failed to log OTP activity', { userId, error: e.message }));
 
   return res.status(authResult?._statusCode || 200).json(authResult);
 };

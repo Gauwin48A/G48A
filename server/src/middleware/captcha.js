@@ -2,6 +2,7 @@
  * reCAPTCHA v3 Integration
  * Protects login/signup from bots
  */
+const logger = require("../utils/logger");
 const https = require('https');
 
 const DEFAULT_RECAPTCHA_THRESHOLD = 0.5; // Score threshold (0.0 = bot, 1.0 = human)
@@ -33,7 +34,7 @@ const verifyRecaptcha = async (token, expectedAction = 'login', env = process.en
     const recaptchaThreshold = getRecaptchaThreshold(env);
 
     if (!recaptchaSecret) {
-        console.log('[CAPTCHA] Secret not configured, skipping verification');
+        logger.info('[CAPTCHA] Secret not configured, skipping verification');
         return { success: true, score: 1.0, action: expectedAction, skipped: true };
     }
 

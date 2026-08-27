@@ -1,5 +1,6 @@
 const cloudinary = require("cloudinary").v2;
 const path = require("path");
+const logger = require("../utils/logger");
 require("dotenv").config();
 
 cloudinary.config({
@@ -81,7 +82,7 @@ const createCloudinaryStorage = () => ({
 const deleteImage = async (publicId) => {
   try {
     const result = await cloudinary.uploader.destroy(publicId);
-    console.log("[Cloudinary] Image deleted:", publicId);
+    logger.info("[Cloudinary] Image deleted:", publicId);
     return result;
   } catch (error) {
     console.error("[Cloudinary] Delete failed:", error);

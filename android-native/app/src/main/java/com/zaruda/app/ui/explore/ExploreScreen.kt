@@ -3148,7 +3148,7 @@ fun AllPostCard(
                                 val origPrice = post.originalPrice
                                 if (origPrice != null && origPrice > price && origPrice > 0) {
                                     val pct = ((origPrice - price) / origPrice * 100).toInt()
-                                    Text("₹${"%,.0f".format(origPrice)}  -$pct%", fontSize = 10.sp, color = Color(0xFFFBBF24), textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough.let { TextDecoration.None })
+                                    Text("₹${"%,.0f".format(origPrice)}  -$pct%", fontSize = 10.sp, color = Color(0xFFFBBF24), textDecoration = TextDecoration.LineThrough)
                                 }
                             }
                         }

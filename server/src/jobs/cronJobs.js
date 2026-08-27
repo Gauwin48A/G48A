@@ -136,7 +136,7 @@ async function insertNotifications(notifications) {
  * @returns {Promise<void>}
  */
 const expireOldPosts = async () => {
-  console.log("[CRON] Running tier-based post expiry check...");
+  logger.info("[CRON] Running tier-based post expiry check...");
 
   try {
     // Tier-based expiry
@@ -151,7 +151,7 @@ const expireOldPosts = async () => {
     );
 
     if (result.rows.length > 0) {
-      console.log(
+      logger.info(
         `[CRON] Expired ${result.rows.length} posts (tier-based expiry)`
       );
 
@@ -168,7 +168,7 @@ const expireOldPosts = async () => {
 
       await insertNotifications(notifications);
     } else {
-      console.log("[CRON] No posts to expire");
+      logger.info("[CRON] No posts to expire");
     }
 
     // Legacy 30-day default expiry
@@ -182,7 +182,7 @@ const expireOldPosts = async () => {
     );
 
     if (legacyResult.rows.length > 0) {
-      console.log(
+      logger.info(
         `[CRON] Expired ${legacyResult.rows.length} legacy posts (30-day default)`
       );
 
@@ -213,7 +213,7 @@ const expireOldPosts = async () => {
  * @returns {Promise<void>}
  */
 const sendExpiryWarnings = async () => {
-  console.log("[CRON] Sending tier-based expiry warnings...");
+  logger.info("[CRON] Sending tier-based expiry warnings...");
 
   try {
     for (const daysBeforeExpiry of POST_WARNING_DAYS) {
@@ -240,7 +240,7 @@ const sendExpiryWarnings = async () => {
       );
 
       if (result.rows.length > 0) {
-        console.log(
+        logger.info(
           `[CRON] Sending ${result.rows.length} expiry warnings (${daysBeforeExpiry} days before)`
         );
 
@@ -260,7 +260,7 @@ const sendExpiryWarnings = async () => {
       }
     }
 
-    console.log("[CRON] Expiry warnings complete");
+    logger.info("[CRON] Expiry warnings complete");
   } catch (error) {
     console.error("[CRON] Expiry warning error:", error);
   }
@@ -276,14 +276,14 @@ const sendExpiryWarnings = async () => {
  * @returns {Promise<void>}
  */
 const checkSubscriptionExpiry = async () => {
-  console.log("[CRON] Checking subscription expiry...");
+  logger.info("[CRON] Checking subscription expiry...");
 
   try {
     const { checkExpiringSubscriptions } = require(
       "../services/subscriptionNotifications"
     );
     const result = await checkExpiringSubscriptions();
-    console.log(
+    logger.info(
       `[CRON] Subscription check complete: ${result.checked || 0} users processed`
     );
   } catch (error) {
@@ -302,7 +302,7 @@ const checkSubscriptionExpiry = async () => {
  * @returns {Promise<void>}
  */
 const expireOldTransactions = async () => {
-  console.log("[CRON] Checking for expired transactions...");
+  logger.info("[CRON] Checking for expired transactions...");
 
   try {
     const hasExpiryColumn = await hasTransactionExpirySupport();
@@ -322,7 +322,7 @@ const expireOldTransactions = async () => {
     );
 
     if (result.rows.length > 0) {
-      console.log(`[CRON] Expired ${result.rows.length} transactions`);
+      logger.info(`[CRON] Expired ${result.rows.length} transactions`);
 
       // Re-activate the posts tied to the expired transactions
       const postIds = [
@@ -365,7 +365,7 @@ const expireOldTransactions = async () => {
  * @returns {Promise<void>}
  */
 const sendDailyDigest = async () => {
-  console.log("[CRON] Sending daily digest...");
+  logger.info("[CRON] Sending daily digest...");
 
   try {
     const result = await pool.query(
@@ -389,7 +389,7 @@ const sendDailyDigest = async () => {
     );
 
     const sent = result.rowCount || 0;
-    console.log(`[CRON] Daily digest sent to ${sent} users`);
+    logger.info(`[CRON] Daily digest sent to ${sent} users`);
   } catch (error) {
     console.error("[CRON] Daily digest error:", error);
   }
@@ -407,7 +407,7 @@ const sendDailyDigest = async () => {
  * @returns {Promise<void>}
  */
 const runFraudBatchReview = async () => {
-  console.log("[CRON] Running fraud batch review...");
+  logger.info("[CRON] Running fraud batch review...");
 
   try {
     // Suspicious logins (>= 5 failures in the past 6 h)
@@ -458,7 +458,7 @@ const runFraudBatchReview = async () => {
       );
     }
 
-    console.log(
+    logger.info(
       `[CRON] Fraud batch complete: ${suspiciousLogins.rows.length} suspicious logins, ${dupePayments.rows.length} duplicate payments`
     );
   } catch (error) {
@@ -477,7 +477,7 @@ const runFraudBatchReview = async () => {
  * @returns {Promise<void>}
  */
 const autoResolveStaleComplaints = async () => {
-  console.log("[CRON] Running complaint auto-resolution...");
+  logger.info("[CRON] Running complaint auto-resolution...");
 
   try {
     const result = await pool
@@ -507,7 +507,7 @@ const autoResolveStaleComplaints = async () => {
         .catch(() => {});
     }
 
-    console.log(`[CRON] Auto-resolved ${result.rows.length} stale complaints`);
+    logger.info(`[CRON] Auto-resolved ${result.rows.length} stale complaints`);
   } catch (error) {
     console.error("[CRON] Complaint auto-resolution error:", error);
   }
@@ -525,7 +525,7 @@ const autoResolveStaleComplaints = async () => {
  * @returns {Promise<void>}
  */
 const runPaymentReconciliation = async () => {
-  console.log("[CRON] Running payment reconciliation...");
+  logger.info("[CRON] Running payment reconciliation...");
 
   try {
     const reconEnabled = String(process.env.PAYMENT_RECON_ENABLED || "true")
@@ -533,7 +533,7 @@ const runPaymentReconciliation = async () => {
       .toLowerCase();
 
     if (["0", "false", "no", "off"].includes(reconEnabled)) {
-      console.log(
+      logger.info(
         "[CRON] Payment reconciliation skipped (PAYMENT_RECON_ENABLED=false)"
       );
       return;
@@ -541,7 +541,7 @@ const runPaymentReconciliation = async () => {
 
     // 1. Run manual payment reconciliation report
     const result = await executePaymentReconciliation({ actor: "cron" });
-    console.log(
+    logger.info(
       `[CRON] Payment reconciliation complete: expired=${result.actions.auto_expired_count}, amount_flags=${result.actions.amount_mismatch_flagged_count}, duplicate_flags=${result.actions.duplicate_flagged_count}`
     );
 
@@ -582,7 +582,7 @@ const runPaymentReconciliation = async () => {
       }
     }
     if (staleTxns.rows.length > 0) {
-      console.log(`[CRON] Cleared ${staleTxns.rows.length} stale payment transactions. Refunded coins to ${refundedCount} transactions.`);
+      logger.info(`[CRON] Cleared ${staleTxns.rows.length} stale payment transactions. Refunded coins to ${refundedCount} transactions.`);
     }
   } catch (error) {
     console.error("[CRON] Payment reconciliation error:", error);
@@ -600,17 +600,17 @@ const runPaymentReconciliation = async () => {
  * @returns {Promise<void>}
  */
 const runLocationRetention = async () => {
-  console.log("[CRON] Running location retention purge...");
+  logger.info("[CRON] Running location retention purge...");
 
   try {
     const result = await purgeLocationRetention();
 
     if (result.skipped) {
-      console.log("[CRON] Location retention skipped");
+      logger.info("[CRON] Location retention skipped");
       return;
     }
 
-    console.log(
+    logger.info(
       `[CRON] Location retention complete: location_events=${result.locationEventsDeleted || 0}, fraud_events=${result.fraudEventsDeleted || 0}`
     );
   } catch (error) {
@@ -623,7 +623,7 @@ const runLocationRetention = async () => {
  * releasing payouts and logging financial ledger entries.
  */
 const autoSettleShippedOrders = async () => {
-  console.log("[CRON] Running auto-settle shipped orders check...");
+  logger.info("[CRON] Running auto-settle shipped orders check...");
   try {
     // 1. Get dispute deadline settings
     const settingsResult = await pool.query(
@@ -641,11 +641,11 @@ const autoSettleShippedOrders = async () => {
 
     const ordersToSettle = eligibleResult.rows;
     if (ordersToSettle.length === 0) {
-      console.log("[CRON] No shipped orders require auto-settling.");
+      logger.info("[CRON] No shipped orders require auto-settling.");
       return;
     }
 
-    console.log(`[CRON] Auto-settling ${ordersToSettle.length} orders...`);
+    logger.info(`[CRON] Auto-settling ${ordersToSettle.length} orders...`);
     const { checkAndAwardSalesMilestones } = require("../controllers/coinController");
 
     for (const order of ordersToSettle) {
@@ -703,7 +703,7 @@ const autoSettleShippedOrders = async () => {
       }
     }
 
-    console.log(`[CRON] Auto-settle complete. Settled ${ordersToSettle.length} orders.`);
+    logger.info(`[CRON] Auto-settle complete. Settled ${ordersToSettle.length} orders.`);
   } catch (error) {
     console.error("[CRON] Auto-settle shipped orders error:", error);
   }
@@ -718,161 +718,161 @@ const autoSettleShippedOrders = async () => {
  * All schedules use Asia/Kolkata timezone.
  */
 const initCronJobs = () => {
-  console.log("[CRON] Initializing CRON jobs...");
+  logger.info("[CRON] Initializing CRON jobs...");
 
   // Post expiry (tier-based) – Daily at 00:00 IST
   cron.schedule("0 0 * * *", expireOldPosts, { timezone: "Asia/Kolkata" });
-  console.log("  - Post expiry (tier-based): Daily at 00:00 IST");
+  logger.info("  - Post expiry (tier-based): Daily at 00:00 IST");
 
   // Expiry warnings – Daily at 09:00 IST
   cron.schedule("0 9 * * *", sendExpiryWarnings, { timezone: "Asia/Kolkata" });
-  console.log("  - Expiry warnings: Daily at 09:00 IST");
+  logger.info("  - Expiry warnings: Daily at 09:00 IST");
 
   // Interactive expiry reminders – Daily at 09:30 IST
   // ≤7 days → "Is your post sold?" (Sold / Not sold actions)
   // ≤2 days → "Repost now?" (Repost action)
   cron.schedule("30 9 * * *", sendExpiryReminders, { timezone: "Asia/Kolkata" });
-  console.log("  - Expiry reminders (sold prompt / repost prompt): Daily at 09:30 IST");
+  logger.info("  - Expiry reminders (sold prompt / repost prompt): Daily at 09:30 IST");
 
   // Subscription expiry check – Daily at 10:00 IST
   cron.schedule("0 10 * * *", checkSubscriptionExpiry, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Subscription expiry: Daily at 10:00 IST");
+  logger.info("  - Subscription expiry: Daily at 10:00 IST");
 
   // Transaction expiry – Hourly
   cron.schedule("0 * * * *", expireOldTransactions, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Transaction expiry: Hourly");
+  logger.info("  - Transaction expiry: Hourly");
 
   // Payment reconciliation – Every 2 hours at :20
   cron.schedule("20 */2 * * *", runPaymentReconciliation, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Payment reconciliation: Every 2 hours at :20");
+  logger.info("  - Payment reconciliation: Every 2 hours at :20");
 
   // Offer expiry (48h) – Hourly at :30
   cron.schedule(
     "30 * * * *",
     async () => {
-      console.log("[CRON] Running offer expiry check...");
+      logger.info("[CRON] Running offer expiry check...");
       const count = await expireOffers();
-      console.log(`[CRON] Offer expiry complete: ${count} expired`);
+      logger.info(`[CRON] Offer expiry complete: ${count} expired`);
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Offer expiry (48h): Hourly at :30");
+  logger.info("  - Offer expiry (48h): Hourly at :30");
 
   // Daily digest – Daily at 09:30 IST
   cron.schedule("30 9 * * *", sendDailyDigest, { timezone: "Asia/Kolkata" });
-  console.log("  - Daily digest: Daily at 09:30 IST");
+  logger.info("  - Daily digest: Daily at 09:30 IST");
 
   // Fraud batch review – Every 6 hours
   cron.schedule("0 */6 * * *", runFraudBatchReview, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Fraud batch review: Every 6 hours");
+  logger.info("  - Fraud batch review: Every 6 hours");
 
   // Complaint auto-resolution – Daily at 02:00 IST
   cron.schedule("0 2 * * *", autoResolveStaleComplaints, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Complaint auto-resolution: Daily at 02:00 IST");
+  logger.info("  - Complaint auto-resolution: Daily at 02:00 IST");
 
   // Location retention purge – Daily at 02:15 IST
   cron.schedule("15 2 * * *", runLocationRetention, {
     timezone: "Asia/Kolkata",
   });
-  console.log("  - Location retention purge: Daily at 02:15 IST");
+  logger.info("  - Location retention purge: Daily at 02:15 IST");
 
   // Weekly leaderboard rewards – Monday 00:10 IST
   cron.schedule(
     "10 0 * * MON",
     async () => {
       const outcome = await awardWeeklySalesLeaderRewards();
-      console.log(
+      logger.info(
         `[CRON] Weekly leaderboard rewards: awarded=${outcome.awarded} period=${outcome.periodKey}`
       );
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Weekly leaderboard rewards: Monday 00:10 IST");
+  logger.info("  - Weekly leaderboard rewards: Monday 00:10 IST");
 
   // Monthly quota reset – 1st of month at 00:00 IST
   cron.schedule(
     "0 0 1 * *",
     async () => {
-      console.log("[CRON] Running monthly quota reset...");
+      logger.info("[CRON] Running monthly quota reset...");
       const result = await resetMonthlyQuotas();
-      console.log(
+      logger.info(
         `[CRON] Monthly quota reset complete: ${result.resetCount} subscriptions reset`
       );
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Monthly quota reset: 1st of month at 00:00 IST");
+  logger.info("  - Monthly quota reset: 1st of month at 00:00 IST");
 
   // Subscription expiry – Daily at 00:30 IST
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("[CRON] Running subscription expiry...");
+      logger.info("[CRON] Running subscription expiry...");
       const result = await expireSubscriptions();
-      console.log(
+      logger.info(
         `[CRON] Subscription expiry: ${result.expiredCount} expired, ${result.downgraded.length} downgraded`
       );
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Subscription expiry: Daily at 00:30 IST");
+  logger.info("  - Subscription expiry: Daily at 00:30 IST");
 
   // Boost expiry – Daily at 00:45 IST
   cron.schedule(
     "45 0 * * *",
     async () => {
-      console.log("[CRON] Running boost expiry...");
+      logger.info("[CRON] Running boost expiry...");
       const result = await expireBoosts();
-      console.log(
+      logger.info(
         `[CRON] Boost expiry: ${result.expiredBoosts} boosts expired`
       );
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Boost expiry: Daily at 00:45 IST");
+  logger.info("  - Boost expiry: Daily at 00:45 IST");
 
   // Tier-based listing expiry – Daily at 01:15 IST
   cron.schedule(
     "15 1 * * *",
     async () => {
-      console.log("[CRON] Setting tier-based expiry dates...");
+      logger.info("[CRON] Setting tier-based expiry dates...");
       const result = await setTierBasedExpiry();
-      console.log(
+      logger.info(
         `[CRON] Tier-based expiry: ${result.updatedCount} posts updated`
       );
     },
     { timezone: "Asia/Kolkata" }
   );
-  console.log("  - Tier-based listing expiry: Daily at 01:15 IST");
+  logger.info("  - Tier-based listing expiry: Daily at 01:15 IST");
 
   // Payout stuck-transaction watchdog – Every 15 minutes
   cron.schedule("*/15 * * * *", async () => {
     try {
       const result = await reconcileStuckTransactions();
-      console.log(
+      logger.info(
         `[CRON] Payout watchdog complete: reconciled=${result.reconciledCount || 0}, reenqueued=${result.reenqueuedCount || 0}, mismatches=${result.mismatchCount || 0}`
       );
     } catch (error) {
       console.error("[CRON] Payout watchdog error:", error);
     }
   }, { timezone: "Asia/Kolkata" });
-  console.log("  - Payout stuck-transaction watchdog: Every 15 minutes");
+  logger.info("  - Payout stuck-transaction watchdog: Every 15 minutes");
 
   // Auto-settle shipped/delivered orders – Daily at 03:00 IST
   cron.schedule("0 3 * * *", autoSettleShippedOrders, { timezone: "Asia/Kolkata" });
-  console.log("  - Auto-settle shipped orders: Daily at 03:00 IST");
+  logger.info("  - Auto-settle shipped orders: Daily at 03:00 IST");
 
-  console.log("[CRON] CRON jobs initialized");
+  logger.info("[CRON] CRON jobs initialized");
 };
 
 // ------------------------------------------------------------

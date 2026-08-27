@@ -1,3 +1,4 @@
+const logger = require("../utils/logger");
 const { getBearerTokenFromHeader } = require("../utils/requestAuth");
 const { resolveVerifiedAuth } = require("../utils/authResolver");
 const {
@@ -16,7 +17,7 @@ const protect = async (req, res, next) => {
 
   if (!hasCookieToken && !hasHeaderToken && !customUserId) {
     if (authDebugEnabled) {
-      console.log("[AUTH] No token provided for:", req.path);
+      logger.info("[AUTH] No token provided for:", req.path);
     }
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }

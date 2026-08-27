@@ -1,3 +1,4 @@
+const logger = require("../utils/logger");
 const admin = require("../config/firebase");
 const pool = require("../config/db");
 
@@ -133,24 +134,24 @@ async function sendPushNotification(
     };
 
     if (!admin.messaging) {
-        console.log("======================================");
-        console.log("⚠️ [FCM MOCK] Firebase not configured - Logging Push Notification");
-        console.log("To         :", token);
-        console.log("Title      :", title);
-        console.log("Body       :", body);
-        console.log("Data       :", JSON.stringify(data));
-        console.log("======================================");
+        logger.info("======================================");
+        logger.info("⚠️ [FCM MOCK] Firebase not configured - Logging Push Notification");
+        logger.info("To         :", token);
+        logger.info("Title      :", title);
+        logger.info("Body       :", body);
+        logger.info("Data       :", JSON.stringify(data));
+        logger.info("======================================");
         return "mock-message-id-" + Date.now();
     }
 
     const response = await admin.messaging.send(message);
 
-    console.log("======================================");
-    console.log("✅ PUSH SENT");
-    console.log("Message ID :", response);
-    console.log("Token      :", token);
-    console.log("Channel    :", resolveChannel(data.type));
-    console.log("======================================");
+    logger.info("======================================");
+    logger.info("✅ PUSH SENT");
+    logger.info("Message ID :", response);
+    logger.info("Token      :", token);
+    logger.info("Channel    :", resolveChannel(data.type));
+    logger.info("======================================");
 
     return response;
 }

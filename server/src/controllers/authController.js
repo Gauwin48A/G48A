@@ -1172,7 +1172,7 @@ exports.forgotPassword = async (req, res) => {
     // NOTE: Removed AUTH_EXPOSE_TEST_SECRETS — NEVER send secrets in API response.
     // Test runners should inspect logs or DB to retrieve test tokens/OTPs.
     if (process.env.NODE_ENV === 'test') {
-      console.log('[TEST ONLY] resetToken=%s otp=%s', resetToken, otp);
+      logger.info('[TEST ONLY] resetToken=%s otp=%s', resetToken, otp);
     }
     res.json(responsePayload);
   } catch (err) {

@@ -1510,7 +1510,7 @@ private fun PendingRequestCard(sale: SaleInfo, state: SaleDoneUiState, viewModel
             }
             Text(sale.postTitle ?: "Unknown Post", fontWeight = FontWeight.Medium, fontSize = 14.sp)
             if (sale.postPrice != null) {
-                Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                Text("₹ ${(sale.postPrice ?: 0.0).toInt()}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
             }
             SaleProgressTracker(sale, isDark)
             Spacer(Modifier.height(2.dp))
@@ -1629,7 +1629,7 @@ private fun ActiveSaleCard(sale: SaleInfo, state: SaleDoneUiState, viewModel: Sa
                 }
             }
             if (sale.postPrice != null) {
-                Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+                Text("₹ ${(sale.postPrice ?: 0.0).toInt()}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
             }
             // ── Mid-flow status tracker ──────────────────────────────────────
             SaleProgressTracker(sale, isDark)
@@ -2090,7 +2090,7 @@ private fun HistoryTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         if (sale.postPrice != null) {
-                            Text("₹ ${sale.postPrice.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("₹ ${(sale.postPrice ?: 0.0).toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                         if (listOf("received", "settled").contains(sale.status) && sale.buyerRating == null && sale.buyerId == viewModel.currentUserId) {
                             Spacer(Modifier.height(4.dp))

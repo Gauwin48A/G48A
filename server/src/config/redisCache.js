@@ -3,6 +3,7 @@
 // =============================================================================
 
 const Redis = require("ioredis");
+const logger = require("../utils/logger");
 
 // =============================================================================
 // Redis Connection Options
@@ -16,7 +17,7 @@ const REDIS_CONFIG = {
   keyPrefix: "mhub:",
   retryStrategy: (times) => {
     if (times > 3) {
-      console.log(
+      logger.info(
         "[Redis] Max retries reached, falling back to in-memory cache"
       );
       return null;
@@ -79,26 +80,26 @@ async function getRedisClient() {
     redisClient = new Redis(REDIS_CONFIG);
 
     redisClient.on("connect", () => {
-      console.log("[Redis] Connected successfully");
+      logger.info("[Redis] Connected successfully");
       isRedisAvailable = true;
     });
 
     redisClient.on("error", (err) => {
-      console.log("[Redis] Connection error:", err.message);
+      logger.info("[Redis] Connection error:", err.message);
       isRedisAvailable = false;
     });
 
     redisClient.on("close", () => {
-      console.log("[Redis] Connection closed");
+      logger.info("[Redis] Connection closed");
       isRedisAvailable = false;
     });
 
     await redisClient.ping();
     isRedisAvailable = true;
-    console.log("[Redis] Ready for distributed caching");
+    logger.info("[Redis] Ready for distributed caching");
     return redisClient;
   } catch (err) {
-    console.log(
+    logger.info(
       "[Redis] Not available, using in-memory fallback:",
       err.message
     );
@@ -219,7 +220,7 @@ async function get(key) {
       return parseRedisValue(value);
     }
   } catch (err) {
-    console.log("[Redis] Get error, using memory:", err.message);
+    logger.info("[Redis] Get error, using memory:", err.message);
   }
 
   const cached = memoryCache.get(key);
@@ -245,7 +246,7 @@ async function set(key, value, ttlSeconds = CACHE_TTL.FEED) {
       return true;
     }
   } catch (err) {
-    console.log("[Redis] Set error, using memory:", err.message);
+    logger.info("[Redis] Set error, using memory:", err.message);
   }
 
   cleanMemoryCache();
@@ -269,7 +270,7 @@ async function del(key) {
       await redis.del(key);
     }
   } catch (err) {
-    console.log("[Redis] Del error:", err.message);
+    logger.info("[Redis] Del error:", err.message);
   }
   memoryCache.delete(key);
 }
@@ -315,7 +316,7 @@ async function clearPattern(pattern) {
       } while (cursor !== "0");
     }
   } catch (err) {
-    console.log("[Redis] ClearPattern error:", err.message);
+    logger.info("[Redis] ClearPattern error:", err.message);
   }
 
   const matchesPattern = globPatternToMatcher(normalizedPattern);

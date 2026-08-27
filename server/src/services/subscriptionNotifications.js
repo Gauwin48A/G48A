@@ -1,3 +1,4 @@
+const logger = require("../utils/logger");
 const pool = require("../config/db");
 
 /**
@@ -7,7 +8,7 @@ const pool = require("../config/db");
  */
 async function checkExpiringSubscriptions() {
   try {
-    console.log("[Subscription] Checking for expiring subscriptions...");
+    logger.info("[Subscription] Checking for expiring subscriptions...");
 
     const result = await pool.query(`
       SELECT
@@ -22,7 +23,7 @@ async function checkExpiringSubscriptions() {
         AND subscription_expiry < NOW() + INTERVAL '8 days'
     `);
 
-    console.log(
+    logger.info(
       `[Subscription] Found ${result.rows.length} users with expiring subscriptions`
     );
 
@@ -66,13 +67,13 @@ async function checkExpiringSubscriptions() {
           `,
           [user.user_id, notificationType, title, message]
         );
-        console.log(
+        logger.info(
           `[Subscription] Notification sent to user ${user.user_id}: ${notificationType}`
         );
       }
     }
 
-    console.log("[Subscription] Expiry check complete");
+    logger.info("[Subscription] Expiry check complete");
     return { checked: result.rows.length };
   } catch (err) {
     console.error("[Subscription] Expiry check error:", err);
@@ -99,7 +100,7 @@ async function sendRenewalSuccessNotification(userId, tier, expiryDate) {
       [userId, title, message]
     );
 
-    console.log(
+    logger.info(
       `[Subscription] Renewal confirmation sent to user ${userId}`
     );
   } catch (err) {
@@ -126,7 +127,7 @@ async function sendUpgradeNotification(userId, fromTier, toTier) {
       [userId, title, message]
     );
 
-    console.log(
+    logger.info(
       `[Subscription] Upgrade notification sent to user ${userId}`
     );
   } catch (err) {

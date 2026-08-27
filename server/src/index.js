@@ -419,12 +419,12 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   if (socketDebugEnabled) {
-    console.log(`User Connected: ${socket.id} (uid: ${socket.user?.userId || socket.user?.id})`);
+    logger.info(`User Connected: ${socket.id} (uid: ${socket.user?.userId || socket.user?.id})`);
   }
 
   socket.on("disconnect", () => {
     if (socketDebugEnabled) {
-      console.log("User Disconnected", socket.id);
+      logger.info("User Disconnected", socket.id);
     }
   });
 });
@@ -513,7 +513,7 @@ app.use(botDetection);
 app.use(blockDevToolsRequests);
 app.use(antiReplayProtection);
 
-if (!isProduction) console.log("🛡️ Operation Polish: Security & Performance middleware loaded");
+if (!isProduction) logger.info("🛡️ Operation Polish: Security & Performance middleware loaded");
 
 // ── VPN Enforcement (server-side) ────────────────────────
 const { vpnEnforcementMiddleware } = require("./middleware/vpnEnforcement");
@@ -804,7 +804,7 @@ app.use(
   })
 );
 
-if (!isProduction) console.log("📁 Static file caching configured");
+if (!isProduction) logger.info("📁 Static file caching configured");
 
 /* ─────────────────────────────────────────────────────────
    API Health & Readiness Probes

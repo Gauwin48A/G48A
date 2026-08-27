@@ -927,7 +927,7 @@ fun MyPostsScreen(
 
     // ═══ Post Actions Bottom Sheet ═══
     if (showPostActionsSheet && actionPost != null) {
-        val p = actionPost!!
+        val p = actionPost!! // Safe: null check guaranteed by enclosing if condition
         ModalBottomSheet(
             onDismissRequest = { showPostActionsSheet = false; actionPost = null },
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),

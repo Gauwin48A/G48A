@@ -2,6 +2,7 @@
  * Image Optimization Pipeline
  * Auto-compress and convert uploads to WebP for 80% bandwidth savings
  */
+const logger = require("../utils/logger");
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
@@ -69,7 +70,7 @@ const optimizeImage = async (input, filename) => {
     const optimizedStats = await fs.stat(optimizedPath);
     const savings = Math.round((1 - optimizedStats.size / originalSize) * 100);
 
-    console.log(`[IMAGE] ✅ Optimized ${filename}: ${savings}% smaller`);
+    logger.info(`[IMAGE] ✅ Optimized ${filename}: ${savings}% smaller`);
 
     let optimizedUrl = `/uploads/optimized/${optimizedName}`;
     let thumbnailUrl = `/uploads/optimized/thumbnails/${thumbnailName}`;

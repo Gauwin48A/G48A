@@ -3,6 +3,7 @@
 // =============================================================================
 
 const crypto = require("crypto");
+const logger = require("../utils/logger");
 
 // =============================================================================
 // Environment & Constants
@@ -214,7 +215,7 @@ const JWT_CONFIG = {
 // =============================================================================
 
 if (!isProduction && !isTest) {
-  console.log(
+  logger.info(
     "[JWT] Config loaded. Access token expiry:",
     JWT_CONFIG.ACCESS_EXPIRY
   );

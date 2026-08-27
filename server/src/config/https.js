@@ -8,6 +8,7 @@
  */
 
 const https = require('https');
+const logger = require('../utils/logger');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -56,10 +57,10 @@ function loadCertificates() {
 
         // Check if certificates exist
         if (!fs.existsSync(certDir) || !fs.existsSync(keyDir)) {
-            console.log('📝 SSL certificates not found. Running in HTTP mode.');
-            console.log('   To enable HTTPS:');
-            console.log('   1. Generate certificates: npm run generate-certs');
-            console.log('   2. Or use Let\'s Encrypt: certbot certonly --webroot');
+            logger.info('📝 SSL certificates not found. Running in HTTP mode.');
+            logger.info('   To enable HTTPS:');
+            logger.info('   1. Generate certificates: npm run generate-certs');
+            logger.info('   2. Or use Let\'s Encrypt: certbot certonly --webroot');
             return null;
         }
 
@@ -74,7 +75,7 @@ function loadCertificates() {
             sslOptions.ca = fs.readFileSync(caPath);
         }
 
-        console.log('🔒 SSL certificates loaded successfully');
+        logger.info('🔒 SSL certificates loaded successfully');
         return sslOptions;
 
     } catch (error) {
@@ -106,7 +107,7 @@ function createSecureServer(app) {
             });
 
             httpRedirect.listen(httpsConfig.httpPort, () => {
-                console.log(`↪️ HTTP redirecting to HTTPS on port ${httpsConfig.httpPort}`);
+                logger.info(`↪️ HTTP redirecting to HTTPS on port ${httpsConfig.httpPort}`);
             });
         }
 
@@ -145,7 +146,7 @@ const enforceHttps = (req, res, next) => {
     const host = req.headers.host?.replace(/:\d+$/, '');
     const httpsUrl = `https://${host}${httpsConfig.httpsPort !== 443 ? ':' + httpsConfig.httpsPort : ''}${req.url}`;
 
-    console.log(`[HTTPS] Redirecting ${req.url} to HTTPS`);
+    logger.info(`[HTTPS] Redirecting ${req.url} to HTTPS`);
     return res.redirect(301, httpsUrl);
 };
 
@@ -177,7 +178,7 @@ async function generateDevCerts() {
         fs.mkdirSync(certDir, { recursive: true });
     }
 
-    console.log('🔐 Generating self-signed certificates for development...');
+    logger.info('🔐 Generating self-signed certificates for development...');
 
     try {
         execSync(`openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -186,7 +187,7 @@ async function generateDevCerts() {
             -subj "/CN=localhost/O=MHub Development"`,
             { stdio: 'inherit' }
         );
-        console.log('✅ Development certificates generated in /server/certs/');
+        logger.info('✅ Development certificates generated in /server/certs/');
     } catch (error) {
         console.error('❌ Failed to generate certificates. Make sure OpenSSL is installed.');
     }

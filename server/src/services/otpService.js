@@ -5,6 +5,7 @@
  * (Twilio, MSG91) or email (SendGrid, SMTP) with mock fallback.
  */
 
+const logger = require("../utils/logger");
 const crypto = require("crypto");
 const pool = require("../config/db");
 const otpDeliveryService = require("./otpDeliveryService");
@@ -203,7 +204,7 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
         to: destination,
         from: process.env.TWILIO_FROM,
       });
-      console.log(`[OTP] Twilio SMS sent to ${destination}: ${result.sid}`);
+      logger.info(`[OTP] Twilio SMS sent to ${destination}: ${result.sid}`);
       return finalizeAndReturn({
         success: true,
         provider: "twilio",
@@ -248,7 +249,7 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
         req.end();
       });
 
-      console.log(`[OTP] MSG91 SMS sent to ${destination}`);
+      logger.info(`[OTP] MSG91 SMS sent to ${destination}`);
       const msg91MessageId =
         msg91Response?.request_id ||
         msg91Response?.requestId ||
@@ -276,7 +277,7 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
         text: message,
         html: `<p style="font-family:sans-serif">Your MHub code is: <strong style="font-size:24px;letter-spacing:4px">${otp}</strong></p><p>Valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
       });
-      console.log(`[OTP] SendGrid email sent to ${destination}`);
+      logger.info(`[OTP] SendGrid email sent to ${destination}`);
       const sendGridMessageId =
         sendGridResult?.[0]?.headers?.["x-message-id"] || null;
       return finalizeAndReturn({
@@ -308,7 +309,7 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
         subject: "Your MHub Verification Code",
         text: message,
       });
-      console.log(`[OTP] SMTP email sent to ${destination}`);
+      logger.info(`[OTP] SMTP email sent to ${destination}`);
       return finalizeAndReturn({
         success: true,
         provider: "smtp",
@@ -320,12 +321,12 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
   }
 
   /* ---- Mock fallback ---- */
-  console.log(`\n[MOCK OTP] ========================================`);
-  console.log(`[MOCK OTP] Channel : ${channel.toUpperCase()}`);
-  console.log(`[MOCK OTP] To      : ${destination}`);
-  console.log(`[MOCK OTP] Code    : ${otp}`);
-  console.log(`[MOCK OTP] Expires : ${OTP_EXPIRY_MINUTES} minutes`);
-  console.log(`[MOCK OTP] ========================================\n`);
+  logger.info(`\n[MOCK OTP] ========================================`);
+  logger.info(`[MOCK OTP] Channel : ${channel.toUpperCase()}`);
+  logger.info(`[MOCK OTP] To      : ${destination}`);
+  logger.info(`[MOCK OTP] Code    : ${otp}`);
+  logger.info(`[MOCK OTP] Expires : ${OTP_EXPIRY_MINUTES} minutes`);
+  logger.info(`[MOCK OTP] ========================================\n`);
 
   await new Promise((resolve) => setTimeout(resolve, 200));
 

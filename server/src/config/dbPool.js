@@ -6,6 +6,7 @@
  */
 
 const { Pool } = require('pg');
+const logger = require('../utils/logger');
 const LEADING_WRITE_QUERY_PATTERN = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE|MERGE|VACUUM|REINDEX|GRANT|REVOKE|LOCK|REFRESH|DO)\b/i;
 const WITH_QUERY_PATTERN = /^\s*WITH\b/i;
 const CTE_WRITE_BODY_PATTERN = /\(\s*(INSERT|UPDATE|DELETE|MERGE)\b/i;
@@ -286,7 +287,7 @@ async function query(text, params, options = {}) {
 
         if (duration > 100) {
             const queryText = typeof text === 'string' ? text : (text && text.text ? text.text : String(text));
-            console.log(`[DB] Slow query (${duration}ms)`, queryText.substring(0, 50) + '...');
+            logger.info(`[DB] Slow query (${duration}ms)`, queryText.substring(0, 50) + '...');
         }
 
         return result;
@@ -295,7 +296,7 @@ async function query(text, params, options = {}) {
 
         // If replica failed, try primary as fallback
         if (pool !== primaryPool && replicaPoolSet.has(pool)) {
-            console.log('[DB] Retrying on primary after replica failure');
+            logger.info('[DB] Retrying on primary after replica failure');
             return primaryPool.query(text, params);
         }
 

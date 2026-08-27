@@ -3,6 +3,7 @@
 // =============================================================================
 
 const Redis = require("ioredis");
+const logger = require("../utils/logger");
 
 // =============================================================================
 // Connection State
@@ -75,12 +76,12 @@ const initRedis = () => {
 
       redis.on("connect", () => {
         isRedisAvailable = true;
-        console.log("✅ Redis connected for session management");
+        logger.info("✅ Redis connected for session management");
       });
 
       redis.on("error", (err) => {
         isRedisAvailable = false;
-        console.log(
+        logger.info(
           "⚠️ Redis unavailable, using in-memory fallback:",
           err.message
         );
@@ -90,10 +91,10 @@ const initRedis = () => {
         isRedisAvailable = false;
       });
     } catch (err) {
-      console.log("⚠️ Redis init failed, using in-memory fallback");
+      logger.info("⚠️ Redis init failed, using in-memory fallback");
     }
   } else {
-    console.log("ℹ️ Redis not configured, using in-memory storage");
+    logger.info("ℹ️ Redis not configured, using in-memory storage");
   }
 };
 
