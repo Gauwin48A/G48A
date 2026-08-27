@@ -253,7 +253,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
             text = { Text(stringResource(R.string.commerce_delete_confirm)) },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.deletePost(state.showDeleteDialog!!) },
+                    onClick = { state.showDeleteDialog?.let { viewModel.deletePost(it) } },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) { Text(stringResource(R.string.action_delete)) }
             },

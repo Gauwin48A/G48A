@@ -300,7 +300,7 @@ fun FeedDetailScreen(feedId: String, onBack: () -> Unit, viewModel: FeedDetailVi
         when {
             state.loading -> ListShimmer(count = 4, modifier = Modifier.fillMaxSize().padding(padding).padding(top = 8.dp))
             state.item != null -> {
-                val item = state.item!!
+                val item = state.item ?: return@Scaffold
                 androidx.compose.foundation.lazy.LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),

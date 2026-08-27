@@ -1225,7 +1225,7 @@ router.get("/settlements", async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ filters: { status }, page, limit }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.json({
       success: true,
@@ -1323,7 +1323,7 @@ router.post("/fee-rules", requireAdminWrite, async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ rule_id: result.rows[0].rule_id, percentage }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.status(201).json({ success: true, rule: result.rows[0] });
   } catch (err) {
@@ -1382,7 +1382,7 @@ router.patch("/fee-rules/:id", requireAdminWrite, async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ rule_id: req.params.id, changes: { percentage: updatedPercentage, is_active } }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.json({ success: true, rule: result.rows[0] });
   } catch (err) {
@@ -1414,7 +1414,7 @@ router.delete("/fee-rules/:id", requireAdminWrite, async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ rule_id: req.params.id }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.json({ success: true, message: "Fee rule deactivated" });
   } catch (err) {
@@ -1483,7 +1483,7 @@ router.get("/payouts", async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ filters: { status, seller_id: sellerId }, page, limit }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.json({
       success: true,
@@ -1575,7 +1575,7 @@ router.post("/payouts/:id/retry", requireAdminWrite, async (req, res) => {
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ payout_id: payout.payout_id, reference_id: payout.reference_id, enqueued: enqueueResult.success }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     if (!enqueueResult.success) {
       return res.status(500).json({ success: false, error: enqueueResult.error || "Failed to re-enqueue payout" });
@@ -1639,7 +1639,7 @@ router.post("/financial-alerts/:id/resolve", requireAdminWrite, async (req, res)
         req.headers["user-agent"] || "unknown",
         JSON.stringify({ alert_id: req.params.id }),
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Admin] Audit log write failed', { action: 'admin_audit', error: e.message }));
 
     res.json({ success: true, alert: result.alert });
   } catch (err) {

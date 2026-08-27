@@ -234,7 +234,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
                                     Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text("Daily Code:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(Modifier.width(8.dp))
-                                        Text(state.dailyCode!!, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                                        Text(state.dailyCode ?: "", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }

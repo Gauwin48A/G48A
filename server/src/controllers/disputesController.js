@@ -70,7 +70,7 @@ exports.create = async (req, res) => {
     await runQuery(
       `UPDATE sales SET razorpay_hold = true, updated_at = NOW() WHERE buyer_id::text IN ($1, $2) AND seller_id::text IN ($1, $2) AND status IN ('requested', 'approved', 'received')`,
       [String(userId), String(raised_against)]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[DISPUTE] Failed to set razorpay_hold on sales', { error: e.message }));
 
     // ── Wire razorpay_hold to actual Razorpay API ────────────────
     setImmediate(async () => {
@@ -391,7 +391,7 @@ exports.adminResolve = async (req, res) => {
     await runQuery(
       `UPDATE sales SET razorpay_hold = false, updated_at = NOW() WHERE buyer_id::text IN ($1, $2) AND seller_id::text IN ($1, $2)`,
       [String(dispute.raised_by), String(dispute.raised_against)]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[DISPUTE] Failed to clear razorpay_hold on sales', { error: e.message }));
 
     // Log resolution
     await runQuery(

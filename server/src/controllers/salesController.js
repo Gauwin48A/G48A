@@ -752,7 +752,7 @@ exports.sellerRespondDispute = async (req, res) => {
       await runQuery(
         `UPDATE posts SET status = 'active', updated_at = NOW() WHERE post_id::text = $1`,
         [String(sale.post_id)]
-      ).catch(() => {});
+      ).catch((e) => logger.warn('[SALES] Failed to reactivate post after mutual cancellation', { saleId: sale.id, postId: sale.post_id, error: e.message }));
 
       // Unified resolution: unfreeze BOTH buyer & seller + close their suspensions
       try {

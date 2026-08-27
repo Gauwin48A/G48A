@@ -269,7 +269,7 @@ async function handleChargebackCreated(payload) {
     `UPDATE sales SET razorpay_hold = true, updated_at = NOW()
      WHERE buyer_id::text = $1 AND seller_id::text = $2 AND status IN ('requested','approved','received')`,
     [String(order.buyer_id), String(order.seller_id)]
-  ).catch(() => {});
+  ).catch((e) => logger.warn('[Webhooks] Failed to set razorpay_hold on sales', { orderId: order.order_id, error: e.message }));
 
   try {
     const { transitionAccountState } = require("../services/accountStateService");
@@ -348,7 +348,7 @@ async function handleChargebackResolved(payload) {
       `UPDATE sales SET razorpay_hold = false, updated_at = NOW()
        WHERE buyer_id::text = $1 AND seller_id::text = $2`,
       [String(order.buyer_id), String(order.seller_id)]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[Webhooks] Failed to clear razorpay_hold on sales', { orderId: order.order_id, error: e.message }));
     try {
       const { transitionAccountState } = require("../services/accountStateService");
       await transitionAccountState(order.buyer_id, "ACTIVE", { reason: `Chargeback resolved in merchant favour (order ${order.order_id})` }).catch((e) => logger.warn('[Webhooks] Failed to unfreeze buyer', { message: e.message }));

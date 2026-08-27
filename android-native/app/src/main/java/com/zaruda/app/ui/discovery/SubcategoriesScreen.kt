@@ -266,7 +266,7 @@ fun SubcategoriesScreen(
                             )
                             if (!cat.categoryGroup.isNullOrBlank()) {
                                 Text(
-                                    cat.categoryGroup!!.replaceFirstChar { it.titlecase() },
+                                    cat.categoryGroup?.replaceFirstChar { it.titlecase() } ?: "",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                 )

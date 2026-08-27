@@ -593,7 +593,7 @@ fun PostGridCard(
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                     ) {
                         Text(
-                            post.condition!!,
+                            post.condition ?: "Used",
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
@@ -641,7 +641,7 @@ fun PostGridCard(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            post.location!!,
+                            post.location ?: "",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

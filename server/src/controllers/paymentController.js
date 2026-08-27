@@ -1419,7 +1419,7 @@ exports.verifyPayment = async (req, res) => {
           ? `Your ${pay.boost_type} boost payment has been verified and activated.`
           : `Your payment for the ${pay.plan_purchased || "plan"} has been verified.`,
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[PAYMENT] Failed to send payment_verified notification', { userId: pay.user_id, error: e.message }));
 
     return res.json({
       success: true,

@@ -125,7 +125,7 @@ fun ExpiryActionScreen(
                 state.loading -> Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 state.post == null -> Text("Post not found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else -> {
-                    val post = state.post!!
+                    val post = state.post ?: return@Scaffold
 
                     // Post card
                     Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp)) {

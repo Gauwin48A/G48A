@@ -120,7 +120,7 @@ const transitionAccountState = async (userId, newState, options = {}) => {
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, created_at)
        VALUES ($1, $2, 'ACCOUNT_STATE', $3, $4::jsonb, NOW())`,
       [String(adminId), "ACCOUNT_STATE_TRANSITION", String(userId), JSON.stringify({ target_user: userId, state: targetState, reason })]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[AccountState] Failed to write audit log', { userId, action: 'ACCOUNT_STATE_TRANSITION', error: e.message }));
 
     logger.info(`[AccountState] User ${userId} successfully transitioned to ${targetState}`);
     return {

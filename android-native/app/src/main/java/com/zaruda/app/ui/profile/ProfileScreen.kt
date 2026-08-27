@@ -247,7 +247,7 @@ class ProfileViewModel @Inject constructor(
 
         // Show cached data instantly — no full-screen spinner if we already have data
         if (cachedProfile?.user != null && current.user == null) {
-            _state.value = cachedProfile!!.copy(loading = false, refreshing = true)
+            cachedProfile?.let { _state.value = it.copy(loading = false, refreshing = true) }
         } else if (current.user == null) {
             _state.value = ProfileState(loading = true)
         }
@@ -286,14 +286,16 @@ class ProfileViewModel @Inject constructor(
                                 // Cache-first: always prefer showing cached profile over blocking UI
                                 if (cachedProfile?.user != null) {
                                     // Show cached profile with a non-blocking warning banner
-                                    _state.value = cachedProfile!!.copy(
-                                        loading = false, refreshing = false,
-                                        error = if (expired)
-                                            "Session expired. Please sign in again."
-                                        else
-                                            retry.error.userFacingMessage("refresh your profile"),
-                                        isSessionExpired = expired,
-                                    )
+                                    cachedProfile?.let { c ->
+                                        _state.value = c.copy(
+                                            loading = false, refreshing = false,
+                                            error = if (expired)
+                                                "Session expired. Please sign in again."
+                                            else
+                                                retry.error.userFacingMessage("refresh your profile"),
+                                            isSessionExpired = expired,
+                                        )
+                                    }
                                 } else if (repo.isDemoSession) {
                                     val demoUser = createDemoUser()
                                     _state.value = _state.value.copy(
@@ -315,10 +317,12 @@ class ProfileViewModel @Inject constructor(
                     } else {
                         // Network/server error — fall back to cache or demo
                         if (cachedProfile?.user != null) {
-                            _state.value = cachedProfile!!.copy(
-                                loading = false, refreshing = false,
-                                error = meResult.error.userFacingMessage("refresh your profile"),
-                            )
+                            cachedProfile?.let { c ->
+                                _state.value = c.copy(
+                                    loading = false, refreshing = false,
+                                    error = meResult.error.userFacingMessage("refresh your profile"),
+                                )
+                            }
                         } else if (repo.isDemoSession) {
                             _state.value = _state.value.copy(
                                 loading = false, refreshing = false,

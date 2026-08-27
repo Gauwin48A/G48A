@@ -188,7 +188,7 @@ fun ProductListingScreen(
     val subcatProducts = remember(allProducts, selectedSubcatId) {
         if (selectedSubcatId != null)
             allProducts.filter { it.subcategory == selectedSubcatId }
-                .ifEmpty { MockDataProvider.productsForSubcategory(selectedSubcatId!!) }
+                .ifEmpty { selectedSubcatId?.let { MockDataProvider.productsForSubcategory(it) } ?: emptyList() }
         else
             allProducts
     }

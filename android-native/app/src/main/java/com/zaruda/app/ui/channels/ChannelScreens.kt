@@ -330,7 +330,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
         when {
             state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             state.channel != null -> {
-                val ch = state.channel!!
+                val ch = state.channel ?: return@Scaffold
                 LazyColumn(contentPadding = PaddingValues(bottom = 80.dp), modifier = Modifier.fillMaxSize().padding(padding)) {
                     // Hero cover banner
                     item {

@@ -1017,7 +1017,7 @@ exports.updateComplaintStatus = async (req, res) => {
         JSON.stringify({ complaintId: id, from: currentStatus, to: nextStatus }),
         req.ip || null,
       ]
-    ).catch(() => {});
+    ).catch((e) => logger.warn('[COMPLAINTS] Failed to write audit log', { complaintId: id, error: e.message }));
 
     res.json({
       message: `Complaint status updated to ${status}`,

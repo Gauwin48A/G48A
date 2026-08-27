@@ -319,7 +319,7 @@ fun MyPostsScreen(
             title = { Text("Mark as Sold", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Mark \"${state.markSoldTarget!!.displayTitle}\" as sold?")
+                    Text("Mark \"${state.markSoldTarget?.displayTitle ?: "this listing"}\" as sold?")
                     Spacer(Modifier.height(8.dp))
                     Text("The listing will move to your Sold tab.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -464,7 +464,7 @@ fun MyPostsScreen(
             title = { Text("🔄 Renew Listing", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Re-activate \"${state.renewTarget!!.displayTitle}\"?")
+                    Text("Re-activate \"${state.renewTarget?.displayTitle ?: "this listing"}\"?")
                     Text("The listing will be set back to Active and appear in search results.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

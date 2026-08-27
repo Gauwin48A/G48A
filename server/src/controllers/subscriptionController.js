@@ -485,14 +485,14 @@ exports.verifyPayment = async (req, res) => {
       `INSERT INTO user_subscriptions (user_id, plan_id, razorpay_order_id, status, start_date, end_date, auto_renew)
        VALUES ($1, $2, $3, 'ACTIVE', $4, $5, $6)
        RETURNING *`,
-      [userId, plan_id, razorpay_order_id, startDate, endDate, true]
+      [userId, orderPlanId, razorpay_order_id, startDate, endDate, true]
     );
 
     // 5. Record the payment transaction
     await runQuery(
       `INSERT INTO payment_transactions (user_id, order_id, plan_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, currency, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'CAPTURED')`,
-      [userId, paymentOrder.order_id, plan_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, parseFloat(plan.price), plan.currency || "INR"]
+      [userId, paymentOrder.order_id, orderPlanId, razorpay_order_id, razorpay_payment_id, razorpay_signature, parseFloat(plan.price), plan.currency || "INR"]
     );
 
     // 6. Update payment order status

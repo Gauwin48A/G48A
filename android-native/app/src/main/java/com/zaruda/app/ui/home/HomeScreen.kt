@@ -1508,7 +1508,7 @@ fun HomeScreen(
                                         InputChip(
                                             selected = true,
                                             onClick = { selectedCategory = null },
-                                            label = { Text(selectedCategory!!, style = MaterialTheme.typography.labelSmall) },
+                                            label = { Text(selectedCategory ?: "", style = MaterialTheme.typography.labelSmall) },
                                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
                                         )
                                     }
@@ -1682,7 +1682,7 @@ fun HomeScreen(
                             Text("${filteredPosts.size} listing${if (filteredPosts.size != 1) "s" else ""}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (selectedCategory != null) {
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.home_in_category, selectedCategory!!), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                                Text(stringResource(R.string.home_in_category, selectedCategory ?: ""), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                             }
                         }
                     }

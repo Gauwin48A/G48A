@@ -511,17 +511,17 @@ fun PostDetailScreen(
         context.getSharedPreferences("mhub_sale_prefs", android.content.Context.MODE_PRIVATE)
     }
 
-    if (showShareSheet && state.post != null) {
+    if (showShareSheet) state.post?.let { post ->
         com.zaruda.app.ui.components.ShareLinkBottomSheet(
-            title = state.post!!.displayTitle,
-            postId = state.post!!.stableId,
+            title = post.displayTitle,
+            postId = post.stableId,
             onDismiss = { showShareSheet = false },
         )
     }
-    if (showInterestModal && state.post != null) {
+    if (showInterestModal) state.post?.let { post ->
         com.zaruda.app.ui.components.BuyerInterestModal(
-            postId = state.post!!.stableId,
-            postTitle = state.post!!.displayTitle,
+            postId = post.stableId,
+            postTitle = post.displayTitle,
             onDismiss = { showInterestModal = false },
             onSubmit = { name, phone, msg ->
                 viewModel.submitInquiry(buyerName = name, phone = phone, message = msg)
@@ -529,8 +529,7 @@ fun PostDetailScreen(
             },
         )
     }
-    if (showBuyFlowHowItWorks && state.post != null) {
-        val buyPost = state.post!!
+    if (showBuyFlowHowItWorks) state.post?.let { buyPost ->
         BuyFlowHowItWorksDialog(
             onContinue = {
                 showBuyFlowHowItWorks = false

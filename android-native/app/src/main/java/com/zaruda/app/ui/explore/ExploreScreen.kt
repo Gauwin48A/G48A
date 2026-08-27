@@ -3178,7 +3178,7 @@ fun AllPostCard(
                     ) {
                         // Tier badge (Premium/Silver/Standard)
                         val tierLabel = when {
-                            post.isPremium == true || post.tierPriority != null && post.tierPriority!! >= 3
+                            post.isPremium == true || (post.tierPriority ?: 0) >= 3
                                 || post.tier?.lowercase() == "premium" -> "PREMIUM" to Color(0xFFF59E0B)
                             post.tier?.lowercase() == "silver" -> "SILVER" to Color(0xFF94A3B8)
                             else -> null
