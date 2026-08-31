@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const pool = require("./db");
+const logger = require("../utils/logger");
 
 // =============================================================================
 // Log Directory Setup

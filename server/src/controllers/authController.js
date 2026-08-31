@@ -14,6 +14,7 @@ const otpDeliveryService = require('../services/otpDeliveryService');
 const mlFraudScoringService = require('../services/mlFraudScoringService');
 const riskTelemetryService = require('../services/riskTelemetryService');
 const { validateTwoFactorCode: validateTwoFactorCode } = require('../services/twoFactorValidationService');
+const { recordFailedAttempt, resetFailedAttempts } = require('../utils/authUtils');
 const {
   applyRewardDeltaInTransaction: applyRewardDeltaInTransaction,
   afterCommitRewardMutation: afterCommitRewardMutation,
@@ -579,6 +580,7 @@ exports.login = async (req, res) => {
           .json({ error: 'Too many failed login attempts. Account locked for 15 minutes.', locked: true });
       }
       await runQuery('UPDATE users SET login_attempts = $1 WHERE user_id = $2', [attempts, user.user_id]);
+      recordFailedAttempt(loginIdentifier.toLowerCase());
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const fraudAssessment = await mlFraudScoringService.scoreLoginAttempt({
@@ -679,6 +681,8 @@ exports.login = async (req, res) => {
     } catch (logErr) {
       logger.warn('[AUDIT] Failed to log login, continuing anyway:', logErr.message);
     }
+    // Clear failed login attempts on successful authentication
+    resetFailedAttempts(loginIdentifier.toLowerCase());
     res.json({
       success: true,
       emailVerified,
@@ -1566,11 +1570,15 @@ exports.completeAadhaarSignup = async (req, res) => {
   const signupToken = parseOptionalString(req.body?.signupToken || req.body?.token);
   const password = String(req.body?.password || '');
   const confirmPassword = String(req.body?.confirmPassword || '');
+  const email = parseOptionalString(req.body?.email);
   const referralCode = parseOptionalString(req.body?.referralCode || req.body?.referral_code || req.body?.ref);
   const fullName = parseOptionalString(req.body?.fullName || req.body?.name);
   const dob = parseOptionalString(req.body?.dob || req.body?.dateOfBirth || req.body?.date_of_birth);
   if (!signupToken) {
     return res.status(400).json({ error: 'Signup token is required' });
+  }
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email address is required' });
   }
   if (!password) {
     return res.status(400).json({ error: 'Password is required' });
@@ -1633,12 +1641,13 @@ exports.completeAadhaarSignup = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const existingUser = await client.query('SELECT user_id FROM users WHERE phone_number = $1 LIMIT 1', [
+    const existingUser = await client.query('SELECT user_id FROM users WHERE phone_number = $1 OR LOWER(email) = LOWER($2) LIMIT 1', [
       mobileNumber,
+      email,
     ]);
     if (existingUser.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'Account already exists. Please login instead.' });
+      return res.status(409).json({ error: 'Account with this phone number or email already exists. Please login instead.' });
     }
     if (referralCode) {
       const referralLookup = await client.query('SELECT user_id FROM users WHERE referral_code = $1 LIMIT 1', [
@@ -1671,6 +1680,10 @@ exports.completeAadhaarSignup = async (req, res) => {
     const username = `user_${mobileNumber.slice(-4)}_${crypto.randomBytes(3).toString('hex')}`;
     const insertColumns = ['username', 'name', 'phone_number', 'password_hash', 'role'];
     const params = [username, 'User', mobileNumber, hashedPassword, 'user'];
+    if (email) {
+      insertColumns.push('email');
+      params.push(email.trim().toLowerCase());
+    }
     if (columnSet.has('aadhaar_number')) {
       insertColumns.push('aadhaar_number');
       params.push(aadhaarNumber);

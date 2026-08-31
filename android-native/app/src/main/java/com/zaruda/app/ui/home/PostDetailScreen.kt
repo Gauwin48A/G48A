@@ -1718,7 +1718,7 @@ private fun ContactSellerRevealPanel(
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                             ) {
-                                Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
                                 Text(stringResource(R.string.commerce_contact_whatsapp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }

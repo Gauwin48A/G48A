@@ -214,14 +214,14 @@ class AuthViewModel @Inject constructor(
         _state.value = _state.value.copy(signupStep = 4)
     }
 
-    fun completeAadhaarSignup(password: String, confirmPassword: String, pan: String?, referral: String?) {
+    fun completeAadhaarSignup(email: String, password: String, confirmPassword: String, pan: String?, referral: String?) {
         val token = _state.value.signupToken
         if (token == null) { _state.value = _state.value.copy(error = "Signup token missing"); return }
         if (password.length < 12) { _state.value = _state.value.copy(error = "Password must be at least 12 characters"); return }
         if (password != confirmPassword) { _state.value = _state.value.copy(error = "Passwords don't match"); return }
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val res = repo.completeAadhaarSignup(token, password, pan, referral)) {
+            when (val res = repo.completeAadhaarSignup(token, password, email, pan, referral)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(loading = false, success = true)
                 is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = res.error.message)
             }

@@ -1,5 +1,16 @@
-const pool = require("../config/db");
 const pino = require("../config/logger");
+
+/**
+ * Lazily require the database pool to break the circular dependency
+ * chain: utils/logger -> config/db -> config/dbPool -> utils/logger.
+ */
+let _pool = null;
+function getPool() {
+    if (_pool === null) {
+        _pool = require("../config/db");
+    }
+    return _pool;
+}
 
 /**
  * Log an Aadhaar verification event to the database.
@@ -11,7 +22,7 @@ const pino = require("../config/logger");
  */
 async function logAadhaarVerification(userId, requestId, requestType, status) {
   try {
-    await pool.query(
+    await getPool().query(
       "INSERT INTO aadhaar_verification_logs (user_id, request_id, request_type, status) VALUES ($1, $2, $3, $4)",
       [userId, requestId, requestType, status]
     );

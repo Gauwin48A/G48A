@@ -221,9 +221,9 @@ class AuthRepository @Inject constructor(
         Unit
     }
 
-    suspend fun completeAadhaarSignup(signupToken: String, password: String, pan: String?, referral: String?): ApiResult<User?> = safeApiCall {
+    suspend fun completeAadhaarSignup(signupToken: String, password: String, email: String?, pan: String?, referral: String?): ApiResult<User?> = safeApiCall {
         runCatching { api.csrfToken() }
-        val res = api.completeAadhaarSignup(CompleteAadhaarSignupRequest(signupToken = signupToken, password = password, confirmPassword = password, panNumber = pan, referralCode = referral))
+        val res = api.completeAadhaarSignup(CompleteAadhaarSignupRequest(signupToken = signupToken, password = password, confirmPassword = password, email = email, panNumber = pan, referralCode = referral))
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
         registerPushTokenIfCached()

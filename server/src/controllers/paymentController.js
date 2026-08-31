@@ -3,8 +3,25 @@ const { verifyRazorpaySignature } = require("../services/paymentGateway");
 const logger = require("../utils/logger");
 const axios = require("axios");
 const crypto = require("crypto");
+const { validateExternalUrl } = require("../utils/ssrfGuard");
 
 const RAZORPAY_API_BASE = process.env.RAZORPAY_API_BASE || "https://api.razorpay.com/v1";
+
+/**
+ * Validate an outbound URL against the SSRF guard before making a request.
+ * Blocks calls to private/internal IPs that could be used to access
+ * internal services (AWS metadata endpoint, internal APIs, etc.).
+ *
+ * @param {string} url - The URL to validate
+ * @returns {Promise<void>} Throws if the URL is unsafe
+ * @throws {Error} If the URL targets a private/internal IP
+ */
+async function assertSafeUrl(url) {
+  const { safe, error } = await validateExternalUrl(url);
+  if (!safe) {
+    throw new Error(`SSRF blocked: ${error}`);
+  }
+}
 
 /**
  * Boost prices (server-authoritative) + promotion durations.
@@ -191,8 +208,10 @@ exports.createRazorpayOrder = async (req, res) => {
       let razorpayOrderId = `mock_order_${crypto.randomBytes(8).toString("hex")}`;
       let mock = true;
       if (credentials) {
+        const orderUrl = `${RAZORPAY_API_BASE}/orders`;
+        await assertSafeUrl(orderUrl);
         const response = await axios.post(
-          `${RAZORPAY_API_BASE}/orders`,
+          orderUrl,
           { amount: amountPaise, currency: "INR", receipt, payment_capture: 1 },
           { auth: { username: credentials.keyId, password: credentials.keySecret } }
         );
@@ -292,8 +311,10 @@ exports.createRazorpayOrder = async (req, res) => {
       let razorpayOrderId = `mock_order_${crypto.randomBytes(8).toString("hex")}`;
       let mock = true;
       if (credentials) {
+        const orderUrl = `${RAZORPAY_API_BASE}/orders`;
+        await assertSafeUrl(orderUrl);
         const response = await axios.post(
-          `${RAZORPAY_API_BASE}/orders`,
+          orderUrl,
           { amount: amountPaise, currency: "INR", receipt, payment_capture: 1 },
           { auth: { username: credentials.keyId, password: credentials.keySecret } }
         );

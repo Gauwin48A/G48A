@@ -77,7 +77,7 @@ all_active_posts AS (
     WHERE p.status = 'active'
       AND p.post_type = 'text'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
-      AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
+      AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR (SELECT uid FROM config) = '0' OR (SELECT uid FROM config) = 'null' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
       ${TEST_USER_EXCLUSION}
 ),
 -- Apply diversity constraints
@@ -209,7 +209,7 @@ all_active_posts AS (
     WHERE p.status = 'active'
       AND p.post_type = 'text'
       AND (p.expires_at IS NULL OR p.expires_at > NOW())
-      AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))
+      AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR (SELECT uid FROM config) = '0' OR (SELECT uid FROM config) = 'null' OR p.user_id::text != (SELECT uid FROM config))
       ${groupFilter}
       ${TEST_USER_EXCLUSION}
 ),

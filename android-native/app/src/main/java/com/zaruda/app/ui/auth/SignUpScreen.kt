@@ -148,6 +148,18 @@ fun SignUpScreen(
                             colors = suTfColors(borderColor, darkTheme)
                         )
 
+                        Text("Email Address", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it.trim() },
+                            placeholder = { Text("e.g. rahul@wyntechlabs.com", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = suTfColors(borderColor, darkTheme)
+                        )
+
                         Text("Mobile Number", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(
@@ -209,11 +221,11 @@ fun SignUpScreen(
 
                         SuGradientButton(
                             label = "Continue to Plan Selection",
-                            enabled = name.isNotBlank() && mobile.length == 10 && password.length >= 6 && !state.loading,
+                            enabled = name.isNotBlank() && email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && mobile.length == 10 && password.length >= 6 && !state.loading,
                             loading = state.loading,
                             gradient = brandGradient
                         ) {
-                            viewModel.completeAadhaarSignup(password = password, confirmPassword = password, pan = null, referral = referralCode.ifBlank { null })
+                            viewModel.completeAadhaarSignup(email = email, password = password, confirmPassword = password, pan = null, referral = referralCode.ifBlank { null })
                         }
 
                         Row(

@@ -1133,7 +1133,7 @@ exports.getAllPosts = async (req, res) => {
         p.subcategory_id,
         COALESCE(u.isaadhaarverified, false) as aadhaar_verified,
         COALESCE(u.kyc_verified, false) as pan_verified,
-        NULL as verification_date
+        u.verified_at as verification_date
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text

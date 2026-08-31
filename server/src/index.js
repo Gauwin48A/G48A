@@ -22,6 +22,8 @@ const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
 const { getUploadsDir, getUploadsSubdir } = require("./utils/uploads");
+const logger = require("./config/logger");
+const JWT_CONFIG = require("./config/jwtConfig");
 
 // ── Security & Middleware ────────────────────────────────
 const {
@@ -130,6 +132,8 @@ const settlementsRoutes = require("./routes/settlements.js");
 const webhooksRoutes = require("./routes/webhooks.js");
 
 const { setNotificationSocket } = require("./services/notificationEmitter");
+const { processExpiredPosts } = require("./workers/cronPostExpiry");
+const { processEscrowSettlements } = require("./workers/cronEscrowSettlement");
 
 /* ─────────────────────────────────────────────────────────
    Express App Setup
@@ -375,6 +379,7 @@ const socketDebugEnabled = process.env.NODE_ENV !== "production";
 
 // ── Socket.IO Authentication Middleware ──────────────────
 const { verifyToken: verifySocketToken } = require("./services/tokenVerificationCache");
+const allowedAudiences = JWT_CONFIG.ALLOWED_AUDIENCES || JWT_CONFIG.AUDIENCE;
 const parseCookieHeader = (cookieHeader = "") => {
   if (!cookieHeader || typeof cookieHeader !== "string") {
     return {};
@@ -947,7 +952,6 @@ if (enableTestNotificationEndpoint) {
    Error Handling
    ───────────────────────────────────────────────────────── */
 
-const logger = require("./config/logger");
 const {
   evaluateFoundationConfig,
 } = require("./services/foundationGuardService");
@@ -1131,6 +1135,12 @@ const bootstrap = async () => {
     autoCreateTwoFactorFallback: true,
   });
   logger.info(`[SchemaGuard] Preflight status: ${schemaReport.status}`);
+
+  // Initialize background worker schedules (run every 1 hour)
+  setInterval(() => {
+    processExpiredPosts().catch((err) => logger.error("[Worker] Post expiry check error:", err));
+    processEscrowSettlements().catch((err) => logger.error("[Worker] Escrow settlement check error:", err));
+  }, 60 * 60 * 1000);
 
   // Start listening
   await startServer();

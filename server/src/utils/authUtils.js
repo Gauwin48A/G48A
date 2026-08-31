@@ -8,6 +8,7 @@
 const failedAttempts = new Map();
 const TTL_MS = 15 * 60 * 1000;       // 15 minutes
 const MAX_ENTRIES = 10_000;
+const MAX_ATTEMPTS_PER_ENTRY = 20;    // Lockout after 20 failures per email
 
 /** Remove entries older than TTL */
 function evictStale() {
@@ -29,6 +30,10 @@ const recordFailedAttempt = (email) => {
     const existing = failedAttempts.get(email);
     if (existing && (Date.now() - existing.firstAttemptAt) < TTL_MS) {
         existing.count += 1;
+        // Cap individual entry to prevent memory bloat from brute-force
+        if (existing.count > MAX_ATTEMPTS_PER_ENTRY) {
+            existing.count = MAX_ATTEMPTS_PER_ENTRY;
+        }
     } else {
         // Evict oldest if at capacity
         if (failedAttempts.size >= MAX_ENTRIES) {

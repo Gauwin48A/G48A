@@ -745,7 +745,6 @@ fun ProfileScreen(
     onOpenAccountDelete: () -> Unit = {},
     onOpenPost: (String) -> Unit = {},
     onOpenOrders: () -> Unit = {},
-    onOpenSaleDone: () -> Unit = {},
     onOpenSaleUndone: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
@@ -1353,14 +1352,6 @@ fun ProfileScreen(
                                     letterSpacing = 0.8.sp,
                                 )
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ProfileQuickActionButton(
-                                        icon = Icons.Filled.CheckCircle,
-                                        label = "Sale Done",
-                                        subtitle = "Mark item as sold",
-                                        accentColor = Color(0xFF22C55E),
-                                        onClick = onOpenSaleDone,
-                                        modifier = Modifier.weight(1f),
-                                    )
                                     ProfileQuickActionButton(
                                         icon = Icons.Filled.RadioButtonUnchecked,
                                         label = "Sale Undone",

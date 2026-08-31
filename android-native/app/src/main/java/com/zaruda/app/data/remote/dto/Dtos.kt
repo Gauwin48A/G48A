@@ -139,6 +139,7 @@ data class CompleteAadhaarSignupRequest(
     val signupToken: String,
     val password: String,
     val confirmPassword: String,
+    val email: String? = null,
     val panNumber: String? = null,
     val referralCode: String? = null,
 )

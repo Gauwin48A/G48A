@@ -177,14 +177,30 @@ const uploadLimiter = rateLimit({
 });
 
 // Custom middleware for tracking suspicious activity
+// Uses Redis when available for persistence across restarts and cluster workers;
+// falls back to in-memory Map for development/single-process environments.
 const suspiciousActivityTracker = (req, res, next) => {
     const ip = resolveClientIp(req);
     const now = Date.now();
+    const key = `suspicious:${ip}`;
 
+    // Fire-and-forget Redis tracking — never block or crash the request pipeline
+    if (redisSession.isRedisAvailable()) {
+        redisSession.incr(key)
+            .then((count) => {
+                if (count === 1) {
+                    return redisSession.expire(key, Math.ceil(SUSPICIOUS_WINDOW_MS / 1000));
+                }
+            })
+            .catch(() => { /* Redis failure — ignore, in-memory still tracks */ })
+            .catch(() => {}); // safety net for expire failures
+    }
+
+    // In-memory tracking (always runs, even when Redis is primary)
     if (!requestCounts.has(ip)) {
         requestCounts.set(ip, {
             count: 1,
-            timestamp: now, // Backward compatibility for existing diagnostics.
+            timestamp: now,
             windowStartAt: now,
             lastSeenAt: now,
             flagged: false
@@ -205,7 +221,6 @@ const suspiciousActivityTracker = (req, res, next) => {
         data.count += 1;
         data.lastSeenAt = now;
 
-        // Flag if more than threshold requests within the active window.
         if (data.count > SUSPICIOUS_REQUEST_THRESHOLD && !data.flagged) {
             data.flagged = true;
             console.warn(`[SECURITY] Suspicious activity detected from IP: ${ip}`);

@@ -639,7 +639,6 @@ fun ZarudaApp(
                             onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
-                            onOpenSaleDone = { navController.navigate(Routes.saleDoneTab()) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.REPOST) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },

@@ -244,46 +244,6 @@ const TIER_RULES = {
       return d;
     },
   },
-  starter: {
-    name: "Starter Plan",
-    displayName: "Starter Plan",
-    visibilityDays: 30,
-    maxListings: 999999,
-    dailyLimit: 1,
-    priority: 3,
-    searchPriority: 3,
-    priceINR: 111,
-    durationMonths: 1,
-    quotaPeriodMonths: 1,
-    trialDays: 0,
-    boostQuotaMonthly: 0,
-    featuredQuotaMonthly: 0,
-    spotlightQuotaMonthly: 0,
-    badgeType: null,
-    hasAnalytics: false,
-    hasPrioritySearch: false,
-    hasPrioritySupport: false,
-    perPostCost: 0,
-    maxImages: 1,
-    tagline: "Taste Premium Experience",
-    features: [
-      "✨ 1 Month Access (30 Days)",
-      "📸 1 Photo per Post",
-      "✍️ 1 Post Per Day Limit",
-      "💰 100 Coins Bonus on Activation",
-      "🆔 KYC Verification Included",
-      "🛡️ Inclusive of GST & all fees",
-    ],
-    canPost: (user) => {
-      if (!user.subscription_expiry) return false;
-      return new Date(user.subscription_expiry) >= new Date();
-    },
-    getExpiry: () => {
-      const d = new Date();
-      d.setDate(d.getDate() + 30);
-      return d;
-    },
-  },
 };
 
 const TIER_ORDER = ["basic", "starter", "bronze", "silver", "gold", "premium"];
@@ -372,11 +332,16 @@ const applyPromoCode = async (code, tierName, pool) => {
         promo.usedCount = parseInt(result.rows[0].used_count, 10);
       } catch (dbErr) {
         // Table may not exist (42P01) — fall through to in-memory check
-        // On other transient DB errors, also fall back (best-effort)
         if (dbErr?.code === '42P01' || dbErr?.code === 'ECONNREFUSED') {
           // Known recoverable errors: table missing or connection refused
-        } else if (promo.usedCount >= promo.maxUses) {
-          return { valid: false, error: "Promo code usage limit reached" };
+          // Fall through to in-memory counter
+          if (promo.usedCount >= promo.maxUses) {
+            return { valid: false, error: "Promo code usage limit reached" };
+          }
+        } else {
+          // Unexpected DB error — reject to prevent race-condition bypass
+          console.error(`[PromoCode] DB error for code ${code}:`, dbErr.message);
+          return { valid: false, error: "Unable to validate promo code. Please try again." };
         }
       }
     } else {
