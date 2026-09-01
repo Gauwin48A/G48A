@@ -2673,7 +2673,7 @@ private fun ForYouBrowseHeader(
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "For You",
+                        stringResource(R.string.nav_for_you),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,

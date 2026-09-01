@@ -466,7 +466,7 @@ fun RecentlyViewedScreen(
                                 contentDescription = "Toggle view",
                             )
                         }
-                        // Overflow menu (three dots) — consistent with MhubTopBar
+                        // Overflow menu (three dots) — consistent with ZarudaTopBar
                         var showOverflow by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { showOverflow = true }) {

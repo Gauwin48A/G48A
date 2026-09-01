@@ -1,11 +1,11 @@
 package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -44,6 +44,7 @@ fun SignUpScreen(
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var referralCode by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.success) { if (state.success) onSignedUp() }
 
@@ -60,6 +61,45 @@ fun SignUpScreen(
     val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
     val mutedText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
     val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
+    val successColor = Color(0xFF22C55E)
+    val warningColor = Color(0xFFF59E0B)
+
+    // Password strength calculation
+    val passwordStrength = remember(password) {
+        when {
+            password.isEmpty() -> 0
+            password.length < 6 -> 1
+            password.length < 8 -> 2
+            password.length >= 8 && password.any { it.isDigit() } && password.any { !it.isLetterOrDigit() } -> 4
+            password.length >= 8 && password.any { it.isDigit() } -> 3
+            else -> 2
+        }
+    }
+    val strengthColor = when (passwordStrength) {
+        1 -> Color(0xFFEF4444)
+        2 -> warningColor
+        3 -> Color(0xFF3B82F6)
+        4 -> successColor
+        else -> borderColor
+    }
+    val strengthLabel = when (passwordStrength) {
+        1 -> "Weak"
+        2 -> "Fair"
+        3 -> "Good"
+        4 -> "Strong"
+        else -> ""
+    }
+
+    // Real-time validation
+    val emailValid = email.isBlank() || android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val phoneValid = mobile.isBlank() || (mobile.length == 10 && mobile.first() in '6'..'9')
+    val passwordsMatch = confirmPassword.isBlank() || password == confirmPassword
+    val canSubmit = name.isNotBlank() &&
+            email.isNotBlank() && emailValid &&
+            mobile.length == 10 && phoneValid &&
+            password.length >= 6 &&
+            password == confirmPassword &&
+            !state.loading
 
     Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
         Column(
@@ -71,6 +111,7 @@ fun SignUpScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Back button
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -93,6 +134,7 @@ fun SignUpScreen(
                 color = if (darkTheme) Color(0xFF1E293B) else Color.White,
             ) {
                 Column(Modifier.fillMaxWidth()) {
+                    // Card header
                     Box(
                         Modifier
                             .fillMaxWidth()
@@ -112,7 +154,7 @@ fun SignUpScreen(
                             }
                             Spacer(Modifier.height(10.dp))
                             Text("Create Account", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            Text("Step 1 of 3: Account Details", color = Color(0xFFDBEAFE), fontSize = 12.sp)
+                            Text("Join the community", color = Color(0xFFDBEAFE), fontSize = 12.sp)
                         }
                     }
 
@@ -120,8 +162,9 @@ fun SignUpScreen(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Error banner
                         state.error?.let { msg ->
                             Row(
                                 Modifier
@@ -137,6 +180,7 @@ fun SignUpScreen(
                             }
                         }
 
+                        // Full Name
                         Text("Full Name", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         OutlinedTextField(
                             value = name,
@@ -148,18 +192,23 @@ fun SignUpScreen(
                             colors = suTfColors(borderColor, darkTheme)
                         )
 
+                        // Email Address
                         Text("Email Address", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it.trim() },
-                            placeholder = { Text("e.g. rahul@wyntechlabs.com", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                            placeholder = { Text("e.g. rahul@example.com", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = suTfColors(borderColor, darkTheme)
                         )
+                        if (email.isNotBlank() && !emailValid) {
+                            Text("Enter a valid email address", color = Color(0xFFEF4444), fontSize = 11.sp)
+                        }
 
+                        // Mobile Number
                         Text("Mobile Number", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(
@@ -183,7 +232,11 @@ fun SignUpScreen(
                                 colors = suTfColors(borderColor, darkTheme)
                             )
                         }
+                        if (mobile.isNotBlank() && !phoneValid) {
+                            Text("Enter a valid 10-digit mobile number starting with 6-9", color = Color(0xFFEF4444), fontSize = 11.sp)
+                        }
 
+                        // Password
                         Text("Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         OutlinedTextField(
                             value = password,
@@ -205,31 +258,97 @@ fun SignUpScreen(
                                 }
                             }
                         )
+                        // Password strength indicator
+                        if (password.isNotBlank()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().animateContentSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Strength bar
+                                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    for (i in 1..4) {
+                                        Box(
+                                            Modifier
+                                                .weight(1f)
+                                                .height(4.dp)
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(if (i <= passwordStrength) strengthColor else borderColor)
+                                        )
+                                    }
+                                }
+                                Text(strengthLabel, color = strengthColor, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
 
+                        // Confirm Password
+                        Text("Confirm Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            placeholder = { Text("Re-enter your password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                            singleLine = true,
+                            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = suTfColors(borderColor, darkTheme),
+                            trailingIcon = {
+                                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                    Icon(
+                                        if (confirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = null,
+                                        tint = mutedText
+                                    )
+                                }
+                            }
+                        )
+                        if (confirmPassword.isNotBlank() && !passwordsMatch) {
+                            Text("Passwords don't match", color = Color(0xFFEF4444), fontSize = 11.sp)
+                        }
+
+                        // Referral Code (Optional)
                         Text("Referral Code (Optional)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
                         OutlinedTextField(
                             value = referralCode,
                             onValueChange = { referralCode = it.uppercase() },
-                            placeholder = { Text("MHUB100", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                            placeholder = { Text("ZARUDA100", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = suTfColors(borderColor, darkTheme)
                         )
 
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(4.dp))
 
+                        // Sign Up button
                         SuGradientButton(
-                            label = "Continue to Plan Selection",
-                            enabled = name.isNotBlank() && email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && mobile.length == 10 && password.length >= 6 && !state.loading,
+                            label = "Create Account",
+                            enabled = canSubmit,
                             loading = state.loading,
                             gradient = brandGradient
                         ) {
-                            viewModel.completeAadhaarSignup(email = email, password = password, confirmPassword = password, pan = null, referral = referralCode.ifBlank { null })
+                            viewModel.signUp(
+                                fullName = name.trim(),
+                                email = email.trim(),
+                                phone = mobile,
+                                password = password,
+                                referral = referralCode.ifBlank { null }
+                            )
                         }
 
+                        // Legal text
+                        Text(
+                            "By signing up, you agree to our Terms of Service and Privacy Policy.",
+                            fontSize = 11.sp,
+                            color = mutedText,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        )
+
+                        // Sign in link
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 4.dp),
+                            Modifier.fillMaxWidth().padding(top = 8.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

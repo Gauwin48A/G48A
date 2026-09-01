@@ -227,7 +227,7 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                         }
                         else -> {
                             Text("Enter Transaction ID (UTR)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                            MhubTextField("Transaction ID / UTR", state.transactionId, viewModel::setTransactionId)
+                            ZarudaTextField("Transaction ID / UTR", state.transactionId, viewModel::setTransactionId)
                             Button(onClick = { viewModel.submitPayment() }, enabled = !state.submitting,
                                 shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                 modifier = Modifier.fillMaxWidth().height(50.dp)) {

@@ -169,7 +169,7 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
         level = 2,
         xpCurrent = 140,
         xpRequired = 250,
-        referralCode = "MHUBDEMO",
+        referralCode = "ZARUDADEMO",
         totalReferrals = 2,
         directReferrals = 2,
         indirectReferrals = 1,
@@ -185,7 +185,7 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
         postStreak = 1,
         profileComplete = true,
         hasPosted = true,
-        dailySecretCode = "MHUB25",
+        dailySecretCode = "ZARUDA25",
     ),
     referralChain = listOf(
         RewardsReferralNodeDto(id = "demo_ref_1", name = "Priya", depth = 1, type = "Direct", coins = 50, joinDate = "Today"),
@@ -1194,7 +1194,7 @@ fun RewardsScreen(
                                 val dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR)
                                 val year = cal.get(java.util.Calendar.YEAR)
                                 val hash = (dayOfYear * 31 + year * 7).toString(16).take(6).uppercase()
-                                "MHUB$hash"
+                                "ZARUDA$hash"
                             }
                             AccentTopCard(listOf(Color(0xFF10B981), Color(0xFF059669)), if (darkTheme) Color(0xFF0F2E20) else Color(0xFFF0FDF4)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1268,14 +1268,14 @@ fun RewardsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Text(
-                                            text = user.referralCode ?: "MHUB",
+                                            text = user.referralCode ?: "ZARUDA",
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary,
                                             letterSpacing = 2.sp,
                                         )
                                         OutlinedButton(
-                                            onClick = { clipboardManager.setText(AnnotatedString(user.referralCode ?: "MHUB")); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                            onClick = { clipboardManager.setText(AnnotatedString(user.referralCode ?: "ZARUDA")); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                                             shape = RoundedCornerShape(8.dp),
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         ) {

@@ -246,7 +246,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                     }
 
                     // Title with char counter
-                    MhubTextFieldWithCounter(
+                    ZarudaTextFieldWithCounter(
                         label = stringResource(R.string.commerce_field_title),
                         value = state.title,
                         onValueChange = viewModel::setTitle,
@@ -254,7 +254,7 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         error = state.fieldErrors["title"],
                     )
                     // Description with char counter
-                    MhubTextFieldWithCounter(
+                    ZarudaTextFieldWithCounter(
                         label = stringResource(R.string.commerce_field_description),
                         value = state.description,
                         onValueChange = viewModel::setDescription,
@@ -263,14 +263,14 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         minLines = 3,
                     )
                     // Price row
-                    MhubTextFieldWithCounter(
+                    ZarudaTextFieldWithCounter(
                         label = "Price (₹)",
                         value = state.price,
                         onValueChange = viewModel::setPrice,
                         maxLength = 10,
                         error = state.fieldErrors["price"],
                     )
-                    MhubTextField(stringResource(R.string.commerce_field_location), state.location, viewModel::setLocation)
+                    ZarudaTextField(stringResource(R.string.commerce_field_location), state.location, viewModel::setLocation)
 
                     Spacer(Modifier.height(8.dp))
                     Button(

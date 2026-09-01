@@ -21,7 +21,7 @@ class PermissionManager @Inject constructor(
         return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
     }
 
-    /** Open the system app settings page for MHub */
+    /** Open the system app settings page for Zaruda */
     fun openAppSettings() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
@@ -30,7 +30,7 @@ class PermissionManager @Inject constructor(
         context.startActivity(intent)
     }
 
-    /** Open the system notification settings for MHub */
+    /** Open the system notification settings for Zaruda */
     fun openNotificationSettings() {
         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {

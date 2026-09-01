@@ -82,7 +82,7 @@ class TopBarViewModel @Inject constructor(
     }
 }
 
-/* ── MhubTopBar ─────────────────────────────────────────────────────────── */
+/* ── ZarudaTopBar ─────────────────────────────────────────────────────────── */
 
 @Composable
 fun ZarudaTopBar(

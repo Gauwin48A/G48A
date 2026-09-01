@@ -10,7 +10,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.zaruda.app"
             android:targetClass="com.zaruda.app.MainActivity"
-            android:data="mhub://create-post" />
+            android:data="zaruda://create-post" />
     </shortcut>
     <shortcut
         android:shortcutId="search"
@@ -22,7 +22,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.zaruda.app"
             android:targetClass="com.zaruda.app.MainActivity"
-            android:data="mhub://search" />
+            android:data="zaruda://search" />
     </shortcut>
     <shortcut
         android:shortcutId="chat"
@@ -34,6 +34,6 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.zaruda.app"
             android:targetClass="com.zaruda.app.MainActivity"
-            android:data="mhub://chat" />
+            android:data="zaruda://chat" />
     </shortcut>
 </shortcuts>

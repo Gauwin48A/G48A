@@ -135,7 +135,7 @@ class TokenStore @Inject constructor(context: Context) {
     }
 
     private companion object {
-        const val PREFS_NAME = "mhub_secure_prefs"
+        const val PREFS_NAME = "zaruda_secure_prefs"
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
         const val KEY_LAST_SPIN_DATE = "last_spin_date"

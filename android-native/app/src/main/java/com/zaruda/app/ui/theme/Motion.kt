@@ -14,7 +14,7 @@ import androidx.compose.animation.slideOutVertically
 /**
  * Standard animation specs used throughout the app for consistency.
  */
-object MhubMotion {
+object ZarudaMotion {
     const val DURATION_FAST = 150
     const val DURATION_MEDIUM = 250
     const val DURATION_SLOW = 400

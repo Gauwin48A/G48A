@@ -11,14 +11,14 @@ class InputValidatorsTest {
 
     @Test
     fun email_and_phone_validation() {
-        assertTrue(InputValidators.isValidEmail("rahul.sharma@mhub.com"))
+        assertTrue(InputValidators.isValidEmail("rahul.sharma@zaruda.com"))
         assertFalse(InputValidators.isValidEmail("rahul.sharma"))
 
         assertTrue(InputValidators.isValidPhone("9876543210"))
         assertTrue(InputValidators.isValidPhone("+91 98765 43210"))
         assertFalse(InputValidators.isValidPhone("12345"))
 
-        assertTrue(InputValidators.isValidEmailOrPhone("rahul.sharma@mhub.com"))
+        assertTrue(InputValidators.isValidEmailOrPhone("rahul.sharma@zaruda.com"))
         assertTrue(InputValidators.isValidEmailOrPhone("+91 98765 43210"))
         assertFalse(InputValidators.isValidEmailOrPhone("invalid-user"))
     }

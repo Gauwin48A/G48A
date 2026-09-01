@@ -70,7 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.zaruda.app.R
 
 /**
- * LoginScreen — pixel-faithful Compose port of `Mhub/client/src/pages/Auth/Login.jsx`.
+ * LoginScreen — pixel-faithful Compose port of `Zaruda/client/src/pages/Auth/Login.jsx`.
  *
  * Visual structure (matches web):
  *   - Light sky/blue gradient background
@@ -96,14 +96,25 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var mobile by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var loginMode by rememberSaveable { mutableStateOf("phone") } // "phone" or "email"
 
     val mobileDigits = remember(mobile) { mobile.filter { it.isDigit() }.take(10) }
     val isValidMobile = remember(mobileDigits) {
         mobileDigits.length == 10 && mobileDigits.first() in '6'..'9'
     }
-    val canSubmit = isValidMobile && password.isNotBlank() && !state.loading
+    val isValidEmail = remember(email) {
+        email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+    val identifier = remember(loginMode, mobileDigits, email) {
+        if (loginMode == "email") email.trim() else mobileDigits
+    }
+    val canSubmit = when (loginMode) {
+        "email" -> isValidEmail && password.isNotBlank() && !state.loading
+        else -> isValidMobile && password.isNotBlank() && !state.loading
+    }
 
     LaunchedEffect(state.success) {
         if (state.success) onSignedIn()
@@ -253,79 +264,130 @@ fun LoginScreen(
                             .padding(horizontal = 24.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(18.dp),
                     ) {
-                        // Mobile Number label
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = null,
-                                tint = labelText,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(Modifier.width(6.dp))
+                        // Phone / Email toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (darkTheme) Color(0xFF0F172A) else Color(0xFFF3F4F6))
+                                .padding(3.dp),
+                        ) {
+                            listOf("phone" to "Phone", "email" to "Email").forEach { (mode, label) ->
+                                val selected = loginMode == mode
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) brandGradient else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent)))
+                                        .clickable { loginMode = mode; viewModel.clearError() }
+                                        .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (selected) Color.White else mutedText,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                        fontSize = 13.sp,
+                                    )
+                                }
+                            }
+                        }
+
+                        // Identifier field (phone or email based on toggle)
+                        if (loginMode == "phone") {
                             Text(
                                 text = stringResource(R.string.auth_mobile_number),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
                                 color = labelText,
                             )
-                        }
-
-                        // +91 prefix + mobile input (joined, two-tone)
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .height(52.dp)
-                                    .background(
-                                        color = prefixBg,
-                                        shape = RoundedCornerShape(
-                                            topStart = 12.dp,
-                                            bottomStart = 12.dp,
-                                        ),
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(52.dp)
+                                        .background(
+                                            color = prefixBg,
+                                            shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp),
+                                        )
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.auth_country_code),
+                                        color = prefixText,
+                                        fontSize = 14.sp,
                                     )
-                                    .padding(horizontal = 14.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.auth_country_code),
-                                    color = prefixText,
-                                    fontSize = 14.sp,
+                                }
+                                OutlinedTextField(
+                                    value = mobile,
+                                    onValueChange = { input ->
+                                        mobile = input.filter { it.isDigit() }.take(10)
+                                        if (state.error != null) viewModel.clearError()
+                                    },
+                                    placeholder = {
+                                        Text(
+                                            stringResource(R.string.auth_mobile_placeholder),
+                                            color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8),
+                                        )
+                                    },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                    shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
+                                        unfocusedBorderColor = borderColor,
+                                        focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                        unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                    ),
+                                    modifier = Modifier.weight(1f).height(52.dp),
                                 )
                             }
+                            Text(
+                                text = stringResource(R.string.auth_mobile_help),
+                                color = if (mobile.isNotBlank() && !isValidMobile) (if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626)) else helpText,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 2.dp),
+                            )
+                        } else {
+                            // Email field
+                            Text(
+                                text = "Email Address",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = labelText,
+                            )
                             OutlinedTextField(
-                                value = mobile,
-                                onValueChange = { input ->
-                                    mobile = input.filter { it.isDigit() }.take(10)
+                                value = email,
+                                onValueChange = {
+                                    email = it.trim()
                                     if (state.error != null) viewModel.clearError()
                                 },
                                 placeholder = {
                                     Text(
-                                        stringResource(R.string.auth_mobile_placeholder),
+                                        "e.g. rahul@example.com",
                                         color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8),
                                     )
                                 },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                shape = RoundedCornerShape(
-                                    topEnd = 12.dp,
-                                    bottomEnd = 12.dp,
-                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF0EA5E9),
                                     unfocusedBorderColor = borderColor,
                                     focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                     unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
                             )
+                            if (email.isNotBlank() && !isValidEmail) {
+                                Text(
+                                    text = "Enter a valid email address",
+                                    color = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626),
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 2.dp),
+                                )
+                            }
                         }
-                        Text(
-                            text = stringResource(R.string.auth_mobile_help),
-                            color = if (mobile.isNotBlank() && !isValidMobile) (if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626)) else helpText,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(start = 2.dp),
-                        )
 
                         // Password label
                         Text(
@@ -355,7 +417,7 @@ fun LoginScreen(
                             keyboardActions = KeyboardActions(onDone = {
                                 if (canSubmit) {
                                     viewModel.clearError()
-                                    viewModel.signInWithEmail(mobileDigits, password)
+                                    viewModel.signInWithEmail(identifier, password)
                                 }
                             }),
                             trailingIcon = {
@@ -457,7 +519,7 @@ fun LoginScreen(
                         Button(
                             onClick = {
                                 viewModel.clearError()
-                                viewModel.signInWithEmail(mobileDigits, password)
+                                viewModel.signInWithEmail(identifier, password)
                             },                                enabled = canSubmit,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(

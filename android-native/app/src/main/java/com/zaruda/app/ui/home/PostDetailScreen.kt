@@ -508,7 +508,7 @@ fun PostDetailScreen(
     var zoomImageIndex by remember { mutableStateOf(0) }
     var showBuyFlowHowItWorks by remember { mutableStateOf(false) }
     val salePrefs = remember {
-        context.getSharedPreferences("mhub_sale_prefs", android.content.Context.MODE_PRIVATE)
+        context.getSharedPreferences("zaruda_sale_prefs", android.content.Context.MODE_PRIVATE)
     }
 
     if (showShareSheet) state.post?.let { post ->
@@ -1718,7 +1718,7 @@ private fun ContactSellerRevealPanel(
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
                                 Text(stringResource(R.string.commerce_contact_whatsapp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }

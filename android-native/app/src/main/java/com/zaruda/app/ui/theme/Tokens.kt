@@ -81,7 +81,7 @@ object ZarudaGradients {
 /**
  * Standard icon sizes.
  */
-object MhubIconSize {
+object ZarudaIconSize {
     val xs = 14.dp
     val sm = 16.dp
     val md = 20.dp

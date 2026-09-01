@@ -115,7 +115,7 @@ class ForgotPasswordViewModel @Inject constructor(
 }
 
 /**
- * ForgotPasswordScreen — Compose port of `Mhub/client/src/pages/Auth/ForgotPassword.jsx`.
+ * ForgotPasswordScreen — Compose port of `Zaruda/client/src/pages/Auth/ForgotPassword.jsx`.
  */
 @Composable
 fun ForgotPasswordScreen(

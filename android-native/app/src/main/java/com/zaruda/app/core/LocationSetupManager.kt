@@ -41,7 +41,7 @@ class LocationSetupManager @Inject constructor(
 ) {
     companion object {
         private const val TAG = "LocationSetupManager"
-        private const val PREFS_NAME = "mhub_location"
+        private const val PREFS_NAME = "zaruda_location"
         private const val KEY_CITY = "saved_city"
         private const val KEY_AREA = "saved_area"
         private const val KEY_LAT = "saved_lat"

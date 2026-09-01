@@ -166,12 +166,12 @@ import com.zaruda.app.ui.components.OfflineBanner
 import com.zaruda.app.ui.components.ZarudaTopBar
 import com.zaruda.app.ui.theme.ZarudaShapes
 import com.zaruda.app.ui.theme.ZarudaElevation
-import com.zaruda.app.ui.theme.MhubMotion
+import com.zaruda.app.ui.theme.ZarudaMotion
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import com.zaruda.app.ui.theme.ZarudaGradients
-import com.zaruda.app.ui.theme.MhubIconSize
+import com.zaruda.app.ui.theme.ZarudaIconSize
 import com.zaruda.app.ui.theme.spacing
 import com.zaruda.app.data.local.ThemeMode
 import kotlinx.coroutines.launch
@@ -437,10 +437,10 @@ fun ZarudaApp(
                 NavHost(
             navController = navController,
             startDestination = startDestination,
-            enterTransition = { MhubMotion.pageEnter },
-            exitTransition = { MhubMotion.pageExit },
-            popEnterTransition = { MhubMotion.pagePopEnter },
-            popExitTransition = { MhubMotion.pagePopExit },
+            enterTransition = { ZarudaMotion.pageEnter },
+            exitTransition = { ZarudaMotion.pageExit },
+            popEnterTransition = { ZarudaMotion.pagePopEnter },
+            popExitTransition = { ZarudaMotion.pagePopExit },
         ) {
             // â”€â”€ Auth Graph â”€â”€
             navigation(startDestination = Routes.LOGIN, route = Routes.AUTH_GRAPH) {
@@ -1309,7 +1309,7 @@ fun ZarudaApp(
 }
 
 /**
- * CompositionLocal exposing the currently-active category key (e.g. "electronics") from MhubApp
+ * CompositionLocal exposing the currently-active category key (e.g. "electronics") from ZarudaApp
  * down to all composables. Ensures MainShell's bottom-bar navigation logic always sees the
  * latest category context regardless of which route composed it. Without this, navigating
  * Profile â†’ AllPosts loses category context and shows an empty feed.
@@ -1573,8 +1573,8 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
     val path = uri
         .removePrefix("zaruda://")
         .removePrefix("https://zaruda.app/")
-        .removePrefix("mhub://")
-        .removePrefix("https://mhub.app/")
+        .removePrefix("zaruda://")
+        .removePrefix("https://zaruda.app/")
         .trimEnd('/')
     val segments = path.split("/")
     when (segments.firstOrNull()) {

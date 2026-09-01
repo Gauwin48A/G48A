@@ -229,7 +229,7 @@ object ColorTokens {
      * Returns whether the CURRENT Applied ColorScheme is dark.
      * Unlike [androidx.compose.foundation.isSystemInDarkTheme] which checks the
      * device-level system setting, this checks the active [MaterialTheme.colorScheme] that
-     * [com.zaruda.app.ui.theme.MhubTheme] applies. Critical for the app's explicit dark mode
+     * [com.zaruda.app.ui.theme.ZarudaTheme] applies. Critical for the app's explicit dark mode
      * toggle — without this, toggling dark mode in-app would return light-mode ColorTokens
      * (dark text on dark background = invisible).
      * Checks background luminance rather than using [isSystemInDarkTheme] which only

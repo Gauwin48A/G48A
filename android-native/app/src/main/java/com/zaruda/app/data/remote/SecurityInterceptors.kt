@@ -36,8 +36,8 @@ class AppCookieJar : CookieJar {
  * Interceptor that adds required native client identity and write-request security headers:
  * - X-Client-Platform / X-Platform
  * - X-Device-Fingerprint / X-Device-Id
- * - X-MHub-Timestamp
- * - X-MHub-Nonce (cryptographically random)
+ * - X-Zaruda-Timestamp
+ * - X-Zaruda-Nonce (cryptographically random)
  * - X-XSRF-TOKEN (read from cookie jar)
  */
 class SecurityHeadersInterceptor(
@@ -59,8 +59,8 @@ class SecurityHeadersInterceptor(
 
         if (method in listOf("POST", "PUT", "PATCH", "DELETE")) {
             val timestamp = System.currentTimeMillis().toString()
-            builder.header("X-MHub-Timestamp", timestamp)
-            builder.header("X-MHub-Nonce", "android-$timestamp-${secureRandom.nextLong().toULong()}")
+            builder.header("X-Zaruda-Timestamp", timestamp)
+            builder.header("X-Zaruda-Nonce", "android-$timestamp-${secureRandom.nextLong().toULong()}")
 
             // Read XSRF-TOKEN from cookie jar
             val cookies = cookieJar.loadForRequest(request.url)
@@ -76,7 +76,7 @@ class SecurityHeadersInterceptor(
     }
 
     private companion object {
-        private const val PREFS_NAME = "mhub_device_identity"
+        private const val PREFS_NAME = "zaruda_device_identity"
         private const val INSTALL_ID_KEY = "install_id"
         private val invalidChars = Regex("[^A-Za-z0-9_.-]")
 

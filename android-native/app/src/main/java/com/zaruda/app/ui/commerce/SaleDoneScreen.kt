@@ -1416,12 +1416,12 @@ private fun RequestTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
                     Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    MhubTextField(
+                    ZarudaTextField(
                         label = stringResource(R.string.commerce_field_seller),
                         value = state.sellerId,
                         onValueChange = viewModel::setSellerId,
                     )
-                    MhubTextField(
+                    ZarudaTextField(
                         label = stringResource(R.string.commerce_field_listing),
                         value = state.postId,
                         onValueChange = viewModel::setPostId,

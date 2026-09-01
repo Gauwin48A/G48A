@@ -87,13 +87,13 @@ class LocaleManager @Inject constructor(
         get() = _currentLocale.value.language
 
     private fun getPersistedLocale(): Locale {
-        val prefs = context.getSharedPreferences("mhub_locale", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("zaruda_locale", Context.MODE_PRIVATE)
         val code = prefs.getString("locale_code", "en") ?: "en"
         return Locale(code)
     }
 
     private fun persistLocale(code: String) {
-        context.getSharedPreferences("mhub_locale", Context.MODE_PRIVATE)
+        context.getSharedPreferences("zaruda_locale", Context.MODE_PRIVATE)
             .edit()
             .putString("locale_code", code)
             .apply()

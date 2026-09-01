@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">MHub</string>
+  <string name="app_name">Zaruda</string>
   <string name="login_title">Bienvenido de nuevo</string>
   <string name="login_subtitle">Inicia sesión para continuar</string>
   <string name="signup_title">Crear cuenta</string>
-  <string name="signup_subtitle">Únete a MHub en un minuto</string>
+  <string name="signup_subtitle">Únete a Zaruda en un minuto</string>
   <string name="auth_brand_subtitle">Compra y vende localmente</string>
   <string name="auth_tab_signin">Iniciar sesión</string>
   <string name="auth_tab_signup">Crear cuenta</string>
@@ -16,7 +16,7 @@
   <string name="action_sign_in">Iniciar sesión</string>
   <string name="action_create_account">Crear cuenta</string>
   <string name="action_sign_in_google">Continuar con Google</string>
-  <string name="action_sign_up_prompt">¿Nuevo en MHub? Crear cuenta</string>
+  <string name="action_sign_up_prompt">¿Nuevo en Zaruda? Crear cuenta</string>
   <string name="action_sign_in_prompt">¿Ya tienes cuenta? Inicia sesión</string>
   <string name="action_forgot_password">¿Olvidaste tu contraseña?</string>
   <string name="validation_required">Este campo es obligatorio</string>
@@ -73,8 +73,8 @@
   <string name="tab_more">Más</string>
   <string name="tab_profile">Perfil</string>
   <string name="nav_home">Inicio</string>
-  <string name="nav_all_posts">Todos los anuncios</string>
-  <string name="nav_for_you">Para ti</string>
+  <string name="nav_all_posts">Marketplace</string>
+  <string name="nav_for_you">Descubrir</string>
   <string name="nav_feed">Feed</string>
   <string name="nav_rewards">Recompensas</string>
   <string name="nav_categories">Categorías</string>
@@ -143,7 +143,7 @@
   <string name="more_social">Social</string>
   <string name="more_account">Cuenta</string>
   <string name="more_help">Ayuda y soporte</string>
-  <string name="all_posts">Todos los anuncios</string>
+  <string name="all_posts">Marketplace</string>
   <string name="for_you">Para ti</string>
   <string name="feed">Feed</string>
   <string name="rewards">Recompensas</string>
@@ -308,7 +308,7 @@
   <string name="more_delete_account">Eliminar cuenta</string>
   <string name="more_delete_account_desc">Eliminar permanentemente</string>
   <string name="more_about">Acerca de</string>
-  <string name="more_about_desc">Acerca de MHub</string>
+  <string name="more_about_desc">Acerca de Zaruda</string>
   <string name="more_contact">Contacto</string>
   <string name="more_contact_desc">Ponerse en contacto</string>
   <string name="more_faq">FAQ</string>
@@ -394,11 +394,11 @@
   <string name="filter_apply">Aplicar</string>
   <string name="filter_ok">OK</string>
   <string name="filter_cancel">Cancelar</string>
-  <string name="allposts_hero_title">Todas las publicaciones</string>
+  <string name="allposts_hero_title">Marketplace</string>
   <string name="allposts_hero_subtitle">Explora listados populares, novedades y ofertas diarias.</string>
   <string name="allposts_items_count">%d artículos</string>
   <string name="allposts_live_marketplace">Mercado en vivo</string>
-  <string name="allposts_for_you">Para ti →</string>
+  <string name="allposts_for_you">Descubrir →</string>
   <string name="allposts_browse_subcategories">Explorar subcategorías</string>
   <string name="allposts_available_count">%d disponibles</string>
   <string name="allposts_all">Todos</string>
@@ -711,11 +711,11 @@
   <string name="detail_play_video">Reproducir video</string>
   <string name="detail_posted_ago">Publicado %s</string>
   <string name="detail_offer_failed">Error al enviar oferta</string>
-  <string name="more_footer">MHub — Todo en un solo lugar</string>
+  <string name="more_footer">Zaruda — Todo en un solo lugar</string>
   <string name="more_close_menu">Cerrar menú</string>
   <string name="more_collapse">Contraer</string>
   <string name="more_expand">Expandir</string>
-  <string name="topbar_logo">MHub</string>
+  <string name="topbar_logo">Zaruda</string>
   <string name="topbar_search">Buscar</string>
   <string name="topbar_notifications">Notificaciones</string>
   <string name="topbar_wishlist">Lista de deseos</string>
@@ -767,10 +767,10 @@
   <string name="social_delete">Eliminar</string>
   <string name="account_welcome_back">Bienvenido,</string>
   <string name="social_review_hint">Comparte tu experiencia…</string>
-  <string name="about_why_title">¿Por qué MHub?</string>
-  <string name="about_version">MHub App v1.1.0 · Hecho con ❤️ en India</string>
+  <string name="about_why_title">¿Por qué Zaruda?</string>
+  <string name="about_version">Zaruda App v1.1.0 · Hecho con ❤️ en India</string>
   <string name="social_ref">Ref: %s</string>
-  <string name="about_description">MHub es el mercado hiperlocal de más rápido crecimiento de India.</string>
+  <string name="about_description">Zaruda es el mercado hiperlocal de más rápido crecimiento de India.</string>
   <string name="account_seller_view">Vista vendedor</string>
   <string name="contact_get_in_touch">Contáctanos</string>
   <string name="social_boost_visibility">Aumentar visibilidad de \"%s\"…</string>
@@ -786,7 +786,7 @@
   <string name="social_feed_text_only">Las publicaciones son solo texto.</string>
   <string name="social_promote_post">Promocionar 🚀</string>
   <string name="about_mission">Empoderar a cada indio para comprar y vender con confianza.</string>
-  <string name="about_headline">MHub — Tu Mercado Local</string>
+  <string name="about_headline">Zaruda — Tu Mercado Local</string>
   <string name="social_feedback_thanks">¡Gracias por tu opinión!</string>
   <string name="social_feedback_ref">Referencia: %s</string>
   <string name="social_title_hint">Dale un título…</string>

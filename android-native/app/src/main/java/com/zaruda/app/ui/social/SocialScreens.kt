@@ -1725,7 +1725,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                         }
                     }
                 } else {
-                    // Main card with gradient header (web parity: mhub-premium-surface rounded-3xl + CardHeader bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500)
+                    // Main card with gradient header (web parity: zaruda-premium-surface rounded-3xl + CardHeader bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500)
                     Surface(shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White, shadowElevation = if (darkTheme) 0.dp else 3.dp, modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Box(

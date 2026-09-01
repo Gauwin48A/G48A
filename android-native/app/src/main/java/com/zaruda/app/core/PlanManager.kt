@@ -67,7 +67,7 @@ object FreeLaunchPlan {
 // at 7 days, 3 days, and 1 day before plan expiry.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private const val CHANNEL_ID = "mhub_plan_expiry"
+private const val CHANNEL_ID = "zaruda_plan_expiry"
 private const val CHANNEL_NAME = "Plan & Subscription"
 
 @EntryPoint
@@ -118,22 +118,22 @@ class PlanExpiryNotificationWorker(
         when (daysLeft.toInt()) {
             7 -> sendNotification(
                 title = "Plan expiring in 7 days",
-                body = "Your MHub plan expires on ${expiresAt.take(10)}. Renew now to keep selling.",
+                body = "Your Zaruda plan expires on ${expiresAt.take(10)}. Renew now to keep selling.",
                 notifId = 1001,
             )
             3 -> sendNotification(
                 title = "Plan expiring in 3 days",
-                body = "Only 3 days left on your MHub plan! Renew to avoid service interruption.",
+                body = "Only 3 days left on your Zaruda plan! Renew to avoid service interruption.",
                 notifId = 1002,
             )
             1 -> sendNotification(
                 title = "Plan expires tomorrow!",
-                body = "Your MHub plan expires tomorrow. Renew now to continue posting and selling.",
+                body = "Your Zaruda plan expires tomorrow. Renew now to continue posting and selling.",
                 notifId = 1003,
             )
             0 -> sendNotification(
                 title = "Plan expired",
-                body = "Your MHub plan has expired. Renew your subscription to post and sell again.",
+                body = "Your Zaruda plan has expired. Renew your subscription to post and sell again.",
                 notifId = 1004,
             )
         }

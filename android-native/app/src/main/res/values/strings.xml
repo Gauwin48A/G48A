@@ -85,12 +85,12 @@
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
-    <string name="nav_all_posts">All Posts</string>
-    <string name="nav_for_you">For You</string>
-    <string name="nav_feed">Feed</string>
+    <string name="nav_all_posts">Marketplace</string>
+    <string name="nav_for_you">Discover</string>
+    <string name="nav_feed">Community</string>
     <string name="nav_rewards">Rewards</string>
     <string name="nav_categories">Categories</string>
-    <string name="nav_explore">All Posts</string>
+    <string name="nav_explore">Marketplace</string>
     <string name="nav_notifications">Alerts</string>
     <string name="nav_profile">Profile</string>
     <string name="nav_more">More</string>
@@ -197,7 +197,7 @@
     <string name="more_help">Help &amp; Support</string>
 
     <!-- Common UI -->
-    <string name="all_posts">All Posts</string>
+    <string name="all_posts">Marketplace</string>
     <string name="for_you">For You</string>
     <string name="feed">Feed</string>
     <string name="rewards">Rewards</string>
@@ -1056,11 +1056,11 @@ Share Zaruda with your friends and earn rewards.
     <string name="filter_apply">Apply</string>
     <string name="filter_ok">OK</string>
     <string name="filter_cancel">Cancel</string>
-    <string name="allposts_hero_title">All Posts</string>
+    <string name="allposts_hero_title">Marketplace</string>
     <string name="allposts_hero_subtitle">Explore trending listings, fresh drops, and daily deals.</string>
     <string name="allposts_items_count">%d items</string>
     <string name="allposts_live_marketplace">Live marketplace</string>
-    <string name="allposts_for_you">For You →</string>
+    <string name="allposts_for_you">Discover →</string>
     <string name="allposts_browse_subcategories">Browse Subcategories</string>
     <string name="allposts_available_count">%d available</string>
     <string name="allposts_all">All</string>
@@ -1270,11 +1270,11 @@ Share Zaruda with your friends and earn rewards.
     <string name="create_account">Create Account</string>
 
     <!-- Bottom Nav (modernized) -->
-    <string name="nav_feed_tab">Feed</string>
+    <string name="nav_feed_tab">Community</string>
     <string name="nav_rewards_tab">Rewards</string>
 
     <!-- Feed page (new) -->
-    <string name="feed_for_you">For You</string>
+    <string name="feed_for_you">Discover</string>
     <string name="feed_following">Following</string>
     <string name="feed_trending">Trending</string>
     <string name="feed_empty">No posts yet. Follow sellers to see their updates here.</string>

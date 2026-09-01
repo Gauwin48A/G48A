@@ -4,7 +4,7 @@
   <string name="login_title">மீண்டும் வரவேற்கிறோம்</string>
   <string name="login_subtitle">தொடர உள்நுழையவும்</string>
   <string name="signup_title">கணக்கை உருவாக்கவும்</string>
-  <string name="signup_subtitle">ஒரு நிமிடத்தில் MHub-ல் சேரவும்</string>
+  <string name="signup_subtitle">ஒரு நிமிடத்தில் Zaruda-ல் சேரவும்</string>
   <string name="auth_brand_subtitle">உள்ளூரில் வாங்கவும் விற்கவும்</string>
   <string name="auth_tab_signin">உள்நுழையவும்</string>
   <string name="auth_tab_signup">கணக்கு உருவாக்கவும்</string>
@@ -32,8 +32,8 @@
   <string name="tab_more">மேலும்</string>
   <string name="tab_profile">சுயவிவரம்</string>
   <string name="nav_home">முகப்பு</string>
-  <string name="nav_all_posts">அனைத்து பதிவுகள்</string>
-  <string name="nav_for_you">உங்களுக்காக</string>
+  <string name="nav_all_posts">சந்தை</string>
+  <string name="nav_for_you">கண்டறியவும்</string>
   <string name="nav_feed">ஊட்டம்</string>
   <string name="nav_rewards">வெகுமதிகள்</string>
   <string name="nav_categories">வகைகள்</string>
@@ -80,7 +80,7 @@
   <string name="more_social">சமூகம்</string>
   <string name="more_account">கணக்கு</string>
   <string name="more_help">உதவி மற்றும் ஆதரவு</string>
-  <string name="all_posts">அனைத்து பதிவுகள்</string>
+  <string name="all_posts">சந்தை</string>
   <string name="for_you">உங்களுக்காக</string>
   <string name="feed">ஊட்டம்</string>
   <string name="rewards">வெகுமதிகள்</string>
@@ -239,11 +239,11 @@
   <string name="filter_apply">பொருத்து</string>
   <string name="filter_ok">சரி</string>
   <string name="filter_cancel">ரத்து</string>
-  <string name="allposts_hero_title">அனைத்து இடுகைகள்</string>
+  <string name="allposts_hero_title">சந்தை</string>
   <string name="allposts_hero_subtitle">டிரெண்டிங் லிஸ்டிங்கள், புதிய டிராப்கள் மற்றும் தினசரி டீல்கள் பாருங்கள்.</string>
   <string name="allposts_items_count">%d பொருட்கள்</string>
   <string name="allposts_live_marketplace">நேரடி சந்தை</string>
-  <string name="allposts_for_you">உங்களுக்காக →</string>
+  <string name="allposts_for_you">கண்டறியவும் →</string>
   <string name="allposts_browse_subcategories">துணை வகைகள் பார்க்கவும்</string>
   <string name="allposts_available_count">%d கிடைக்கும்</string>
   <string name="allposts_all">அனைத்தும்</string>
@@ -342,11 +342,11 @@
   <string name="detail_make_offer">சலுகை அளி</string>
   <string name="detail_interested">ஆர்வம்</string>
   <string name="detail_compare">ஒப்பிடு</string>
-  <string name="more_footer">MHub — அனைத்தும் ஒரே இடத்தில்</string>
+  <string name="more_footer">Zaruda — அனைத்தும் ஒரே இடத்தில்</string>
   <string name="more_close_menu">மெனுவை மூடு</string>
   <string name="more_collapse">சுருக்கு</string>
   <string name="more_expand">விரிவாக்கு</string>
-  <string name="topbar_logo">MHub</string>
+  <string name="topbar_logo">Zaruda</string>
   <string name="topbar_search">தேடு</string>
   <string name="topbar_notifications">அறிவிப்புகள்</string>
   <string name="topbar_wishlist">விருப்பப் பட்டியல்</string>
@@ -391,7 +391,7 @@
   <string name="contact_message">செய்தி</string>
   <string name="account_change_password">கடவுச்சொல்லை மாற்று</string>
   <string name="account_welcome_back">மீண்டும் வருக,</string>
-  <string name="about_why_title">ஏன் MHub?</string>
+  <string name="about_why_title">ஏன் Zaruda?</string>
   <string name="contact_your_name">உங்கள் பெயர்</string>
   <string name="account_total_coins">மொத்த நாணயங்கள்</string>
   <string name="social_share">பகிர்</string>
@@ -407,7 +407,7 @@
   <string name="social_no_posts_title">இன்னும் பதிவுகள் இல்லை</string>
   <string name="faq_search_hint">கேள்விகளைத் தேடுங்கள்…</string>
   <string name="social_category">வகை</string>
-  <string name="about_headline">MHub — உங்கள் உள்ளூர் சந்தை</string>
+  <string name="about_headline">Zaruda — உங்கள் உள்ளூர் சந்தை</string>
   <string name="social_rating">மதிப்பீடு</string>
   <string name="contact_send_message">செய்தி அனுப்புங்கள்</string>
   <string name="social_cancel">ரத்து</string>
@@ -551,9 +551,9 @@
   <!-- Feed screen -->
   <string name="feed_sort_label">Sort: %s</string>
     <!-- Auto-filled English fallbacks (864 keys) -->
-    <string name="about_description">MHub is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
+    <string name="about_description">Zaruda is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
     <string name="about_mission">To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.</string>
-    <string name="about_version">MHub App v1.1.0 · Made with ❤️ in India</string>
+    <string name="about_version">Zaruda App v1.1.0 · Made with ❤️ in India</string>
     <string name="about_vision">A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.</string>
     <string name="about_why">✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns &amp; refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards &amp; loyalty programme</string>
     <string name="account_2fa_disable">Disable</string>
@@ -594,7 +594,7 @@
     <string name="action_confirm_delete">Are you sure you want to delete this item?</string>
     <string name="action_remove">Remove</string>
     <string name="action_sign_in_prompt">Already have an account? Sign in</string>
-    <string name="action_sign_up_prompt">New to MHub? Create account</string>
+    <string name="action_sign_up_prompt">New to Zaruda? Create account</string>
     <string name="activity_hub_title">Activity Hub</string>
     <string name="allposts_change_app">Change App</string>
     <string name="allposts_compact">Compact</string>
@@ -1023,7 +1023,7 @@
     <string name="language_changed">Language changed</string>
     <string name="language_select">Select Language</string>
     <string name="login_legal">By continuing, you agree to Terms and Privacy Policy.</string>
-    <string name="more_about_desc">About MHub</string>
+    <string name="more_about_desc">About Zaruda</string>
     <string name="more_activity_hub">Activity Hub</string>
     <string name="more_activity_hub_desc">Your activity</string>
     <string name="more_admin_panel">Admin Panel</string>
@@ -1086,7 +1086,7 @@
     <string name="my_posts_empty">You have not posted anything yet.</string>
     <string name="my_posts_label">My Posts</string>
     <string name="my_posts_title">My posts</string>
-    <string name="nav_explore">அனைத்து இடுகைகள்</string>
+    <string name="nav_explore">சந்தை</string>
     <string name="nav_feed_tab">Feed</string>
     <string name="nav_rewards_tab">Rewards</string>
     <string name="nav_wishlist">Wishlist</string>

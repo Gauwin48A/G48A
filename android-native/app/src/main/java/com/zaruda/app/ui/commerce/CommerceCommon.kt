@@ -175,7 +175,7 @@ object CompareItemHolder {
 }
 
 @Composable
-internal fun MhubTextFieldWithCounter(
+internal fun ZarudaTextFieldWithCounter(
     label: String, value: String, onValueChange: (String) -> Unit,
     maxLength: Int = 200, maxLines: Int = 1, minLines: Int = 1, error: String? = null,
 ) {
@@ -205,7 +205,7 @@ internal fun MhubTextFieldWithCounter(
 }
 
 @Composable
-internal fun MhubTextField(label: String, value: String, onValueChange: (String) -> Unit, maxLines: Int = 1, minLines: Int = 1) {
+internal fun ZarudaTextField(label: String, value: String, onValueChange: (String) -> Unit, maxLines: Int = 1, minLines: Int = 1) {
     Column {
         Text(label, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))

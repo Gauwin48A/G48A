@@ -4,7 +4,7 @@
   <string name="login_title">తిరిగి స్వాగతం</string>
   <string name="login_subtitle">కొనసాగించడానికి సైన్ ఇన్ చేయండి</string>
   <string name="signup_title">ఖాతా సృష్టించండి</string>
-  <string name="signup_subtitle">ఒక్క నిమిషంలో MHub లో చేరండి</string>
+  <string name="signup_subtitle">ఒక్క నిమిషంలో Zaruda లో చేరండి</string>
   <string name="auth_brand_subtitle">స్థానికంగా కొనండి మరియు అమ్మండి</string>
   <string name="auth_tab_signin">సైన్ ఇన్</string>
   <string name="auth_tab_signup">ఖాతా సృష్టించండి</string>
@@ -29,8 +29,8 @@
   <string name="tab_more">మరిన్ని</string>
   <string name="tab_profile">ప్రొఫైల్</string>
   <string name="nav_home">హోమ్</string>
-  <string name="nav_all_posts">అన్ని పోస్టులు</string>
-  <string name="nav_for_you">మీకోసం</string>
+  <string name="nav_all_posts">మార్కెట్200cప్లేస్</string>
+  <string name="nav_for_you">కనుగొనండి</string>
   <string name="nav_feed">ఫీడ్</string>
   <string name="nav_rewards">బహుమతులు</string>
   <string name="nav_categories">వర్గాలు</string>
@@ -77,7 +77,7 @@
   <string name="more_social">సామాజిక</string>
   <string name="more_account">ఖాతా</string>
   <string name="more_help">సహాయం మరియు మద్దతు</string>
-  <string name="all_posts">అన్ని పోస్టులు</string>
+  <string name="all_posts">మార్కెట్200cప్లేస్</string>
   <string name="for_you">మీకోసం</string>
   <string name="feed">ఫీడ్</string>
   <string name="rewards">బహుమతులు</string>
@@ -238,7 +238,7 @@
   <string name="allposts_hero_subtitle">ట్రెండింగ్ లిస్టింగ్‌లు, కొత్త డ్రాప్‌లు మరియు రోజువారీ డీల్స్ చూడండి.</string>
   <string name="allposts_items_count">%d ఐటెమ్‌లు</string>
   <string name="allposts_live_marketplace">లైవ్ మార్కెట్‌ప్లేస్</string>
-  <string name="allposts_for_you">మీ కోసం →</string>
+  <string name="allposts_for_you">కనుగొనండి →</string>
   <string name="allposts_browse_subcategories">ఉప వర్గాలు బ్రౌజ్ చేయండి</string>
   <string name="allposts_available_count">%d అందుబాటులో</string>
   <string name="allposts_all">అన్నీ</string>
@@ -347,11 +347,11 @@
   <string name="detail_interested">ఆసక్తి</string>
   <string name="detail_compare">పోల్చు</string>
   <!-- MoreScreen / Drawer -->
-  <string name="more_footer">MHub — అన్నీ ఒకే చోట</string>
+  <string name="more_footer">Zaruda — అన్నీ ఒకే చోట</string>
   <string name="more_close_menu">మెనూ మూసివేయండి</string>
   <string name="more_collapse">కుదించు</string>
   <string name="more_expand">విస్తరించు</string>
-  <string name="topbar_logo">MHub</string>
+  <string name="topbar_logo">Zaruda</string>
   <string name="topbar_search">శోధించు</string>
   <string name="topbar_notifications">నోటిఫికేషన్లు</string>
   <string name="topbar_wishlist">విష్‌లిస్ట్</string>
@@ -396,7 +396,7 @@
   <string name="contact_message">సందేశం</string>
   <string name="account_change_password">పాస్‌వర్డ్ మార్చు</string>
   <string name="account_welcome_back">తిరిగి స్వాగతం,</string>
-  <string name="about_why_title">MHub ఎందుకు?</string>
+  <string name="about_why_title">Zaruda ఎందుకు?</string>
   <string name="contact_your_name">మీ పేరు</string>
   <string name="account_total_coins">మొత్తం నాణేలు</string>
   <string name="social_share">షేర్</string>
@@ -412,7 +412,7 @@
   <string name="social_no_posts_title">ఇంకా పోస్ట్‌లు లేవు</string>
   <string name="faq_search_hint">ప్రశ్నలు వెతకండి…</string>
   <string name="social_category">వర్గం</string>
-  <string name="about_headline">MHub — మీ స్థానిక మార్కెట్</string>
+  <string name="about_headline">Zaruda — మీ స్థానిక మార్కెట్</string>
   <string name="social_rating">రేటింగ్</string>
   <string name="contact_send_message">సందేశం పంపండి</string>
   <string name="social_cancel">రద్దు</string>
@@ -556,9 +556,9 @@
   <!-- Feed screen -->
   <string name="feed_sort_label">Sort: %s</string>
     <!-- Auto-filled English fallbacks (861 keys) -->
-    <string name="about_description">MHub is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
+    <string name="about_description">Zaruda is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
     <string name="about_mission">To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.</string>
-    <string name="about_version">MHub App v1.1.0 · Made with ❤️ in India</string>
+    <string name="about_version">Zaruda App v1.1.0 · Made with ❤️ in India</string>
     <string name="about_vision">A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.</string>
     <string name="about_why">✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns &amp; refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards &amp; loyalty programme</string>
     <string name="account_2fa_disable">Disable</string>
@@ -599,7 +599,7 @@
     <string name="action_confirm_delete">Are you sure you want to delete this item?</string>
     <string name="action_remove">Remove</string>
     <string name="action_sign_in_prompt">Already have an account? Sign in</string>
-    <string name="action_sign_up_prompt">New to MHub? Create account</string>
+    <string name="action_sign_up_prompt">New to Zaruda? Create account</string>
     <string name="activity_hub_title">Activity Hub</string>
     <string name="allposts_change_app">Change App</string>
     <string name="allposts_compact">Compact</string>
@@ -1027,7 +1027,7 @@
     <string name="language_changed">Language changed</string>
     <string name="language_select">Select Language</string>
     <string name="login_legal">By continuing, you agree to Terms and Privacy Policy.</string>
-    <string name="more_about_desc">About MHub</string>
+    <string name="more_about_desc">About Zaruda</string>
     <string name="more_activity_hub">Activity Hub</string>
     <string name="more_activity_hub_desc">Your activity</string>
     <string name="more_admin_panel">Admin Panel</string>

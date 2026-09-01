@@ -129,24 +129,8 @@ class CartViewModel @Inject constructor(
     }
 
     private fun syncCartItems(loading: Boolean = _state.value.loading, error: String? = null) {
-        val catFilter = _categoryFilter.value
-        // Filter all cart items strictly by category when inside a category app / category-scoped context
-        val filteredRemote = if (catFilter != null) {
-            remoteCartItems.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
-        } else {
-            remoteCartItems
-        }
-        val localPosts = if (catFilter != null) {
-            SharedExploreStore.cartPosts.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
-        } else {
-            SharedExploreStore.cartPosts
-        }
-        val filteredRoom = if (catFilter != null) {
-            roomCartItems.filter { normalizeMarketplaceCategoryKey(it.category) == normalizeMarketplaceCategoryKey(catFilter) }
-        } else {
-            roomCartItems
-        }
-        val mergedItems = mergeCartItems(filteredRemote, localPosts, filteredRoom)
+        // Show ALL cart items regardless of category context (web parity: Cart.jsx fix)
+        val mergedItems = mergeCartItems(remoteCartItems, SharedExploreStore.cartPosts, roomCartItems)
         _state.value = _state.value.copy(
             loading = loading,
             items = mergedItems,

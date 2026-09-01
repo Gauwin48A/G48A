@@ -146,7 +146,7 @@ fun MyPostsScreen(onBack: () -> Unit, onEdit: (String) -> Unit = {}, viewModel: 
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            // Screen Header (since MhubTopBar is unified)
+            // Screen Header (since ZarudaTopBar is unified)
             Text(
                 stringResource(R.string.my_posts_label),
                 style = MaterialTheme.typography.headlineSmall,

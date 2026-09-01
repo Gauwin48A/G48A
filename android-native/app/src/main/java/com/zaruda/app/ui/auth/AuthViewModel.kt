@@ -232,7 +232,24 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState(signupStep = 1)
     }
 
-    // signUp removed — SignUpScreen uses the Aadhaar 4-step flow instead
+    /**
+     * Direct email+phone signup (no Aadhaar required).
+     * Calls POST /api/auth/signup with fullName, email, phone, password.
+     */
+    fun signUp(fullName: String, email: String, phone: String, password: String, referral: String?) {
+        if (_state.value.loading) return
+        if (fullName.isBlank()) { _state.value = AuthUiState(error = "Full name is required"); return }
+        if (!InputValidators.isValidEmail(email)) { _state.value = AuthUiState(error = "Enter a valid email address"); return }
+        if (phone.length != 10) { _state.value = AuthUiState(error = "Enter a valid 10-digit mobile number"); return }
+        if (password.length < 6) { _state.value = AuthUiState(error = "Password must be at least 6 characters"); return }
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            when (val res = repo.signUp(fullName, email, phone, password)) {
+                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
+            }
+        }
+    }
 
     fun logout() {
         viewModelScope.launch { repo.logout() }

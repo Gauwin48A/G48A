@@ -86,7 +86,7 @@ class RewardsViewModelTest {
         val state = viewModel.state.value
         assertFalse("Loading should be false", state.loading)
         assertNotNull("Rewards should be populated", state.rewards)
-        assertEquals("MHub Member", state.rewards?.user?.name)
+        assertEquals("Zaruda Member", state.rewards?.user?.name)
         assertNotNull("Engagement should be populated", state.engagement)
         assertTrue("Daily check-in should be available", state.engagement?.dailyCheckIn?.canClaim ?: false)
         assertEquals("Streak should be 3", 3, state.engagement?.dailyCheckIn?.streak)
@@ -113,7 +113,7 @@ class RewardsViewModelTest {
         val state = viewModel.state.value
         assertFalse("Loading should be false", state.loading)
         assertNotNull("Rewards from API should be present", state.rewards)
-        assertEquals("MHub Member", state.rewards?.user?.name)
+        assertEquals("Zaruda Member", state.rewards?.user?.name)
         // Fallback engagement should be used since API failed
         assertNotNull("Engagement fallback should be populated", state.engagement)
     }
@@ -134,7 +134,7 @@ class RewardsViewModelTest {
         val state = viewModel.state.value
         assertFalse("Loading should be false", state.loading)
         assertNotNull("Fallback rewards should be shown", state.rewards)
-        assertEquals("MHub Member", state.rewards?.user?.name)
+        assertEquals("Zaruda Member", state.rewards?.user?.name)
         assertNotNull("Fallback engagement should be shown", state.engagement)
         assertNotNull("Fallback coin history should be shown", state.coinHistory)
     }
@@ -433,7 +433,7 @@ class RewardsViewModelTest {
     private fun sampleRewardsOverview(): RewardsOverviewResponse = RewardsOverviewResponse(
         user = RewardsUserDto(
             id = "test_user",
-            name = "MHub Member",
+            name = "Zaruda Member",
             rank = "Bronze",
             tier = "Bronze",
             totalCoins = 185,

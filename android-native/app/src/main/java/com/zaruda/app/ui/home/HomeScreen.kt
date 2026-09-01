@@ -1324,8 +1324,8 @@ fun HomeScreen(
                                 Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     listOf(
-                                        Triple("â­", "For You", onOpenForYou),
-                                        Triple("ðŸ“°", "Feed", onOpenFeed),
+                                        Triple("â­", stringResource(R.string.nav_for_you), onOpenForYou),
+                                        Triple("ðŸ“°", stringResource(R.string.nav_feed), onOpenFeed),
                                         Triple("ðŸ·ï¸", "Deals", onOpenExplore),
                                         Triple("ðŸ“‚", "All", onOpenCategories),
                                     ).forEach { (emoji, label, onClick) ->
