@@ -373,6 +373,8 @@ const io = new Server(server, {
     credentials: true,
     allowedHeaders: commonAllowedHeaders,
   },
+  pingInterval: 25000,
+  pingTimeout: 60000,
 });
 
 const socketDebugEnabled = process.env.NODE_ENV !== "production";

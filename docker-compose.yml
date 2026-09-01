@@ -5,21 +5,21 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-mhub}
-      POSTGRES_USER: ${POSTGRES_USER:-mhub}
+      POSTGRES_DB: ${POSTGRES_DB:-zaruda}
+      POSTGRES_USER: ${POSTGRES_USER:-zaruda}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mhub} -d ${POSTGRES_DB:-mhub}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zaruda} -d ${POSTGRES_DB:-zaruda}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
-      - mhub-net
+      - zaruda-net
 
   redis:
     image: redis:7-alpine
@@ -35,7 +35,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - mhub-net
+      - zaruda-net
 
   server:
     build:
@@ -45,7 +45,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-mhub}:${POSTGRES_PASSWORD:?err}@postgres:5432/${POSTGRES_DB:-mhub}
+      DATABASE_URL: postgres://${POSTGRES_USER:-zaruda}:${POSTGRES_PASSWORD:?err}@postgres:5432/${POSTGRES_DB:-zaruda}
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
       CORS_ORIGINS: "https://ideal-xylophone-77v6x7w9g6whpr6v-5001.app.github.dev,https://ideal-xylophone-77v6x7w9g6whpr6v-4173.app.github.dev,https://ideal-xylophone-77v6x7w9g6whpr6v-8081.app.github.dev"
@@ -66,7 +66,7 @@ services:
       - uploads:/app/uploads
       - server-logs:/app/logs
     networks:
-      - mhub-net
+      - zaruda-net
 
   client:
     build:
@@ -84,7 +84,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - mhub-net
+      - zaruda-net
 
 volumes:
   pgdata:
@@ -97,5 +97,5 @@ volumes:
     driver: local
 
 networks:
-  mhub-net:
+  zaruda-net:
     driver: bridge

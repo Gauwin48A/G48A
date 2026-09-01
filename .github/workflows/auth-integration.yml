@@ -20,13 +20,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: mhub_test
+          POSTGRES_DB: zaruda_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d mhub_test"
+          --health-cmd="pg_isready -U postgres -d zaruda_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -39,7 +39,7 @@ jobs:
       NODE_ENV: test
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
-      DB_NAME: mhub_test
+      DB_NAME: zaruda_test
       DB_USER: postgres
       DB_PASSWORD: postgres
       JWT_SECRET: ci_access_secret_x9k3f2m8n1v6p4r7t2w5z8q1y3u6i9o

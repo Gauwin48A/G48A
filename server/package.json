@@ -6,6 +6,7 @@
     "start": "npm run preflight:schema && node scripts/start-prod.js",
     "dev": "nodemon",
     "test": "node scripts/run-jest.js --runInBand --openHandlesTimeout=10000 --silent",
+    "test:coverage": "jest --coverage --collectCoverageFrom='src/middleware/security.js' --collectCoverageFrom='src/middleware/rateLimiter.js' --collectCoverageFrom='src/config/tierRules.js' --collectCoverageFrom='src/utils/authUtils.js' --collectCoverageFrom='src/workers/cronPostExpiry.js' --collectCoverageFrom='src/workers/cronEscrowSettlement.js' --collectCoverageFrom='src/controllers/ordersController.js' --forceExit",
     "test:critical-paths": "node scripts/run-jest.js --runInBand --silent tests/critical_paths.integration.test.js",
     "test:e2e:journeys": "node scripts/run-jest.js --runInBand --silent tests/e2e/top10_user_journeys.e2e.test.js",
     "test:auth:integration": "node scripts/run-jest.js --runInBand --openHandlesTimeout=10000 --silent tests/auth.real.integration.test.js",

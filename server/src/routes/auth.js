@@ -273,20 +273,55 @@ router.post(
   "/forgot-password",
   maybeBypassAuthRateLimit(recoveryLimiter),
   maybeBypassAuthRateLimit(authAnomalyThrottle("forgot_password")),
+  [
+    body("identifier").optional().trim().isLength({ min: 3, max: 200 }),
+    body("phone").optional().trim().isLength({ min: 6, max: 15 }),
+    body().custom((value) => {
+      if (!value?.identifier && !value?.phone) {
+        throw new Error("Email or phone number is required");
+      }
+      return true;
+    }),
+  ],
+  validationGuard,
   authController.forgotPassword,
 );
 router.post(
   "/reset-password",
   maybeBypassAuthRateLimit(recoveryLimiter),
   maybeBypassAuthRateLimit(authAnomalyThrottle("reset_password")),
+  [
+    body("newPassword")
+      .isLength({ min: 12 })
+      .withMessage("Password must be at least 12 characters"),
+    body("token")
+      .optional()
+      .trim()
+      .isLength({ min: 10, max: 500 })
+      .withMessage("Invalid token format"),
+    body("phone")
+      .optional()
+      .trim()
+      .isLength({ min: 6, max: 15 }),
+    body("otp")
+      .optional()
+      .isLength({ min: 4, max: 8 })
+      .withMessage("Invalid OTP format"),
+  ],
+  validationGuard,
   authController.resetPassword,
 );
 router.get("/me", authenticateToken, authController.getMe);
 router.get("/validate", authenticateToken, (req, res) => res.json({ valid: true, user: req.user }));
 router.get("/otp/metrics", authenticateToken, authController.getOtpDeliveryMetrics);
 router.get("/risk-metrics", authenticateToken, authController.getRiskDecisionMetrics);
-router.post("/set-password", authenticateToken, authCsrfProtection, authController.setPassword);
-router.post("/change-password", authenticateToken, authCsrfProtection, authController.changePassword);
+router.post("/set-password", authenticateToken, authCsrfProtection, [
+  body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters"),
+], validationGuard, authController.setPassword);
+router.post("/change-password", authenticateToken, authCsrfProtection, [
+  body("currentPassword").notEmpty().withMessage("Current password is required"),
+  body("newPassword").isLength({ min: 12 }).withMessage("New password must be at least 12 characters"),
+], validationGuard, authController.changePassword);
 router.get("/sessions", authenticateToken, authSessionController.listSessions);
 router.delete(
   "/sessions/:sessionId",

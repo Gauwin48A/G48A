@@ -269,28 +269,78 @@ const sanitizeHtml = require("sanitize-html");
 const sanitizeString = (value) =>
   sanitizeHtml(String(value), { allowedTags: [], allowedAttributes: {} });
 
-const sanitizeValue = (value) => {
+// NoSQL injection operators that must be stripped from user input.
+const NOSQL_OPERATORS = new Set([
+  "$gt", "$gte", "$lt", "$lte", "$ne", "$eq",
+  "$in", "$nin", "$or", "$and", "$not", "$nor",
+  "$regex", "$options", "$exists", "$type",
+  "$elemMatch", "$all", "$size",
+  "$where", "$function",
+]);
+
+// XSS patterns beyond sanitize-html (catches event handlers in attributes).
+const XSS_PATTERNS = [
+  /<script[\s>]/i,
+  /<\/script>/i,
+  /javascript\s*:/i,
+  /\bon\w+\s*=/i,
+  /data\s*:\s*text\/html/i,
+];
+
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+const MAX_STRING_LENGTH = 50_000;
+const MAX_BODY_DEPTH = 10;
+
+const sanitizeValue = (value, depth = 0) => {
+  if (depth > MAX_BODY_DEPTH) return undefined;
+  if (value === null || value === undefined) return value;
+
   if (typeof value === "string") {
-    return sanitizeString(value);
+    let cleaned = sanitizeString(value);
+    if (cleaned.length > MAX_STRING_LENGTH) cleaned = cleaned.slice(0, MAX_STRING_LENGTH);
+    for (const pattern of XSS_PATTERNS) {
+      if (pattern.test(cleaned)) cleaned = "";
+    }
+    return cleaned;
   }
+
   if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValue(entry));
+    return value.map((entry) => sanitizeValue(entry, depth + 1));
   }
+
   if (value && typeof value === "object") {
-    for (const key of Object.keys(value)) {
-      if (key === "__proto__" || key === "constructor") {
+    const keys = Object.keys(value);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      // Block prototype-pollution keys
+      if (DANGEROUS_KEYS.has(key)) {
+        delete value[key];
         continue;
       }
-      value[key] = sanitizeValue(value[key]);
+      // Block NoSQL injection operators ($-prefixed)
+      if (key.startsWith("$") && NOSQL_OPERATORS.has(key)) {
+        delete value[key];
+        continue;
+      }
+      // Block any other $-prefixed keys in user input (catch-all)
+      if (key.startsWith("$")) {
+        delete value[key];
+        continue;
+      }
+      value[key] = sanitizeValue(value[key], depth + 1);
     }
   }
   return value;
 };
 
 exports.sanitizeInput = (req, res, next) => {
-  if (req.body) sanitizeValue(req.body);
-  if (req.query) sanitizeValue(req.query);
-  if (req.params) sanitizeValue(req.params);
+  try {
+    if (req.body) sanitizeValue(req.body);
+    if (req.query) sanitizeValue(req.query);
+    if (req.params) sanitizeValue(req.params);
+  } catch (_err) {
+    // Fail-open: don't block requests if sanitization itself throws
+  }
   next();
 };
 const helmet = require("helmet");

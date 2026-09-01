@@ -10,7 +10,8 @@ exports.list = async (req, res) => {
   const userId = getAuthUserId(req);
   if (!userId) return res.status(401).json({ error: "Authentication required" });
 
-  const role = req.query.role || "buyer"; // 'buyer' | 'seller'
+  const rawRole = String(req.query.role || "buyer").toLowerCase();
+  const role = rawRole === "seller" ? "seller" : "buyer"; // whitelist to prevent SQL injection
 
   try {
     const result = await runQuery(
