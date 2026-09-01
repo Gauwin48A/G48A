@@ -105,3 +105,36 @@ exports.getPages = async (_req, res) => {
     return res.status(500).json({ error: "Failed to load CMS pages" });
   }
 };
+
+/**
+ * GET /api/cms/support
+ * Returns official support contact details, Grievance Officer details,
+ * SLA times, and registered company address for statutory compliance.
+ */
+exports.getSupportInfo = async (_req, res) => {
+  try {
+    return res.json({
+      success: true,
+      platformName: "Zaruda Marketplace",
+      supportEmail: process.env.SUPPORT_EMAIL || "support@zarudatech.com",
+      grievanceEmail: process.env.GRIEVANCE_EMAIL || "grievance@zarudatech.com",
+      grievanceOfficer: {
+        name: "Customer Care Officer",
+        designation: "Nodal Grievance Officer",
+        email: process.env.GRIEVANCE_EMAIL || "grievance@zarudatech.com",
+        address: "Zaruda Technologies Pvt. Ltd., India",
+        acknowledgmentSla: "48 Hours",
+        resolutionSla: "30 Days",
+      },
+      workingHours: "Monday to Saturday, 9:00 AM – 6:00 PM IST",
+      inAppChannels: [
+        { type: "feedback", path: "More -> Feedback", description: "Product feedback & suggestions" },
+        { type: "complaints", path: "More -> Complaints", description: "Disputes, refunds & fraud reports" },
+      ],
+    });
+  } catch (err) {
+    logger.error("CMS getSupportInfo error:", err);
+    return res.status(500).json({ error: "Failed to load support information" });
+  }
+};
+

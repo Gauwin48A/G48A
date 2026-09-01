@@ -20,12 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Comment
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -167,7 +162,8 @@ fun ContactUsScreen(onBack: () -> Unit) {
             }
             // Direct contact info
             item {
-                ContactRow(icon = Icons.Filled.Email, label = "support@zaruda.app")
+                ContactRow(icon = Icons.Filled.Email, label = "support@zarudatech.com")
+                ContactRow(icon = Icons.Filled.Report, label = "Grievance Officer: grievance@zarudatech.com")
                 ContactRow(icon = Icons.Filled.Comment, label = "In-app: More → Feedback / Complaints")
             }
             if (!submitted) {
@@ -254,7 +250,7 @@ private val faqs = listOf(
     FaqItem("What is Escrow Protection?", "On escrow-eligible listings your payment is held securely and released to the seller only after you confirm you've received the item — protecting both sides. A 2.5% platform fee applies to escrow-protected purchases and is shown before you pay.", "Buying"),
     FaqItem("Where do I find my purchases?", "Open Profile → Orders → Order History, or the Bought Posts section, to see everything you've bought, track its status and raise any issues.", "Buying"),
     FaqItem("How do I start selling?", "Tap Sell from the home screen. You need an active plan (free or paid) and completed KYC (Aadhaar + PAN). Then add photos, a title and description, price and category, and publish your listing.", "Selling"),
-    FaqItem("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Sale Undone to bring the listing back.", "Selling"),
+    FaqItem("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Repost to bring the listing back.", "Selling"),
     FaqItem("Why do I need KYC?", "KYC (Aadhaar + PAN) confirms that sellers are real people, which builds trust and keeps the marketplace safe. KYC verification is required to publish listings.", "Account"),
     FaqItem("How do I complete KYC?", "Go to More → Verification, verify your Aadhaar with an OTP, verify your PAN, and submit. An active plan is required to complete KYC. Most verifications are approved within 24–48 hours.", "Account"),
     FaqItem("What do the plans include?", "The Free plan includes 1 photo per post. Paid plans add more photos, better visibility, promoted listings, analytics, a profile badge and priority support.", "Plans"),
@@ -262,7 +258,7 @@ private val faqs = listOf(
     FaqItem("How do Rewards and Coins work?", "Earn coins through daily check-ins, spins, engagement and referral milestones. Redeem them in the Rewards store for discounts and perks.", "Rewards"),
     FaqItem("How do I report a post or user?", "Open the post and tap Report, or block a user from their profile. Our safety team reviews every report.", "Safety"),
     FaqItem("What should I do if a deal goes wrong?", "File a complaint from More → Complaints with the order or listing details. Our team mediates between buyer and seller. In fraud cases, payments are held and accounts may be frozen until the case is reviewed.", "Safety"),
-    FaqItem("How do I contact support?", "Email support@zaruda.app, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "Support"),
+    FaqItem("How do I contact support?", "Email support@zarudatech.com or grievance@zarudatech.com, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "Support"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -189,6 +189,11 @@ fun CategoryHubScreen(
     onOpenForYou: () -> Unit = {},
     onOpenWishlist: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
+    onOpenRewards: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    onOpenTierSelection: () -> Unit = {},
+    onOpenKyc: () -> Unit = {},
+    onOpenPayouts: () -> Unit = {},
     unreadNotifications: Int = 0,
     cartItemCount: Int = 0,
     viewModel: CategoryHubViewModel = hiltViewModel(),
@@ -216,7 +221,7 @@ fun CategoryHubScreen(
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Welcome to Zaruda 🌟",
+                        stringResource(R.string.hub_title),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
@@ -227,26 +232,57 @@ fun CategoryHubScreen(
                         color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
                     )
                     Spacer(Modifier.height(4.dp))
-                }
-            }
 
-            // ── Error banner ───────────────────────────────────────────
-            if (state.error != null && !state.loading) {
-                item(key = "error") {
-                    Surface(
-                        color = Color(0xFFFEF2F2),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    // ── Quick-Ribbon: 1-tap shortcuts ──────────────────
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(top = 4.dp),
                     ) {
-                        Text(
-                            "⚠️ Offline — showing cached data",
-                            color = Color(0xFFDC2626),
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        )
+                        item {
+                            QuickRibbonPill(
+                                emoji = "🏆",
+                                label = stringResource(R.string.hub_ribbon_rewards),
+                                onClick = onOpenRewards,
+                                isDark = isDark,
+                            )
+                        }
+                        item {
+                            QuickRibbonPill(
+                                emoji = "👤",
+                                label = stringResource(R.string.hub_ribbon_profile),
+                                onClick = onOpenProfile,
+                                isDark = isDark,
+                            )
+                        }
+                        item {
+                            QuickRibbonPill(
+                                emoji = "💎",
+                                label = stringResource(R.string.hub_ribbon_plan),
+                                onClick = onOpenTierSelection,
+                                isDark = isDark,
+                            )
+                        }
+                        item {
+                            QuickRibbonPill(
+                                emoji = "🆔",
+                                label = "KYC Verified",
+                                onClick = onOpenKyc,
+                                isDark = isDark,
+                            )
+                        }
+                        item {
+                            QuickRibbonPill(
+                                emoji = "🏦",
+                                label = "Wallet",
+                                onClick = onOpenPayouts,
+                                isDark = isDark,
+                            )
+                        }
                     }
                 }
             }
+
+            // Offline handling is done silently via global OfflineBanner in ZarudaApp.kt
 
             // ── Loading state ──────────────────────────────────────────
             if (state.loading) {
@@ -428,6 +464,36 @@ private fun AppPulsingDot() {
         label = "dotAlpha",
     )
     Box(Modifier.size(6.dp).alpha(dotAlpha).background(Color(0xFF4ADE80), CircleShape))
+}
+
+@Composable
+private fun QuickRibbonPill(
+    emoji: String,
+    label: String,
+    onClick: () -> Unit,
+    isDark: Boolean,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
+        modifier = Modifier
+            .height(36.dp)
+            .clickable { onClick() },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(emoji, fontSize = 14.sp)
+            Text(
+                label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155),
+            )
+        }
+    }
 }
 
 

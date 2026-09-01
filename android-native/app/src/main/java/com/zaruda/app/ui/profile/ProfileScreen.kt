@@ -1354,8 +1354,8 @@ fun ProfileScreen(
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     ProfileQuickActionButton(
                                         icon = Icons.Filled.RadioButtonUnchecked,
-                                        label = "Sale Undone",
-                                        subtitle = "Revert sale status",
+                                        label = "Repost",
+                                        subtitle = "Relist this item",
                                         accentColor = Color(0xFFEF4444),
                                         onClick = onOpenSaleUndone,
                                         modifier = Modifier.weight(1f),

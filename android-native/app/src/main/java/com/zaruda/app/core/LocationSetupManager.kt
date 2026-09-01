@@ -47,8 +47,9 @@ class LocationSetupManager @Inject constructor(
         private const val KEY_LAT = "saved_lat"
         private const val KEY_LNG = "saved_lng"
 
-        // IP geolocation service — free tier, no API key required, ~1000 req/day
-        private const val IP_API_URL = "http://ip-api.com/json/?fields=status,message,city,lat,lon"
+        // IP geolocation service — HTTPS free tier, no API key required
+        private const val IP_API_URL = "https://ip-api.com/json/?fields=status,message,city,lat,lon"
+        private const val IP_API_FALLBACK_URL = "https://ipapi.co/json/"
 
         /** Haversine formula — distance in km between two lat/lng points. */
         fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -86,8 +87,10 @@ class LocationSetupManager @Inject constructor(
     private val _isMockLocation = MutableStateFlow(false)
     val isMockLocation: StateFlow<Boolean> = _isMockLocation.asStateFlow()
 
-    private var lastLat: Double? = null
-    private var lastLng: Double? = null
+    var lastLat: Double? = null
+        private set
+    var lastLng: Double? = null
+        private set
 
     init {
         // Restore persisted location on startup for instant availability
@@ -114,6 +117,8 @@ class LocationSetupManager @Inject constructor(
     suspend fun autoDetectAndSetup() {
         val hasPermission = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasPermission) {
@@ -123,17 +128,41 @@ class LocationSetupManager @Inject constructor(
                 applyLocation(ipResult.city, ipResult.lat, ipResult.lng)
                 return
             }
-            _currentLocationName.value = "Location Permission Required"
+            _currentLocationName.value = "All India"
             return
         }
 
         withContext(Dispatchers.IO) {
             try {
-                // Step 1: Try FusedLocationProvider (reliable on modern Android)
-                val locationTask = fusedLocationClient.lastLocation
-                val location = Tasks.await(locationTask, 5, TimeUnit.SECONDS)
+                // Step 1: Try Android LocationManager (instant lastKnown, no blocking)
+                var location: android.location.Location? = null
+                try {
+                    val lm = context.getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager
+                    if (lm != null) {
+                        val providers = listOf(android.location.LocationManager.GPS_PROVIDER, android.location.LocationManager.NETWORK_PROVIDER)
+                            .filter { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
+                        // Try last known location from each provider (instant, no blocking)
+                        for (provider in providers) {
+                            location = runCatching { lm.getLastKnownLocation(provider) }.getOrNull()
+                            if (location != null) break
+                        }
+                    }
+                if (location == null) {
+                    location = try {
+                        kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+                            fusedLocationClient.lastLocation
+                                .addOnSuccessListener { loc ->
+                                    if (cont.isActive) cont.resume(loc) {}
+                                }
+                                .addOnFailureListener {
+                                    if (cont.isActive) cont.resume(null) {}
+                                }
+                        }
+                    } catch (_: Exception) { null }
+                }
 
                 if (location != null) {
+                    android.util.Log.d(TAG, "GPS location found: ${location.latitude}, ${location.longitude}")
                     // 🛡️ Fake GPS / Mock Location Protection
                     if (location.isFromMockProvider) {
                         _isMockLocation.value = true
@@ -144,7 +173,9 @@ class LocationSetupManager @Inject constructor(
 
                     // Hyper-Local geocoding: subLocality → locality → adminArea
                     val geocoder = Geocoder(context, Locale.getDefault())
-                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    val addresses = try {
+                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    } catch (_: Exception) { null }
                     val address = addresses?.firstOrNull()
 
                     // Neighborhood / hub name (e.g. JNTU, Kukatpally, Gachibowli, Hitec City)
@@ -153,7 +184,7 @@ class LocationSetupManager @Inject constructor(
                         ?: ""
                     val cityName = address?.locality
                         ?: address?.adminArea
-                        ?: "Unknown City"
+                        ?: "Current Location"
 
                     _currentAreaName.value = areaName
                     applyLocation(cityName, location.latitude, location.longitude)
@@ -175,7 +206,7 @@ class LocationSetupManager @Inject constructor(
                     lastLat = prefs.getString(KEY_LAT, "")?.toDoubleOrNull()
                     lastLng = prefs.getString(KEY_LNG, "")?.toDoubleOrNull()
                 } else {
-                    _currentLocationName.value = "Location unavailable"
+                    _currentLocationName.value = "All India"
                 }
             } catch (e: Exception) {
                 // Step 2 (fallback): IP geolocation if GPS threw an error
@@ -186,20 +217,20 @@ class LocationSetupManager @Inject constructor(
                         return@withContext
                     }
                 } catch (_: Exception) {
-                    _currentLocationName.value = "Location unavailable"
+                    _currentLocationName.value = "All India"
                 }
                 if (_currentLocationName.value == "Detecting...") {
-                    _currentLocationName.value = "Location unavailable"
+                    _currentLocationName.value = "All India"
                 }
             }
         }
     }
 
     /**
-     * IP geolocation fallback using ip-api.com (free tier, no API key).
-     * Mirrors the web app's IP-based location detection.
+     * IP geolocation fallback using HTTPS endpoints.
      */
     private suspend fun ipGeolocate(): IpLocationResult? = withContext(Dispatchers.IO) {
+        // Try primary HTTPS endpoint (ip-api.com)
         try {
             val request = Request.Builder()
                 .url(IP_API_URL)
@@ -207,23 +238,45 @@ class LocationSetupManager @Inject constructor(
                 .build()
 
             val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext null
+            if (response.isSuccessful) {
+                val body = response.body?.string()
+                if (body != null) {
+                    val json = JSONObject(body)
+                    if (json.optString("status") == "success") {
+                        val city = json.optString("city")
+                        val lat = json.optDouble("lat")
+                        val lng = json.optDouble("lon")
+                        if (city.isNotEmpty() && lat != 0.0 && lng != 0.0) {
+                            return@withContext IpLocationResult(city, lat, lng)
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
 
-            val body = response.body?.string() ?: return@withContext null
-            val json = JSONObject(body)
+        // Try secondary HTTPS endpoint (ipapi.co)
+        try {
+            val request = Request.Builder()
+                .url(IP_API_FALLBACK_URL)
+                .header("User-Agent", "ZarudaApp/1.0")
+                .build()
 
-            if (json.optString("status") != "success") return@withContext null
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string()
+                if (body != null) {
+                    val json = JSONObject(body)
+                    val city = json.optString("city")
+                    val lat = json.optDouble("latitude")
+                    val lng = json.optDouble("longitude")
+                    if (city.isNotEmpty() && lat != 0.0 && lng != 0.0) {
+                        return@withContext IpLocationResult(city, lat, lng)
+                    }
+                }
+            }
+        } catch (_: Exception) {}
 
-            val city = json.optString("city")
-            val lat = json.optDouble("lat")
-            val lng = json.optDouble("lon")
-
-            if (city.isNotEmpty() && lat != 0.0 && lng != 0.0) {
-                IpLocationResult(city, lat, lng)
-            } else null
-        } catch (_: Exception) {
-            null
-        }
+        null
     }
 
     /**

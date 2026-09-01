@@ -39,11 +39,11 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -103,10 +103,10 @@ fun MoreScreen(
     onOpenWishlist: () -> Unit,
     onOpenCreatePost: () -> Unit,
     onOpenKyc: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenTierSelection: () -> Unit = {},
     onOpenMyHome: () -> Unit = {},
     onOpenSaleUndone: () -> Unit = {},
+    onOpenNearby: () -> Unit = {},
     onOpenPublicWall: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
     onOpenComplaints: () -> Unit = {},
@@ -124,7 +124,6 @@ fun MoreScreen(
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onSetThemeMode: (ThemeMode) -> Unit = {},
 ) {
-    var prefsExpanded by rememberSaveable { mutableStateOf(false) }
     var accountExpanded by rememberSaveable { mutableStateOf(false) }
 
     // ── TRADE section: Sell, Plans, Repost
@@ -134,6 +133,7 @@ fun MoreScreen(
         MenuRow("Sell", "List a new item for sale", Icons.Outlined.LocalOffer, Color(0xFFDBEAFE), Color(0xFF2563EB), onClick = onOpenCreatePost),
         MenuRow("Plans", plansSubtitle, Icons.Outlined.Star, Color(0xFFFFF7ED), Color(0xFFEA580C), onClick = onOpenTierSelection),
         MenuRow("Repost", "Renew or reactivate your listings", Icons.Outlined.Restore, Color(0xFFFFF7ED), Color(0xFFF59E0B), onClick = onOpenSaleUndone),
+        MenuRow("Nearby", "Items near you sorted by distance", Icons.Outlined.LocationOn, Color(0xFFECFDF5), Color(0xFF059669), onClick = onOpenNearby),
     )
 
     // ── SOCIAL section: Feedback, Complaints
@@ -158,7 +158,6 @@ fun MoreScreen(
     }
     // ── Utilities (settings + logout always at bottom) ────────────────────────
     val utilRows = buildList {
-        add(MenuRow("Settings", "App preferences and language", Icons.Outlined.Settings, Color(0xFFF1F5F9), Color(0xFF475569), onClick = onOpenSettings))
         add(MenuRow("Help & Support", "FAQs, guides and customer support", Icons.AutoMirrored.Outlined.HelpOutline, Color(0xFFECFDF5), Color(0xFF22C55E), onClick = onOpenHelp))
         if (isLoggedIn) add(MenuRow("Logout", "Sign out of your account", Icons.AutoMirrored.Outlined.Logout, Color(0xFFFEF2F2), Color(0xFFDC2626), onClick = onLogout))
     }
@@ -258,62 +257,26 @@ fun MoreScreen(
                 }
             }
 
-            item(key = "appearance") {
-                androidx.compose.material3.Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth().clickable { prefsExpanded = !prefsExpanded },
+            item(key = "footer") {
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column(Modifier.padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.DarkMode, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Text("Appearance & Language", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                            Icon(if (prefsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        }
-                        if (prefsExpanded) {
-                            Spacer(Modifier.height(12.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            Spacer(Modifier.height(12.dp))
-                            Text("Theme", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(6.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("Light" to ThemeMode.LIGHT, "System" to ThemeMode.SYSTEM, "Dark" to ThemeMode.DARK).forEach { (label, mode) ->
-                                    FilterChip(
-                                        selected = currentThemeMode == mode,
-                                        onClick = { onSetThemeMode(mode) },
-                                        label = { Text(label, fontSize = 12.sp) },
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                                        shape = RoundedCornerShape(20.dp),
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            Text("Language", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(6.dp))
-                            val currentLocale = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags().ifEmpty { "en" }
-                            var selectedLang by remember { mutableStateOf(currentLocale.split(",").first().split("-").first()) }
-                            val langs = listOf("en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்", "kn" to "ಕನ್ನಡ", "mr" to "मराठी", "bn" to "বাংলা", "gu" to "ગુજરાતી")
-                            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                langs.forEach { (code, label) ->
-                                    FilterChip(
-                                        selected = selectedLang == code,
-                                        onClick = { selectedLang = code; onLanguageChange(code) },
-                                        label = { Text(label, fontSize = 11.sp) },
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White),
-                                        shape = RoundedCornerShape(20.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    Text(
+                        text = "Zaruda Marketplace v1.0.0",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
+                    Text(
+                        text = "Safe & Verified E-Commerce Platform",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    )
                 }
             }
         }
-
-
     }
 }
 

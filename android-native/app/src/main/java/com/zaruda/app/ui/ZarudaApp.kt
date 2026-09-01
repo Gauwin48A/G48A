@@ -150,7 +150,6 @@ import com.zaruda.app.ui.profile.ProfileViewModel
 import com.zaruda.app.ui.rewards.RewardsScreen
 import com.zaruda.app.ui.rewards.ReferralTreeScreen
 import com.zaruda.app.ui.search.SearchScreen
-import com.zaruda.app.ui.settings.SettingsScreen
 import com.zaruda.app.ui.social.ComplaintsScreen
 import com.zaruda.app.ui.social.FeedbackScreen
 import com.zaruda.app.ui.social.FeedDetailScreen
@@ -175,6 +174,8 @@ import com.zaruda.app.ui.theme.ZarudaIconSize
 import com.zaruda.app.ui.theme.spacing
 import com.zaruda.app.data.local.ThemeMode
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.first
 import com.google.firebase.analytics.FirebaseAnalytics
 import android.os.Bundle
 import com.zaruda.app.data.repository.KycRepository
@@ -252,11 +253,25 @@ fun ZarudaApp(
     deepLinkUri: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
     localeManager: LocaleManager? = null,
-) {
-    val themeVm: AppThemeViewModel = hiltViewModel()
-    val themeMode by themeVm.themeMode.collectAsState()
-    ZarudaTheme(themeMode = themeMode) {
-        val navController = rememberNavController()
+) {        val themeVm: AppThemeViewModel = hiltViewModel()
+        val themeMode by themeVm.themeMode.collectAsState()
+        val onboardingVm: com.zaruda.app.ui.onboarding.OnboardingViewModel = hiltViewModel()
+        val onboardingCompleted by onboardingVm.onboardingCompleted.collectAsState()
+        var showOnboarding by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            showOnboarding = !onboardingVm.onboardingCompleted.value
+        }
+        ZarudaTheme(themeMode = themeMode) {
+            if (showOnboarding) {
+                com.zaruda.app.ui.onboarding.OnboardingScreen(
+                    onFinished = {
+                        onboardingVm.completeOnboarding()
+                        showOnboarding = false
+                    },
+                )
+                return@ZarudaTheme
+            }
+            val navController = rememberNavController()
 
         // Navigation diagnostics
         DisposableEffect(navController) {
@@ -270,13 +285,46 @@ fun ZarudaApp(
         val authViewModel: AuthViewModel = hiltViewModel()
         val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
         val isAdmin by authViewModel.isAdmin.collectAsState()
+        // Auto-detect GPS location on app launch (FusedLocationProvider + Geocoder)
+        val appLocationVm: com.zaruda.app.ui.location.AppLocationViewModel = hiltViewModel()
+        val currentCity by appLocationVm.currentCity.collectAsState()
+        val currentArea by appLocationVm.currentArea.collectAsState()
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
         var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
         var showAuthGate by rememberSaveable { mutableStateOf(false) }
 
         val context = LocalContext.current
-        val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
         val exitScope = rememberCoroutineScope()
+        // Request location permission on launch and auto-detect when granted
+        val locationPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+            contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
+        ) { perms ->
+            val fine = perms[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val coarse = perms[android.Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+            if (fine || coarse) {
+                exitScope.launch {
+                    appLocationVm.detectLocation()
+                }
+            }
+        }
+        LaunchedEffect(Unit) {
+            val hasFine = androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val hasCoarse = androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (!hasFine && !hasCoarse) {
+                locationPermLauncher.launch(arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                ))
+            } else {
+                appLocationVm.detectLocation()
+            }
+        }
+        val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
+
 
         fun openAllPosts(categoryKey: String? = null) {
             activeCategoryKey = categoryKey
@@ -521,12 +569,14 @@ fun ZarudaApp(
                             openCategoryApp(safeKey)
                         },
                         onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                         onOpenScanner = { navController.navigate(Routes.SCANNER) { launchSingleTop = true } },
                         onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                         onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
                         onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                         onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
+                        onOpenRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
+                        onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                        onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -631,7 +681,7 @@ fun ZarudaApp(
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
-                            onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                            onOpenSettings = { navController.navigate(Routes.MORE) { launchSingleTop = true } },
                             onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenSecurity = { navController.navigate(Routes.SECURITY) { launchSingleTop = true } },
@@ -724,6 +774,13 @@ fun ZarudaApp(
                 }
             }
 
+            composable(Routes.LOCATION_SELECTION) {
+                com.zaruda.app.ui.location.LocationSelectionScreen(
+                    onBack = { navController.popBackStack() },
+                    onSelect = { _ -> navController.popBackStack() },
+                )
+            }
+
             composable(Routes.CATEGORIES) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
                     CategoriesScreen(
@@ -803,11 +860,6 @@ fun ZarudaApp(
 
             
 
-            composable(Routes.SETTINGS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
-                    SettingsScreen(onBack = { navController.popBackStack() }, onLogout = { navController.navigate(Routes.AUTH_GRAPH) { popUpTo(0) { inclusive = true } } })
-                }
-            }
 
             // â”€â”€ Commerce â”€â”€
             composable(Routes.POST_WELCOME) {
@@ -964,6 +1016,13 @@ fun ZarudaApp(
                 }
             }
 
+            composable(Routes.NEARBY) {
+                com.zaruda.app.ui.nearby.NearbyScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
+                )
+            }
+
             composable(
                 route = Routes.EXPIRY_ACTION,
                 arguments = listOf(androidx.navigation.navArgument("postId") { type = androidx.navigation.NavType.StringType }),
@@ -999,7 +1058,7 @@ fun ZarudaApp(
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     currentThemeMode = themeMode,
                     onToggleTheme = toggleTheme,
-                    onLanguage = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                    onLanguage = { },
                     categoryKey = null,
                 )
             }
@@ -1274,10 +1333,11 @@ fun ZarudaApp(
                         onDismiss = { showMoreDrawer = false },
                         onOpenWishlist = { drawerNav(Routes.WISHLIST) },
                         onOpenCreatePost = { drawerNav(Routes.POST_WELCOME) },
-                        onOpenSettings = { drawerNav(Routes.SETTINGS) },
+
                         onOpenTierSelection = { drawerNav(Routes.TIER_SELECTION) },
                         onOpenMyHome = { drawerNav(Routes.MY_HOME) },
                         onOpenSaleUndone = { drawerNav(Routes.REPOST) },
+                        onOpenNearby = { drawerNav(Routes.NEARBY) },
                         onOpenPublicWall = { drawerNav(Routes.PUBLIC_WALL) },
                         onOpenFeedback = { drawerNav(Routes.FEEDBACK) },
                         onOpenComplaints = { drawerNav(Routes.COMPLAINTS) },
@@ -1351,6 +1411,7 @@ fun MainShell(
     selected: BottomTab,
     showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
+    showSellFab: Boolean = selected != BottomTab.HOME,
     activeCategoryKey: String? = null,
     onOpenMore: () -> Unit = {},
     content: @Composable () -> Unit,
@@ -1360,6 +1421,18 @@ fun MainShell(
             topBar = {
                 if (showTopBar) {
                 val themeCtl = LocalThemeController.current
+                val appLocationVm: com.zaruda.app.ui.location.AppLocationViewModel = hiltViewModel()
+                val currentCity by appLocationVm.currentCity.collectAsState()
+                val currentArea by appLocationVm.currentArea.collectAsState()
+                val displayLocationText = remember(currentCity, currentArea) {
+                    if (currentArea.isNotBlank() && currentArea != currentCity) {
+                        "$currentArea, $currentCity"
+                    } else if (currentCity.isNotBlank() && currentCity != "Detecting...") {
+                        currentCity
+                    } else {
+                        "Detecting..."
+                    }
+                }
                 ZarudaTopBar(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
@@ -1369,6 +1442,8 @@ fun MainShell(
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     onProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
+                    onLocationClick = { navController.navigate(Routes.LOCATION_SELECTION) { launchSingleTop = true } },
+                    locationText = displayLocationText,
                 )
                 }
             },
@@ -1420,41 +1495,43 @@ fun MainShell(
                                 }
                             }
                             // + Sell button — native 56dp FAB, dead-center of the screen
-                            val sellFlowVm: SellFlowViewModel = hiltViewModel()
-                            val authGate = LocalAuthGate.current
-                            val authVm: AuthViewModel = hiltViewModel()
-                            val isAuthed by authVm.isAuthenticated.collectAsState()
-                            val sellScope = rememberCoroutineScope()
-                            Box(
-                                modifier = Modifier
-                                    .width(76.dp)
-                                    .fillMaxHeight(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                FloatingActionButton(
-                                    onClick = {
-                                        if (!isAuthed) {
-                                            authGate()
-                                        } else {
-                                            sellScope.launch {
-                                                val destination = sellFlowVm.resolveDestination()
-                                                navController.navigate(destination) { launchSingleTop = true }
-                                            }
-                                        }
-                                    },
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(56.dp),
-                                    elevation = FloatingActionButtonDefaults.elevation(
-                                        defaultElevation = 4.dp,
-                                        pressedElevation = 8.dp,
-                                    ),
+                            if (showSellFab) {
+                                val sellFlowVm: SellFlowViewModel = hiltViewModel()
+                                val authGate = LocalAuthGate.current
+                                val authVm: AuthViewModel = hiltViewModel()
+                                val isAuthed by authVm.isAuthenticated.collectAsState()
+                                val sellScope = rememberCoroutineScope()
+                                Box(
+                                    modifier = Modifier
+                                        .width(76.dp)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(
-                                        Icons.Filled.Add,
-                                        contentDescription = stringResource(R.string.nav_sell),
-                                        modifier = Modifier.size(28.dp),
-                                    )
+                                    FloatingActionButton(
+                                        onClick = {
+                                            if (!isAuthed) {
+                                                authGate()
+                                            } else {
+                                                sellScope.launch {
+                                                    val destination = sellFlowVm.resolveDestination()
+                                                    navController.navigate(destination) { launchSingleTop = true }
+                                                }
+                                            }
+                                        },
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(56.dp),
+                                        elevation = FloatingActionButtonDefaults.elevation(
+                                            defaultElevation = 4.dp,
+                                            pressedElevation = 8.dp,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Add,
+                                            contentDescription = stringResource(R.string.nav_sell),
+                                            modifier = Modifier.size(28.dp),
+                                        )
+                                    }
                                 }
                             }
                             // Right cluster: Feed, Rewards, More — mirrors the left half
@@ -1615,7 +1692,6 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
         "wishlist", "saved" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
         "cart" -> navController.navigate(Routes.CART) { launchSingleTop = true }
         "notifications" -> navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
-        "settings" -> navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
         "saledone", "sale-done", "sales" -> {
             val tab = segments.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 3) ?: 0
             navController.navigate(Routes.saleDoneTab(tab)) { launchSingleTop = true }

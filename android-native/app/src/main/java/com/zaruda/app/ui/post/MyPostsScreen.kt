@@ -503,7 +503,7 @@ fun MyPostsScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("My Home", fontWeight = FontWeight.ExtraBold)
+                            Text(stringResource(R.string.my_posts_title), fontWeight = FontWeight.ExtraBold)
                             Text("Your marketplace listings", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
@@ -566,8 +566,8 @@ fun MyPostsScreen(
                                             Icon(Icons.Default.ShoppingBag, null, tint = Color.White, modifier = Modifier.size(22.dp))
                                         }
                                         Column {
-                                            Text("MY HOME", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.7f), letterSpacing = 1.5.sp)
-                                            Text("My Home", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
+                                            Text("MY LISTINGS", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.7f), letterSpacing = 1.5.sp)
+                                            Text(stringResource(R.string.my_posts_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
                                             Text("Your marketplace listings", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
                                         }
                                     }
@@ -707,7 +707,7 @@ fun MyPostsScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     Text("🚀", fontSize = 20.sp)
-                                                    Text("Welcome to Zaruda!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
+                                                    Text("Welcome!", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0369A1))
                                                 }
                                                 IconButton(onClick = { showOnboarding = false }, modifier = Modifier.size(24.dp)) {
                                                     Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
@@ -846,6 +846,10 @@ fun MyPostsScreen(
                                                                 Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                             }
                                                         }
+                                                        // Post ID & Seller ID (compact for grid)
+                                                        post.postId?.let { pid ->
+                                                            Text("ID: $pid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+                                                        }
                                                     }
                                                 }
                                             }
@@ -865,6 +869,7 @@ fun MyPostsScreen(
                                         colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
+                                        Column {
                                         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                             if (state.bulkMode) {
                                                 Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
@@ -891,20 +896,18 @@ fun MyPostsScreen(
                                                     post.viewCount?.let { v -> Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                                     post.likeCount?.let { l -> Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp)); Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                                 }
-                                                // 7-day sparkline
-                                                post.viewCount?.let { totalViews ->
-                                                    val sparkData = remember(post.stableId) {
-                                                        val seed = post.stableId.hashCode().toLong(); val rng = java.util.Random(seed)
-                                                        List(7) { i -> (totalViews / 7 * (0.5 + rng.nextDouble())).toFloat().coerceAtLeast(0f) }
+                                                // Post ID & Seller ID row (for complaints reference)
+                                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 2.dp)) {
+                                                    post.postId?.let { pid ->
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                            Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                                                            Text("Post: $pid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                                        }
                                                     }
-                                                    val maxVal = sparkData.maxOrNull()?.coerceAtLeast(1f) ?: 1f
-                                                    val lineColor = MaterialTheme.colorScheme.primary
-                                                    Canvas(modifier = Modifier.fillMaxWidth(0.6f).height(28.dp).padding(vertical = 4.dp)) {
-                                                        val step = size.width / (sparkData.size - 1).coerceAtLeast(1)
-                                                        for (i in 0 until sparkData.size - 1) {
-                                                            val x1 = i * step; val y1 = size.height - (sparkData[i] / maxVal * size.height)
-                                                            val x2 = (i + 1) * step; val y2 = size.height - (sparkData[i + 1] / maxVal * size.height)
-                                                            drawLine(color = lineColor, start = androidx.compose.ui.geometry.Offset(x1, y1), end = androidx.compose.ui.geometry.Offset(x2, y2), strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                    post.userId?.let { uid ->
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                            Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                                                            Text("Seller: $uid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                                         }
                                                     }
                                                 }
@@ -914,7 +917,68 @@ fun MyPostsScreen(
                                                 Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                                             }
                                         }
+                                        // ── 1-Tap Quick Actions ──
+                                        if (!state.bulkMode && post.status?.lowercase() != "sold") {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(start = 96.dp, end = 12.dp, bottom = 8.dp, top = 0.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            ) {
+                                                // Repost (50c)
+                                                Surface(
+                                                    onClick = { viewModel.showRenew(post) },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = Color(0xFF7C3AED).copy(alpha = 0.1f),
+                                                    modifier = Modifier.weight(1f).height(30.dp),
+                                                ) {
+                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                        Text("🔄", fontSize = 11.sp)
+                                                        Spacer(Modifier.width(2.dp))
+                                                        Text("Repost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
+                                                    }
+                                                }
+                                                // Edit
+                                                Surface(
+                                                    onClick = { onOpenPost(post.stableId) },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                                    modifier = Modifier.weight(1f).height(30.dp),
+                                                ) {
+                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                        Text("✏️", fontSize = 11.sp)
+                                                        Spacer(Modifier.width(2.dp))
+                                                        Text("Edit", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                                                    }
+                                                }
+                                                // Mark Sold
+                                                Surface(
+                                                    onClick = { viewModel.showMarkSold(post) },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = Color(0xFF22C55E).copy(alpha = 0.1f),
+                                                    modifier = Modifier.weight(1f).height(30.dp),
+                                                ) {
+                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                        Text("✅", fontSize = 11.sp)
+                                                        Spacer(Modifier.width(2.dp))
+                                                        Text("Sold", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                                                    }
+                                                }
+                                                // Boost
+                                                Surface(
+                                                    onClick = { promoteTarget = post },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = Color(0xFFF59E0B).copy(alpha = 0.1f),
+                                                    modifier = Modifier.weight(1f).height(30.dp),
+                                                ) {
+                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                        Text("🚀", fontSize = 11.sp)
+                                                        Spacer(Modifier.width(2.dp))
+                                                        Text("Boost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFD97706))
+                                                    }
+                                                }
+                                            }
+                                        }
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                                        }
                                     }
                                 }
                             }

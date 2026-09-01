@@ -83,10 +83,10 @@ object NetworkModule {
         }
         return OkHttpClient.Builder()
             .cache(httpCache)
-            .connectTimeout(3, TimeUnit.SECONDS)
-            .readTimeout(8, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .callTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             // Connection pool tuned for 10M+ user scale: keep 8 idle connections alive for 3 min
             .connectionPool(ConnectionPool(8, 3, TimeUnit.MINUTES))

@@ -332,7 +332,7 @@ fun CategoryAppShell(
                     categoryKey = categoryKey,
                     subcategoryId = subcatId,
                     onOpenProduct = onOpenPostDetail,
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                 )
             }
 
@@ -341,13 +341,13 @@ fun CategoryAppShell(
                     categoryKey = categoryKey,
                     subcategoryId = null,
                     onOpenProduct = onOpenPostDetail,
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                 )
             }
 
             composable(Routes.categoryCart(categoryKey)) {
                 com.zaruda.app.ui.commerce.CartScreen(
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                     categoryKey = categoryKey,
                 )
             }
@@ -355,7 +355,7 @@ fun CategoryAppShell(
             composable(Routes.categoryWishlist(categoryKey)) {
                 // Wishlist is category-scoped — only this category's saved items show.
                 WishlistScreen(
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                     onOpenPost = onOpenPostDetail,
                     categoryKey = categoryKey,
                 )
@@ -363,7 +363,7 @@ fun CategoryAppShell(
 
             composable(Routes.categoryRecentlyViewed(categoryKey)) {
                 RecentlyViewedScreen(
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                     onOpenPost = onOpenPostDetail,
                     categoryKey = categoryKey,
                 )
@@ -371,7 +371,7 @@ fun CategoryAppShell(
 
             composable(Routes.categoryCompare(categoryKey)) {
                 CompareScreen(
-                    onBack = { innerNav.popBackStack() },
+                    onBack = { if (!innerNav.popBackStack()) onBackToLauncher() },
                     categoryKey = categoryKey,
                 )
             }

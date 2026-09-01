@@ -55,6 +55,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -244,14 +250,22 @@ fun AadhaarVerifyScreen(
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Text("Enter Aadhaar Number", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                             OutlinedTextField(
-                                value = state.aadhaarNumber,
-                                onValueChange = viewModel::onAadhaarChange,
+                                value = state.aadhaarNumber.chunked(4).joinToString(" "),
+                                onValueChange = { viewModel.onAadhaarChange(it.filter { c -> c.isDigit() }) },
                                 label = { Text("12-digit Aadhaar number") },
                                 placeholder = { Text("XXXX XXXX XXXX") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                                 singleLine = true,
                                 isError = state.error != null,
-                                supportingText = { Text("${state.aadhaarNumber.length}/12 digits") },
+                                supportingText = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("${state.aadhaarNumber.length}/12 digits")
+                                        if (state.aadhaarNumber.length == 12) {
+                                            Spacer(Modifier.size(4.dp))
+                                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(14.dp))
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                             )
@@ -263,6 +277,52 @@ fun AadhaarVerifyScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
                             ) {
                                 Text(if (state.loading) "Sending OTP…" else "Send OTP", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+
+                    // ── Security & Privacy Accordion ──
+                    Spacer(Modifier.height(12.dp))
+                    var securityExpanded by remember { mutableStateOf(false) }
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable { securityExpanded = !securityExpanded }.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.12f), modifier = Modifier.size(32.dp)) {
+                                    Box(contentAlignment = Alignment.Center) { Text("🔒", fontSize = 16.sp) }
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Security & Privacy Info", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                    Text(if (securityExpanded) "Tap to collapse" else "Tap to expand", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Icon(
+                                    if (securityExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                                    contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            AnimatedVisibility(visible = securityExpanded, enter = expandVertically(), exit = shrinkVertically()) {
+                                Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    HorizontalDivider()
+                                    Spacer(Modifier.height(4.dp))
+                                    listOf(
+                                        "🛡️ Your Aadhaar data is encrypted in transit (TLS 1.3) and at rest (AES-256).",
+                                        "📋 We only verify your identity — we never store your Aadhaar number on our servers.",
+                                        "🔒 OTP is sent directly by UIDAI to your registered mobile number.",
+                                        "✅ Verification is completed within 24–48 hours of submission.",
+                                        "🚫 We do not share your identity data with third parties.",
+                                    ).forEach { item ->
+                                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text(item, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

@@ -1933,43 +1933,14 @@ private fun categoryEmoji(name: String): String = when {
 
 /** Fetch the device location — last known first, single-update as a fallback. */
 private suspend fun fetchCurrentLocation(context: Context): android.location.Location? =
-    suspendCancellableCoroutine { cont ->
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-        if (lm == null) {
-            cont.resume(null)
-            return@suspendCancellableCoroutine
+    withContext(Dispatchers.IO) {
+        try {
+            val fusedClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context)
+            val locationTask = fusedClient.lastLocation
+            com.google.android.gms.tasks.Tasks.await(locationTask, 8, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: Exception) {
+            null
         }
-        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
-            .filter { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
-
-        // Fast path: a recent last-known fix
-        providers.firstNotNullOfOrNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }?.let {
-            cont.resume(it)
-            return@suspendCancellableCoroutine
-        }
-
-        if (providers.isEmpty()) {
-            cont.resume(null)
-            return@suspendCancellableCoroutine
-        }
-
-        // Slow path: request a single fresh fix (callback arrives on the main looper)
-        val listener = object : android.location.LocationListener {
-            override fun onLocationChanged(loc: android.location.Location) {
-                if (cont.isActive) {
-                    runCatching { lm.removeUpdates(this) }
-                    cont.resume(loc)
-                }
-            }
-        }
-        val scheduled = runCatching {
-            providers.forEach { lm.requestSingleUpdate(it, listener, Looper.getMainLooper()) }
-        }.isSuccess
-        if (!scheduled) {
-            cont.resume(null)
-            return@suspendCancellableCoroutine
-        }
-        cont.invokeOnCancellation { runCatching { lm.removeUpdates(listener) } }
     }
 
 /** Reverse-geocode coordinates into a "City, State" label (best effort). */

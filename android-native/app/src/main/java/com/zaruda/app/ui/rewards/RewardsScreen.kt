@@ -11,6 +11,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -59,6 +62,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -161,7 +165,7 @@ data class RewardsUiState(
 private val fallbackRewardsOverview = RewardsOverviewResponse(
     user = RewardsUserDto(
         id = "demo_rewards_user",
-        name = "Zaruda Member",
+        name = "Demo User",
         rank = "Bronze",
         tier = "Bronze",
         membershipPlan = "premium",
@@ -169,7 +173,7 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
         level = 2,
         xpCurrent = 140,
         xpRequired = 250,
-        referralCode = "ZARUDADEMO",
+        referralCode = "DEMO001",
         totalReferrals = 2,
         directReferrals = 2,
         indirectReferrals = 1,
@@ -185,7 +189,7 @@ private val fallbackRewardsOverview = RewardsOverviewResponse(
         postStreak = 1,
         profileComplete = true,
         hasPosted = true,
-        dailySecretCode = "ZARUDA25",
+        dailySecretCode = "DAILY25",
     ),
     referralChain = listOf(
         RewardsReferralNodeDto(id = "demo_ref_1", name = "Priya", depth = 1, type = "Direct", coins = 50, joinDate = "Today"),
@@ -728,7 +732,7 @@ fun RewardsScreen(
                     val referralProgress = (directReferrals.toFloat() / referralTarget).coerceIn(0f, 1f)
                     val xpProgress = if (user.xpRequired <= 0) 0f else user.xpCurrent.toFloat() / user.xpRequired.toFloat()
                     val xpRemaining = max(0, user.xpRequired - user.xpCurrent)
-                    val inviteText = "Join Zaruda with my referral code ${user.referralCode ?: "ZARUDA"} and start earning rewards! https://zaruda.app/invite/${user.referralCode ?: ""}"
+                    val inviteText = "Join with my referral code ${user.referralCode ?: "JOINME"} and start earning rewards!"
 
                     // Redeem confirmation dialog with optional post picker
                     var redeemDialogType by remember { mutableStateOf<String?>(null) }
@@ -895,22 +899,15 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Coins Utility Overview ───────────────────────
+                        // ─── Coins Utility Overview (collapsed by default) ──
                         if (selectedTab == 0) item {
-                            Card(
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+                            CollapsibleAccordion(
+                                title = "\uD83D\uDCB0 Coins Usage & Strategic Valuation",
+                                emoji = "\uD83D\uDCB0",
+                                accentColor = Color(0xFFF59E0B),
+                                darkTheme = darkTheme,
                             ) {
-                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        "💰 Coins Usage & Strategic Valuation",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
                                         if (isPremium) "🔥 Premium Active Perk: 100 coins = ₹5.00 (5x Valuation Bonus!)"
                                         else "Standard Rate: 100 coins = ₹1.00. Upgrade to Premium for 5x valuation!",
@@ -918,51 +915,56 @@ fun RewardsScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (isPremium) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                    Spacer(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
-                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text(
-                                            if (isPremium) "🔥 Post Boost (50 coins): Top priority placement for 7 days."
-                                            else "📢 Post Boost (200 coins): Top priority placement for 7 days (50c for Premium).",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            if (isPremium) "🔥 Featured Post (100 coins): Highlighted badge & featured placement for 14 days."
-                                            else "📢 Featured Post (300 coins): Highlighted placement for 14 days (100c for Premium).",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            if (isPremium) "🔥 Spotlight / Top Placement (200 coins): Premium top feed placement for 30 days."
-                                            else "📢 Spotlight / Top Placement (500 coins): Top placement for 30 days (200c for Premium).",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            "• Plan Purchase Discount: Redeem coins to claim up to 25% off plan purchases (7,200 coins = ₹450 off ₹1,800 Premium plan).",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
+                                    HorizontalDivider()
+                                    Text(
+                                        if (isPremium) "🔥 Post Boost (50 coins): Top priority placement for 7 days."
+                                        else "📢 Post Boost (200 coins): Top priority placement for 7 days (50c for Premium).",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        if (isPremium) "🔥 Featured Post (100 coins): Highlighted badge & featured placement for 14 days."
+                                        else "📢 Featured Post (300 coins): Highlighted placement for 14 days (100c for Premium).",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        if (isPremium) "🔥 Spotlight / Top Placement (200 coins): Premium top feed placement for 30 days."
+                                        else "📢 Spotlight / Top Placement (500 coins): Top placement for 30 days (200c for Premium).",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    HorizontalDivider()
+                                    Text(
+                                        "• Plan Purchase Discount: Redeem coins to claim up to 25% off plan purchases (7,200 coins = ₹450 off ₹1,800 Premium plan).",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             }
                         }
 
-                        // ─── Impact Dashboard ────────────────────────────
+                        // ─── Impact Dashboard (collapsed by default) ───
                         if (selectedTab == 0) item {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(stringResource(R.string.rewards_impact_dashboard), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ImpactCard("Total Points", (user.totalCoins + user.chainEarnedPoints).toString(), "\uD83C\uDFC6", Color(0xFFF59E0B), Modifier.weight(1f))
-                                    ImpactCard("Chain Depth", rewards.referralChain.size.toString(), "\uD83D\uDD17", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                                }
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ImpactCard("Active Referrals", user.directReferrals.toString(), "\uD83D\uDC65", Color(0xFF10B981), Modifier.weight(1f))
-                                    ImpactCard("Success Rate", if (user.directReferrals == 0) "\u2014" else "${(user.successfulRefs.toFloat() / user.directReferrals * 100).toInt()}%", "\uD83D\uDCC8", Color(0xFF0EA5E9), Modifier.weight(1f))
+                            CollapsibleAccordion(
+                                title = stringResource(R.string.rewards_impact_dashboard),
+                                emoji = "\uD83D\uDCCA",
+                                accentColor = Color(0xFF3B82F6),
+                                darkTheme = darkTheme,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        ImpactCard("Total Points", (user.totalCoins + user.chainEarnedPoints).toString(), "\uD83C\uDFC6", Color(0xFFF59E0B), Modifier.weight(1f))
+                                        ImpactCard("Chain Depth", rewards.referralChain.size.toString(), "\uD83D\uDD17", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                                    }
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        ImpactCard("Active Referrals", user.directReferrals.toString(), "\uD83D\uDC65", Color(0xFF10B981), Modifier.weight(1f))
+                                        ImpactCard("Success Rate", if (user.directReferrals == 0) "\u2014" else "${(user.successfulRefs.toFloat() / user.directReferrals * 100).toInt()}%", "\uD83D\uDCC8", Color(0xFF0EA5E9), Modifier.weight(1f))
+                                    }
                                 }
                             }
                         }
@@ -1194,7 +1196,7 @@ fun RewardsScreen(
                                 val dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR)
                                 val year = cal.get(java.util.Calendar.YEAR)
                                 val hash = (dayOfYear * 31 + year * 7).toString(16).take(6).uppercase()
-                                "ZARUDA$hash"
+                                "CODE$hash"
                             }
                             AccentTopCard(listOf(Color(0xFF10B981), Color(0xFF059669)), if (darkTheme) Color(0xFF0F2E20) else Color(0xFFF0FDF4)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1268,14 +1270,14 @@ fun RewardsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Text(
-                                            text = user.referralCode ?: "ZARUDA",
+                                            text = user.referralCode ?: "JOINME",
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary,
                                             letterSpacing = 2.sp,
                                         )
                                         OutlinedButton(
-                                            onClick = { clipboardManager.setText(AnnotatedString(user.referralCode ?: "ZARUDA")); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                            onClick = { clipboardManager.setText(AnnotatedString(user.referralCode ?: "JOINME")); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                                             shape = RoundedCornerShape(8.dp),
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         ) {
@@ -1300,6 +1302,115 @@ fun RewardsScreen(
                                     EarnPlaybookRow("✅", "Complete Profile", "+15 coins", if ((user.email ?: "").isNotBlank() && (user.phone ?: "").isNotBlank()) 1f else 0.5f, Color(0xFFF59E0B))
                                     EarnPlaybookRow("💰", "Complete Sale", "+25 coins", (stats.salesCount / 5f).coerceIn(0f, 1f), Color(0xFF059669))
                                     EarnPlaybookRow("🛒", "Make Purchase", "+10 coins", (stats.purchasesCount / 5f).coerceIn(0f, 1f), Color(0xFFEC4899))
+                                }
+                            }
+                        }
+
+                        // ─── Rules & Valuation Guide (Accordion) ──────
+                        if (selectedTab == 1) item {
+                            CollapsibleAccordion(
+                                title = stringResource(R.string.rewards_accordion_rules_title),
+                                emoji = "\u2139\uFE0F",
+                                accentColor = Color(0xFF3B82F6),
+                                darkTheme = darkTheme,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    // Coin Valuation
+                                    Text("\uD83D\uDCB0 Coin Valuation", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("100 coins = \u20B91", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                                            Text("500 coins = \u20B95", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("1000 coins = \u20B910", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                    HorizontalDivider()
+                                    // Referral Chain Rules
+                                    Text("\uD83D\uDD17 Referral Chain Depth", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                    val chainRules = rewards.chainRules
+                                    if (chainRules.isNotEmpty()) {
+                                        chainRules.forEach { rule ->
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Depth ${rule.depth}", style = MaterialTheme.typography.bodySmall)
+                                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF10B981).copy(alpha = 0.12f)) {
+                                                    Text("+${rule.points.toInt()} coins", modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Text("Depth 1 = +50 coins \u2022 Depth 2 = +25 coins \u2022 Depth 3 = +10 coins", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    HorizontalDivider()
+                                    // Boost Pricing
+                                    Text("\uD83D\uDE80 Boost Pricing", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.08f)) {
+                                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Basic", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("200c", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                                Text("3 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFF7C3AED).copy(alpha = 0.08f)) {
+                                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Pro", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("500c", fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                                                Text("7 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFFF59E0B).copy(alpha = 0.08f)) {
+                                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Premium", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("1000c", fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                                                Text("14 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ─── How Referral Chain Works (Accordion) ─────
+                        if (selectedTab == 2) item {
+                            CollapsibleAccordion(
+                                title = stringResource(R.string.rewards_accordion_referral_title),
+                                emoji = "\uD83D\uDD04",
+                                accentColor = Color(0xFF8B5CF6),
+                                darkTheme = darkTheme,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("When you invite a friend, you earn coins at every level of their network:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    // Visual chain
+                                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f), modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text("\uD83D\uDC64", fontSize = 16.sp)
+                                                Text("You", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                                                Text("\u2192", color = MaterialTheme.colorScheme.primary)
+                                                Text("Direct friend", style = MaterialTheme.typography.bodySmall)
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
+                                                    Text("+50", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                                }
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text("\u251C\u2500", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("Friend\'s friend", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
+                                                Text("\u2192", color = Color(0xFF3B82F6))
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
+                                                    Text("+25", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+                                                }
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text("\u2514\u2500\u2500", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("Third level", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
+                                                Text("\u2192", color = Color(0xFF8B5CF6))
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF8B5CF6).copy(alpha = 0.15f)) {
+                                                    Text("+10", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Text("Deeper levels earn fewer coins. Focus on inviting quality referrals who stay active!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -1692,6 +1803,80 @@ private fun ImpactCard(label: String, value: String, emoji: String, accentColor:
                     Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.5.sp)
                 }
                 Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = accentColor)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollapsibleAccordion(
+    title: String,
+    emoji: String,
+    accentColor: Color,
+    darkTheme: Boolean,
+    initiallyExpanded: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(initiallyExpanded) }
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                if (darkTheme) Color(0xFF94A3B8).copy(alpha = 0.15f) else Color(0xFFE2E8F0),
+                RoundedCornerShape(16.dp),
+            ),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = accentColor.copy(alpha = 0.12f),
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(emoji, fontSize = 18.sp)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        if (expanded) "Tap to collapse" else "Tap to expand",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(),
+                exit = shrinkVertically(),
+            ) {
+                Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
+                    content()
+                }
             }
         }
     }

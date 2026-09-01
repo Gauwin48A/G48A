@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Zaruda</string>
+  <string name="app_name"></string>
   <string name="login_title">Bon retour</string>
   <string name="login_subtitle">Connectez-vous pour continuer</string>
   <string name="signup_title">Créer un compte</string>
-  <string name="signup_subtitle">Rejoignez Zaruda en une minute</string>
+  <string name="signup_subtitle">Rejoignez en une minute</string>
   <string name="auth_brand_subtitle">Achetez et vendez localement</string>
   <string name="auth_tab_signin">Se connecter</string>
   <string name="auth_tab_signup">Créer un compte</string>
@@ -16,7 +16,7 @@
   <string name="action_sign_in">Se connecter</string>
   <string name="action_create_account">Créer un compte</string>
   <string name="action_sign_in_google">Continuer avec Google</string>
-  <string name="action_sign_up_prompt">Nouveau sur Zaruda ? Créer un compte</string>
+  <string name="action_sign_up_prompt">Nouveau sur ? Créer un compte</string>
   <string name="action_sign_in_prompt">Déjà un compte ? Se connecter</string>
   <string name="action_forgot_password">Mot de passe oublié ?</string>
   <string name="validation_required">Ce champ est obligatoire</string>
@@ -496,11 +496,11 @@
   <string name="detail_interested">Intéressé</string>
   <string name="detail_comparing">En comparaison</string>
   <string name="detail_compare">Comparer</string>
-  <string name="more_footer">Zaruda — Tout au même endroit</string>
+  <string name="more_footer">Tout au même endroit</string>
   <string name="more_close_menu">Fermer le menu</string>
   <string name="more_collapse">Réduire</string>
   <string name="more_expand">Développer</string>
-  <string name="topbar_logo">Zaruda</string>
+  <string name="topbar_logo"></string>
   <string name="topbar_search">Rechercher</string>
   <string name="topbar_notifications">Notifications</string>
   <string name="topbar_wishlist">Liste de souhaits</string>
@@ -552,10 +552,10 @@
   <string name="social_delete">Supprimer</string>
   <string name="account_welcome_back">Bienvenue,</string>
   <string name="social_review_hint">Partagez votre expérience…</string>
-  <string name="about_why_title">Pourquoi Zaruda ?</string>
-  <string name="about_version">Zaruda App v1.1.0 · Fait avec ❤️ en Inde</string>
+  <string name="about_why_title">Pourquoi ?</string>
+  <string name="about_version">v1.1.0 · Fait avec ❤️ en Inde</string>
   <string name="social_ref">Réf : %s</string>
-  <string name="about_description">Zaruda est le marché hyperlocal à la croissance la plus rapide en Inde.</string>
+  <string name="about_description">est le marché hyperlocal à la croissance la plus rapide en Inde.</string>
   <string name="account_seller_view">Vue vendeur</string>
   <string name="contact_get_in_touch">Contactez-nous</string>
   <string name="social_boost_visibility">Booster \"%s\"…</string>
@@ -571,7 +571,7 @@
   <string name="social_feed_text_only">Publications texte uniquement.</string>
   <string name="social_promote_post">Promouvoir 🚀</string>
   <string name="about_mission">Permettre à chaque Indien d acheter et vendre en confiance.</string>
-  <string name="about_headline">Zaruda — Votre marché local</string>
+  <string name="about_headline">Votre marché local</string>
   <string name="social_feedback_thanks">Merci pour votre avis !</string>
   <string name="social_feedback_ref">Référence : %s</string>
   <string name="social_title_hint">Donnez un titre…</string>
@@ -1110,7 +1110,7 @@
     <string name="kyc_get_verified">Get Verified</string>
     <string name="language_changed">Language changed</string>
     <string name="language_select">Select Language</string>
-    <string name="more_about_desc">About Zaruda</string>
+    <string name="more_about_desc">About</string>
     <string name="more_activity_hub">Activity Hub</string>
     <string name="more_activity_hub_desc">Your activity</string>
     <string name="more_admin_panel">Admin Panel</string>
@@ -1151,7 +1151,7 @@
     <string name="more_profile_desc">Your profile</string>
     <string name="more_public_wall">Public Wall</string>
     <string name="more_public_wall_desc">Community wall</string>
-    <string name="more_recently_viewed">Recently Viewed</string>
+    <string name="more_recently_viewed">Browsing History</string>
     <string name="more_recently_viewed_desc">Browsing history</string>
     <string name="more_rewards_desc">Earn rewards</string>
     <string name="more_saved_searches">Saved Searches</string>
@@ -1170,10 +1170,10 @@
     <string name="more_wishlist_desc">Items you like</string>
     <string name="my_feed_title">My Feed</string>
     <string name="my_posts_empty">You have not posted anything yet.</string>
-    <string name="my_posts_label">My Posts</string>
-    <string name="my_posts_title">My posts</string>
+    <string name="my_posts_label">My Listings</string>
+    <string name="my_posts_title">My Listings</string>
     <string name="nav_feed_tab">Feed</string>
-    <string name="nav_rewards_tab">Rewards</string>
+    <string name="nav_rewards_tab">Rewards &amp; Coins</string>
     <string name="notif_accept_offer">Accept Offer</string>
     <string name="notif_cancel">Cancel</string>
     <string name="notif_delete_all">Delete All</string>
@@ -1258,7 +1258,7 @@
     <string name="promote_5x">5x + homepage</string>
     <string name="public_wall_title">Public Wall</string>
     <string name="recently_viewed_empty">Nothing viewed recently</string>
-    <string name="recently_viewed_title">Recently Viewed</string>
+    <string name="recently_viewed_title">Browsing History</string>
     <string name="refund_title">Refund Policy</string>
     <string name="reviews_title">Reviews</string>
     <string name="rewards_active_referrals">Active Referrals</string>
@@ -1370,7 +1370,7 @@
     <string name="settings_intl_languages">International Languages</string>
     <string name="settings_local">Local emulator</string>
     <string name="settings_logout_all">Logout from all devices</string>
-    <string name="settings_logout_all_desc">Sign out of Zaruda on every device, including this one. You will need to sign in again.</string>
+    <string name="settings_logout_all_desc">Sign out on every device, including this one. You will need to sign in again.</string>
     <string name="settings_network">Network</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_offer_updates">Offer updates</string>

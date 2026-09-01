@@ -4,7 +4,7 @@
   <string name="login_title">مرحباً بعودتك</string>
   <string name="login_subtitle">سجّل دخولك للمتابعة</string>
   <string name="signup_title">إنشاء حساب</string>
-  <string name="signup_subtitle">انضم إلى Zaruda في دقيقة</string>
+  <string name="signup_subtitle">انضم إلى في دقيقة</string>
   <string name="auth_brand_subtitle">اشتر وبع محلياً</string>
   <string name="auth_tab_signin">تسجيل الدخول</string>
   <string name="auth_tab_signup">إنشاء حساب</string>
@@ -481,11 +481,11 @@
   <string name="detail_interested">مهتم</string>
   <string name="detail_comparing">قيد المقارنة</string>
   <string name="detail_compare">مقارنة</string>
-  <string name="more_footer">Zaruda — كل شيء في مكان واحد</string>
+  <string name="more_footer">كل شيء في مكان واحد</string>
   <string name="more_close_menu">إغلاق القائمة</string>
   <string name="more_collapse">طي</string>
   <string name="more_expand">توسيع</string>
-  <string name="topbar_logo">Zaruda</string>
+  <string name="topbar_logo"></string>
   <string name="topbar_search">بحث</string>
   <string name="topbar_notifications">الإشعارات</string>
   <string name="topbar_wishlist">قائمة الأمنيات</string>
@@ -537,10 +537,10 @@
   <string name="social_delete">حذف</string>
   <string name="account_welcome_back">مرحبًا بعودتك،</string>
   <string name="social_review_hint">شارك تجربتك…</string>
-  <string name="about_why_title">لماذا Zaruda؟</string>
-  <string name="about_version">Zaruda App v1.1.0 · صنع بـ ❤️ في الهند</string>
+  <string name="about_why_title">لماذا؟</string>
+  <string name="about_version">v1.1.0 · صنع بـ ❤️ في الهند</string>
   <string name="social_ref">مرجع: %s</string>
-  <string name="about_description">Zaruda هو أسرع سوق محلي نموًا في الهند.</string>
+  <string name="about_description">هو أسرع سوق محلي نموًا في الهند.</string>
   <string name="account_seller_view">عرض البائع</string>
   <string name="contact_get_in_touch">تواصل معنا</string>
   <string name="social_boost_visibility">تعزيز \"%s\"…</string>
@@ -556,7 +556,7 @@
   <string name="social_feed_text_only">المنشورات نصية فقط.</string>
   <string name="social_promote_post">ترويج 🚀</string>
   <string name="about_mission">تمكين كل هندي من الشراء والبيع بثقة.</string>
-  <string name="about_headline">Zaruda — سوقك المحلي</string>
+  <string name="about_headline">سوقك المحلي</string>
   <string name="social_feedback_thanks">شكرًا لملاحظاتك!</string>
   <string name="social_feedback_ref">مرجع: %s</string>
   <string name="social_title_hint">أعط منشورك عنوانًا…</string>
@@ -768,7 +768,7 @@
     <string name="action_confirm_delete">Are you sure you want to delete this item?</string>
     <string name="action_remove">Remove</string>
     <string name="action_sign_in_prompt">Already have an account? Sign in</string>
-    <string name="action_sign_up_prompt">New to Zaruda? Create account</string>
+    <string name="action_sign_up_prompt">New here? Create account</string>
     <string name="activity_hub_title">Activity Hub</string>
     <string name="allposts_change_app">Change App</string>
     <string name="allposts_compact">Compact</string>
@@ -1101,7 +1101,7 @@
     <string name="language_changed">Language changed</string>
     <string name="language_select">Select Language</string>
     <string name="login_legal">By continuing, you agree to Terms and Privacy Policy.</string>
-    <string name="more_about_desc">About Zaruda</string>
+    <string name="more_about_desc">About</string>
     <string name="more_activity_hub">Activity Hub</string>
     <string name="more_activity_hub_desc">Your activity</string>
     <string name="more_admin_panel">Admin Panel</string>
@@ -1143,7 +1143,7 @@
     <string name="more_profile_desc">Your profile</string>
     <string name="more_public_wall">Public Wall</string>
     <string name="more_public_wall_desc">Community wall</string>
-    <string name="more_recently_viewed">Recently Viewed</string>
+    <string name="more_recently_viewed">Browsing History</string>
     <string name="more_recently_viewed_desc">Browsing history</string>
     <string name="more_rewards_desc">Earn rewards</string>
     <string name="more_saved_searches">Saved Searches</string>
@@ -1162,11 +1162,11 @@
     <string name="more_wishlist_desc">Items you like</string>
     <string name="my_feed_title">My Feed</string>
     <string name="my_posts_empty">You have not posted anything yet.</string>
-    <string name="my_posts_label">My Posts</string>
-    <string name="my_posts_title">My posts</string>
+    <string name="my_posts_label">My Listings</string>
+    <string name="my_posts_title">My Listings</string>
     <string name="nav_explore">السوق</string>
     <string name="nav_feed_tab">Feed</string>
-    <string name="nav_rewards_tab">Rewards</string>
+    <string name="nav_rewards_tab">Rewards &amp; Coins</string>
     <string name="notif_accept_offer">Accept Offer</string>
     <string name="notif_cancel">Cancel</string>
     <string name="notif_delete_all">Delete All</string>
@@ -1253,7 +1253,7 @@
     <string name="public_wall_title">Public Wall</string>
     <string name="pull_to_refresh">Pull to refresh</string>
     <string name="recently_viewed_empty">Nothing viewed recently</string>
-    <string name="recently_viewed_title">Recently Viewed</string>
+    <string name="recently_viewed_title">Browsing History</string>
     <string name="refund_title">Refund Policy</string>
     <string name="reviews_title">Reviews</string>
     <string name="rewards_active_referrals">Active Referrals</string>
@@ -1369,7 +1369,7 @@
     <string name="settings_intl_languages">International Languages</string>
     <string name="settings_local">Local emulator</string>
     <string name="settings_logout_all">Logout from all devices</string>
-    <string name="settings_logout_all_desc">Sign out of Zaruda on every device, including this one. You will need to sign in again.</string>
+    <string name="settings_logout_all_desc">Sign out on every device, including this one. You will need to sign in again.</string>
     <string name="settings_network">Network</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_offer_updates">Offer updates</string>

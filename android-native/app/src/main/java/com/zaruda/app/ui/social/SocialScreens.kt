@@ -1281,10 +1281,21 @@ data class ComplaintsUiState(
 class ComplaintsViewModel @Inject constructor(
     private val repo: ComplaintsRepository,
     private val socialRepo: com.zaruda.app.data.repository.UserSocialRepository,
+    private val postsRepo: com.zaruda.app.data.repository.PostsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ComplaintsUiState())
     val state: StateFlow<ComplaintsUiState> = _state.asStateFlow()
-    init { loadHistory() }
+    var myPosts: List<com.zaruda.app.domain.model.Post> by mutableStateOf(emptyList())
+        private set
+    init { loadHistory(); loadMyPosts() }
+    private fun loadMyPosts() {
+        viewModelScope.launch {
+            when (val r = postsRepo.mine()) {
+                is ApiResult.Success -> myPosts = r.data
+                is ApiResult.Failure -> { }
+            }
+        }
+    }
     fun loadHistory() {
         _state.value = _state.value.copy(historyLoading = true)
         viewModelScope.launch {
@@ -1492,7 +1503,66 @@ fun ComplaintsScreen(onBack: () -> Unit, viewModel: ComplaintsViewModel = hiltVi
                                         if (row.size == 1) Spacer(Modifier.weight(1f))
                                     }
                                 }
-                                // Seller ID + Post ID in 2-col grid
+                                // Select from My Posts (auto-fill IDs)
+                                var showPostPicker by remember { mutableStateOf(false) }
+                                val myPosts = viewModel.myPosts
+                                if (myPosts.isNotEmpty()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (complaintsDark) Color(0xFF1E293B) else Color(0xFFF0F9FF),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (complaintsDark) Color(0xFF334155) else Color(0xFFBAE6FD)),
+                                        modifier = Modifier.fillMaxWidth().clickable { showPostPicker = !showPostPicker },
+                                    ) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(Icons.Default.List, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                            Column(Modifier.weight(1f)) {
+                                                Text("Select from My Posts", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                                Text("Auto-fill Post ID & Seller ID from your listings", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                            Icon(if (showPostPicker) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                    if (showPostPicker) {
+                                        Surface(shape = RoundedCornerShape(12.dp), color = if (complaintsDark) Color(0xFF0F172A) else Color.White, modifier = Modifier.fillMaxWidth()) {
+                                            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                myPosts.take(10).forEach { post ->
+                                                    Surface(
+                                                        shape = RoundedCornerShape(10.dp),
+                                                        color = if (complaintsDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+                                                        modifier = Modifier.fillMaxWidth().clickable {
+                                                            viewModel.setPostId(post.postId ?: post.id ?: "")
+                                                            viewModel.setSellerId(post.userId ?: "")
+                                                            showPostPicker = false
+                                                        },
+                                                    ) {
+                                                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                                            Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                                                                Icon(Icons.Default.Article, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                                            }
+                                                            Column(Modifier.weight(1f)) {
+                                                                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                                    Text("ID: ${post.postId ?: post.id ?: "—"}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                                    Text("Seller: ${post.userId ?: "—"}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                                }
+                                                            }
+                                                            post.status?.let { s ->
+                                                                Surface(shape = RoundedCornerShape(6.dp), color = if (s == "active") Color(0xFFDCFCE7) else Color(0xFFFEF3C7)) {
+                                                                    Text(s.replaceFirstChar { it.uppercase() }, fontSize = 9.sp, color = if (s == "active") Color(0xFF166534) else Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                if (myPosts.size > 10) {
+                                                    Text("+ ${myPosts.size - 10} more posts…", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Manual Seller ID + Post ID (fallback)
+                                Text("Or enter manually", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                                     Column(Modifier.weight(1f)) { FormField("Seller ID (optional)", state.sellerId, viewModel::setSellerId, "e.g. USER123") }
                                     Column(Modifier.weight(1f)) { FormField("Post ID *", state.postId, viewModel::setPostId, "e.g. POST001") }
@@ -1875,7 +1945,7 @@ fun FeedbackScreen(onBack: () -> Unit, viewModel: FeedbackViewModel = hiltViewMo
                 Surface(shape = RoundedCornerShape(12.dp), color = if (darkTheme) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("📞 Direct Contact", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text("For urgent issues, reach us at support@zaruda.app", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("For urgent issues, reach us at support@zarudatech.com", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("We respond within 24 hours on business days.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

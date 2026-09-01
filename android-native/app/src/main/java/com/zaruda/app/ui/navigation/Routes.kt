@@ -29,6 +29,7 @@ object Routes {
 
     // Full screen routes
     const val SEARCH = "search"
+    const val LOCATION_SELECTION = "location-selection"
     const val CATEGORIES = "categories"
     const val SUBCATEGORIES = "subcategories"
     const val POST_DETAIL = "post/{postId}"
@@ -42,7 +43,6 @@ object Routes {
     const val POST_WELCOME = "post/welcome"
     const val TIER_SELECTION = "tier-selection"
     const val KYC = "kyc"
-    const val SETTINGS = "settings"
     // Commerce
     const val BOUGHT_POSTS = "bought-posts"
     const val SOLD_POSTS = "sold-posts"
@@ -55,6 +55,7 @@ object Routes {
     const val SALE_DONE_WITH = "saledone/{postId}/{sellerId}"
     fun saleDone(postId: String, sellerId: String): String = "saledone/$postId/$sellerId"
     const val REPOST = "repost"
+    const val NEARBY = "nearby"
     /** Notification-driven expiry action: {postId} → Sold/Not-sold/Repost chooser. */
     const val EXPIRY_ACTION = "expiry-action/{postId}"
     fun expiryAction(postId: String) = "expiry-action/$postId"

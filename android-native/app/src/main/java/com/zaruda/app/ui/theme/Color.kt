@@ -2,44 +2,49 @@ package com.zaruda.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Brand: web parity theme (blue + indigo gradients).
-val BrandPrimary = Color(0xFF2F66EA)
-val BrandPrimaryDark = Color(0xFFB9CCFF)
-val BrandContainer = Color(0xFFDCE6FF)
-val BrandOnContainer = Color(0xFF14244D)
+// Brand: Modern vibrant blue + indigo gradient theme
+val BrandPrimary = Color(0xFF1E40AF)
+val BrandPrimaryDark = Color(0xFF93C5FD)
+val BrandContainer = Color(0xFFDBEAFE)
+val BrandOnContainer = Color(0xFF1E3A5F)
 
-val AccentTeal = Color(0xFF6C4CF3)
+val AccentTeal = Color(0xFF7C3AED)
 val AccentAmber = Color(0xFFF59E0B)
 
-// Neutral slate
+// Neutral slate - warm modern feel
 val Neutral0 = Color(0xFFFFFFFF)
-val Neutral50 = Color(0xFFF3F4F6)
-val Neutral100 = Color(0xFFEBEEF3)
-val Neutral200 = Color(0xFFDDE3EC)
-val Neutral300 = Color(0xFFC7CFDC)
-val Neutral400 = Color(0xFF9FAAC1)
-val Neutral500 = Color(0xFF6F7B93)
-val Neutral600 = Color(0xFF4F5A70)
-val Neutral700 = Color(0xFF3A4457)
-val Neutral800 = Color(0xFF272F3D)
-val Neutral900 = Color(0xFF161C26)
+val Neutral50 = Color(0xFFF8FAFC)
+val Neutral100 = Color(0xFFF1F5F9)
+val Neutral200 = Color(0xFFE2E8F0)
+val Neutral300 = Color(0xFFCBD5E1)
+val Neutral400 = Color(0xFF94A3B8)
+val Neutral500 = Color(0xFF64748B)
+val Neutral600 = Color(0xFF475569)
+val Neutral700 = Color(0xFF334155)
+val Neutral800 = Color(0xFF1E293B)
+val Neutral900 = Color(0xFF0F172A)
 
 // Semantic
-val ErrorRed = Color(0xFFB42318)
-val SuccessGreen = Color(0xFF067647)
-val WarnAmber = Color(0xFFB54708)
-val InfoBlue = Color(0xFF1849A9)
+val ErrorRed = Color(0xFFEF4444)
+val SuccessGreen = Color(0xFF10B981)
+val WarnAmber = Color(0xFFF59E0B)
+val InfoBlue = Color(0xFF3B82F6)
+
+// Splash gradient colors
+val SplashStart = Color(0xFF0F172A)
+val SplashCenter = Color(0xFF1E3A8A)
+val SplashEnd = Color(0xFF3B82F6)
 
 // Category surface tints
 val CategoryTints = listOf(
-    Color(0xFFFFF4E8),
-    Color(0xFFE8FFF3),
-    Color(0xFFE8F0FF),
-    Color(0xFFFFF0F4),
-    Color(0xFFE8FAFF),
-    Color(0xFFF3EEFF),
-    Color(0xFFFFF8E8),
-    Color(0xFFECFFF8),
-    Color(0xFFFFF0EC),
-    Color(0xFFEEF7FF),
+    Color(0xFFFFF7ED),
+    Color(0xFFECFDF5),
+    Color(0xFFEFF6FF),
+    Color(0xFFFFF1F2),
+    Color(0xFFF0F9FF),
+    Color(0xFFF5F3FF),
+    Color(0xFFFFFBEB),
+    Color(0xFFECFDF5),
+    Color(0xFFFFF5F5),
+    Color(0xFFEFF6FF),
 )

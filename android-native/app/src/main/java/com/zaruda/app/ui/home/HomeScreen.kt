@@ -1,5 +1,6 @@
 package com.zaruda.app.ui.home
 import com.zaruda.app.ui.theme.ColorTokens
+import kotlin.collections.*
 
 import com.zaruda.app.R
 import androidx.compose.animation.AnimatedVisibility
@@ -145,6 +146,7 @@ private enum class SortOption(val label: String) {
     NEWEST("New"),
     POPULAR("Popular"),
     MOST_VIEWED("Most Viewed"),
+    NEARBY("Near Me"),
     PRICE_ASC("Price low-high"),
     PRICE_DESC("Price high-low"),
 }
@@ -915,7 +917,7 @@ fun HomeScreen(
         )
     }
 
-    val filteredPosts = remember(state.posts, selectedCategory, sortBy, searchQuery, filters, quickFilter) {
+    val filteredPosts: List<Post> = remember(state.posts, selectedCategory, sortBy, searchQuery, filters, quickFilter) {
         // Multi-token search: split query into tokens
         val searchTokens = searchQuery.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
         
@@ -971,8 +973,25 @@ fun HomeScreen(
                     SortOption.NEWEST -> list
                     SortOption.POPULAR -> list.sortedByDescending { (it.likeCount ?: 0) + (it.viewCount ?: 0) * 2 }
                     SortOption.MOST_VIEWED -> list.sortedByDescending { it.viewCount ?: 0 }
+                    SortOption.NEARBY -> {
+                        val locMgr = viewModel.locationManager
+                        val myLat = locMgr.lastLat
+                        val myLng = locMgr.lastLng
+                        if (myLat != null && myLng != null) {
+                            list.sortedBy { post ->
+                                val pLat = post.latitude
+                                val pLng = post.longitude
+                                if (pLat != null && pLng != null) {
+                                    com.zaruda.app.core.LocationSetupManager.distanceKm(myLat, myLng, pLat, pLng)
+                                } else Double.MAX_VALUE
+                            }
+                        } else {
+                            list.sortedBy { it.location ?: "zzz" }
+                        }
+                    }
                     SortOption.PRICE_ASC -> list.sortedBy { it.price ?: Double.MAX_VALUE }
                     SortOption.PRICE_DESC -> list.sortedByDescending { it.price ?: 0.0 }
+                    else -> list
                 }
             }
             // Guest preview limit: take only 5 for guests
@@ -1705,7 +1724,7 @@ fun HomeScreen(
                             }
                         }
                     } else if (gridMode) {
-                        items(filteredPosts.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
+                        items(items = filteredPosts.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 row.forEach { post ->
                                     GridPostCard(
@@ -1720,12 +1739,20 @@ fun HomeScreen(
                             }
                         }
                     } else {
-                        items(filteredPosts, key = { it.stableId }) { post ->
+                        items(items = filteredPosts, key = { post -> post.stableId }) { post ->
+                            val distKm = viewModel.locationManager.let { locMgr ->
+                                val myLat = locMgr.lastLat
+                                val myLng = locMgr.lastLng
+                                if (myLat != null && myLng != null && post.latitude != null && post.longitude != null) {
+                                    com.zaruda.app.core.LocationSetupManager.distanceKm(myLat, myLng, post.latitude, post.longitude)
+                                } else null
+                            }
                             ListPostCard(
                                 post = post,
                                 onClick = { onOpenPost(post.stableId) },
                                 onUserClick = { post.userId?.let(onOpenUser) },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                distanceKm = distKm,
                                 onShare = {
                                     sharePostId = post.stableId
                                     sharePostTitle = post.displayTitle
@@ -1947,6 +1974,7 @@ fun ListPostCard(
     isOwner: Boolean = false,
     isInCompare: Boolean = false,
     pageDensity: PageDensity = PageDensity.NORMAL,
+    distanceKm: Double? = null,
 ) {
     var wishlisted by remember { mutableStateOf(false) }
     var liked by remember { mutableStateOf(false) }
@@ -2108,6 +2136,9 @@ fun ListPostCard(
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
                         Spacer(Modifier.width(3.dp))
                         Text(post.location ?: "Nearby", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (distanceKm != null && distanceKm < 1000.0) {
+                            Text(" \u00b7 ${"%.1f".format(distanceKm)} km", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                     val timeAgo = relativeTime(post.createdAt)
                     if (timeAgo.isNotBlank()) {

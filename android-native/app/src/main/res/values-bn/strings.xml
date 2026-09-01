@@ -4,7 +4,7 @@
   <string name="login_title">স্বাগতম ফিরে আসুন</string>
   <string name="login_subtitle">চালিয়ে যেতে সাইন ইন করুন</string>
   <string name="signup_title">অ্যাকাউন্ট তৈরি করুন</string>
-  <string name="signup_subtitle">এক মিনিটে Zaruda-এ যোগ দিন</string>
+  <string name="signup_subtitle">এক মিনিটে-এ যোগ দিন</string>
   <string name="auth_brand_subtitle">স্থানীয়ভাবে কিনুন এবং বিক্রি করুন</string>
   <string name="auth_tab_signin">সাইন ইন</string>
   <string name="auth_tab_signup">অ্যাকাউন্ট তৈরি</string>
@@ -16,7 +16,7 @@
   <string name="action_sign_in">সাইন ইন</string>
   <string name="action_create_account">অ্যাকাউন্ট তৈরি করুন</string>
   <string name="action_sign_in_google">Google দিয়ে চালিয়ে যান</string>
-  <string name="action_sign_up_prompt">Zaruda-এ নতুন? অ্যাকাউন্ট তৈরি করুন</string>
+  <string name="action_sign_up_prompt">-এ নতুন? অ্যাকাউন্ট তৈরি করুন</string>
   <string name="action_sign_in_prompt">ইতিমধ্যে অ্যাকাউন্ট আছে? সাইন ইন করুন</string>
   <string name="action_forgot_password">পাসওয়ার্ড ভুলে গেছেন?</string>
   <string name="validation_required">এই ক্ষেত্রটি প্রয়োজন</string>
@@ -453,12 +453,12 @@
   <string name="detail_interested">আগ্রহী</string>
   <string name="detail_compare">তুলনা</string>
   <!-- MoreScreen / Drawer -->
-  <string name="more_footer">Zaruda — সব কিছু এক জায়গায়</string>
+  <string name="more_footer">সব কিছু এক জায়গায়</string>
   <string name="more_close_menu">মেনু বন্ধ করুন</string>
   <string name="more_collapse">সংকুচিত করুন</string>
   <string name="more_expand">প্রসারিত করুন</string>
   <!-- TopBar -->
-  <string name="topbar_logo">Zaruda</string>
+  <string name="topbar_logo"></string>
   <string name="topbar_search">অনুসন্ধান</string>
   <string name="topbar_notifications">বিজ্ঞপ্তি</string>
   <string name="topbar_wishlist">ইচ্ছা তালিকা</string>
@@ -506,7 +506,7 @@
   <string name="contact_message">বার্তা</string>
   <string name="account_change_password">পাসওয়ার্ড পরিবর্তন</string>
   <string name="account_welcome_back">স্বাগতম,</string>
-  <string name="about_why_title">কেন Zaruda?</string>
+  <string name="about_why_title">কেন?</string>
   <string name="contact_your_name">আপনার নাম</string>
   <string name="account_total_coins">মোট কয়েন</string>
   <string name="social_share">শেয়ার</string>
@@ -522,7 +522,7 @@
   <string name="social_no_posts_title">এখনো কোনো পোস্ট নেই</string>
   <string name="faq_search_hint">প্রশ্ন খুঁজুন…</string>
   <string name="social_category">বিভাগ</string>
-  <string name="about_headline">Zaruda — আপনার স্থানীয় বাজার</string>
+  <string name="about_headline">আপনার স্থানীয় বাজার</string>
   <string name="contact_subtitle">আমরা সাহায্যের জন্য এখানে।</string>
   <string name="contact_send_message">বার্তা পাঠান</string>
   <string name="social_cancel">বাতিল</string>
@@ -667,9 +667,9 @@
   <!-- Feed screen -->
   <string name="feed_sort_label">Sort: %s</string>
     <!-- Auto-filled English fallbacks (754 keys) -->
-    <string name="about_description">Zaruda is India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
+    <string name="about_description">India\'s fastest-growing hyper-local marketplace that connects buyers and sellers in your neighbourhood. From Electronics and Fashion to Grocery and Furniture — find everything you need, just around the corner.</string>
     <string name="about_mission">To empower every Indian to buy and sell confidently and conveniently, fostering a trusted community marketplace where everyone wins.</string>
-    <string name="about_version">Zaruda App v1.1.0 · Made with ❤️ in India</string>
+    <string name="about_version">v1.1.0 · Made with ❤️ in India</string>
     <string name="about_vision">A world where every neighbourhood has a thriving digital marketplace, reducing waste, supporting local sellers, and making commerce accessible.</string>
     <string name="about_why">✓ 100% verified sellers\n✓ Secure payments\n✓ Easy returns &amp; refunds\n✓ Delivery within 48 hours\n✓ 6 Indian languages supported\n✓ Rewards &amp; loyalty programme</string>
     <string name="account_2fa_disable">Disable</string>
@@ -1058,7 +1058,7 @@
     <string name="language_changed">Language changed</string>
     <string name="language_select">Select Language</string>
     <string name="login_legal">By continuing, you agree to Terms and Privacy Policy.</string>
-    <string name="more_about_desc">About Zaruda</string>
+    <string name="more_about_desc">About</string>
     <string name="more_activity_hub">Activity Hub</string>
     <string name="more_activity_hub_desc">Your activity</string>
     <string name="more_admin_panel">Admin Panel</string>
@@ -1100,7 +1100,7 @@
     <string name="more_profile_desc">Your profile</string>
     <string name="more_public_wall">Public Wall</string>
     <string name="more_public_wall_desc">Community wall</string>
-    <string name="more_recently_viewed">Recently Viewed</string>
+    <string name="more_recently_viewed">Browsing History</string>
     <string name="more_recently_viewed_desc">Browsing history</string>
     <string name="more_rewards_desc">Earn rewards</string>
     <string name="more_saved_searches">Saved Searches</string>
@@ -1118,11 +1118,11 @@
     <string name="more_verification_desc">Verify your identity</string>
     <string name="more_wishlist_desc">Items you like</string>
     <string name="my_feed_title">My Feed</string>
-    <string name="my_posts_label">My Posts</string>
-    <string name="my_posts_title">My posts</string>
+    <string name="my_posts_label">My Listings</string>
+    <string name="my_posts_title">My Listings</string>
     <string name="nav_explore">মার্কেটপ্লেস</string>
     <string name="nav_feed_tab">Feed</string>
-    <string name="nav_rewards_tab">Rewards</string>
+    <string name="nav_rewards_tab">Rewards &amp; Coins</string>
     <string name="notif_accept_offer">Accept Offer</string>
     <string name="notif_cancel">Cancel</string>
     <string name="notif_delete_all">Delete All</string>
@@ -1226,7 +1226,7 @@
     <string name="public_wall_title">Public Wall</string>
     <string name="pull_to_refresh">Pull to refresh</string>
     <string name="recently_viewed_empty">Nothing viewed recently</string>
-    <string name="recently_viewed_title">Recently Viewed</string>
+    <string name="recently_viewed_title">Browsing History</string>
     <string name="refund_title">Refund Policy</string>
     <string name="reviews_title">Reviews</string>
     <string name="rewards_active_referrals">Active Referrals</string>
@@ -1342,7 +1342,7 @@
     <string name="settings_intl_languages">International Languages</string>
     <string name="settings_local">Local emulator</string>
     <string name="settings_logout_all">Logout from all devices</string>
-    <string name="settings_logout_all_desc">Sign out of Zaruda on every device, including this one. You will need to sign in again.</string>
+    <string name="settings_logout_all_desc">Sign out on every device, including this one. You will need to sign in again.</string>
     <string name="settings_network">Network</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_offer_updates">Offer updates</string>

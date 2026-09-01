@@ -25,6 +25,7 @@ class AppPreferences @Inject constructor(private val context: Context) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val lastCategoryKey = stringPreferencesKey("last_category_key")
     private val recentSearchesKey = stringPreferencesKey("recent_searches_json")
+    private val onboardingCompletedKey = stringPreferencesKey("onboarding_completed")
 
     private fun categoryTabKey(categoryKey: String) =
         stringPreferencesKey("last_category_tab_${categoryKey.lowercase()}")
@@ -77,6 +78,14 @@ class AppPreferences @Inject constructor(private val context: Context) {
             ?: BuildConfig.DEFAULT_API_BASE_URL
     } catch (_: Throwable) {
         BuildConfig.DEFAULT_API_BASE_URL
+    }
+
+    val onboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[onboardingCompletedKey] == "true"
+    }
+
+    suspend fun setOnboardingCompleted() {
+        context.dataStore.edit { it[onboardingCompletedKey] = "true" }
     }
 
     // Recent searches (persisted as pipe-delimited string, max 10)

@@ -40,6 +40,7 @@ class HomeViewModel @Inject constructor(
     private val boostRepo: com.zaruda.app.data.repository.BoostRepository,
     private val savedStateHandle: SavedStateHandle,
     private val localeManager: LocaleManager,
+    val locationManager: com.zaruda.app.core.LocationSetupManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())

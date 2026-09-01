@@ -134,28 +134,28 @@ fun TermsScreen(onBack: () -> Unit, viewModel: TermsViewModel = hiltViewModel())
     val state by viewModel.state.collectAsState()
     CmsScreen("Terms & Conditions", Icons.Filled.Gavel, state, onBack,
         fallbackContent = """
-Zaruda Terms & Conditions
+Terms & Conditions
 
 1. Acceptance of Terms
-By accessing or using Zaruda ("the Platform"), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the Platform.
+By accessing or using this platform, you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the Platform.
 
 2. Description of Service
-Zaruda is a marketplace platform that connects buyers and sellers for local commerce. We facilitate listings, messaging, and transaction coordination.
+The platform is a marketplace platform that connects buyers and sellers for local commerce. We facilitate listings, messaging, and transaction coordination.
 
 3. User Accounts
 You must provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your login credentials.
 
 4. Listings & Sales
-Sellers are responsible for the accuracy of their listings. Zaruda is not a party to any sale transaction and acts solely as a facilitator.
+Sellers are responsible for the accuracy of their listings. The platform is not a party to any sale transaction and acts solely as a facilitator.
 
 5. Prohibited Activities
-Users may not list prohibited items, engage in fraud, or misuse the platform in any way as determined by Zaruda's discretion.
+Users may not list prohibited items, engage in fraud, or misuse the platform in any way as determined by the platform's discretion.
 
 6. Limitation of Liability
-Zaruda is not liable for any damages arising from the use of the Platform, including but not limited to failed transactions, misrepresented items, or disputes between users.
+The platform is not liable for any damages arising from the use of the Platform, including but not limited to failed transactions, misrepresented items, or disputes between users.
 
 7. Modifications
-Zaruda reserves the right to modify these terms at any time. Users will be notified of material changes.
+The platform reserves the right to modify these terms at any time. Users will be notified of material changes.
 
 For complete terms, please visit our website or contact support through the app.
         """.trimIndent()
@@ -167,7 +167,7 @@ fun PrivacyScreen(onBack: () -> Unit, viewModel: PrivacyViewModel = hiltViewMode
     val state by viewModel.state.collectAsState()
     CmsScreen("Privacy Policy", Icons.Filled.PrivacyTip, state, onBack,
         fallbackContent = """
-Zaruda Privacy Policy
+Privacy Policy
 
 1. Information We Collect
 We collect information you provide during registration (name, email, phone number, location) and usage data (listings, messages, transactions).
@@ -197,22 +197,22 @@ fun RefundScreen(onBack: () -> Unit, viewModel: RefundViewModel = hiltViewModel(
     val state by viewModel.state.collectAsState()
     CmsScreen("Refund Policy", Icons.Filled.CurrencyRupee, state, onBack,
         fallbackContent = """
-Zaruda Refund Policy
+Refund Policy
 
 1. Marketplace Facilitator
-Zaruda is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
+The platform is a marketplace facilitator and does not directly handle payments or refunds. All transactions occur directly between buyers and sellers.
 
 2. Dispute Resolution
 If an item is not as described or a transaction fails, buyers should first contact the seller directly via the in-app chat.
 
 3. Mediation
-If the buyer and seller cannot resolve the dispute, Zaruda offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
+If the buyer and seller cannot resolve the dispute, The platform offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
 
 4. Escrow Protection
-For transactions processed through Zaruda's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
+For transactions processed through the platform's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
 
 5. Chargebacks
-Buyers who initiate chargebacks without first attempting to resolve the dispute through Zaruda may have their account restricted.
+Buyers who initiate chargebacks without first attempting to resolve the dispute through the platform may have their account restricted.
 
 For assistance, please file a complaint through the app's Complaints section.
         """.trimIndent()
@@ -226,7 +226,7 @@ private val helpFaqs: List<HelpFaq> = listOf(
     HelpFaq("How do I create an account?", "Tap Sign Up on the login screen and register with your email or mobile number, then verify the one-time password (OTP) sent to you. You can browse and buy right away; to sell you'll also need an active plan and KYC verification.", "Account"),
     HelpFaq("I forgot my password. How do I reset it?", "On the login screen tap Forgot Password, enter your registered email or phone number, and follow the instructions sent to you to set a new password.", "Account"),
     HelpFaq("How do I secure my account?", "Open Profile → Security to set a strong password and enable two-factor authentication (2FA). With 2FA on, you'll need a one-time code when logging in from a new device.", "Account"),
-    HelpFaq("Can I use Zaruda in my language?", "Yes. Zaruda supports English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali and Gujarati. Switch anytime from More → Appearance & Language.", "Account"),
+    HelpFaq("Can I use the app in my language?", "Yes. The app supports English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali and Gujarati. Switch anytime from More → Appearance & Language.", "Account"),
 
     HelpFaq("How do I buy an item?", "Browse or search listings in Electronics, Fashion, Vehicles and Others. Open an item to view details, then contact the seller, express interest or send an offer, or buy safely in-app when the listing carries the escrow lock badge.", "Buying"),
     HelpFaq("What is the Interest / Offer option?", "It tells the seller that you want to buy. You can send an offer amount with a short message; the seller can accept or decline it. Once accepted, you'll be guided to complete the purchase.", "Buying"),
@@ -237,7 +237,7 @@ private val helpFaqs: List<HelpFaq> = listOf(
 
     HelpFaq("How do I start selling?", "Tap Sell from the home screen. You need an active plan (free or paid) and completed KYC (Aadhaar + PAN). Then add photos, a title and description, price and category, and publish your listing.", "Selling"),
     HelpFaq("What do the plans include?", "The Free plan includes 1 photo per post. Paid plans add more photos, better visibility, promoted listings, analytics, a profile badge and priority support.", "Selling"),
-    HelpFaq("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Sale Undone to bring the listing back.", "Selling"),
+    HelpFaq("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Repost to bring the listing back.", "Selling"),
     HelpFaq("How do I get paid for an escrow sale?", "Once the buyer confirms receipt, escrow payments are released to your payout account. Add your UPI or bank details under Profile → Payout Account.", "Selling"),
     HelpFaq("How do I track how my listings are doing?", "Open Profile → Seller Analytics to see views, likes and engagement for your posts. Analytics access is included with paid plans.", "Selling"),
 
@@ -258,9 +258,9 @@ private val helpFaqs: List<HelpFaq> = listOf(
     HelpFaq("What should I do if a deal goes wrong?", "File a complaint from More → Complaints with the order or listing details. Our team mediates between buyer and seller. In fraud cases, payments are held and accounts may be frozen until the case is reviewed.", "Safety & Disputes"),
     HelpFaq("How is my data protected?", "Your data is encrypted in transit and at rest, tokens are stored securely, and we never sell your personal information. See the Privacy Policy for details.", "Safety & Disputes"),
 
-    HelpFaq("I'm not receiving notifications. What should I do?", "Check that notifications are enabled for Zaruda in your phone's Settings and that in-app notification preferences are on, then restart the app.", "App & Technical"),
-    HelpFaq("Can I use Zaruda offline?", "Yes — core browsing works with cached content, and actions such as saving to your wishlist are queued and synced automatically when you're back online.", "App & Technical"),
-    HelpFaq("How do I contact support?", "Email support@zaruda.app, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "App & Technical"),
+    HelpFaq("I'm not receiving notifications. What should I do?", "Check that notifications are enabled for the app in your phone's Settings and that in-app notification preferences are on, then restart the app.", "App & Technical"),
+    HelpFaq("Can I use the app offline?", "Yes — core browsing works with cached content, and actions such as saving to your wishlist are queued and synced automatically when you're back online.", "App & Technical"),
+    HelpFaq("How do I contact support?", "Use More → Feedback for suggestions and More → Complaints for disputes.", "App & Technical"),
 )
 
 private val helpCategories = listOf(
@@ -301,9 +301,14 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                         Spacer(Modifier.height(4.dp))
                         Text("Guides, answers and direct support for everything in Zaruda.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                         Spacer(Modifier.height(12.dp))
-                        HelpContactRow(Icons.Filled.Email, "Email — support@zaruda.app") {
+                        HelpContactRow(Icons.Filled.Email, "Support — support@zarudatech.com") {
                             runCatching {
-                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@zaruda.app")))
+                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@zarudatech.com")))
+                            }
+                        }
+                        HelpContactRow(Icons.Filled.Report, "Grievance Officer — grievance@zarudatech.com") {
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:grievance@zarudatech.com")))
                             }
                         }
                         HelpContactRow(Icons.Filled.Comment, "In-app Feedback — More → Feedback", onClick = null)
@@ -354,7 +359,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                             Spacer(Modifier.height(8.dp))
                             Text("No articles match your search.", fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                             Spacer(Modifier.height(4.dp))
-                            Text("Try a different keyword, or email support@zaruda.app.", fontSize = 12.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
+                            Text("Try a different keyword, or email support@zarudatech.com.", fontSize = 12.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
                         }
                     }
                 } else {
@@ -368,7 +373,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                         HelpBullet("We respond to every inquiry within 24–48 hours on business days.", isDark)
                         HelpBullet("We help with accounts, listings, orders, payments, KYC and disputes.", isDark)
                         HelpBullet("Safety and fraud issues are prioritised and handled by a senior team member.", isDark)
-                        HelpBullet("We treat every user with respect — abusive behaviour isn't tolerated.", isDark)
+                        HelpBullet("Grievances acknowledged within 48h and resolved within 30 days per Consumer Protection Rules 2020.", isDark)
                     }
                 }
 
@@ -376,7 +381,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                 Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E3A5F) else Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Still need help?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
-                        Text("Reach us any time at support@zaruda.app, or use the Feedback and Complaints forms inside the app. For urgent safety concerns, mention “Urgent” in your message so we can prioritise it.", fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151))
+                        Text("Reach us any time at support@zarudatech.com or grievance@zarudatech.com, or use the Feedback and Complaints forms inside the app. For urgent safety concerns, mention “Urgent” in your message so we can prioritise it.", fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151))
                     }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -442,7 +447,7 @@ fun ShippingPolicyScreen(onBack: () -> Unit) {
         state = CmsUiState(
             loading = false,
             content = """
-Zaruda Shipping Policy
+Shipping Policy
 
 1. Shipping Responsibility
 Shipping is the responsibility of the seller. Zaruda acts as a marketplace facilitator and does not directly handle shipping or logistics.

@@ -1,9 +1,23 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Outer circle background -->
     <path
-        android:fillColor="#0B6EFD"
-        android:pathData="M30,72 L30,36 L44,36 L54,54 L64,36 L78,36 L78,72 L68,72 L68,50 L58,66 L50,66 L40,50 L40,72 Z" />
+        android:fillColor="#1E40AF"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    <!-- Inner gradient accent circle -->
+    <path
+        android:fillColor="#3B82F6"
+        android:fillAlpha="0.3"
+        android:pathData="M60,60m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0" />
+    <!-- Abstract "M" shape - modern marketplace icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,75 L35,45 L42,45 L52,62 L62,45 L69,45 L69,75 L62,75 L62,54 L55,66 L49,66 L42,54 L42,75 Z" />
+    <!-- Small diamond accent -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M75,45 L82,52 L75,59 L68,52 Z" />
 </vector>
