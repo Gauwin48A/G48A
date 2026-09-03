@@ -28,6 +28,8 @@ data class User(
     @SerialName("is_verified") val isVerified: Boolean? = null,
     @SerialName("shares_count") val sharesCount: Int? = null,
     @SerialName("bio") val bio: String? = null,
+    @SerialName("address") val address: String? = null,
+    @SerialName("location") val location: String? = null,
     @SerialName("website") val website: String? = null,
     @SerialName("social_links") val socialLinks: Map<String, String>? = null,
     @SerialName("post_credits") val coins: Int? = null,

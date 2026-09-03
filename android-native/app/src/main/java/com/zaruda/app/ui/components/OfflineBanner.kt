@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,30 +34,59 @@ import androidx.compose.ui.unit.sp
 import com.zaruda.app.core.ConnectivityObserver
 import kotlinx.coroutines.delay
 
+/**
+ * 3-state progressive connectivity banner (UI/UX Checklist #42.3):
+ * - Red: "No internet connection"
+ * - Amber: "Reconnecting..."
+ * - Green: "Back online ✓" (auto-dismisses after 2s)
+ */
 @Composable
 fun OfflineBanner(connectivityObserver: ConnectivityObserver) {
     val isOnline by connectivityObserver.isOnline.collectAsState(initial = true)
     var wasOffline by remember { mutableStateOf(false) }
-    var showBackOnline by remember { mutableStateOf(false) }
+    var bannerState by remember { mutableIntStateOf(0) } // 0=hidden, 1=offline, 2=reconnecting, 3=back-online
 
     LaunchedEffect(isOnline) {
         if (!isOnline) {
             wasOffline = true
-            showBackOnline = false
+            bannerState = 1 // Red: "No internet"
         } else if (wasOffline) {
-            showBackOnline = true
+            bannerState = 2 // Amber: "Reconnecting..."
+            delay(1500)
+            bannerState = 3 // Green: "Back online ✓"
             delay(2400)
-            showBackOnline = false
+            bannerState = 0 // Hidden
             wasOffline = false
+        } else {
+            bannerState = 0
         }
     }
 
-    val isVisible = !isOnline || showBackOnline
+    val isVisible = bannerState != 0
     val bgColor by animateColorAsState(
-        targetValue = if (!isOnline) Color(0xFFEF4444) else Color(0xFF10B981),
+        targetValue = when (bannerState) {
+            1 -> Color(0xFFEF4444) // Red
+            2 -> Color(0xFFF59E0B) // Amber
+            3 -> Color(0xFF10B981) // Green
+            else -> Color(0xFFEF4444)
+        },
         animationSpec = tween(400),
         label = "bannerBg",
     )
+
+    val bannerText = when (bannerState) {
+        1 -> "No internet connection"
+        2 -> "Reconnecting..."
+        3 -> "✓ Back online"
+        else -> ""
+    }
+
+    val dotColor = when (bannerState) {
+        1 -> Color.White.copy(alpha = 0.8f)
+        2 -> Color.White.copy(alpha = 0.9f)
+        3 -> Color.White
+        else -> Color.White
+    }
 
     AnimatedVisibility(
         visible = isVisible,
@@ -75,11 +105,11 @@ fun OfflineBanner(connectivityObserver: ConnectivityObserver) {
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
+                        .background(dotColor)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (!isOnline) "No internet connection • Using cached data" else "✓ Back online",
+                    text = bannerText,
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,

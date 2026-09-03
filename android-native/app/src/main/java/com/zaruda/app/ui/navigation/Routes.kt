@@ -61,6 +61,9 @@ object Routes {
     fun expiryAction(postId: String) = "expiry-action/$postId"
     const val PAYMENT = "payment"
     const val CART = "cart"
+    const val CHECKOUT = "checkout/{postId}?amount={amount}"
+    fun checkout(postId: String = "cart", amount: Double = 0.0): String = "checkout/$postId?amount=$amount"
+    fun checkoutConfirm(orderId: String? = null): String = if (orderId != null) "checkout/confirm?orderId=$orderId" else "checkout/confirm"
     const val RECENTLY_VIEWED = "recently-viewed"
     const val SAVED_SEARCHES = "saved-searches"
     const val COMPARE = "compare"
@@ -145,7 +148,7 @@ object Routes {
     const val CHECKOUT_ADDRESS  = "checkout/address"
     const val CHECKOUT_PAYMENT  = "checkout/payment"
     const val CHECKOUT_REVIEW   = "checkout/review"
-    const val CHECKOUT_CONFIRM  = "checkout/confirm"
+    const val CHECKOUT_CONFIRM  = "checkout/confirm?orderId={orderId}"
     const val CHECKOUT_FAILED   = "checkout/failed"
 
     // ── Rewards sub-screens ────────────────────────────────────────────────

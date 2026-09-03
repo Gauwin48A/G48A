@@ -67,6 +67,34 @@ private val DarkColors = darkColorScheme(
     onErrorContainer = Color(0xFFFEF2F2),
 )
 
+// AMOLED True Black — pure #000000 background for OLED battery savings (Checklist #39.1)
+private val AmoledDarkColors = darkColorScheme(
+    primary = BrandPrimaryDark,
+    onPrimary = Neutral900,
+    primaryContainer = Color(0xFF1E40AF),
+    onPrimaryContainer = Color(0xFFDBEAFE),
+    secondary = Color(0xFFC4B5FD),
+    onSecondary = Color(0xFF2E1065),
+    secondaryContainer = Color(0xFF5B21B6),
+    onSecondaryContainer = Color(0xFFEDE9FE),
+    tertiary = Color(0xFFFCD34D),
+    onTertiary = Color(0xFF451A03),
+    tertiaryContainer = Color(0xFF78350F),
+    onTertiaryContainer = Color(0xFFFFF3C7),
+    background = Color.Black,
+    onBackground = Neutral50,
+    surface = Color(0xFF0A0A0A),
+    onSurface = Neutral50,
+    surfaceVariant = Color(0xFF141414),
+    onSurfaceVariant = Neutral300,
+    outline = Color(0xFF333333),
+    outlineVariant = Color(0xFF222222),
+    error = Color(0xFFFCA5A5),
+    onError = Color(0xFF7F1D1D),
+    errorContainer = Color(0xFF991B1B),
+    onErrorContainer = Color(0xFFFEF2F2),
+)
+
 @Composable
 fun ZarudaTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -74,10 +102,14 @@ fun ZarudaTheme(
 ) {
     val useDarkTheme = when (themeMode) {
         ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
+        ThemeMode.DARK, ThemeMode.AMOLED -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val colors = if (useDarkTheme) DarkColors else LightColors
+    val colors = when {
+        themeMode == ThemeMode.AMOLED -> AmoledDarkColors
+        useDarkTheme -> DarkColors
+        else -> LightColors
+    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

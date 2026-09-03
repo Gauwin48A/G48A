@@ -111,6 +111,48 @@ fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
                         }
                     }
                 }
+                Spacer(Modifier.height(16.dp))
+                // ── Good vs Bad photo guidelines ──
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("📸", fontSize = 16.sp)
+                            Text("Photo Tips for 4x Faster Sales", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFF22C55E).copy(alpha = 0.1f),
+                                border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.3f)),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Column(Modifier.padding(10.dp)) {
+                                    Text("✅ Recommended", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF15803D))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("• Natural daylight\n• Front, back & sides\n• Show accessories\n• Original bill/box", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFEF4444).copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.25f)),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Column(Modifier.padding(10.dp)) {
+                                    Text("❌ Avoid", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFFB91C1C))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("• Blurry/dark shots\n• Screenshots only\n• Stock catalog photos\n• Covered scratches", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             // ── Sticky bottom CTA ──
             Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {

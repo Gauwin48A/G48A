@@ -15,17 +15,9 @@ const pool = require("../config/db");
 const logger = require("../utils/logger");
 const paymentGateway = require("../services/paymentGatewayService");
 const { checkPayoutKycEligibility } = require("../services/payoutKycGuard");
+const { getRedisConnectionOptions } = require("../config/redisConnection");
 
-const redisHost = process.env.REDIS_HOST || "127.0.0.1";
-const redisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
-const redisPassword = process.env.REDIS_PASSWORD || undefined;
-
-const connection = {
-  host: redisHost,
-  port: redisPort,
-  password: redisPassword,
-  maxRetriesPerRequest: null,
-};
+const connection = getRedisConnectionOptions({ maxRetriesPerRequest: null });
 
 /**
  * Check the actual payout/transfer status from Razorpay before deciding to retry.

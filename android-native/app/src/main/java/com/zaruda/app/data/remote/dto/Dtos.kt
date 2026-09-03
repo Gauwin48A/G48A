@@ -945,6 +945,79 @@ data class PayoutStatusResponse(
     @SerialName("razorpay_fund_account_id") val razorpayFundAccountId: String? = null,
 )
 
+// -------- Full Profile (single-call payload) --------
+
+@Serializable
+data class FullProfileResponse(
+    val success: Boolean = false,
+    val user: FullProfileUser? = null,
+    val profile: FullProfileData? = null,
+    val verification: FullProfileVerification? = null,
+    val stats: FullProfileStats? = null,
+    val payout: FullProfilePayout? = null,
+    val completion: FullProfileCompletion? = null,
+)
+
+@Serializable
+data class FullProfileUser(
+    @SerialName("userId") val userId: String? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val role: String? = null,
+    @SerialName("currentPlan") val currentPlan: String? = null,
+    @SerialName("rewardsRank") val rewardsRank: String? = null,
+    @SerialName("rewardBadge") val rewardBadge: String? = null,
+    val coins: Int = 0,
+    @SerialName("createdAt") val createdAt: String? = null,
+)
+
+@Serializable
+data class FullProfileData(
+    @SerialName("fullName") val fullName: String? = null,
+    @SerialName("avatarUrl") val avatarUrl: String? = null,
+    @SerialName("coverImageUrl") val coverImageUrl: String? = null,
+    val bio: String? = null,
+    val location: FullProfileLocation? = null,
+    @SerialName("socialLinks") val socialLinks: Map<String, String>? = null,
+)
+
+@Serializable
+data class FullProfileLocation(
+    val address: String? = null,
+)
+
+@Serializable
+data class FullProfileVerification(
+    @SerialName("emailVerified") val emailVerified: Boolean = false,
+    @SerialName("phoneVerified") val phoneVerified: Boolean = false,
+    @SerialName("aadhaarVerified") val aadhaarVerified: Boolean = false,
+    @SerialName("kycStatus") val kycStatus: String? = null,
+    @SerialName("trustScore") val trustScore: Int = 0,
+    @SerialName("trustBadge") val trustBadge: String? = null,
+    @SerialName("trustLevel") val trustLevel: String? = null,
+)
+
+@Serializable
+data class FullProfileStats(
+    @SerialName("activeListings") val activeListings: Int = 0,
+    @SerialName("soldListings") val soldListings: Int = 0,
+    @SerialName("totalSalesAmount") val totalSalesAmount: Double = 0.0,
+)
+
+@Serializable
+data class FullProfilePayout(
+    @SerialName("isLinked") val isLinked: Boolean = false,
+    val type: String? = null,
+    @SerialName("maskedAccount") val maskedAccount: String? = null,
+)
+
+@Serializable
+data class FullProfileCompletion(
+    val percentage: Int = 0,
+    @SerialName("missingFields") val missingFields: List<String> = emptyList(),
+)
+
 @Serializable
 data class PreferencesUpdateRequest(
     val location: String? = null,
@@ -1834,6 +1907,8 @@ data class CreateOrderRequest(
 data class CreateOrderResponse(
     val success: Boolean = true,
     @SerialName("order_id") val orderId: String? = null,
+    @SerialName("order_number") val orderNumber: String? = null,
+    @SerialName("handover_otp") val handoverOtp: String? = null,
     @SerialName("transaction_id") val transactionId: String? = null,
     val message: String? = null,
     @SerialName("payment_url") val paymentUrl: String? = null,

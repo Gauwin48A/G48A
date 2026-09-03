@@ -1,6 +1,12 @@
 package com.zaruda.app.ui.search
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
@@ -40,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -337,6 +344,24 @@ fun SearchScreen(
         ImageZoomDialog(imageUrls = zoomImages, onDismiss = { zoomImages = emptyList() })
     }
 
+    val placeholderHints = remember {
+        listOf(
+            "Search 'iPhone 15 Pro'...",
+            "Search 'Royal Enfield Himalayan'...",
+            "Search 'Laptops under ₹50k'...",
+            "Search 'Sony Alpha Cameras'...",
+            "Search 'Designer Sarees & Kurtis'...",
+            "Search verified local listings...",
+        )
+    }
+    var currentHintIndex by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            currentHintIndex = (currentHintIndex + 1) % placeholderHints.size
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -345,7 +370,19 @@ fun SearchScreen(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
                         singleLine = true,
-                        placeholder = { Text("Search listings, brands, categories...") },
+                        placeholder = {
+                            AnimatedContent(
+                                targetState = placeholderHints[currentHintIndex],
+                                transitionSpec = {
+                                    (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                                        slideOutVertically { height -> -height } + fadeOut()
+                                    )
+                                },
+                                label = "searchHint",
+                            ) { hint ->
+                                Text(hint, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             if (state.query.isNotBlank()) {

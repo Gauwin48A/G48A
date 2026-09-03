@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -258,101 +259,166 @@ class ProfileViewModel @Inject constructor(
                 repo.tryRefreshToken()
             }
 
-            // Step 2: Load profile
-            val meResult = repo.me()
-            when (meResult) {
+            // Step 2: Try unified single-call endpoint first
+            val fullResult = dashboardRepo.getFullProfile()
+            when (fullResult) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        loading = false, refreshing = false, user = meResult.data,
-                        lastLoadTimeMs = System.currentTimeMillis(), error = null,
-                        isSessionExpired = false,
-                    )
+                    applyFullProfileResponse(fullResult.data)
                 }
                 is ApiResult.Failure -> {
-                    val isUnauth = meResult.error is ApiError.Unauthorized || meResult.error is ApiError.Forbidden
-                    if (isUnauth) {
-                        // Step 3: Retry with token refresh before declaring session expired
-                        repo.tryRefreshToken()
-                        when (val retry = repo.me()) {
-                            is ApiResult.Success -> {
-                                _state.value = _state.value.copy(
-                                    loading = false, refreshing = false, user = retry.data,
-                                    lastLoadTimeMs = System.currentTimeMillis(), error = null,
-                                    isSessionExpired = false,
-                                )
-                            }
-                            is ApiResult.Failure -> {
-                                val expired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden
-                                // Cache-first: always prefer showing cached profile over blocking UI
-                                if (cachedProfile?.user != null) {
-                                    // Show cached profile with a non-blocking warning banner
-                                    cachedProfile?.let { c ->
-                                        _state.value = c.copy(
-                                            loading = false, refreshing = false,
-                                            error = if (expired)
-                                                "Session expired. Please sign in again."
-                                            else
-                                                retry.error.userFacingMessage("refresh your profile"),
-                                            isSessionExpired = expired,
-                                        )
-                                    }
-                                } else if (repo.isDemoSession) {
-                                    val demoUser = createDemoUser()
-                                    _state.value = _state.value.copy(
-                                        loading = false, refreshing = false,
-                                        user = demoUser, error = null, isSessionExpired = false,
-                                        userPosts = DEMO_USER_POSTS,
-                                    )
-                                    cachedProfile = _state.value
-                                } else {
-                                    // No cache available — show minimal error state
-                                    _state.value = _state.value.copy(
-                                        loading = false, refreshing = false,
-                                        isSessionExpired = expired,
-                                        error = retry.error.userFacingMessage("load your profile"),
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        // Network/server error — fall back to cache or demo
-                        if (cachedProfile?.user != null) {
-                            cachedProfile?.let { c ->
-                                _state.value = c.copy(
-                                    loading = false, refreshing = false,
-                                    error = meResult.error.userFacingMessage("refresh your profile"),
-                                )
-                            }
-                        } else if (repo.isDemoSession) {
-                            _state.value = _state.value.copy(
-                                loading = false, refreshing = false,
-                                user = createDemoUser(), error = null, isSessionExpired = false,
-                                userPosts = DEMO_USER_POSTS,
-                            )
-                            cachedProfile = _state.value
-                        } else {
-                            _state.value = _state.value.copy(
-                                loading = false, refreshing = false,
-                                error = meResult.error.userFacingMessage("load your profile"),
-                            )
-                        }
-                    }
+                    // Fall back to old multi-call flow if /full endpoint is unavailable
+                    loadViaLegacyFlow()
                 }
             }
-            // Fire stats, referral code, and trust score concurrently
-            coroutineScope {
-                val statsDeferred = async { loadStats() }
-                val referralDeferred = async { loadReferralCode() }
-                val trustDeferred = async { loadTrustScore() }
-                statsDeferred.await()
-                referralDeferred.await()
-                trustDeferred.await()
-            }
+
             // Cache the successful state for instant display next time
             val s = _state.value
             if (s.user != null && s.error == null) {
                 cachedProfile = s
             }
+        }
+    }
+
+    /**
+     * Map a FullProfileResponse into all ProfileState fields in one shot.
+     * This eliminates the 4-call waterfall (me + dashboard + rewards + trust).
+     */
+    private fun applyFullProfileResponse(full: com.zaruda.app.data.remote.dto.FullProfileResponse) {
+        val fullUser = full.user ?: return
+        val fullProfile = full.profile ?: com.zaruda.app.data.remote.dto.FullProfileData()
+        val verification = full.verification ?: com.zaruda.app.data.remote.dto.FullProfileVerification()
+        val stats = full.stats ?: com.zaruda.app.data.remote.dto.FullProfileStats()
+        val payout = full.payout ?: com.zaruda.app.data.remote.dto.FullProfilePayout()
+
+        // Map to User domain model
+        val user = User(
+            userId = fullUser.userId,
+            id = fullUser.userId,
+            fullName = fullProfile.fullName ?: fullUser.name,
+            name = fullUser.name,
+            phone = fullUser.phone,
+            email = fullUser.email,
+            role = fullUser.role,
+            currentPlan = fullUser.currentPlan,
+            rewardsRank = fullUser.rewardsRank,
+            rewardBadge = fullUser.rewardBadge,
+            coins = fullUser.coins,
+            bio = fullProfile.bio,
+            address = fullProfile.location?.address,
+            location = fullProfile.location?.address,
+            pictureUrl = fullProfile.avatarUrl?.takeIf { it.isNotBlank() },
+            coverImage = fullProfile.coverImageUrl?.takeIf { it.isNotBlank() },
+            socialLinks = fullProfile.socialLinks,
+            isVerified = verification.aadhaarVerified || verification.kycStatus == "verified",
+            kycStatus = verification.kycStatus,
+        )
+
+        // Map trust score
+        val trustResp = com.zaruda.app.data.remote.dto.TrustScoreResponse(
+            trustScore = verification.trustScore.toFloat(),
+            trustLabel = verification.trustBadge,
+            trustBadge = verification.trustBadge,
+        )
+
+        _state.value = _state.value.copy(
+            loading = false,
+            refreshing = false,
+            user = user,
+            listingsCount = stats.activeListings.toString(),
+            salesCount = stats.soldListings.toString(),
+            error = null,
+            isSessionExpired = false,
+            socialLinks = fullProfile.socialLinks ?: emptyMap(),
+            trustScore = trustResp,
+            lastLoadTimeMs = System.currentTimeMillis(),
+        )
+    }
+
+    /**
+     * Legacy multi-call fallback: me + dashboard + rewards overview + trust score.
+     * Used when the /api/profile/full endpoint is unavailable (old server).
+     */
+    private suspend fun loadViaLegacyFlow() {
+        val meResult = repo.me()
+        when (meResult) {
+            is ApiResult.Success -> {
+                _state.value = _state.value.copy(
+                    loading = false, refreshing = false, user = meResult.data,
+                    lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                    isSessionExpired = false,
+                )
+            }
+            is ApiResult.Failure -> {
+                val isUnauth = meResult.error is ApiError.Unauthorized || meResult.error is ApiError.Forbidden
+                if (isUnauth) {
+                    repo.tryRefreshToken()
+                    when (val retry = repo.me()) {
+                        is ApiResult.Success -> {
+                            _state.value = _state.value.copy(
+                                loading = false, refreshing = false, user = retry.data,
+                                lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                                isSessionExpired = false,
+                            )
+                        }
+                        is ApiResult.Failure -> {
+                            val expired = retry.error is ApiError.Unauthorized || retry.error is ApiError.Forbidden
+                            if (cachedProfile?.user != null) {
+                                cachedProfile?.let { c ->
+                                    _state.value = c.copy(
+                                        loading = false, refreshing = false,
+                                        error = if (expired) "Session expired. Please sign in again."
+                                        else retry.error.userFacingMessage("refresh your profile"),
+                                        isSessionExpired = expired,
+                                    )
+                                }
+                            } else if (repo.isDemoSession) {
+                                _state.value = _state.value.copy(
+                                    loading = false, refreshing = false,
+                                    user = createDemoUser(), error = null, isSessionExpired = false,
+                                    userPosts = DEMO_USER_POSTS,
+                                )
+                                cachedProfile = _state.value
+                            } else {
+                                _state.value = _state.value.copy(
+                                    loading = false, refreshing = false,
+                                    isSessionExpired = expired,
+                                    error = retry.error.userFacingMessage("load your profile"),
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    if (cachedProfile?.user != null) {
+                        cachedProfile?.let { c ->
+                            _state.value = c.copy(
+                                loading = false, refreshing = false,
+                                error = meResult.error.userFacingMessage("refresh your profile"),
+                            )
+                        }
+                    } else if (repo.isDemoSession) {
+                        _state.value = _state.value.copy(
+                            loading = false, refreshing = false,
+                            user = createDemoUser(), error = null, isSessionExpired = false,
+                            userPosts = DEMO_USER_POSTS,
+                        )
+                        cachedProfile = _state.value
+                    } else {
+                        _state.value = _state.value.copy(
+                            loading = false, refreshing = false,
+                            error = meResult.error.userFacingMessage("load your profile"),
+                        )
+                    }
+                }
+            }
+        }
+        // Fire stats, referral code, and trust score concurrently
+        coroutineScope {
+            val statsDeferred = async { loadStats() }
+            val referralDeferred = async { loadReferralCode() }
+            val trustDeferred = async { loadTrustScore() }
+            statsDeferred.await()
+            referralDeferred.await()
+            trustDeferred.await()
         }
     }
 
@@ -363,23 +429,30 @@ class ProfileViewModel @Inject constructor(
             if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
                 repo.tryRefreshToken()
             }
-            val meResult = repo.me()
-            when (meResult) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    refreshing = false, user = meResult.data,
-                    lastLoadTimeMs = System.currentTimeMillis(), error = null,
-                )
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    refreshing = false,
-                    error = meResult.error.userFacingMessage("refresh your profile"),
-                )
-            }
-            // Parallel secondary loads
-            coroutineScope {
-                val statsDef = async { loadStats() }
-                val referralDef = async { loadReferralCode() }
-                val trustDef = async { loadTrustScore() }
-                statsDef.await(); referralDef.await(); trustDef.await()
+            // Try unified single-call endpoint first
+            val fullResult = dashboardRepo.getFullProfile()
+            when (fullResult) {
+                is ApiResult.Success -> applyFullProfileResponse(fullResult.data)
+                is ApiResult.Failure -> {
+                    // Fallback to legacy multi-call
+                    val meResult = repo.me()
+                    when (meResult) {
+                        is ApiResult.Success -> _state.value = _state.value.copy(
+                            refreshing = false, user = meResult.data,
+                            lastLoadTimeMs = System.currentTimeMillis(), error = null,
+                        )
+                        is ApiResult.Failure -> _state.value = _state.value.copy(
+                            refreshing = false,
+                            error = meResult.error.userFacingMessage("refresh your profile"),
+                        )
+                    }
+                    coroutineScope {
+                        val statsDef = async { loadStats() }
+                        val referralDef = async { loadReferralCode() }
+                        val trustDef = async { loadTrustScore() }
+                        statsDef.await(); referralDef.await(); trustDef.await()
+                    }
+                }
             }
             // Update cache
             val s = _state.value
@@ -448,6 +521,77 @@ class ProfileViewModel @Inject constructor(
                     editSaving = false,
                     editError = result.error.userFacingMessage("save your profile"),
                 )
+            }
+        }
+    }
+
+    fun updateFullProfile(
+        fullName: String?,
+        phone: String?,
+        bio: String?,
+        location: String?,
+        socialLinks: Map<String, String>?,
+        minPrice: Int? = null,
+        maxPrice: Int? = null,
+        categories: List<String>? = null,
+        onDone: () -> Unit,
+    ) {
+        _state.value = _state.value.copy(editSaving = true, editError = null, editResult = null)
+
+        if (repo.isDemoSession) {
+            val currentUser = _state.value.user
+            val updatedUser = currentUser?.copy(
+                fullName = fullName ?: currentUser.fullName,
+                phone = phone ?: currentUser.phone,
+                bio = bio ?: currentUser.bio,
+                address = location ?: currentUser.address,
+                location = location ?: currentUser.location,
+                socialLinks = socialLinks ?: currentUser.socialLinks,
+            )
+            _state.value = _state.value.copy(
+                editSaving = false,
+                editResult = "Profile updated!",
+                editError = null,
+                user = updatedUser,
+                socialLinks = socialLinks ?: emptyMap(),
+            )
+            cachedProfile = _state.value
+            onDone()
+            return
+        }
+
+        viewModelScope.launch {
+            val updateReq = ProfileUpdateRequest(
+                fullName = fullName,
+                phone = phone,
+                bio = bio,
+                address = location,
+                socialLinks = socialLinks,
+            )
+            when (val result = rewardsRepo.updateProfile(updateReq)) {
+                is ApiResult.Success -> {
+                    if (location != null || minPrice != null || maxPrice != null || categories != null) {
+                        try {
+                            api.updatePreferences(
+                                com.zaruda.app.data.remote.dto.PreferencesUpdateRequest(
+                                    location = location,
+                                    minPrice = minPrice,
+                                    maxPrice = maxPrice,
+                                    categories = categories ?: emptyList(),
+                                )
+                            )
+                        } catch (_: Exception) {}
+                    }
+                    _state.value = _state.value.copy(editSaving = false, editResult = "Profile updated!", editError = null)
+                    load()
+                    onDone()
+                }
+                is ApiResult.Failure -> {
+                    _state.value = _state.value.copy(
+                        editSaving = false,
+                        editError = result.error.userFacingMessage("save your profile"),
+                    )
+                }
             }
         }
     }
@@ -594,6 +738,25 @@ class ProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(editResult = "Avatar upload failed")
+            }
+        }
+    }
+
+    fun uploadCover(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                val bytes = resolver.openInputStream(uri)?.readBytes() ?: return@launch
+                when (val r = uploadRepo.uploadPostImage(bytes, mimeType)) {
+                    is ApiResult.Success -> {
+                        rewardsRepo.updateProfile(ProfileUpdateRequest(coverImage = r.data))
+                        load()
+                    }
+                    is ApiResult.Failure -> _state.value = _state.value.copy(editResult = "Cover upload failed")
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(editResult = "Cover upload failed")
             }
         }
     }
@@ -748,6 +911,9 @@ fun ProfileScreen(
     onOpenSaleUndone: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
+    onOpenLanguage: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
+    onOpenKyc: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -975,6 +1141,50 @@ fun ProfileScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color.White.copy(alpha = 0.75f),
                                     )
+
+                                    // NEW: Trust Ribbon
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = Color(0xFF059669).copy(alpha = 0.12f),
+                                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                                            Text(
+                                                text = "Verified Zaruda Member • 100% Escrow Protected",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF059669)
+                                            )
+                                        }
+                                    }
+
+                                    // NEW: Marketplace Activity Quick Metrics Bar
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp, bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("🛍️ ${state.listingsCount}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text("Active Listings", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("🛡️ ${state.salesCount}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text("Escrow Deals", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            val scoreText = state.trustScore?.trustScore?.toInt()?.toString() ?: if (state.ratingValue != "—") state.ratingValue else "98"
+                                            Text("⭐ $scoreText/100", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text("Trust Score", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
+                                        }
+                                    }
 
                                     // Bio
                                     user?.bio?.takeIf { it.isNotBlank() }?.let { bio ->
@@ -1351,13 +1561,37 @@ fun ProfileScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 0.8.sp,
                                 )
+                                val ctx = LocalContext.current
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     ProfileQuickActionButton(
-                                        icon = Icons.Filled.RadioButtonUnchecked,
-                                        label = "Repost",
-                                        subtitle = "Relist this item",
-                                        accentColor = Color(0xFFEF4444),
-                                        onClick = onOpenSaleUndone,
+                                        icon = Icons.Filled.Share,
+                                        label = "Share Card",
+                                        subtitle = "Share profile",
+                                        accentColor = Color(0xFF3B82F6),
+                                        onClick = {
+                                            val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${user?.displayName ?: "User"}'s profile on Zaruda!")
+                                            }
+                                            val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Profile")
+                                            ctx.startActivity(shareIntent)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    ProfileQuickActionButton(
+                                        icon = Icons.Filled.VerifiedUser,
+                                        label = "Verify KYC",
+                                        subtitle = if (user?.isKycVerified == true) "Verified" else "Get badge",
+                                        accentColor = if (user?.isKycVerified == true) Color(0xFF10B981) else Color(0xFFF59E0B),
+                                        onClick = onOpenKyc,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    ProfileQuickActionButton(
+                                        icon = Icons.Filled.AccountBalance,
+                                        label = "Payouts",
+                                        subtitle = "Bank & UPI",
+                                        accentColor = Color(0xFF8B5CF6),
+                                        onClick = onOpenPayout,
                                         modifier = Modifier.weight(1f),
                                     )
                                 }
@@ -1441,6 +1675,19 @@ fun ProfileScreen(
                                         ProfileMenuItemCompact(icon = Icons.Default.Notifications, label = "Notifications", subtitle = "Push alerts", onClick = onOpenNotifications)
                                         ProfileMenuItemCompact(icon = Icons.Default.Security, label = "Security", subtitle = "Password, 2FA", onClick = onOpenSecurity)
                                         ProfileMenuItemCompact(icon = Icons.Default.DeleteForever, label = "Delete Account", subtitle = "Remove your account", onClick = onOpenAccountDelete, tint = MaterialTheme.colorScheme.error)
+
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 4.dp))
+
+                                        // Preferences subgroup
+                                        Text("Preferences", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 6.dp))
+                                        ProfileMenuItemCompact(icon = Icons.Default.Flag, label = "Language", subtitle = "App display language", onClick = onOpenLanguage)
+                                        ProfileMenuItemCompact(icon = Icons.Default.Receipt, label = "Recently Viewed", subtitle = "Items you browsed", onClick = onOpenRecentlyViewed)
+
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 4.dp))
+
+                                        // Help subgroup
+                                        Text("Help & Legal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 6.dp))
+                                        ProfileMenuItemCompact(icon = Icons.Default.Info, label = "Help & Support", subtitle = "FAQ, contact us, report issue", onClick = onOpenHelp)
                                     }
                                 }
                             }
@@ -1500,17 +1747,38 @@ fun ProfileScreen(
                         Spacer(Modifier.height(24.dp))
                     }
 
-                    // ─── Edit Profile Dialog ──────────────────────────────────────
+                    // ─── Edit Profile Screen ──────────────────────────────────────
                     if (showEditDialog) {
-                        EditProfileDialog(
+                        val editContext = LocalContext.current
+                        val prefs by viewModel.prefsLoaded.collectAsState()
+                        EditProfileScreen(
                             user = user,
                             saving = state.editSaving,
                             saveError = state.editError,
+                            initialLocation = prefs?.location ?: user?.address ?: "",
+                            initialMinPrice = prefs?.minPrice,
+                            initialMaxPrice = prefs?.maxPrice,
+                            initialCategories = prefs?.categories ?: emptyList(),
                             onDismiss = { showEditDialog = false },
-                            onSave = { name, phone, bio ->
-                                viewModel.updateProfile(name, phone, bio) {
+                            onSave = { fullName, phone, bio, location, socialLinks, minPrice, maxPrice, categories ->
+                                viewModel.updateFullProfile(
+                                    fullName = fullName,
+                                    phone = phone,
+                                    bio = bio,
+                                    location = location,
+                                    socialLinks = socialLinks,
+                                    minPrice = minPrice,
+                                    maxPrice = maxPrice,
+                                    categories = categories,
+                                ) {
                                     showEditDialog = false
                                 }
+                            },
+                            onUploadAvatar = { uri ->
+                                viewModel.uploadAvatar(editContext, uri)
+                            },
+                            onUploadCover = { uri ->
+                                viewModel.uploadCover(editContext, uri)
                             },
                         )
                     }

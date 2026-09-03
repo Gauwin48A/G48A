@@ -92,6 +92,9 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.graphics.Brush
 import java.util.concurrent.Executors
 
 // ── Result type for scanned content ─────────────────────
@@ -164,6 +167,7 @@ private fun ScannerContent(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val haptic = LocalHapticFeedback.current
 
     var scannedResult by remember { mutableStateOf<ScanResult?>(null) }
     var rawValue by remember { mutableStateOf("") }
@@ -283,6 +287,7 @@ private fun ScannerContent(
 
             IconButton(
                 onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     flashEnabled = !flashEnabled
                     camera?.cameraControl?.enableTorch(flashEnabled)
                 },
@@ -301,14 +306,21 @@ private fun ScannerContent(
 
         // Hint text
         if (scannedResult == null) {
-            Text(
-                "Point camera at a QR code or barcode",
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 14.sp,
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 160.dp),
-            )
+                    .padding(bottom = 160.dp, start = 32.dp, end = 32.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    "🔍 Align Zaruda Item QR or Delivery Handover Code within frame",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         // Result card
@@ -421,11 +433,20 @@ private fun ScannerOverlay() {
 
         // Animated scan line
         val lineY = rect.top + (rect.height * scanLineY)
-        drawLine(
-            color = Color(0xFF00E676).copy(alpha = 0.7f),
-            start = Offset(rect.left + 8f, lineY),
-            end = Offset(rect.right - 8f, lineY),
-            strokeWidth = 2f,
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color(0xFF00E676).copy(alpha = 0.3f),
+                    Color(0xFF00E676),
+                    Color(0xFF00E676).copy(alpha = 0.3f),
+                    Color.Transparent
+                ),
+                startY = lineY - 8f,
+                endY = lineY + 8f
+            ),
+            topLeft = Offset(rect.left + 8f, lineY - 8f),
+            size = androidx.compose.ui.geometry.Size(rect.width - 16f, 16f)
         )
     }
 }

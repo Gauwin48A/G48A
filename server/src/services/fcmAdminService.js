@@ -1,46 +1,13 @@
-// firebase-admin v14+ exposes only the modular API via subpath imports
-// (the legacy compat namespace `admin.messaging()` / `admin.apps` is gone),
-// so this service imports getApps/getMessaging exactly like config/firebase.js.
-const { initializeApp, cert, getApps } = require("firebase-admin/app");
+const { getApps } = require("firebase-admin/app");
 const { getMessaging } = require("firebase-admin/messaging");
+const firebase = require("../config/firebase");
 const logger = require("../utils/logger");
 
-let fcmInitialized = false;
-
 function initFcmAdmin() {
-  if (fcmInitialized || getApps().length > 0) {
-    fcmInitialized = true;
+  if (getApps().length > 0) {
     return true;
   }
-
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-      const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
-      initializeApp({
-        credential: cert(serviceAccount)
-      });
-      fcmInitialized = true;
-      logger.info("[FCM] Admin SDK initialized from service account file");
-      return true;
-    } else if (process.env.FCM_PROJECT_ID && process.env.FCM_CLIENT_EMAIL && process.env.FCM_PRIVATE_KEY) {
-      initializeApp({
-        credential: cert({
-          projectId: process.env.FCM_PROJECT_ID,
-          clientEmail: process.env.FCM_CLIENT_EMAIL,
-          privateKey: process.env.FCM_PRIVATE_KEY.replace(/\\n/g, "\n")
-        })
-      });
-      fcmInitialized = true;
-      logger.info("[FCM] Admin SDK initialized from env variables");
-      return true;
-    } else {
-      logger.warn("[FCM] Admin SDK not configured (Missing FIREBASE_SERVICE_ACCOUNT_PATH or FCM credentials)");
-      return false;
-    }
-  } catch (err) {
-    logger.error("[FCM] Admin SDK initialization failed:", err.message);
-    return false;
-  }
+  return firebase.isFirebaseAvailable();
 }
 
 const ANDROID_CHANNELS = {

@@ -15,18 +15,9 @@ const logger = require("../utils/logger");
 const pool = require("../config/db");
 const paymentGateway = require("./paymentGatewayService");
 const { checkPayoutKycEligibility } = require("./payoutKycGuard");
+const { getRedisConnectionOptions } = require("../config/redisConnection");
 
-const redisHost = process.env.REDIS_HOST || "127.0.0.1";
-const redisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
-const redisPassword = process.env.REDIS_PASSWORD || undefined;
-
-const connection = {
-  host: redisHost,
-  port: redisPort,
-  password: redisPassword,
-  maxRetriesPerRequest: 1,
-  enableOfflineQueue: false,
-};
+const connection = getRedisConnectionOptions({ maxRetriesPerRequest: 1 });
 
 let payoutQueue = null;
 let isRedisAvailable = false;

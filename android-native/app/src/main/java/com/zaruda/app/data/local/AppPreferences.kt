@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "zaruda_prefs")
 
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
+enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 
 @Singleton
 class AppPreferences @Inject constructor(private val context: Context) {

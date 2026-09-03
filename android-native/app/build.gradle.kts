@@ -144,12 +144,38 @@ android {
         warningsAsErrors = false
     }
 
+    // ── Firebase Crashlytics: automatic ProGuard mapping upload for release builds ──
+    // The com.google.firebase.crashlytics Gradle plugin automatically uploads
+    // mapping.txt when isMinifyEnabled = true in release builds. This block
+    // explicitly configures the upload behavior and ensures task dependencies.
+    firebaseCrashlytics {
+        // Automatically de-obfuscates crash reports in Firebase Console
+        mappingFileUploadEnabled = true
+    }
+
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     exclude(
         "**/ui/channels/CentreScreens.kt",
     )
+}
+
+// ── Verify ProGuard mapping file after release build ───────────────────────────
+tasks.register("verifyMappingFile") {
+    description = "Verify R8 produced a ProGuard mapping file for Crashlytics upload"
+    group = "verification"
+    dependsOn("assembleRelease")
+    doLast {
+        val mappingFile = layout.buildDirectory.file("outputs/mapping/release/mapping.txt").get().asFile
+        if (mappingFile.exists()) {
+            val sizeKB = mappingFile.length() / 1024
+            println("✅ ProGuard mapping file found: ${mappingFile.absolutePath} (${sizeKB} KB)")
+            println("   → Will be automatically uploaded to Firebase Crashlytics by the Gradle plugin")
+        } else {
+            throw GradleException("❌ mapping.txt not found at ${mappingFile.absolutePath} — R8 did not produce mapping output")
+        }
+    }
 }
 
 dependencies {

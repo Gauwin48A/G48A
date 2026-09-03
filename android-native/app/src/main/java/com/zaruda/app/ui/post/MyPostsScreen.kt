@@ -38,6 +38,7 @@ import coil.compose.AsyncImage
 import com.zaruda.app.R
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.zaruda.app.core.ApiResult
+import com.zaruda.app.core.userFacingMessage
 import com.zaruda.app.data.repository.BoostRepository
 import com.zaruda.app.data.repository.PostsRepository
 import com.zaruda.app.data.repository.RewardsRepository
@@ -123,14 +124,14 @@ class MyPostsViewModel @Inject constructor(
             when {
                 result == null -> _state.value = _state.value.copy(
                     loading = false, refreshing = false,
-                    items = DEMO_USER_POSTS,
+                    error = "Request timed out. Pull to retry.",
                 )
                 result is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false, refreshing = false, items = result.data,
                 )
                 result is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false, refreshing = false,
-                    items = DEMO_USER_POSTS,
+                    error = result.error.userFacingMessage(),
                 )
             }
             when (val bought = repo.bought()) {
@@ -279,6 +280,7 @@ fun MyPostsScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     onCreatePost: () -> Unit = {},
+    onEditPost: (String) -> Unit = {},
     viewModel: MyPostsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -938,7 +940,7 @@ fun MyPostsScreen(
                                                 }
                                                 // Edit
                                                 Surface(
-                                                    onClick = { onOpenPost(post.stableId) },
+                                                    onClick = { onEditPost(post.stableId) },
                                                     shape = RoundedCornerShape(8.dp),
                                                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                                                     modifier = Modifier.weight(1f).height(30.dp),
@@ -1008,7 +1010,7 @@ fun MyPostsScreen(
                 HorizontalDivider(modifier = Modifier.padding(bottom = 4.dp))
 
                 PostActionItem(icon = Icons.Default.Edit, label = "Edit Listing", subtitle = "Update details, price & photos") {
-                    onOpenPost(p.stableId); showPostActionsSheet = false; actionPost = null
+                    onEditPost(p.stableId); showPostActionsSheet = false; actionPost = null
                 }
                 if (p.status?.lowercase() == "active") {
                     PostActionItem(icon = Icons.Default.CheckCircle, label = "Mark as Sold", subtitle = "Move this listing to Sold", tint = Color(0xFF22C55E)) {

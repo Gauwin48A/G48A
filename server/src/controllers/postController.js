@@ -1087,17 +1087,10 @@ exports.getAllPosts = async (req, res) => {
       filters,
     } = normalizePostListQuery(req.query);
 
-    const userId = getAuthUserId(req);
-    const hasFullAccess = await checkUserAccessFull(userId);
-    const restrictedMode = !hasFullAccess;
-
     const offset = (pageNumber - 1) * limitNumber;
-    let finalLimit = limitNumber;
-    let finalOffset = offset;
-    if (restrictedMode) {
-      finalLimit = 5;
-      finalOffset = 0;
-    }
+    const finalLimit = limitNumber;
+    const finalOffset = offset;
+    const restrictedMode = false;
 
     const { clause: whereClause, params: whereParams, categoryResolution } =
       buildPostWhereClause(filters);
@@ -1580,20 +1573,11 @@ exports.createPost = async (req, res) => {
  */
 exports.getPostById = async (req, res) => {
   try {
-    const postId = req.params.postId || req.params.id;
+    const rawId = req.params.postId || req.params.id;
+    const postId = parseOptionalString(rawId);
 
-    // Validate UUID format to avoid Postgres cast errors on invalid IDs
-    if (!postId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId)) {
+    if (!postId) {
       return res.status(404).json({ error: "Post not found" });
-    }
-
-    const userId = getAuthUserId(req);
-    const hasFullAccess = await checkUserAccessFull(userId);
-    if (!hasFullAccess) {
-      return res.status(403).json({
-        error: "KYC_PLAN_REQUIRED",
-        message: "Complete subscription plan purchase and KYC verification to unlock full access."
-      });
     }
 
     const postRes = await runQuery(
@@ -1601,7 +1585,7 @@ exports.getPostById = async (req, res) => {
       WITH updated_post AS (
         UPDATE posts
         SET views_count = COALESCE(views_count, 0) + 1
-        WHERE post_id = $1
+        WHERE post_id::text = $1
         RETURNING *
       )
       SELECT

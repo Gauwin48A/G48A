@@ -372,7 +372,9 @@ exports.getProfile = async (req, res) => {
              ${hasUpdatedAtColumn ? "p.updated_at," : "NULL::timestamptz AS updated_at,"}
              COALESCE(p.verified, false) AS verified,
              p.payout_upi_id,
-             p.payout_bank_details
+             p.payout_bank_details,
+             COALESCE(NULLIF(p.cover_image_url, ''), '') AS cover_image_url,
+             COALESCE(p.social_links, '{}'::jsonb) AS social_links
            FROM users u
            LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
            WHERE u.user_id::text = $1
@@ -424,6 +426,8 @@ exports.getProfile = async (req, res) => {
           post_credits: parseOptionalNumber(row.post_credits) || 0,
           payout_upi_id: row.payout_upi_id || "",
           payout_bank_details: row.payout_bank_details || {},
+          cover_image_url: row.cover_image_url || "",
+          social_links: row.social_links || {},
           created_at: row.created_at,
           updated_at: row.updated_at || null,
           trust: trustSnapshot,
@@ -466,7 +470,20 @@ exports.updateProfile = async (req, res) => {
   try {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
-    const { full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details } = req.body;
+    const { full_name, phone, address, avatar_url, bio, payout_upi_id, payout_bank_details,
+            avatar, cover_image, cover_image_url, social_links,
+            // Multi-alias normalization for cross-platform compatibility
+            fullName, name, phoneNumber, phone_number, location,
+            city, state, pincode, picture_url, profile_image_url } = req.body;
+    // Accept both "avatar" and "avatar_url" and "picture_url" from clients
+    const resolvedAvatarUrl = avatar_url || avatar || picture_url || profile_image_url || null;
+    const resolvedCoverUrl = cover_image_url || cover_image || null;
+    // Normalize full_name from multiple alias sources
+    const resolvedFullName = full_name || fullName || name || null;
+    // Normalize phone from multiple alias sources
+    const resolvedPhone = phone || phoneNumber || phone_number || null;
+    // Normalize address from multiple alias sources
+    const resolvedAddress = address || location || null;
     const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
 
     if (!requestedUserId) {
@@ -478,7 +495,7 @@ exports.updateProfile = async (req, res) => {
     }
 
     const normalizedFullName =
-      parseOptionalString(full_name) ||
+      parseOptionalString(resolvedFullName) ||
       parseOptionalString(req.user?.name) ||
       parseOptionalString(req.user?.username) ||
       "User";
@@ -496,13 +513,24 @@ exports.updateProfile = async (req, res) => {
     const queryParams = [
       requestedUserId,
       normalizedFullName,
-      parseOptionalString(phone),
-      parseOptionalString(address),
-      parseOptionalString(avatar_url),
+      parseOptionalString(resolvedPhone),
+      parseOptionalString(resolvedAddress),
+      parseOptionalString(resolvedAvatarUrl),
       parseOptionalString(bio),
       sanitizedUpiId,
       payout_bank_details ? (typeof payout_bank_details === "string" ? payout_bank_details : JSON.stringify(payout_bank_details)) : null,
     ];
+
+    // Self-heal: ensure cover_image_url and social_links columns exist
+    async function ensureExtendedProfileColumns() {
+      const stmts = [
+        `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_image_url VARCHAR(500)`,
+        `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb`,
+      ];
+      for (const sql of stmts) {
+        try { await runQuery(sql); } catch (_) { /* column already exists or table missing */ }
+      }
+    }
 
     const returningFields = hasUpdatedAtColumn
       ? `profile_id, user_id, full_name, phone, address,
@@ -651,6 +679,34 @@ exports.updateProfile = async (req, res) => {
       }).catch((err) => {
         logger.warn("[Profile] Profile completion bonus skipped", { message: err.message });
       });
+    }
+
+    // ── Extended profile fields: cover_image_url + social_links ──
+    if (resolvedCoverUrl || social_links) {
+      try {
+        await ensureExtendedProfileColumns();
+        const extSets = [];
+        const extParams = [requestedUserId];
+        let paramIdx = 2;
+        if (resolvedCoverUrl) {
+          extSets.push(`cover_image_url = $${paramIdx}`);
+          extParams.push(parseOptionalString(resolvedCoverUrl));
+          paramIdx++;
+        }
+        if (social_links) {
+          extSets.push(`social_links = $${paramIdx}::jsonb`);
+          extParams.push(typeof social_links === "string" ? social_links : JSON.stringify(social_links));
+          paramIdx++;
+        }
+        if (extSets.length > 0) {
+          await runQuery(
+            `UPDATE profiles SET ${extSets.join(", ")} WHERE user_id::text = $1`,
+            extParams
+          );
+        }
+      } catch (extErr) {
+        logger.warn("[Profile] Extended profile fields update failed:", extErr.message);
+      }
     }
 
     invalidateProfileCache(requestedUserId);
@@ -907,6 +963,72 @@ exports.uploadAvatar = async (req, res) => {
 };
 
 // ────────────────────────────────────────────────────────────
+// COVER IMAGE UPLOAD
+// ────────────────────────────────────────────────────────────
+
+/**
+ * POST /profile/upload-cover
+ * Upload a new cover image for the authenticated user.
+ *
+ * Expects `req.file` to be populated by multer.
+ */
+exports.uploadCover = async (req, res) => {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
+    const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
+
+    if (!requestedUserId) {
+      return res.status(400).json({ error: "userId required" });
+    }
+
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const base64 = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype;
+    const coverUrl = `data:${mimeType};base64,${base64}`;
+
+    // Self-heal: ensure cover_image_url column exists
+    try {
+      await runQuery(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_image_url VARCHAR(500)`);
+    } catch (_) {}
+
+    const result = await runQuery(
+      hasUpdatedAtColumn
+        ? `INSERT INTO profiles (user_id, full_name, cover_image_url, updated_at)
+           VALUES ($1, 'User', $2, NOW())
+           ON CONFLICT (user_id) DO UPDATE
+           SET cover_image_url = EXCLUDED.cover_image_url,
+               updated_at = NOW()
+           RETURNING cover_image_url`
+        : `INSERT INTO profiles (user_id, full_name, cover_image_url)
+           VALUES ($1, 'User', $2)
+           ON CONFLICT (user_id) DO UPDATE
+           SET cover_image_url = EXCLUDED.cover_image_url
+           RETURNING cover_image_url`,
+      [requestedUserId, coverUrl]
+    );
+
+    if (!result.rows?.length) {
+      return res.status(500).json({ error: "Failed to update cover image" });
+    }
+
+    logger.info("Cover image updated for user:", requestedUserId);
+    invalidateProfileCache(requestedUserId);
+    return res.json({ cover_image_url: result.rows[0].cover_image_url });
+  } catch (err) {
+    logger.error("Error uploading cover image:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
 // PAYOUT ACCOUNT LINKING (Razorpay)
 // ────────────────────────────────────────────────────────────
 
@@ -950,6 +1072,37 @@ exports.linkPayoutAccount = async (req, res) => {
     return res.status(400).json({ error: "type must be 'bank_account' or 'upi'" });
   }
 
+  if (type === "bank_account") {
+    if (!bank_account || !bank_account.account_number || !bank_account.ifsc || !bank_account.beneficiary_name) {
+      return res.status(400).json({ error: "bank_account requires account_number, ifsc, and beneficiary_name" });
+    }
+
+    // Strict validation: IFSC format (e.g., HDFC0000123)
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    if (!ifscRegex.test(String(bank_account.ifsc).toUpperCase())) {
+      return res.status(400).json({ error: "Invalid IFSC code format. Expected: ABCD0123456 (4 letters + 0 + 6 alphanumeric)" });
+    }
+
+    // Account number: 9 to 18 digits
+    const acctDigits = String(bank_account.account_number).replace(/\D/g, '');
+    if (acctDigits.length < 9 || acctDigits.length > 18) {
+      return res.status(400).json({ error: "Account number must be 9 to 18 digits" });
+    }
+
+    // Beneficiary name: at least 3 characters
+    if (String(bank_account.beneficiary_name).trim().length < 3) {
+      return res.status(400).json({ error: "Beneficiary name must be at least 3 characters" });
+    }
+  } else if (type === "upi") {
+    if (!upi_id) {
+      return res.status(400).json({ error: "upi_id is required for UPI type" });
+    }
+    const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9]{2,64}$/;
+    if (!upiRegex.test(String(upi_id).trim())) {
+      return res.status(400).json({ error: "Invalid UPI ID format. Expected format: username@bank" });
+    }
+  }
+
   try {
     await ensurePayoutColumns();
 
@@ -965,9 +1118,6 @@ exports.linkPayoutAccount = async (req, res) => {
     let fundAccountResult;
 
     if (type === "bank_account") {
-      if (!bank_account || !bank_account.account_number || !bank_account.ifsc || !bank_account.beneficiary_name) {
-        return res.status(400).json({ error: "bank_account requires account_number, ifsc, and beneficiary_name" });
-      }
 
       fundAccountResult = await razorpayService.createFundAccount({
         contactId: contactResult.contactId,
@@ -1080,5 +1230,185 @@ exports.getPayoutStatus = async (req, res) => {
   } catch (err) {
     logger.error("[PAYOUT_LINK] Error fetching payout status:", err);
     res.status(500).json({ error: "Failed to fetch payout status" });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// UNIFIED FULL PROFILE (Single-Call Payload)
+// ────────────────────────────────────────────────────────────
+
+/**
+ * GET /profile/full
+ * Returns a consolidated profile payload with identity, profile, verification,
+ * stats, payout, and completion data in a single HTTP call.
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.getFullProfile = async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const cacheKey = `profile:${userId}:full`;
+    if (req.query.refresh === "true") cacheService.del(cacheKey);
+
+    const payload = await cacheService.getOrSetWithStampedeProtection(
+      cacheKey,
+      async () => {
+        // 1. Core identity + profile
+        const userResult = await runQuery(
+          `SELECT
+             u.user_id, u.name, u.email, u.phone_number, u.role,
+             NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,
+             NULLIF(to_jsonb(u)->>'tier', '') AS tier,
+             u.created_at,
+             p.full_name, p.phone, p.address, p.avatar_url, p.bio,
+             p.cover_image_url, p.social_links, p.reward_badge,
+             p.verified, p.payout_upi_id, p.payout_bank_details,
+             COALESCE(r.tier, 'Bronze') AS rewards_rank
+           FROM users u
+           LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
+           LEFT JOIN rewards r ON r.user_id::text = u.user_id::text
+           WHERE u.user_id = $1 LIMIT 1`,
+          [userId]
+        );
+
+        if (!userResult.rows?.length) return null;
+        const u = userResult.rows[0];
+
+        // 2. Coins
+        let coins = 0;
+        try {
+          const cRes = await runQuery(`SELECT coins FROM users WHERE user_id = $1`, [userId]);
+          coins = Number(cRes.rows[0]?.coins) || 0;
+        } catch (_) {}
+
+        // 3. Trust score
+        const trustSnapshot = await getTrustSnapshot(userId);
+
+        // 4. Stats (active listings, sold items)
+        let stats = { activeListings: 0, soldListings: 0, totalSalesAmount: 0 };
+        try {
+          const statsRes = await runQuery(
+            `SELECT
+               COUNT(*) FILTER (WHERE status = 'active') AS active_listings,
+               COUNT(*) FILTER (WHERE status = 'sold') AS sold_listings,
+               COALESCE(SUM(price) FILTER (WHERE status = 'sold'), 0) AS total_sales
+             FROM posts WHERE user_id::text = $1`,
+            [userId]
+          );
+          if (statsRes.rows?.[0]) {
+            stats = {
+              activeListings: Number(statsRes.rows[0].active_listings) || 0,
+              soldListings: Number(statsRes.rows[0].sold_listings) || 0,
+              totalSalesAmount: Number(statsRes.rows[0].total_sales) || 0,
+            };
+          }
+        } catch (_) {}
+
+        // 5. Followers count
+        let followersCount = 0;
+        let followingCount = 0;
+        try {
+          const followRes = await runQuery(
+            `SELECT
+               (SELECT COUNT(*) FROM follows WHERE following_id::text = $1) AS followers,
+               (SELECT COUNT(*) FROM follows WHERE follower_id::text = $1) AS following`,
+            [userId]
+          );
+          if (followRes.rows?.[0]) {
+            followersCount = Number(followRes.rows[0].followers) || 0;
+            followingCount = Number(followRes.rows[0].following) || 0;
+          }
+        } catch (_) {}
+
+        // 6. Completion percentage
+        const filledFields = [
+          u.full_name || u.name,
+          u.phone || u.phone_number,
+          u.email,
+          u.address,
+          u.avatar_url,
+          u.bio,
+        ].filter((v) => v && String(v).trim().length > 0).length;
+        const completionPct = Math.round((filledFields / 6) * 100);
+        const missingFields = [];
+        if (!u.full_name && !u.name) missingFields.push("name");
+        if (!u.phone && !u.phone_number) missingFields.push("phone");
+        if (!u.email) missingFields.push("email");
+        if (!u.address) missingFields.push("address");
+        if (!u.avatar_url) missingFields.push("avatar");
+        if (!u.bio) missingFields.push("bio");
+
+        // 7. Verification states
+        let emailVerified = false;
+        let phoneVerified = false;
+        let kycVerified = false;
+        try {
+          const vRes = await runQuery(
+            `SELECT email_verified, phone_verified, kyc_verified FROM users WHERE user_id = $1`,
+            [userId]
+          );
+          if (vRes.rows?.[0]) {
+            emailVerified = /true|1|yes/i.test(String(vRes.rows[0].email_verified || ''));
+            phoneVerified = /true|1|yes/i.test(String(vRes.rows[0].phone_verified || ''));
+            kycVerified = /true|1|yes/i.test(String(vRes.rows[0].kyc_verified || ''));
+          }
+        } catch (_) {}
+
+        return {
+          user: {
+            userId: u.user_id,
+            name: u.full_name || u.name || "User",
+            email: u.email,
+            phone: u.phone || u.phone_number,
+            role: u.role || "user",
+            currentPlan: u.current_plan || u.tier || "basic",
+            rewardsRank: u.rewards_rank || "Bronze",
+            rewardBadge: u.reward_badge || null,
+            coins: coins,
+            createdAt: u.created_at,
+          },
+          profile: {
+            fullName: u.full_name || u.name || "User",
+            avatarUrl: u.avatar_url || "",
+            coverImageUrl: u.cover_image_url || "",
+            bio: u.bio || "",
+            location: {
+              address: u.address || "",
+            },
+            socialLinks: u.social_links || {},
+          },
+          verification: {
+            emailVerified: emailVerified,
+            phoneVerified: phoneVerified,
+            aadhaarVerified: kycVerified,
+            kycStatus: kycVerified ? "verified" : "pending",
+            trustScore: trustSnapshot?.score || 0,
+            trustBadge: trustSnapshot?.label || "",
+            trustLevel: trustSnapshot?.level || "bronze",
+          },
+          stats: stats,
+          followers: { count: followersCount, following: followingCount },
+          payout: {
+            isLinked: Boolean(u.payout_upi_id || (u.payout_bank_details && Object.keys(u.payout_bank_details).length > 0)),
+            type: u.payout_upi_id ? "upi" : "bank_account",
+            maskedAccount: u.payout_upi_id || "",
+          },
+          completion: {
+            percentage: completionPct,
+            missingFields: missingFields,
+          },
+        };
+      },
+      PROFILE_CACHE_TTL_SECONDS
+    );
+
+    if (!payload) return res.status(404).json({ error: "User not found" });
+    return res.json({ success: true, ...payload });
+  } catch (err) {
+    logger.error("[PROFILE_FULL] Error:", err);
+    res.status(500).json({ error: "Failed to fetch full profile" });
   }
 };

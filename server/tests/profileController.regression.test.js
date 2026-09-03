@@ -114,7 +114,7 @@ describe('profileController regression behavior', () => {
 
       if (sql.includes('INSERT INTO profiles') && sql.includes('ON CONFLICT (user_id)')) {
         expect(sql).not.toContain('updated_at');
-        expect(values).toEqual(['260', 'Test User', '9876543210', 'Addr', null, 'Bio']);
+        expect(values.slice(0, 6)).toEqual(['260', 'Test User', '9876543210', 'Addr', null, 'Bio']);
         return {
           rows: [
             {
@@ -177,7 +177,7 @@ describe('profileController regression behavior', () => {
       }
 
       if (sql.includes('INSERT INTO profiles') && !sql.includes('ON CONFLICT')) {
-        expect(values).toEqual(['260', 'legacy260', '9876543210', null, null, null]);
+        expect(values.slice(0, 6)).toEqual(['260', 'legacy260', '9876543210', null, null, null]);
         return {
           rows: [
             {

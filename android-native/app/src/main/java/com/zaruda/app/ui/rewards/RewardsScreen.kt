@@ -83,6 +83,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -100,8 +102,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -2208,7 +2208,25 @@ fun SpinWheelCanvas(
         Box(
             modifier = Modifier
                 .size(180.dp)
+                .drawBehind {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFFFD700).copy(alpha = 0.5f), Color.Transparent)
+                        ),
+                        radius = size.minDimension / 2 + 40f
+                    )
+                }
                 .graphicsLayer { rotationZ = rotation.value }
+                .border(
+                    width = 4.dp,
+                    brush = Brush.sweepGradient(
+                        listOf(
+                            Color(0xFFFF6B6B), Color(0xFFFFD700), Color(0xFF6BCB77),
+                            Color(0xFF45B7D1), Color(0xFFF7AEF8), Color(0xFFFF6B6B)
+                        )
+                    ),
+                    shape = CircleShape
+                )
                 .clip(CircleShape)
                 .background(Color(0xFF1E293B))
                 .clickable(enabled = canSpin && !isAnimating && !isSpinning) { onSpin() },
@@ -2354,6 +2372,10 @@ fun ScratchCardCanvas(
 ) {
     val scratchedPoints = remember { mutableStateListOf<Offset>() }
     val isRevealed = scratchedPoints.size > 30
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(isRevealed) { 
+        if (isRevealed) haptic.performHapticFeedback(HapticFeedbackType.LongPress) 
+    }
     Box(
         modifier = modifier
             .size(200.dp, 100.dp)
@@ -2369,6 +2391,15 @@ fun ScratchCardCanvas(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("🎁", fontSize = 28.sp)
                 Text(rewardText, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                if (isRevealed) {
+                    Text(
+                        text = "🎉 Coins Credited to Zaruda Wallet!",
+                        color = Color(0xFFFFD700),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
         }
         // Scratchable silver overlay

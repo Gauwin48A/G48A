@@ -15,28 +15,45 @@ const validate = (req, res, next) => {
 // All order routes require authentication
 router.use(protect);
 
-// GET /api/v1/orders — list user's orders
+// GET /api/orders/my — list authenticated buyer's orders
+router.get("/my", ordersController.myOrders);
+
+// GET /api/v1/orders — list user's orders (role=buyer or role=seller)
 router.get("/",
   query("role").optional().isIn(["buyer", "seller"]).withMessage("Role must be 'buyer' or 'seller'"),
   validate,
   ordersController.list
 );
 
-// POST /api/v1/orders — create new order
-router.post("/",
-  body("product_id").notEmpty().withMessage("product_id is required"),
-  body("seller_id").notEmpty().withMessage("seller_id is required"),
+// POST /api/orders/create and POST /api/v1/orders — create new order
+const createOrderValidation = [
+  body().custom((value) => {
+    if (!value.product_id && !value.postId && !value.post_id) {
+      throw new Error("Either postId or product_id is required");
+    }
+    return true;
+  }),
   body("quantity").optional().isInt({ min: 1, max: 100 }).withMessage("Quantity must be 1-100"),
   body("variant_id").optional().trim().isLength({ max: 100 }),
   validate,
-  ordersController.create
-);
+];
+
+router.post("/create", createOrderValidation, ordersController.create);
+router.post("/", createOrderValidation, ordersController.create);
 
 // GET /api/v1/orders/:id — get order details
 router.get("/:id",
   param("id").notEmpty().withMessage("Order ID is required"),
   validate,
   ordersController.getById
+);
+
+// POST /api/orders/:id/confirm-handover — confirm delivery with OTP
+router.post("/:id/confirm-handover",
+  param("id").notEmpty().withMessage("Order ID is required"),
+  body("otp").notEmpty().withMessage("Handover OTP is required"),
+  validate,
+  ordersController.confirmHandover
 );
 
 // PATCH /api/v1/orders/:id/status — update order status

@@ -106,6 +106,7 @@ class EditPostViewModel @Inject constructor(
                 description = s.description.ifBlank { null },
                 price = s.price.toDoubleOrNull(),
                 location = s.location.ifBlank { null },
+                images = s.existingImages,
             )
             when (val r = repo.update(postId, req)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(saving = false, success = true)
@@ -271,6 +272,37 @@ fun EditPostScreen(postId: String, onBack: () -> Unit, viewModel: EditPostViewMo
                         error = state.fieldErrors["price"],
                     )
                     ZarudaTextField(stringResource(R.string.commerce_field_location), state.location, viewModel::setLocation)
+
+                    var notifyPriceDrop by remember { mutableStateOf(true) }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Checkbox(
+                                checked = notifyPriceDrop,
+                                onCheckedChange = { notifyPriceDrop = it },
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "⚡ Broadcast price updates to buyers",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    "Notify users who saved or wishlisted this item about price changes",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(8.dp))
                     Button(

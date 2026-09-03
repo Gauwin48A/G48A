@@ -45,9 +45,11 @@ import javax.inject.Inject
 
 data class NearbyUiState(
     val loading: Boolean = true,
+    val allPosts: List<Post> = emptyList(),
     val posts: List<Post> = emptyList(),
     val error: String? = null,
     val selectedCategory: String = "All",
+    val selectedRadiusKm: Int = 25,
 )
 
 @HiltViewModel
@@ -68,14 +70,16 @@ class NearbyViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     val allPosts = r.data
                     val sorted = sortPostsByDistance(allPosts)
-                    _state.value = _state.value.copy(loading = false, posts = sorted)
+                    _state.value = _state.value.copy(loading = false, allPosts = sorted)
+                    applyFilters()
                 }
                 is ApiResult.Failure -> {
                     // Try fallback with different endpoint
                     when (val r2 = postsRepo.mine()) {
                         is ApiResult.Success -> {
                             val sorted = sortPostsByDistance(r2.data)
-                            _state.value = _state.value.copy(loading = false, posts = sorted)
+                            _state.value = _state.value.copy(loading = false, allPosts = sorted)
+                            applyFilters()
                         }
                         is ApiResult.Failure -> _state.value = _state.value.copy(
                             loading = false,
@@ -88,13 +92,32 @@ class NearbyViewModel @Inject constructor(
     }
 
     fun filterByCategory(category: String) {
-        val allPosts = _state.value.posts
-        val filtered = if (category == "All") {
-            sortPostsByDistance(allPosts)
-        } else {
-            sortPostsByDistance(allPosts.filter { it.category.equals(category, ignoreCase = true) })
+        _state.value = _state.value.copy(selectedCategory = category)
+        applyFilters()
+    }
+    
+    fun filterByRadius(radiusKm: Int) {
+        _state.value = _state.value.copy(selectedRadiusKm = radiusKm)
+        applyFilters()
+    }
+    
+    private fun applyFilters() {
+        var filtered = _state.value.allPosts
+        val category = _state.value.selectedCategory
+        val radius = _state.value.selectedRadiusKm
+        
+        if (category != "All") {
+            filtered = filtered.filter { it.category.equals(category, ignoreCase = true) }
         }
-        _state.value = _state.value.copy(selectedCategory = category, posts = filtered)
+        
+        if (radius > 0) {
+            filtered = filtered.filter { post ->
+                val dist = getDistanceKm(post)
+                dist != null && dist <= radius
+            }
+        }
+        
+        _state.value = _state.value.copy(posts = filtered)
     }
 
     private fun sortPostsByDistance(posts: List<Post>): List<Post> {
@@ -153,7 +176,6 @@ fun NearbyScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             // Location header
-            val city = viewModel.locationManager.currentLocationName.collectAsState()
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -164,9 +186,8 @@ fun NearbyScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Text(
-                        "Showing items near ${city.value.ifBlank { "your location" }}",
+                        "📡 Hyperlocal Radar active • Showing verified listings near you",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -188,6 +209,22 @@ fun NearbyScreen(
                 }
             }
 
+            // Radius chips
+            val radii = listOf(2 to "2 km", 5 to "5 km", 10 to "10 km", 25 to "25 km", 0 to "Whole City")
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 8.dp),
+            ) {
+                items(radii) { (radius, label) ->
+                    FilterChip(
+                        selected = state.selectedRadiusKm == radius,
+                        onClick = { viewModel.filterByRadius(radius) },
+                        label = { Text(label, fontSize = 12.sp) },
+                    )
+                }
+            }
+
             when {
                 state.loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -205,11 +242,13 @@ fun NearbyScreen(
                 }
                 state.posts.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No nearby posts found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(4.dp))
-                            Text("Try adjusting your category filter", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        com.zaruda.app.ui.components.AppEmptyState(
+                            icon = Icons.Default.LocationOn,
+                            title = "No listings within ${state.selectedRadiusKm} km",
+                            subtitle = "Try expanding your search radius to 25 km or Whole City",
+                            actionLabel = "Expand Radius",
+                            onAction = { viewModel.filterByRadius(0) }
+                        )
                     }
                 }
                 else -> {

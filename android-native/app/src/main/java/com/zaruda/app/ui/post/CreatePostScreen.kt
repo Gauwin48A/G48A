@@ -489,6 +489,13 @@ fun CreatePostScreen(
                                             val updated = state.imageUris.toMutableList().apply { removeAt(idx) }
                                             viewModel.setImages(updated)
                                         },
+                                        onMakeCoverClick = { idx ->
+                                            val updated = state.imageUris.toMutableList().apply { 
+                                                val item = removeAt(idx)
+                                                add(0, item)
+                                            }
+                                            viewModel.setImages(updated)
+                                        },
                                     )
                                 }
 
@@ -829,6 +836,45 @@ fun CreatePostScreen(
                                     current = priceText,
                                     onPick = { priceText = it.replace(",", ""); priceTouched = true; viewModel.clearError() },
                                 )
+
+                                val priceNum = InputValidators.parsePositiveAmount(priceText)
+                                if (priceNum != null && priceNum > 0) {
+                                    Spacer(Modifier.height(12.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    ) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text("📊", fontSize = 16.sp)
+                                                Text("Zaruda Price Intelligence", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                            }
+                                            Spacer(Modifier.height(12.dp))
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                // Fast Sale
+                                                Column(Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(Color(0xFFDCFCE7).copy(alpha = 0.8f)).padding(8.dp)) {
+                                                    Text("🟢 Fast Sale", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF166534))
+                                                    Text("₹${String.format(Locale.ENGLISH, "%,.0f", priceNum * 0.85)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534))
+                                                    Text("24-48 hrs", fontSize = 9.sp, color = Color(0xFF166534).copy(alpha = 0.8f))
+                                                }
+                                                // Fair Market
+                                                Column(Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(Color(0xFFDBEAFE).copy(alpha = 0.8f)).padding(8.dp)) {
+                                                    Text("🔵 Fair Market", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF))
+                                                    Text("₹${String.format(Locale.ENGLISH, "%,.0f", priceNum)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E40AF))
+                                                    Text("Balanced", fontSize = 9.sp, color = Color(0xFF1E40AF).copy(alpha = 0.8f))
+                                                }
+                                                // High Range
+                                                Column(Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFEDD5).copy(alpha = 0.8f)).padding(8.dp)) {
+                                                    Text("🟠 High Range", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF9A3412))
+                                                    Text("₹${String.format(Locale.ENGLISH, "%,.0f", priceNum * 1.2)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9A3412))
+                                                    Text("2+ weeks", fontSize = 9.sp, color = Color(0xFF9A3412).copy(alpha = 0.8f))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
 
                                 if (state.isNegotiable && priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) != null) {
                                     Spacer(Modifier.height(6.dp))
@@ -1613,6 +1659,7 @@ private fun ImageGrid(
     maxImages: Int,
     onAddClick: () -> Unit,
     onRemoveClick: (Int) -> Unit,
+    onMakeCoverClick: ((Int) -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FlowRow(
@@ -1655,6 +1702,23 @@ private fun ImageGrid(
                     ) {
                         Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(12.dp))
                     }
+                    if (idx == 0) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFFFD700).copy(alpha = 0.9f),
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp)
+                        ) {
+                            Text("⭐ Cover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    } else if (onMakeCoverClick != null) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color.Black.copy(alpha = 0.7f),
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp).clickable { onMakeCoverClick(idx) }
+                        ) {
+                            Text("Make Cover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
                 }
             }
             if (uris.size < maxImages) {
@@ -1680,6 +1744,21 @@ private fun ImageGrid(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+        ) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("💡", fontSize = 16.sp)
+                Text("Tip: First photo is your listing's cover. Photos from 3+ angles with clear lighting sell 4x faster!",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            }
+        }
     }
 }
 

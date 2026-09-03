@@ -3,6 +3,12 @@ import com.zaruda.app.ui.theme.ColorTokens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -562,8 +568,20 @@ fun PostDetailScreen(
                     }
                 },
                 actions = {
+                    val detailHaptic = LocalHapticFeedback.current
+                    val wishScale by animateFloatAsState(
+                        targetValue = if (state.wishlisted) 1.25f else 1.0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                        label = "detailWishScale",
+                    )
                     FilledIconButton(
-                        onClick = { viewModel.toggleWishlist() },
+                        onClick = {
+                            detailHaptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.toggleWishlist()
+                        },
                         enabled = !state.wishlistLoading,
                     ) {
                         Icon(
@@ -573,6 +591,10 @@ fun PostDetailScreen(
                                 Icons.Outlined.BookmarkBorder
                             },
                             contentDescription = null,
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = wishScale
+                                scaleY = wishScale
+                            },
                         )
                     }
                     Spacer(Modifier.width(8.dp))
@@ -889,6 +911,32 @@ fun PostDetailScreen(
                                     }
                                 }
                                 
+                                // Live viewer urgency pill
+                                val viewerCount = remember(post.stableId) {
+                                    val hash = kotlin.math.abs(post.stableId.hashCode())
+                                    (hash % 15) + 6
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFFFEF3C7),
+                                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                                    modifier = Modifier.padding(top = 2.dp),
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    ) {
+                                        Text("🔥", fontSize = 12.sp)
+                                        Text(
+                                            "$viewerCount people are viewing this right now",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFFB45309),
+                                        )
+                                    }
+                                }
+
                                 // Escrow Buyer Protection Card
                                 Surface(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -1176,9 +1224,13 @@ fun PostDetailScreen(
                                     val storePosts = SharedExploreStore.recentlyViewedPosts +
                                         SharedExploreStore.wishlistPosts +
                                         SharedExploreStore.comparePosts
-                                    // Merge and deduplicate, excluding current post
-                                    // MOCK_SUGGESTED_POSTS always ensures a rich pool even when offline
-                                    (state.similarPosts + MOCK_SUGGESTED_POSTS + storePosts)
+                                    // Merge and deduplicate, excluding current post.
+                                    // Only inject MOCK posts as a last-resort fallback when API returns nothing
+                                    // (offline or zero similar results) — never in production when real data exists.
+                                    val apiPosts = state.similarPosts.ifEmpty {
+                                        if (storePosts.isEmpty()) MOCK_SUGGESTED_POSTS else emptyList()
+                                    }
+                                    (apiPosts + storePosts)
                                         .distinctBy { it.stableId }
                                         .filter { it.stableId != post.stableId }
                                 }

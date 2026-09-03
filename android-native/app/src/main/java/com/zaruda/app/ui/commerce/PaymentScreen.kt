@@ -209,8 +209,56 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                                         Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), modifier = Modifier.fillMaxWidth()) {
                                             Column(Modifier.padding(14.dp)) {
                                                 Text("UPI ID", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text(state.upiId ?: "", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
-                                                if (state.merchantName != null) Text("Merchant: ${state.merchantName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text(state.upiId ?: "", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2563EB))
+                                                        if (state.merchantName != null) Text("Merchant: ${state.merchantName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                                                    val context = androidx.compose.ui.platform.LocalContext.current
+                                                    IconButton(onClick = {
+                                                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.upiId!!))
+                                                        android.widget.Toast.makeText(context, "UPI ID copied", android.widget.Toast.LENGTH_SHORT).show()
+                                                    }) {
+                                                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copy UPI ID", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.height(12.dp))
+                                        val context = androidx.compose.ui.platform.LocalContext.current
+                                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                                        Text("Open App:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                                        Spacer(Modifier.height(8.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            val apps = listOf(
+                                                "GPay" to "com.google.android.apps.nbu.paisa.user",
+                                                "PhonePe" to "com.phonepe.app",
+                                                "Paytm" to "net.one97.paytm",
+                                                "BHIM" to "in.org.npci.upiapp"
+                                            )
+                                            apps.forEach { (appName, pkg) ->
+                                                AssistChip(
+                                                    onClick = {
+                                                        val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                                                        if (intent != null) {
+                                                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(state.upiId!!))
+                                                            android.widget.Toast.makeText(context, "UPI ID copied", android.widget.Toast.LENGTH_SHORT).show()
+                                                            context.startActivity(intent)
+                                                        } else {
+                                                            val upiIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("upi://pay?pa=${state.upiId}&pn=${android.net.Uri.encode(state.merchantName ?: "")}"))
+                                                            if (upiIntent.resolveActivity(context.packageManager) != null) {
+                                                                context.startActivity(upiIntent)
+                                                            } else {
+                                                                android.widget.Toast.makeText(context, "$appName not installed", android.widget.Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        }
+                                                    },
+                                                    label = { Text(appName) }
+                                                )
                                             }
                                         }
                                     }
@@ -227,7 +275,31 @@ fun PaymentScreen(onBack: () -> Unit, viewModel: PaymentViewModel = hiltViewMode
                         }
                         else -> {
                             Text("Enter Transaction ID (UTR)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(Modifier.height(8.dp))
+                            Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                                    Icon(Icons.Filled.Info, contentDescription = "Info", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("UTR is a 12-digit reference number found in your UPI payment receipt (Google Pay, PhonePe, Paytm).", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
                             ZarudaTextField("Transaction ID / UTR", state.transactionId, viewModel::setTransactionId)
+                            Spacer(Modifier.height(4.dp))
+                            if (state.transactionId.length == 12 && state.transactionId.all { it.isDigit() }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Valid 12-digit UTR format", fontSize = 11.sp, color = Color(0xFF22C55E))
+                                }
+                            } else if (state.transactionId.isNotBlank() && (state.transactionId.length != 12 || !state.transactionId.all { it.isDigit() })) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Warning, null, tint = Color(0xFFEF4444), modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("${state.transactionId.length}/12 digits entered", fontSize = 11.sp, color = Color(0xFFEF4444))
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
                             Button(onClick = { viewModel.submitPayment() }, enabled = !state.submitting,
                                 shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                                 modifier = Modifier.fillMaxWidth().height(50.dp)) {

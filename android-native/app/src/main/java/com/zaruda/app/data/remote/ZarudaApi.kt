@@ -294,6 +294,10 @@ interface ZarudaApi {
         @Query("limit") limit: Int = 5,
     ): ReferralLeaderboardResponse
 
+    // ---- Full Profile (single-call payload) ----
+    @GET("api/profile/full")
+    suspend fun getFullProfile(): FullProfileResponse
+
     // ---- Profile Update ----
     @POST("api/profile/update")
     suspend fun updateProfile(@Body body: ProfileUpdateRequest): MessageResponse

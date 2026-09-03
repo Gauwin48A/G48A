@@ -810,13 +810,7 @@ router.delete("/:postId", protect, async (req, res) => {
  * Update a post's title, description, price, location, status, category, subcategory, or images.
  * Only the post owner may edit their post.
  */
-router.put(
-  "/:postId",
-  protect,
-  upload.fields([{ name: "images", maxCount: 10 }]),
-  postUploadSecurity,
-  optimizeLocalImages,
-  async (req, res) => {
+const handleUpdatePost = async (req, res) => {
   const { postId } = req.params;
   const userId = req.user?.userId || req.user?.id;
   const {
@@ -913,11 +907,22 @@ router.put(
     let mergedImages = null;
     const existingImages = ownerCheck.rows[0].images || [];
     const newFiles = req.files?.images || [];
-    const removedImages = req.body.removed_images
-      ? JSON.parse(req.body.removed_images)
-      : [];
+    let removedImages = [];
+    if (req.body.removed_images) {
+      if (Array.isArray(req.body.removed_images)) {
+        removedImages = req.body.removed_images;
+      } else if (typeof req.body.removed_images === "string") {
+        try {
+          removedImages = JSON.parse(req.body.removed_images);
+        } catch (_) {
+          removedImages = [req.body.removed_images];
+        }
+      }
+    }
 
-    if (newFiles.length > 0 || removedImages.length > 0) {
+    if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
+      mergedImages = JSON.stringify(req.body.images.filter(Boolean));
+    } else if (newFiles.length > 0 || removedImages.length > 0) {
       // Keep existing images that weren't removed
       const removedSet = new Set(removedImages.map(String));
       const kept = (Array.isArray(existingImages) ? existingImages : [])
@@ -1003,12 +1008,30 @@ router.put(
       ]
     );
 
-    res.json({ message: "Post updated successfully", post: result.rows[0] });
+    res.json({ success: true, message: "Post updated successfully", post: result.rows[0] });
   } catch (err) {
     logger.error("Update post error:", err);
     res.status(500).json({ error: "Failed to update post" });
   }
-});
+};
+
+router.put(
+  "/:postId",
+  protect,
+  upload.fields([{ name: "images", maxCount: 10 }]),
+  postUploadSecurity,
+  optimizeLocalImages,
+  handleUpdatePost
+);
+
+router.patch(
+  "/:postId",
+  protect,
+  upload.fields([{ name: "images", maxCount: 10 }]),
+  postUploadSecurity,
+  optimizeLocalImages,
+  handleUpdatePost
+);
 
 /**
  * POST /:postId/report - Report a listing

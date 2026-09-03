@@ -58,17 +58,17 @@ fun AnimatedSplashScreen(
     )
 
     LaunchedEffect(Unit) {
-        delay(300)
+        delay(150)
         logoScale = 1f
-        delay(600)
+        delay(250)
         glowAlpha = 0.6f
-        delay(400)
-        taglineVisible = true
-        delay(300)
-        badgeVisible = true
         delay(200)
+        taglineVisible = true
+        delay(150)
+        badgeVisible = true
+        delay(100)
         contentVisible = true
-        delay(1800)
+        delay(600)
         onSplashFinished()
     }
 

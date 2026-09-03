@@ -1,6 +1,9 @@
 package com.zaruda.app.ui.social
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
@@ -9,13 +12,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -132,18 +139,49 @@ fun RatingsScreen(
                             colors = CardDefaults.cardColors(containerColor = trustColor.copy(alpha = 0.1f)),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
+                            val animatedSweep by animateFloatAsState(
+                                targetValue = (score / 100f) * 180f,
+                                animationSpec = tween(1200),
+                                label = "trustGauge"
+                            )
+                            val gradientBrush = Brush.linearGradient(
+                                colors = listOf(Color(0xFFEF4444), Color(0xFFF59E0B), Color(0xFF22C55E))
+                            )
+                            val backgroundArcColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+
                             Column(
-                                Modifier.padding(20.dp),
+                                Modifier.padding(20.dp).fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 Icon(Icons.Filled.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(36.dp))
-                                Text(
-                                    "$score",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 40.sp,
-                                    color = trustColor,
-                                )
+                                
+                                Box(contentAlignment = Alignment.BottomCenter) {
+                                    Canvas(modifier = Modifier.size(160.dp, 90.dp)) {
+                                        drawArc(
+                                            color = backgroundArcColor,
+                                            startAngle = 180f,
+                                            sweepAngle = 180f,
+                                            useCenter = false,
+                                            style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                        drawArc(
+                                            brush = gradientBrush,
+                                            startAngle = 180f,
+                                            sweepAngle = animatedSweep,
+                                            useCenter = false,
+                                            style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                    }
+                                    Text(
+                                        "$score / 100",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 28.sp,
+                                        color = trustColor,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+
                                 Text(
                                     when {
                                         score >= 80 -> "Highly Trusted"
@@ -160,6 +198,36 @@ fun RatingsScreen(
                                         fontSize = 13.sp,
                                         color = trustColor.copy(alpha = 0.6f),
                                     )
+                                }
+                            }
+                        }
+
+                        // Trust Factors Checklist
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isDark) Color(0xFF1E293B) else Color.White,
+                            shadowElevation = 1.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("🛡️ Verification Breakdown", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                                
+                                val factors = listOf(
+                                    "🆔" to "Aadhaar / PAN KYC Verified",
+                                    "🛡️" to "100% Escrow Protection Rate",
+                                    "⭐" to "Zero Active Dispute Reports",
+                                    "⚡" to "Lightning Response Rate (< 1 hr)"
+                                )
+                                factors.forEach { (emoji, text) ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(emoji, fontSize = 16.sp)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(text, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(16.dp))
+                                    }
                                 }
                             }
                         }

@@ -2439,8 +2439,17 @@ private fun AllPostsBrowse(
                                                 Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
                                             }
                                         }
-                                        // Wishlist save overlay (top-right)
+                                        // Wishlist save overlay (top-right) — animated bounce
                                         val isWished = wishlisted.contains(post.stableId)
+                                        val wishScale by androidx.compose.animation.core.animateFloatAsState(
+                                            targetValue = if (isWished) 1.3f else 1f,
+                                            animationSpec = androidx.compose.animation.core.spring(
+                                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                                stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
+                                            ),
+                                            label = "wishScale",
+                                        )
+                                        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
                                         Icon(
                                             if (isWished) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
                                             contentDescription = null,
@@ -2449,7 +2458,11 @@ private fun AllPostsBrowse(
                                                 .align(Alignment.TopEnd)
                                                 .padding(8.dp)
                                                 .size(20.dp)
-                                                .clickable { onToggleWishlist(post.stableId) },
+                                                .graphicsLayer { scaleX = wishScale; scaleY = wishScale }
+                                                .clickable {
+                                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                                    onToggleWishlist(post.stableId)
+                                                },
                                         )
                                     }
                                     Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

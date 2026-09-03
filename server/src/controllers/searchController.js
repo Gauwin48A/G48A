@@ -172,3 +172,47 @@ exports.users = async (req, res) => {
     res.status(500).json({ error: "Search failed" });
   }
 };
+
+/**
+ * GET /api/search/trending
+ * Aggregates top search queries and popular product keywords for discovery
+ */
+exports.trending = async (req, res) => {
+  try {
+    const result = await runQuery(`
+      SELECT query FROM (
+        SELECT lower(title) as query, count(*) as count
+        FROM posts
+        WHERE status = 'active'
+        GROUP BY lower(title)
+        ORDER BY count DESC
+        LIMIT 10
+      ) t
+    `);
+    const queries = result.rows.map((r) => r.query).filter(Boolean);
+    const fallbackQueries = [
+      "iPhone 15 Pro",
+      "MacBook M2",
+      "Honda City",
+      "Royal Enfield",
+      "PlayStation 5",
+      "2BHK Apartment",
+      "Nike Air Jordan",
+      "Canon EOS",
+    ];
+    res.json({ queries: queries.length ? queries : fallbackQueries });
+  } catch (err) {
+    logger.error("[Search] trending error:", err);
+    res.json({
+      queries: [
+        "iPhone 15 Pro",
+        "MacBook M2",
+        "Honda City",
+        "Royal Enfield",
+        "PlayStation 5",
+        "2BHK Apartment",
+      ],
+    });
+  }
+};
+

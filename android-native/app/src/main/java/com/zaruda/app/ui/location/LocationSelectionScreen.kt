@@ -309,22 +309,68 @@ fun LocationSelectionScreen(
             }
 
             // Results
-            Text(
-                text = if (state.query.length >= 3) "Search Results" else "Popular Cities",
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.Gray,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            if (state.query.isBlank()) {
+                Text(
+                    text = "⚡ Popular Metros",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
 
-            if (state.loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    LocationViewModel.POPULAR_CITIES.chunked(2).forEach { rowCities ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowCities.forEach { city ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onSelect(city) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(10.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("🏙️", fontSize = 24.sp)
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(city.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text(city.state, fontSize = 10.sp, color = Color.Gray)
+                                    }
+                                }
+                            }
+                            if (rowCities.size < 2) {
+                                Spacer(modifier = Modifier.weight((2 - rowCities.size).toFloat()))
+                            }
+                        }
+                    }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(state.results) { city ->
-                        LocationRow(city = city, onClick = { onSelect(city) })
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color.LightGray.copy(alpha = 0.3f))
+                Text(
+                    text = if (state.query.length >= 3) "Search Results" else "Suggestions",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                if (state.loading) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.results) { city ->
+                            LocationRow(city = city, onClick = { onSelect(city) })
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color.LightGray.copy(alpha = 0.3f))
+                        }
                     }
                 }
             }

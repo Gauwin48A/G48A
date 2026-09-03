@@ -1,5 +1,6 @@
 package com.zaruda.app.ui.checkout
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -105,6 +106,10 @@ fun CheckoutAddressScreen(
         return listOf(nameError, phoneError, line1Error, cityError, stateError, pincodeError).all { it.isEmpty() }
     }
 
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    var selectedSavedAddress by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -126,10 +131,108 @@ fun CheckoutAddressScreen(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                Spacer(Modifier.height(4.dp))
+                
+                Text(
+                    text = "📍 Saved Addresses",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedSavedAddress = "Home"
+                        name = "John Doe"
+                        phone = "9876543210"
+                        line1 = "123 Example Street"
+                        line2 = ""
+                        city = "Bengaluru"
+                        state = "Karnataka"
+                        pincode = "560001"
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(
+                                    color = if (selectedSavedAddress == "Home") MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .border(
+                                    width = 2.dp,
+                                    color = if (selectedSavedAddress == "Home") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    shape = CircleShape
+                                )
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Home", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("123 Example Street, Bengaluru, Karnataka 560001", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedSavedAddress = "Office"
+                        name = "John Doe"
+                        phone = "9876543210"
+                        line1 = "456 Tech Park"
+                        line2 = ""
+                        city = "Hyderabad"
+                        state = "Telangana"
+                        pincode = "500081"
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(
+                                    color = if (selectedSavedAddress == "Office") MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .border(
+                                    width = 2.dp,
+                                    color = if (selectedSavedAddress == "Office") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    shape = CircleShape
+                                )
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Office", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("456 Tech Park, Hyderabad, Telangana 500081", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        scope.launch {
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Text("+ Add New Address")
+                }
+
+                HorizontalDivider()
                 Spacer(Modifier.height(4.dp))
                 ValidatedField("Full Name", name, nameError, onValue = { name = it }, keyboardType = KeyboardType.Text)
                 ValidatedField("Phone Number", phone, phoneError, onValue = { phone = it }, keyboardType = KeyboardType.Phone)
@@ -172,6 +275,7 @@ fun CheckoutPaymentScreen(
     var selectedMethod by remember { mutableStateOf(PaymentMethod.UPI) }
     var selectedBank by remember { mutableStateOf("") }
     var upiId by remember { mutableStateOf("") }
+    var selectedUpiApp by remember { mutableStateOf<String?>(null) }
     var cardNumber by remember { mutableStateOf("") }
     var cardExpiry by remember { mutableStateOf("") }
     var cardCvv by remember { mutableStateOf("") }
@@ -200,6 +304,26 @@ fun CheckoutPaymentScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🛡️", fontSize = 24.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("100% Zaruda Escrow Protection", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF059669))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Payment is held safely in escrow. Seller is paid only after you inspect the item and share your Delivery OTP.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
                 Text(
                     "Choose Payment Method",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -222,6 +346,17 @@ fun CheckoutPaymentScreen(
 
                 // UPI input
                 if (selectedMethod == PaymentMethod.UPI) {
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            UpiAppCard("GPay", selectedUpiApp == "GPay", Modifier.weight(1f)) { selectedUpiApp = "GPay" }
+                            UpiAppCard("PhonePe", selectedUpiApp == "PhonePe", Modifier.weight(1f)) { selectedUpiApp = "PhonePe" }
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            UpiAppCard("Paytm", selectedUpiApp == "Paytm", Modifier.weight(1f)) { selectedUpiApp = "Paytm" }
+                            UpiAppCard("BHIM / Other", selectedUpiApp == "BHIM / Other", Modifier.weight(1f)) { selectedUpiApp = "BHIM / Other" }
+                        }
+                    }
+                    Text("or enter UPI ID manually:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                     OutlinedTextField(
                         value = upiId,
                         onValueChange = { upiId = it },
@@ -388,6 +523,27 @@ fun CheckoutReviewScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFEF3C7),
+                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("⚡", fontSize = 24.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text("Guaranteed Delivery Window", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFB45309))
+                                Spacer(Modifier.height(4.dp))
+                                Text("Order within 23 mins for delivery by tomorrow, 4 PM", fontSize = 11.sp, color = Color(0xFF92400E))
+                            }
+                        }
+                    }
+                }
+                item {
                     ReviewSection(title = "Delivery Address", icon = Icons.Filled.Home) {
                         Text(address, style = MaterialTheme.typography.bodyMedium)
                     }
@@ -403,6 +559,7 @@ fun CheckoutReviewScreen(
                             PriceLine("Subtotal", "₹${subtotal.toInt()}")
                             PriceLine("GST (18%)", "₹${tax.toInt()}")
                             PriceLine("Shipping", if (shipping == 0.0) "FREE" else "₹${shipping.toInt()}")
+                            PriceLine("Escrow Buyer Insurance", "FREE (₹0)", isHighlightGreen = true)
                             Spacer(Modifier.height(4.dp))
                             HorizontalDivider()
                             Spacer(Modifier.height(4.dp))
@@ -453,8 +610,9 @@ fun OrderConfirmationScreen(
     onContinueShopping: () -> Unit,
     onViewOrder: () -> Unit,
     orderId: String? = null,
+    handoverOtp: String? = null,
 ) {
-    val displayOrderId = orderId ?: remember { "MH${UUID.randomUUID().toString().take(8).uppercase()}" }
+    val displayOrderId = orderId ?: remember { "ZRD-${UUID.randomUUID().toString().take(8).uppercase()}" }
 
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -462,13 +620,13 @@ fun OrderConfirmationScreen(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = "Order placed successfully",
                 tint = Color(0xFF4CAF50),
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(72.dp),
             )
             Text(
                 "Order Placed!",
@@ -478,19 +636,68 @@ fun OrderConfirmationScreen(
                 ),
             )
             Text(
-                "Order ID: $displayOrderId",
-                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                "Order Number: $displayOrderId",
+                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold),
             )
+
+            if (!handoverOtp.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color(0xFF10B981)),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("🛡️ Delivery Handover OTP", fontWeight = FontWeight.Bold, color = Color(0xFF047857), style = MaterialTheme.typography.labelMedium)
+                        Text(handoverOtp, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 6.sp, color = Color(0xFF047857))
+                        Text(
+                            "Share this OTP with the seller or courier only after inspecting your item at delivery to release payment.",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF0FDF4),
+                border = BorderStroke(1.dp, Color(0xFF4ADE80)),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("🎉", fontSize = 24.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Congratulations! Your payment is 100% Escrow protected.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OrderStepRow(step = "1. Order Placed", isCompleted = true, isCurrent = false)
+                OrderStepRow(step = "2. Seller Packaging", isCompleted = false, isCurrent = true)
+                OrderStepRow(step = "3. Delivery & Inspection", isCompleted = false, isCurrent = false)
+                OrderStepRow(step = "4. Payment Released", isCompleted = false, isCurrent = false)
+            }
+
             Text(
-                "Thank you for your order. Estimated delivery in 3–5 business days.",
-                style = MaterialTheme.typography.bodyMedium,
+                "Estimated delivery in 3–5 business days. Your payment is held securely in escrow.",
+                style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = onViewOrder,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-            ) { Text("View Order") }
+            ) { Text("View My Orders", fontWeight = FontWeight.Bold) }
             androidx.compose.material3.OutlinedButton(
                 onClick = onContinueShopping,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -620,9 +827,57 @@ private fun ReviewSection(
 }
 
 @Composable
-private fun PriceLine(label: String, value: String, isBold: Boolean = false) {
+private fun PriceLine(label: String, value: String, isBold: Boolean = false, isHighlightGreen: Boolean = false) {
+    val color = if (isHighlightGreen) Color(0xFF059669) else Color.Unspecified
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal))
-        Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal))
+        Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isBold || isHighlightGreen) FontWeight.Bold else FontWeight.Normal), color = color)
+        Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isBold || isHighlightGreen) FontWeight.Bold else FontWeight.Normal), color = color)
+    }
+}
+
+@Composable
+private fun UpiAppCard(name: String, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        modifier = modifier.clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (isSelected) {
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+        }
+    }
+}
+
+@Composable
+private fun OrderStepRow(step: String, isCompleted: Boolean, isCurrent: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier.size(20.dp).background(
+                color = if (isCompleted) Color(0xFF059669) else if (isCurrent) Color(0xFF2563EB) else MaterialTheme.colorScheme.surfaceVariant,
+                shape = CircleShape
+            ).border(1.dp, if (isCompleted || isCurrent) Color.Transparent else MaterialTheme.colorScheme.outline, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isCompleted) {
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+            } else if (isCurrent) {
+                Box(modifier = Modifier.size(8.dp).background(Color.White, CircleShape))
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            step,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal),
+            color = if (isCompleted) Color(0xFF059669) else if (isCurrent) Color(0xFF2563EB) else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

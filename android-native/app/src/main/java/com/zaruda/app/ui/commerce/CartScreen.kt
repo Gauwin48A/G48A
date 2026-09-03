@@ -1,6 +1,7 @@
 package com.zaruda.app.ui.commerce
 
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -375,7 +376,12 @@ private fun List<CartItem>.cartTotal(): Double = sumOf { (it.price ?: 0.0) * it.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartViewModel = hiltViewModel()) {
+fun CartScreen(
+    onBack: () -> Unit,
+    categoryKey: String? = null,
+    onCheckout: (() -> Unit)? = null,
+    viewModel: CartViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -457,6 +463,36 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                         ) {
                             // Cart items section
                             if (state.items.isNotEmpty()) {
+                                item(key = "free_delivery_meter") {
+                                    val freeDeliveryThreshold = 1500.0
+                                    val progress = (state.total / freeDeliveryThreshold).coerceIn(0.0, 1.0).toFloat()
+                                    val remaining = (freeDeliveryThreshold - state.total).coerceAtLeast(0.0)
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (remaining == 0.0) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                        border = BorderStroke(1.dp, if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                    ) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text(if (remaining == 0.0) "🎉" else "🚚", fontSize = 16.sp)
+                                                Text(
+                                                    text = if (remaining == 0.0) "You unlocked FREE Escrow Insured Delivery!" else "Add ₹${"%,.0f".format(remaining)} more for Free Escrow Delivery",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (remaining == 0.0) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                            LinearProgressIndicator(
+                                                progress = { progress },
+                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                                color = if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary,
+                                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                
                                 item(key = "cart_header") {
                                     SectionLabelWithCount("Saved Items", state.items.size)
                                 }
@@ -499,6 +535,19 @@ fun CartScreen(onBack: () -> Unit, categoryKey: String? = null, viewModel: CartV
                                 shadowElevation = 8.dp,
                             ) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    if (onCheckout != null && state.items.isNotEmpty()) {
+                                        Button(
+                                            onClick = onCheckout,
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Icon(Icons.Filled.ShoppingCartCheckout, null, tint = Color.White)
+                                                Text("Proceed to Checkout (₹%,.0f)".format(state.total), fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        }
+                                    }
                                     if (hasElectronics) {
                                         // Electronics Category: In-App Escrow Fraud Protection
                                         Button(

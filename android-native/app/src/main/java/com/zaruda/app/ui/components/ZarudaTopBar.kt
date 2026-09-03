@@ -187,13 +187,31 @@ fun ZarudaTopBar(
 
             // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Search icon button with ripple
-                IconButton(onClick = onSearch, modifier = Modifier.size(36.dp)) {
+                // Search capsule — always visible tappable bar (Amazon-style)
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 6.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.18f))
+                        .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                        .clickable { onSearch() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     Icon(
                         Icons.Default.Search,
                         contentDescription = "Search marketplace",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = "Search phones, cars, fashion...",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 

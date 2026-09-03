@@ -301,6 +301,7 @@ fun ZarudaApp(
         var activeCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
         var showMoreDrawer by rememberSaveable { mutableStateOf(false) }
         var showAuthGate by rememberSaveable { mutableStateOf(false) }
+        var scrollToTopTrigger by androidx.compose.runtime.mutableIntStateOf(0)
 
         val context = LocalContext.current
         val exitScope = rememberCoroutineScope()
@@ -471,6 +472,7 @@ fun ZarudaApp(
             LocalOnOpenMore provides { showMoreDrawer = true },
             LocalAuthGate provides { if (!isAuthenticated) showAuthGate = true },
             LocalThemeController provides ThemeController(themeMode, toggleTheme, setThemeMode),
+            LocalScrollToTopTrigger provides scrollToTopTrigger,
             LocalSnackbarHostState provides snackbarHostState,
             *listOfNotNull(
                 localeManager?.let { LocalLocaleManager provides it },
@@ -518,7 +520,7 @@ fun ZarudaApp(
         }
 
         val startDestination = if (isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
-        var showingLaunch by remember { mutableStateOf(true) }
+        var showingLaunch by remember { mutableStateOf(false) }
 
         if (showingLaunch) {
             BrandLaunchScreen(onFinished = { showingLaunch = false })
@@ -741,6 +743,8 @@ fun ZarudaApp(
                             onOpenSaleUndone = { navController.navigate(Routes.REPOST) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
+                            onOpenLanguage = { navController.navigate(Routes.MORE) { launchSingleTop = true } },
+                            onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -759,8 +763,8 @@ fun ZarudaApp(
                                 navController.popBackStack()
                             }
                         },
-                        onUploadAvatar = { _ -> },
-                        onUploadCover = { _ -> },
+                        onUploadAvatar = { uri -> profileVm.uploadAvatar(context, uri) },
+                        onUploadCover = { uri -> profileVm.uploadCoverImage(context, uri) },
                     )
                 }
 
@@ -803,7 +807,7 @@ fun ZarudaApp(
                     onOpenCategory = { key -> openCategoryApp(key) },
                     onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
                     onOpenSale = { postId, sellerId ->
-                        navController.navigate(Routes.saleDone(postId, sellerId)) { launchSingleTop = true }
+                        navController.navigate(Routes.checkout(postId, 0.0)) { launchSingleTop = true }
                     },
                     onOpenUser = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
                 )
@@ -871,6 +875,7 @@ fun ZarudaApp(
                         },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         onCreatePost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
+                        onEditPost = { id -> navController.navigate(Routes.editPost(id)) { launchSingleTop = true } },
                     )
                 }
             }
@@ -1092,8 +1097,81 @@ fun ZarudaApp(
             composable(Routes.CART) {
                 MainShell(navController = navController, selected = BottomTab.PROFILE) {
                     val catKey = LocalActiveCategoryKey.current
-                    CartScreen(onBack = { navController.popBackStack() }, categoryKey = catKey)
+                    CartScreen(
+                        onBack = { navController.popBackStack() },
+                        categoryKey = catKey,
+                        onCheckout = {
+                            navController.navigate(Routes.checkout("cart", 0.0)) { launchSingleTop = true }
+                        },
+                    )
                 }
+            }
+
+            composable(
+                route = Routes.CHECKOUT,
+                arguments = listOf(
+                    navArgument("postId") { type = NavType.StringType; defaultValue = "cart" },
+                    navArgument("amount") { type = NavType.StringType; defaultValue = "0.0" },
+                ),
+            ) { backStack ->
+                val checkoutVm: com.zaruda.app.ui.checkout.CheckoutViewModel = hiltViewModel(backStack)
+                val checkoutState by checkoutVm.state.collectAsState()
+                val amountStr = backStack.arguments?.getString("amount") ?: "0.0"
+                val amount = amountStr.toDoubleOrNull() ?: 0.0
+
+                var checkoutStep by remember { mutableStateOf(0) }
+
+                when (checkoutStep) {
+                    0 -> com.zaruda.app.ui.checkout.CheckoutAddressScreen(
+                        onBack = { navController.popBackStack() },
+                        onNext = { name, phone, address ->
+                            checkoutVm.setDeliveryDetails(name, phone, address)
+                            checkoutStep = 1
+                        },
+                    )
+                    1 -> com.zaruda.app.ui.checkout.CheckoutPaymentScreen(
+                        onBack = { checkoutStep = 0 },
+                        onNext = { method ->
+                            checkoutVm.setPaymentMethod(method)
+                            checkoutStep = 2
+                        },
+                    )
+                    else -> com.zaruda.app.ui.checkout.CheckoutReviewScreen(
+                        address = checkoutState.address.ifBlank { "Delivery Address" },
+                        paymentMethod = checkoutState.paymentMethod,
+                        cartSubtotal = if (amount > 0) amount else 500.0,
+                        onBack = { checkoutStep = 1 },
+                        onPlaceOrder = {
+                            navController.navigate(Routes.checkoutConfirm(checkoutState.orderNumber ?: checkoutState.orderId)) {
+                                popUpTo(Routes.CHECKOUT) { inclusive = true }
+                            }
+                        },
+                        onOrderFailed = {},
+                        viewModel = checkoutVm,
+                    )
+                }
+            }
+
+            composable(
+                route = Routes.CHECKOUT_CONFIRM,
+                arguments = listOf(
+                    navArgument("orderId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { backStack ->
+                val orderId = backStack.arguments?.getString("orderId")
+                com.zaruda.app.ui.checkout.OrderConfirmationScreen(
+                    orderId = orderId,
+                    onContinueShopping = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.HOME) { inclusive = false }
+                        }
+                    },
+                    onViewOrder = {
+                        navController.navigate(Routes.BOUGHT_POSTS) {
+                            popUpTo(Routes.HOME) { inclusive = false }
+                        }
+                    },
+                )
             }
 
             composable(Routes.RECENTLY_VIEWED) {
@@ -1461,6 +1539,11 @@ val LocalThemeController = compositionLocalOf<ThemeController> {
 val LocalActiveCategoryKey = staticCompositionLocalOf<String?> { null }
 val LocalOnOpenMore = staticCompositionLocalOf<() -> Unit> { {} }
 val LocalAuthGate = staticCompositionLocalOf<() -> Unit> { {} }
+/**
+ * Scroll-to-top trigger: increments each time the current tab is re-tapped.
+ * Screens observing this Int can scroll to top when it changes. (Checklist #6.6)
+ */
+val LocalScrollToTopTrigger = staticCompositionLocalOf<Int> { 0 }
 val LocalSnackbarHostState = staticCompositionLocalOf<androidx.compose.material3.SnackbarHostState> {
     androidx.compose.material3.SnackbarHostState()
 }
@@ -1535,6 +1618,8 @@ fun MainShell(
                 if (showBottomBar) {
                 val openMore = LocalOnOpenMore.current
                 val navigateToTab: (BottomTab) -> Unit = { tab ->
+                    // If re-tapping current tab, trigger scroll-to-top via CompositionLocal (Checklist #6.6)
+                    // The parent ZarudaApp increments the trigger; screens observe via LocalScrollToTopTrigger
                     navController.navigate(tab.route) {
                         popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                         launchSingleTop = true

@@ -1570,6 +1570,9 @@ private fun ActiveTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item {
+            EscrowTransactionStepper(currentStep = 2)
+        }
         items(state.activeSales, key = { it.id }) { sale ->
             ActiveSaleCard(sale, state, viewModel, isDark)
         }
@@ -2056,6 +2059,9 @@ private fun HistoryTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        item {
+            EscrowTransactionStepper(currentStep = 5)
+        }
         items(state.historySales, key = { it.id }) { sale ->
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -2104,6 +2110,87 @@ private fun HistoryTab(state: SaleDoneUiState, viewModel: SaleDoneViewModel) {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Escrow Transaction Stepper
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun EscrowTransactionStepper(
+    currentStep: Int, // 0-4
+    modifier: Modifier = Modifier,
+) {
+    val steps = listOf(
+        "Order Placed" to "Buyer initiated purchase",
+        "Seller Confirmed" to "Seller accepted the order",
+        "Item Shipped" to "Package is on its way",
+        "Buyer Inspects" to "Buyer verifies the item",
+        "Payment Released" to "Escrow funds released to seller",
+    )
+    Column(modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        steps.forEachIndexed { index, (title, subtitle) ->
+            val isCompleted = index < currentStep
+            val isCurrent = index == currentStep
+            val isPending = index > currentStep
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+            ) {
+                // Step indicator circle + connecting line
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.width(32.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = when {
+                            isCompleted -> Color(0xFF22C55E)
+                            isCurrent -> Color(0xFF3B82F6)
+                            else -> Color(0xFFE2E8F0)
+                        },
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (isCompleted) {
+                                Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            } else {
+                                Text("${index + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                    color = if (isCurrent) Color.White else Color(0xFF94A3B8))
+                            }
+                        }
+                    }
+                    if (index < steps.lastIndex) {
+                        Box(
+                            modifier = Modifier
+                                .width(2.dp)
+                                .height(32.dp)
+                                .background(if (isCompleted) Color(0xFF22C55E) else Color(0xFFE2E8F0))
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                // Step text
+                Column(modifier = Modifier.padding(bottom = if (index < steps.lastIndex) 12.dp else 0.dp)) {
+                    Text(
+                        title,
+                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = when {
+                            isCompleted -> Color(0xFF22C55E)
+                            isCurrent -> MaterialTheme.colorScheme.onSurface
+                            else -> Color(0xFF94A3B8)
+                        },
+                    )
+                    Text(
+                        subtitle,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

@@ -572,8 +572,19 @@ fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, on
                                         Text("${c.listingCount} listings", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         c.followerCount?.let { Text("$it followers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     }
+                                    Spacer(Modifier.height(6.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Box(Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF22C55E)))
+                                        Text("Open Now · Closes 8 PM", fontSize = 11.sp, color = Color(0xFF15803D), fontWeight = FontWeight.SemiBold)
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.1f)) {
+                                        Text("🛡️ Zaruda Inspection Desk", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    }
                                 }
-                                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                IconButton(onClick = { /* navigate to directions */ }) {
+                                    Icon(Icons.Filled.Directions, contentDescription = "Directions", tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
                         }
                     }

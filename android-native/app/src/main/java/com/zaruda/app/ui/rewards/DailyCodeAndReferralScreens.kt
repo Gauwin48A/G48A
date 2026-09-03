@@ -27,6 +27,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -38,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +57,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zaruda.app.core.ApiError
 import com.zaruda.app.core.ApiResult
+import com.zaruda.app.core.userFacingMessage
 import com.zaruda.app.data.remote.dto.ReferralNode
 import com.zaruda.app.data.remote.dto.ReferralTreeResponse
 import com.zaruda.app.data.repository.ReferralTreeRepository
@@ -68,6 +74,8 @@ data class DailyCodeState(
     val code: String? = null,
     val expiresAt: String? = null,
     val reward: Int? = null,
+    val redeemLoading: Boolean = false,
+    val redeemResult: String? = null,
 )
 
 /** Auto-generated daily code based on deterministic day-of-year + year hash. */
@@ -81,7 +89,9 @@ private fun generateDailyCode(): String {
 }
 
 @HiltViewModel
-class DailyCodeViewModel @Inject constructor() : ViewModel() {
+class DailyCodeViewModel @Inject constructor(
+    private val rewardsRepository: com.zaruda.app.data.repository.RewardsRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(DailyCodeState())
     val state: StateFlow<DailyCodeState> = _state.asStateFlow()
 
@@ -97,6 +107,26 @@ class DailyCodeViewModel @Inject constructor() : ViewModel() {
             expiresAt = expiresAt,
             reward = 15,
         )
+    }
+
+    fun redeemCode(code: String) {
+        _state.value = _state.value.copy(redeemLoading = true, redeemResult = null)
+        viewModelScope.launch {
+            val result = try {
+                val r = rewardsRepository.claimDailyCode(code)
+                when (r) {
+                    is ApiResult.Success -> r.data.message ?: "🎉 +15 coins claimed!"
+                    is ApiResult.Failure -> r.error.userFacingMessage("redeem code")
+                }
+            } catch (e: Exception) {
+                e.message ?: "Failed to redeem"
+            }
+            _state.value = _state.value.copy(redeemLoading = false, redeemResult = result)
+        }
+    }
+
+    fun clearRedeemResult() {
+        _state.value = _state.value.copy(redeemResult = null)
     }
 }
 
@@ -157,6 +187,44 @@ fun DailyCodeScreen(onBack: () -> Unit, viewModel: DailyCodeViewModel = hiltView
                     Spacer(Modifier.height(8.dp))
                     state.expiresAt?.let {
                         Text("Expires: ${it.take(10)}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    // ── Interactive code input + Redeem ──
+                    var inputCode by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = inputCode,
+                        onValueChange = { inputCode = it.uppercase() },
+                        label = { Text("Enter secret code") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (inputCode.isNotBlank()) {
+                                viewModel.redeemCode(inputCode.trim())
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        enabled = inputCode.isNotBlank() && !state.redeemLoading,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        if (state.redeemLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                        } else {
+                            Text("Redeem Code", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    state.redeemResult?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (it.contains("🎉")) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFDC2626).copy(alpha = 0.12f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(it, modifier = Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = if (it.contains("🎉")) Color(0xFF059669) else Color(0xFFDC2626))
+                        }
                     }
                 }
             } else {

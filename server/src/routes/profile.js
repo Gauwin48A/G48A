@@ -42,6 +42,9 @@ const validateProfileUpdate = [
   },
 ];
 
+/** @route GET /full - Unified full profile (single-call payload) */
+router.get("/full", protect, profileController.getFullProfile);
+
 /** @route GET / - Get the authenticated user's profile */
 router.get("/", protect, profileController.getProfile);
 
@@ -50,6 +53,9 @@ router.post("/update", protect, validateProfileUpdate, profileController.updateP
 
 /** @route POST /upload-avatar - Upload a new avatar image */
 router.post("/upload-avatar", protect, upload.single("avatar"), profileController.uploadAvatar);
+
+/** @route POST /upload-cover - Upload a new cover image */
+router.post("/upload-cover", protect, upload.single("cover"), profileController.uploadCover);
 
 /** @route GET /preferences - Get user preferences */
 router.get("/preferences", protect, profileController.getPreferences);

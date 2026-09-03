@@ -348,6 +348,8 @@ class DashboardRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun coinBalance(): ApiResult<CoinBalanceResponse> = safeApiCall { api.coinBalance() }
     suspend fun dailyCode(): ApiResult<DailyCodeResponse> = safeApiCall { api.dailyCode() }
     suspend fun trustScore(userId: String): ApiResult<TrustScoreResponse> = safeApiCall { api.trustScore(userId) }
+    /** Single-call unified profile endpoint (replaces 4-call waterfall) */
+    suspend fun getFullProfile(): ApiResult<com.zaruda.app.data.remote.dto.FullProfileResponse> = safeApiCall { api.getFullProfile() }
 }
 
 @Singleton
